@@ -1,0 +1,7 @@
+Known Issues
+------------
+
+By design the STONIX program does not attempt to gain or relinquish privileges 
+on any platform. This causes some minor issues on the Mac where command line 
+usage is not common.
+
