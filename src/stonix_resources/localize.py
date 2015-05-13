@@ -254,3 +254,8 @@ GATEKEEPER = "00000000-0000-0000-0000-000000000000"
 
 LOGSVR = "@@log.foo.com"
 LOGROTATE = "700.lanl.logrotate"
+
+## Proxy setting
+PROXYSERVER = "xxx.xxx.xxx"
+PROXYPORT = "00"
+PROXYURL = "http://xxx.xxx.xxx/xxx.xxx"
