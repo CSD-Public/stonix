@@ -35,16 +35,20 @@ import logdispatcher
 import networksetup
 
 
-class zzzTestFrameworkConfigureNetworks(unittest.TestCase):
+class zzzTestFrameworknetworksetup(unittest.TestCase):
 
     def setUp(self):
         # create sample test files
         env = environment.Environment()
         logger = logdispatcher.LogDispatcher(env)
-        self.cf = networksetup()
+        self.ns = networksetup()
 
     def tearDown(self):
         pass
+
+    def testGetLocation(self):
+        location = self.ns.getLocation()
+        self.failUnless( location == "" )
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
