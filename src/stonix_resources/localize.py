@@ -47,11 +47,11 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.8.17'
+STONIXVERSION = '0.8.16.3'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
-REPORTSERVER = 'reports.bar.com'
+REPORTSERVER = 'csd-web.lanl.gov'
 
 # If you are not using a central report server then set the value of
 # sendreports to False. Please note no quotes.
@@ -62,16 +62,21 @@ SENDREPORTS = True
 # used. If you have local update sources list them here. This check will be
 # skipped if the list is empty. The list is in python list format:
 # updateservers = ['myserver1.mydomain.tld', 'myserver2.mydomain.tld']
-UPDATESERVERS = ['repo.bar.com', 'satellite.bar.com']
+UPDATESERVERS = ['rhnsd.lanl.gov',
+                 'rhnsc.lanl.gov',
+                 'rhus.lanl.gov',
+                 'rhnsg.lanl.gov',
+                 'rhusd.lanl.gov',
+                 'rhusc.lanl.gov']
 
 # Stonix can set OS X systems to use a local Apple Software Update Server
 # if you have an ASUS server on your network enter its FQDN here. A zero
 # length entry will be ignored.
-APPLESOFTUPDATESERVER = 'http://appleupdates.bar.com:8088/'
+APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
-CENTRALLOGHOST = 'logs.bar.com'
+CENTRALLOGHOST = 'winlog.lanl.gov'
 
 # Warning Banners are site-specific
 # You may edit the text of the warning banner here to reflect your particular
@@ -99,33 +104,33 @@ OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
 
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
-MAILRELAYSERVER = 'mail.bar.com'
+MAILRELAYSERVER = 'mail.lanl.gov'
 
 # STONIX Error Message Source Address
 # Set this to the email address that STONIX error messages should appear to
 # come from.
-STONIXERR = 'stonix-err@bar.com'
+STONIXERR = 'dkennel@lanl.gov'
 
 # STONIX Error Message Destination
 # Set the email address that STONIX error messages should be delivered to.
-STONIXDEVS = 'stonix-devs@bar.com'
+STONIXDEVS = 'stonix-dev@lanl.gov'
 
 # Set the URL and port of your proxy server if one is in use.
 # If you do not use a proxy server set this to None.
 # Note that STONIX will not work through authenticating proxies.
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
-PROXY = 'http://myproxy.bar.com:3128'
+PROXY = 'http://proxyout.lanl.gov:8080'
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
-ALLOWNET = '192.168.0.1/24'
+ALLOWNET = '128.165.0.0/16'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
 PRINTBROWSESUBNET = ''
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
-NTPSERVERSINTERNAL = ["time.bar.com", "ntp.bar.com"]
+NTPSERVERSINTERNAL = ["time.lanl.gov", "ntp.lanl.gov"]
 
 # Specify a list of external Network Time Protocol (NTP) Servers
 NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
@@ -133,33 +138,31 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 
 # List Of Corporate Network Servers used to determine if we are on the
 # corporate network they need to be reachable only internally on port 80
-CORPORATENETWORKSERVERS = ["foo.bar.com"]
+CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
-KERB5 = '''[logging]
- default = FILE:/var/log/krb5libs.log
- kdc = FILE:/var/log/krb5kdc.log
- admin_server = FILE:/var/log/kadmind.log
-
-[libdefaults]
- dns_lookup_realm = false
- ticket_lifetime = 24h
- renew_lifetime = 7d
- forwardable = true
- rdns = false
-# default_realm = EXAMPLE.COM
- default_ccache_name = KEYRING:persistent:%{uid}
-
- default_realm = #
+KERB5 = '''[libdefaults]
+    default_realm = lanl.gov
+    allow_weak_crypto = true
+    forwardable = true
 [realms]
-# EXAMPLE.COM = {
-#  kdc = kerberos.example.com
-#  admin_server = kerberos.example.com
-# }
-
+    lanl.gov = {
+    kdc = kerberos.lanl.gov
+    kdc = kerberos-slaves.lanl.gov
+    admin_server = kerberos.lanl.gov
+    }
+[pam]
+    debug = false
+    krb4_convert = false
 [domain_realm]
-# .example.com = EXAMPLE.COM
-# example.com = EXAMPLE.COM'''
+    eia-ecs-p-f5.lanl.gov = WIN.LANL.GOV
+    .lanl.gov = lanl.gov
+    .lanl.org = lanl.gov'''
+
+# Self Update server - a web server that houses packages for Mac, Solaris and
+# Gentoo, for a self update feature, since these OSs do not have good package
+# management like yum and apt-get.
+SELFUPDATESERVER = "csd-web.lanl.gov"
 
 HOSTSDENYDEFAULT = """##########################################################################
 #
@@ -228,13 +231,12 @@ all : all : DENY
 """
 
 # This is used in the SecureMailClient Rule to set up DomainForMatching
-# APPLEMAILDOMAINFORMATCHING = "foo.com"
-APPLEMAILDOMAINFORMATCHING = ""
+APPLEMAILDOMAINFORMATCHING = "lanl.gov"
 
 # This list contains quoted strings that are fully qualified paths to
 # world writable directories that are common at your site (possibly due to
 # widely deployed software).
-SITELOCALWWWDIRS = []
+SITELOCALWWWDIRS = ['/var/lanl/puppet/run']
 
 # Default messages for self.detailedresults initialization, report, fix, undo
 DRINITIAL = "Neither report, fix, or revert have been run yet."
@@ -248,9 +250,6 @@ DRREPORTAVAILABLE = "This Rule does not support report."
 DRUNDOSUCCESSFUL = "Revert was completed successfully."
 DRUNDOFAILED = "The revert for this Rule failed."
 DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
-
-## Insert gatekeeper profile UUID here
-GATEKEEPER = "00000000-0000-0000-0000-000000000000"
-
-LOGSVR = "@@log.foo.com"
-LOGROTATE = "700.lanl.logrotate"
+GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
+WINLOG = "@@winlog.lanl.gov"
+LANLLOGROTATE = "700.lanl.logrotate"
