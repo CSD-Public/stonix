@@ -32,7 +32,7 @@ Created on May 13, 2015
 import unittest
 import environment
 import logdispatcher
-import ConfigureNetworks
+import networksetup
 
 
 class zzzTestFrameworkConfigureNetworks(unittest.TestCase):
@@ -41,7 +41,7 @@ class zzzTestFrameworkConfigureNetworks(unittest.TestCase):
         # create sample test files
         env = environment.Environment()
         logger = logdispatcher.LogDispatcher(env)
-        self.cf = ConfigureNetworks()
+        self.cf = networksetup()
 
     def tearDown(self):
         pass

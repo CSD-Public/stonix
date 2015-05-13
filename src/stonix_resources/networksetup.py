@@ -28,9 +28,12 @@ This objects encapsulates the complexities of the networksetup command on OS X
 '''
 import re
 import CommandHelper
+from .localize import PROXYSERVER
+from .localize import PROXYPORT
+from .localize import PROXYURL
 
 
-class ConfigureNetworks():
+class networksetup():
     '''
     This objects encapsulates the complexities of the networksetup command
     on OS X
@@ -49,6 +52,9 @@ class ConfigureNetworks():
         self.nso = {}
         self.nsInitialized = False
         self.nsc = "/usr/sbin/networksetup"
+        self.ps = PROXYSERVER
+        self.pp = PROXYPORT
+        self.pu = PROXYURL
         self.ch = CommandHelper()
         self.getLocation()
         self.updateCurrentNetworkConfigurationDictionary()
