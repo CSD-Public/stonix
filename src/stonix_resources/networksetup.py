@@ -30,7 +30,7 @@ import re
 import CommandHelper
 from .localize import PROXYSERVER
 from .localize import PROXYPORT
-from .localize import PROXYURL
+from .localize import PROXYCONFIGURATIONFILE
 
 
 class networksetup():
@@ -54,7 +54,7 @@ class networksetup():
         self.nsc = "/usr/sbin/networksetup"
         self.ps = PROXYSERVER
         self.pp = PROXYPORT
-        self.pu = PROXYURL
+        self.pf = PROXYCONFIGURATIONFILE
         self.ch = CommandHelper()
         self.getLocation()
         self.updateCurrentNetworkConfigurationDictionary()

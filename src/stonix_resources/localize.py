@@ -258,4 +258,4 @@ LOGROTATE = "700.lanl.logrotate"
 ## Proxy setting
 PROXYSERVER = "xxx.xxx.xxx"
 PROXYPORT = "00"
-PROXYURL = "http://xxx.xxx.xxx/xxx.xxx"
+PROXYCONFIGURATIONFILE = "http://xxx.xxx.xxx/xxx.xxx"
