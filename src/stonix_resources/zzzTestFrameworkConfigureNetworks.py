@@ -31,7 +31,6 @@ Created on May 13, 2015
 '''
 import unittest
 import environment
-import os
 import logdispatcher
 import ConfigureNetworks
 
