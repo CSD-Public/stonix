@@ -253,3 +253,8 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@winlog.lanl.gov"
 LANLLOGROTATE = "700.lanl.logrotate"
+
+## Proxy setting
+PROXYSERVER = "proxyout.lanl.gov"
+PROXYPORT = "8080"
+PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
