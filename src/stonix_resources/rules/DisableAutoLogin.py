@@ -42,7 +42,6 @@ import traceback
 from ..ruleKVEditor import RuleKVEditor
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
-from ..dylutils import *
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import *
 
