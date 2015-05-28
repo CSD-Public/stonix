@@ -194,7 +194,7 @@ def verifyAndFixEtcConf(target="", message_level="normal"):
     
             #####
             # append the bak.date to the filename
-            backup = targetRootAppStonix + "." + myDate + "." + mytime
+            backup = targetRootAppStonix + "." + myDate + "." + myTime
             try:
                 shutil.move(targetRootAppStonixConf, backup)
             except Exception, err:
@@ -233,7 +233,7 @@ def verifyAndFixAppConf(target="", message_level="normal"):
     
             #####
             # append the bak.date to the filename
-            backup = targetAppStonixConf + "." + myDate + "." + mytime
+            backup = targetAppStonixConf + "." + myDate + "." + myTime
             try:
                 shutil.move(targetAppStonixConf, backup)
             except Exception, err:
