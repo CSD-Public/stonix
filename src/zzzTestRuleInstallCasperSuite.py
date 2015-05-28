@@ -25,32 +25,25 @@
 This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 
 @author: ekkehard j. koch
-@change: 2015/01/05 Original Implementation
+@change: 2014-11-24 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
 from stonix_resources.RuleTestTemplate import RuleTest
 from stonix_resources.CommandHelper import CommandHelper
 from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.ConfigureComputerName import ConfigureComputerName
+from stonix_resources.rules.InstallCasperSuite import InstallCasperSuite
 
 
-class zzzTestRuleConfigureComputerName(RuleTest):
+class zzzTestRuleInstallCasperSuite(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureComputerName(self.config,
-                                           self.environ,
-                                           self.logdispatch,
-                                           self.statechglogger)
+        self.rule = InstallCasperSuite(self.config, self.environ,
+                                       self.logdispatch,
+                                       self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.effectiveUserID = self.environ.geteuid()
-        self.environ.setverbosemode(True)
-        self.environ.setdebugmode(True)
-        self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
-        self.su = "/usr/sbin/scutil"
 
     def tearDown(self):
         pass
@@ -66,21 +59,6 @@ class zzzTestRuleConfigureComputerName(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        blank = "blank"
-        if self.environ.getosfamily() == "darwin":
-            if self.effectiveUserID == 0:
-                if success:
-                    command = [self.su, "--set", "ComputerName", blank]
-                    self.logdispatch.log(LogPriority.DEBUG, str(command))
-                    success = self.ch.executeCommand(command)
-                if success:
-                    command = [self.su, "--set", "LocalHostName", blank]
-                    self.logdispatch.log(LogPriority.DEBUG, str(command))
-                    success = self.ch.executeCommand(command)
-                if success:
-                    command = [self.su, "--set", "HostName", blank]
-                    self.logdispatch.log(LogPriority.DEBUG, str(command))
-                    success = self.ch.executeCommand(command)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
