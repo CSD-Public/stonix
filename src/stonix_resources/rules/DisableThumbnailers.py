@@ -47,7 +47,9 @@ class DisableThumbnailers(Rule):
                            'family': ['linux', 'solaris', 'freebsd']}
         self.formatDetailedResults("initialize")
         self.guidance = ["NSA 2.2.2.6"]
+        self.rulename = "DisableThumbnailers"
         datatype = 'bool'
+        self.helptext = '''This rule disables thumbnailers for gnome.'''
         key = 'DISABLETHUMBNAILERS'
         instructions = "To disable this rule set the value of " + \
             "DISABLETHUMBNAILERS to False."
