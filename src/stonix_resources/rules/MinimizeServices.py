@@ -117,7 +117,7 @@ this rule enabled but some server administrators may want to disable this rule.
                              'sssd', 'xfs', 'mcstrans', 'cron', 'acpi-support',
                              'alsa-restore', 'alsa-store', 'dbus',
                              'bootlogd', 'libnss-ldap', 'grub-common',
-                             'ondemand', 'rc.local' 'pulseaudio' 'splash',
+                             'ondemand', 'rc.local', 'pulseaudio', 'splash',
                              'splash-early', 'smartd', 'random', 'udev-post',
                              'purge-kernels', 'network-remotefs', 'kbd',
                              'haveged', 'fbset', 'earlysyslog', 'alsasound',
