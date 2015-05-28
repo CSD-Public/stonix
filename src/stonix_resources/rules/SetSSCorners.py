@@ -61,8 +61,6 @@ class SetSSCorners(Rule):
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}}
-        if self.environ.geteuid() == 0:
-            self.applicable = False
 
         # set up configuration items for this rule
         datatype = 'bool'
@@ -119,12 +117,13 @@ class SetSSCorners(Rule):
         '''
 
         found = False
+        self.detailedresults = ""
 
         try:
 
             if self.environ.geteuid() == 0:
                 self.detailedresults += '\nYou are running SetSSCorners in Admin mode. This rule must be run in regular user context.'
-                self.logger.log(LogPriority.WARNING, self.detailedresults)
+                self.logger.log(LogPriority.INFO, self.detailedresults)
                 return False
 
             self.setVars()
@@ -169,12 +168,13 @@ class SetSSCorners(Rule):
         '''
 
         success = True
+        self.detailedresults = ""
 
         try:
 
             if self.environ.geteuid() == 0:
                 self.detailedresults += '\nYou are running SetSSCorners in Admin mode. This rule must be run in regular user context.'
-                self.logger.log(LogPriority.WARNING, self.detailedresults)
+                self.logger.log(LogPriority.INFO, self.detailedresults)
                 return False
 
             if self.ci.getcurrvalue():
