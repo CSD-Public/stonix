@@ -55,3 +55,10 @@ STONIX
   of the debug output is also very valuable.
   
   Report your issue via the STONIX github issue tracker.
+  
+ 4. Known Issues
+-----------------
+
+   1. Developers have observed behavior on CentOS where DisableThumbnailers
+   returns non-compliant after the fix is run. This appears to be due to
+   issues in gconf or dbus and the rule is working as designed.
