@@ -61,8 +61,6 @@ class SetSSCorners(Rule):
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}}
-        # this space intentionally left non-blank
-        # 
 
         # set up configuration items for this rule
         datatype = 'bool'
