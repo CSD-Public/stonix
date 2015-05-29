@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.8.16
+Version: 0.8.17
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -116,6 +116,13 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Fri May 29 2015 David Kennel <dkennel@lanl.gov> - 0.8.17
+- Fixed multiple issues with SetSSCorners
+- Observed behavior on CentOS where DisableThumbnailers is non-compliant after fix
+  due to issues with gconf/dbus.
+- Fixed bug in MinimizeServices caused by missing commas in a Python list that affected
+  non-systemd Linux distributions.
+
 * Thu Apr 30 2015 David Kennel <dkennel@lanl.gov> - 0.8.16
 - Major refactor of the isApplicable method and workflow
 - Corrected bug in the behavior of RootMailAlias
