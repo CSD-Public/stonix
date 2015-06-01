@@ -83,6 +83,7 @@ class VerifySysFilePerms(Rule):
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
 
         self.findsysvol = '/usr/sbin/bless --info --getBoot'
+        self.hasrun = False
 
     def report(self):
         '''
@@ -139,6 +140,8 @@ class VerifySysFilePerms(Rule):
             # if any incorrect permissions or ownership found, return false
             if wrongperms:
                 self.compliant = False
+                if self.hasrun:
+                    self.detailedresults += '\nThe disk utility for Mac OS X has been run, but there are files which were unable to be reverted to their intended permissions state(s). This is due to an issue with a mismatch in the package receipts database originally configured for this system, as compared to the current versions of the files on this system. This sometimes occurs when a system has been upgraded from a long-deprecated version of Mac OS to a more current one. This is an issue which Apple needs to fix before this rule can succeed on such systems.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -172,7 +175,7 @@ class VerifySysFilePerms(Rule):
 
             self.cmdhelper.executeCommand('/usr/sbin/diskutil repairPermissions ' + str(self.sysvol))
             errout = self.cmdhelper.getErrorString()
-            if errout:
+            if errout and not re.search('SUID file', errout):
                 success = False
 
         except (KeyboardInterrupt, SystemExit):
@@ -183,6 +186,7 @@ class VerifySysFilePerms(Rule):
         self.formatDetailedResults("fix", success,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.hasrun = True
         return success
 
     def undo(self):

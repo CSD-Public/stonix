@@ -202,6 +202,7 @@ class KVAConf():
         @return: Bool
         '''
         fixables = []  # this fixables variable will be used for both desired and non desired keys
+        removeables = []
         if self.contents:
             if self.intent == "present":  # self.data contains key val pairs we want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
@@ -253,7 +254,9 @@ class KVAConf():
                                     raise(self.detailedresults)
                     return found
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
+                print "inside getspacevalue"
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
+                    print "it's a list"
                     for item in value:
                         foundalready = False
                         for line in self.contents:
@@ -273,11 +276,14 @@ class KVAConf():
                                         self.detailedresults += "Index error\n"
                                         raise(self.detailedresults)
                         if foundalready:
-                            fixables.append(item)
-                    if fixables:
-                        return fixables
+                            #fixables.append(item)
+                            removeables.append(item)
+                    if removeables:
+                        print "removeables inside getspacevalue: " + str(removeables)
+                        return removeables
                     else:
-                        return True
+                        print "returning True"
+                        return False
                 else:  # value must be a string, normal case
                     found = False
                     for line in self.contents:
@@ -376,13 +382,14 @@ class KVAConf():
         @param removeables: a dictionary of key val paris not desired in file
         @return: Bool
         '''
+        print "inside setSpaceValue\n"
         self.storeContents(self.path)  # re-read the contents of the desired file
         contents = self.contents
         if removeables:  # we have items that need to be removed from file
             for key, val in removeables.iteritems():
                 i = 0
                 if isinstance(val, list):  # we have a list where the key can repeat itself
-                    for key2, in val:
+                    for key2 in removeables[key]:
                         for line in contents:
                             if re.search("^#", line) or re.match("^\s*$", line):  # ignore comments and blank lines
                                 i += 1

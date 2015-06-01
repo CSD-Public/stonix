@@ -56,7 +56,8 @@ class SetSSCorners(Rule):
         self.rootrequired = False
         self.helptext = "The screen saver should be set to turn on after a period of inactivity, and should require a password to dismiss. " + \
 "Disabling the screen saver would disable the screen lock. This rule removes the functionality of using a 'hot corner' " + \
-"to disable the screen saver."
+"to disable the screen saver. Note: the fix for this rule will not take effect immediately. If you log out or restart it will take effect. It " + \
+"will also take effect automatically, after the fix is run, but you may have to wait a few minutes for Mac OS X to reload the process."
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}}
@@ -79,30 +80,34 @@ class SetSSCorners(Rule):
 
             self.homedir = self.environ.geteuidhome()
             self.conffile = self.homedir + '/Library/Preferences/com.apple.dock.plist'
-            self.readcmd = '/usr/bin/defaults read ' + self.conffile
+            self.readcmd = '/usr/bin/defaults read ' + '\"' + self.conffile + '\"'
             self.optlist = ["wvous-bl-corner",
                             "wvous-br-corner",
                             "wvous-tl-corner",
                             "wvous-tr-corner"]
             self.optdict = {}
-            self.writecmd = '/usr/bin/defaults write ' + self.conffile
+            self.writecmd = '/usr/bin/defaults write ' + '\"' + self.conffile + '\"'
             self.detailedresults = ""
             self.cmdhelper = CommandHelper(self.logger)
             self.compliant = True
             self.moddict = {}
             for opt in self.optlist:
                 self.cmdhelper.executeCommand(self.readcmd + ' ' + opt)
+                errout = self.cmdhelper.getErrorString()
                 output = self.cmdhelper.getOutputString()
+                if not re.search('^6', output) and not errout:
+                    self.optdict[opt] = output
                 if re.search('^5', output):
-                    self.optdict[opt] = 5
                     ssfound = True
-                else:
+
+            for opt in self.optlist:
+                if opt not in self.optdict:
                     self.optdict[opt] = 1
             if not ssfound:
-                self.optdict = {"wvous-bl-corner": 1,
-                                "wvous-br-corner": 1,
-                                "wvous-tl-corner": 1,
-                                "wvous-tr-corner": 5}
+                self.optdict["wvous-tl-corner"] = 5
+            for opt in self.optdict:
+                if self.optdict[opt] == 6:
+                    self.optdict[opt] = 1
 
         except Exception:
             raise
@@ -112,12 +117,13 @@ class SetSSCorners(Rule):
         '''
 
         found = False
+        self.detailedresults = ""
 
         try:
 
             if self.environ.geteuid() == 0:
                 self.detailedresults += '\nYou are running SetSSCorners in Admin mode. This rule must be run in regular user context.'
-                self.logger.log(LogPriority.WARNING, self.detailedresults)
+                self.logger.log(LogPriority.INFO, self.detailedresults)
                 return False
 
             self.setVars()
@@ -162,16 +168,18 @@ class SetSSCorners(Rule):
         '''
 
         success = True
+        self.detailedresults = ""
 
         try:
 
             if self.environ.geteuid() == 0:
                 self.detailedresults += '\nYou are running SetSSCorners in Admin mode. This rule must be run in regular user context.'
-                self.logger.log(LogPriority.WARNING, self.detailedresults)
+                self.logger.log(LogPriority.INFO, self.detailedresults)
                 return False
 
-            if os.path.exists(self.conffile):
-                if self.ci.getcurrvalue():
+            if self.ci.getcurrvalue():
+
+                if os.path.exists(self.conffile):
                     for item in self.optdict:
                         cmd = self.writecmd + ' ' + item + ' -int ' + str(self.optdict[item])
                         self.cmdhelper.executeCommand(cmd)
@@ -180,13 +188,13 @@ class SetSSCorners(Rule):
                         if errout:
                             success = False
                             self.detailedresults += '\nunable to execute command ' + str(cmd)
-            if self.moddict:
-                for item in self.moddict:
-                    cmd = self.writecmd + ' ' + item + ' -int ' + str(self.moddict[item])
-                    self.cmdhelper.executeCommand(cmd)
-                    errout = self.cmdhelper.getErrorString()
-                    if errout:
-                        success = False
+                if self.moddict:
+                    for item in self.moddict:
+                        cmd = self.writecmd + ' ' + item + ' -int ' + str(self.moddict[item])
+                        self.cmdhelper.executeCommand(cmd)
+                        errout = self.cmdhelper.getErrorString()
+                        if errout:
+                            success = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
