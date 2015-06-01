@@ -29,7 +29,7 @@ files, or launching further attacks on the system. This rule ensures that no
 dot files within users' home directories possess the world/other - writable
 permission.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 02/14/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/12/2014 ekkehard Implemented isapplicable
 @change: 02/27/2014 ekkehard fix self.detailedresults flow bug
@@ -37,16 +37,18 @@ permission.
 checked in fix method.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/04/30 Breen corrected mac implementation and separated mac and linux functionality
 '''
 
 from __future__ import absolute_import
 import os
 import re
 import traceback
+import pwd
 from ..rule import Rule
-from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import isWritable
+from ..CommandHelper import CommandHelper
 
 
 class ConfigureDotFiles(Rule):
@@ -94,59 +96,35 @@ permission.'''
         '''
         The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
-        self.compliant, self.detailed results and self.currstate properties are
-        updated to reflect the system status. self.rulesuccess will be updated
-        if the rule does not succeed.
+        self.compliant and self.detailed results properties are
+        updated to reflect the system status.
 
-        @return bool
-        @author bemalmbe
+        @return self.compliant
+        @rtype: boolean
+        @author: Breen Malmberg
         '''
 
         # defaults
-        filelist = []
         dotfilelist = []
-        secure = True
+        self.compliant = True
+        self.detailedresults = ""
+        self.cmdhelper = CommandHelper(self.logger)
 
         try:
-            self.detailedresults = ""
-            f = open('/etc/passwd', 'r')
-            contentlines = f.readlines()
-            f.close()
 
-            try:
-
-                for line in contentlines:
-                    line = line.split(':')
-                    if len(line) > 5:
-                        line[2] = int(line[2])
-                        if line[2] >= 500 and not re.search('nfsnobody',
-                                                            line[0]):
-                            if os.path.exists(line[5]):
-                                filelist = os.listdir(line[5])
-                                for i in range(len(filelist)):
-                                    if re.search('^\.', filelist[i]):
-                                        dotfilelist.append(line[5] + "/" + \
-                                                           filelist[i])
-
-            except (KeyError, IndexError):
-                self.logger.log(LogPriority.DEBUG, traceback.format_exc())
+            if self.environ.getostype() == 'Mac OS X':
+                dotfilelist = self.buildmacdotfilelist()
+            else:
+                dotfilelist = self.buildlinuxdotfilelist()
 
             for item in dotfilelist:
                 # is item world writable?
                 if isWritable(self.logger, item, 'other'):
-                    secure = False
+                    self.compliant = False
 
-            if secure:
-                self.compliant = True
-            else:
-                self.compliant = False
-
-        except (KeyError, IndexError):
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -156,60 +134,123 @@ permission.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
+    def buildlinuxdotfilelist(self):
+        '''
+        build a list of linux dot files for the current user
+        @return: dotfilelist
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        dotfilelist = []
+
+        try:
+
+            f = open('/etc/passwd', 'r')
+            contentlines = f.readlines()
+            f.close()
+
+            for line in contentlines:
+
+                line = line.split(':')
+
+                if line[5] and self.environ.geteuidhome() == str(line[5]):
+
+                    line[2] = int(line[2])
+                    if line[2] >= 500 and not re.search('nfsnobody', line[0]):
+
+                        if os.path.exists(line[5]):
+                            filelist = os.listdir(line[5])
+                            for i in range(len(filelist)):
+                                if re.search('^\.', filelist[i]):
+                                    dotfilelist.append(line[5] + '/' + filelist[i])
+
+        except Exception:
+            raise
+        return dotfilelist
+
+    def buildmacdotfilelist(self):
+        '''
+        build a list of mac dot files for the current user
+        @return: dotfilelist
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        dotfilelist = []
+        users = []
+        homedirs = []
+
+        try:
+
+            cmd = ["/usr/bin/dscl", ".", "-list", "/Users"]
+            self.cmdhelper.executeCommand(cmd)
+            output = self.cmdhelper.getOutput()
+            error = self.cmdhelper.getError()
+            if error:
+                self.detailedresults += '\ncould not get a list of user home directories. returning empty list...'
+                return dotfilelist
+
+            if output:
+                for user in output:
+                    if not re.search('^_', user) and not re.search('^root', user):
+                        users.append(user.strip())
+
+            if users:
+                for user in users:
+                    currpwd = pwd.getpwnam(user)
+                    homedirs.append(currpwd[5])
+
+            if homedirs:
+                for homedir in homedirs:
+                    if self.environ.geteuidhome() == homedir:
+                        filelist = os.listdir(homedir)
+                        for i in range(len(filelist)):
+                            if re.search('^\.', filelist[i]):
+                                dotfilelist.append(homedir + '/' + filelist[i])
+
+        except Exception:
+            raise
+        return dotfilelist
+
     def fix(self):
         '''
-        The fix method will apply the required settings to the system.
-        self.rulesuccess will be updated if the rule does not succeed.
+        remove any world writable flags from any dot files in user's home
+        directory
 
-        @author bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
         dotfilelist = []
-        filelist = []
+        self.detailedresults = ""
+        self.rulesuccess = True
+
         if self.ConfigureDotFiles.getcurrvalue():
+
             try:
-                self.detailedresults = ""
-                f = open('/etc/passwd', 'r')
-                contentlines = f.readlines()
-                f.close()
 
-                for line in contentlines:
+                if self.environ.getostype() == 'Mac OS X':
+                    dotfilelist = self.buildmacdotfilelist()
+                else:
+                    dotfilelist = self.buildlinuxdotfilelist()
 
-                    line = line.split(':')
+                if dotfilelist:
+                    for item in dotfilelist:
+                        if os.path.isfile(item):
 
-                    if line[5]:
+                            try:
+                                os.system('chmod o-w ' + item)
+                            except (OSError, IOError):
+                                self.rulesuccess = False
+                                self.detailedresults += '\ncould not chmod: ' + str(item)
 
-                        line[2] = int(line[2])
-                        if line[2] >= 500 and not re.search('nfsnobody', line[0]):
-
-                            if os.path.exists(line[5]):
-
-                                filelist = os.listdir(line[5])
-                                for i in range(len(filelist)):
-                                    if re.search('^\.', filelist[i]):
-                                        dotfilelist.append(line[5] + "/" + filelist[i])
-
-                                if os.getuid() in [line[2], 0]:
-
-                                    for item in dotfilelist:
-                                        if os.path.isfile(item):
-
-                                            os.system('chmod o-w ' + item)
-
-                                else:
-                                    dotfilelist = []
-                                dotfilelist = []
-
-            except (IndexError):
-                self.detailedresults = traceback.format_exc()
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except Exception, err:
+            except Exception as err:
                 self.rulesuccess = False
-                self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+                self.detailedresults = self.detailedresults + "\n" + \
+                str(err) + " - " + str(traceback.format_exc())
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                                           self.detailedresults)
