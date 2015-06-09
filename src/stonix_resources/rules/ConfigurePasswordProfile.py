@@ -69,6 +69,7 @@ class ConfigurePasswordProfile(Rule):
     def report(self):
         try:
             compliant = True
+            self.detailedresults = ""
             cmd = ["/usr/bin/profiles", "-L"]
             notinst = "There are no configuration profiles installed"
             inst = "C873806E-E634-4E58-B960-62817F398E11"
@@ -115,6 +116,7 @@ class ConfigurePasswordProfile(Rule):
     def fix(self):
         try:
             success = True
+            self.detailedresults = ""
             cmd = ["/usr/bin/profiles", "-L"]
             notinst = "There are no configuration profiles installed"
             inst = "C873806E-E634-4E58-B960-62817F398E11"
