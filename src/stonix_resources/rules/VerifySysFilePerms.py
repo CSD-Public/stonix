@@ -142,6 +142,8 @@ class VerifySysFilePerms(Rule):
                 self.compliant = False
                 if self.hasrun:
                     self.detailedresults += '\nThe disk utility for Mac OS X has been run, but there are files which were unable to be reverted to their intended permissions state(s). This is due to an issue with a mismatch in the package receipts database originally configured for this system, as compared to the current versions of the files on this system. This sometimes occurs when a system has been upgraded from a long-deprecated version of Mac OS to a more current one. This is an issue which Apple needs to fix before this rule can succeed on such systems.'
+                else:
+                    self.detailedresults += '\nFiles with incorrect permissions and/or ownership have been found.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
