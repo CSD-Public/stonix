@@ -224,7 +224,6 @@ class KVEditor(object):
         if self.intent == "notpresent":
             for k, v in self.data.iteritems():
                 retval = self.editor.validate(k, v)
-                print "retval " + str(retval) + "\n\n"
                 if isinstance(retval, list):
                     self.removeables[k] = retval
                     validate = False

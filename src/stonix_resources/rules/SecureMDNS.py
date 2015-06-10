@@ -430,7 +430,7 @@ the avahi service in order to secure it.'''
             if fixit:
                 self.ch.executeCommand(self.pbf)
                 resultOutput = self.ch.getOutput()
-                errorcode = self.ch.getError()
+                errorcode = self.ch.getReturnCode()
                 if errorcode == 0:
                     messagestring = "- " + self.parameter + " was set successfully!"
                 else:
