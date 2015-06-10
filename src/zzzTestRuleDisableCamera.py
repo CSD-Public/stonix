@@ -29,6 +29,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 '''
 from __future__ import absolute_import
 import unittest
+import os
 from stonix_resources.RuleTestTemplate import RuleTest
 from stonix_resources.CommandHelper import CommandHelper
 from stonix_resources.logdispatcher import LogPriority
@@ -38,6 +39,11 @@ from stonix_resources.rules.DisableCamera import DisableCamera
 class zzzTestRuleDisableCamera(RuleTest):
 
     def setUp(self):
+        '''
+        @change: Breen Malmberg - 06102015 - updated self.cmd and paths to work
+        with updated unit test functionality
+        '''
+
         RuleTest.setUp(self)
         self.rule = DisableCamera(self.config,
                                   self.environ,
@@ -46,7 +52,12 @@ class zzzTestRuleDisableCamera(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
+        self.cmd = 'chmod a+r '
+        self.paths = ['/System/Library/QuickTime/QuickTimeUSBVDCDigitizer.component/Contents/MacOS/QuickTimeUSBVDCDigitizer',
+                     '/System/Library/PrivateFrameworks/CoreMediaIOServicesPrivate.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+                     '/System/Library/PrivateFrameworks/CoreMediaIOServices.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+                     '/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+                     '/Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/MacOS/AppleCamera']
 
     def tearDown(self):
         pass
@@ -60,14 +71,17 @@ class zzzTestRuleDisableCamera(RuleTest):
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+        @change: Breen Malmberg - 06102015 - changed this method to reflect
+        the new functionality of DisableCamera.py
         '''
         success = True
-        if success:
-            command = [self.dc, "-currentHost", "write",
-                       "/System/Library/Extensions/Apple_iSight.kext",
-                       "DeviceEnabled", "-bool", "yes"]
-            self.logdispatch.log(LogPriority.DEBUG, str(command))
-            success = self.ch.executeCommand(command)
+
+        for path in self.paths:
+            if os.path.exists(path):
+                self.ch.executeCommand(self.cmd + path)
+                error = self.ch.getErrorString()
+                if error:
+                    success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
