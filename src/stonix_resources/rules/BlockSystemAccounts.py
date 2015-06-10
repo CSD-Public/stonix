@@ -30,7 +30,7 @@ the entry in /etc/passwd preventing future login from them. One exception is
 the 'root' account which will not be blocked due access to it being required
 by administrators in certain situations.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 01/29/2014 dwalker revised
 @change: 02/12/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/12/2014 ekkehard Implemented isapplicable
@@ -38,6 +38,8 @@ by administrators in certain situations.
 @change: 04/18/2014 dkennel Updated to new style configuration item.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel Updated for new style isApplicable
+@change: 2015/06/10 Breen Malmberg - updated author names; implemented correct
+mac os x functionality; refactored code for readability; fixed pep8 violations
 '''
 
 from __future__ import absolute_import
@@ -46,7 +48,6 @@ import re
 import traceback
 
 from ..rule import Rule
-from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import readFile, writeFile, iterate, checkPerms
 from ..stonixutilityfunctions import setPerms, resetsecon
@@ -56,7 +57,6 @@ class BlockSystemAccounts(Rule):
     '''
     classdocs
     '''
-
 
     def __init__(self, config, enviro, logger, statechglogger):
         '''
@@ -104,51 +104,58 @@ shells set the value of this to False, or No.'''
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
-        @author bemalmbe
+        @return: self.compliant
+        @rtype: boolean
+        @author: Breen Malmberg
         @change: dwalker
+        @change: Breen Malmberg - 06/10/2015 - fixed some reporting variables;
+        added correct mac os x implementation (/usr/bin/false)
         '''
+
+        self.detailedresults = ""
+        self.compliant = True
+        self.nologinopt = '/sbin/nologin'
+        configoptfound = True
+
         try:
-            self.detailedresults = ""
-            retval = True
+
+            if self.environ.getosfamily() == 'darwin':
+                self.nologinopt = '/usr/bin/false'
+
             contents = readFile("/etc/passwd", self.logger)
+
             if contents:
+
                 for line in contents:
+
                     if re.search("^#", line) or re.match("^\s*$", line):
                         continue
+
                     templine = line.strip().split(":")
+
                     if not len(templine) >= 6:
-                        self.detailedresults = "your /etc/passwd file is \
-in bad format"
+                        self.detailedresults += "\nyour /etc/passwd file is incorrectly formatted"
                         self.compliant = False
-                        self.rulesuccess = False
-                        return False
-                    try:
-                        if int(templine[2]) >= 500 or templine[2] == "0":
-                            continue
-                        if not re.search(":/sbin/nologin$|:/dev/null$", line):
-                            retval = False
-                    except IndexError:
-                        debug = traceback.format_exc()
-                        debug += "Index out of range"
-                        self.logger.log(LogPriority.INFO, debug)
-                        self.rulesuccess = False
-                        return False
-                if retval:
-                    self.compliant = True
-                else:
-                    self.compliant = False
+                        return self.compliant
+
+                    if int(templine[2]) >= 500 or templine[2] == "0":
+                        continue
+                    if not re.search(":" + self.nologinopt + "$|:/dev/null$", line):
+                        self.compliant = False
+                        configoptfound = False
+                if not configoptfound:
+                    self.detailedresults += '\nrequired configuration option not found in system account entry in /etc/passwd'
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            retval = False
         self.formatDetailedResults("report", self.compliant,
                                                           self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
@@ -156,93 +163,116 @@ in bad format"
         The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @author bemalmbe
+        @return: self.rulesuccess
+        @rtype: boolean
+        @author: Breen Malmberg
         @change: dwalker
+        @change: Breen Malmberg - 06/10/2015 - pep8 housekeeping; readability improvements;
+        refactored some logging and reporting and try/except code; implemented correct
+        mac os x fix functionality
         '''
+
+        self.detailedresults = ""
+        self.rulesuccess = True
+
         try:
+
             if not self.ci.getcurrvalue():
-                return True
-            self.detailedresults = ""
-            
+                return self.rulesuccess
+
             #clear out event history so only the latest fix is recorded
             self.iditerator = 0
+
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-                
-            success = True
+            if eventlist:
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+
             path = "/etc/passwd"
             contents = readFile(path, self.logger)
             tempstring = ""
             tmpfile = path + ".tmp"
+
             if contents:
+
                 if not checkPerms(path, [0, 0, 420], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
+
                     if not setPerms(path, [0, 0, 420], self.logger,
                                                     self.statechglogger, myid):
-                        success = False
+                        self.rulesuccess = False
+                        self.detailedresults += '\nunable to set permissions correctly on ' + str(path)
+
                 for line in contents:
+
                     if re.match('^#', line) or re.match(r'^\s*$', line):
                         tempstring += line
                         continue
+
                     templine = line.strip().split(":")
+
                     if not len(templine) >= 6:
-                        self.detailedresults = "your /etc/passwd file is " + \
-                        "in bad format"
+
+                        self.detailedresults += "\nyour /etc/passwd file is incorrectly formatted"
                         self.rulesuccess = False
                         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
                         self.logdispatch.log(LogPriority.INFO,
                                              self.detailedresults)
-                        return False
+                        return self.rulesuccess
+
                     try:
+
                         if int(templine[2]) >= 500 or templine[2] == "0":
                             tempstring += line
                             continue
-                        elif not re.search(":/sbin/nologin$|:/dev/null$", line.strip()):
+
+                        elif not re.search(":" + self.nologinopt + "$|:/dev/null$", line.strip()):
                             if len(templine) == 6:
-                                templine.append("/sbin/nologin")
+                                templine.append(self.nologinopt)
                             elif len(templine) == 7:
-                                templine[6] = "/sbin/nologin"
+                                templine[6] = self.nologinopt
+
                             templine = ":".join(templine)
                             tempstring += templine + "\n"
+
                         else:
                             tempstring += line
+
                     except IndexError:
                         raise
                     except Exception:
                         self.detailedresults = traceback.format_exc()
-                        self.detailedresults += "Index out of range"
                         self.logger.log(LogPriority.ERROR, self.detailedresults)
                         self.rulesuccess = False
-                        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-                        self.logdispatch.log(LogPriority.INFO,
-                                             self.detailedresults)
-                        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-                        self.logdispatch.log(LogPriority.INFO,
-                                             self.detailedresults)
-                        return False
+                        return self.rulesuccess
+
                 if writeFile(tmpfile, tempstring, self.logger):
+
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {'eventtype': 'conf',
                              'filepath': path}
+
                     self.statechglogger.recordchgevent(myid, event)
                     self.statechglogger.recordfilechange(path, tmpfile, myid)
+
                     os.rename(tmpfile, path)
                     os.chown(path, 0, 0)
                     os.chmod(path, 420)
                     resetsecon(path)
+
+            else:
+                self.rulesuccess = False
+                self.detailedresults += '\nunable to read /etc/passwd contents'
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, 
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess

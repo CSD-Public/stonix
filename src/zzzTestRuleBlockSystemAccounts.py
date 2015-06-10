@@ -29,6 +29,8 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 '''
 from __future__ import absolute_import
 import unittest
+import os
+import re
 from stonix_resources.RuleTestTemplate import RuleTest
 from stonix_resources.CommandHelper import CommandHelper
 from stonix_resources.logdispatcher import LogPriority
@@ -61,6 +63,29 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+
+        path = '/etc/passwd'
+
+        if os.path.exists(path):
+            f = open(path, 'r')
+            contentlines = f.readlines()
+            f.close()
+
+            for line in contentlines:
+                try:
+                    if re.search('^#', line) or re.search('^\s', line):
+                        continue
+                    sline = line.split(':')
+                    if int(sline[2]) < 500 and int(sline[2]) != 0 and len(sline) == 7:
+                        sline[7] = '\n'
+                    newline = ':'.join(sline)
+                    contentlines = [c.replace(line, newline) for c in contentlines]
+                except IndexError:
+                    continue
+            f = open(path, 'w')
+            f.writelines(contentlines)
+            f.close()
+
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
