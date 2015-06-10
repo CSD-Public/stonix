@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule BlockSystemAccounts
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation

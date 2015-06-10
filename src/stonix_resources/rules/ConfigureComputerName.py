@@ -28,7 +28,7 @@ Created on Dec 3, 2014
 '''
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..lanlMacInfo import lanlMacInfo
+from ..MacInfoLANL import MacInfoLANL
 import traceback
 import types
 
@@ -42,7 +42,7 @@ class ConfigureComputerName(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
         self.formatDetailedResults("initialize")
-        self.lmi = None
+        self.mil = None
         self.mandatory = True
         self.helptext = "This rule sets the name of the computer based on " + \
         "information on the mac and information available in LDAP."
@@ -64,10 +64,10 @@ class ConfigureComputerName(Rule):
         try:
             self.resultReset()
             self.compliant = True
-            self.initializeLanlMacInfo()
-            self.lmi.messageReset()
-            self.compliant = self.lmi.getComputerInfoCompliance()
-            self.resultAppend(self.lmi.messageGet())
+            self.initializeMacInfoLANL()
+            self.mil.messageReset()
+            self.compliant = self.mil.getComputerInfoCompliance()
+            self.resultAppend(self.mil.messageGet())
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -87,10 +87,10 @@ class ConfigureComputerName(Rule):
             if not self.ci.getcurrvalue():
                 return
             self.resultReset()
-            self.initializeLanlMacInfo()
-            self.lmi.messageReset()
-            success = self.lmi.setComputerInfo()
-            self.resultAppend(self.lmi.messageGet())
+            self.initializeMacInfoLANL()
+            self.mil.messageReset()
+            success = self.mil.setComputerInfo()
+            self.resultAppend(self.mil.messageGet())
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -106,9 +106,9 @@ class ConfigureComputerName(Rule):
 
 ###############################################################################
 
-    def initializeLanlMacInfo(self):
-        if self.lmi == None:
-            self.lmi = lanlMacInfo(self.logdispatch)
+    def initializeMacInfoLANL(self):
+        if self.mil == None:
+            self.mil = MacInfoLANL(self.logdispatch)
 
 ###############################################################################
 

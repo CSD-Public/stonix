@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -21,33 +22,30 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Mar 4, 2015
+This is a Unit Test for Rule ConfigureComputerName
 
-@author: bemalmbe
+@author: ekkehard j. koch
+@change: 2015/06/10 Original Implementation
 '''
 from __future__ import absolute_import
-
 import unittest
-import re
-
 from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.VerifySysFilePerms import VerifySysFilePerms
 from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.rules.ConfigureComputerName import ConfigureComputerName
 
 
-class zzzTestVerifySysFilePerms(RuleTest):
+class zzzTestConfigureComputerName(RuleTest):
 
     def setUp(self):
-
         RuleTest.setUp(self)
-        self.rule = VerifySysFilePerms(self.config,
-                                self.environ,
-                                self.logdispatch,
-                                self.statechglogger)
-        self.cmdhelper = CommandHelper(self.logdispatch)
+        self.rule = ConfigureComputerName(self.config,
+                                          self.environ,
+                                          self.logdispatch,
+                                          self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
@@ -60,11 +58,9 @@ class zzzTestVerifySysFilePerms(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: bemalmbe
+        @author: ekkehard j. koch
         '''
-
         success = True
-
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -108,7 +104,6 @@ class zzzTestVerifySysFilePerms(RuleTest):
                              str(pRuleSuccess) + ".")
         success = True
         return success
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
