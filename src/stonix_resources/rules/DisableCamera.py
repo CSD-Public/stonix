@@ -30,15 +30,20 @@ Created on Dec 10, 2013
 @change: 2015/04/14 dkennel updated for new isApplicable
 '''
 from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
+from ..rule import Rule
+from ..logdispatcher import LogPriority
+from ..CommandHelper import CommandHelper
+
+import os
+import traceback
+import stat
 
 
-class DisableCamera(RuleKVEditor):
-
+class DisableCamera(Rule):
 ###############################################################################
 
     def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
+        Rule.__init__(self, config, environ, logger, statechglogger)
         self.rulenumber = 150
         self.rulename = "DisableCamera"
         self.formatDetailedResults("initialize")
@@ -48,14 +53,107 @@ class DisableCamera(RuleKVEditor):
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.addKVEditor("DisableiSightCamera",
-                         "defaults",
-                         "/System/Library/Extensions/Apple_iSight.kext",
-                         "",
-                         {"DeviceEnabled": ["0", "-bool no"]},
-                         "present",
-                         "",
-                         "Disable iSight Camera.",
-                         None,
-                         False,
-                         {"DeviceEnabled": ["1", "-bool yes"]})
+
+    def isreadable(self, path):
+        '''
+        detect and return whether a specified file is readable (by anyone)
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = False
+
+        try:
+
+            statlist = [stat.S_IROTH,
+                        stat.S_IRUSR,
+                        stat.S_IRGRP]
+            readabledict = {}
+
+            if os.path.exists(path):
+                perms = os.stat(path)
+                for s in statlist:
+                    readabledict[path + str(s)] = bool(perms.st_mode & s)
+
+            if readabledict:
+                for item in readabledict:
+                    if readabledict[item] == True:
+                        retval = True
+
+        except Exception:
+            raise
+        return retval
+
+    def report(self):
+        '''
+        report the compliancy status of this rule
+
+        @return: self.compliant
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        self.detailedresults = ""
+        self.compliant = True
+        self.pathlist = ['/System/Library/QuickTime/QuickTimeUSBVDCDigitizer.component/Contents/MacOS/QuickTimeUSBVDCDigitizer',
+                         '/System/Library/PrivateFrameworks/CoreMediaIOServicesPrivate.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+                         '/System/Library/PrivateFrameworks/CoreMediaIOServices.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+                         '/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+                         '/Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/MacOS/AppleCamera']
+        self.cmdhelper = CommandHelper(self.logdispatch)
+
+        try:
+
+            for path in self.pathlist:
+                if self.isreadable(path):
+                    self.compliant = False
+                    self.detailedresults += '\nfile: ' + str(path) + ' is still readable'
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as err:
+            self.rulesuccess = False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
+
+    def fix(self):
+        '''
+        remove read access from key files to disable the isight camera functionality
+
+        @return: success
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        self.detailedresults = ""
+        success = True
+        cmd = "chmod a-r "
+
+        try:
+
+            for path in self.pathlist:
+                if os.path.exists(path):
+                    self.cmdhelper.executeCommand(cmd + path)
+                    error = self.cmdhelper.getErrorString()
+                    if error:
+                        success = False
+                        self.detailedresults += '\nthere was an error running command: ' + cmd + path
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as err:
+            self.rulesuccess = False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", success,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return success
