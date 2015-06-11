@@ -574,11 +574,13 @@ class MacInfoLANL():
             else:
                 self.accuracyDictionary[self.dictionaryItem["assetTag"]]["Number"] = self.accuracyDictionary[self.dictionaryItem["assetTag"]]["Number"] + 1
 # The macAddress is not in the list of macAddresses to append it
-                if not(self.dictionaryItem["macAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"]):
-                    self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"].append(self.dictionaryItem["macAddress"])
-# The macAddress is not in the list of ipAddresses to append it
-                if not(self.dictionaryItem["ipAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"]):
-                    self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"].append(self.dictionaryItem["ipAddress"])
+                if not(self.dictionaryItem["macAddress"] == ""):
+                    if not(self.dictionaryItem["macAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"]):
+                        self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"].append(self.dictionaryItem["macAddress"])
+# The ipAddress is not in the list of ipAddresses to append it
+                if not(self.dictionaryItem["ipAddress"] == ""):
+                    if not(self.dictionaryItem["ipAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"]):
+                        self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"].append(self.dictionaryItem["ipAddress"])
 # The ComputerName is not in the list of computer names add it
                 if not(self.dictionaryItem["ComputerName"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ComputerName"]):
                     self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ComputerName"].append(self.dictionaryItem["ComputerName"])
