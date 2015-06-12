@@ -105,11 +105,11 @@ class MacInfoLANL():
         self.keysNumberOf = len(self.keys)
         if self.keysNumberOf > self.keyIndexNumber:
             self.key = self.keys[self.keyIndexNumber]
-            self.dictinaryItem = self.dictionary[self.key]
+            self.dictionaryItem = self.dictionary[self.key]
         else:
             self.key = None
-            self.dictinaryItem = None
-        return self.dictinaryItem
+            self.dictionaryItem = None
+        return self.dictionaryItem
 
     def gotoNextItemLDAP(self):
         '''
@@ -122,11 +122,11 @@ class MacInfoLANL():
         self.keysNumberOf = len(self.keys)
         if (self.keysNumberOf - 1) < self.keyIndexNumber:
             self.keyIndexNumber = 0
-            self.dictinaryItem = None
+            self.dictionaryItem = None
         else:
             self.key = self.keys[self.keyIndexNumber]
-            self.dictinaryItem = self.dictionary[self.key]
-        return self.dictinaryItem
+            self.dictionaryItem = self.dictionary[self.key]
+        return self.dictionaryItem
 
     def getCurrentItemLDAP(self):
         '''
@@ -134,7 +134,7 @@ class MacInfoLANL():
         @author: ekkehard
         @return: dictionary entry
         '''
-        return self.dictinaryItem
+        return self.dictionaryItem
 
     def getComputerInfoCompliance(self):
         '''
@@ -647,6 +647,7 @@ class MacInfoLANL():
         item = {"hardwarePort": "",
                 "device": "",
                 "macAddress": "",
+                "ipAddress": "",
                 "ComputerName": "",
                 "HostName": "",
                 "LocalHostname": "",
@@ -854,7 +855,7 @@ class MacInfoLANL():
                         messagestring = str(err) + " - " + str(traceback.format_exc())
                         self.logdispatch.log(LogPriority.DEBUG, messagestring)
                         continue
-                if not(macAddress == "") and not(computerName == "") and not(assetTag == ""):
+                if not(ipAddress == "") and not(computerName == "") and not(assetTag == ""):
                     self.entries = self.entries + 1
                     self.initializeDictionaryItemLDAP(self.entries)
                     self.dictionaryItem["macAddress"] = ""
