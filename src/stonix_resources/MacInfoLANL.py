@@ -649,9 +649,6 @@ class MacInfoLANL():
                 self.updateComputerNameAccuracy(len(self.accuracyDictionary[key]["ComputerName"]) <= 1,
                                                 1000, "# of ComputerNames is " + \
                                                 str(len(self.accuracyDictionary[key]["ComputerName"])) + ";")
-                if not(self.getDiskUtilityComputerName() == self.computerName):
-                    self.updateComputerNameAccuracy(self.getDiskUtilityComputerName() == self.computerName,
-                                                    100, "ComputerName is actual ComputerMame are not equal;")
             else:
                 self.computerName = ""
                 self.hostName = ""
@@ -663,19 +660,19 @@ class MacInfoLANL():
             if not(self.getLANLAssetTagNVRAM() == ""):
 # If the NVRAM assetTage value is not equal to the most prominent assetTag that is an issue
                 self.updateAssetTagAccuracy(self.getLANLAssetTagNVRAM() == self.assetTag,
-                                            100, "LANLAssetTagNVRAM is not equal to assetTag;")
+                                            1000, "LANLAssetTagNVRAM is not equal to suggested assetTag;")
             if not(self.getLANLAssetTagFilesystem() == ""):
 # If the Filesystem assetTag value is not equal to the most prominent assetTag that is an issue
                 self.updateAssetTagAccuracy(self.getLANLAssetTagFilesystem() == self.assetTag,
-                                            100, "LANLAssetTagFilesystem is not equal to assetTag;")
+                                            10, "LANLAssetTagFilesystem is not equal to suggested assetTag;")
             elif not(self.getLANLAssetTagNVRAM() == ""):
                 if not(self.getLANLAssetTagNVRAM() == self.getLANLAssetTagFilesystem()):
 # If the Filesystem assetTag value is not equal to NVRAM assetTag that is an issue
                     self.updateAssetTagAccuracy(self.getLANLAssetTagNVRAM() == self.getLANLAssetTagFilesystem(),
-                                                100, "LANLAssetTagNVRAM is not equal to LANLAssetTagFilesystem;")
+                                                10, "LANLAssetTagNVRAM is not equal to LANLAssetTagFilesystem;")
             if not(self.computerNameDiskUtilityAssetTag == ""):
                 self.updateAssetTagAccuracy(self.computerNameDiskUtilityAssetTag == self.assetTag,
-                                            100, "AssetTag in ComputerName is not equal to assetTag;")
+                                            500, "AssetTag in ComputerName is not equal to suggested assetTag;")
 # Endusername
             if not(self.accuracyDictionary[key]["endUsername"] == []):
                 self.endUsername = self.accuracyDictionary[key]["endUsername"][0]
