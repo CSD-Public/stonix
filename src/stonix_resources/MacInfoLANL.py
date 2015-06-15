@@ -898,6 +898,7 @@ class MacInfoLANL():
                         if not(assetTag == ""):
                             self.entries = self.entries + 1
                             self.initializeDictionaryItemLDAP(self.entries)
+                            self.dictionaryItem["searchTerm"] = addressType + "=" + address
                             self.dictionaryItem["hardwarePort"] = hardwarePort
                             self.dictionaryItem["device"] = device
                             self.dictionaryItem["macAddress"] = macAddress
@@ -920,6 +921,7 @@ class MacInfoLANL():
             if not(assetTag == ""):
                 self.entries = self.entries + 1
                 self.initializeDictionaryItemLDAP(self.entries)
+                self.dictionaryItem["searchTerm"] = addressType + "=" + address
                 self.dictionaryItem["hardwarePort"] = hardwarePort
                 self.dictionaryItem["device"] = device
                 self.dictionaryItem["macAddress"] = macAddress
@@ -1072,15 +1074,25 @@ class MacInfoLANL():
         self.messageAppend(messagestring)
         self.gotoFirstItemLDAP()
         while not(self.getCurrentItemLDAP() == None):
-            messagestring = " - macAddress=" + str(self.dictionaryItem["macAddress"]) + ";"
-            messagestring = messagestring + " ipAddress=" + str(self.dictionaryItem["ipAddress"]) + ";"
-            messagestring = messagestring + " hardwarePort=" + str(self.dictionaryItem["hardwarePort"]) + ";"
-            messagestring = messagestring + " device=" + str(self.dictionaryItem["device"]) + ";"
-            messagestring = messagestring + " ComputerName=" + str(self.dictionaryItem["ComputerName"]) + ";"
-            messagestring = messagestring + " HostName=" + str(self.dictionaryItem["HostName"]) + ";"
-            messagestring = messagestring + " LocalHostname=" + str(self.dictionaryItem["LocalHostname"]) + ";"
-            messagestring = messagestring + " endUsername=" + str(self.dictionaryItem["endUsername"]) + ";"
-            messagestring = messagestring + " assetTag=" + str(self.dictionaryItem["assetTag"]) + ";"
+            messagestring = " - searchTerm=" + self.dictionaryItem["searchTerm"] + ";"
+            if not(self.dictionaryItem["macAddress"] == ""):
+                messagestring = messagestring + " macAddress=" + str(self.dictionaryItem["macAddress"]) + ";"
+            if not(self.dictionaryItem["ipAddress"] == ""):
+                messagestring = messagestring + " ipAddress=" + str(self.dictionaryItem["ipAddress"]) + ";"
+            if not(self.dictionaryItem["hardwarePort"] == ""):
+                messagestring = messagestring + " hardwarePort=" + str(self.dictionaryItem["hardwarePort"]) + ";"
+            if not(self.dictionaryItem["device"] == ""):
+                messagestring = messagestring + " device=" + str(self.dictionaryItem["device"]) + ";"
+            if not(self.dictionaryItem["ComputerName"] == ""):
+                messagestring = messagestring + " ComputerName=" + str(self.dictionaryItem["ComputerName"]) + ";"
+            if not(self.dictionaryItem["HostName"] == ""):
+                messagestring = messagestring + " HostName=" + str(self.dictionaryItem["HostName"]) + ";"
+            if not(self.dictionaryItem["LocalHostname"] == ""):
+                messagestring = messagestring + " LocalHostname=" + str(self.dictionaryItem["LocalHostname"]) + ";"
+            if not(self.dictionaryItem["endUsername"] == ""):
+                messagestring = messagestring + " endUsername=" + str(self.dictionaryItem["endUsername"]) + ";"
+            if not(self.dictionaryItem["assetTag"] == ""):
+                messagestring = messagestring + " assetTag=" + str(self.dictionaryItem["assetTag"]) + ";"
             self.messageAppend(messagestring)
             self.gotoNextItemLDAP()
         return self.messageGet()
