@@ -35,7 +35,7 @@ from logdispatcher import LogDispatcher
 from ServiceHelper import ServiceHelper
 
 
-class zzzTestFrameworkSeriveHelper(unittest.TestCase):
+class zzzTestFrameworkServiceHelper(unittest.TestCase):
 
     def setUp(self):
         self.enviro = Environment()
@@ -44,7 +44,7 @@ class zzzTestFrameworkSeriveHelper(unittest.TestCase):
         self.mysh = ServiceHelper(self.enviro, self.logger)
         self.myservice = 'crond'
         self.myservicename = ""
-        if self.enviro.getosfamily() == 'OS X':
+        if self.enviro.getosfamily() == 'darwin':
             self.myservice = "/System/Library/PrivateFrameworks/CalendarAgent.framework/Executables/CalendarAgent"
             self.myservicename = "com.apple.CalendarAgent"
         elif self.enviro.getosfamily() == 'solaris':
