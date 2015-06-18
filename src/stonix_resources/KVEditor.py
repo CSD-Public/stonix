@@ -218,7 +218,7 @@ class KVEditor(object):
                 if isinstance(retval, list):
                     self.fixables[k] = retval
                     validate = False
-                elif not self.editor.validate(k, v):
+                elif not retval:
                     validate = False
                     self.fixables[k] = v
         if self.intent == "notpresent":
@@ -234,7 +234,7 @@ class KVEditor(object):
 ###############################################################################
     def updateConf(self):
         if self.fixables or self.removeables:
-            if self.editor.update(self.fixables,self.removeables):
+            if self.editor.update(self.fixables, self.removeables):
                 return True
 ###############################################################################
     def checkConf(self):
