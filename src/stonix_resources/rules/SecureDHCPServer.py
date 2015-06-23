@@ -54,8 +54,8 @@ class SecureDHCPServer(Rule):
                                      "routers;",
                                      "time-offset;"]}
             if self.ph.manager == "zypper":
-                self.package = "dhcp"
-                self.path = "/etc/dhclient.conf"
+                self.package = "dhcp-server"
+                self.path = "/etc/dhcpd.conf"
             elif self.ph.manager == "yum":
                 self.package = "dhcp"
                 self.path = "/etc/dhcp/dhcpd.conf"
