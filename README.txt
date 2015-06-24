@@ -1,6 +1,4 @@
-STONIX
-
-License
+##License
 
 Los Alamos National Security, LLC owns the copyright to "stonix". The license for the software is BSD with standard clauses regarding modifications and redistribution.
 
