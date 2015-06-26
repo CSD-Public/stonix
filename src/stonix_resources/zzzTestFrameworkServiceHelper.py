@@ -45,8 +45,8 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.myservice = 'crond'
         self.myservicename = ""
         if self.enviro.getosfamily() == 'darwin':
-            self.myservice = "/System/Library/PrivateFrameworks/CalendarAgent.framework/Executables/CalendarAgent"
-            self.myservicename = "com.apple.CalendarAgent"
+            self.myservice = "/System/Library/LaunchDaemons/org.ntp.ntpd.plist"
+            self.myservicename = "org.ntp.ntpd"
         elif self.enviro.getosfamily() == 'solaris':
             self.myservice = 'svc:/system/cron:default'
         elif self.enviro.getosfamily() == 'freebsd':
