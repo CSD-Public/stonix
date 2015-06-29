@@ -123,7 +123,7 @@ STONIXDEVS = 'stonix-dev@bar.com'
 PROXY = 'http://foo.bar.com:8080'
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
-ALLOWNET = 192.168.0.1/24'
+ALLOWNET = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
