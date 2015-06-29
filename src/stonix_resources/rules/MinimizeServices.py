@@ -380,28 +380,32 @@ should be space separated.'''
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__initializeenablelist',
                             "systemctl found using systemd list"])
-            default = self.systemddefault
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.systemddefault)
         elif self.environ.getosfamily() == 'linux':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__initializeenablelist',
                             "Linux OS found using Linux default list"])
-            default = self.linuxdefault
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.linuxdefault)
         elif self.environ.getosfamily() == 'solaris':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__initializeenablelist',
                             "Solaris OS found using Solaris list"])
-            default = self.soldefault
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.soldefault)
         elif self.environ.getosfamily() == 'freebsd':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__initializeenablelist',
                             "FreeBSD OS found using BSD list"])
-            default = self.bsddefault
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.bsddefault)
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__initializeenablelist',
                             "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
-            default = self.linuxdefault
-        cienablelist = self.initCi(datatype, key, instructions, default)
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.linuxdefault)
         return cienablelist
 
     def report(self):
