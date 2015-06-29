@@ -443,6 +443,13 @@ class InstallBanners(RuleKVEditor):
             path2 = '/etc/dconf/db/gdm.d/00-login-screen'
             confstr2 = '[org/gnome/login-screen]\ndisable-user-list=true\n'
 
+            pathsplit = os.path.split(path)
+            if not os.path.exists(pathsplit[0]):
+                os.makedirs(pathsplit[0], 0755)
+            pathsplit2 = os.path.split(path2)
+            if not os.path.exists(pathsplit2[0]):
+                os.makedirs(pathsplit2[0], 0755)
+
             f = open(path, 'w')
             f.write(confstr)
             f.close()
