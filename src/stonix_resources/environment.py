@@ -177,7 +177,7 @@ class Environment:
         @author D. Kennel
         """
         return self.operatingsystem
-    
+
     def getosreportstring(self):
         """
         Return the detailed operating system type with full version info.

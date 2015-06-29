@@ -522,6 +522,7 @@ function makeSelfUpdatePackage ()
     #####
     # Copy the pkg to the local directory for processing
     ${CP} -a /Volumes/${STONIX4MAC}-${STONIX4MACVERSION}/${STONIX4MAC}-${STONIX4MACVERSION}.pkg ${STONIX4MAC}.pkg
+    ${CP} -a /Volumes/${STONIX4MAC}-${STONIX4MACVERSION}/${STONIX4MAC}-${STONIX4MACVERSION}.pkg .
 
     #####
     # Make sure the copy is finished and hd sync'd

@@ -139,10 +139,10 @@ class ConfigureScreenLocking(RuleKVEditor):
                                  "defaults",
                                  "~/Library/Preferences/com.apple.screensaver",
                                  "",
-                                 {"askForPasswordDelay": ["60", "-int 60"]},
+                                 {"askForPasswordDelay": ["0", "-int 0"]},
                                  "present",
                                  "",
-                                 "Delay asking for password by 60 seconds.",
+                                 "Delay asking for password by 0 seconds.",
                                  None,
                                  False,
                                  {"askForPasswordDelay":

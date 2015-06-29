@@ -1477,8 +1477,8 @@ because these values are optional\n"
                     success = False
                     self.detailedresults += "unsuccessful in creating file: \
 " + path + "\n"
-        if os.path.exists("/etc/periodic/weekly/" + LOGROTATE):
-            os.remove("/etc/periodic/weekly/" + LOGROTATE)
+        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
+            os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
         if os.path.exists(syslog):
             tempstring = ""
             contents = readFile(syslog, self.logger)

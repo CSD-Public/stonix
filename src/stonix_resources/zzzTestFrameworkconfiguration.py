@@ -27,29 +27,30 @@ Created on Jul 18, 2011
 @author: dkennel
 '''
 import unittest
-import re
 import configuration
+from environment import Environment
+
 
 class zzzTestFrameworkconfiguration(unittest.TestCase):
 
-
     def setUp(self):
-        self.to = configuration.Configuration()
+        self.enviro = Environment()
+        self.to = configuration.Configuration(self.enviro)
 
     def tearDown(self):
         pass
-    
+
     def testConfValueSetGet(self):
         self.to.setconfvalue('UnitTest', 'unit', True)
         self.failUnless(self.to.getconfvalue('UnitTest', 'unit'))
-    
+
     def testSetCommentText(self):
         self.to.setcommenttxt('UnitTest', '# Unit test comment\n')
-    
+
     def testSetSimple(self):
         self.to.setsimple('UnitTest', True)
         self.to.setsimple('UnitTest', False)
-    
+
     def testUserComment(self):
         self.to.setusercomment('UnitTest', 'unit', 'Unit test user comment')
         self.failUnless(self.to.getusercomment('UnitTest', 'unit'))

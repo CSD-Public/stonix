@@ -22,26 +22,24 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableThumbnailers
+Created on Jun 24, 2015
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: dwalker
 '''
 from __future__ import absolute_import
 import unittest
-import os
-import re
-from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.CommandHelper import CommandHelper
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.BlockSystemAccounts import BlockSystemAccounts
+from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.logdispatcher import LogPriority
+from src.stonix_resources.rules.DisableThumbnailers import DisableThumbnailers
 
 
-class zzzTestRuleBlockSystemAccounts(RuleTest):
+class zzzTestRuleSecureIPV6(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = BlockSystemAccounts(self.config,
+        self.rule = DisableThumbnailers(self.config,
                                         self.environ,
                                         self.logdispatch,
                                         self.statechglogger)
@@ -63,29 +61,13 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-
-        path = '/etc/passwd'
-
-        if os.path.exists(path):
-            f = open(path, 'r')
-            contentlines = f.readlines()
-            f.close()
-
-            for line in contentlines:
-                try:
-                    if re.search('^#', line) or re.search('^\s', line):
-                        continue
-                    sline = line.split(':')
-                    if int(sline[2]) < 500 and int(sline[2]) != 0 and len(sline) == 7:
-                        sline[7] = '\n'
-                    newline = ':'.join(sline)
-                    contentlines = [c.replace(line, newline) for c in contentlines]
-                except IndexError:
-                    continue
-            f = open(path, 'w')
-            f.writelines(contentlines)
-            f.close()
-
+        self.gconf = "/usr/bin/gconftool-2"
+        cmd = self.gconf + " --direct --config-source " + \
+            "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
+            "--type bool --set " + \
+            "/desktop/gnome/thumbnailers/disable_all false"
+        if not self.ch.executeCommand(cmd):
+            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -97,9 +79,9 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -112,7 +94,7 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -125,7 +107,7 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success

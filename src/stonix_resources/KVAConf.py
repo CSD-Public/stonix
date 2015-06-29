@@ -223,6 +223,7 @@ class KVAConf():
                                             foundalready = True
                                     except IndexError:
                                         self.detailedresults += "Index error\n"
+                                        #maybe should continue instead of raising
                                         raise(self.detailedresults)
                         if not foundalready:
                             fixables.append(item)
@@ -254,9 +255,7 @@ class KVAConf():
                                     raise(self.detailedresults)
                     return found
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
-                print "inside getspacevalue"
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
-                    print "it's a list"
                     for item in value:
                         foundalready = False
                         for line in self.contents:
@@ -274,15 +273,13 @@ class KVAConf():
                                             foundalready = True
                                     except IndexError:
                                         self.detailedresults += "Index error\n"
+                                        #maybe continue instead of raising
                                         raise(self.detailedresults)
                         if foundalready:
-                            #fixables.append(item)
                             removeables.append(item)
                     if removeables:
-                        print "removeables inside getspacevalue: " + str(removeables)
                         return removeables
                     else:
-                        print "returning True"
                         return False
                 else:  # value must be a string, normal case
                     found = False
@@ -382,7 +379,6 @@ class KVAConf():
         @param removeables: a dictionary of key val paris not desired in file
         @return: Bool
         '''
-        print "inside setSpaceValue\n"
         self.storeContents(self.path)  # re-read the contents of the desired file
         contents = self.contents
         if removeables:  # we have items that need to be removed from file
@@ -416,12 +412,12 @@ class KVAConf():
                         else:
                             i += 1
             self.contents = contents
+            contents = self.contents
         if fixables:
             contents.append(self.universal)
-            listPresent = False
             for key, val in fixables.iteritems():
                 if isinstance(val, list):
-                    listPresent = True
+                    continue
                     for key2 in fixables[key]:
                         contents.append(key + " " + key2 + "\n")
                 else:
@@ -430,25 +426,40 @@ class KVAConf():
                         if re.search("^#", line) or re.match("^\s*$", line):
                             i += 1
                         elif re.search(key, line):
-                            temp = line.strip().split()
-                            if re.match("^" + key + "$", temp[0].strip()):
+                            temp = line.strip()
+                            temp = re.sub("\s+", " ", temp)
+                            temp = line.split()
+                            if len(temp) > 2:
+                                i += 1
+                                continue
+                            #temp = line.strip().split()
+                            elif re.match("^" + key + "$", temp[0].strip()):
                                 contents.pop(i)
-                            i += 1
+                            else:
+                                i += 1
                         else:
                             i += 1
-            if listPresent:
-                self.contents = contents
-                return True
-            else:
-                self.contents = []
-                for line in contents:  # reconstruct the self.contents list to contain the most updated list
-                    self.contents.append(line)
-                self.contents.append("\n" + self.universal)
-                if fixables:  # if there are fixables, we need to then add those, removeables have already been taken care of above
-                    for key in fixables:
-                        temp = key + " " + fixables[key] + "\n"
-                        self.contents.append(temp)
-                return True
+            for key, val in fixables.iteritems():
+                if isinstance(val, list):
+                    for key2 in fixables[key]:
+                        contents.append(key + " " + key2 + "\n")
+                else:
+                    contents.append(key + " " + val + "\n")
+        self.contents = contents
+#             if listPresent:
+#                 self.contents = contents
+#                 return True
+#             else:
+#                 self.contents = []
+#                 for line in contents:  # reconstruct the self.contents list to contain the most updated list
+#                     self.contents.append(line)
+#                 self.contents.append("\n" + self.universal)
+#                 if fixables:  # if there are fixables, we need to then add those, removeables have already been taken care of above
+#                     for key in fixables:
+#                         temp = key + " " + fixables[key] + "\n"
+#                         self.contents.append(temp)
+#                 return True
+        return True
 ###############################################################################
     def commit(self):
         '''
