@@ -22,27 +22,27 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigurePasswordProfile
-Created on Jun 9, 2015
+This is a Unit Test for Rule DisableThumbnailers
+Created on Jun 24, 2015
 
 @author: dwalker
 '''
 from __future__ import absolute_import
 import unittest
-import re
 from src.stonix_resources.RuleTestTemplate import RuleTest
-from src.stonix_resources.rules.ConfigurePasswordProfile import ConfigurePasswordProfile
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.logdispatcher import LogPriority
+from src.stonix_resources.rules.DisableThumbnailers import DisableThumbnailers
 
 
-class zzzTestRuleConfigurePasswordProfile(RuleTest):
+class zzzTestRuleSecureIPV6(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigurePasswordProfile(self.config, self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = DisableThumbnailers(self.config,
+                                        self.environ,
+                                        self.logdispatch,
+                                        self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -54,17 +54,20 @@ class zzzTestRuleConfigurePasswordProfile(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
+        '''
+        Configure system for the unit test
+        @param self: essential if you override this definition
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
         success = True
-        cmd = ["/usr/bin/profiles", "-L"]
-        profilenum = "C873806E-E634-4E58-B960-62817F398E11"
-        if self.ch.executeCommand(cmd):
-            output = self.ch.getOutput()
-            if output:
-                for line in output:
-                    if re.search(profilenum, line):
-                        cmd = ["/usr/bin/profiles", "-r", profilenum]
-                        if not self.ch.executeCommand(cmd):
-                            success = False
+        self.gconf = "/usr/bin/gconftool-2"
+        cmd = self.gconf + " --direct --config-source " + \
+            "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
+            "--type bool --set " + \
+            "/desktop/gnome/thumbnailers/disable_all false"
+        if not self.ch.executeCommand(cmd):
+            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
