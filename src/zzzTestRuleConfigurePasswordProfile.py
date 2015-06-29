@@ -22,29 +22,27 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigurePasswordProfile
+Created on Jun 9, 2015
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: dwalker
 '''
 from __future__ import absolute_import
 import unittest
-import os
 import re
-from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.CommandHelper import CommandHelper
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.BlockSystemAccounts import BlockSystemAccounts
+from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.stonix_resources.rules.ConfigurePasswordProfile import ConfigurePasswordProfile
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.logdispatcher import LogPriority
 
 
-class zzzTestRuleBlockSystemAccounts(RuleTest):
+class zzzTestRuleConfigurePasswordProfile(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = BlockSystemAccounts(self.config,
-                                        self.environ,
-                                        self.logdispatch,
-                                        self.statechglogger)
+        self.rule = ConfigurePasswordProfile(self.config, self.environ,
+                                             self.logdispatch,
+                                             self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -56,36 +54,17 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-        '''
         success = True
-
-        path = '/etc/passwd'
-
-        if os.path.exists(path):
-            f = open(path, 'r')
-            contentlines = f.readlines()
-            f.close()
-
-            for line in contentlines:
-                try:
-                    if re.search('^#', line) or re.search('^\s', line):
-                        continue
-                    sline = line.split(':')
-                    if int(sline[2]) < 500 and int(sline[2]) != 0 and len(sline) == 7:
-                        sline[7] = '\n'
-                    newline = ':'.join(sline)
-                    contentlines = [c.replace(line, newline) for c in contentlines]
-                except IndexError:
-                    continue
-            f = open(path, 'w')
-            f.writelines(contentlines)
-            f.close()
-
+        cmd = ["/usr/bin/profiles", "-L"]
+        profilenum = "C873806E-E634-4E58-B960-62817F398E11"
+        if self.ch.executeCommand(cmd):
+            output = self.ch.getOutput()
+            if output:
+                for line in output:
+                    if re.search(profilenum, line):
+                        cmd = ["/usr/bin/profiles", "-r", profilenum]
+                        if not self.ch.executeCommand(cmd):
+                            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -97,9 +76,9 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -112,7 +91,7 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -125,7 +104,7 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success

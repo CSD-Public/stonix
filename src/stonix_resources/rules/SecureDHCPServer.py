@@ -14,20 +14,20 @@ import traceback
 import os
 
 
-class SecureDHCP(Rule):
+class SecureDHCPServer(Rule):
 
     def __init__(self, config, enviro, logger, statechglogger):
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 134
-        self.rulename = "SecureDHCP"
+        self.rulename = "SecureDHCPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''Configures DHCP functionality '''
         datatype = "bool"
-        key = "SECUREDHCP"
-        instructions = '''To disable this rule set the value of SECUREDHCP to \
-        False.'''
+        key = "SECUREDHCPSERVER"
+        instructions = '''To disable this rule set the value of \
+        SECUREDHCPSERVER to False.'''
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -54,8 +54,8 @@ class SecureDHCP(Rule):
                                      "routers;",
                                      "time-offset;"]}
             if self.ph.manager == "zypper":
-                self.package = "dhcp"
-                self.path = "/etc/dhclient.conf"
+                self.package = "dhcp-server"
+                self.path = "/etc/dhcpd.conf"
             elif self.ph.manager == "yum":
                 self.package = "dhcp"
                 self.path = "/etc/dhcp/dhcpd.conf"
