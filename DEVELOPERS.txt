@@ -1,0 +1,259 @@
+Developers Information for STONIX
+=================================
+
+0. Overview
+---------------------------------
+
+  STONIX is an operating system configuration hardening tool for Unix and Unix 
+  like (e.g. Linux) operating systems. This tool implements a hybrid of 
+  guidance from NSA, DISA STIGs, USGCB and the CIS. To as great of a degree as 
+  possible each guidance element for each platform is evaluated on the other 
+  platforms for applicability and applied if possible and sensible.
+  
+  The STONIX program is a modular codebase implemented in Python (currently 
+  using the 2.x dialect, a port to Python 3.0 is in future planning). Python
+  was selected due to it being part of the default install on all target 
+  platforms. The program is primarily a command-line utility but there is a
+  robust GUI built in. The GUI is implemented in PyQt.
+  
+  STONIX uses some common design patterns including Model View Controller, 
+  Factory, and Observable.
+  
+1. STONIX Components
+---------------------------------
+  STONIX is comprised of the following major components:
+  
+  1. The controller, stonix.py. The controller is the core of the program and 
+    dictates the core program logic.
+    
+  2. The environment, environment.py. The environment object is a collection of 
+    information about the system on which STONIX is running. It should be viewed
+    as a collection of data that is accessed via getters. (We had a significant
+    debate over getters vs. raw property access). This object is intended to be
+    a singleton largely to prevent the repetition of the data gathering process.
+    
+  3. The Log Dispatcher, logdispatcher.py. This object at present handles the
+    CLI output to console as well as the creation of the human readable and XML
+    logs. This object is intended to be a singleton to preserve a unified
+    output/logging stream.
+    
+  4. The Program Arguments object, program_arguments.py. This object handles
+    the program arguments from the command line.
+    
+  5. The Rules, multiple files. The rule objects are the actual implementation
+    of the hardening guidance. See the section below on rules and how they work.
+    
+  6. Helpers, multiple files. The helper objects are common abstractions of
+    underlying system functionality. E.G. The Service Helper object abstracts
+    the functions of starting, stopping and checking services so that rules
+    don't have to worry about whether the system is chkconfig, rc-update,
+    svcadm, systemd or launchd. See the section on Helpers for more information.
+    
+  7. The GUI class, gui.py, main_window.py. This is the GUI. The base GUI was
+    created using QT designer and the main_window file is the output from that.
+    The gui.py file contains the action logic associated with the gui. Care
+    should be taken when working with the GUI as there are multiple threads in
+    use during some portions of program execution and cross thread references
+    are a shortcut to weird crashes.
+    
+  8. The Log Importer, LogImporter folder + contents. This is a simple import
+    program to import the STONIX XML logs into a database.
+    
+2. STONIX Code Standards
+----------------------------------
+  The STONIX dev team largely follows PEP 8 for code formatting standards. We
+  do deviate from PEP 8 in the allowance of camelCase variable & method names.
+  Code rules that are specific to the STONIX project are:
+  
+  1. No third party libraries (exception made for the dmidecode library as it's
+  essential to the information gathering). This is to simplify code distribution
+  and installation.
+  
+  2. We are trying to move to Test Driven Development. It is expected that any
+  code added to STONIX have unit tests (preferably good ones).
+  
+  3. Error Handling: All modules must deal with errors in a sane fashion.
+  For rules this means that errors must be handled and reported. For Helper
+  objects usually this means allowing the error to bubble up to the caller so
+  that the call stack can be more easily evaluated. Only the STONIX controller
+  is permitted to stop execution of the whole program. The controller will
+  capture rules that die during initialization or execution.
+    
+3. STONIX Rules
+----------------------------------
+  All STONIX rules inherit from a template rule class in the file rule.py. This
+  template class defines the interface that the controller uses to talk to all
+  of the rules. You should read and understand the template rule class before
+  implementing your own rules.
+  
+  The most important rule of writing rules: All rules must "do the right thing"
+  on _all_ platforms. At minimum this means have an accurate dictionary in
+  self.applicable and have a constructor that runs correctly on all platforms.
+  
+  Each concrete rule should override several of the base properties and methods
+  of the template. The rulenumber, rulename, helptext, detailedresults,
+  applicable properties need to be overridden at minimum. In addition a minimum
+  set of methods will need to be overridden: fix, report.
+  
+  Each rule will have between 0 and n Configuration Items, where n is something
+  this side of ridiculous. A Configuration Item is any option made available to
+  the user of the STONIX program to tune the behavior of a given rule. The
+  simplest is a boolean option that says whether or not the rule should even
+  execute it's fix functions. More complex rules may have multiple CIs. CIs are
+  documented in more detail below.
+  
+  More information on helper classes is located below but for rules that boil
+  down to editing key/value pairs the rule author may choose to inherit from the
+  ruleKVEditor class instead of the base rule template class. ruleKVEditor is a
+  template class derived from the base rule template.
+  
+  There are a couple of process flow requirements expected of rules. The Report
+  method of the rule should adjust the value of the boolean property "compliant"
+  to reflect whether or not the system accurately implements the guidance
+  embodied by the rule. The Fix method should update the rulesuccess and
+  currstate properties as needed.
+  
+  Reading and understanding existing rules is strongly recommended before
+  attempting to author one.
+  
+  Undo is a tricky thing inside STONIX. While there is a desire to be able to
+  return the system state back to the way it was before STONIX executed in fix
+  mode this can be problematic for a number of reasons. For some rules undo is
+  fairly reasonable and the undo method may be overridden and the revertable
+  property set to True. There is a helper object called the StateChgLogger that
+  can assist with recording and undoing changes. However in many cases,
+  particularly when multiple changes are made to a file by different rules or
+  the security concern is severe it is acceptable to not offer an Undo option
+  for a rule.
+  
+  Explanation of the intended use of the template Rule properties:
+  
+  self.config, self.environ, self.statechglogger, self.logdispatch are class
+  properties holding the objects passed in at instantiation.
+  
+  self.rulenumber is a unique identifier for the rule. The only requirements are
+  that it be a python int and that it be unique.
+  
+  self.rulename is a text identifier that is displayed to the user of the
+  program. Due to the way that it is used it should be a string of
+  alpha-numeric characters with no spaces or specials.
+  
+  self.mandatory - a boolean flag that indicates whether or not the rule is
+  mandatory.
+  
+  self.helptext - a text string that is displayed to the user vi the UI and
+  the configuration file. This should contain information about the rule
+  and what it does.
+  
+  self.executionpriority - a provision inserted into stonix to allow for
+  execution of rules in a specific order. This property is unused in v1 and
+  below.
+  
+  self.rootrequired - a boolean flag indicating whether or not the rule
+  requires root privileges. If this flag is set to true the rule will not
+  display or execute if the program is run as a non-privileged user.
+  
+  self.configinsimple - the configuration object can write two types of config
+  files, full and simple. The simple config contains only settings that are
+  expected to be routinely altered. The full config file contains every option
+  for that platform. Setting this bool to True will include the CI elements for
+  this rule into the simple config.
+  
+  self.detailedresults - this is feedback text that is shown to the user at
+  the end of the rules execution. Due to the way that message flow presently
+  works only messages from the Report method are actually displayed. The rules
+  report method should initialize the detailedresults and append relevant
+  information to that string during their execution.
+  
+  self.compliant - this status boolean indicates whether or not the current
+  system configuration is compliant with the guidance in this rule. This
+  property should be updated by the Report method as appropriate.
+  
+  self.rulesuccess - this status boolean indicates whether or not the fix
+  method was successfully executed. It should be updated by the fix method
+  as appropriate.
+  
+  self.databaserule - this boolean indicates whether or not the rule maintains
+  a database of results of any sort. Very few rules fall into this category.
+  Options were built into the framework to permit a run of a subset of rules
+  that maintain databases to update those databases after authorized system
+  changes.
+  
+  self.applicable - this property should contain a correctly formatted
+  dictionary for consumption by the isApplicable method in the template rule
+  class. Please reference the pydoc string for that method for full
+  documentation.
+  
+  self.revertable - this property indicates whether or not the rule is designed
+  to be safely undone via a call to its undo method.
+  
+  self.confitems - this is a python list of instantiated ConfigurationItem
+  objects. Each CI object used by the rule should be appended to this list after
+  instantiation.
+  
+  self.currstate - indicates the current state of the rule. Usually this is a
+  text string that is either "notconfigured" or "configured". This property
+  should be updated as appropriate.
+  
+  self.targetstate - indicates the destination state or target state of the
+  rule. Typically this uses the same values as currstate. This should be
+  updated as appropriate (typically only needs to be updated during the undo).
+  
+  self.guidance - Python list of source guidance elements covered by the rule.
+  E.G. if the rule satisfied CCE 14161-4 you would indicate that by adding
+  that as a quoted string list element to this property. This is to support
+  future functionality.
+  
+4. Helpers
+-----------------------------------
+  STONIX has a number of helper objects for various tasks, and a file of small
+  functions not really suited for placing into individual classes. Major helpers
+  include the Service Helper (ServiceHelper.py), the Package Helper
+  (pkghelper.py), the StateChgLogger, the ConfigurationItem and
+  stonixutilityfunctions.
+  
+  The ServiceHelper abstracts functions having to do with managing services on
+  the various target platforms. When instantiated it will determine the
+  underlying service management tools and instantiate the appropriate 
+  sub-class(es). The rule author needs only to instantiate the ServiceHelper and
+  then issue requests to enable, disable or audit services.
+  
+  The Package Helper abstracts functions having to do with installation,
+  removal and checking packages. There are some important limitations with the
+  Package Helper that have to do with the underlying packaging systems, or lack
+  thereof on some platforms. This helper is far more effective with Linux OS
+  systems than it is with Mac or Solaris.
+  
+  The StateChgLogger assists rules that wish to have undo functionality to
+  record their changes and unwind them. To make effective use of the
+  statechglogger review the pydoc strings, the implementations in existing rules
+  and the implementation in the template rule class.
+  
+  The ConfigurationItem class encapsulates all of the information and behavior
+  of STONIX preference items. I.E. the checkboxes in the GUI that control
+  program behavior. Please review the documentation strings in the
+  configurationitem.py file and the usage in existing rules.
+  
+  A typical CI would look something like this:
+        datatype = 'bool'
+        key = 'DISABLEBLUETOOTH'
+        instructions = "To prevent the disabling of bluetooth services, " + \
+        "set the value of DISABLEBLUETOOTH to False."
+        default = True
+        self.ci = self.initCi(datatype, key, instructions, default)
+        
+  In this case we are stating that the data type of the CI is boolean, the
+  default value is "True", and the instructions (which are shown to the end 
+  user) are as listed. The final call is to the initCi method of the template
+  rule class. This method actually invokes the object, appends it to the
+  self.configitems property and then returns the instantiated object.
+  
+  Typical use of the ci then would be in the fix method of the rule:
+	if not self.ci.getcurrvalue():
+           return
+           
+  This essentially shortcuts the rule if the CI current value is False.
+  
+  The stonixutilityfunctions.py module contains small functions that were not
+  deemed significant enough to turn into full objects. These functions can be
+  accessed by importing the stonixutilityfunctions module.

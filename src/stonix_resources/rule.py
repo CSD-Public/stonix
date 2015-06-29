@@ -85,7 +85,7 @@ LANL-stonix."""
         self.detailedresults = """This is the default detailed results text
         for the base rule class. If you are seeing this text it is because the
         developer for one of the rules forgot to assign the appropriate text.
-        Please file a bug against LANL-stonix."""
+        Please file a bug against stonix."""
         self.compliant = False
         self.rulesuccess = True
         self.databaserule = False
