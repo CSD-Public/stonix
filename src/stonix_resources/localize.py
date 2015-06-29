@@ -33,7 +33,7 @@ run-time failures. Pay attention to comments documenting both the content and
 format of entries.
 
 @author: dkennel
-@change: 2014/07/14 - ekkehard - added eia-ecs-p-f5.lanl.gov = WIN.LANL.GOV to
+@change: 2014/07/14 - ekkehard - added foo.bar.com = WIN.LANL.GOV to
 KERB5
 @change: 2014/08/20 - Added version variable to here and updated all locations
 that access the version variable to use this copy.
@@ -51,7 +51,7 @@ STONIXVERSION = '0.8.18'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
-REPORTSERVER = 'csd-web.lanl.gov'
+REPORTSERVER = 'foo.bar.com'
 
 # If you are not using a central report server then set the value of
 # sendreports to False. Please note no quotes.
@@ -62,21 +62,21 @@ SENDREPORTS = True
 # used. If you have local update sources list them here. This check will be
 # skipped if the list is empty. The list is in python list format:
 # updateservers = ['myserver1.mydomain.tld', 'myserver2.mydomain.tld']
-UPDATESERVERS = ['rhnsd.lanl.gov',
-                 'rhnsc.lanl.gov',
-                 'rhus.lanl.gov',
-                 'rhnsg.lanl.gov',
-                 'rhusd.lanl.gov',
-                 'rhusc.lanl.gov']
+UPDATESERVERS = ['foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com']
 
 # Stonix can set OS X systems to use a local Apple Software Update Server
 # if you have an ASUS server on your network enter its FQDN here. A zero
 # length entry will be ignored.
-APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
+APPLESOFTUPDATESERVER = 'http://foo.bar.com:8088/'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
-CENTRALLOGHOST = 'winlog.lanl.gov'
+CENTRALLOGHOST = 'foo.bar.com'
 
 # Warning Banners are site-specific
 # You may edit the text of the warning banner here to reflect your particular
@@ -100,37 +100,37 @@ WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
 "system. Authorized use only. Users have no explicit/implicit expectation " + \
 "of privacy. By using this system the user consents to monitoring and " + \
-"disclosure. See http://int.lanl.gov/copyright.shtml#disclaimers"
+"disclosure. See http://foo.bar.com/copyright.shtml#disclaimers"
 
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
-MAILRELAYSERVER = 'mail.lanl.gov'
+MAILRELAYSERVER = 'foo.bar.com'
 
 # STONIX Error Message Source Address
 # Set this to the email address that STONIX error messages should appear to
 # come from.
-STONIXERR = 'dkennel@lanl.gov'
+STONIXERR = 'stonixerr@bar.com'
 
 # STONIX Error Message Destination
 # Set the email address that STONIX error messages should be delivered to.
-STONIXDEVS = 'stonix-dev@lanl.gov'
+STONIXDEVS = 'stonix-dev@bar.com'
 
 # Set the URL and port of your proxy server if one is in use.
 # If you do not use a proxy server set this to None.
 # Note that STONIX will not work through authenticating proxies.
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
-PROXY = 'http://proxyout.lanl.gov:8080'
+PROXY = 'http://foo.bar.com:8080'
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
-ALLOWNET = '128.165.0.0/16'
+ALLOWNET = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
 PRINTBROWSESUBNET = ''
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
-NTPSERVERSINTERNAL = ["time.lanl.gov", "ntp.lanl.gov"]
+NTPSERVERSINTERNAL = ["foo.bar.com", "foo.bar.com"]
 
 # Specify a list of external Network Time Protocol (NTP) Servers
 NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
@@ -138,7 +138,7 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 
 # List Of Corporate Network Servers used to determine if we are on the
 # corporate network they need to be reachable only internally on port 80
-CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
+CORPORATENETWORKSERVERS = ["foo.bar.com"]
 
 # Content of the kerb5.conf file
 KERB5 = '''[libdefaults]
@@ -147,22 +147,22 @@ KERB5 = '''[libdefaults]
     forwardable = true
 [realms]
     lanl.gov = {
-    kdc = kerberos.lanl.gov
-    kdc = kerberos-slaves.lanl.gov
-    admin_server = kerberos.lanl.gov
+    kdc = foo.bar.com
+    kdc = foo.bar.com
+    admin_server = foo.bar.com
     }
 [pam]
     debug = false
     krb4_convert = false
 [domain_realm]
-    eia-ecs-p-f5.lanl.gov = WIN.LANL.GOV
-    .lanl.gov = lanl.gov
-    .lanl.org = lanl.gov'''
+    foo.bar.com = WIN.LANL.GOV
+    .example.com = EXAMPLE.COM
+    example.com = EXAMPLE.COM'''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
 # management like yum and apt-get.
-SELFUPDATESERVER = "csd-web.lanl.gov"
+SELFUPDATESERVER = "foo.bar.com"
 
 HOSTSDENYDEFAULT = """##########################################################################
 #
@@ -231,12 +231,12 @@ all : all : DENY
 """
 
 # This is used in the SecureMailClient Rule to set up DomainForMatching
-APPLEMAILDOMAINFORMATCHING = "lanl.gov"
+APPLEMAILDOMAINFORMATCHING = "bar.com"
 
 # This list contains quoted strings that are fully qualified paths to
 # world writable directories that are common at your site (possibly due to
 # widely deployed software).
-SITELOCALWWWDIRS = ['/var/lanl/puppet/run']
+SITELOCALWWWDIRS = []
 
 # Default messages for self.detailedresults initialization, report, fix, undo
 DRINITIAL = "Neither report, fix, or revert have been run yet."
@@ -251,10 +251,10 @@ DRUNDOSUCCESSFUL = "Revert was completed successfully."
 DRUNDOFAILED = "The revert for this Rule failed."
 DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
-WINLOG = "@@winlog.lanl.gov"
+WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
 
 ## Proxy setting
-PROXYSERVER = "proxyout.lanl.gov"
+PROXYSERVER = "foo.bar.com"
 PROXYPORT = "8080"
-PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
+PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
