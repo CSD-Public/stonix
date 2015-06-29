@@ -373,15 +373,33 @@ False.'''
 platform. If you need to run a service not currently in this list add the
 service to the list and STONIX will ensure that it is set to run. List elements
 should be space separated.'''
+        self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Starting platform detection"])
         if os.path.exists('/bin/systemctl'):
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "systemctl found using systemd list"])
             default = self.systemddefault
-        elif self.environ.getosfamily == 'linux':
+        elif self.environ.getosfamily() == 'linux':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Linux OS found using Linux default list"])
             default = self.linuxdefault
-        elif self.environ.getosfamily == 'solaris':
+        elif self.environ.getosfamily() == 'solaris':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Solaris OS found using Solaris list"])
             default = self.soldefault
-        elif self.environ.getosfamily == 'freebsd':
+        elif self.environ.getosfamily() == 'freebsd':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "FreeBSD OS found using BSD list"])
             default = self.bsddefault
         else:
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
             default = self.linuxdefault
         cienablelist = self.initCi(datatype, key, instructions, default)
         return cienablelist
