@@ -113,7 +113,10 @@ the avahi service in order to secure it.'''
                 self.pbf =  self.plb + ' -c "Add :ProgramArguments: string '  + self.parameter + '" ' +  self.service
             else:
                 self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                self.servicename = "com.apple.mDNSResponder"
+                if osxversion.startswith("10.10"):
+                    self.servicename = "com.apple.mDNSResponder.reloaded"
+                else:
+                    self.servicename = "com.apple.mDNSResponder"
                 self.parameter = "-NoMulticastAdvertisements"
                 self.pbr =  self.plb + " -c Print " +  self.service + " | grep 'NoMulticastAdvertisements'"
                 self.pbf =  self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
