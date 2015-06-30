@@ -858,7 +858,7 @@ class Environment:
             # Run with Eclipse debugger -- Eclipse debugger will never try to run
             # the "stonix" binary blob created by pyinstaller, so don't include
             # here.
-            print "ERROR: Environment.collectpaths: unexpected argv[0]: " + str(sys.argv[0])
+            #print "DEBUG: Environment.collectpaths: unexpected argv[0]: " + str(sys.argv[0])
             if re.search("stonix.py$", script_path_one) or re.search("stonixtest.py$", script_path_one):
                 script = script_path_one.split("/")[-1]
                 script_path = "/".join(script_path_one.split("/")[:-1])
@@ -872,7 +872,7 @@ class Environment:
                 else:
                     print "ERROR: Cannot run using this method"
             else:
-                print "ERROR: Cannot find appropriate path, building paths for current directory"
+                #print "DEBUG: Cannot find appropriate path, building paths for current directory"
                 self.script_path = os.getcwd()
 
         #####

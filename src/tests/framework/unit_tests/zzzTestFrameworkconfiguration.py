@@ -1,3 +1,6 @@
+'''
+Created on Jul 18, 2011
+
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -20,43 +23,40 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+
+@author: dkennel
 '''
-Created on Mar 2, 2015
+import unittest
+import re
+import src.stonix_resources.environment as environment
+import src.stonix_resources.configuration as configuration
 
-@author: dwalker
-@change: 2015/04/15 dkennel updated for new isApplicable
-'''
-from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
+class zzzTestFrameworkconfiguration(unittest.TestCase):
 
 
-class EncryptSwap(RuleKVEditor):
-    '''
-    This rule is a user-context only rule meaning, if stonix is run as root
-    this rule should not show up in the GUI or be able to be run through the
-    CLI.  In addition, when this rule is being run in user context, there
-    is no undo.
-    '''
-    def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
-        self.logger = logger
-        self.rulenumber = 97
-        self.formatDetailedResults("initialize")
-        self.mandatory = True
-        self.rulename = "EncryptSwap"
-        self.helptext = "Passwords and other sensitive information can be " + \
-        "extracted from insecure virtual memory. This rule secures " + \
-        "virtual memory."
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.addKVEditor("swapEncrypt",
-                         "defaults",
-                         "/Library/Preferences/com.apple.virtualMemory",
-                         "",
-                         {"UseEncryptedSwap": ["1", "-bool yes"]},
-                          "present",
-                          "",
-                          "Secure Virtual memory.",
-                          None,
-                          False,
-                          {})
+    def setUp(self):
+        self.env = environment.Environment()
+        self.to = configuration.Configuration(self.env)
+
+    def tearDown(self):
+        pass
+    
+    def testConfValueSetGet(self):
+        self.to.setconfvalue('UnitTest', 'unit', True)
+        self.failUnless(self.to.getconfvalue('UnitTest', 'unit'))
+    
+    def testSetCommentText(self):
+        self.to.setcommenttxt('UnitTest', '# Unit test comment\n')
+    
+    def testSetSimple(self):
+        self.to.setsimple('UnitTest', True)
+        self.to.setsimple('UnitTest', False)
+    
+    def testUserComment(self):
+        self.to.setusercomment('UnitTest', 'unit', 'Unit test user comment')
+        self.failUnless(self.to.getusercomment('UnitTest', 'unit'))
+
+
+if __name__ == "__main__":
+    #import sys;sys.argv = ['', 'Test.testName']
+    unittest.main()
