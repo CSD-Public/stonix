@@ -20,43 +20,48 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
-Created on Mar 2, 2015
 
-@author: dwalker
-@change: 2015/04/15 dkennel updated for new isApplicable
-'''
-from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
+import re
+import sys
+import unittest
+from mock import *
+
+### for importing support libraries
+sys.path.append("..")
+
+from src.stonix_resources.Connectivity import Connectivity
+from src.tests.lib.logdispatcher_mock import LogDispatcher
+from src.tests.lib.environment_mac_mock import Environment
+
+from connectivity_test_data import test_case_data_site_socket_online
+
+def name_test_template_one(*args):
+    """ 
+    decorator for monkeypatching
+    """
+    def foo(self):
+        self.assert_value(*args)
+    return foo 
+
+class test_Connectivity_is_site_socket_online(unittest.TestCase):
+
+    def setUp(self):
+        self.environ = Environment()
+        self.logdispatcher = LogDispatcher(self.environ)
+        self.conn = Connectivity(self.logdispatcher)
+
+    def assert_value(self, test_iteration, pass_or_not, host):
+
+        if pass_or_not:
+            self.assertTrue(self.conn.is_site_socket_online(host))
+        else:
+            self.assertFalse(self.conn.is_site_socket_online(host))
 
 
-class EncryptSwap(RuleKVEditor):
-    '''
-    This rule is a user-context only rule meaning, if stonix is run as root
-    this rule should not show up in the GUI or be able to be run through the
-    CLI.  In addition, when this rule is being run in user context, there
-    is no undo.
-    '''
-    def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
-        self.logger = logger
-        self.rulenumber = 97
-        self.formatDetailedResults("initialize")
-        self.mandatory = True
-        self.rulename = "EncryptSwap"
-        self.helptext = "Passwords and other sensitive information can be " + \
-        "extracted from insecure virtual memory. This rule secures " + \
-        "virtual memory."
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.addKVEditor("swapEncrypt",
-                         "defaults",
-                         "/Library/Preferences/com.apple.virtualMemory",
-                         "",
-                         {"UseEncryptedSwap": ["1", "-bool yes"]},
-                          "present",
-                          "",
-                          "Secure Virtual memory.",
-                          None,
-                          False,
-                          {})
+for behavior, test_cases in test_case_data_site_socket_online.items():
+    for test_case_data in test_cases:
+        test_iteration, pass_or_not, host = test_case_data
+        my_test_name = "test_{0}_{1}".format(test_iteration, str(pass_or_not))
+        my_test_case = name_test_template_one(*test_case_data)
+        setattr(test_Connectivity_is_site_socket_online, my_test_name, my_test_case)
+

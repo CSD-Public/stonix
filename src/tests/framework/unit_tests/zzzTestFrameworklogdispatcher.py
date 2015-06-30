@@ -1,3 +1,8 @@
+#! /usr/bin/env python
+
+'''
+Created on Sep 21, 2011
+
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -20,43 +25,31 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+
+@author: scmcleni
 '''
-Created on Mar 2, 2015
-
-@author: dwalker
-@change: 2015/04/15 dkennel updated for new isApplicable
-'''
-from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
+import unittest
+from src.stonix_resources.logdispatcher import LogDispatcher, LogPriority
+import src.stonix_resources.environment as environment
 
 
-class EncryptSwap(RuleKVEditor):
-    '''
-    This rule is a user-context only rule meaning, if stonix is run as root
-    this rule should not show up in the GUI or be able to be run through the
-    CLI.  In addition, when this rule is being run in user context, there
-    is no undo.
-    '''
-    def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
-        self.logger = logger
-        self.rulenumber = 97
-        self.formatDetailedResults("initialize")
-        self.mandatory = True
-        self.rulename = "EncryptSwap"
-        self.helptext = "Passwords and other sensitive information can be " + \
-        "extracted from insecure virtual memory. This rule secures " + \
-        "virtual memory."
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.addKVEditor("swapEncrypt",
-                         "defaults",
-                         "/Library/Preferences/com.apple.virtualMemory",
-                         "",
-                         {"UseEncryptedSwap": ["1", "-bool yes"]},
-                          "present",
-                          "",
-                          "Secure Virtual memory.",
-                          None,
-                          False,
-                          {})
+class zzzTestFrameworklogdispatcher(unittest.TestCase):
+
+    def setUp(self):
+        self.environ = environment.Environment()
+        self.environ.setdebugmode(True)
+        self.test_message = "my test message"
+        self.logger = LogDispatcher(self.environ)
+        self.priority = LogPriority()
+
+    def tearDown(self):
+        pass
+
+    def testLogError(self):
+        try:
+            self.logger.log(self.priority.ERROR, "error level message")
+        except:
+            self.fail("Failed to write ERROR to log file")
+
+if __name__ == "__main__":
+    unittest.main()
