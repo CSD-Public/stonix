@@ -40,7 +40,6 @@ from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
 from ..stonixutilityfunctions import createFile
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
 
 
 class SecureSSH(Rule):
@@ -62,7 +61,10 @@ class SecureSSH(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''The SecureSSH class makes a number of configuration\
- changes to SSH in order to ensure secure use of the functionality.'''
+ changes to SSH in order to ensure secure use of the functionality.  This rule
+ will not attempt to install ssh server or client if it is not installed
+ however it will create the appropriate files if not present and put the
+ appropriate contents in them whether installed or not.'''
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
@@ -73,36 +75,37 @@ class SecureSSH(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.guidance = ['CIS, NSA(3.5.2.1)', 'CCE 4325-7', 'CCE 4726-6',
-                    'CCE 4475-0', 'CCE 4370-3', 'CCE 4387-7', 'CCE 3660-8',
-                    'CCE 4431-3', 'CCE 14716-5', 'CCE 14491-5']
+                         'CCE 4475-0', 'CCE 4370-3', 'CCE 4387-7',
+                         'CCE 3660-8', 'CCE 4431-3', 'CCE 14716-5',
+                         'CCE 14491-5']
         self.ed1, self.ed2 = "", ""
 
 ###############################################################################
 
     def report(self):
         try:
-            self.client = {"Host":"*",
-                           "Protocol":"2",
-                           "GSSAPIAuthentication":"yes",
-                           "GSSAPIDelegateCredentials":"yes",
-                           "ForwardX11":"no"}
-            self.server = {"Protocol":"2",
-                           "SyslogFacility":"AUTHPRIV",
-                           "PermitRootLogin":"no",
-                           "MaxAuthTries":"5",
-                           "RhostsRSAAuthentication":"no",
-                           "HostbasedAuthentication":"no",
-                           "IgnoreRhosts":"yes",
-                           "PermitEmptyPasswords":"no",
-                           "PasswordAuthentication":"yes",
-                           "ChallengeResponseAuthentication":"no",
-                           "KerberosAuthentication":"yes",
-                           "GSSAPIAuthentication":"yes",
-                           "GSSAPICleanupCredentials":"yes",
-                           "UsePAM":"yes",
-                           "Banner":"/etc/issue.net",
-                           "Ciphers":"aes128-ctr,aes192-ctr,aes256-ctr",
-                           "PermitUserEnvironment":"no"}
+            self.client = {"Host": "*",
+                           "Protocol": "2",
+                           "GSSAPIAuthentication": "yes",
+                           "GSSAPIDelegateCredentials": "yes",
+                           "ForwardX11": "no"}
+            self.server = {"Protocol": "2",
+                           "SyslogFacility": "AUTHPRIV",
+                           "PermitRootLogin": "no",
+                           "MaxAuthTries": "5",
+                           "RhostsRSAAuthentication": "no",
+                           "HostbasedAuthentication": "no",
+                           "IgnoreRhosts": "yes",
+                           "PermitEmptyPasswords": "no",
+                           "PasswordAuthentication": "yes",
+                           "ChallengeResponseAuthentication": "no",
+                           "KerberosAuthentication": "yes",
+                           "GSSAPIAuthentication": "yes",
+                           "GSSAPICleanupCredentials": "yes",
+                           "UsePAM": "yes",
+                           "Banner": "/etc/issue.net",
+                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
+                           "PermitUserEnvironment": "no"}
             self.detailedresults = ""
             compliant = True
             debug = ""
@@ -112,96 +115,73 @@ class SecureSSH(Rule):
             else:
                 self.path1 = "/etc/ssh/sshd_config"  # server file
                 self.path2 = "/etc/ssh/ssh_config"  # client file
-                self.ph = Pkghelper(self.logger, self.environ)
-                
-                #check if openssh-server and clients are installed
-                if self.ph.manager == "yum":
-                    self.serverpkg = "openssh-server"
-                    self.clientpkg = "openssh-clients"
-                elif self.ph.manager == "zypper":
-                    self.serverpkg = "openssh"
-                    self.clientpkg = "openssh"
-                elif self.ph.manager == "apt-get":
-                    self.serverpkg = "openssh-server"
-                    self.clientpkg = "openssh-client"
-                    
-                if not self.ph.check(self.serverpkg):
-                    debug = "openssh-server is not installed"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
-                    
-                elif not os.path.exists(self.path1):
-                    compliant = False
-                
-                if not self.ph.check(self.clientpkg):
-                    debug = "openssh-clients is not installed"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
-                elif not os.path.exists(self.path2):
-                    compliant = False
-            
-            
+
             if os.path.exists(self.path1):
                 tpath1 = self.path1 + ".tmp"
                 if re.search("Ubuntu", self.environ.getostype()):
                     del(self.server["GSSAPIAuthentication"])
                     del(self.server["KerberosAuthentication"])
-                self.ed1 = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                            self.path1, tpath1, self.server, "present", "space")
+                self.ed1 = KVEditorStonix(self.statechglogger,
+                                          self.logger, "conf",
+                                          self.path1, tpath1,
+                                          self.server, "present",
+                                          "space")
                 if not self.ed1.report():
                     debug = "didn't find the correct" + \
-                    " contents in sshd_config\n"
+                        " contents in sshd_config\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
                 if re.search("Ubuntu", self.environ.getostype()):
-                    self.server = {"GSSAPIAuthentication":"",
-                                   "KerberosAuthentication":""}
+                    self.server = {"GSSAPIAuthentication": "",
+                                   "KerberosAuthentication": ""}
                     self.ed1.setIntent("notpresent")
                     self.ed1.setData(self.server)
                     if not self.ed1.report():
                         debug = "didn't find the correct" + \
-                        " contents in sshd_config\n"
+                            " contents in sshd_config\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         compliant = False
-                if not checkPerms(self.path1, [0, 0, 420], self.logger):
+                if not checkPerms(self.path1, [0, 0, 420],
+                                  self.logger):
                     compliant = False
             else:
-                debug = self.path1 + " doesn't exist\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += self.path1 + " doesn't exist\n"
                 compliant = False
-                
             if os.path.exists(self.path2):
                 tpath2 = self.path2 + ".tmp"
                 if re.search("Ubuntu", self.environ.getostype()):
                     del(self.client["GSSAPIAuthentication"])
-                self.ed2 = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                               self.path2, tpath2, self.client, "present", "space")
+                self.ed2 = KVEditorStonix(self.statechglogger,
+                                          self.logger, "conf",
+                                          self.path2, tpath2,
+                                          self.client, "present",
+                                          "space")
                 if not self.ed2.report():
                     debug = "didn't find the correct" + \
-                    " contents in ssh_config\n"
+                        " contents in ssh_config\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
                 if re.search("Ubuntu", self.environ.getostype()):
-                    self.client = {"GSSAPIAuthentication":""}
+                    self.client = {"GSSAPIAuthentication": ""}
                     self.ed2.setIntent("notpresent")
                     self.ed2.setData(self.client)
                     if not self.ed2.report():
                         debug = "didn't find the correct" + \
-                        " contents in ssh_config\n"
+                            " contents in ssh_config\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         compliant = False
-                if not checkPerms(self.path2, [0, 0, 420], self.logger):
+                if not checkPerms(self.path2, [0, 0, 420],
+                                  self.logger):
                     compliant = False
             else:
-                debug = self.path2 + " doesn't exist\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += self.path2 + " doesn't exist\n"
                 compliant = False
             if compliant:
-                self.detailedresults = "SecureSSH report has been run and is \
+                self.detailedresults += "SecureSSH report has been run and is \
 compliant"
                 self.compliant = True
             else:
-                self.detailedresults = "SecureSSH report has been run and is \
+                self.detailedresults += "SecureSSH report has been run and is \
 not compliant"
                 self.compliant = False
         except (KeyboardInterrupt, SystemExit):
@@ -215,7 +195,7 @@ not compliant"
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
@@ -225,63 +205,35 @@ not compliant"
             self.detailedresults = ""
             created1, created2 = False, False
             debug = ""
-            #clear all recorded events from previous fix run
+
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            
-            
-            #if openssh-server isn't installed at all
-            if self.environ.getostype() != "Mac OS X":
-                if not self.ph.check(self.serverpkg):
-                    if self.ph.checkAvailable(self.serverpkg):
-                        if not self.ph.install(self.serverpkg):
-                            debug += "Unable to install openssh-server\n"
-                            self.rulesuccess = False
-                        else:
-                            self.detailedresults += "Installed openssh-server\n"
-                    else:
-                        debug += "openssh-server not available to install\n"
             tpath1 = self.path1 + ".tmp"
-            
-            #if openssh-server but for some reason the file isn't there
+
             if not os.path.exists(self.path1):
                 createFile(self.path1, self.logger)
                 created1 = True
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"creation",
-                         "filepath":self.path1}
+                event = {"eventtype": "creation",
+                         "filepath": self.path1}
                 self.statechglogger.recordchgevent(myid, event)
-                tpath1 = self.path1 + ".tmp"
-                if re.search("Ubuntu", self.environ.getostype()):
-                    del(self.server["GSSAPIAuthentication"])
-                    del(self.server["KerberosAuthentication"])
-                self.ed1 = KVEditorStonix(self.statechglogger, 
-                    self.logger, "conf", self.path1, tpath1, self.server, 
-                                                            "present", "space")
-                self.ed1.report()
-                if re.search("Ubuntu", self.environ.getostype()):
-                    self.server = {"GSSAPIAuthentication":"",
-                                   "KerberosAuthentication":""}
-                    self.ed1.setIntent("notpresent")
-                    self.ed1.setData(self.server)
-                    self.ed1.report()
-                    
             if os.path.exists(self.path1):
                 if not self.ed1:
                     tpath1 = self.path1 + ".tmp"
                     if re.search("Ubuntu", self.environ.getostype()):
                         del(self.server["GSSAPIAuthentication"])
                         del(self.server["KerberosAuthentication"])
-                    self.ed1 = KVEditorStonix(self.statechglogger, 
-                        self.logger, "conf", self.path1, tpath1, self.server, 
-                                                            "present", "space")
+                    self.ed1 = KVEditorStonix(self.statechglogger,
+                                              self.logger, "conf", self.path1,
+                                              tpath1, self.server, "present",
+                                              "space")
                     self.ed1.report()
                     if re.search("Ubuntu", self.environ.getostype()):
-                        self.server = {"GSSAPIAuthentication":"",
-                                       "KerberosAuthentication":""}
+                        self.server = {"GSSAPIAuthentication": "",
+                                       "KerberosAuthentication": ""}
                         self.ed1.setIntent("notpresent")
                         self.ed1.setData(self.server)
                         self.ed1.report()
@@ -289,8 +241,8 @@ not compliant"
                     if not created1:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path1, [0, 0, 420], self.logger, 
-                                                    self.statechglogger, myid):
+                        if not setPerms(self.path1, [0, 0, 420], self.logger,
+                                        self.statechglogger, myid):
                             self.rulesuccess = False
                     else:
                         if not setPerms(self.path1, [0, 0, 420], self.logger):
@@ -305,6 +257,13 @@ not compliant"
                         if self.ed1.commit():
                             self.detailedresults += "kveditor1 commit ran \
 successfully\n"
+                            if not created1:
+                                event = {"eventtype": "conf",
+                                         "filepath": self.path1}
+                                self.statechglogger.recordchgevent(myid, event)
+                                self.statechglogger.recordfilechange(self.path1,
+                                                                     tpath1,
+                                                                     myid)
                         else:
                             self.detailedresults += "kveditor1 commit did not run \
 successfully\n"
@@ -316,51 +275,30 @@ successfully\n"
                     os.chown(self.path1, 0, 0)
                     os.chmod(self.path1, 420)
                     resetsecon(self.path1)
-                    
-            if self.environ.getostype() != "Mac OS X":
-                if not self.ph.check(self.clientpkg):
-                    if self.ph.checkAvailable(self.clientpkg):
-                        if not self.ph.install(self.clientpkg):
-                            debug += "Unable to install openssh-clients\n"
-                            self.rulesuccess = False
-                        else:
-                            self.detailedresults += "Installed openssh-clients\n"
-                    else:
-                        debug += "openssh-clients not available to install\n"
+
             tpath2 = self.path2 + ".tmp"
             if not os.path.exists(self.path2):
                 createFile(self.path2, self.logger)
                 created2 = True
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"creation",
-                         "filepath":self.path2}
+                event = {"eventtype": "creation",
+                         "filepath": self.path2}
                 self.statechglogger.recordchgevent(myid, event)
-                tpath2 = self.path2 + ".tmp"
-                if re.search("Ubuntu", self.environ.getostype()):
-                    del(self.client["GSSAPIAuthentication"])
-                self.ed2 = KVEditorStonix(self.statechglogger, 
-                    self.logger, "conf", self.path2, tpath2, self.server, 
-                                                            "present", "space")
-                self.ed2.report()
-                if re.search("Ubuntu", self.environ.getostype()):
-                    self.client = {"GSSAPIAuthentication":""}
-                    self.ed2.setIntent("notpresent")
-                    self.ed2.setData(self.client)
-                    self.ed2.report()
-                    
+
             if os.path.exists(self.path2):
                 if not self.ed2:
                     tpath2 = self.path2 + ".tmp"
                     if re.search("Ubuntu", self.environ.getostype()):
                         del(self.client["GSSAPIAuthentication"])
-                    self.ed2 = KVEditorStonix(self.statechglogger, 
-                        self.logger, "conf", self.path2, tpath2, self.client, 
-                                                            "present", "space")
+                    self.ed2 = KVEditorStonix(self.statechglogger,
+                                              self.logger, "conf", self.path2,
+                                              tpath2, self.client, "present",
+                                              "space")
                     self.ed2.report()
                     if re.search("Ubuntu", self.environ.getostype()):
-                        self.server = {"GSSAPIAuthentication":"",
-                                       "KerberosAuthentication":""}
+                        self.server = {"GSSAPIAuthentication": "",
+                                       "KerberosAuthentication": ""}
                         self.ed2.setIntent("notpresent")
                         self.ed2.setData(self.client)
                         self.ed2.report()
@@ -369,7 +307,7 @@ successfully\n"
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(self.path2, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                        self.statechglogger, myid):
                             self.rulesuccess = False
                     else:
                         if not setPerms(self.path2, [0, 0, 420], self.logger):
@@ -384,6 +322,13 @@ successfully\n"
                         if self.ed2.commit():
                             self.detailedresults += "kveditor2 commit ran \
 successfully\n"
+                            if not created2:
+                                event = {"eventtype": "conf",
+                                         "filepath": self.path2}
+                                self.statechglogger.recordchgevent(myid, event)
+                                self.statechglogger.recordfilechange(self.path2,
+                                                                     tpath2,
+                                                                     myid)
                         else:
                             self.detailedresults += "kveditor2 commit did not \
 run successfully\n"
@@ -405,6 +350,6 @@ successfully\n"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
