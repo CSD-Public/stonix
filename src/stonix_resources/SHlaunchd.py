@@ -30,6 +30,7 @@ This object encapsulates the /bin/launchctl command for Service Helper
 '''
 
 import CommandHelper
+import re
 from logdispatcher import LogPriority
 
 
@@ -239,11 +240,16 @@ class SHlaunchd(object):
 
         servicesuccess = False
         startsuccess = True
-        stopsuccess = self.stopservice(service, servicename)
-        if stopsuccess:
-            startsuccess = self.startservice(service, servicename)
-
-        servicesuccess = startsuccess and stopsuccess
+        if re.search('10.10.', self.environment.getosver()):
+            command = [self.launchd, 'kickstart', '-kp', servicename]
+            if self.ch.executeCommand(command):
+                if self.ch.getReturnCode == 0:
+                    servicesuccess = True
+        else:
+            stopsuccess = self.stopservice(service, servicename)
+            if stopsuccess:
+                startsuccess = self.startservice(service, servicename)
+            servicesuccess = startsuccess and stopsuccess
 
         self.logdispatcher.log(LogPriority.DEBUG,
                                '(' + service + ', ' + servicename + \
