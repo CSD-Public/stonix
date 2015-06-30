@@ -240,16 +240,10 @@ class SHlaunchd(object):
 
         servicesuccess = False
         startsuccess = True
-        if re.search('10.10.', self.environment.getosver()):
-            command = [self.launchd, 'kickstart', '-kp', servicename]
-            if self.ch.executeCommand(command):
-                if self.ch.getReturnCode == 0:
-                    servicesuccess = True
-        else:
-            stopsuccess = self.stopservice(service, servicename)
-            if stopsuccess:
-                startsuccess = self.startservice(service, servicename)
-            servicesuccess = startsuccess and stopsuccess
+        stopsuccess = self.stopservice(service, servicename)
+        if stopsuccess:
+            startsuccess = self.startservice(service, servicename)
+        servicesuccess = startsuccess and stopsuccess
 
         self.logdispatcher.log(LogPriority.DEBUG,
                                '(' + service + ', ' + servicename + \
