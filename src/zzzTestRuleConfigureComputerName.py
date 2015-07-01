@@ -22,29 +22,27 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule BlockSystemAccounts
+This is a Unit Test for Rule ConfigureComputerName
 
 @author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@change: 2015/06/10 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
-import os
-import re
-from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
-from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.BlockSystemAccounts import BlockSystemAccounts
+from stonix_resources.RuleTestTemplate import RuleTest
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.rules.ConfigureComputerName import ConfigureComputerName
 
 
-class zzzTestRuleBlockSystemAccounts(RuleTest):
+class zzzTestConfigureComputerName(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = BlockSystemAccounts(self.config,
-                                        self.environ,
-                                        self.logdispatch,
-                                        self.statechglogger)
+        self.rule = ConfigureComputerName(self.config,
+                                          self.environ,
+                                          self.logdispatch,
+                                          self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -63,29 +61,6 @@ class zzzTestRuleBlockSystemAccounts(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-
-        path = '/etc/passwd'
-
-        if os.path.exists(path):
-            f = open(path, 'r')
-            contentlines = f.readlines()
-            f.close()
-
-            for line in contentlines:
-                try:
-                    if re.search('^#', line) or re.search('^\s', line):
-                        continue
-                    sline = line.split(':')
-                    if int(sline[2]) < 500 and int(sline[2]) != 0 and len(sline) == 7:
-                        sline[7] = '\n'
-                    newline = ':'.join(sline)
-                    contentlines = [c.replace(line, newline) for c in contentlines]
-                except IndexError:
-                    continue
-            f = open(path, 'w')
-            f.writelines(contentlines)
-            f.close()
-
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
