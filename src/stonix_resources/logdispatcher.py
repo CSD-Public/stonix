@@ -253,24 +253,29 @@ class LogDispatcher (Observable):
         @author: dkennel
         """
 
-        message = '''From: ''' + localize.STONIXERR + '''
+        # Function wrapped in try/except to allow the program to keep running
+        # when the mail server is unavailable.
+        try:
+            message = '''From: ''' + localize.STONIXERR + '''
 To: ''' + localize.STONIXDEVS + '''
 Subject: STONIX Error Report: ''' + prefix + '''
 
 '''
-        message = prefix + ' ' + message + 'Sent by: ' + \
-        self.environment.gethostname() + ' IP: ' \
-        + self.environment.getipaddress() + ' OS: ' + \
-        self.environment.getostype() + ': ' + \
-        str(self.environment.getosver()) + \
-        ' STONIX Ver: ' + str(self.environment.getstonixversion())
-        message = message + '\n' + errmsg
-        to = localize.STONIXDEVS + '\r\n'
-        frm = localize.STONIXERR + '\r\n'
+            message = prefix + ' ' + message + 'Sent by: ' + \
+            self.environment.gethostname() + ' IP: ' \
+            + self.environment.getipaddress() + ' OS: ' + \
+            self.environment.getostype() + ': ' + \
+            str(self.environment.getosver()) + \
+            ' STONIX Ver: ' + str(self.environment.getstonixversion())
+            message = message + '\n' + errmsg
+            to = localize.STONIXDEVS + '\r\n'
+            frm = localize.STONIXERR + '\r\n'
 
-        server = smtplib.SMTP(localize.MAILRELAYSERVER)
-        server.sendmail(frm, to, message)
-        server.quit()
+            server = smtplib.SMTP(localize.MAILRELAYSERVER)
+            server.sendmail(frm, to, message)
+            server.quit()
+        except socket.error:
+            pass
 
     def format_message_data(self, msg_data):
         """

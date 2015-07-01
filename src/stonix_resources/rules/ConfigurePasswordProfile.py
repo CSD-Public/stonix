@@ -61,7 +61,7 @@ class ConfigurePasswordProfile(Rule):
         "PASSCODECONFIG to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.10.10']}}
         self.ci = self.initCi(datatype, key, instructions, default)
         self.profPath = os.path.join(os.path.dirname(__file__), "..", "files",
                 "LANL Passcode Profile for OS X Yosemite 10.10.mobileconfig")
