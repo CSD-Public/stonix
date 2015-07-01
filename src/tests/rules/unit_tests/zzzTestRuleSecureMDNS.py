@@ -69,17 +69,21 @@ class zzzTestRuleSecureMDNS(RuleTest):
         if self.environ.getosfamily() == "darwin":
             success = False
             osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.9"):
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                self.servicename = "com.apple.mDNSResponder"
-                self.parameter = "-NoMulticastAdvertisements"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string ' + self.parameter + '" ' +  self.service
-                success = True
-            elif osxversion.startswith("10.10"):
+            if osxversion.startswith("10.10.0") or osxversion.startswith("10.10.1") or osxversion.startswith("10.10.2") or osxversion.startswith("10.10.3"):
                 self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
                 self.servicename = "com.apple.networking.discoveryd"
                 self.parameter = "--no-multicast"
                 self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string '  + self.parameter + '" ' +  self.service
+                success = True
+            else:
+                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
+                if osxversion.startswith("10.10"):
+                    self.servicename = "com.apple.mDNSResponder.reloaded"
+                    self.parameter = "-NoMulticastAdvertisements"
+                else:
+                    self.servicename = "com.apple.mDNSResponder"
+                    self.parameter = "-NoMulticastAdvertisements"
+                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string ' + self.parameter + '" ' +  self.service
                 success = True
 # This needs to be fixed
 #            if success:
