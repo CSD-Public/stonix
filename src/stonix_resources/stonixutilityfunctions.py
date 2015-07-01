@@ -335,19 +335,17 @@ def get_plist_value(plist="", key="", current_host=""):
 # =========================================================================== #
 
 
-def has_connection_to_server(server=None, port=80, timeout=1):
+def has_connection_to_server(logger, server=None, port=80, timeout=1):
     '''
     Check to see if there is a connection to a server.
-    @server = name of the server you want to check connection with
-              default = None
-
-    @port = port number you want to check connection with
-            default=80
-
-    @timeout = the number of seconds to wait for a timeout, can be a float.
-               default = 1 second
-
-    @returns True if there is a connection, False if there is not.
+    @param logger: logger object
+    @param server: name of the server you want to check connection with
+                   default = None
+    @param port: port number you want to check connection with
+                 default=80
+    @param timeout: the number of seconds to wait for a timeout, can be a float.
+                    default = 1 second
+    @return: True if there is a connection, False if there is not.
 
     @author: Dave Kennel/Roy Nielsen
     '''
@@ -361,12 +359,14 @@ def has_connection_to_server(server=None, port=80, timeout=1):
             resolvable = True
         except (socket.gaierror, socket.timeout, socket.error), err:
             resolvable = False
-            print "has_connection_to_server: socket error: " + str(err)
-            print "has_connection_to_server: server: " + str(server) + \
-            " port: " + str(port) + " timeout = " + str(timeout) + \
-            " Connection failed"
+            logger.log(LogPriority.ERROR, "has_connection_to_server: socket \
+                       error: " + str(err))
+            logger.log(LogPriority.ERROR, "has_connection_to_server: server: "
+                       + str(server) + " port: " + str(port) + " timeout = "
+                       + str(timeout) + " Connection failed")
     else:
-        print "has_connection_to_server: Need a non-empty server name"
+        logger.log(LogPriority.ERROR, "has_connection_to_server: Need a \
+        non-empty server name")
     return resolvable
 
 # =========================================================================== #
@@ -431,13 +431,13 @@ def cloneMeta(logger, originFile, destinationFile):
             # clone secon; doesn't work on mac os x
             if env.getosfamily() != 'darwin':
 
-                os.system('chcon --reference=' + originFile + ' ' + \
+                os.system('chcon --reference=' + originFile + ' ' +
                           destinationFile)
 
         else:
 
-            logger.log(LogPriority.DEBUG, 'stat command failed to get ' + \
-                       'output. Is the stat command available on this ' + \
+            logger.log(LogPriority.DEBUG, 'stat command failed to get ' +
+                       'output. Is the stat command available on this ' +
                        'system type?')
             return
 
