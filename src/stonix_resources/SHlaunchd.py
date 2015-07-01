@@ -30,6 +30,7 @@ This object encapsulates the /bin/launchctl command for Service Helper
 '''
 
 import CommandHelper
+import re
 from logdispatcher import LogPriority
 
 
@@ -242,7 +243,6 @@ class SHlaunchd(object):
         stopsuccess = self.stopservice(service, servicename)
         if stopsuccess:
             startsuccess = self.startservice(service, servicename)
-
         servicesuccess = startsuccess and stopsuccess
 
         self.logdispatcher.log(LogPriority.DEBUG,
