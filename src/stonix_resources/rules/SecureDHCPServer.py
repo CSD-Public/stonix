@@ -46,13 +46,13 @@ class SecureDHCPServer(Rule):
             self.data1 = {"ddns-update-style": "none;",
                           "deny": ["declines;",
                                    "bootp;"]}
-            self.data2 = {"option": ["domain-name;",
-                                     "domain-name-servers;",
-                                     "nis-domain;",
-                                     "nis-servers;",
-                                     "ntp-servers;",
-                                     "routers;",
-                                     "time-offset;"]}
+            self.data2 = {"option": ["domain-name",
+                                     "domain-name-servers",
+                                     "nis-domain",
+                                     "nis-servers",
+                                     "ntp-servers",
+                                     "routers",
+                                     "time-offset"]}
             if self.ph.manager == "zypper":
                 self.package = "dhcp-server"
                 self.path = "/etc/dhcpd.conf"
