@@ -257,13 +257,6 @@ not compliant"
                         if self.ed1.commit():
                             self.detailedresults += "kveditor1 commit ran \
 successfully\n"
-                            if not created1:
-                                event = {"eventtype": "conf",
-                                         "filepath": self.path1}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(self.path1,
-                                                                     tpath1,
-                                                                     myid)
                         else:
                             self.detailedresults += "kveditor1 commit did not run \
 successfully\n"
@@ -322,13 +315,6 @@ successfully\n"
                         if self.ed2.commit():
                             self.detailedresults += "kveditor2 commit ran \
 successfully\n"
-                            if not created2:
-                                event = {"eventtype": "conf",
-                                         "filepath": self.path2}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(self.path2,
-                                                                     tpath2,
-                                                                     myid)
                         else:
                             self.detailedresults += "kveditor2 commit did not \
 run successfully\n"
