@@ -219,7 +219,7 @@ def importkey(logger):
                                            err])
 
 
-def write_file(file_name="", file_content=""):
+def write_file(logger, file_name="", file_content=""):
     '''
     Write a config file (file_content) to destination (file_name)
 
@@ -238,7 +238,8 @@ def write_file(file_name="", file_content=""):
             finally:
                 fh.close()
         except IOError, err:
-            print "Error opening file: " + file_name + " error: " + err
+            logger.log(LogPriority.ERROR, "Error opening file: " + file_name +
+                       " error: " + err)
 
 # =========================================================================== #
 
