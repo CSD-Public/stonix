@@ -36,7 +36,8 @@ STONIX
   THANKS	An incomplete list of people who contributed to this software
   ChangeLog	Detailed list of changes
   TODO		Known bugs and to-do listing
-
+  DEVELOPERS Detailed documentation for people who want to contribute to STONIX
+  
 2. Version numbering
 --------------------
 

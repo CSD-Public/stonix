@@ -22,35 +22,30 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigureComputerName
 
 @author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@change: 2015/06/10 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
 from stonix_resources.RuleTestTemplate import RuleTest
 from stonix_resources.CommandHelper import CommandHelper
 from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.ServiceHelper import ServiceHelper
-from stonix_resources.rules.SecureMDNS import SecureMDNS
+from stonix_resources.rules.ConfigureComputerName import ConfigureComputerName
 
 
-class zzzTestRuleSecureMDNS(RuleTest):
+class zzzTestConfigureComputerName(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = SecureMDNS(self.config,
-                               self.environ,
-                               self.logdispatch,
-                               self.statechglogger)
+        self.rule = ConfigureComputerName(self.config,
+                                          self.environ,
+                                          self.logdispatch,
+                                          self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
-        self.lc = "/bin/launchctl"
-        self.plb = "/usr/libexec/PlistBuddy"
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
     def tearDown(self):
         pass
@@ -66,31 +61,6 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        if self.environ.getosfamily() == "darwin":
-            success = False
-            osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.10.0") or osxversion.startswith("10.10.1") or osxversion.startswith("10.10.2") or osxversion.startswith("10.10.3"):
-                self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
-                self.servicename = "com.apple.networking.discoveryd"
-                self.parameter = "--no-multicast"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string '  + self.parameter + '" ' +  self.service
-                success = True
-            else:
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                if osxversion.startswith("10.10"):
-                    self.servicename = "com.apple.mDNSResponder.reloaded"
-                    self.parameter = "-NoMulticastAdvertisements"
-                else:
-                    self.servicename = "com.apple.mDNSResponder"
-                    self.parameter = "-NoMulticastAdvertisements"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string ' + self.parameter + '" ' +  self.service
-                success = True
-# This needs to be fixed
-#            if success:
-#                command = self.pbd
-#                success = self.ch.executeCommand(command)
-            if success:
-                success = self.sh.reloadservice(self.service, self.servicename)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -138,4 +108,3 @@ class zzzTestRuleSecureMDNS(RuleTest):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
-

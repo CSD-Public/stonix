@@ -105,18 +105,21 @@ the avahi service in order to secure it.'''
         if self.environ.getostype() == "Mac OS X":
             self.plb = "/usr/libexec/PlistBuddy"
             osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.9"):
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                self.servicename = "com.apple.mDNSResponder"
-                self.parameter = "-NoMulticastAdvertisements"
-                self.pbr =  self.plb + " -c Print " +  self.service + " | grep 'NoMulticastAdvertisements'"
-                self.pbf =  self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
-            elif osxversion.startswith("10.10"):
+            if osxversion.startswith("10.10.0") or osxversion.startswith("10.10.1") or osxversion.startswith("10.10.2") or osxversion.startswith("10.10.3"):
                 self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
                 self.servicename = "com.apple.networking.discoveryd"
                 self.parameter = "--no-multicast"
                 self.pbr =  self.plb + " -c Print " +  self.service + " | grep 'no-multicast'"
                 self.pbf =  self.plb + ' -c "Add :ProgramArguments: string '  + self.parameter + '" ' +  self.service
+            else:
+                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
+                if osxversion.startswith("10.10"):
+                    self.servicename = "com.apple.mDNSResponder.reloaded"
+                else:
+                    self.servicename = "com.apple.mDNSResponder"
+                self.parameter = "-NoMulticastAdvertisements"
+                self.pbr =  self.plb + " -c Print " +  self.service + " | grep 'NoMulticastAdvertisements'"
+                self.pbf =  self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
         else:
 
             # init CIs
@@ -430,7 +433,7 @@ the avahi service in order to secure it.'''
             if fixit:
                 self.ch.executeCommand(self.pbf)
                 resultOutput = self.ch.getOutput()
-                errorcode = self.ch.getError()
+                errorcode = self.ch.getReturnCode()
                 if errorcode == 0:
                     messagestring = "- " + self.parameter + " was set successfully!"
                 else:
