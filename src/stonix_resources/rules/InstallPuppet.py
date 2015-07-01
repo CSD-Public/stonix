@@ -251,7 +251,8 @@ class InstallPuppet(Rule):
                 self.logdispatch.log(LogPriority.DEBUG, "Attempting to fix mac")
 
 # If there network, install, else no network, log
-                hasconnection = has_connection_to_server(self.puppetpkgserver)
+                hasconnection = has_connection_to_server(self.logdispatch,
+                                                         self.puppetpkgserver)
                 if hasconnection:
 # Set up the installation
                     installing = IHmac(self.environ,
