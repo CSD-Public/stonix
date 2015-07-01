@@ -32,8 +32,9 @@ import KVATaggedConf
 import os
 from logdispatcher import LogPriority
 
+
 class KVEditor(object):
-    '''The main parent class for The Key Value Editor Class group.  Call the 
+    '''The main parent class for The Key Value Editor Class group.  Call the
     validate def to see if the specified values are either present or not based
     on the intent desired, "present" or "notpresent", where, "present" means
     the values you set are desired in the configuration file and "notpresent"
@@ -42,8 +43,22 @@ class KVEditor(object):
     intent for each time you change intents then setData with the new data.  Do
     not run commit until all'''
 ###############################################################################
-    def __init__(self,stchlgr,logger,kvtype,path,tmpPath,data,intent="",
-                                                                configType=""):
+    def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
+                 configType=""):
+        '''
+        KVEditor constructor
+        @param stchlgr: StateChangeLogger object
+        @param logger: logger object
+        @param kvtype: Type of key value list.
+                       Valid values: "tagconf", "conf", "defaults"
+        @param path: Path to key value list
+        @param tmpPath: Path to temp file for key value list
+        @param data: Dict of key value data
+        @param intent: "present" or "notpresent"
+        @param configType: Specify how the config options are separated.
+                           Valid values: "space", "openeq", "closedeq"
+        @return: True if kvtype is valid
+        '''
         self.kvtype = kvtype
         self.path = path
         self.tmpPath = tmpPath
@@ -62,26 +77,29 @@ class KVEditor(object):
         if self.kvtype == "tagconf":
             if not self.getPath:
                 return False
-            self.editor = KVATaggedConf.KVATaggedConf(self.path,self.tmpPath,
-                                       self.intent,self.configType,self.logger)
+            self.editor = KVATaggedConf.KVATaggedConf(self.path, self.tmpPath,
+                                                      self.intent,
+                                                      self.configType,
+                                                      self.logger)
             return True
         elif self.kvtype == "conf":
             if not self.getPath:
                 return False
-            self.editor = KVAConf.KVAConf(self.path,self.tmpPath,self.intent,
-                                                   self.configType,self.logger)
+            self.editor = KVAConf.KVAConf(self.path, self.tmpPath, self.intent,
+                                          self.configType, self.logger)
             return True
         elif self.kvtype == "defaults":
-            self.editor = KVADefault.KVADefault(self.path,self.logger,self.data)
+            self.editor = KVADefault.KVADefault(self.path, self.logger,
+                                                self.data)
             return True
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
-                                    ["KVEditor.__init__",self.detailedresults])
+                            ["KVEditor.__init__", self.detailedresults])
             return False
 ###############################################################################
     def setData(self,data):
-        if data == None:
+        if data is None:
             return False
         elif data == "":
             return False
@@ -122,7 +140,8 @@ class KVEditor(object):
     def getPath(self):
         if not os.path.exists(self.path):
             self.detailedresults = "File path does not exist"
-            self.logger.log(LogPriority.INFO,["KVEditor",self.detailedresults])
+            self.logger.log(LogPriority.INFO,
+                            ["KVEditor", self.detailedresults])
             return False
         else:
             return self.path
@@ -135,13 +154,13 @@ class KVEditor(object):
         return self.tmpPath
 ###############################################################################
     def setType(self,kvtype):
-        '''implementer must use one of the following four strings to 
+        '''implementer must use one of the following four strings to
         instantiate the corresponding class: tagconf,conf,plist,defaults'''
         self.kvtype = kvtype
         return True
 ###############################################################################
     def validate(self):
-        try: 
+        try:
             if self.kvtype == "defaults":
                 status = self.validateDefaults()
             elif self.kvtype == "plist":
@@ -177,7 +196,7 @@ class KVEditor(object):
             raise
 ###############################################################################
     def validateDefaults(self):
-        if isinstance(self.data,dict):
+        if isinstance(self.data, dict):
             if not self.checkDefaults(self.data):
                 return False
         else:
@@ -186,26 +205,27 @@ class KVEditor(object):
             return True
         else:
             return False
-    
+
     def updateDefaults(self):
         if self.editor.update():
             return True
         else:
             return False
-    
-    def checkDefaults(self,data):
-        for k, v in data.iteritems():  
+
+    def checkDefaults(self, data):
+        for k, v in data.iteritems():
             if isinstance(v, dict):
                 retval = self.checkDefaults(v)
                 return retval
-            elif isinstance(v,list):
+            elif isinstance(v, list):
                 if len(v) == 2 or len(v) == 3:
                     return True
                 else:
                     return False
             else:
                 return False
-    def setCurrentHostbool(self,val):
+
+    def setCurrentHostbool(self, val):
         self.editor.currentHost = val
 ###############################################################################
     def validateConf(self):
@@ -238,7 +258,7 @@ class KVEditor(object):
                 return True
 ###############################################################################
     def checkConf(self):
-        if isinstance(self.data,dict):
+        if isinstance(self.data, dict):
             return True
         else:
             return False
@@ -251,7 +271,6 @@ class KVEditor(object):
             return False
         if self.intent == "present":
             for tag in self.data:
-                #self.editor.getTagValue(tag, self.data[tag])
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
                     return "invalid"
@@ -260,22 +279,22 @@ class KVEditor(object):
                     validate = False
         if self.intent == "notpresent":
             for tag in self.data:
-                keyvals = self.editor.getValue(tag,self.data[tag])
+                keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
                     return "invalid"
                 elif keyvals:
                     self.removeables[tag] = keyvals
                     validate = False
         return validate
-            
+
     def updateTag(self):
-        if self.editor.setValue(self.fixables,self.removeables):
+        if self.editor.setValue(self.fixables, self.removeables):
             return True
-        
+
     def checkTag(self):
-        if isinstance(self.data,dict):
+        if isinstance(self.data, dict):
             for tag in self.data:
-                if not isinstance(self.data[tag],dict):
+                if not isinstance(self.data[tag], dict):
                         return False
             return True
         else:
