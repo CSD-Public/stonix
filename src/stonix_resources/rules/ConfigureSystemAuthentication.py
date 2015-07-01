@@ -344,16 +344,17 @@ has been run and is not compliant"
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 ###############################################################################
+
     def fixLinux(self):
         '''
-        Linux specific submethod to correct linux distributions.  If your 
-        system is portage based, i.e. gentoo, you will need to do a manual 
+        Linux specific submethod to correct linux distributions.  If your
+        system is portage based, i.e. gentoo, you will need to do a manual
         fix for everything except the login.defs file
         @author: dwalker
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
         '''
-        
+
         success = True
         debug = ""
         usingcracklib, usingpasswdqc, usingquality = False, False, False
@@ -364,8 +365,11 @@ has been run and is not compliant"
                 usingquality = True
             elif self.ph.checkAvailable(self.quality):
                 if not self.ph.install(self.quality):
+                    self.detailedresults += "wasn't able to install " + \
+                        "pwquality, unable to continue with the rest " + \
+                        "of the rule\n"
                     debug = "wasn't able to install pwquality, unable to " + \
-                    "continue with the rest of the rule\n"
+                        "continue with the rest of the rule\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
@@ -375,8 +379,11 @@ has been run and is not compliant"
                 usingpasswdqc = True
             elif self.ph.checkAvailable(self.passwdqc):
                 if not self.ph.install(self.passwdqc):
+                    self.detailedresults += "wasn't able to install " + \
+                        "passwdqc, unable to continue with the rest of " + \
+                        "the rule\n"
                     debug = "wasn't able to install passwdqc, unable to " + \
-                    "continue with the rest of the rule\n"
+                        "continue with the rest of the rule\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
@@ -386,19 +393,26 @@ has been run and is not compliant"
                 usingcracklib = True
             elif self.ph.checkAvailable(self.cracklib):
                 if not self.ph.install(self.cracklib):
+                    self.detailedresults += "wasn't able to install " + \
+                        "cracklib, unable to continue with the rest of " + \
+                        "the rule\n"
                     debug = "wasn't able to install cracklib, unable " + \
-                    "to continue with the rest of the rule\n"
+                        "to continue with the rest of the rule\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
                     usingcracklib = True
             else:
-                debug = "There are no preferred password enforcement" + \
-                " pam modules available to install on this system\n"
+                self.detailedresults += "There are no preferred password " + \
+                    "enforcement pam modules available to install on this " + \
+                    "system.  Unable to proceed with configuration\n"
+                debug = "There are no preferred password enforcement " + \
+                    "pam modules available to install on this system.  " + \
+                    "Unable to proceed with configuration\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
 
-                
+
             #configure pam to use passwdqc if passwdqc is avail and inst.
             if usingquality:
                 package = "quality"
@@ -408,13 +422,13 @@ has been run and is not compliant"
                 package = "cracklib"
             if not self.setpassword(package):
                 self.detailedresults += "unable to set the pam password " + \
-                " authority\n"
+                    " authority\n"
                 success = False
         if self.ci2.getcurrvalue():
             if not self.chklockout():
                 if not self.setlockout():
                     self.detailedresults += "Unable to set the pam " + \
-                    "lockout authority\n"
+                        "lockout authority\n"
                     success = False
         if self.ci3.getcurrvalue():
             if not self.ph.check(self.libuser):
@@ -422,14 +436,14 @@ has been run and is not compliant"
                     if not self.ph.install(self.libuser):
                         debug = "libuser not able to be installed\n"
                         self.detailedresults += "libuser not able to be " + \
-                        "installed\n"
+                            "installed\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     elif not self.chklibuserhash():
                         if not self.setlibhash():
                             debug = "setlibhash() failed\n"
                             self.detailedresults += "unable to configure " + \
-                            "/etc/libuser.conf\n"
+                                "/etc/libuser.conf\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                 else:
@@ -440,17 +454,17 @@ has been run and is not compliant"
                     debug = "setlibhash() failed\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     self.detailedresults += "unable to configure " + \
-                    "/etc/libuser.conf file\n"
+                        "/etc/libuser.conf file\n"
                     success = False
             if not self.chkdefspasshash():
                 if not self.setdefpasshash():
                     debug = "setdefpasshash() failed\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     self.detailedresults += "Unable to configure " + \
-                    "/etc/login.defs file\n"
+                        "/etc/login.defs file\n"
                     success = False
         return success
-    
+
 ###############################################################################
 
     def fixSolaris(self):
@@ -461,7 +475,7 @@ has been run and is not compliant"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.pam, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     return False
             if not self.chkpasswdqc():
                 if self.setpasswdqc():
@@ -476,8 +490,8 @@ has been run and is not compliant"
             if writeFile(tmpfile, tempstring, self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype':'conf',
-                         'filepath':self.pam}
+                event = {'eventtype': 'conf',
+                         'filepath': self.pam}
                 self.statechglogger.recordchgevent(myid, event)
                 self.statechglogger.recordfilechange(self.pam, tmpfile, myid)
                 os.rename(tmpfile, self.pam)
@@ -493,7 +507,7 @@ has been run and is not compliant"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(path, [0, 0, 292], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
         if self.editor1.fixables:
             self.iditerator += 1
@@ -509,7 +523,7 @@ has been run and is not compliant"
         if not self.fixPolicy():
             success = False
         return success
-    
+
 ###############################################################################
 
     def fixFreebsd(self):
@@ -520,7 +534,7 @@ has been run and is not compliant"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.pam, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
             if not self.chklockout():
                 if os.path.exists('/lib/security/pam_faillock.so'):
@@ -540,10 +554,11 @@ has been run and is not compliant"
                 if writeFile(tmpfile, tempstring, self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype':'conf',
-                             'filepath':self.pam}
+                    event = {'eventtype': 'conf',
+                             'filepath': self.pam}
                     self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.pam, tmpfile, myid)
+                    self.statechglogger.recordfilechange(self.pam, tmpfile,
+                                                         myid)
                     os.rename(tmpfile, self.pam)
                     os.chown(self.pam, 0, 0)
                     os.chmod(self.pam, 420)
@@ -557,7 +572,7 @@ has been run and is not compliant"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.pam2, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
             if not self.chkpasswdqc():
                 if self.setpasswdqc():
@@ -577,10 +592,11 @@ has been run and is not compliant"
                 if writeFile(tmpfile, tempstring, self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype':'conf',
-                             'filepath':self.pam2}
+                    event = {'eventtype': 'conf',
+                             'filepath': self.pam2}
                     self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.pam2, tmpfile, myid)
+                    self.statechglogger.recordfilechange(self.pam2, tmpfile,
+                                                         myid)
                     os.rename(tmpfile, self.pam2)
                     os.chown(self.pam2, 0, 0)
                     os.chmod(self.pam2, 420)
@@ -591,16 +607,16 @@ has been run and is not compliant"
             if not self.fixLogin():
                 success = False
         return success
-    
+
 ###############################################################################
 
     def chkpassword(self, package):
-        '''ConfigureSystemAuthentication.chkpasswdqc() Private method to check 
-        for the presence of the correct passwdqc directives.  Upon entering 
+        '''ConfigureSystemAuthentication.chkpasswdqc() Private method to check
+        for the presence of the correct passwdqc directives.  Upon entering
         this method, self.config has the contents of whatever pam file that
-        self.pam represents.  However for apt-get systems we will make 
+        self.pam represents.  However for apt-get systems we will make
         self.config contain the contents of self.pam2. In this method we want
-        the pam_passwdqc.so line to be the first line to appear of the 
+        the pam_passwdqc.so line to be the first line to appear of the
         password type and the pam_unix.so line to be right after.
         @author: dwalker
         @return: bool
