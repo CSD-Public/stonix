@@ -54,22 +54,21 @@ class ConfigureSystemAuthentication(Rule):
         self.helptext = "This rule configures the pam stack for password " + \
         "requirements and password failed login attempts.  It also " + \
         "ensures the system uses SHA512 encryption.  There are three " + \
-        "configuration items.  Two of these configuration items are " + \
-        "disabled by default and both CI's involve configuring PAM.  " + \
+        "configuration items.  Two of these configuration involve " + \
+        "configuring PAM, PASSWORDREQ and PASSWORDFAIL. " + \
         "Please be advised, due to the complexity and sensitivity of PAM, " + \
-        "if you enable these two CI's, portions of the pam files that " + \
-        "these two CI's configure will be completely overwritten, " + \
-        "therefore if you have configured PAM with other modules, you may " + \
-        "want to avoid enabling these two items and configure them by " + \
-        "hand.  Also, if on a yum based package manager system such as " + \
-        "redhat, fedora, or centos, both pam files have to recieve the " + \
-        "same contents.  Due to this, no undo events will be recorded " + \
-        "for the first two configuration items.  However backups will be " + \
-        "made in the /etc/pam.d directory to restore them back to the way " + \
-        "before the rule was run.  Run these rules at your own risk. If " + \
-        "your system uses portage for a package manager i.e. gentoo, you " + \
-        "will need to do fix manually for all files except for the " + \
-        "login.defs file"
+        "portions of the pam files that these two CI's configure will be " + \
+        "completely overwritten, therefore if you have configured PAM " + \
+        "withother modules, you may want to avoid enabling these two " + \
+        "items and configure them by hand.  Also, if on a yum based " + \
+        "package manager system such as redhat, fedora, or centos, both " + \
+        "pam files have to recieve the same contents.  Due to this, no " + \
+        "undo events will be recorded for the first two configuration " + \
+        "items.  However backups will be made in the /etc/pam.d directory " + \
+        "to restore them back to the way before the rule was run.  Run " + \
+        "these rules at your own risk. If your system uses portage for a " + \
+        "package manager i.e. gentoo, you will need to do fix manually " + \
+        "for all files except for the login.defs file"
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
 
@@ -136,6 +135,7 @@ has been run and is not compliant"
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 ###############################################################################
+
     def reportLinux(self):
         '''Linux specific submethod for linux distributions.
         @author: dwalker
@@ -170,9 +170,9 @@ has been run and is not compliant"
         quality = "quality"
         passwdqc = "passwdqc"
         cracklib = "cracklib"
-        
+
         ######This section to configure password regulations###################
-        
+
         #is pwquality installed?    
         if self.ph.check(self.quality):
             #is it configured correctly?
