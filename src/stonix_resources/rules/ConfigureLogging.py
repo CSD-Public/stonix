@@ -41,7 +41,7 @@ from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
-from ..localize import LOGSVR, LOGROTATE
+from ..localize import WINLOG, LANLLOGROTATE
 from subprocess import PIPE, Popen
 import os
 import traceback
@@ -130,7 +130,7 @@ class ConfigureLogging(Rule):
                              "local4,local5,local6,local7.*": "/var/log/local",
                              "ftp.info": "/var/log/ftp",
                              "local7.*": "/var/log/boot.log",
-                             "auth,authpriv.info,mark.info": LOGSVR}
+                             "auth,authpriv.info,mark.info": WINLOG}
             self.detailedresults = ""
             self.wronglogrot = []
             self.missinglogrot = []
@@ -1316,7 +1316,7 @@ because these values are optional\n"
                          "netinfo.*": "/var/log/netinfo.log",
                          "remoteauth,authpriv.*": "/var/log/secure.log",
                          "*.crit": "/dev/console",
-                         "auth.info,authpriv.info,mark.info": LOGSVR}
+                         "auth.info,authpriv.info,mark.info": WINLOG}
         self.asl = ["? [T com.apple.message.domain] store_dir /var/log/DiagnosticMessages",
                     "? [A= Facility com.apple.performance] store_dir /var/log/performance",
                     "? [A= Facility com.apple.eventmonitor] store_dir /var/log/eventmonitor",
@@ -1344,7 +1344,7 @@ because these values are optional\n"
             if not os.path.exists(path):
                 compliant = False
                 self.detailedresults += path + " logfile doesn't exist\n"
-        if os.path.exists("/etc/periodic/weekly/" + LOGROTATE):
+        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
             compliant = False
             self.detailedresults += "old logrotation file exists\n"
 #----------Check /etc/syslog.conf file for correct contents-------------------#
@@ -1477,8 +1477,8 @@ because these values are optional\n"
                     success = False
                     self.detailedresults += "unsuccessful in creating file: \
 " + path + "\n"
-        if os.path.exists("/etc/periodic/weekly/" + LOGROTATE):
-            os.remove("/etc/periodic/weekly/" + LOGROTATE)
+        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
+            os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
         if os.path.exists(syslog):
             tempstring = ""
             contents = readFile(syslog, self.logger)

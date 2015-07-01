@@ -148,6 +148,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         compliant = True
+        self.detailedresults = ""
 
         try:
 
@@ -214,7 +215,7 @@ class InstallBanners(RuleKVEditor):
         try:
 
             path = '/etc/dconf/db/gdm.d/01-banner-message'
-            confstr = '[org/gnome/login-screen]\nbanner-message-enable=true\nbanner-message-text=\'' + WARNINGBANNER + '\'\n'
+            confstr = '[org/gnome/login-screen]\nbanner-message-enable=true\nbanner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'\n'
 
             path2 = '/etc/dconf/db/gdm.d/00-login-screen'
             confstr2 = '[org/gnome/login-screen]\ndisable-user-list=true\n'
@@ -327,6 +328,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         success = True
+        self.detailedresults = ""
 
         try:
 
@@ -437,11 +439,18 @@ class InstallBanners(RuleKVEditor):
         try:
 
             path = '/etc/dconf/db/gdm.d/01-banner-message'
-            confstr = '[org/gnome/login-screen]\nbanner-message-enable=true\nbanner-message-text=\'' + WARNINGBANNER + '\'\n'
+            confstr = '[org/gnome/login-screen]\nbanner-message-enable=true\nbanner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'\n'
             cmd = '/usr/bin/dconf update'
 
             path2 = '/etc/dconf/db/gdm.d/00-login-screen'
             confstr2 = '[org/gnome/login-screen]\ndisable-user-list=true\n'
+
+            pathsplit = os.path.split(path)
+            if not os.path.exists(pathsplit[0]):
+                os.makedirs(pathsplit[0], 0755)
+            pathsplit2 = os.path.split(path2)
+            if not os.path.exists(pathsplit2[0]):
+                os.makedirs(pathsplit2[0], 0755)
 
             f = open(path, 'w')
             f.write(confstr)
@@ -457,6 +466,7 @@ class InstallBanners(RuleKVEditor):
             if errout:
                 retval = False
                 self.detailedresults += '\ncould not execute command: ' + str(cmd)
+                self.logger.log(LogPriority.DEBUG, str(errout))
 
         except Exception:
             raise

@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.8.17
+Version: 0.8.18
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -116,6 +116,14 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Jun 30 2015 David Kennel <dkennel@lanl.gov> - 0.8.18
+- New rule: Secure the ISC DHCP server
+- Fixed an issue that caused tracebacks in SecureMDNS
+- Fixed an issue that would cause STONIX to quit if mail relay was not available when a traceback occured
+- Fixed unit test issues in the zzzTestFrameworkconfiguration and zzzTestFrameworkServiceHelper
+- Corrected traceback in ConfigureLogging
+- Unit test added for DisableThumbnailers
+
 * Fri May 29 2015 David Kennel <dkennel@lanl.gov> - 0.8.17
 - Fixed multiple issues with SetSSCorners
 - Observed behavior on CentOS where DisableThumbnailers is non-compliant after fix

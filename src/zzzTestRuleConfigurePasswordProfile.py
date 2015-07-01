@@ -22,35 +22,30 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigurePasswordProfile
+Created on Jun 9, 2015
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: dwalker
 '''
 from __future__ import absolute_import
 import unittest
-from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.CommandHelper import CommandHelper
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.ServiceHelper import ServiceHelper
-from stonix_resources.rules.SecureMDNS import SecureMDNS
+import re
+from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.stonix_resources.rules.ConfigurePasswordProfile import ConfigurePasswordProfile
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.logdispatcher import LogPriority
 
 
-class zzzTestRuleSecureMDNS(RuleTest):
+class zzzTestRuleConfigurePasswordProfile(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = SecureMDNS(self.config,
-                               self.environ,
-                               self.logdispatch,
-                               self.statechglogger)
+        self.rule = ConfigurePasswordProfile(self.config, self.environ,
+                                             self.logdispatch,
+                                             self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
-        self.lc = "/bin/launchctl"
-        self.plb = "/usr/libexec/PlistBuddy"
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
     def tearDown(self):
         pass
@@ -59,38 +54,17 @@ class zzzTestRuleSecureMDNS(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-        '''
         success = True
-        if self.environ.getosfamily() == "darwin":
-            success = False
-            osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.10.0") or osxversion.startswith("10.10.1") or osxversion.startswith("10.10.2") or osxversion.startswith("10.10.3"):
-                self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
-                self.servicename = "com.apple.networking.discoveryd"
-                self.parameter = "--no-multicast"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string '  + self.parameter + '" ' +  self.service
-                success = True
-            else:
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                if osxversion.startswith("10.10"):
-                    self.servicename = "com.apple.mDNSResponder.reloaded"
-                    self.parameter = "-NoMulticastAdvertisements"
-                else:
-                    self.servicename = "com.apple.mDNSResponder"
-                    self.parameter = "-NoMulticastAdvertisements"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string ' + self.parameter + '" ' +  self.service
-                success = True
-# This needs to be fixed
-#            if success:
-#                command = self.pbd
-#                success = self.ch.executeCommand(command)
-            if success:
-                success = self.sh.reloadservice(self.service, self.servicename)
+        cmd = ["/usr/bin/profiles", "-L"]
+        profilenum = "C873806E-E634-4E58-B960-62817F398E11"
+        if self.ch.executeCommand(cmd):
+            output = self.ch.getOutput()
+            if output:
+                for line in output:
+                    if re.search(profilenum, line):
+                        cmd = ["/usr/bin/profiles", "-r", profilenum]
+                        if not self.ch.executeCommand(cmd):
+                            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -102,9 +76,9 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -117,7 +91,7 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -130,7 +104,7 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -138,4 +112,3 @@ class zzzTestRuleSecureMDNS(RuleTest):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
-

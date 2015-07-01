@@ -359,7 +359,46 @@ False.'''
         default = True
         self.minimizeci = self.initCi(datatype, key, instructions, default)
 
-        self.svcslistci = self.__initializeenablelist()
+        # self.svcslistci = self.__initializeenablelist()
+        datatype2 = 'list'
+        key2 = 'serviceenable'
+        instructions2 = '''This list contains services that are permitted to run on this
+platform. If you need to run a service not currently in this list add the
+service to the list and STONIX will ensure that it is set to run. List elements
+should be space separated.'''
+        self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                            "Starting platform detection"])
+        if os.path.exists('/bin/systemctl'):
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                            "systemctl found using systemd list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                       self.systemddefault)
+        elif self.environ.getosfamily() == 'linux':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                            "Linux OS found using Linux default list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                       self.linuxdefault)
+        elif self.environ.getosfamily() == 'solaris':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                            "Solaris OS found using Solaris list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                       self.soldefault)
+        elif self.environ.getosfamily() == 'freebsd':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                            "FreeBSD OS found using BSD list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                       self.bsddefault)
+        else:
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                       self.linuxdefault)
 
     def __initializeenablelist(self):
         '''
@@ -373,17 +412,39 @@ False.'''
 platform. If you need to run a service not currently in this list add the
 service to the list and STONIX will ensure that it is set to run. List elements
 should be space separated.'''
+        self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Starting platform detection"])
         if os.path.exists('/bin/systemctl'):
-            default = self.systemddefault
-        elif self.environ.getosfamily == 'linux':
-            default = self.linuxdefault
-        elif self.environ.getosfamily == 'solaris':
-            default = self.soldefault
-        elif self.environ.getosfamily == 'freebsd':
-            default = self.bsddefault
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "systemctl found using systemd list"])
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.systemddefault)
+        elif self.environ.getosfamily() == 'linux':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Linux OS found using Linux default list"])
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.linuxdefault)
+        elif self.environ.getosfamily() == 'solaris':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Solaris OS found using Solaris list"])
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.soldefault)
+        elif self.environ.getosfamily() == 'freebsd':
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "FreeBSD OS found using BSD list"])
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.bsddefault)
         else:
-            default = self.linuxdefault
-        cienablelist = self.initCi(datatype, key, instructions, default)
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__initializeenablelist',
+                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
+            cienablelist = self.initCi(datatype, key, instructions,
+                                       self.linuxdefault)
         return cienablelist
 
     def report(self):
