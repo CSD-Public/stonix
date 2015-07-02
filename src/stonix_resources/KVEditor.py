@@ -47,13 +47,13 @@ class KVEditor(object):
                  configType=""):
         '''
         KVEditor constructor
-        @param stchlgr: StateChangeLogger object
+        @param stchlgr: StateChgLogger object
         @param logger: logger object
-        @param kvtype: Type of key value list.
+        @param kvtype: Type of key-value file.
                        Valid values: "tagconf", "conf", "defaults"
-        @param path: Path to key value list
-        @param tmpPath: Path to temp file for key value list
-        @param data: Dict of key value data
+        @param path: Path to key-value file
+        @param tmpPath: Path to temp file for key-value list
+        @param data: Dict of key-value data
         @param intent: "present" or "notpresent"
         @param configType: Specify how the config options are separated.
                            Valid values: "space", "openeq", "closedeq"
@@ -98,7 +98,7 @@ class KVEditor(object):
                             ["KVEditor.__init__", self.detailedresults])
             return False
 ###############################################################################
-    def setData(self,data):
+    def setData(self, data):
         if data is None:
             return False
         elif data == "":
@@ -110,10 +110,10 @@ class KVEditor(object):
     def getData(self):
         return self.data
 ###############################################################################
-    def updateData(self,data):
+    def updateData(self, data):
         self.data = data
 ###############################################################################
-    def setIntent(self,intent):
+    def setIntent(self, intent):
         if intent == "present":
             self.intent = intent
             self.editor.setIntent(intent)
@@ -128,7 +128,7 @@ class KVEditor(object):
     def getIntent(self):
         return self.intent
 ###############################################################################
-    def setPath(self,path):
+    def setPath(self, path):
         if not os.path.exists(path):
             self.detailedresults = "File path does not exist"
             self.logger.log(LogPriority.INFO,["KVEditor",self.detailedresults])
@@ -146,18 +146,26 @@ class KVEditor(object):
         else:
             return self.path
 ###############################################################################
-    def setTmpPath(self,tmpPath):
+    def setTmpPath(self, tmpPath):
         self.tmpPath = tmpPath
         return True
 ###############################################################################
     def getTmpPath(self):
         return self.tmpPath
 ###############################################################################
-    def setType(self,kvtype):
+    def setType(self, kvtype):
         '''implementer must use one of the following four strings to
         instantiate the corresponding class: tagconf,conf,plist,defaults'''
         self.kvtype = kvtype
         return True
+###############################################################################
+    def setConfigType(self, configType):
+        self.configType = configType
+        self.editor.setConfigType(configType)
+        return True
+###############################################################################
+    def getConfigType(self):
+        return self.configType
 ###############################################################################
     def validate(self):
         try:
@@ -310,7 +318,7 @@ class KVEditor(object):
             self.removeables = {}
             return retval
 ###############################################################################
-    def removekey(self,d, key):
+    def removekey(self, d, key):
         r = dict(d)
         del r[key]
         return r
