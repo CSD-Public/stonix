@@ -1,17 +1,41 @@
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
 '''
-Created on 07/01/2015
+This rule creates scripts to automatically log out bash and csh shells
+after 15 minutes.
 
-@author: eball
+@author: Eric Ball
+@change: 2015-07-01 eball Original implementation
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, createFile
+from ..stonixutilityfunctions import resetsecon, createFile, writeFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
 import traceback
 import os
+import re
 
 
 class ShellTimeout(Rule):
@@ -23,11 +47,14 @@ class ShellTimeout(Rule):
         self.rulename = "ShellTimeout"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''Configures DHCP functionality '''
+        self.helptext = '''This optional rule will set up shell scripts in \
+/etc/profile.d which will log a user out of a bash or csh login shell after \
+15 minutes of inactivity. This is not practical for systems which run X \
+Windows, as it will close terminal windows in the X environment.'''
         datatype = "bool"
         key = "SHELLTIMEOUT"
-        instructions = '''To disable this rule set the value of \
-        SHELLTIMEOUT to False.'''
+        instructions = "To disable this rule set the value of " + \
+                       "SHELLTIMEOUT to False."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -39,39 +66,57 @@ class ShellTimeout(Rule):
 
     def report(self):
         try:
-            #self.ph = Pkghelper(self.logger, self.environ)
-            self.path = "/etc/profile.d/tmout.sh"
+            self.path1 = "/etc/profile.d/tmout.sh"
             self.data1 = {"TMOUT": "900"}
-            self.data2 = {["readonly", "export"]: "TMOUT"}
+            self.data2 = {"readonly": "TMOUT", "export": "TMOUT"}
+            self.path2 = "/etc/profile.d/autologout.csh"
+            self.cshData = "set -r autologout 15"
             compliant = True
-            if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 755], self.logger) and \
-                   not checkPerms(self.path, [0, 0, 644], self.logger):
+            results = ""
+
+            if os.path.exists(self.path1):
+                # Shell scripts in profile.d do not require +x, so they can
+                # be either 0755 (493) or 0644 (420)
+                if not checkPerms(self.path1, [0, 0, 493], self.logger) and \
+                   not checkPerms(self.path1, [0, 0, 420], self.logger):
                     compliant = False
-                self.tmppath = self.path + ".tmp"
-                self.editor = KVEditorStonix(self.statechglogger,
-                                             self.logger, "conf",
-                                             self.path, self.tmppath,
-                                             self.data1, "present",
-                                             "closedeq")
-                if not self.editor.report():
+                    results += self.path1 + " permissions incorrect\n"
+                self.tmppath1 = self.path1 + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.path1, self.tmppath1,
+                                              self.data1, "present", "closedeq")
+                kveReport1 = self.editor1.report()
+                self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.path1, self.tmppath1,
+                                              self.data2, "present", "space")
+                kveReport2 = self.editor2.report()
+                if not kveReport1 or not kveReport2:
                     compliant = False
-                self.editor = KVEditorStonix(self.statechglogger,
-                                             self.logger, "conf",
-                                             self.path, self.tmppath,
-                                             self.data2, "present",
-                                             "space")
-                if not self.editor.report():
-                    compliant = False
+                    results += self.path1 + " does not contain the correct " + \
+                                            "values\n"
             else:
                 compliant = False
+                results += self.path1 + " does not exist\n"
+
+            if os.path.exists(self.path2):
+                if not checkPerms(self.path2, [0, 0, 493], self.logger) and \
+                   not checkPerms(self.path2, [0, 0, 420], self.logger):
+                    compliant = False
+                    results += self.path2 + " permissions incorrect\n"
+                if not re.search(self.cshData, self.path2):
+                    results += self.path2 + " does not contain the correct " + \
+                                            "values\n"
+            else:
+                compliant = False
+                results += self.path2 + " does not exist\n"
+
             self.compliant = compliant
             if self.compliant:
-                self.detailedresults = "SecureDHCP report has been run " + \
+                self.detailedresults = "ShellTimeout report has been run " + \
                     "and is compliant"
             else:
-                self.detailedresults = "SecureDHCP report has been run " + \
-                    "and is not compliant"
+                self.detailedresults = "ShellTimeout report has been run " + \
+                    "and is not compliant\n" + results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -88,63 +133,104 @@ class ShellTimeout(Rule):
             if not self.ci.getcurrvalue():
                 return
             success = True
+            results = ""
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if self.ph.check(self.package):
-                if not os.path.exists(self.path):
-                    createFile(self.path, self.logger)
-                    self.created = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.path}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.editor = KVEditorStonix(self.statechglogger,
-                                                 self.logger, "conf",
-                                                 self.path, self.tmppath,
-                                                 self.data1, "present",
-                                                 "space")
-                    self.editor.report()
-                    self.editor.setData(self.data2)
-                    self.editor.setIntent("notpresent")
-                    self.editor.report()
-                if self.editor.fixables or self.editor.removeables:
-                    if not self.created:
-                        if not checkPerms(self.path, [0, 0, 420], self.logger):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(self.path, [0, 0, 420],
-                                            self.logger, self.statechglogger,
-                                            myid):
-                                success = False
+
+            if not os.path.exists(self.path1):
+                createFile(self.path1, self.logger)
+                self.created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.path1}
+                self.statechglogger.recordchgevent(myid, event)
+                self.tmppath = self.path1 + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.path1, self.tmppath,
+                                              self.data1, "present", "closedeq")
+                self.editor1.report()
+                self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.path1, self.tmppath,
+                                              self.data2, "present", "space")
+                self.editor2.report()
+            if self.editor1.fixables or self.editor2.fixables:
+                if not self.created:
+                    if not checkPerms(self.path1, [0, 0, 493], self.logger) and \
+                       not checkPerms(self.path1, [0, 0, 420], self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        self.editor.setEventID(myid)
-                    if self.editor.fix():
-                        if self.editor.commit():
-                            debug = self.path + "'s contents have been " + \
-                                "corrected\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            os.chown(self.path, 0, 0)
-                            os.chmod(self.path, 420)
-                            resetsecon(self.path)
-                        else:
-                            debug = "kveditor commit not successful\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
+                        if not setPerms(self.path1, [0, 0, 420],
+                                        self.logger, self.statechglogger, myid):
                             success = False
+                            results += "Could not set permissions for " + \
+                                       self.path1 + "\n"
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor1.setEventID(myid)
+                if self.editor1.fix():
+                    if self.editor1.commit():
+                        debug = self.path1 + "'s contents have been " + \
+                            "corrected\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        resetsecon(self.path1)
                     else:
-                        debug = "kveditor fix not successful\n"
+                        debug = "kveditor commit not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
+                        results += self.path1 + " properties could not be set\n"
+                else:
+                    debug = "kveditor fix not successful\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+                    results += self.path1 + " properties could not be set\n"
+                if self.editor2.fix():
+                    if self.editor2.commit():
+                        debug = self.path1 + "'s contents have been " + \
+                            "corrected\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        resetsecon(self.path1)
+                    else:
+                        debug = "kveditor commit not successful\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                        results += self.path1 + " properties could not be set\n"
+                else:
+                    debug = "kveditor fix not successful\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+                    results += self.path1 + " properties could not be set\n"
+
+            if not os.path.exists(self.path2):
+                createFile(self.path2, self.logger)
+                self.created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.path2}
+                self.statechglogger.recordchgevent(myid, event)
+                writeFile(self.path2, self.cshData, self.logger)
+            else:
+                if not checkPerms(self.path2, [0, 0, 493], self.logger) and \
+                   not checkPerms(self.path2, [0, 0, 420], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.path2, [0, 0, 420],
+                                    self.logger, self.statechglogger, myid):
+                        success = False
+                        results += "Could not set permissions for " + \
+                                   self.path2 + "\n"
+            
+
             self.rulesuccess = success
             if self.rulesuccess:
-                self.detailedresults = "SecureDHCP fix has been run to " + \
+                self.detailedresults = "ShellTimeout fix has been run to " + \
                     "completion"
             else:
-                self.detailedresults = "SecureDHCP fix has been run " + \
-                    "but not to completion"
+                self.detailedresults = "ShellTimeout fix was unsuccessful\n" \
+                                       + self.results
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
