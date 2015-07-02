@@ -29,8 +29,6 @@ This is a Unit Test for Rule ShellTimeout
 '''
 from __future__ import absolute_import
 import unittest
-import sys
-sys.path.append("../../..")
 from stonix_resources.stonixutilityfunctions import setPerms
 from stonix_resources.RuleTestTemplate import RuleTest
 from stonix_resources.CommandHelper import CommandHelper
@@ -63,8 +61,17 @@ class zzzTestRuleShellTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: Eric Ball
         '''
+        datatype = "bool"
+        key = "SHELLTIMEOUT"
+        instructions = "To disable this rule set the value of " + \
+                       "SHELLTIMEOUT to False."
+        default = True
+        self.rule.ci = self.rule.initCi(datatype, key, instructions, default)
+        
         cmd = ["/bin/rm", "-f", "/etc/profile.d/tmout.sh"]
         success = self.ch.executeCommand(cmd)
+        cmd = ["/bin/rm", "-f", "/etc/profile.d/autologout.csh"]
+        success &= self.ch.executeCommand(cmd)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
