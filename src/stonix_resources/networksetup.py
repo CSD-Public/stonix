@@ -27,10 +27,10 @@ This objects encapsulates the complexities of the networksetup command on OS X
 @change: 2015/05/07 ekkehard Original Implementation
 '''
 import re
-import CommandHelper
-from .localize import PROXYSERVER
-from .localize import PROXYPORT
+import types
+from .localize import PROXY
 from .localize import PROXYCONFIGURATIONFILE
+from .CommandHelper import CommandHelper
 
 
 class networksetup():
@@ -51,13 +51,93 @@ class networksetup():
         self.nsInitialized = False
         self.nso = {}
         self.nsInitialized = False
+        self.resultReset()
         self.nsc = "/usr/sbin/networksetup"
-        self.ps = PROXYSERVER
-        self.pp = PROXYPORT
+        fullproxy = PROXY
+        self.ps = fullproxy.sp(":")[0]
+        self.pp = fullproxy.sp(":")[1]
         self.pf = PROXYCONFIGURATIONFILE
         self.ch = CommandHelper()
         self.getLocation()
         self.updateCurrentNetworkConfigurationDictionary()
+
+###############################################################################
+
+    def report(self):
+        compliant = True
+        for key in sorted(self.nso):
+            network = self.nso[key]
+            networkvalues = self.ns[network]
+            networkname = networkvalues["name"]
+            networktype = networkvalues["type"]
+            networkenabled = networkvalues["enabled"]
+            if networktype == "bluetooth" and networkenabled:
+                compliant = False
+                networkvalues["compliant"] = False
+            elif networktype == "wi-fi" and networkenabled and \
+            not self.locationIsValidWiFiLocation:
+                compliant = False
+                networkvalues["compliant"] = False
+            else:
+                networkvalues["compliant"] = True
+            if networkvalues["compliant"]:
+                messagestring = str(networkname) + " is compliant " + \
+                ": " + str(networkvalues)
+            else:
+                messagestring = str(networkname) + " is NOT " + \
+                "compliant : " + str(networkvalues)
+            self.resultAppend(str(key) + " - " + messagestring)
+        return compliant
+
+###############################################################################
+
+    def fix(self):
+        fixed = True
+        messagestring = "for location = " + str(self.location)
+        for key in sorted(self.nso):
+            network = self.nso[key]
+            networkvalues = self.ns[network]
+            networkname = networkvalues["name"]
+            networktype = networkvalues["type"]
+            networkenabled = networkvalues["enabled"]
+            if networktype == "bluetooth" and networkenabled:
+                fixedWorked = self.disableNetworkService(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    fixed = False
+            elif networktype == "wi-fi" and networkenabled and \
+            not self.locationIsValidWiFiLocation:
+                fixedWorked = self.disableNetworkService(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    fixed = False
+            elif networktype == "wi-fi" and not networkenabled and \
+            self.locationIsValidWiFiLocation:
+                fixedWorked = self.enableNetwork(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    fixed = False
+            else:
+                networkvalues["compliant"] = True
+                messagestring = ""
+            if not messagestring == "":
+                messagestring = self.detailedresults + '\n' + \
+                str(key) + " - " + messagestring
+        return fixed
+
+###############################################################################
+
+    def getDetailedresults(self):
+        return self.detailedresults
 
 ###############################################################################
 
@@ -267,3 +347,50 @@ class networksetup():
             success = False
             raise
         return success
+
+###############################################################################
+
+    def resultAppend(self, pMessage=""):
+        '''
+        reset the current kveditor values to their defaults.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: kveditorName is essential
+        '''
+        datatype = type(pMessage)
+        if datatype == types.StringType:
+            if not (pMessage == ""):
+                messagestring = pMessage
+                if (self.detailedresults == ""):
+                    self.detailedresults = messagestring
+                else:
+                    self.detailedresults = self.detailedresults + "\n" + \
+                    messagestring
+        elif datatype == types.ListType:
+            if not (pMessage == []):
+                for item in pMessage:
+                    messagestring = item
+                    if (self.detailedresults == ""):
+                        self.detailedresults = messagestring
+                    else:
+                        self.detailedresults = self.detailedresults + "\n" + \
+                        messagestring
+        else:
+            raise TypeError("pMessage with value" + str(pMessage) + \
+                            "is of type " + str(datatype) + " not of " + \
+                            "type " + str(types.StringType) + \
+                            " or type " + str(types.ListType) + \
+                            " as expected!")
+
+###############################################################################
+
+    def resultReset(self):
+        '''
+        reset the current kveditor values to their defaults.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: kveditorName is essential
+        '''
+        self.detailedresults = ""
