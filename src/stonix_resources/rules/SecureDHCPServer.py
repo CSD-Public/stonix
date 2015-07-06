@@ -5,13 +5,14 @@ Created on Apr 22, 2015
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, createFile
+from ..stonixutilityfunctions import resetsecon, createFile, readFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
 import traceback
 import os
+import re
 
 
 class SecureDHCPServer(Rule):
@@ -53,34 +54,51 @@ class SecureDHCPServer(Rule):
                                      "ntp-servers",
                                      "routers",
                                      "time-offset"]}
+            self.data2 = ["domain-name;",
+                          "domain-name-servers;",
+                          "nis-domain;",
+                          "nis-servers;",
+                          "ntp-servers;",
+                          "routers;",
+                          "time-offset;"]
             if self.ph.manager == "zypper":
-                self.package = "dhcp-server"
+#                 self.package = "dhcp-server"
                 self.path = "/etc/dhcpd.conf"
             elif self.ph.manager == "yum":
-                self.package = "dhcp"
+                #self.package = "dhcp"
                 self.path = "/etc/dhcp/dhcpd.conf"
             elif self.ph.manager == "apt-get":
-                self.package = "isc-dhcp-server"
+                #self.package = "isc-dhcp-server"
                 self.path = "/etc/dhcp/dhcpd.conf"
             compliant = True
-            if self.ph.check(self.package):
-                if os.path.exists(self.path):
-                    if not checkPerms(self.path, [0, 0, 420], self.logger):
-                        compliant = False
-                    self.tmppath = self.path + ".tmp"
-                    self.editor = KVEditorStonix(self.statechglogger,
-                                                 self.logger, "conf",
-                                                 self.path, self.tmppath,
-                                                 self.data1, "present",
-                                                 "space")
-                    if not self.editor.report():
-                        compliant = False
-                    self.editor.setData(self.data2)
-                    self.editor.setIntent("notpresent")
-                    if not self.editor.report():
-                        compliant = False
-                else:
+            #if self.ph.check(self.package):
+            if os.path.exists(self.path):
+                if not checkPerms(self.path, [0, 0, 420], self.logger):
                     compliant = False
+                self.tmppath = self.path + ".tmp"
+                self.editor = KVEditorStonix(self.statechglogger,
+                                             self.logger, "conf",
+                                             self.path, self.tmppath,
+                                             self.data1, "present",
+                                             "space")
+                if not self.editor.report():
+                    compliant = False
+                contents = readFile(self.path)
+                for line in contents:
+                    if re.match('^#', line) or re.match(r'^\s*$', line):
+                        continue
+                    if re.search("^option", line):
+                        line = line.split()
+                        if len(line) >= 2:
+                            for item in self.data2:
+                                if re.search(item, line[1]):
+                                    compliant = False
+#                 self.editor.setData(self.data2)
+#                 self.editor.setIntent("notpresent")
+#                 if not self.editor.report():
+#                     compliant = False
+            else:
+                compliant = False
             self.compliant = compliant
             if self.compliant:
                 self.detailedresults = "SecureDHCP report has been run " + \
