@@ -24,39 +24,49 @@
 Created on Mar 2, 2015
 
 @author: dwalker
-@change: 2015/04/15 dkennel updated for new isApplicable
 '''
+
 from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
+import unittest
+from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.rules.EncryptSwap import EncryptSwap
 
+class zzzTestRuleEncryptSwap(RuleTest):
 
-class EncryptSwap(RuleKVEditor):
-    '''
-    This rule is a user-context only rule meaning, if stonix is run as root
-    this rule should not show up in the GUI or be able to be run through the
-    CLI.  In addition, when this rule is being run in user context, there
-    is no undo.
-    '''
-    def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
-        self.logger = logger
-        self.rulenumber = 97
-        self.formatDetailedResults("initialize")
-        self.mandatory = True
-        self.rulename = "EncryptSwap"
-        self.helptext = "Passwords and other sensitive information can be " + \
-        "extracted from insecure virtual memory. This rule secures " + \
-        "virtual memory."
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.addKVEditor("swapEncrypt",
-                         "defaults",
-                         "/Library/Preferences/com.apple.virtualMemory",
-                         "",
-                         {"UseEncryptedSwap": ["1", "-bool yes"]},
-                          "present",
-                          "",
-                          "Secure Virtual memory.",
-                          None,
-                          False,
-                          {})
+    def setUp(self):
+        RuleTest.setUp(self)
+        self.rule = EncryptSwap(self.config,
+                                  self.environ,
+                                  self.logdispatch,
+                                  self.statechglogger)
+        self.rulename = self.rule.rulename
+        self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
+        
+    def tearDown(self):
+        pass
+
+    def runTest(self):
+        self.simpleRuleTest()
+
+    def setConditionsForRule(self):
+        '''
+        This method runs the following command to make sure system is in a 
+        non compliant state before rule runs:
+        sudo defaults write /Library/Preferences/com.apple.virtualMemory 
+        UseEncryptedSwap -bool no
+        @author: dwalker
+        @return: bool - True if successful, False if not
+        '''
+        cmd = ["/usr/bin/defaults", "write", 
+               "/Library/Preferences/com.apple.virtualMemory", "-bool", "no"]
+        if self.ch.executeCommand(cmd):
+            return True
+        else:
+            return False
+
+if __name__ == "__main__":
+    #import sys;sys.argv = ['', 'Test.testName']
+    unittest.main()
