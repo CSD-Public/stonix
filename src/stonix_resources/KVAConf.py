@@ -122,6 +122,13 @@ class KVAConf():
         '''
         return self.intent
 ###############################################################################
+    def setConfigType(self, configType):
+        self.configType = configType
+        return True
+###############################################################################
+    def getConfigType(self):
+        return self.configType
+###############################################################################
     def validate(self, key, val):
         '''Private outer method to call submethod getOpenClosedValue() or
         getSpaceValue() depending on the value of self.configType.
