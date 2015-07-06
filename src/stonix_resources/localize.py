@@ -121,6 +121,7 @@ STONIXDEVS = 'stonix-dev@bar.com'
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
 PROXY = 'http://foo.bar.com:8080'
+PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'
@@ -253,8 +254,3 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
-
-## Proxy setting
-PROXYSERVER = "foo.bar.com"
-PROXYPORT = "8080"
-PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
