@@ -1,0 +1,187 @@
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
+'''
+This rule restricts mounting rights and options.
+
+@author: Eric Ball
+@change: 2015-07-06 eball Original implementation
+'''
+from __future__ import absolute_import
+import os
+import re
+import traceback
+from ..stonixutilityfunctions import iterate, resetsecon
+from ..stonixutilityfunctions import createFile, writeFile, readFile
+from ..rule import Rule
+from ..logdispatcher import LogPriority
+from ..CommandHelper import CommandHelper
+from ..KVEditorStonix import KVEditorStonix
+from ..pkghelper import Pkghelper
+from ..ServiceHelper import ServiceHelper
+
+
+class RestrictMounting(Rule):
+
+    def __init__(self, config, enviro, logger, statechglogger):
+        Rule.__init__(self, config, enviro, logger, statechglogger)
+        self.logger = logger
+        self.rulenumber = 112
+        self.rulename = "RestrictMounting"
+        self.formatDetailedResults("initialize")
+        self.mandatory = False
+        self.helptext = '''This optional rule can be used to restrict access \
+and permissions related to disk mounts.\n\nRESTRICTCONSOLEACCESS will restrict \
+device ownership for console users to root only.\nDISABLEAUTOFS disables the \
+autofs service, which is used to dynamically mount NFS filesystems. Even if \
+NFS in needed, NFS filesystems can usually be statically mounted through 
+/etc/fstab.\nDISABLEGNOMEAUTOMOUNT will restrict the gnome-volume-manager \
+(part of the GNOME Desktop Environment) from automatically mounting devices \
+and media.'''
+        
+        # Configuration item instantiation
+        datatype = "bool"
+        key = "RESTRICTCONSOLEACCESS"
+        instructions = "To restrict console device access, set " + \
+                       "RESTRICTCONSOLEACCESS to True."
+        default = False
+        self.consoleCi = self.initCi(datatype, key, instructions, default)
+        
+        datatype = "bool"
+        key = "DISABLEAUTOFS"
+        instructions = "To disable dynamic NFS mounting through the " + \
+                       "autofs service, set DISABLEAUTOFS to True."
+        default = False
+        self.autofsCi = self.initCi(datatype, key, instructions, default)
+        
+        datatype = "bool"
+        key = "DISABLEGNOMEAUTOMOUNT"
+        instructions = "To disable the GNOME desktop environment from " + \
+                       "automounting devices and removable media, set " + \
+                       "DISABLEGNOMEAUTOMOUNT to True."
+        default = False
+        self.gnomeCi = self.initCi(datatype, key, instructions, default)
+
+        self.guidance = ["NSA 2.2.2.1", "NSA 2.2.2.3", "NSA 2.2.2.4",
+                         "CCE 3685-5", "CCE 4072-5", "CCE 4231-7"]
+        self.applicable = {"type": "white",
+                           "family": ["linux"]}
+        self.iditerator = 0
+        self.created = False
+
+    def report(self):
+        try:
+            self.path1 = "/etc/security/console.perms.d/50-default.perms"
+            self.path2 = "/etc/security/console.perms"
+            self.data = {"<console>": 
+                         "tty[0-9][0-9]* vc/[0-9][0-9]* :0\.[0-9] :0",
+                         "<xconsole>": "0\.[0-9] :0"}
+            self.ph = Pkghelper(self.logdispatch, self.environ)
+            self.sh = ServiceHelper(self.environ, self.logdispatch)
+            self.sh.setService("autofs")
+            self.ch = CommandHelper(self.logdispatch)
+            compliant = True
+            results = ""
+
+            if os.path.exists(self.path1):
+                defaultPerms = readFile(self.path1, self.logger)
+                for line in defaultPerms:
+                    if re.search("^<[x]?console>", line, re.M):
+                        compliant = False
+                        results += self.path1 + " contains " + \
+                        "unrestricted device access\n"
+                        break
+
+            if os.path.exists(self.path2):
+                self.tmppath = self.path2 + ".tmp"
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path2, self.tmppath,
+                                             self.data, "present", "closedeq")
+                kveReport = self.editor.report()
+                if not kveReport:
+                    compliant = False
+                    results += self.path2 + " does not contain " \
+                    + "the correct values\n"
+
+            if self.ph.check("autofs"):
+                if self.sh.auditservice("autofs"):
+                    compliant = False
+                    results += "autofs is installed and enabled\n"
+
+            cmd = ["gconftool-2", "-R", "/desktop/gnome/volume_manager"]
+            self.ch.executeCommand(cmd)
+            gconf = self.ch.getOutputString()
+            if not re.findall("automount[media|drives]+ = false", gconf):
+                compliant = False
+                results += "GNOME automounting is not disabled\n"
+
+            self.compliant = compliant
+            if self.compliant:
+                self.detailedresults = "RestrictMounting report has been " + \
+                    "run and is compliant"
+            else:
+                self.detailedresults += "RestrictMounting report has been " + \
+                    "run and is not compliant\n" + results
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
+
+    def fix(self):
+        try:
+            if not self.ci.getcurrvalue():
+                return
+            success = True
+            results = ""
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+
+            if os.path.exists(self.path1):
+                defaultPerms = open(self.path1, "r").read()
+                re.sub("^(<[x]?console>)", r"#\0", defaultPerms, re.M)
+
+            self.rulesuccess = success
+            if self.rulesuccess:
+                self.detailedresults = "RestrictMounting fix has been run " + \
+                                       "to completion"
+            else:
+                self.detailedresults = "RestrictMounting fix was unsuccessful\n" \
+                                       + self.results
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
