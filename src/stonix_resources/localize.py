@@ -121,6 +121,7 @@ STONIXDEVS = 'stonix-dev@bar.com'
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
 PROXY = 'http://foo.bar.com:8080'
+PROXYCONFIGURATIONFILE = "http://xxx.lanl.gov/xxx.dat"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'
@@ -250,7 +251,6 @@ DRREPORTAVAILABLE = "This Rule does not support report."
 DRUNDOSUCCESSFUL = "Revert was completed successfully."
 DRUNDOFAILED = "The revert for this Rule failed."
 DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
-<<<<<<< HEAD
 
 ## Insert gatekeeper profile UUID here
 GATEKEEPER = "00000000-0000-0000-0000-000000000000"
@@ -258,21 +258,5 @@ GATEKEEPER = "00000000-0000-0000-0000-000000000000"
 LOGSVR = "@@log.foo.com"
 LOGROTATE = "700.lanl.logrotate"
 
-## Proxy setting
-PROXYSERVER = "xxx.xxx.xxx"
-PROXYPORT = "00"
-PROXYCONFIGURATIONFILE = "http://xxx.xxx.xxx/xxx.xxx"
-=======
-GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
-
-## Proxy setting
-PROXYSERVER = "foo.bar.com"
-PROXYPORT = "8080"
-<<<<<<< HEAD
-PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
->>>>>>> origin/develop
-=======
-PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
->>>>>>> origin/develop
