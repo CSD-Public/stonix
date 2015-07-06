@@ -65,15 +65,7 @@ class ConfigureNetworks(RuleKVEditor):
         self.guidance = []
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.location = ""
-        self.locationIsValidWiFiLocation = False
-        self.locationInitialized = False
-        self.ns = {}
-        self.nsInitialized = False
-        self.nso = {}
         self.nsobject = networksetup()
-        self.nsInitialized = False
-        self.nsc = "/usr/sbin/networksetup"
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.addKVEditor("DisableBluetoothUserInterface",
@@ -109,14 +101,6 @@ class ConfigureNetworks(RuleKVEditor):
             if compliant:
                 compliant = self.nsobject.updateCurrentNetworkConfigurationDictionary()
             if compliant:
-                if self.locationIsValidWiFiLocation:
-                    self.resultAppend("WiFi Network Setup for " + \
-                                      "services for location named " + \
-                                      str(self.location))
-                else:
-                    self.resultAppend("Non-WiFi Network Setup for " + \
-                                      "services for location named " + \
-                                      str(self.location))
                 compliant = self.nsobject.report()
                 self.resultAppend(self.nsobject.getDetailedresults())
             self.compliant = compliant and kvcompliant

@@ -65,6 +65,14 @@ class networksetup():
 
     def report(self):
         compliant = True
+        if self.locationIsValidWiFiLocation:
+            self.resultAppend("WiFi Network Setup for " + \
+                              "services for location named " + \
+                              str(self.location))
+        else:
+            self.resultAppend("Non-WiFi Network Setup for " + \
+                              "services for location named " + \
+                              str(self.location))
         for key in sorted(self.nso):
             network = self.nso[key]
             networkvalues = self.ns[network]
