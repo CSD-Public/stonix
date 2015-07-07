@@ -31,7 +31,7 @@ import os
 import re
 import traceback
 from ..stonixutilityfunctions import iterate, resetsecon
-from ..stonixutilityfunctions import createFile, writeFile, readFile
+from ..stonixutilityfunctions import writeFile, readFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
@@ -50,7 +50,7 @@ class RestrictMounting(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.helptext = '''This optional rule can be used to restrict access \
-and permissions related to disk mounts.\n\nRESTRICTCONSOLEACCESS will restrict \
+and permissions related to disk mounts.\nRESTRICTCONSOLEACCESS will restrict \
 device ownership for console users to root only.\nDISABLEAUTOFS disables the \
 autofs service, which is used to dynamically mount NFS filesystems. Even if \
 NFS in needed, NFS filesystems can usually be statically mounted through 
@@ -66,19 +66,15 @@ and media.'''
         default = False
         self.consoleCi = self.initCi(datatype, key, instructions, default)
         
-        datatype = "bool"
         key = "DISABLEAUTOFS"
         instructions = "To disable dynamic NFS mounting through the " + \
                        "autofs service, set DISABLEAUTOFS to True."
-        default = False
         self.autofsCi = self.initCi(datatype, key, instructions, default)
         
-        datatype = "bool"
         key = "DISABLEGNOMEAUTOMOUNT"
         instructions = "To disable the GNOME desktop environment from " + \
                        "automounting devices and removable media, set " + \
                        "DISABLEGNOMEAUTOMOUNT to True."
-        default = False
         self.gnomeCi = self.initCi(datatype, key, instructions, default)
 
         self.guidance = ["NSA 2.2.2.1", "NSA 2.2.2.3", "NSA 2.2.2.4",
@@ -86,7 +82,6 @@ and media.'''
         self.applicable = {"type": "white",
                            "family": ["linux"]}
         self.iditerator = 0
-        self.created = False
 
     def report(self):
         try:
@@ -97,7 +92,6 @@ and media.'''
                          "<xconsole>": "0\.[0-9] :0"}
             self.ph = Pkghelper(self.logdispatch, self.environ)
             self.sh = ServiceHelper(self.environ, self.logdispatch)
-            self.sh.setService("autofs")
             self.ch = CommandHelper(self.logdispatch)
             compliant = True
             results = ""
@@ -130,7 +124,7 @@ and media.'''
             cmd = ["gconftool-2", "-R", "/desktop/gnome/volume_manager"]
             self.ch.executeCommand(cmd)
             gconf = self.ch.getOutputString()
-            if not re.findall("automount[media|drives]+ = false", gconf):
+            if len(re.findall("automount_[media|drives]+ = false", gconf)) < 2:
                 compliant = False
                 results += "GNOME automounting is not disabled\n"
 
@@ -154,7 +148,9 @@ and media.'''
 
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
+            if not self.consoleCi.getcurrvalue() and \
+               not self.autofsCi.getcurrvalue() and \
+               not self.gnomeCi.getcurrvalue():
                 return
             success = True
             results = ""
@@ -163,14 +159,85 @@ and media.'''
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if os.path.exists(self.path1):
-                defaultPerms = open(self.path1, "r").read()
-                re.sub("^(<[x]?console>)", r"#\0", defaultPerms, re.M)
+            if self.consoleCi.getcurrvalue():
+                if os.path.exists(self.path1):
+                    tmpfile = self.path1 + ".tmp"
+                    defaultPerms = open(self.path1, "r").read()
+                    defaultPerms = re.sub("(<[x]?console>)", r"#\1",
+                                          defaultPerms)
+                    if writeFile(tmpfile, defaultPerms, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf", "filepath": self.path1}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.path1,
+                                                             tmpfile, myid)
+                        os.rename(tmpfile, self.path1)
+                        resetsecon(self.path1)
+                    else:
+                        success = False
+                        results += "Problem writing new contents to " + \
+                                   "temporary file"
+                if os.path.exists(self.path2):
+                    self.tmppath = self.path2 + ".tmp"
+                    self.editor = KVEditorStonix(self.statechglogger, 
+                                                 self.logger,
+                                                 "conf", self.path2,
+                                                 self.tmppath,
+                                                 self.data, "present",
+                                                 "closedeq")
+                    self.editor.report()
+                    if self.editor.fixables:
+                        if self.editor.fix():
+                            if self.editor.commit():
+                                debug = self.path2 + "'s contents have been " \
+                                        + "corrected\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                resetsecon(self.path2)
+                            else:
+                                debug = "kveditor commit not successful\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                success = False
+                                results += self.path2 + \
+                                           " properties could not be set\n"
+                        else:
+                            debug = "kveditor fix not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                            results += self.path2 + \
+                                       " properties could not be set\n"
+
+            if self.autofsCi.getcurrvalue():
+                if self.ph.check("autofs"):
+                    if self.sh.disableservice("autofs"):
+                        debug = "autofs service successfully disabled\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    else:
+                        success = False
+                        debug = "Unable to disable autofs service\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+
+            if self.gnomeCi.getcurrvalue():
+                cmd = ["gconftool-2", "--direct", "--config-source",
+                       "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
+                       "--type", "bool", "--set",
+                       "/desktop/gnome/volume_manager/automount_media",
+                       "false"]
+                cmdSuccess = self.ch.executeCommand(cmd)
+                cmd = ["gconftool-2", "--direct", "--config-source",
+                       "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
+                       "--type", "bool", "--set",
+                       "/desktop/gnome/volume_manager/automount_drives",
+                       "false"]
+                cmdSuccess &= self.ch.executeCommand(cmd)
+                if not cmdSuccess:
+                    success = False
+                    results += "Fix failed to disable GNOME automouting\n"
 
             self.rulesuccess = success
             if self.rulesuccess:
                 self.detailedresults = "RestrictMounting fix has been run " + \
-                                       "to completion"
+                                       "to completion\n"
             else:
                 self.detailedresults = "RestrictMounting fix was unsuccessful\n" \
                                        + self.results
