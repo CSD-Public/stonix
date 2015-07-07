@@ -21,8 +21,6 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-from src.stonix_resources.pkghelper import Pkghelper
-from src.stonix_resources.stonixutilityfunctions import readFile
 '''
 This is a Unit Test for Rule RestrictMounting
 
