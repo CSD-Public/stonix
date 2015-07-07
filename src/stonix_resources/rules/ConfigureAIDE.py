@@ -62,17 +62,17 @@ class ConfigureAIDE(Rule):
         self.rulenumber = 110
         self.rulename = 'ConfigureAIDE'
         self.formatDetailedResults("initialize")
-        self.helptext = '''Install and configure Advanced Intrusion Detection
-        Environment (AIDE). This rule is optional and will install and
-        configure AIDE when it is run.'''
+        self.helptext = 'Install and configure Advanced Intrusion Detection ' + \
+'Environment (AIDE). This rule is optional and will install and configure AIDE ' + \
+'when it is run.'
         self.guidance = ['NSA(2.1.3)', 'cce-4209-3']
 
         # init CIs
         datatype = 'bool'
         key = 'configureaide'
-        instructions = '''If set to yes or true the CONFIGUREAIDE variable
-        will install, if necessary and configure the Advanced Intrustion
-        Detection Environment on this system.'''
+        instructions = 'If you set the ConfigureAIDE variable to yes, or true, ' + \
+'ConfigureAIDE will install and set up the Advanced Intrusion ' + \
+'Detection Environment on this system.'
         default = False
         self.applicable = {'type': 'white',
                            'family': ['linux']}
@@ -103,7 +103,7 @@ class ConfigureAIDE(Rule):
         try:
             self.ph = Pkghelper(self.logger, self.environ)
             self.ch = CommandHelper(self.logger)
-            compliant = True
+            self.compliant = True
             self.detailedresults = ""
 
             # is aide installed?
@@ -118,7 +118,7 @@ class ConfigureAIDE(Rule):
                 else:
                     self.detailedresults += "Could not locate path to " + \
                         "aide executable\n"
-                    compliant = False
+                    self.compliant = False
 
                 # does the system have a crontab?
                 if os.path.exists('/etc/crontab'):
@@ -141,29 +141,20 @@ class ConfigureAIDE(Rule):
                     if not found:
                         self.detailedresults += "Didn't find the aide job " + \
                             "in the crontab\n"
-                        compliant = False
+                        self.compliant = False
                 # if the system does not have a crontab, do not attempt to
                 # proceed
                 else:
                     self.detailedresults += "Could not locate the system " + \
                         "crontab"
-                    compliant = False
+                    self.compliant = False
             else:
                 self.detailedresults += "Aide is not installed\n"
-                compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "ConfigureAIDE rule has been run " + \
-                    "and is compliant\n"
-            else:
                 self.compliant = False
-                self.detailedresults += "ConfigureAIDE rule has been run " + \
-                    "and is not compliant\n"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
@@ -183,8 +174,13 @@ class ConfigureAIDE(Rule):
         @change: dwalker - various bug fixes, added event deletions in fix
         '''
         try:
+            self.detailedresults = ""
             if not self.ci.getcurrvalue():
-                return
+                self.rulesuccess = True
+                self.formatDetailedResults("disabled", self.rulesuccess,
+                                   self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
 
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
@@ -194,7 +190,6 @@ class ConfigureAIDE(Rule):
             aidepath = ''
             newaidedb = ''
             aidedb = ''
-            self.detailedresults = ""
 
             if not self.ph.check("aide"):
                 if not self.ph.checkAvailable("aide"):

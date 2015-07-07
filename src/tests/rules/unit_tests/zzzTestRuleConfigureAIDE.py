@@ -61,6 +61,7 @@ class zzzTestRuleConfigureAIDE(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        self.rule.ci.updatecurrvalue(True)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
