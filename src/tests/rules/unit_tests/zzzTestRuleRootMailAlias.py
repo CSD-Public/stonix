@@ -36,6 +36,8 @@ from src.stonix_resources.rules.RootMailAlias import RootMailAlias
 import re
 from src.stonix_resources.stonixutilityfunctions import readFile, writeFile
 import os
+
+
 class zzzTestRuleRootMailAlias(RuleTest):
 
     def setUp(self):
@@ -77,6 +79,7 @@ class zzzTestRuleRootMailAlias(RuleTest):
         #set incorrect permissions
         os.chown(aliasfile, 8, 8)
         os.chmod(aliasfile, 500)
+        self.rule.ci2.updatecurrvalue('bemalmbe@lanl.gov')
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
