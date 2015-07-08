@@ -214,7 +214,10 @@ and media.'''
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        commandstring = 
+                        event = {"eventtype": "servicehelper", "servicename":
+                                 "autofs", "startstate": "enabled",
+                                 "endstate": "disabled"}
+                        self.statechglogger.recordchgevent(myid, event)
                     else:
                         success = False
                         debug = "Unable to disable autofs service\n"
