@@ -64,9 +64,12 @@ class SecureNFS(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        ''''''
+        '''
+        '''
+
         try:
-            compliant = True
+            self.detailedresults = ""
+            self.compliant = True
             if self.environ.getosfamily() == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
 
@@ -76,6 +79,13 @@ class SecureNFS(Rule):
                 data1 = {"nfs.lockd.port": "",
                          "nfs.lockd.tcp": "1",
                          "nfs.lockd.udp": "1"}
+                if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                    self.compliant = True
+                    self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO,
+                                         self.detailedresults)
+                    return self.compliant
             elif self.ph.manager in ("yum", "zypper"):
                 nfsfile = "/etc/sysconfig/nfs"
                 data1 = {"LOCKD_TCPPORT": "32803",
@@ -86,6 +96,8 @@ class SecureNFS(Rule):
                          "STATD_OUTGOING_PORT": "2020"}
                 if self.ph.manager == "zypper":
                     nfspackage = "nfs-kernel-server"
+                elif self.ph.manager == "yum":
+                    nfspackage = "nfs-utils"
             elif self.ph.manager == "apt-get":
                 nfsfile = "/etc/services"
                 data1 = {"rpc.lockd": ["32803/tcp",
@@ -100,11 +112,14 @@ class SecureNFS(Rule):
                                           "2020/udp"]}
                 nfspackage = "nfs-kernel-server"
             if self.environ.getostype() != "Mac OS X":
-                if self.ph.manager in ("apt-get", "zypper"):
+                if self.ph.manager in ("apt-get", "zypper", "yum"):
                     if not self.ph.check(nfspackage):
-                        debug = "nfs is not installed"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
+                        self.compliant = True
+                        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+                        self.logdispatch.log(LogPriority.INFO,
+                                             self.detailedresults)
+                        return self.compliant
             if os.path.exists(nfsfile):
                 nfstemp = nfsfile + ".tmp"
                 if self.environ.getostype() == "Mac OS X":
@@ -123,17 +138,17 @@ class SecureNFS(Rule):
                                                   nfstemp, data1, "present",
                                                   "space")
                 if not self.editor1.report():
-                    debug = "report for editor1 is not compliant"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
+                    self.detailedresults += "\nreport for editor1 is not compliant"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    self.compliant = False
                 if not checkPerms(nfsfile, [0, 0, 420], self.logger):
-                    debug = "permissions aren't correct on " + nfsfile
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
+                    self.detailedresults += "\npermissions aren't correct on " + nfsfile
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    self.compliant = False
             else:
-                debug = nfsfile + " doesn't exist"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
+                self.detailedresults += "\n" + nfsfile + " doesn't exist"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                self.compliant = False
 
             export = "/etc/exports"
             if os.path.exists(export):
@@ -145,23 +160,21 @@ class SecureNFS(Rule):
                                               "conf", export, extemp, data2,
                                               "notpresent", "space")
                 if not self.editor2.report():
-                    debug = "editor2 report is not compliant"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
+                    self.detailedresults += "\neditor2 report is not compliant"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    self.compliant = False
                 if not checkPerms(export, [0, 0, 420], self.logger):
-                    debug = export + " file doesn't have the correct " + \
+                    self.detailedresults += "\n" + export + " file doesn't have the correct " + \
                         " permissions"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    self.compliant = False
             else:
-                debug = export + " file doesn't exist"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
-            self.compliant = compliant
+                self.detailedresults += "\n" + export + " file doesn't exist"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                self.compliant = False
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
@@ -172,9 +185,14 @@ class SecureNFS(Rule):
 ###############################################################################
 
     def fix(self):
+        '''
+        '''
+
         try:
             if not self.ci.getcurrvalue():
-                return
+                self.rulesuccess = True
+                return self.rulesuccess
+
             self.detailedresults = ""
 
             #clear out event history so only the latest fix is recorded
@@ -202,6 +220,8 @@ class SecureNFS(Rule):
                 nfsservice = "nfs"
                 if self.ph.manager == "zypper":
                     nfspackage = "nfs-kernel-server"
+                elif self.ph.manager == "yum":
+                    nfspackage = "nfs-utils"
             elif self.ph.manager == "apt-get":
                 nfsservice = "nfs-kernel-server"
                 nfspackage = "nfs-kernel-server"
@@ -219,29 +239,23 @@ class SecureNFS(Rule):
             if self.environ.getostype() != "Mac OS X":
                 if self.ph.manager in ("apt-get", "zypper"):
                     if not self.ph.check(nfspackage):
-                        if not self.ph.checkAvailable(nfspackage):
-                            debug = "nfs isn't available for install on " + \
-                                "this system\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            success = False
-                        else:
-                            if not self.ph.install(nfspackage):
-                                debug = "installation of nfs unsuccessful\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                success = False
-                            else:
-                                event = {"eventtype": "commandstring",
-                                         "command": self.ph.getRemove() + " "
-                                         + nfspackage}
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator,
-                                               self.rulenumber)
-                                self.statechglogger.recordchgevent(myid, event)
-                                installed = True
+                        self.rulesuccess = True
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        self.logdispatch.log(LogPriority.INFO,
+                                             self.detailedresults)
+                        return self.rulesuccess
             if not os.path.exists(nfsfile):
                 if createFile(nfsfile, self.logger):
                     nfstemp = nfsfile + ".tmp"
                     if self.environ.getostype() == "Mac OS X":
+                        if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                            self.rulesuccess = True
+                            self.formatDetailedResults("fix", self.rulesuccess,
+                                           self.detailedresults)
+                            self.logdispatch.log(LogPriority.INFO,
+                                                 self.detailedresults)
+                            return self.rulesuccess
                         self.editor1 = KVEditorStonix(self.statechglogger,
                                                       self.logger, "conf",
                                                       nfsfile, nfstemp, data1,
