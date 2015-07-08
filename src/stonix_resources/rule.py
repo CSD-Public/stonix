@@ -38,6 +38,7 @@
 Created on Aug 24, 2010
 
 @author: dkennel
+@change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
 '''
 
 from observable import Observable
@@ -55,6 +56,8 @@ from localize import DRREPORTCOMPIANT, DRREPORTNOTCOMPIANT, DRREPORTNOTAVAILABLE
 from localize import DRFIXSUCCESSFUL, DRFIXFAILED, DRFIXNOTAVAILABLE
 from localize import DRUNDOSUCCESSFUL, DRUNDOFAILED, DRUNDONOTAVAILABLE
 from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 import traceback
 
 
@@ -160,15 +163,8 @@ LANL-stonix."""
                     elif event["eventtype"] == "conf":
                         self.statechglogger.revertfilechanges(event["filepath"], entry)
                         
-                    elif event["eventtype"] == "comm":
-                        ch = CommandHelper(self.logger)
-                        command = event["command"]
-                        ch.executeCommand(command)
-                        if ch.getReturnCode() != 0:
-                            self.detailedresults = "couldn\'t run the command \
-to undo\n"
-                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    elif event["eventtype"] == "commandstring":
+                    elif event["eventtype"] == "comm" or \
+                         event["eventtype"] == "commandstring":
                         ch = CommandHelper(self.logger)
                         command = event["command"]
                         ch.executeCommand(command)
@@ -178,6 +174,30 @@ to undo\n"
                             self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     elif event["eventtype"] == "creation":
                         os.remove(event["filepath"])
+                    elif event["eventtype"] == "pkghelper":
+                        ph = Pkghelper(self.logdispatch, self.environ)
+                        if event["startstate"] == "installed":
+                            ph.install(event["pkgname"])
+                        elif event["startstate"] == "removed":
+                            ph.remove(event["pkgname"])
+                        else:
+                            self.detailedresults = "Invalid startstate for " \
+                            + "eventtype \"pkghelper\". startstate should " + \
+                            "either be \"installed\" or \"removed\"\n"
+                            self.logger.log(LogPriority.ERROR,
+                                            self.detailedresults)
+                    elif event["eventtype"] == "servicehelper":
+                        sh = ServiceHelper(self.environ, self.logdispatch)
+                        if event["startstate"] == "enabled":
+                            sh.enableservice(event["servicename"])
+                        elif event["startstate"] == "disabled":
+                            sh.disableservice(event["servicename"])
+                        else:
+                            self.detailedresults = "Invalid startstate for " \
+                            + "eventtype \"servicehelper\". startstate " + \
+                            "should either be \"enabled\" or \"disabled\"\n"
+                            self.logger.log(LogPriority.ERROR,
+                                            self.detailedresults)
                 except(IndexError, KeyError):
                     self.detailedresults = "EventID " + entry + " not found"
                     self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
