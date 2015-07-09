@@ -1,3 +1,25 @@
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
 '''
 Created on Apr 22, 2015
 
@@ -5,7 +27,7 @@ Created on Apr 22, 2015
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, createFile, readFile
+from ..stonixutilityfunctions import resetsecon, createFile, readFile, writeFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
@@ -100,12 +122,6 @@ class SecureDHCPServer(Rule):
             else:
                 compliant = False
             self.compliant = compliant
-            if self.compliant:
-                self.detailedresults = "SecureDHCP report has been run " + \
-                    "and is compliant"
-            else:
-                self.detailedresults = "SecureDHCP report has been run " + \
-                    "and is not compliant"
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -126,59 +142,87 @@ class SecureDHCPServer(Rule):
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if self.ph.check(self.package):
-                if not os.path.exists(self.path):
-                    createFile(self.path, self.logger)
-                    self.created = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.path}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.editor = KVEditorStonix(self.statechglogger,
-                                                 self.logger, "conf",
-                                                 self.path, self.tmppath,
-                                                 self.data1, "present",
-                                                 "space")
-                    self.editor.report()
-                    self.editor.setData(self.data2)
-                    self.editor.setIntent("notpresent")
-                    self.editor.report()
-                if self.editor.fixables or self.editor.removeables:
-                    if not self.created:
-                        if not checkPerms(self.path, [0, 0, 420], self.logger):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(self.path, [0, 0, 420],
-                                            self.logger, self.statechglogger,
-                                            myid):
-                                success = False
+            #if self.ph.check(self.package):
+            if not os.path.exists(self.path):
+                createFile(self.path, self.logger)
+                self.created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.path}
+                self.statechglogger.recordchgevent(myid, event)
+                self.editor = KVEditorStonix(self.statechglogger,
+                                             self.logger, "conf",
+                                             self.path, self.tmppath,
+                                             self.data1, "present",
+                                             "space")
+                self.editor.report()
+                self.editor.setData(self.data2)
+                self.editor.setIntent("notpresent")
+                self.editor.report()
+            tempstring = ""
+            tmpfile = self.path + ".tmp"
+            contents = readFile(self.path)
+            for line in contents:
+                found = False
+                if re.match('^#', line) or re.match(r'^\s*$', line):
+                    tempstring += line
+                    continue
+                if re.search("^option", line):
+                    line = line.split()
+                    if len(line) >= 2:
+                        for item in self.data2:
+                            if re.search(item, line[1]):
+                                found = True
+                                break
+                        if found:
+                            continue
+                        else:
+                            tempstring += line
+            if tempstring:
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    self.detailedresults += "Unable to write changes to " + \
+                        self.path
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    success = False
+                else:
+                    if not self.editor.fixables:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        self.editor.setEventID(myid)
-                    if self.editor.fix():
-                        if self.editor.commit():
-                            debug = self.path + "'s contents have been " + \
-                                "corrected\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            os.chown(self.path, 0, 0)
-                            os.chmod(self.path, 420)
-                            resetsecon(self.path)
-                        else:
-                            debug = "kveditor commit not successful\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.path}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.path,
+                                                             tmpfile, myid)
+            if self.editor.fixables:
+                if not self.created:
+                    if not checkPerms(self.path, [0, 0, 420], self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        if not setPerms(self.path, [0, 0, 420],
+                                        self.logger, self.statechglogger,
+                                        myid):
                             success = False
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
+                if self.editor.fix():
+                    if self.editor.commit():
+                        debug = self.path + "'s contents have been " + \
+                            "corrected\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        os.chown(self.path, 0, 0)
+                        os.chmod(self.path, 420)
+                        resetsecon(self.path)
                     else:
-                        debug = "kveditor fix not successful\n"
+                        debug = "kveditor commit not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
+                else:
+                    debug = "kveditor fix not successful\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
             self.rulesuccess = success
-            if self.rulesuccess:
-                self.detailedresults = "SecureDHCP fix has been run to " + \
-                    "completion"
-            else:
-                self.detailedresults = "SecureDHCP fix has been run " + \
-                    "but not to completion"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
