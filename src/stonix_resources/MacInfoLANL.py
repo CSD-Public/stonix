@@ -979,7 +979,7 @@ class MacInfoLANL():
         except Exception, err:
             success = False
             messagestring = str(err) + " - " + str(traceback.format_exc())
-            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+            self.logdispatch.log(LogPriority.ERROR, messagestring)
 # go and pouplate the LDAP data
         keys = sorted(self.macAddressDictionary.keys())
         for key in keys:
@@ -996,21 +996,60 @@ class MacInfoLANL():
                     temp = line.split(":")
                     ipv6status = temp[1].strip()
                     item["IPv6"] = ipv6status
-            self.populateDataFromLDAP("macAddress", item["macAddress"],
-                                      item["hardwarePort"], item["device"])
-            if not(item["IP address"] == ""):
+# Make sure you are only searching for valid macAddress
+            if not(item["macAddress"] == "00:00:00:00:00:00"):
+                self.populateDataFromLDAP("macAddress", 100, "macAddress", item["macAddress"],
+                                          item["hardwarePort"], item["device"])
+            else:
+                log_message("Invalid macAddress item['macAddress'] = " + \
+                            str(item["macAddress"]) + ", ",
+                            "normal",
+                            self.logpriority, self.logsyslog_level)
+# Make sure you are only searching for valid IP address
+            if not(item["IP address"] == "") and not(item["IP address"] == "0.0.0.0"):
                 if not(item["IP address"] in self.ipAddressActive):
                     self.ipAddressActive.append(item["IP address"])
-                self.populateDataFromLDAP("ipHostNumber", item["IP address"],
+                self.populateDataFromLDAP("IP", 100, "ipHostNumber", item["IP address"],
                                       item["hardwarePort"], item["device"])
+            else:
+                log_message("Invalid IP address item['IP address'] = " + \
+                            str(item["IP address"]) + ", ",
+                            "normal",
+                            self.logpriority, self.logsyslog_level)
 # add entries from property number in computer name
-        if not(self.computerNameDiskUtilityAssetTag == ""):
-            self.populateDataFromLDAP("lanlPN", self.computerNameDiskUtilityAssetTag,
+        if not(self.computerNameDiskUtilityAssetTag == "") and not(int(self.computerNameDiskUtilityAssetTag) == 0):
+            self.populateDataFromLDAP("ComputerName", 100, "lanlPN", self.computerNameDiskUtilityAssetTag,
                                       "", "")
+        else:
+            log_message("Invalid Asset Tag computerNameDiskUtitilyAssetTag = " + \
+                        str(self.computerNameDiskUtilityAssetTag) + ", ",
+                        "normal",
+                        self.logpriority, self.logsyslog_level)
 # add potenetial entries from computer name as hostname
         if not(self.computerNameDiskUtilityHostName == ""):
-            self.populateDataFromLDAP("cn", self.computerNameDiskUtilityHostName,
+            self.populateDataFromLDAP("ComputerName", 100, "cn", self.computerNameDiskUtilityHostName,
                                       "", "")
+# add entries from property number in LANLAssetTagNVRAM
+        if not(self.getLANLAssetTagNVRAM() == ""):
+            if self.getNumberOfLDAPEntries() > 0:
+                weight = 0
+            else:
+                weight = 100
+            self.populateDataFromLDAP("NVRAM", weight, "lanlPN", self.getLANLAssetTagNVRAM(),
+                                      "", "")
+# add entries from property number in LANLAssetTagNVRAM
+        if not(self.getLANLAssetTagFilesystem() == "") and not(int(self.getLANLAssetTagFilesystem()) == 0):
+            if self.getNumberOfLDAPEntries() > 0:
+                weight = 0
+            else:
+                weight = 100
+            self.populateDataFromLDAP("Filesystem", weight, "lanlPN", self.getLANLAssetTagFilesystem(),
+                                      "", "")
+        else:
+            log_message("Invalid Asset Tag getLANLAssetTagFilesystem = " + \
+                        str(self.getLANLAssetTagFilesystem()) + ", ",
+                        "normal",
+                        self.logpriority, self.logsyslog_level)
         return success
 
     def report(self):
