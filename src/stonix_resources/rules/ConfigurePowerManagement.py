@@ -25,9 +25,9 @@ This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
 @author: ekkehard j. koch
-@change: 2014-08-27 - ekkehard - Original Implementation
-@change: 2014-10-17 ekkehard OS X Yosemite 10.10 Update
-@change: 2015-02-15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
+@change: 2014/08/27 - ekkehard - Original Implementation
+@change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
+@change: 2015/02/15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
 @change: 2015/04/14 dkennel updated to use new isApplicable
 '''
 from __future__ import absolute_import
@@ -131,11 +131,16 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 powerSetting = psinfo["PowerSetting"]
                 powerSettingValue = psinfo["PowerSettingValue"]
-                if powerSettingValue == self.getPowerSetting(powerType, powerSetting):
-                    self.resultAppend(pslabel + " is compliant.")
+                powerSettingActual = self.getPowerSetting(powerType, powerSetting)
+                powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
+                ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
+                if powerSettingValue == powerSettingActual:
+                    self.resultAppend(pslabel + " is compliant. " + powerSettingInfo)
                 else:
-                    self.resultAppend(pslabel + " is not compliant!")
+                    self.resultAppend(pslabel + " is not compliant! " + powerSettingInfo)
                     self.compliant = False
+            
+            self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -164,19 +169,23 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 powerSetting = psinfo["PowerSetting"]
                 powerSettingValue = psinfo["PowerSettingValue"]
-                if powerSettingValue == self.getPowerSetting(powerType, powerSetting):
-                    self.resultAppend(pslabel + " was correctly set.")
+                powerSettingActual = self.getPowerSetting(powerType, powerSetting)
+                powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
+                ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
+                if powerSettingValue == powerSettingActual:
+                    self.resultAppend(pslabel + " was correctly set. " + powerSettingInfo)
                 else:
                     if self.ci[pslabel].getcurrvalue() == True:
                         newPowerSettingValue = self.setPowerSetting(powerType, powerSetting)
                         if newPowerSettingValue == self.getPowerSetting(powerType, powerSetting):
-                            self.resultAppend(pslabel + " is now compliant!")
+                            self.resultAppend(pslabel + " is now compliant! "  + powerSettingInfo)
                         else:
-                            self.resultAppend(pslabel + " setting still not compliant!")
+                            self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
                             success = False
                     else:
-                        self.resultAppend(pslabel + " configuration item set to False!")
+                        self.resultAppend(pslabel + " configuration item set to False! "  + powerSettingInfo)
             self.rulesuccess = success
+            self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -224,8 +233,14 @@ class ConfigurePowerManagement(Rule):
                 self.psd[itemType] = item
 
     def getPowerSetting(self, powerType, powerSetting, forceUpdate=False):
-        self.initializePowerSetting(forceUpdate)
-        powerSettingValue = self.psd[powerType][powerSetting]
+        try:
+            self.initializePowerSetting(forceUpdate)
+            powerSettingValue = self.psd[powerType][powerSetting]
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            powerSettingValue = ""
         return powerSettingValue
 
     def setPowerSetting(self, powerType, powerSetting, powerSettingValue):
