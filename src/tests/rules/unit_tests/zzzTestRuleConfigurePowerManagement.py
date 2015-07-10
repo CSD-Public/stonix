@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigurePowerManagement
 
 @author: ekkehard j. koch
 @change: 02/27/2013 Original Implementation
