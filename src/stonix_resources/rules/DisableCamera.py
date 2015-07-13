@@ -33,6 +33,7 @@ from __future__ import absolute_import
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import iterate
 
 import os
 import traceback
@@ -53,6 +54,7 @@ class DisableCamera(Rule):
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+        self.id = 0
 
     def isreadable(self, path):
         '''
@@ -135,6 +137,7 @@ class DisableCamera(Rule):
         self.detailedresults = ""
         success = True
         cmd = "chmod a-r "
+        undocmd = "chmod a+r "
 
         try:
 
@@ -145,6 +148,12 @@ class DisableCamera(Rule):
                     if error:
                         success = False
                         self.detailedresults += '\nthere was an error running command: ' + cmd + path
+                    else:
+                        self.id += 1
+                        event = {"eventtype": "commandstring",
+                                 "command": str(undocmd) + str(path)}
+                        myid = iterate(self.id, self.rulenumber)
+                        self.statechglogger.recordchgevent(myid, event)
 
         except (KeyboardInterrupt, SystemExit):
             raise
