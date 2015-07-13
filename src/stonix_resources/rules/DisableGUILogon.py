@@ -29,7 +29,6 @@ from __future__ import absolute_import
 
 import os
 import re
-from subprocess import call
 import traceback
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
@@ -37,8 +36,8 @@ from ..pkghelper import Pkghelper
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, readFile, \
-    writeFile, resetsecon, createFile
+from ..stonixutilityfunctions import iterate, readFile, writeFile, createFile
+from ..stonixutilityfunctions import resetsecon
 
 
 class DisableGUILogon(Rule):
@@ -81,7 +80,8 @@ class DisableGUILogon(Rule):
         key = "REMOVEX"
         instructions = "To enable this item, set the value of REMOVEX " + \
         "to True. When enabled, this item will completely remove X Windows " + \
-        "from the system."
+        "from the system.\nIt is recommended that this rule be run from a " + \
+        "console session rather than from the GUI.\nREMOVEX cannot be undone."
         default = False
         self.ci3 = self.initCi(datatype, key, instructions, default)
 
@@ -100,29 +100,77 @@ class DisableGUILogon(Rule):
             self.ph = Pkghelper(self.logger, self.environ)
             self.ch = CommandHelper(self.logger)
             self.sh = ServiceHelper(self.environ, self.logger)
+            self.myos = self.environ.getostype().lower()
             compliant = True
             results = ""
             
-            if self.ci1.getcurrvalue():
-                if os.path.exists("/bin/systemctl"):
-                    compliant, results = self.reportSystemd()
-                elif re.search("Debian", self.environ.getostype()):
-                    compliant, results = self.reportDebian()
-                elif re.search("Ubuntu", self.environ.getostype()):
-                    compliant, results = self.reportUbuntu()
+            if os.path.exists("/bin/systemctl"):
+                self.initver = "systemd"
+                compliant, results = self.reportSystemd()
+            elif re.search("debian", self.myos):
+                self.initver = "debian"
+                compliant, results = self.reportDebian()
+            elif re.search("ubuntu", self.myos):
+                self.initver = "ubuntu"
+                compliant, results = self.reportUbuntu()
+            else:
+                self.initver = "inittab"
+                compliant, results = self.reportInittab()
+
+            # NSA guidance specifies disabling of X Font Server (xfs),
+            # however, this guidance seems to be obsolete as of RHEL 6,
+            # and does not apply to the Debian family.
+            if os.path.exists("/etc/rc.d/init.d/xfs"):
+                if self.sh.auditservice("xfs"):
+                    compliant = False
+                    results += "xfs is currently enabled\n"
+            self.serverrc = "/etc/X11/xinit/xserverrc"
+            self.xservSecure = False
+            if os.path.exists(self.serverrc):
+                serverrcText = readFile(self.serverrc, self.logger)
+                if re.search("opensuse", self.myos):
+                    for line in serverrcText:
+                        reSearch = r'exec (/usr/bin/)?X \$dspnum.*\$args'
+                        if re.search(reSearch, line):
+                            self.xservSecure = True
+                            break
                 else:
-                    compliant, results = self.reportInittab()
-            if self.ci2.getcurrvalue():
-                # something
-                pass
+                    for line in serverrcText:
+                        reSearch = r'^exec (/usr/bin/)?X (:0 )?-nolisten tcp ("$@"|.?\$@)'
+                        if re.search(reSearch, line):
+                            self.xservSecure = True
+                            break
+                if not self.xservSecure:
+                    compliant = False
+                    results += self.serverrc + " does not contain proper " \
+                               + "settings to disable X Window System " + \
+                               "Listening/remote display\n"
+            else:
+                compliant = False
+                results += self.serverrc + " does not exist; X Window " + \
+                           "System Listening/remote display has not " + \
+                           "been disabled\n"
+
+            if re.search("debian|ubuntu", self.myos):
+                if self.ph.check("xserver-xorg-core"):
+                    compliant = False
+                    results += "Core X11 components are present\n"
+            elif re.search("opensuse", self.myos):
+                if self.ph.check("xorg-x11-server"):
+                    compliant = False
+                    results += "Core X11 components are present\n"
+            else:
+                if self.ph.check("xorg-x11-server-Xorg"):
+                    compliant = False
+                    results += "Core X11 components are present\n"
             
             self.compliant = compliant
             if self.compliant:
-                self.detailedresults = "ConfigureSystemAuthentication report \
-has been run and is compliant"
+                self.detailedresults = "DisableGUILogon report has been " + \
+                                       "run and is compliant"
             else:
-                self.detailedresults = "ConfigureSystemAuthentication report \
-has been run and is not compliant\n" + results
+                self.detailedresults = "DisableGUILogon report has been " + \
+                                       "run and is not compliant\n" + results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -138,11 +186,12 @@ has been run and is not compliant\n" + results
         compliant = False
         results = ""
         inittab = "/etc/inittab"
-        initData = readFile(inittab, self.logger)
-        for line in initData:
-            if line == "id:3:initdefault:":
-                compliant = True
-                break
+        if os.path.exists(inittab):
+            initData = readFile(inittab, self.logger)
+            for line in initData:
+                if line.strip() == "id:3:initdefault:":
+                    compliant = True
+                    break
         if not compliant:
             results = "inittab not set to runlevel 3; GUI logon is enabled\n"
         return compliant, results
@@ -172,11 +221,12 @@ has been run and is not compliant\n" + results
     def reportUbuntu(self):
         compliant = False
         results = ""
-        lightdmOverride = "/etc/init/lightdm.override"
-        if os.path.exists(lightdmOverride):
-            lightdmText = readFile(lightdmOverride, self.logger)
+        ldmover = "/etc/init/lightdm.override"
+        if os.path.exists(ldmover):
+            lightdmText = readFile(ldmover, self.logger)
             if "manual" in lightdmText:
                 compliant = True
+        # TODO: Check grub setup too. Use KVEditor
         if not compliant:
             results = "/etc/init does not contain proper override file " + \
                       "for lightdm; GUI logon is enabled\n"
@@ -190,28 +240,196 @@ has been run and is not compliant\n" + results
         '''
         try:
             if not self.ci1.getcurrvalue() and not self.ci2.getcurrvalue() \
-                and not self.ci3.getcurrvalue():
+               and not self.ci3.getcurrvalue():
                 return
-            #delete past state change records from previous fix
+            success = True
+            results = ""
+            # Delete past state change records from previous fix
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
-            if self.environ.getosfamily() == "linux":
-                self.rulesuccess = self.fixLinux()
-            elif self.environ.getosfamily() == "freebsd":
-                self.rulesuccess = self.fixFreebsd()
-            elif self.environ.getosfamily() == "solaris":
-                self.rulesuccess = self.fixSolaris()
-            elif self.environ.getosfamily() == "darwin":
-                self.rulesuccess = self.fixMac()
+            
+            if self.ci1.getcurrvalue() or self.ci3.getcurrvalue():
+                if self.initver == "systemd":
+                    cmd = ["/bin/systemctl", "set-default", "multi-user.target"]
+                    if not self.ch.executeCommand(cmd):
+                        success = False
+                        results += '"systemctl set-default multi-user.target"' \
+                                   + " did not succeed\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        commandstring = "/bin/systemctl set-default " + \
+                                        "graphical.target"
+                        event = {"eventtype": "commandstring",
+                                 "command": commandstring}
+                        self.statechglogger.recordchgevent(myid, event)
+
+                elif self.initver == "debian":
+                    dmlist = ["gdm", "gdm3", "lightdm", "xdm", "kdm"]
+                    for dm in dmlist:
+                        if not self.sh.disableservice(dm):
+                            results += "Failed to disable desktop " + \
+                                       "manager " + dm
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype":   "servicehelper",
+                                     "servicename": dm,
+                                     "startstate":  "enabled",
+                                     "endstate":    "disabled"}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                elif self.initver == "ubuntu":
+                    ldmover = "/etc/init/lightdm.override"
+                    tmpfile = ldmover + ".tmp"
+                    if not os.path.exists(ldmover):
+                        createFile(ldmover, self.logger)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation", "filepath": ldmover}
+                        self.statechglogger.recordchgevent(myid, event)
+                    writeFile(tmpfile, "manual", self.logger)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf", "filepath": ldmover}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(ldmover, tmpfile, myid)
+                    os.rename(tmpfile, ldmover)
+                    resetsecon(ldmover)
+                    
+                    grub = "/etc/default/grub"
+                    if not os.path.exists(grub):
+                        createFile(grub, self.logger)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation", "filepath": grub}
+                        self.statechglogger.recordchgevent(myid, event)
+                    tmppath = grub + ".tmp"
+                    data = {"GRUB_CMDLINE_LINUX_DEFAULT": '"quiet"'}
+                    editor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "conf", grub, tmppath, data,
+                                            "present", "closedeq")
+                    editor.report()
+                    if editor.fixables:
+                        if editor.fix():
+                            debug = "kveditor fix ran successfully\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            if editor.commit():
+                                debug = "kveditor commit ran successfully\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            else:
+                                error = "kveditor commit did not run " + \
+                                        "successfully\n"
+                                self.logger.log(LogPriority.ERROR, error)
+                                success = False
+                        else:
+                            error = "kveditor fix did not run successfully\n"
+                            self.logger.log(LogPriority.ERROR, error)
+                            success = False
+                    cmd = "update-grub"
+                    self.ch.executeCommand(cmd)
+
+                else:
+                    inittab = "/etc/inittab"
+                    tmpfile = inittab + ".tmp"
+                    if os.path.exists(inittab):
+                        initText = open(inittab, "r").read()
+                        initre = r"id:\d:initdefault:"
+                        if re.search(initre, initText):
+                            initText = re.sub(initre, "id:3:initdefault:",
+                                              initText)
+                            writeFile(tmpfile, initText, self.logger)
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf", "filepath": inittab}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(inittab, 
+                                                                 tmpfile, myid)
+                            os.rename(tmpfile, inittab)
+                            resetsecon(inittab)
+                        else:
+                            initText += "\nid:3:initdefault:\n"
+                            writeFile(tmpfile, initText, self.logger)
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf", "filepath": inittab}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(inittab, 
+                                                                 tmpfile, myid)
+                            os.rename(tmpfile, inittab)
+                            resetsecon(inittab)
+                    else:
+                        results += inittab + " not found, no other init " + \
+                                   "system found. If you are using a " + \
+                                   "supported Linux OS, please report " + \
+                                   "this as a bug\n"
+
+            if self.ci2.getcurrvalue():
+                # See report comments
+                # TODO: See if auditservice will error out if xfs is not on system
+                if os.path.exists("/etc/rc.d/init.d/xfs"):
+                    if self.sh.disableservice("xfs"):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype":   "servicehelper",
+                                 "servicename": "xfs",
+                                 "startstate":  "enabled",
+                                 "endstate":    "disabled"}
+                        self.statechglogger.recordchgevent(myid, event)
+                    else:
+                        success = False
+                        results += "/etc/rc.d/init.d/xfs found, but STONIX " + \
+                                   "was unable to disable the xfs service\n"
+                    
+                if not self.xservSecure:
+                    serverrcString = "exec X :0 -nolisten tcp $@"
+                    if not os.path.exists(self.serverrc):
+                        createFile(self.serverrc, self.logger)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation",
+                                 "filepath": self.serverrc}
+                        self.statechglogger.recordchgevent(myid, event)
+                        writeFile(self.serverrc, serverrcString, self.logger)
+                    else:
+                        open(self.serverrc, "a").write(serverrcString)
+
+            if self.ci3.getcurrvalue():
+                # Due to automatic removal of dependent packages, the full
+                # removal of X and related packages cannot be undone
+                if re.search("opensuse", self.myos):
+                    cmd = ["zypper", "-n", "rm", "-u", "xorg-x11*", "kde*"]
+                    self.ch.executeCommand(cmd)
+                elif re.search("debian|ubuntu", self.myos):
+                    cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
+                           "xserver.*", "gnome.*", "x11.*", "lightdm.*",
+                           "libx11.*", "libqt.*"]
+                    self.ch.executeCommand(cmd)
+                    cmd2 = ["apt-get", "autoremove"]
+                    self.ch.executeCommand(cmd2)
+                elif re.search("fedora", self.myos):
+                    # Fedora does not use the same group packages as other
+                    # RHEL-based OSs. Removing this package will remove the X
+                    # Windows system, just less efficiently than using a group
+                    self.ph.remove("xorg-x11-server-Xorg")
+                else:
+                    cmd = ["yum", "groups", "mark", "convert"]
+                    self.ch.executeCommand(cmd)
+                    cmd2 = ["yum", "groupremove", "-y", "X Window System"]
+                    if not self.ch.executeCommand(cmd2):
+                        success = False
+                        results += '"yum groupremove -y X Window System" ' + \
+                                   'command failed\n'
+
+            self.rulesuccess = success
             if self.rulesuccess:
-                self.detailedresults = "ConfigureSystemAuthentication fix " + \
-                "has been run to completion"
+                self.detailedresults = "DisableGUILogon fix has been run " + \
+                "to completion"
             else:
-                self.detailedresults = "ConfigureSystemAuthentication fix " + \
-                "has been run but not to completion"
+                self.detailedresults = "DisableGUILogon fix has been run " + \
+                "but not to completion\n" + results
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
