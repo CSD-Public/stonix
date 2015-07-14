@@ -54,8 +54,8 @@ class networksetup():
         self.resultReset()
         self.nsc = "/usr/sbin/networksetup"
         fullproxy = PROXY
-        self.ps = fullproxy.split(":")[0]
-        self.pp = fullproxy.split(":")[1]
+        self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
+        self.pp = fullproxy.split(":")[2]
         self.pf = PROXYCONFIGURATIONFILE
         self.ch = CommandHelper()
         self.getLocation()
