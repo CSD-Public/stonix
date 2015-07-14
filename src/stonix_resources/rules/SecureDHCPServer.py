@@ -65,24 +65,18 @@ class SecureDHCPServer(Rule):
 
     def report(self):
         try:
+            print "inside report!!!!\n\n"
             self.ph = Pkghelper(self.logger, self.environ)
             self.data1 = {"ddns-update-style": "none;",
                           "deny": ["declines;",
                                    "bootp;"]}
-            self.data2 = {"option": ["domain-name",
-                                     "domain-name-servers",
-                                     "nis-domain",
-                                     "nis-servers",
-                                     "ntp-servers",
-                                     "routers",
-                                     "time-offset"]}
-            self.data2 = ["domain-name;",
-                          "domain-name-servers;",
-                          "nis-domain;",
-                          "nis-servers;",
-                          "ntp-servers;",
-                          "routers;",
-                          "time-offset;"]
+            self.data2 = ["domain-name",
+                          "domain-name-servers",
+                          "nis-domain",
+                          "nis-servers",
+                          "ntp-servers",
+                          "routers",
+                          "time-offset"]
             if self.ph.manager == "zypper":
 #                 self.package = "dhcp-server"
                 self.path = "/etc/dhcpd.conf"
@@ -92,12 +86,12 @@ class SecureDHCPServer(Rule):
             elif self.ph.manager == "apt-get":
                 #self.package = "isc-dhcp-server"
                 self.path = "/etc/dhcp/dhcpd.conf"
+            self.tmppath = self.path + ".tmp"
             compliant = True
             #if self.ph.check(self.package):
             if os.path.exists(self.path):
                 if not checkPerms(self.path, [0, 0, 420], self.logger):
                     compliant = False
-                self.tmppath = self.path + ".tmp"
                 self.editor = KVEditorStonix(self.statechglogger,
                                              self.logger, "conf",
                                              self.path, self.tmppath,
@@ -105,13 +99,15 @@ class SecureDHCPServer(Rule):
                                              "space")
                 if not self.editor.report():
                     compliant = False
-                contents = readFile(self.path)
+                contents = readFile(self.path, self.logger)
                 for line in contents:
                     if re.match('^#', line) or re.match(r'^\s*$', line):
                         continue
                     if re.search("^option", line):
+                        print "line is: " + line + "\n\n"
                         line = line.split()
                         if len(line) >= 2:
+                            print "line has two or more placeholders\n\n"
                             for item in self.data2:
                                 if re.search(item, line[1]):
                                     compliant = False
@@ -143,6 +139,7 @@ class SecureDHCPServer(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             #if self.ph.check(self.package):
+            print "inside fix!\n\n"
             if not os.path.exists(self.path):
                 createFile(self.path, self.logger)
                 self.created = True
@@ -162,23 +159,30 @@ class SecureDHCPServer(Rule):
                 self.editor.report()
             tempstring = ""
             tmpfile = self.path + ".tmp"
-            contents = readFile(self.path)
+            contents = readFile(self.path, self.logger)
             for line in contents:
                 found = False
                 if re.match('^#', line) or re.match(r'^\s*$', line):
                     tempstring += line
                     continue
                 if re.search("^option", line):
-                    line = line.split()
-                    if len(line) >= 2:
+                    print "here's an option line!\n\n" + line + "\n\n"
+                    temp = line.split()
+                    if len(temp) >= 2:
+                        print "line has 2 or more placeholders"
                         for item in self.data2:
-                            if re.search(item, line[1]):
+                            if re.search(item, temp[1]):
+                                print "we found the line we don't want"
                                 found = True
                                 break
                         if found:
+                            print "found = True, skip this line"
                             continue
                         else:
                             tempstring += line
+                else:
+                    tempstring += line
+            print "tempstring: " + tempstring + "\n\n"
             if tempstring:
                 if not writeFile(tmpfile, tempstring, self.logger):
                     self.detailedresults += "Unable to write changes to " + \
@@ -194,6 +198,10 @@ class SecureDHCPServer(Rule):
                         self.statechglogger.recordchgevent(myid, event)
                         self.statechglogger.recordfilechange(self.path,
                                                              tmpfile, myid)
+                        os.rename(tmpfile, self.path)
+                        os.chown(self.path, 0, 0)
+                        os.chmod(self.path, 420)
+                        resetsecon(self.path)
             if self.editor.fixables:
                 if not self.created:
                     if not checkPerms(self.path, [0, 0, 420], self.logger):
