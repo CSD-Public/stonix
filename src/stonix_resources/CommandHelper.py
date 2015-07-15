@@ -374,16 +374,23 @@ class CommandHelper(object):
             if (success):
                 commandobj = subprocess.Popen(self.command,
                                stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
+                               stderr=subprocess.PIPE, 
                                shell=self.shell)
+                outlines = []
+                errlines = []
+                for line in iter(commandobj.stdout.readline, ''):
+                    outlines.append(line)
+                commandobj.stdout.close()
+                for line in iter(commandobj.stderr.readline, ''):
+                    errlines.append(line)
+                commandobj.stderr.close()
+
                 if self.wait:
                     commandobj.wait()
 
                 if commandobj is not None:
-
-                    self.stdout = commandobj.stdout.readlines()
-
-                    self.stderr = commandobj.stderr.readlines()
+                    self.stdout = outlines
+                    self.stderr = errlines
                     self.output = self.stderr + self.stdout
 
                     self.returncode = commandobj.returncode
