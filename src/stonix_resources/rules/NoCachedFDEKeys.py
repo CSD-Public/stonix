@@ -100,11 +100,10 @@ class NoCachedFDEKeys(Rule):
             raise
         except Exception, err:
             self.rulesuccess = False
-            fixed = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", fixed,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return fixed
+        return self.rulesuccess
