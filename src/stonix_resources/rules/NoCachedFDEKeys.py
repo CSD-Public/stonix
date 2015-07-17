@@ -103,7 +103,7 @@ class NoCachedFDEKeys(Rule):
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", fixed,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
