@@ -120,10 +120,9 @@ class DisableGUILogon(Rule):
             # NSA guidance specifies disabling of X Font Server (xfs),
             # however, this guidance seems to be obsolete as of RHEL 6,
             # and does not apply to the Debian family.
-            if os.path.exists("/etc/rc.d/init.d/xfs"):
-                if self.sh.auditservice("xfs"):
-                    compliant = False
-                    results += "xfs is currently enabled\n"
+            if self.sh.auditservice("xfs"):
+                compliant = False
+                results += "xfs is currently enabled\n"
             self.serverrc = "/etc/X11/xinit/xserverrc"
             self.xservSecure = False
             if os.path.exists(self.serverrc):
@@ -175,7 +174,7 @@ class DisableGUILogon(Rule):
             raise
         except Exception:
             self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults = "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -192,6 +191,9 @@ class DisableGUILogon(Rule):
                 if line.strip() == "id:3:initdefault:":
                     compliant = True
                     break
+        else:
+            self.logger.log(LogPriority.ERROR, inittab + " not found, init " +
+                            "system unknown")
         if not compliant:
             results = "inittab not set to runlevel 3; GUI logon is enabled\n"
         return compliant, results
@@ -219,14 +221,31 @@ class DisableGUILogon(Rule):
         return compliant, results
     
     def reportUbuntu(self):
-        compliant = False
+        compliant = True
         results = ""
         ldmover = "/etc/init/lightdm.override"
+        grub = "/etc/default/grub"
         if os.path.exists(ldmover):
             lightdmText = readFile(ldmover, self.logger)
-            if "manual" in lightdmText:
-                compliant = True
-        # TODO: Check grub setup too. Use KVEditor
+            if not "manual" in lightdmText:
+                compliant = False
+                results += ldmover + " exists, but does not contain text " + \
+                           '"manual". GUI logon is still enabled\n'
+        else:
+            compliant = False
+            results += ldmover + " does not exist; GUI logon is enabled\n"
+        if os.path.exists(grub):
+            tmppath = grub + ".tmp"
+            data = {"GRUB_CMDLINE_LINUX_DEFAULT": '"quiet"'}
+            editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                    grub, tmppath, data, "present", "closedeq")
+            if not editor.report():
+                compliant = False
+                results += grub + " does not contain the correct values: " + \
+                           str(data)
+        else:
+            compliant = False
+            results += "Cannot find file " + grub
         if not compliant:
             results = "/etc/init does not contain proper override file " + \
                       "for lightdm; GUI logon is enabled\n"
@@ -368,20 +387,17 @@ class DisableGUILogon(Rule):
 
             if self.ci2.getcurrvalue():
                 # See report comments
-                # TODO: See if auditservice will error out if xfs is not on system
-                if os.path.exists("/etc/rc.d/init.d/xfs"):
-                    if self.sh.disableservice("xfs"):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype":   "servicehelper",
-                                 "servicename": "xfs",
-                                 "startstate":  "enabled",
-                                 "endstate":    "disabled"}
-                        self.statechglogger.recordchgevent(myid, event)
-                    else:
-                        success = False
-                        results += "/etc/rc.d/init.d/xfs found, but STONIX " + \
-                                   "was unable to disable the xfs service\n"
+                if self.sh.disableservice("xfs"):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype":   "servicehelper",
+                             "servicename": "xfs",
+                             "startstate":  "enabled",
+                             "endstate":    "disabled"}
+                    self.statechglogger.recordchgevent(myid, event)
+                else:
+                    success = False
+                    results += "STONIX was unable to disable the xfs service\n"
                     
                 if not self.xservSecure:
                     serverrcString = "exec X :0 -nolisten tcp $@"
@@ -435,7 +451,7 @@ class DisableGUILogon(Rule):
             raise
         except Exception:
             self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults = "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
