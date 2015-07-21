@@ -423,7 +423,7 @@ class DisableGUILogon(Rule):
                            "xserver.*", "gnome.*", "x11.*", "lightdm.*",
                            "libx11.*", "libqt.*"]
                     self.ch.executeCommand(cmd)
-                    cmd2 = ["apt-get", "autoremove"]
+                    cmd2 = ["apt-get", "autoremove", "-y"]
                     self.ch.executeCommand(cmd2)
                 elif re.search("fedora", self.myos):
                     # Fedora does not use the same group packages as other
