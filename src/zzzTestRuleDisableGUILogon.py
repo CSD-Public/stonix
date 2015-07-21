@@ -54,7 +54,7 @@ class zzzTestRuleDisableGUILogon(RuleTest):
 
     def tearDown(self):
         if self.inittab:
-            tmppath = self.inittab + ".tmp"
+            tmppath = self.inittab + ".utmp"
             try:
                 os.rename(tmppath, self.inittab)
             except Exception:
@@ -74,10 +74,15 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         # Enable CIs
         self.rule.ci1.updatecurrvalue(True)
         self.rule.ci2.updatecurrvalue(True)
-        self.rule.ci3.updatecurrvalue(True)
+        # CI 3 is REMOVEX, which will remove X Windows entirely. STONIX unit
+        # tests should generally only be run in virtual environments anyway,
+        # but due to the severity of the changes caused by this rule, it is
+        # disabled by default. To enable, simply set it to True instead.
+        self.rule.ci3.updatecurrvalue(False)
         
         # Ensure GUI logon is enabled
         self.myos = self.environ.getostype().lower()
+        self.logdispatch.log(LogPriority.DEBUG, self.myos)
         if os.path.exists("/bin/systemctl"):
             cmd = ["systemctl", "set-default", "graphical.target"]
             if not self.ch.executeCommand(cmd):
@@ -111,10 +116,10 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         else:
             self.inittab = "/etc/inittab"
             if os.path.exists(self.inittab):
-                tmppath = self.inittab + ".tmp"
+                tmppath = self.inittab + ".utmp"
                 try:
                     os.rename(self.inittab, tmppath)
-                    os.open(self.inittab, "w").write("id:5:initdefault:")
+                    open(self.inittab, "w").write("id:5:initdefault:")
                 except Exception:
                     success = False
                     self.logdispatch.log(LogPriority.ERROR,
