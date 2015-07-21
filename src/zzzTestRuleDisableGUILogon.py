@@ -31,13 +31,13 @@ from __future__ import absolute_import
 import unittest
 import os
 import re
-from stonix_resources.stonixutilityfunctions import readFile, writeFile
+import traceback
 from stonix_resources.RuleTestTemplate import RuleTest
 from stonix_resources.CommandHelper import CommandHelper
 from stonix_resources.logdispatcher import LogPriority
 from stonix_resources.rules.DisableGUILogon import DisableGUILogon
-from stonix_resources.pkghelper import Pkghelper
 from stonix_resources.ServiceHelper import ServiceHelper
+from stonix_resources.KVEditorStonix import KVEditorStonix
 
 
 class zzzTestRuleDisableGUILogon(RuleTest):
@@ -45,15 +45,20 @@ class zzzTestRuleDisableGUILogon(RuleTest):
     def setUp(self):
         RuleTest.setUp(self)
         self.rule = DisableGUILogon(self.config, self.environ,
-                                     self.logdispatch, self.statechglogger)
+                                    self.logdispatch, self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.ph = Pkghelper(self.logdispatch, self.environ)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.inittab = False
 
     def tearDown(self):
-        pass
+        if self.inittab:
+            tmppath = self.inittab + ".tmp"
+            try:
+                os.rename(tmppath, self.inittab)
+            except Exception:
+                self.logdispatch.log(LogPriority.ERROR, traceback.format_exc())
 
     def runTest(self):
         self.simpleRuleTest()
@@ -87,10 +92,38 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         elif re.search("ubuntu", self.myos):
             ldmover = "/etc/init/lightdm.override"
             grub = "/etc/default/grub"
-            
+            if os.path.exists(ldmover):
+                if not os.remove(ldmover):
+                    success = False
+            if os.path.exists(grub):
+                tmppath = grub + ".tmp"
+                data = {"GRUB_CMDLINE_LINUX_DEFAULT": '"quiet splash"'}
+                editor = KVEditorStonix(self.statechglogger, self.logdispatch,
+                                        "conf", grub, tmppath, data,
+                                        "present", "closedeq")
+                editor.report()
+                if editor.fixables:
+                    if editor.fix():
+                        if not editor.commit():
+                            success = False
+                    else:
+                        success = False
         else:
-            self.initver = "inittab"
-            compliant, results = self.reportInittab()
+            self.inittab = "/etc/inittab"
+            if os.path.exists(self.inittab):
+                tmppath = self.inittab + ".tmp"
+                try:
+                    os.rename(self.inittab, tmppath)
+                    os.open(self.inittab, "w").write("id:5:initdefault:")
+                except Exception:
+                    success = False
+                    self.logdispatch.log(LogPriority.ERROR,
+                                         traceback.format_exc())
+            else:
+                self.logdispatch.log(LogPriority.ERROR, self.inittab +
+                                     " not found, init system unknown")
+                self.inittab = False
+                success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -117,13 +150,6 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        # Cleanup: put original perms files back
-        if os.path.exists(self.path1) and os.path.exists(self.tmpfile1):
-            os.remove(self.path1)
-            os.rename(self.tmpfile1, self.path1)
-        if os.path.exists(self.path2) and os.path.exists(self.tmpfile2):
-            os.remove(self.path2)
-            os.rename(self.tmpfile2, self.path2)
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
