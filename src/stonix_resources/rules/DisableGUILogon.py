@@ -49,7 +49,8 @@ class DisableGUILogon(Rule):
         self.rulename = "DisableGUILogon"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''Add help text'''
+        self.helptext = '''This rule will disable, secure, or entirely remove \
+the X11/X Windows GUI.'''
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 
@@ -123,46 +124,53 @@ class DisableGUILogon(Rule):
             if self.sh.auditservice("xfs"):
                 compliant = False
                 results += "xfs is currently enabled\n"
-            self.serverrc = "/etc/X11/xinit/xserverrc"
-            self.xservSecure = False
-            if os.path.exists(self.serverrc):
-                serverrcText = readFile(self.serverrc, self.logger)
-                if re.search("opensuse", self.myos):
-                    for line in serverrcText:
-                        reSearch = r'exec (/usr/bin/)?X \$dspnum.*\$args'
-                        if re.search(reSearch, line):
-                            self.xservSecure = True
-                            break
-                else:
-                    for line in serverrcText:
-                        reSearch = r'^exec (/usr/bin/)?X (:0 )?-nolisten tcp ("$@"|.?\$@)'
-                        if re.search(reSearch, line):
-                            self.xservSecure = True
-                            break
-                if not self.xservSecure:
-                    compliant = False
-                    results += self.serverrc + " does not contain proper " \
-                               + "settings to disable X Window System " + \
-                               "Listening/remote display\n"
-            else:
-                compliant = False
-                results += self.serverrc + " does not exist; X Window " + \
-                           "System Listening/remote display has not " + \
-                           "been disabled\n"
 
+            xremoved = True
             if re.search("debian|ubuntu", self.myos):
                 if self.ph.check("xserver-xorg-core"):
                     compliant = False
+                    xremoved = False
                     results += "Core X11 components are present\n"
             elif re.search("opensuse", self.myos):
                 if self.ph.check("xorg-x11-server"):
                     compliant = False
+                    xremoved = False
                     results += "Core X11 components are present\n"
             else:
                 if self.ph.check("xorg-x11-server-Xorg"):
                     compliant = False
+                    xremoved = False
                     results += "Core X11 components are present\n"
-            
+            # Removing X will take xserverrc with it. If X is not present, we
+            # do not need to check for xserverrc 
+            if not xremoved:
+                self.serverrc = "/etc/X11/xinit/xserverrc"
+                self.xservSecure = False
+                if os.path.exists(self.serverrc):
+                    serverrcText = readFile(self.serverrc, self.logger)
+                    if re.search("opensuse", self.myos):
+                        for line in serverrcText:
+                            reSearch = r'exec (/usr/bin/)?X \$dspnum.*\$args'
+                            if re.search(reSearch, line):
+                                self.xservSecure = True
+                                break
+                    else:
+                        for line in serverrcText:
+                            reSearch = r'^exec (/usr/bin/)?X (:0 )?-nolisten tcp ("$@"|.?\$@)'
+                            if re.search(reSearch, line):
+                                self.xservSecure = True
+                                break
+                    if not self.xservSecure:
+                        compliant = False
+                        results += self.serverrc + " does not contain proper " \
+                                   + "settings to disable X Window System " + \
+                                   "Listening/remote display\n"
+                else:
+                    compliant = False
+                    results += self.serverrc + " does not exist; X Window " + \
+                               "System Listening/remote display has not " + \
+                               "been disabled\n"
+
             self.compliant = compliant
             if self.compliant:
                 self.detailedresults = "DisableGUILogon report has been " + \
@@ -385,8 +393,38 @@ class DisableGUILogon(Rule):
                                    "supported Linux OS, please report " + \
                                    "this as a bug\n"
 
-            if self.ci2.getcurrvalue():
-                # See report comments
+            if self.ci3.getcurrvalue():
+                # Due to automatic removal of dependent packages, the full
+                # removal of X and related packages cannot be undone
+                if re.search("opensuse", self.myos):
+                    cmd = ["zypper", "-n", "rm", "-u", "xorg-x11*", "kde*",
+                           "xinit*"]
+                    self.ch.executeCommand(cmd)
+                elif re.search("debian|ubuntu", self.myos):
+                    cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
+                           "xserver.*", "gnome.*", "x11.*", "lightdm.*",
+                           "libx11.*", "libqt.*"]
+                    self.ch.executeCommand(cmd)
+                    cmd2 = ["apt-get", "autoremove", "-y"]
+                    self.ch.executeCommand(cmd2)
+                elif re.search("fedora", self.myos):
+                    # Fedora does not use the same group packages as other
+                    # RHEL-based OSs. Removing this package will remove the X
+                    # Windows system, just less efficiently than using a group
+                    self.ph.remove("xorg-x11-server-Xorg")
+                    self.ph.remove("xorg-x11-xinit*")
+                else:
+                    cmd = ["yum", "groups", "mark", "convert"]
+                    self.ch.executeCommand(cmd)
+                    cmd2 = ["yum", "groupremove", "-y", "X Window System"]
+                    if not self.ch.executeCommand(cmd2):
+                        success = False
+                        results += '"yum groupremove -y X Window System" ' + \
+                                   'command failed\n'
+            # Since LOCKDOWNX depends on having X installed, and REMOVEX
+            # completely removes X from the system, LOCKDOWNX fix will only be
+            # executed if REMOVEX is not.
+            elif self.ci2.getcurrvalue():
                 if self.sh.disableservice("xfs"):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -412,33 +450,6 @@ class DisableGUILogon(Rule):
                     else:
                         open(self.serverrc, "a").write(serverrcString)
 
-            if self.ci3.getcurrvalue():
-                # Due to automatic removal of dependent packages, the full
-                # removal of X and related packages cannot be undone
-                if re.search("opensuse", self.myos):
-                    cmd = ["zypper", "-n", "rm", "-u", "xorg-x11*", "kde*"]
-                    self.ch.executeCommand(cmd)
-                elif re.search("debian|ubuntu", self.myos):
-                    cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
-                           "xserver.*", "gnome.*", "x11.*", "lightdm.*",
-                           "libx11.*", "libqt.*"]
-                    self.ch.executeCommand(cmd)
-                    cmd2 = ["apt-get", "autoremove", "-y"]
-                    self.ch.executeCommand(cmd2)
-                elif re.search("fedora", self.myos):
-                    # Fedora does not use the same group packages as other
-                    # RHEL-based OSs. Removing this package will remove the X
-                    # Windows system, just less efficiently than using a group
-                    self.ph.remove("xorg-x11-server-Xorg")
-                else:
-                    cmd = ["yum", "groups", "mark", "convert"]
-                    self.ch.executeCommand(cmd)
-                    cmd2 = ["yum", "groupremove", "-y", "X Window System"]
-                    if not self.ch.executeCommand(cmd2):
-                        success = False
-                        results += '"yum groupremove -y X Window System" ' + \
-                                   'command failed\n'
-
             self.rulesuccess = success
             if self.rulesuccess:
                 self.detailedresults = "DisableGUILogon fix has been run " + \
@@ -451,7 +462,7 @@ class DisableGUILogon(Rule):
             raise
         except Exception:
             self.rulesuccess = False
-            self.detailedresults = "\n" + traceback.format_exc()
+            self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
