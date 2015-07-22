@@ -30,13 +30,12 @@ This is a Unit Test for Rule RestrictMounting
 from __future__ import absolute_import
 import unittest
 import os
-from stonix_resources.stonixutilityfunctions import readFile, writeFile
-from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.CommandHelper import CommandHelper
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.RestrictMounting import RestrictMounting
-from stonix_resources.pkghelper import Pkghelper
-from stonix_resources.ServiceHelper import ServiceHelper
+from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.logdispatcher import LogPriority
+from src.stonix_resources.rules.RestrictMounting import RestrictMounting
+from src.stonix_resources.pkghelper import Pkghelper
+from src.stonix_resources.ServiceHelper import ServiceHelper
 
 
 class zzzTestRuleRestrictMounting(RuleTest):
