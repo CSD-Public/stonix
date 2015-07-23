@@ -243,10 +243,10 @@ class DisableRemoveableStorage(Rule):
                             for item in self.blacklist:
                                 if not self.blacklist[item]:
                                     debug = "modprobe.conf nor blacklist " + \
-                                    "files contain " + item + "\n"
+                                        "files contain " + item + "\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     compliant = False
-                            
+
                 elif os.path.exists("/etc/modprobe.conf"):
                     contents = readFile("/etc/modprobe.conf", self.logger)
                     if contents:
@@ -263,14 +263,7 @@ class DisableRemoveableStorage(Rule):
                         removeables.append(item)
                 for item in removeables:
                     del(self.blacklist[item])
-            if compliant:
-                self.detailedresults += "The DisableRemovableStorage rule " + \
-                "is compliant\n"
-                self.compliant = True
-            else:
-                self.detailedresults += "The DisableRemovableStorage rule " + \
-                "is not compliant\n"
-                self.compliant = False
+            self.compliant = compliant
         except OSError:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
@@ -286,63 +279,55 @@ class DisableRemoveableStorage(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 ###############################################################################
+
     def reportMac(self):
         debug = ""
         self.detailedresults = ""
         check = "/usr/sbin/kextstat "
         compliant = True
         self.ch = CommandHelper(self.logger)
-        
-        
         usb = "IOUSBMassStorageClass"
         cmd = check + "| grep " + usb
         self.ch.executeCommand(cmd)
-        
+
         #if return code is 0, the kernel module is loaded, thus we need
         #to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "Usb Kernel module is loaded\n"
             self.detailedresults += "Usb Kernel module is loaded\n"
-        
         fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
-        
         #if return code is 0, the kernel module is loaded, thus we need
         #to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "Firewire kernel module is loaded\n"
             self.detailedresults += "Firewire kernel module is loaded\n"
-            
         tb = "AppleThunderboltUTDM"
         cmd = check + "| grep " + tb
         self.ch.executeCommand(cmd)
-        
         #if return code is 0, the kernel module is loaded, thus we need
         #to disable it
-        if self.ch.getReturnCode() == 0: 
+        if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "Thunderbolt kernel module is loaded\n"
             self.detailedresults += "Thunderbolt kernel module is loaded\n"
-        
         sd = "AppleSDXC"
         cmd = check + "| grep " + sd
         self.ch.executeCommand(cmd)
-        
         #if return code is 0, the kernel module is loaded, thus we need
         #to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "SD card kernel module is loaded\n"
             self.detailedresults += "SD card kernel module is loaded\n"
-            
-            
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return compliant
 ###############################################################################
+
     def fix(self):
         '''
         attempt to perform necessary operations to bring the system into
@@ -362,7 +347,6 @@ class DisableRemoveableStorage(Rule):
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
             if self.environ.getostype() == "Mac OS X":
                 self.rulesuccess = self.fixMac()
             else:
@@ -376,8 +360,7 @@ class DisableRemoveableStorage(Rule):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(grub, [0, 0, 384], self.logger, "",
-                                                        self.statechglogger,
-                                                        myid):
+                                        self.statechglogger, myid):
                             success = False
                     contents = readFile(grub, self.logger)
                     if contents:
@@ -417,9 +400,10 @@ class DisableRemoveableStorage(Rule):
                             self.statechglogger.recordchgevent(myid, event)
                         else:
                             if not checkPerms(modfile, [0, 0, 420],
-                                                              self.logger):
+                                              self.logger):
                                 self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
+                                myid = iterate(self.iditerator,
+                                               self.rulenumber)
                                 if not setPerms(modfile, [0, 0, 420],
                                    self.logger, self.statechglogger, myid):
                                     success = False
@@ -437,7 +421,9 @@ class DisableRemoveableStorage(Rule):
                                          "filepath": modfile}
                                 self.statechglogger.recordchgevent(myid,
                                                                    event)
-                                self.statechglogger.recordfilechange(modfile, tmpfile, myid)
+                                self.statechglogger.recordfilechange(modfile,
+                                                                     tmpfile,
+                                                                     myid)
                             os.rename(tmpfile, modfile)
                             os.chown(modfile, 0, 0)
                             os.chmod(modfile, 420)
@@ -456,18 +442,18 @@ class DisableRemoveableStorage(Rule):
                             createFile(blacklistf, self.logger)
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype":"creation",
+                            event = {"eventtype": "creation",
                                      "filepath": blacklistf}
                             self.statechglogger.recordchgevent(myid, event)
                         else:
                             if not checkPerms(blacklistf, [0, 0, 420],
-                                                              self.logger):
+                                              self.logger):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator,
-                                                           self.rulenumber)
+                                               self.rulenumber)
                                 if not setPerms(blacklistf, [0, 0, 420],
-                                    self.logger, self.statechglogger,
-                                                                     myid):
+                                                self.logger,
+                                                self.statechglogger, myid):
                                     success = False
                         for item in self.blacklist:
                             tempstring += item + "\n"
@@ -493,7 +479,7 @@ class DisableRemoveableStorage(Rule):
                 if output:
                     output = output[0].strip()
                     if os.path.exists("/lib/modules/" + output + \
-                             "/kernel/drivers/usb/storage/usb-storage.ko"):
+                                      "/kernel/drivers/usb/storage/usb-storage.ko"):
                         os.rename("/lib/modules/" + output + \
                             "/kernel/drivers/usb/storage/usb-storage.ko",
                                                          "/usb-storage.ko")
@@ -513,7 +499,7 @@ class DisableRemoveableStorage(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-    
+
 ###############################################################################
 
     def fixMac(self):
@@ -539,7 +525,7 @@ class DisableRemoveableStorage(Rule):
             usb = "IOUSBMassStorageClass"
             cmd = check + "| grep " + usb
             self.ch.executeCommand(cmd)
-            
+
             #if return code is 0, the kernel module is loaded, thus we need
             #to disable it
             if self.ch.getReturnCode() == 0:
@@ -551,14 +537,14 @@ class DisableRemoveableStorage(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     undo = load + filepath + usb + ".kext/"
-                    event = {"eventtype":"comm",
-                             "command":undo}
+                    event = {"eventtype": "comm",
+                             "command": undo}
                     self.statechglogger.recordchgevent(myid, event)
         if self.fwci.getcurrvalue():
             fw = "IOFireWireSerialBusProtocolTransport"
             cmd = check + "| grep " + fw
             self.ch.executeCommand(cmd)
-            
+
             #if return code is 0, the kernel module is loaded, thus we need
             #to disable it
             if self.ch.getReturnCode() == 0:
@@ -570,17 +556,17 @@ class DisableRemoveableStorage(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     undo = load + filepath + fw + ".kext/"
-                    event = {"eventtype":"comm",
-                             "command":undo}
+                    event = {"eventtype": "comm",
+                             "command": undo}
                     self.statechglogger.recordchgevent(myid, event)
         if self.tbci.getcurrvalue():
             tb = "AppleThunderboltUTDM"
             cmd = check + "| grep " + tb
             self.ch.executeCommand(cmd)
-            
+
             #if return code is 0, the kernel module is loaded, thus we need
             #to disable it
-            if self.ch.getReturnCode() == 0: 
+            if self.ch.getReturnCode() == 0:
                 cmd = unload + "/System/Library/Extensions/" + tb + ".kext/"
                 if not self.ch.executeCommand(cmd):
                     debug += "Unable to disable thunderbolt\n"
@@ -589,14 +575,14 @@ class DisableRemoveableStorage(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     undo = load + filepath + tb + ".kext/"
-                    event = {"eventtype":"comm",
-                             "command":undo}
+                    event = {"eventtype": "comm",
+                             "command": undo}
                     self.statechglogger.recordchgevent(myid, event)
         if self.sdci.getcurrvalue():
             sd = "AppleSDXC"
             cmd = check + "| grep " + sd
             self.ch.executeCommand(cmd)
-        
+
             #if return code is 0, the kernel module is loaded, thus we need
             #to disable it
             if self.ch.getReturnCode() == 0:
@@ -608,8 +594,8 @@ class DisableRemoveableStorage(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     undo = load + filepath + sd + ".kext/"
-                    event = {"eventtype":"comm",
-                             "command":undo}
+                    event = {"eventtype": "comm",
+                             "command": undo}
                     self.statechglogger.recordchgevent(myid, event)
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
