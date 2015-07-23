@@ -43,7 +43,7 @@ class networksetup():
 
 ###############################################################################
 
-    def __init__(self):
+    def __init__(self, logdispatcher):
         self.location = ""
         self.locationIsValidWiFiLocation = False
         self.locationInitialized = False
@@ -57,7 +57,8 @@ class networksetup():
         self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
         self.pp = fullproxy.split(":")[2]
         self.pf = PROXYCONFIGURATIONFILE
-        self.ch = CommandHelper()
+        self.logdispatch = logdispatcher
+        self.ch = CommandHelper(self.logdispatch)
         self.getLocation()
         self.updateCurrentNetworkConfigurationDictionary()
 
