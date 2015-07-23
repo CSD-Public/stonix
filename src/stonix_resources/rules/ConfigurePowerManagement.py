@@ -133,8 +133,9 @@ class ConfigurePowerManagement(Rule):
                 powerSettingValue = psinfo["PowerSettingValue"]
                 powerSettingActual = self.getPowerSetting(powerType, powerSetting)
                 powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
-                ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
-                if powerSettingValue == powerSettingActual:
+                ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual) +"])"
+                powerSettingActualValue = int(powerSettingActual)
+                if powerSettingValue == powerSettingActualValue:
                     self.resultAppend(pslabel + " is compliant. " + powerSettingInfo)
                 else:
                     self.resultAppend(pslabel + " is not compliant! " + powerSettingInfo)
@@ -228,7 +229,7 @@ class ConfigurePowerManagement(Rule):
                         name = name + " " + str(namepart)
                     name = name.strip()
                     value = str(values[-1])
-                    item[name] = str(value)
+                    item[name] = int(value)
             if not itemType == "":
                 self.psd[itemType] = item
 
