@@ -49,6 +49,7 @@ from ..IHmac import IHmac
 JAMFCASPERQUICKADD = "http://puppet-prod.lanl.gov/support/casper/Puppet-Stonix-quickadd.zip"
 JAMFCASPERSUITESERVER = "puppet-prod.lanl.gov"
 
+
 class InstallCasperSuite(Rule):
     """
     This class installs puppet on the system.
@@ -211,7 +212,8 @@ class InstallCasperSuite(Rule):
                                      str(self.rulename) + " is user disabled")
             else:
 # If there network, install, else no network, log
-                hasconnection = has_connection_to_server(self.js)
+                hasconnection = has_connection_to_server(self.logdispatch,
+                                                         self.js)
                 if hasconnection:
                     self.logdispatch.log(LogPriority.ERROR,
                                          "Connected to " + str(self.js))

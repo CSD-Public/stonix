@@ -27,6 +27,7 @@ Created on Aug 22, 2012
 
 @change: 2014/07/22 dkennel - Added -f flag to patch command call to eliminate
 prompt and wait issues during undo.
+@change: 2015/07/08 eball - Updated documentation for recordchgevent method
 '''
 import shelve
 import shutil
@@ -366,10 +367,25 @@ are an end user please report a bug.''')
         is a four digit zero padded rule number and a three digit zero padded
         number selected by the rule author.
         @param dictionary eventdict : The event dict is a python dictionary that
-        contains the following key:data elements -
-        eventtype: conf | perm | command | del
-        startstate: string
-        endstate: string
+        contains the following key:data element sets:
+        eventtype: conf | creation
+        filepath: string
+        ==========================================
+        eventtype: perms
+        filepath: string
+        startstate: [owner_uid, group_gid, mode]
+        endstate: [owner_uid, group_gid, mode]
+        ==========================================
+        eventtype: pkghelper
+        pkgname: string
+        startstate: installed | removed
+        endstate: installed | removed
+        ==========================================
+        eventtype: servicehelper
+        servicename: string
+        startstate: enabled | disabled
+        endstate: enabled | disabled
+        
         @return  : void
         @author D. Kennel
         """
