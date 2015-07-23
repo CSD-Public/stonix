@@ -133,7 +133,7 @@ and media.'''
                 self.detailedresults = "RestrictMounting report has been " + \
                     "run and is compliant"
             else:
-                self.detailedresults += "RestrictMounting report has been " + \
+                self.detailedresults = "RestrictMounting report has been " + \
                     "run and is not compliant\n" + results
         except (KeyboardInterrupt, SystemExit):
             raise
