@@ -237,11 +237,15 @@ class ConfigurePowerManagement(Rule):
         try:
             self.initializePowerSetting(forceUpdate)
             powerSettingValue = self.psd[powerType][powerSetting]
+            if powerSettingValue == "":
+                powerSettingValue = 0
+            else:
+                powerSettingValue = int(powerSettingValue)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception:
-            powerSettingValue = ""
+            powerSettingValue = 0
         return powerSettingValue
 
     def setPowerSetting(self, powerType, powerSetting, powerSettingValue):
