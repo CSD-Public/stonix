@@ -118,12 +118,6 @@ class ConfigureSystemAuthentication(Rule):
                 self.compliant = self.reportSolaris()
             elif self.environ.getosfamily() == "freebsd":
                 self.compliant = self.reportFreebsd()
-            if self.compliant:
-                self.detailedresults = "ConfigureSystemAuthentication report \
-has been run and is compliant"
-            else:
-                self.detailedresults = "ConfigureSystemAuthentication report \
-has been run and is not compliant"
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -317,7 +311,7 @@ has been run and is not compliant"
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
+
             if self.environ.getosfamily() == "linux":
                 self.rulesuccess = self.fixLinux()
             elif self.environ.getosfamily() == "freebsd":
@@ -326,12 +320,6 @@ has been run and is not compliant"
                 self.rulesuccess = self.fixSolaris()
             elif self.environ.getosfamily() == "darwin":
                 self.rulesuccess = self.fixMac()
-            if self.rulesuccess:
-                self.detailedresults = "ConfigureSystemAuthentication fix " + \
-                "has been run to completion"
-            else:
-                self.detailedresults = "ConfigureSystemAuthentication fix " + \
-                "has been run but not to completion"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
