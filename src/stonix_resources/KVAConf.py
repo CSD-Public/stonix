@@ -259,8 +259,9 @@ class KVAConf():
                                         found = False
                                         break
                                 except IndexError:
+                                    found = False
                                     self.detailedresults += "Index error\n"
-                                    raise(self.detailedresults)
+                                    break
                     return found
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
