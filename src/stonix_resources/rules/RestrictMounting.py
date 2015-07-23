@@ -212,6 +212,12 @@ and media.'''
                     if self.sh.disableservice("autofs"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "servicehelper", "servicename":
+                                 "autofs", "startstate": "enabled",
+                                 "endstate": "disabled"}
+                        self.statechglogger.recordchgevent(myid, event)
                     else:
                         success = False
                         debug = "Unable to disable autofs service\n"
@@ -232,7 +238,7 @@ and media.'''
                 cmdSuccess &= self.ch.executeCommand(cmd)
                 if not cmdSuccess:
                     success = False
-                    results += "Fix failed to disable GNOME automouting\n"
+                    results += "Fix failed to disable GNOME automounting\n"
 
             self.rulesuccess = success
             if self.rulesuccess:
