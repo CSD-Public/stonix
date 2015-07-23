@@ -246,6 +246,7 @@ Bluetooth\n"
                 resetsecon(self.kve.getPath())
             if debug:
                 self.logger.log(LogPriority.DEBUG, debug)
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
