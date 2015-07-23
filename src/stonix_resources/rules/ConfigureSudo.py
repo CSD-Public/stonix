@@ -137,20 +137,12 @@ CONFIGURESUDO to False.'''
                                 debug += "Index out of range on line: " + line + "\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 break
-                                
                     #make sure the sudoers file has correct permissions
                     if not checkPerms(self.path, [0, 0, 288], self.logger):
                         self.compliant = False
             if not self.present or self.wrongconfig:
                 compliant = False
             self.compliant = compliant
-            if self.compliant:
-                self.detailedresults += "Configuresudo report has been " + \
-                "run and is compliant"
-            else:
-                self.detailedresults += "Configuresudo report has been " + \
-                "run and is not compliant"
-
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
