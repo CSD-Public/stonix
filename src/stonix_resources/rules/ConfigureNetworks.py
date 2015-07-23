@@ -65,7 +65,7 @@ class ConfigureNetworks(RuleKVEditor):
         self.guidance = []
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.nsobject = networksetup()
+        self.nsobject = networksetup(self.logdispatch)
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.addKVEditor("DisableBluetoothUserInterface",
