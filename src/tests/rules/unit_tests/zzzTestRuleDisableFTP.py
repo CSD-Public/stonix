@@ -22,27 +22,27 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigurePowerManagement
+This is a Unit Test for Rule DisableFTP
 
-@author: ekkehard j. koch
-@change: 02/27/2013 Original Implementation
+@author: Eric Ball
+@change: 06/29/2015 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
-from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
-from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigurePowerManagement import ConfigurePowerManagement
+from stonix_resources.RuleTestTemplate import RuleTest
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.rules.DisableFTP import DisableFTP
 
 
-class test_zzzTestRuleConfigurePowerManagement(RuleTest):
+class zzzTestRuleDisableFTP(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigurePowerManagement(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = DisableFTP(self.config,
+                               self.environ,
+                               self.logdispatch,
+                               self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -57,37 +57,46 @@ class test_zzzTestRuleConfigurePowerManagement(RuleTest):
     def setConditionsForRule(self):
         '''
         This makes sure the intial report fails by executing the following
-
+        commands:
+        defaults write /System/Library/LaunchDaemons/ftp.plist Disabled 0
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
         success = True
-        if success:
-            success = self.checkReportForRule(False, True)
+        if self.environ.getosfamily() == "darwin":
+            if success:
+                command = [self.dc, "write",
+                           "/System/Library/LaunchDaemons/ftp.plist",
+                           "Disabled", "0"]
+                self.logdispatch.log(LogPriority.DEBUG, str(command))
+                success = self.ch.executeCommand(command)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
+        check on whether report was correct
         @param self: essential if you override this definition
+        @param pCompliance: the self.iscompliant value of rule
+        @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = self.checkReportForRule(True, pRuleSuccess)
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = self.checkReportForRule(False, pRuleSuccess)
         return success

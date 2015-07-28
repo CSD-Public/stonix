@@ -22,36 +22,43 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule RestrictMounting
+This is a Unit Test for Rule DisableGUILogon
 
 @author: Eric Ball
-@change: 07/07/2015 Original Implementation
+@change: 07/20/2015 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
 import os
+import re
+import traceback
 from src.stonix_resources.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.logdispatcher import LogPriority
-from src.stonix_resources.rules.RestrictMounting import RestrictMounting
-from src.stonix_resources.pkghelper import Pkghelper
+from src.stonix_resources.rules.DisableGUILogon import DisableGUILogon
 from src.stonix_resources.ServiceHelper import ServiceHelper
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
-class zzzTestRuleRestrictMounting(RuleTest):
+class zzzTestRuleDisableGUILogon(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = RestrictMounting(self.config, self.environ,
-                                     self.logdispatch, self.statechglogger)
+        self.rule = DisableGUILogon(self.config, self.environ,
+                                    self.logdispatch, self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.ph = Pkghelper(self.logdispatch, self.environ)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.inittab = False
 
     def tearDown(self):
-        pass
+        if self.inittab:
+            tmppath = self.inittab + ".utmp"
+            try:
+                os.rename(tmppath, self.inittab)
+            except Exception:
+                self.logdispatch.log(LogPriority.ERROR, traceback.format_exc())
 
     def runTest(self):
         self.simpleRuleTest()
@@ -65,83 +72,63 @@ class zzzTestRuleRestrictMounting(RuleTest):
         '''
         success = True
         # Enable CIs
-        datatype = "bool"
-        key = "RESTRICTCONSOLEACCESS"
-        instructions = "Unit test"
-        default = True
-        self.rule.consoleCi = self.rule.initCi(datatype, key, instructions,
-                                               default)
-        key = "DISABLEAUTOFS"
-        self.rule.autofsCi = self.rule.initCi(datatype, key, instructions,
-                                               default)
-        key = "DISABLEGNOMEAUTOMOUNT"
-        self.rule.gnomeCi = self.rule.initCi(datatype, key, instructions,
-                                               default)
+        self.rule.ci1.updatecurrvalue(True)
+        self.rule.ci2.updatecurrvalue(True)
+        # CI 3 is REMOVEX, which will remove X Windows entirely. STONIX unit
+        # tests should generally only be run in virtual environments anyway,
+        # but due to the severity of the changes caused by this rule, it is
+        # disabled by default. To enable, simply set it to True instead.
+        self.rule.ci3.updatecurrvalue(False)
         
-        self.path1 = "/etc/security/console.perms.d/50-default.perms"
-        self.path2 = "/etc/security/console.perms"
-        self.data1 = ["<floppy>=/dev/fd[0-1]* \\",
-                      "<scanner>=/dev/scanner* /dev/usb/scanner*",
-                      "<flash>=/mnt/flash* /dev/flash*",
-                      "# permission definitions",
-                      "<console>  0660 <floppy>     0660 root.floppy",
-                      "<console>  0600 <scanner>    0600 root",
-                      "<console>  0600 <flash>      0600 root.disk"]
-        self.data2 = ["<console>=tty[0-9][0-9]* vc/[0-9][0-9]* :[0-9]+\.[0-9]+ :[0-9]+",
-                      "<xconsole>=:[0-9]+\.[0-9]+ :[0-9]+"]
-        if os.path.exists(self.path1):
-            self.tmpfile1 = self.path1 + ".tmp"
-            os.rename(self.path1, self.tmpfile1)
-            try:
-                defaultPermsFile = open(self.path1, "w")
-            except IOError:
-                debug = "Could not open file " + self.path1 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+        # Ensure GUI logon is enabled
+        self.myos = self.environ.getostype().lower()
+        self.logdispatch.log(LogPriority.DEBUG, self.myos)
+        if os.path.exists("/bin/systemctl"):
+            cmd = ["systemctl", "set-default", "graphical.target"]
+            if not self.ch.executeCommand(cmd):
                 success = False
-            try:
-                defaultPermsFile.writelines(self.data1)
-            except IOError:
-                debug = "Could not write to file " + self.path1 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+        elif re.search("debian", self.myos):
+            if not self.sh.enableservice("gdm3"):
+                if not self.sh.enableservice("gdm"):
+                    if not self.sh.enableservice("kdm"):
+                        if not self.sh.enableservice("xdm"):
+                            if not self.sh.enableservice("lightdm"):
+                                success = False
+        elif re.search("ubuntu", self.myos):
+            ldmover = "/etc/init/lightdm.override"
+            grub = "/etc/default/grub"
+            if os.path.exists(ldmover):
+                if not os.remove(ldmover):
+                    success = False
+            if os.path.exists(grub):
+                tmppath = grub + ".tmp"
+                data = {"GRUB_CMDLINE_LINUX_DEFAULT": '"quiet splash"'}
+                editor = KVEditorStonix(self.statechglogger, self.logdispatch,
+                                        "conf", grub, tmppath, data,
+                                        "present", "closedeq")
+                editor.report()
+                if editor.fixables:
+                    if editor.fix():
+                        if not editor.commit():
+                            success = False
+                    else:
+                        success = False
+        else:
+            self.inittab = "/etc/inittab"
+            if os.path.exists(self.inittab):
+                tmppath = self.inittab + ".utmp"
+                try:
+                    os.rename(self.inittab, tmppath)
+                    open(self.inittab, "w").write("id:5:initdefault:")
+                except Exception:
+                    success = False
+                    self.logdispatch.log(LogPriority.ERROR,
+                                         traceback.format_exc())
+            else:
+                self.logdispatch.log(LogPriority.ERROR, self.inittab +
+                                     " not found, init system unknown")
+                self.inittab = False
                 success = False
-        if os.path.exists(self.path2):
-            self.tmpfile2 = self.path2 + ".tmp"
-            os.rename(self.path2, self.tmpfile2)
-            try:
-                permsFile = open(self.path2, "w")
-            except IOError:
-                debug = "Could not open file " + self.path2 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                success = False
-            try:
-                permsFile.writelines(self.data2)
-            except IOError:
-                debug = "Could not write to file " + self.path2 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                success = False
-        
-        # If autofs is installed, enable and start it. If it is not
-        # installed, it will not be tested.
-        if self.ph.check("autofs"):
-            if not self.sh.enableservice("autofs"):
-                debug = "Could not enable autofs\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                success = False
-
-        cmd = ["gconftool-2", "--direct", "--config-source",
-               "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
-               "--type", "bool", "--set",
-               "/desktop/gnome/volume_manager/automount_media",
-               "true"]
-        cmdSuccess = self.ch.executeCommand(cmd)
-        cmd = ["gconftool-2", "--direct", "--config-source",
-               "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
-               "--type", "bool", "--set",
-               "/desktop/gnome/volume_manager/automount_drives",
-               "true"]
-        cmdSuccess &= self.ch.executeCommand(cmd)
-        if not cmdSuccess:
-            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -168,13 +155,6 @@ class zzzTestRuleRestrictMounting(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        # Cleanup: put original perms files back
-        if os.path.exists(self.path1) and os.path.exists(self.tmpfile1):
-            os.remove(self.path1)
-            os.rename(self.tmpfile1, self.path1)
-        if os.path.exists(self.path2) and os.path.exists(self.tmpfile2):
-            os.remove(self.path2)
-            os.rename(self.tmpfile2, self.path2)
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True

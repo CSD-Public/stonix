@@ -26,6 +26,7 @@ Created on Mar 11, 2015
 
 @author: dwalker
 @change: 2015/04/14 dkennel - Now using new isApplicable method
+@change: 2015/07/27 eball - Added logger to setPerms call in fix()
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -55,7 +56,7 @@ class SecureNFS(Rule):
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]
 
-        #configuration item instantiation
+        # Configuration item instantiation
         datatype = 'bool'
         key = 'SECURENFS'
         instructions = "To disable this rule set the value of SECURENFS " + \
@@ -195,7 +196,7 @@ class SecureNFS(Rule):
 
             self.detailedresults = ""
 
-            #clear out event history so only the latest fix is recorded
+            # Clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -381,7 +382,7 @@ class SecureNFS(Rule):
                 if not checkPerms(export, [0, 0, 420], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(export, [0, 0, 420],
+                    if not setPerms(export, [0, 0, 420], self.logger,
                                     self.statechglogger, myid):
                         success = False
                         debug = "Unable to set permissions on " + export

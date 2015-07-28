@@ -136,15 +136,7 @@ class ConsoleRootOnly(Rule):
                             self.detailedresults += "The following line is \
 not acceptable in /etc/securetty: " + line + "\n"
                             compliant = False
-
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "The system is compliant with the \
-ConsoleRootOnly rule"
-            else:
-                self.compliant = False
-                self.detailedresults += "The system is not compliant with the \
-ConsoleRootOnly rule"
+            self.compliant = compliant
 
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -153,7 +145,7 @@ ConsoleRootOnly rule"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -226,7 +218,7 @@ ConsoleRootOnly rule"
                     myid = iterate(self.iditerator, self.rulenumber)
 
                     if not setPerms(self.securetty, self.perms, self.logger,
-                                                    self.statechglogger, myid):
+                                    self.statechglogger, myid):
                         self.detailedresults += "Unable to set permissions \
 on: " + self.securetty + "\n"
                         self.rulesuccess = False

@@ -25,9 +25,9 @@ This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
 @author: ekkehard j. koch
-@change: 2014-08-27 - ekkehard - Original Implementation
-@change: 2014-10-17 ekkehard OS X Yosemite 10.10 Update
-@change: 2015-02-15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
+@change: 2014/08/27 - ekkehard - Original Implementation
+@change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
+@change: 2015/02/15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
 @change: 2015/04/14 dkennel updated to use new isApplicable
 '''
 from __future__ import absolute_import
@@ -83,18 +83,18 @@ class ConfigurePowerManagement(Rule):
           "PowerSettingValue": 30,
           "PowerSettingMinimum": 0,
           "PowerSettingMaximum": 60},
+         "ACDiskSleep":
+         {"HelpText": "Set Disk Sleep minutes on AC Power. Default(AC Power, disksleep, 10).",
+          "PowerType": "AC Power",
+          "PowerSetting": "disksleep",
+          "PowerSettingValue": 10,
+          "PowerSettingMinimum": 0,
+          "PowerSettingMaximum": 60},
          "BatteryDisplaySleep":
          {"HelpText": "Set Display Sleep minutes on Battery Power. Default(Battery Power, displaysleep, 15).",
           "PowerType": "Battery Power",
           "PowerSetting": "displaysleep",
           "PowerSettingValue": 15,
-          "PowerSettingMinimum": 0,
-          "PowerSettingMaximum": 60},
-         "ACDiskSleep":
-         {"HelpText": "Set Disk Sleep minutes on AC Power. Default(AC Power, disksleep, 10).",
-          "PowerType": "AC Power",
-          "PowerSetting": "displaysleep",
-          "PowerSettingValue": 10,
           "PowerSettingMinimum": 0,
           "PowerSettingMaximum": 60},
          "BatteryDiskSleep":
@@ -116,6 +116,8 @@ class ConfigurePowerManagement(Rule):
             self.ci[pslabel] = self.initCi(datatype, key, instructions, defaultInteger)
         self.pmset = "/usr/bin/pmset"
         self.psd = {}
+        self.psACPowerAvailable = False
+        self.psACBatteryPowerAvailable = False
         self.ch = CommandHelper(self.logdispatch)
 
     def report(self):
@@ -126,16 +128,25 @@ class ConfigurePowerManagement(Rule):
         '''
         try:
             self.detailedresults = ""
+            self.initializePowerSetting(True)
             self.compliant = True
             for pslabel, psinfo in sorted(self.psconfiguration.items()):
                 powerType = psinfo["PowerType"]
-                powerSetting = psinfo["PowerSetting"]
-                powerSettingValue = psinfo["PowerSettingValue"]
-                if powerSettingValue == self.getPowerSetting(powerType, powerSetting):
-                    self.resultAppend(pslabel + " is compliant.")
-                else:
-                    self.resultAppend(pslabel + " is not compliant!")
-                    self.compliant = False
+                if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
+                    powerSetting = psinfo["PowerSetting"]
+                    powerSettingDefaultValue = psinfo["PowerSettingValue"]
+                    powerSettingValue = self.ci[pslabel].getcurrvalue()
+                    powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
+                    powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
+                    ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual) +"])"
+                    powerSettingActualValue = int(powerSettingActual)
+                    if powerSettingValue == powerSettingActualValue:
+                        self.resultAppend(pslabel + " is compliant. " + powerSettingInfo)
+                    else:
+                        self.resultAppend(pslabel + " is not compliant! " + powerSettingInfo)
+                        self.compliant = False
+            
+            self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -160,23 +171,27 @@ class ConfigurePowerManagement(Rule):
         try:
             self.detailedresults = ""
             success = True
+            self.initializePowerSetting(True)
             for pslabel, psinfo in sorted(self.psconfiguration.items()):
                 powerType = psinfo["PowerType"]
-                powerSetting = psinfo["PowerSetting"]
-                powerSettingValue = psinfo["PowerSettingValue"]
-                if powerSettingValue == self.getPowerSetting(powerType, powerSetting):
-                    self.resultAppend(pslabel + " was correctly set.")
-                else:
-                    if self.ci[pslabel].getcurrvalue() == True:
-                        newPowerSettingValue = self.setPowerSetting(powerType, powerSetting)
-                        if newPowerSettingValue == self.getPowerSetting(powerType, powerSetting):
-                            self.resultAppend(pslabel + " is now compliant!")
-                        else:
-                            self.resultAppend(pslabel + " setting still not compliant!")
-                            success = False
+                if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
+                    powerSetting = psinfo["PowerSetting"]
+                    powerSettingDefaultValue = psinfo["PowerSettingValue"]
+                    powerSettingValue = self.ci[pslabel].getcurrvalue()
+                    powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
+                    powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
+                    ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
+                    if powerSettingValue == powerSettingActual:
+                        self.resultAppend(pslabel + " was correctly set. " + powerSettingInfo)
                     else:
-                        self.resultAppend(pslabel + " configuration item set to False!")
+                        newPowerSettingValue = self.setPowerSetting(powerType, powerSetting, powerSettingValue)
+                        if newPowerSettingValue == self.getPowerSetting(powerType, powerSetting):
+                            self.resultAppend(pslabel + " is now compliant! "  + powerSettingInfo)
+                        else:
+                            self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
+                            success = False
             self.rulesuccess = success
+            self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -193,8 +208,17 @@ class ConfigurePowerManagement(Rule):
 ###############################################################################
 
     def initializePowerSetting(self, forceUpdate=False):
+        '''
+        Initialize Power Setting Dictionary (psd) with output from pmset command
+        @param self:essential if you override this definition
+        @param forceUpdate: Force Dictionary Reset
+        @return: boolean - true if applicable false if not
+        '''
+        success = True
         if forceUpdate:
             self.psd = {}
+            self.psACPowerAvailable = False
+            self.psACBatteryPowerAvailable = False
         if self.psd == {}:
             itemType = ""
             item = {}
@@ -208,40 +232,88 @@ class ConfigurePowerManagement(Rule):
                         self.psd[itemType] = item
                         item = {}
                     itemType = "Battery Power"
+                    self.psACBatteryPowerAvailable = True
                 elif linestripped == "AC Power:":
                     if not itemType == "":
                         self.psd[itemType] = item
                         item = {}
                     itemType = "AC Power"
+                    self.psACPowerAvailable = True
                 elif not itemType == "":
                     name = ""
                     for namepart in values[:-1]:
                         name = name + " " + str(namepart)
                     name = name.strip()
                     value = str(values[-1])
-                    item[name] = str(value)
+                    try:
+                        item[name] = int(value)
+                    except Exception:
+                        item[name] = value
+                    messagestring = "[" + str(itemType) + ", " + str(name) + "] = " + \
+                    str(item[name])
+                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
             if not itemType == "":
                 self.psd[itemType] = item
+        return success
+
+###############################################################################
 
     def getPowerSetting(self, powerType, powerSetting, forceUpdate=False):
-        self.initializePowerSetting(forceUpdate)
-        powerSettingValue = self.psd[powerType][powerSetting]
+        '''
+        Set a power setting on a system
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param powerType:Like AC Power or Battery Power
+        @param powerSetting:Like sleep or disksleep
+        @param forceUpdate:Get new values from system if true
+        @return: boolean - true
+        @note: None
+        '''
+        try:
+            self.initializePowerSetting(forceUpdate)
+            powerSettingValueString = self.psd[powerType][powerSetting]
+            if powerSettingValueString == "":
+                powerSettingValue = 0
+            else:
+                powerSettingValue = int(powerSettingValueString)
+            messagestring = "[" + str(powerType) + ", " + str(powerSetting) + \
+            "] = " + str(powerSettingValue)
+            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            powerSettingValue = 0
         return powerSettingValue
 
+###############################################################################
+
     def setPowerSetting(self, powerType, powerSetting, powerSettingValue):
+        '''
+        Set a power setting on a system
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param powerType:Like AC Power or Battery Power
+        @param powerSetting:Like sleep or disksleep
+        @param powerSettingValue:Value to set setting to
+        @return: boolean - true
+        @note: None
+        '''
         success = False
         if not powerSettingValue == self.getPowerSetting(powerType, powerSetting):
             if powerType == "Battery Power":
-                command = [self.pmset, "-b", powerSetting, powerSettingValue]
+                command = [self.pmset, "-b", powerSetting, str(powerSettingValue)]
                 self.ch.executeCommand(command)
             elif powerType == "AC Power":
-                command = [self.pmset, "-c", powerSetting, powerSettingValue]
+                command = [self.pmset, "-c", powerSetting, str(powerSettingValue)]
                 self.ch.executeCommand(command)
-            if powerSettingValue == self.getPowerSetting(powerType, powerSetting):
+            if powerSettingValue == self.getPowerSetting(powerType, powerSetting, True):
                 success = True
         else:
             success = True
         return success
+
+###############################################################################
 
     def resultAppend(self, pMessage=""):
         '''

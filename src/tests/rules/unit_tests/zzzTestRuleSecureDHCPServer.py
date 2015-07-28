@@ -22,31 +22,31 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigurePowerManagement
+This is a Unit Test for Rule SecureDHCPServer
 
-@author: ekkehard j. koch
-@change: 02/27/2013 Original Implementation
+@author: Eric Ball
+@change: 06/30/2015 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
-from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
-from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigurePowerManagement import ConfigurePowerManagement
+from stonix_resources.stonixutilityfunctions import setPerms
+from stonix_resources.RuleTestTemplate import RuleTest
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.rules.SecureDHCPServer import SecureDHCPServer
 
 
-class test_zzzTestRuleConfigurePowerManagement(RuleTest):
+class zzzTestRuleSecureDHCPServer(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigurePowerManagement(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = SecureDHCPServer(self.config,
+                                     self.environ,
+                                     self.logdispatch,
+                                     self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
 
     def tearDown(self):
         pass
@@ -56,40 +56,69 @@ class test_zzzTestRuleConfigurePowerManagement(RuleTest):
 
     def setConditionsForRule(self):
         '''
-        This makes sure the intial report fails by executing the following
-
+        Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
         success = True
+        self.rule.report()
         if success:
-            success = self.checkReportForRule(False, True)
+            # Open file with 'w' so it is empty, then write unwanted options
+            fo = open(self.rule.path, "w")
+            badoptionstring = '''option domain-name example.com;
+option domain-name-servers servers.example.com;
+option nis-domain          example.com;
+option nis-servers servers.example.com;
+option ntp-servers\tntp.example.com;
+option routers 127.0.0.1;
+option time-offset -18000;
+'''
+            fo.write(badoptionstring)
+            # Rule wants 420 perms, set to 660
+            success = setPerms(self.rule.path, [0, 0, 660], self.logdispatch)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
+        check on whether report was correct
         @param self: essential if you override this definition
+        @param pCompliance: the self.iscompliant value of rule
+        @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        '''
+        check on whether fix was correct
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        success = self.checkReportForRule(True, pRuleSuccess)
+        success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        '''
+        check on whether undo was correct
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        success = self.checkReportForRule(False, pRuleSuccess)
+        success = True
         return success
 
 if __name__ == "__main__":
