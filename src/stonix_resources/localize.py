@@ -96,6 +96,18 @@ WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
 "**WARNING**WARNING**WARNING**WARNING**WARNING**"
 
 
+ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE computer\\n" + \
+"systems are provided for the processing of official U.S. Government\\n" + \
+"information only. All data contained within DOE computer systems is\\n" + \
+"owned by the DOE, and may be audited, intercepted, recorded, read,\\n" + \
+"copied, or captured in any manner and disclosed in any manner, by\\n" + \
+"authorized personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM.\\n" + \
+"System personnel may disclose any potential evidence of crime found on\\n" + \
+"DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY\\n" + \
+"ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\\n" + \
+"AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\\n" + \
+"DISCLOSURE OF COMPUTER ACTIVITY."
+
 # Warning Banners abbreviated for OS X login Screen
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
 "system. Authorized use only. Users have no explicit/implicit expectation " + \
