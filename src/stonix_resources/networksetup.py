@@ -59,8 +59,7 @@ class networksetup():
         self.pf = PROXYCONFIGURATIONFILE
         self.logdispatch = logdispatcher
         self.ch = CommandHelper(self.logdispatch)
-        self.getLocation()
-        self.updateCurrentNetworkConfigurationDictionary()
+        self.initialized = False
 
 ###############################################################################
 
@@ -166,6 +165,13 @@ class networksetup():
             success = False
             raise
         return success
+
+    def initialize(self):
+        if not self.initialized:
+            self.getLocation()
+            self.updateCurrentNetworkConfigurationDictionary()
+            self.initialized = True
+        return self.initialized
 
 ###############################################################################
 
