@@ -220,7 +220,8 @@ class networksetup():
                     for item in linearray:
                         lineprocessed = item.strip()
                         itemarray = lineprocessed.split(":")
-                        self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
+                        if len(itemarray) > 1:
+                            self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
                     hardwareport = self.ns[servicename]["hardware port"].lower()
                     splitline = hardwareport.split()
                     networktype = ""
