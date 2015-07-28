@@ -31,10 +31,12 @@ Created on Jul 11, 2013
 @change: 2014-07-29 ekkehard refix OS X Mavericks issues
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel update for new isApplicable
+@change: 2015/07/28 eball Fixed path validation problems in fixKde
+@change: 2015/07/28 eball Fixed return value and statechglogging in correctFile
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms
-from ..stonixutilityfunctions import writeFile, readFile, resetsecon, getUserGroupName
+from ..stonixutilityfunctions import readFile, resetsecon
 from ..ruleKVEditor import RuleKVEditor
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
@@ -63,7 +65,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.effectiveUserID = self.environ.geteuid()
         if self.environ.getosfamily() == "darwin":
             self.helptext = "This rule will configure screen saver " + \
-            "settings."
+                            "settings."
         else:
             self.helptext = "This rule will configure Screen locking " + \
             "after 15 minutes of continuous inactivity.  This rule will " + \
@@ -84,7 +86,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                                  {"askForPassword": ["1", "-int 1"]},
                                  "present",
                                  "",
-                                 "Ask for password when system wide " + \
+                                 "Ask for password when system wide " +
                                  "screen saver is on.",
                                  None,
                                  False,
@@ -96,14 +98,14 @@ class ConfigureScreenLocking(RuleKVEditor):
                                  {"idleTime": ["840", "-int 840"]},
                                  "present",
                                  "",
-                                 "Sets system the screen saver to " + \
+                                 "Sets system the screen saver to " +
                                  "activate after 14 minutes of idleTime.",
                                  None,
                                  False,
                                  {"idleTime":
-                                  ["The domain/default pair of ( .+" + \
-                                   "com\.apple\.screensaver, " + \
-                                   "idleTime) does not " + \
+                                  ["The domain/default pair of ( .+" +
+                                   "com\.apple\.screensaver, " +
+                                   "idleTime) does not " +
                                    "exist",
                                    None]})
                 self.addKVEditor("SystemLoginWindowIdleTime",
@@ -113,14 +115,14 @@ class ConfigureScreenLocking(RuleKVEditor):
                                  {"loginWindowIdleTime": ["840", "-int 840"]},
                                  "present",
                                  "",
-                                 "Sets system LoginWindowIdleTime to " + \
+                                 "Sets system LoginWindowIdleTime to " +
                                  "14 minutes.",
                                  None,
                                  False,
                                  {"loginWindowIdleTime":
-                                  ["The domain/default pair of ( .+" + \
-                                   "com\.apple\.screensaver, " + \
-                                   "loginWindowIdleTime) does not " + \
+                                  ["The domain/default pair of ( .+" +
+                                   "com\.apple\.screensaver, " +
+                                   "loginWindowIdleTime) does not " +
                                    "exist",
                                    None]})
             else:
@@ -146,9 +148,9 @@ class ConfigureScreenLocking(RuleKVEditor):
                                  None,
                                  False,
                                  {"askForPasswordDelay":
-                                  ["The domain/default pair of ( .+" + \
-                                   "com\.apple\.screensaver, " + \
-                                   "askForPassword) does not " + \
+                                  ["The domain/default pair of ( .+" +
+                                   "com\.apple\.screensaver, " +
+                                   "askForPassword) does not " +
                                    "exist",
                                    None]})
         else:
@@ -156,7 +158,7 @@ class ConfigureScreenLocking(RuleKVEditor):
             datatype = 'bool'
             key = 'CONFIGURESCREENLOCKING'
             instructions = "To disable this rule set the value of " + \
-            "CONFIGURESCREENLOCKING to False."
+                           "CONFIGURESCREENLOCKING to False."
             default = True
             self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -250,7 +252,7 @@ desired value after being run which is " + getcmds[cmd] + "\n"
                     compliant = False
             elif error:
                 self.detailedresults += "There is no value set for:" + \
-                cmd2 + "\n"
+                                        cmd2 + "\n"
                 compliant = False
         return compliant
 
@@ -304,8 +306,8 @@ desired value after being run which is " + getcmds[cmd] + "\n"
                                             else:
                                                 uid = getpwnam(temp[0])[2]
                                                 gid = getpwnam(temp[0])[3]
-                                                if not checkPerms(kfile, 
-                                                        [uid, gid, 384], 
+                                                if not checkPerms(kfile,
+                                                                  [uid, gid, 384],
                                                                   self.logger):
                                                     compliant = False
                                                 if not self.searchFile(kfile):
@@ -328,9 +330,9 @@ directory, invalid form of /etc/passwd"
                     break
             if self.kdefix:
                 self.detailedresults += "The following users don't " + \
-                "have kde configured:\n"
+                                        "have kde configured:\n"
                 for user in self.kdefix:
-                    self.detailedresults += user + "\n" 
+                    self.detailedresults += user + "\n"
         else:
             if self.environ.getosfamily() == "solaris":
                 who = "/usr/bin/who"
@@ -377,8 +379,8 @@ directory, invalid form of /etc/passwd"
                                             else:
                                                 uid = getpwnam(temp[0])[2]
                                                 gid = getpwnam(temp[0])[3]
-                                                if not checkPerms(kfile, 
-                                                        [uid, gid, 384], 
+                                                if not checkPerms(kfile,
+                                                                  [uid, gid, 384],
                                                                   self.logger):
                                                     compliant = False
                                                 if not self.searchFile(kfile):
@@ -419,7 +421,7 @@ directory, invalid form of /etc/passwd"
             if self.environ.getosfamily() == "darwin":
                 self.rulesuccess = self.fixMac()
             elif self.ci.getcurrvalue():
-            #clear out event history so only the latest fix is recorded
+                # clear out event history so only the latest fix is recorded
                 if self.environ.geteuid() == 0:
                     self.iditerator = 0
                     eventlist = self.statechglogger.findrulechanges(self.rulenumber)
@@ -435,7 +437,7 @@ directory, invalid form of /etc/passwd"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
@@ -559,33 +561,27 @@ for this portion of the rule\n"
     def fixKde(self):
         '''This method checks if the kde screenlock file is configured
         properly.  Please note, this rule may fail if the owner and group of
-        configuration file are not that of the user in question but doesn't 
+        configuration file are not that of the user in question but doesn't
         necessarily mean your system is out of compliance.  If the fix fails
         Please check the logs to determing the real reason of non rule success.
         @author: dwalker
         @param self - essential if you override this definition
-        @return: bool - True if KDE is successfully configured, False if it 
+        @return: bool - True if KDE is successfully configured, False if it
                 isn't
         '''
 
         debug = ""
         success = True
-        
+
         for user in self.kdefix:
             if self.environ.getosfamily() == "solaris":
                 homebase = "/export/home/"
             else:
                 homebase = "/home/"
             homebase += user
-            homebase += "/.kde"
+            homebase += "/.kde/share/config"
             if not os.path.exists(homebase):
-                os.mkdir(homebase)
-            homebase += "/share"
-            if not os.path.exists(homebase):
-                os.mkdir(homebase)
-            homebase += "/config"
-            if not os.path.exists(homebase):
-                os.mkdir(homebase)
+                os.makedirs(homebase)
             kfile = homebase + "/kdesktoprc"
             if not os.path.exists(kfile):
                 kfile = homebase + "/kscreensaverrc"
@@ -603,7 +599,7 @@ for this portion of the rule\n"
         rest of the code.  Will put back all in one method eventually
         @author: dwalker
         @return: bool
-        @param filehandle: string 
+        @param filehandle: string
         '''
         self.editor = ""
         kvt = "tagconf"
@@ -611,7 +607,8 @@ for this portion of the rule\n"
         tpath = filehandle + ".tmp"
         conftype = "closedeq"
         self.editor = KVEditorStonix(self.statechglogger, self.logger, kvt,
-                            filehandle, tpath, self.kdeprops, intent, conftype)
+                                     filehandle, tpath, self.kdeprops, intent,
+                                     conftype)
         if not self.editor.report():
             return False
         else:
@@ -626,23 +623,24 @@ for this portion of the rule\n"
         @param filehandle: string
          '''
         created = False
+        success = True
         if not os.path.exists(kfile):
             f = open(kfile, "w")
             f.close()
             created = True
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype":"creation",
-                     "filepath":kfile}
-        
+            event = {"eventtype": "creation", "filepath": kfile}
+            self.statechglogger.recordchgevent(myid, event)
+
         uid = getpwnam(user)[2]
         gid = getpwnam(user)[3]
         if not created:
-            if not checkPerms(kfile, [uid, gid, 384], self.logger):
+            if not checkPerms(kfile, [uid, gid, 0600], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(kfile, [uid, gid ,384], self.logger,
-                                            self.statechglogger, myid):
+                if not setPerms(kfile, [uid, gid, 0600], self.logger,
+                                self.statechglogger, myid):
                     success = False
         if not self.searchFile(kfile):
             if self.editor.fixables:
@@ -653,7 +651,7 @@ for this portion of the rule\n"
                     return False
                 elif not self.editor.commit():
                     return False
-        os.chmod(kfile, 384)
+        os.chmod(kfile, 0600)
         os.chown(kfile, uid, gid)
         resetsecon(homebase)
-        return True
+        return success
