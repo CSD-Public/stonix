@@ -27,6 +27,7 @@ Created on Aug 12, 2013
 @change: dkennel 04/18/2014 Replaced old style CI with new style
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated to use new isApplicable
+@change: 2015/07/27 eball Fixed help text typos and improved PEP8 compliance
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import readFile, writeFile, setPerms, checkPerms
@@ -49,21 +50,22 @@ class DisableWeakAuthentication(Rule):
         self.rulenumber = 30
         self.rulename = "DisableWeakAuthentication"
         self.mandatory = True
-        self.helptext = "The Berkley r-commands are legacy services which " + \
-        "allow cleartext remote acces and have an insecure trust model. " + \
-        " r-commands suffer from the same hijacking and eavesdropping " + \
-        "problems as telnet.  This rules ensures that no r-services are " + \
-        "implemented or installed"
+        self.helptext = "The Berkeley r-commands are legacy services which " + \
+                        "allow cleartext remote access and have an insecure" + \
+                        " trust model. r-commands suffer from the same " + \
+                        "hijacking and eavesdropping problems as telnet. " + \
+                        "This rules ensures that no r-services are " + \
+                        "implemented or installed"
         self.formatDetailedResults("initialize")
         self.guidance = ["NSA 3.2.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
 
-        #configuration item instantiation
+        # Configuration item instantiation
         datatype = 'bool'
         key = 'DISABLEWEAKAUTHENTICATION'
         instructions = "To prevent the disabling of services using weak " + \
-        "authentication set DISABLEWEAKAUTHENTICATION to False."
+                       "authentication set DISABLEWEAKAUTHENTICATION to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -99,7 +101,7 @@ class DisableWeakAuthentication(Rule):
                     if contents:
                         for line in contents:
                             if re.match('^#', line) or \
-                            re.match(r'^\s*$', line):
+                               re.match(r'^\s*$', line):
                                 continue
                             elif re.search("pam_rhosts", line):
                                 found = True
@@ -134,10 +136,10 @@ class DisableWeakAuthentication(Rule):
 
             if compliant:
                 self.detailedresults = "DisableWeakAuthentication report " + \
-                "has been run and is compliant\n"
+                                       "has been run and is compliant\n"
             else:
                 self.detailedresults = "DisableWeakAuthentication report " + \
-                "has been run and is not compliant\n"
+                                       "has been run and is not compliant\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)
             self.compliant = compliant
         except(KeyboardInterrupt, SystemExit):
@@ -147,12 +149,12 @@ class DisableWeakAuthentication(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
+
     def fix(self):
-        '''DisableWeakAuthentication.fix() Public method to fix any issues 
+        '''DisableWeakAuthentication.fix() Public method to fix any issues
         that were found in the report method.
         @author: dwalker
         @return: bool - False if the method died during execution
@@ -208,12 +210,12 @@ class DisableWeakAuthentication(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-###############################################################################
+
     def undo(self):
-        '''There is no undo method for this rule since we don't ever want rsh 
+        '''There is no undo method for this rule since we don't ever want rsh
         installed or for the r services to be enabled.  Overrides the undo
         inside the rule.py class'''
         try:
