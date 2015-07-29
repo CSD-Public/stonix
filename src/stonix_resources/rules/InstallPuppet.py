@@ -947,7 +947,7 @@ class InstallPuppet(Rule):
             self.notOnCorperateNetwork = False
             #####
             # Check connection to server that has puppet.zip
-            if has_connection_to_server(self.puppetpkgserver):
+            if has_connection_to_server(self.logdispatch, self.puppetpkgserver):
                 self.notConnectedToServer = False
                 if not os.path.exists("/usr/bin/puppet"):
                     compliant = False
