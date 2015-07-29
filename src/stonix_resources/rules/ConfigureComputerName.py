@@ -49,7 +49,6 @@ class ConfigureComputerName(Rule):
         self.rootrequired = True
         self.guidance = [""]
         self.CN = ""
-        self.logger = logger
         self.iditerator = 0
 
         #configuration item instantiation

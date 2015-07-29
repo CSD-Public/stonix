@@ -29,10 +29,10 @@ This is a Unit Test for Rule ConfigureComputerName
 '''
 from __future__ import absolute_import
 import unittest
-from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.CommandHelper import CommandHelper
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.ConfigureComputerName import ConfigureComputerName
+from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.rules.ConfigureComputerName import ConfigureComputerName
 
 
 class zzzTestConfigureComputerName(RuleTest):

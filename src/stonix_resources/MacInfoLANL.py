@@ -53,15 +53,18 @@ class MacInfoLANL():
         initialize lanlMacInfo
         @author: ekkehard
         '''
-        self.logdispatch = logger
+        self.logpriority="debug"
+        self.logsyslog_level=None
 # Make sure we have the full path for all commands
-        self.ch = CommandHelper(logger)
+        self.logdispatch = logger
+        self.ch = CommandHelper(self.logdispatch)
         self.LANLAssetTagNVRAM = ""
         self.LANLAssetTagFilesystem = ""
         self.macAddressDictionary = {}
-        self.dictionary = {}
         self.accuracyDictionary = {}
+        self.dictionary = {}
         self.dictionaryItem = None
+        self.dictionaryWeight = 100
         self.keys = None
         self.key = None
         self.keyIndexNumber = 0
@@ -78,6 +81,7 @@ class MacInfoLANL():
         self.macAddress = ""
         self.ipAddress = ""
         self.ipAddressActive = []
+        self.ldapnotworking = False
 # Make sure we have the full path for all commands
         self.ns = "/usr/sbin/networksetup"
         self.scutil = "/usr/sbin/scutil"
@@ -139,6 +143,14 @@ class MacInfoLANL():
         '''
         return self.dictionaryItem
 
+    def getNumberOfLDAPEntries(self):
+        '''
+        get current number of items in the LDAP dictionary
+        @author: ekkehard
+        @return: dictionary entry
+        '''
+        return len(self.dictionary.keys())
+
     def getComputerInfoCompliance(self):
         '''
         see if all is set correctly
@@ -164,7 +176,7 @@ class MacInfoLANL():
         if not compliant:
             messagestring = "- Not compliant; " + messagestring
             if not(self.computerNameAccuracyLevelWhy == "" ):
-                messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy + ";"
+                messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy
             success = False
         else:
             messagestring = "- compliant; " + messagestring
@@ -187,7 +199,7 @@ class MacInfoLANL():
         if not compliant:
             messagestring = "- Not compliant; " + messagestring
             if not(self.computerNameAccuracyLevelWhy == "" ):
-                messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy + ";"
+                messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy
             success = False
         else:
             messagestring = "- compliant; " + messagestring
@@ -210,7 +222,7 @@ class MacInfoLANL():
         if not compliant:
             messagestring = "- Not compliant; " + messagestring
             if not(self.computerNameAccuracyLevelWhy == "" ):
-                messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy + ";"
+                messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy
             success = False
         else:
             messagestring = "- compliant; " + messagestring
@@ -539,7 +551,7 @@ class MacInfoLANL():
                     except Exception, err :
                         messagestring = "Problem writing: " + self.lanl_property_file + \
                         " error: " + str(err)
-                        self.logdispatch.log(LogPriority.DEBUG, messagestring)
+                        self.logdispatch.log(LogPriority.ERROR, messagestring)
             else:
                 assetTag = ""
                 messagestring = " - Filesystem asset_id was not changed because confidence was only " + \
@@ -573,47 +585,48 @@ class MacInfoLANL():
         self.gotoFirstItemLDAP()
 # Build a dictionary based upon assetTag. If all is right there should only be one.
         while not(self.getCurrentItemLDAP() == None):
+            if self.dictionaryItem["Weight"] >= self.dictionaryWeight:
 # If the assetTag is not in the dictionary add an entry
-            if not(self.dictionaryItem["assetTag"] in self.accuracyDictionary):
-                if self.dictionaryItem["macAddress"] == "":
-                    newMacAddress = []
-                else:
-                    newMacAddress = [self.dictionaryItem["macAddress"]]
-                if self.dictionaryItem["ipAddress"] == "":
-                    newIpAddress = []
-                else:
-                    newIpAddress = [self.dictionaryItem["ipAddress"]]
-                if self.dictionaryItem["ComputerName"] == "":
-                    newComputerName = []
-                else:
-                    newComputerName = [self.dictionaryItem["ComputerName"]]
-                if self.dictionaryItem["endUsername"] == "":
-                    newEndUsername = []
-                else:
-                    newEndUsername = [self.dictionaryItem["endUsername"]]
-                item = {"macAddress": newMacAddress,
-                        "ipAddress": newIpAddress,
-                        "ComputerName": newComputerName,
-                        "endUsername": newEndUsername,
-                        "Number": 1}
-                self.accuracyDictionary[self.dictionaryItem["assetTag"]] = item
+                if not(self.dictionaryItem["assetTag"] in self.accuracyDictionary):
+                    if self.dictionaryItem["macAddress"] == "":
+                        newMacAddress = []
+                    else:
+                        newMacAddress = [self.dictionaryItem["macAddress"]]
+                    if self.dictionaryItem["ipAddress"] == "":
+                        newIpAddress = []
+                    else:
+                        newIpAddress = [self.dictionaryItem["ipAddress"]]
+                    if self.dictionaryItem["ComputerName"] == "":
+                        newComputerName = []
+                    else:
+                        newComputerName = [self.dictionaryItem["ComputerName"]]
+                    if self.dictionaryItem["endUsername"] == "":
+                        newEndUsername = []
+                    else:
+                        newEndUsername = [self.dictionaryItem["endUsername"]]
+                    item = {"macAddress": newMacAddress,
+                            "ipAddress": newIpAddress,
+                            "ComputerName": newComputerName,
+                            "endUsername": newEndUsername,
+                            "Number": 1}
+                    self.accuracyDictionary[self.dictionaryItem["assetTag"]] = item
 # If the assetTag has a dictionary add an entry add extra data
-            else:
-                self.accuracyDictionary[self.dictionaryItem["assetTag"]]["Number"] = self.accuracyDictionary[self.dictionaryItem["assetTag"]]["Number"] + 1
+                else:
+                    self.accuracyDictionary[self.dictionaryItem["assetTag"]]["Number"] = self.accuracyDictionary[self.dictionaryItem["assetTag"]]["Number"] + 1
 # The macAddress is not in the list of macAddresses to append it
-                if not(self.dictionaryItem["macAddress"] == ""):
-                    if not(self.dictionaryItem["macAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"]):
-                        self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"].append(self.dictionaryItem["macAddress"])
+                    if not(self.dictionaryItem["macAddress"] == ""):
+                        if not(self.dictionaryItem["macAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"]):
+                            self.accuracyDictionary[self.dictionaryItem["assetTag"]]["macAddress"].append(self.dictionaryItem["macAddress"])
 # The ipAddress is not in the list of ipAddresses to append it
-                if not(self.dictionaryItem["ipAddress"] == ""):
-                    if not(self.dictionaryItem["ipAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"]):
-                        self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"].append(self.dictionaryItem["ipAddress"])
+                    if not(self.dictionaryItem["ipAddress"] == ""):
+                        if not(self.dictionaryItem["ipAddress"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"]):
+                            self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ipAddress"].append(self.dictionaryItem["ipAddress"])
 # The ComputerName is not in the list of computer names add it
-                if not(self.dictionaryItem["ComputerName"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ComputerName"]):
-                    self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ComputerName"].append(self.dictionaryItem["ComputerName"])
+                    if not(self.dictionaryItem["ComputerName"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ComputerName"]):
+                        self.accuracyDictionary[self.dictionaryItem["assetTag"]]["ComputerName"].append(self.dictionaryItem["ComputerName"])
 # The endUserName is not in the list of endUserNames so append it
-                if not(self.dictionaryItem["endUsername"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["endUsername"]):
-                    self.accuracyDictionary[self.dictionaryItem["assetTag"]]["endUsername"].append(self.dictionaryItem["endUsername"])
+                    if not(self.dictionaryItem["endUsername"] in self.accuracyDictionary[self.dictionaryItem["assetTag"]]["endUsername"]):
+                        self.accuracyDictionary[self.dictionaryItem["assetTag"]]["endUsername"].append(self.dictionaryItem["endUsername"])
             self.gotoNextItemLDAP()
         self.updateAssetTagAccuracy(len(self.accuracyDictionary) == 1,
                                     0, "# of entries in accuracyDictionary is " + str(len(self.accuracyDictionary)) + ";")
@@ -705,7 +718,9 @@ class MacInfoLANL():
         @author: ekkehard
         @return: dictionary item
         '''
-        item = {"hardwarePort": "",
+        item = {"Tag": "",
+                "Weight": 100,
+                "hardwarePort": "",
                 "device": "",
                 "macAddress": "",
                 "ipAddress": "",
@@ -730,7 +745,7 @@ class MacInfoLANL():
         except Exception, err:
             messagestring = "Cannot open: " + self.lanl_property_file + \
             "Exception: " + str(err)
-            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+            self.logdispatch.log(LogPriority.ERROR, messagestring)
         else:
             try :
                 for line in fileToOpen:
@@ -745,7 +760,7 @@ class MacInfoLANL():
             except Exception, err:
                 messagestring = str(err) + " - Can't find a line in the file: " + \
                 self.LANLAssetTagFilesystem
-                self.logdispatch.log(LogPriority.DEBUG, messagestring)
+                self.logdispatch.log(LogPriority.ERROR, messagestring)
                 self.LANLAssetTagFilesystem = ""
             else:
                 fileToOpen.close()
@@ -789,7 +804,7 @@ class MacInfoLANL():
             raise
         except Exception:
             messagestring = traceback.format_exc()
-            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+            self.logdispatch.log(LogPriority.ERROR, messagestring)
         try:
             command = [self.scutil,"--get", "HostName"]
             self.ch.executeCommand(command)
@@ -803,7 +818,7 @@ class MacInfoLANL():
             raise
         except Exception:
             messagestring = traceback.format_exc()
-            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+            self.logdispatch.log(LogPriority.ERROR, messagestring)
         try:
             command = [self.scutil,"--get", "LocalHostName"]
             errorcode = self.ch.getError()
@@ -817,7 +832,7 @@ class MacInfoLANL():
             raise
         except Exception:
             messagestring = traceback.format_exc()
-            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+            self.logdispatch.log(LogPriority.ERROR, messagestring)
         return success
 
     def initializeLanlAssetTagNVRAM(self):
@@ -843,7 +858,7 @@ class MacInfoLANL():
             self.logdispatch.log(LogPriority.ERROR, messagestring)
         return success
 
-    def populateDataFromLDAP(self, addressType, address, hardwarePort, device):
+    def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device):
         '''
         get LDAP data from
         @author: ekkehard j. koch
@@ -854,15 +869,23 @@ class MacInfoLANL():
         try:
 # lookup in LDAP based on macAddress
             success = True
-            command = [self.ldap,
-                       "-x",
-                       "-h",
-                       "ldap-adhoc.lanl.gov",
-                       "-b",
-                       "dc=lanl,dc=gov",
-                       addressType + "=" + address]
-            self.ch.executeCommand(command)
-            output = self.ch.getOutput()
+            if self.ldapnotworking:
+                output = []
+            else:
+                command = [self.ldap,
+                           "-x",
+                           "-h",
+                           "ldap.lanl.gov",
+                           "-b",
+                           "dc=lanl,dc=gov",
+                           addressType + "=" + address]
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                returncode = self.ch.returncode
+                if returncode == 0:
+                    self.ldapnotworking = False
+                else:
+                    self.ldapnotworking = True
             macAddress = ""
             ipAddress = ""
             computerName = ""
@@ -898,6 +921,8 @@ class MacInfoLANL():
                         if not(assetTag == ""):
                             self.entries = self.entries + 1
                             self.initializeDictionaryItemLDAP(self.entries)
+                            self.dictionaryItem["Tag"] = tag
+                            self.dictionaryItem["Weight"] = weightValue
                             self.dictionaryItem["searchTerm"] = addressType + "=" + address
                             self.dictionaryItem["hardwarePort"] = hardwarePort
                             self.dictionaryItem["device"] = device
@@ -916,11 +941,13 @@ class MacInfoLANL():
                         endUsername = ""
                 except Exception, err:
                     messagestring = str(err) + " - " + str(traceback.format_exc())
-                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
+                    self.logdispatch.log(LogPriority.ERROR, messagestring)
                     continue
             if not(assetTag == ""):
                 self.entries = self.entries + 1
                 self.initializeDictionaryItemLDAP(self.entries)
+                self.dictionaryItem["Tag"] = tag
+                self.dictionaryItem["Weight"] = weightValue
                 self.dictionaryItem["searchTerm"] = addressType + "=" + address
                 self.dictionaryItem["hardwarePort"] = hardwarePort
                 self.dictionaryItem["device"] = device
@@ -936,7 +963,7 @@ class MacInfoLANL():
         except Exception:
             success = False
             messagestring = traceback.format_exc()
-            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+            self.logdispatch.log(LogPriority.ERROR, messagestring)
         return success
     
     def populateFromMac(self):
@@ -1001,10 +1028,9 @@ class MacInfoLANL():
                 self.populateDataFromLDAP("macAddress", 100, "macAddress", item["macAddress"],
                                           item["hardwarePort"], item["device"])
             else:
-                log_message("Invalid macAddress item['macAddress'] = " + \
-                            str(item["macAddress"]) + ", ",
-                            "normal",
-                            self.logpriority, self.logsyslog_level)
+                messagestring = "Invalid macAddress item['macAddress'] = " + \
+                str(item["macAddress"])
+                self.logdispatch.log(LogPriority.DEBUG, messagestring)
 # Make sure you are only searching for valid IP address
             if not(item["IP address"] == "") and not(item["IP address"] == "0.0.0.0"):
                 if not(item["IP address"] in self.ipAddressActive):
@@ -1012,25 +1038,23 @@ class MacInfoLANL():
                 self.populateDataFromLDAP("IP", 100, "ipHostNumber", item["IP address"],
                                       item["hardwarePort"], item["device"])
             else:
-                log_message("Invalid IP address item['IP address'] = " + \
-                            str(item["IP address"]) + ", ",
-                            "normal",
-                            self.logpriority, self.logsyslog_level)
+                messagestring = "Invalid IP address item['IP address'] = " + \
+                str(item["IP address"])
+                self.logdispatch.log(LogPriority.DEBUG, messagestring)
 # add entries from property number in computer name
         if not(self.computerNameDiskUtilityAssetTag == "") and not(int(self.computerNameDiskUtilityAssetTag) == 0):
             self.populateDataFromLDAP("ComputerName", 100, "lanlPN", self.computerNameDiskUtilityAssetTag,
                                       "", "")
         else:
-            log_message("Invalid Asset Tag computerNameDiskUtitilyAssetTag = " + \
-                        str(self.computerNameDiskUtilityAssetTag) + ", ",
-                        "normal",
-                        self.logpriority, self.logsyslog_level)
+            messagestring = "Invalid Asset Tag computerNameDiskUtitilyAssetTag = " + \
+            str(self.computerNameDiskUtilityAssetTag)
+            self.logdispatch.log(LogPriority.DEBUG, messagestring)
 # add potenetial entries from computer name as hostname
         if not(self.computerNameDiskUtilityHostName == ""):
             self.populateDataFromLDAP("ComputerName", 100, "cn", self.computerNameDiskUtilityHostName,
                                       "", "")
 # add entries from property number in LANLAssetTagNVRAM
-        if not(self.getLANLAssetTagNVRAM() == ""):
+        if not(self.getLANLAssetTagNVRAM() == "")  and not(int(self.getLANLAssetTagNVRAM()) == 0):
             if self.getNumberOfLDAPEntries() > 0:
                 weight = 0
             else:
@@ -1046,10 +1070,9 @@ class MacInfoLANL():
             self.populateDataFromLDAP("Filesystem", weight, "lanlPN", self.getLANLAssetTagFilesystem(),
                                       "", "")
         else:
-            log_message("Invalid Asset Tag getLANLAssetTagFilesystem = " + \
-                        str(self.getLANLAssetTagFilesystem()) + ", ",
-                        "normal",
-                        self.logpriority, self.logsyslog_level)
+            messagestring = "Invalid Asset Tag getLANLAssetTagFilesystem = " + \
+            str(self.getLANLAssetTagFilesystem())
+            self.logdispatch.log(LogPriority.DEBUG, messagestring)
         return success
 
     def report(self):
@@ -1059,17 +1082,17 @@ class MacInfoLANL():
         self.messageAppend(messagestring)
         messagestring = "AssetTag=" + self.getSuggestedAssetTagConfidence() + ";"
         if not(self.assetTagAccuracyLevelWhy == "" ):
-            messagestring = messagestring + " - " + self.assetTagAccuracyLevelWhy + ";"
+            messagestring = messagestring + " - " + self.assetTagAccuracyLevelWhy
         self.messageAppend(messagestring)
         messagestring = "Owner=" + self.getSuggestedEndUsernameConfidence() + ";"
         if not(self.endUserNameAccuracyLevelWhy == "" ):
-            messagestring = messagestring + " - " + self.endUserNameAccuracyLevelWhy + ";"
+            messagestring = messagestring + " - " + self.endUserNameAccuracyLevelWhy
         self.messageAppend(messagestring)
         messagestring = "ComputerName=" + self.getSuggestedComputerNameConfidence() + ";"
         messagestring = messagestring + " Hostname=" + self.getSuggestedHostNameConfidence() + ";"
         messagestring = messagestring + " LocalHostname=" + self.getSuggestedLocalHostNameConfidence() + ";"
         if not(self.computerNameAccuracyLevelWhy == "" ):
-            messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy + ";"
+            messagestring = messagestring + " - " + self.computerNameAccuracyLevelWhy
         self.messageAppend(messagestring)
         messagestring = ""
         self.messageAppend(messagestring)
@@ -1089,11 +1112,10 @@ class MacInfoLANL():
         '''
         messagestring = "List Of Asset Values:"
         self.messageAppend(messagestring)
-        messagestring = "macAddress=" + self.macAddress + ";"
+        messagestring = "macAddress=" + str(self.macAddress) + ";"
         self.messageAppend(messagestring)
-        messagestring = "ipAddress=" + self.ipAddress + ";"
-        self.messageAppend(messagestring)
-        messagestring = "ipAddressesActive=" + str(self.ipAddressActive) + ";"
+        messagestring = "ipAddressesActive=" + str(self.ipAddress) + \
+        "; ipAddressesActive=" + str(self.ipAddressActive) + ";"
         self.messageAppend(messagestring)
         messagestring = "LANLAssetTagNVRAM=" + self.getLANLAssetTagNVRAM() + ";"
         self.messageAppend(messagestring)
@@ -1113,25 +1135,23 @@ class MacInfoLANL():
         self.messageAppend(messagestring)
         self.gotoFirstItemLDAP()
         while not(self.getCurrentItemLDAP() == None):
-            messagestring = " - searchTerm=" + self.dictionaryItem["searchTerm"] + ";"
-            if not(self.dictionaryItem["macAddress"] == ""):
-                messagestring = messagestring + " macAddress=" + str(self.dictionaryItem["macAddress"]) + ";"
+            messagestring = " - Tag=" + str(self.dictionaryItem["Tag"]) + ";"
+            messagestring = messagestring + " weight=" + str(self.dictionaryItem["Weight"]) + ";"
+            messagestring = messagestring + " searchTerm='" + str(self.dictionaryItem["searchTerm"]) + "';"
+            if not(self.dictionaryItem["assetTag"] == ""):
+                messagestring = messagestring + " assetTag=" + str(self.dictionaryItem["assetTag"]) + ";"
+            if not(self.dictionaryItem["endUsername"] == ""):
+                messagestring = messagestring + " endUsername=" + str(self.dictionaryItem["endUsername"]) + ";"
+            if not(self.dictionaryItem["ComputerName"] == ""):
+                messagestring = messagestring + " ComputerName=" + str(self.dictionaryItem["ComputerName"]) + ";"
             if not(self.dictionaryItem["ipAddress"] == ""):
                 messagestring = messagestring + " ipAddress=" + str(self.dictionaryItem["ipAddress"]) + ";"
+            if not(self.dictionaryItem["macAddress"] == ""):
+                messagestring = messagestring + " macAddress=" + str(self.dictionaryItem["macAddress"]) + ";"
             if not(self.dictionaryItem["hardwarePort"] == ""):
                 messagestring = messagestring + " hardwarePort=" + str(self.dictionaryItem["hardwarePort"]) + ";"
             if not(self.dictionaryItem["device"] == ""):
                 messagestring = messagestring + " device=" + str(self.dictionaryItem["device"]) + ";"
-            if not(self.dictionaryItem["ComputerName"] == ""):
-                messagestring = messagestring + " ComputerName=" + str(self.dictionaryItem["ComputerName"]) + ";"
-            if not(self.dictionaryItem["HostName"] == ""):
-                messagestring = messagestring + " HostName=" + str(self.dictionaryItem["HostName"]) + ";"
-            if not(self.dictionaryItem["LocalHostname"] == ""):
-                messagestring = messagestring + " LocalHostname=" + str(self.dictionaryItem["LocalHostname"]) + ";"
-            if not(self.dictionaryItem["endUsername"] == ""):
-                messagestring = messagestring + " endUsername=" + str(self.dictionaryItem["endUsername"]) + ";"
-            if not(self.dictionaryItem["assetTag"] == ""):
-                messagestring = messagestring + " assetTag=" + str(self.dictionaryItem["assetTag"]) + ";"
             self.messageAppend(messagestring)
             self.gotoNextItemLDAP()
         return self.messageGet()
