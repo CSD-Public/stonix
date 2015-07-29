@@ -76,9 +76,9 @@ Windows, as it will close terminal windows in the X environment.'''
 
             if os.path.exists(self.path1):
                 # Shell scripts in profile.d do not require +x, so they can
-                # be either 0755 (493) or 0644 (420)
-                if not checkPerms(self.path1, [0, 0, 493], self.logger) and \
-                   not checkPerms(self.path1, [0, 0, 420], self.logger):
+                # be either 0755 (0755) or 0644 (0644)
+                if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
+                   not checkPerms(self.path1, [0, 0, 0644], self.logger):
                     compliant = False
                     results += self.path1 + " permissions incorrect\n"
                 self.tmppath1 = self.path1 + ".tmp"
@@ -99,11 +99,13 @@ Windows, as it will close terminal windows in the X environment.'''
                 results += self.path1 + " does not exist\n"
 
             if os.path.exists(self.path2):
-                if not checkPerms(self.path2, [0, 0, 493], self.logger) and \
-                   not checkPerms(self.path2, [0, 0, 420], self.logger):
+                if not checkPerms(self.path2, [0, 0, 0755], self.logger) and \
+                   not checkPerms(self.path2, [0, 0, 0644], self.logger):
                     compliant = False
                     results += self.path2 + " permissions incorrect\n"
-                if not re.search(self.cshData, self.path2):
+                cshText = open(self.path2, "r").read()
+                if not re.search(self.cshData, cshText):
+                    compliant = False
                     results += self.path2 + " does not contain the correct " + \
                                             "values\n"
             else:
@@ -147,29 +149,26 @@ Windows, as it will close terminal windows in the X environment.'''
                 event = {"eventtype": "creation",
                          "filepath": self.path1}
                 self.statechglogger.recordchgevent(myid, event)
-                self.tmppath = self.path1 + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", self.path1, self.tmppath,
-                                              self.data1, "present", "closedeq")
-                self.editor1.report()
-                self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", self.path1, self.tmppath,
-                                              self.data2, "present", "space")
-                self.editor2.report()
+            if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
+               not checkPerms(self.path1, [0, 0, 0644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path1, [0, 0, 0644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
+                    results += "Could not set permissions for " + \
+                               self.path1 + "\n"
+            self.tmppath = self.path1 + ".tmp"
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          "conf", self.path1, self.tmppath,
+                                          self.data1, "present", "closedeq")
+            self.editor1.report()
+            self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                          "conf", self.path1, self.tmppath,
+                                          self.data2, "present", "space")
+            self.editor2.report()
+
             if self.editor1.fixables or self.editor2.fixables:
-                if not self.created:
-                    if not checkPerms(self.path1, [0, 0, 493], self.logger) and \
-                       not checkPerms(self.path1, [0, 0, 420], self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path1, [0, 0, 420],
-                                        self.logger, self.statechglogger, myid):
-                            success = False
-                            results += "Could not set permissions for " + \
-                                       self.path1 + "\n"
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.editor1.setEventID(myid)
                 if self.editor1.fix():
                     if self.editor1.commit():
                         debug = self.path1 + "'s contents have been " + \
@@ -211,18 +210,16 @@ Windows, as it will close terminal windows in the X environment.'''
                 event = {"eventtype": "creation",
                          "filepath": self.path2}
                 self.statechglogger.recordchgevent(myid, event)
-                writeFile(self.path2, self.cshData, self.logger)
-            else:
-                if not checkPerms(self.path2, [0, 0, 493], self.logger) and \
-                   not checkPerms(self.path2, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.path2, [0, 0, 420],
-                                    self.logger, self.statechglogger, myid):
-                        success = False
-                        results += "Could not set permissions for " + \
-                                   self.path2 + "\n"
-            
+            writeFile(self.path2, self.cshData, self.logger)
+            if not checkPerms(self.path2, [0, 0, 0755], self.logger) and \
+               not checkPerms(self.path2, [0, 0, 0644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path2, [0, 0, 0644],
+                                self.logger, self.statechglogger, myid):
+                    success = False
+                    results += "Could not set permissions for " + \
+                               self.path2 + "\n"
 
             self.rulesuccess = success
             if self.rulesuccess:
