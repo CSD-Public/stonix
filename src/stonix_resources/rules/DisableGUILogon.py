@@ -76,13 +76,15 @@ the X11/X Windows GUI.'''
         "a remote display."
         default = False
         self.ci2 = self.initCi(datatype, key, instructions, default)
-        
+
         datatype = "bool"
         key = "REMOVEX"
         instructions = "To enable this item, set the value of REMOVEX " + \
-        "to True. When enabled, this item will completely remove X Windows " + \
-        "from the system.\nIt is recommended that this rule be run from a " + \
-        "console session rather than from the GUI.\nREMOVEX cannot be undone."
+        "to True. When enabled, this item will COMPLETELY remove X Windows " + \
+        "from the system, and on most platforms will disable any currently " + \
+        "running display manager. It is therefore recommended that this " + \
+        "rule be run from a console session rather than from the GUI.\n" + \
+        "REMOVEX cannot be undone."
         default = False
         self.ci3 = self.initCi(datatype, key, instructions, default)
 
@@ -104,7 +106,7 @@ the X11/X Windows GUI.'''
             self.myos = self.environ.getostype().lower()
             compliant = True
             results = ""
-            
+
             if os.path.exists("/bin/systemctl"):
                 self.initver = "systemd"
                 compliant, results = self.reportSystemd()
@@ -142,7 +144,7 @@ the X11/X Windows GUI.'''
                     xremoved = False
                     results += "Core X11 components are present\n"
             # Removing X will take xserverrc with it. If X is not present, we
-            # do not need to check for xserverrc 
+            # do not need to check for xserverrc
             if not xremoved:
                 self.serverrc = "/etc/X11/xinit/xserverrc"
                 self.xservSecure = False
@@ -205,7 +207,7 @@ the X11/X Windows GUI.'''
         if not compliant:
             results = "inittab not set to runlevel 3; GUI logon is enabled\n"
         return compliant, results
-        
+
     def reportSystemd(self):
         compliant = True
         results = ""
@@ -217,7 +219,7 @@ the X11/X Windows GUI.'''
             results = "systemd default target is not multi-user.target; " + \
                       "GUI logon is enabled\n"
         return compliant, results
-    
+
     def reportDebian(self):
         compliant = True
         results = ""
@@ -227,7 +229,7 @@ the X11/X Windows GUI.'''
                 compliant = False
                 results = dm + " is still in init folders; GUI logon is enabled\n"
         return compliant, results
-    
+
     def reportUbuntu(self):
         compliant = True
         results = ""
@@ -276,7 +278,7 @@ the X11/X Windows GUI.'''
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            
+
             if self.ci1.getcurrvalue() or self.ci3.getcurrvalue():
                 if self.initver == "systemd":
                     cmd = ["/bin/systemctl", "set-default", "multi-user.target"]
@@ -325,7 +327,7 @@ the X11/X Windows GUI.'''
                     self.statechglogger.recordfilechange(ldmover, tmpfile, myid)
                     os.rename(tmpfile, ldmover)
                     resetsecon(ldmover)
-                    
+
                     grub = "/etc/default/grub"
                     if not os.path.exists(grub):
                         createFile(grub, self.logger)
@@ -416,6 +418,7 @@ the X11/X Windows GUI.'''
                 else:
                     cmd = ["yum", "groups", "mark", "convert"]
                     self.ch.executeCommand(cmd)
+                    self.ph.remove("xorg-x11-xinit")
                     cmd2 = ["yum", "groupremove", "-y", "X Window System"]
                     if not self.ch.executeCommand(cmd2):
                         success = False
@@ -436,7 +439,7 @@ the X11/X Windows GUI.'''
                 else:
                     success = False
                     results += "STONIX was unable to disable the xfs service\n"
-                    
+
                 if not self.xservSecure:
                     serverrcString = "exec X :0 -nolisten tcp $@"
                     if not os.path.exists(self.serverrc):
@@ -453,10 +456,10 @@ the X11/X Windows GUI.'''
             self.rulesuccess = success
             if self.rulesuccess:
                 self.detailedresults = "DisableGUILogon fix has been run " + \
-                "to completion"
+                                       "to completion"
             else:
                 self.detailedresults = "DisableGUILogon fix has been run " + \
-                "but not to completion\n" + results
+                                       "but not to completion\n" + results
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
