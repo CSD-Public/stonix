@@ -53,11 +53,11 @@ class RestrictMounting(Rule):
 and permissions related to disk mounts.\nRESTRICTCONSOLEACCESS will restrict \
 device ownership for console users to root only.\nDISABLEAUTOFS disables the \
 autofs service, which is used to dynamically mount NFS filesystems. Even if \
-NFS in needed, NFS filesystems can usually be statically mounted through 
+NFS in needed, NFS filesystems can usually be statically mounted through
 /etc/fstab.\nDISABLEGNOMEAUTOMOUNT will restrict the gnome-volume-manager \
 (part of the GNOME Desktop Environment) from automatically mounting devices \
 and media.'''
-        
+
         # Configuration item instantiation
         datatype = "bool"
         key = "RESTRICTCONSOLEACCESS"
@@ -65,12 +65,12 @@ and media.'''
                        "RESTRICTCONSOLEACCESS to True."
         default = False
         self.consoleCi = self.initCi(datatype, key, instructions, default)
-        
+
         key = "DISABLEAUTOFS"
         instructions = "To disable dynamic NFS mounting through the " + \
                        "autofs service, set DISABLEAUTOFS to True."
         self.autofsCi = self.initCi(datatype, key, instructions, default)
-        
+
         key = "DISABLEGNOMEAUTOMOUNT"
         instructions = "To disable the GNOME desktop environment from " + \
                        "automounting devices and removable media, set " + \
@@ -87,7 +87,7 @@ and media.'''
         try:
             self.path1 = "/etc/security/console.perms.d/50-default.perms"
             self.path2 = "/etc/security/console.perms"
-            self.data = {"<console>": 
+            self.data = {"<console>":
                          "tty[0-9][0-9]* vc/[0-9][0-9]* :0\.[0-9] :0",
                          "<xconsole>": "0\.[0-9] :0"}
             self.ph = Pkghelper(self.logdispatch, self.environ)
@@ -102,7 +102,7 @@ and media.'''
                     if re.search("^<[x]?console>", line, re.M):
                         compliant = False
                         results += self.path1 + " contains " + \
-                        "unrestricted device access\n"
+                                                "unrestricted device access\n"
                         break
 
             if os.path.exists(self.path2):
@@ -113,20 +113,21 @@ and media.'''
                 kveReport = self.editor.report()
                 if not kveReport:
                     compliant = False
-                    results += self.path2 + " does not contain " \
-                    + "the correct values\n"
+                    results += self.path2 + " does not contain " + \
+                                            "the correct values\n"
 
             if self.ph.check("autofs"):
                 if self.sh.auditservice("autofs"):
                     compliant = False
                     results += "autofs is installed and enabled\n"
 
-            cmd = ["gconftool-2", "-R", "/desktop/gnome/volume_manager"]
-            self.ch.executeCommand(cmd)
-            gconf = self.ch.getOutputString()
-            if len(re.findall("automount_[media|drives]+ = false", gconf)) < 2:
-                compliant = False
-                results += "GNOME automounting is not disabled\n"
+            if os.path.exists("/usr/bin/gconftool-2"):
+                cmd = ["gconftool-2", "-R", "/desktop/gnome/volume_manager"]
+                self.ch.executeCommand(cmd)
+                gconf = self.ch.getOutputString()
+                if len(re.findall("automount_[media|drives]+ = false", gconf)) < 2:
+                    compliant = False
+                    results += "GNOME automounting is not disabled\n"
 
             self.compliant = compliant
             if self.compliant:
