@@ -180,7 +180,6 @@ class ConfigureAIDE(Rule):
         try:
 
             if not self.ci.getcurrvalue():
-                self.rulesuccess = False
                 self.detailedresults += '\nThis rule is currently not enabled, so nothing was done!'
                 self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
