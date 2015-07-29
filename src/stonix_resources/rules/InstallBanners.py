@@ -170,12 +170,13 @@ class InstallBanners(RuleKVEditor):
         val1 = 'true'
         val2 = 'true'
         val3 = '\'' + ALTWARNINGBANNER + '\''
+        val3report = "This is a Department of Energy (DOE) computer system. DOE computer"
         fix1 = gconfset + opt1type + opt1 + ' ' + val1
         fix2 = gconfset + opt2type + opt2 + ' ' + val2
         fix3 = gconfset + opt3type + opt3 + ' ' + val3
         self.gnome2reportdict = {rep1: val1,
                                  rep2: val2,
-                                 rep3: val3}
+                                 rep3: val3report}
         self.gnome2fixlist = [fix1, fix2, fix3]
 
     def setgnome3(self):
