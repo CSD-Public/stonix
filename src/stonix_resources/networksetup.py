@@ -65,6 +65,7 @@ class networksetup():
 
     def report(self):
         compliant = True
+        self.initialize()
         if self.locationIsValidWiFiLocation:
             self.resultAppend("WiFi Network Setup for " + \
                               "services for location named " + \
@@ -101,6 +102,7 @@ class networksetup():
 
     def fix(self):
         fixed = True
+        self.initialize()
         messagestring = "for location = " + str(self.location)
         for key in sorted(self.nso):
             network = self.nso[key]
@@ -165,6 +167,8 @@ class networksetup():
             success = False
             raise
         return success
+
+###############################################################################
 
     def initialize(self):
         if not self.initialized:
