@@ -173,11 +173,16 @@ class ConfigureAIDE(Rule):
         @return: bool
         @change: dwalker - various bug fixes, added event deletions in fix
         '''
+
+        self.detailedresults = ""
+        self.rulesuccess = True
+
         try:
-            self.detailedresults = ""
+
             if not self.ci.getcurrvalue():
-                self.rulesuccess = True
-                self.formatDetailedResults("disabled", self.rulesuccess,
+                self.rulesuccess = False
+                self.detailedresults += '\nThis rule is currently not enabled, so nothing was done!'
+                self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.rulesuccess
