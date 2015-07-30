@@ -65,7 +65,6 @@ class SecureDHCPServer(Rule):
 
     def report(self):
         try:
-            print "inside report!!!!\n\n"
             self.ph = Pkghelper(self.logger, self.environ)
             self.data1 = {"ddns-update-style": "none;",
                           "deny": ["declines;",
@@ -104,10 +103,8 @@ class SecureDHCPServer(Rule):
                     if re.match('^#', line) or re.match(r'^\s*$', line):
                         continue
                     if re.search("^option", line):
-                        print "line is: " + line + "\n\n"
                         line = line.split()
                         if len(line) >= 2:
-                            print "line has two or more placeholders\n\n"
                             for item in self.data2:
                                 if re.search(item, line[1]):
                                     compliant = False
@@ -139,7 +136,6 @@ class SecureDHCPServer(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             #if self.ph.check(self.package):
-            print "inside fix!\n\n"
             if not os.path.exists(self.path):
                 createFile(self.path, self.logger)
                 self.created = True
@@ -166,23 +162,18 @@ class SecureDHCPServer(Rule):
                     tempstring += line
                     continue
                 if re.search("^option", line):
-                    print "here's an option line!\n\n" + line + "\n\n"
                     temp = line.split()
                     if len(temp) >= 2:
-                        print "line has 2 or more placeholders"
                         for item in self.data2:
                             if re.search(item, temp[1]):
-                                print "we found the line we don't want"
                                 found = True
                                 break
                         if found:
-                            print "found = True, skip this line"
                             continue
                         else:
                             tempstring += line
                 else:
                     tempstring += line
-            print "tempstring: " + tempstring + "\n\n"
             if tempstring:
                 if not writeFile(tmpfile, tempstring, self.logger):
                     self.detailedresults += "Unable to write changes to " + \
