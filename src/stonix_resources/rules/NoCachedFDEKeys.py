@@ -24,7 +24,8 @@ class NoCachedFDEKeys(Rule):
         self.rulenumber = 271
         self.rulename = "NoCachedFDEKeys"
         self.formatDetailedResults("initialize")
-        self.helptext = ""
+        self.helptext = "This rule prevents the mac from saving filevault " + \
+            "encryption keys on the system."
         self.rootrequired = True
         datatype = "bool"
         key = "NOCACHEDFDEKEYS"
