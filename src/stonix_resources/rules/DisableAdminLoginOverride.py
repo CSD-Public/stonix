@@ -73,8 +73,8 @@ to log into another user's active, locked session.'''
                 for line in ssText:
                     if re.search(adminAllowed, line):
                         self.compliant = False
-                        self.detailedresults += self.path + " contains " + \
-                            adminAllowed
+                        self.detailedresults += self.path + ' contains "' + \
+                            adminAllowed + '"'
                         break
             else:
                 self.compliant = False
@@ -105,9 +105,9 @@ to log into another user's active, locked session.'''
             if os.path.exists(self.path):
                 adminAllowed = "group=admin,wheel fail_safe"
                 adminDisabled = "group=wheel fail_safe"
-                ssText = "\n".join(readFile(self.path, self.logger))
+                ssText = "".join(readFile(self.path, self.logger))
                 if re.search(adminAllowed, ssText):
-                    re.sub(adminAllowed, adminDisabled, ssText)
+                    ssText = re.sub(adminAllowed, adminDisabled, ssText)
                     tmpfile = self.path + ".tmp"
                     if writeFile(tmpfile, ssText, self.logger):
                         self.iditerator += 1
