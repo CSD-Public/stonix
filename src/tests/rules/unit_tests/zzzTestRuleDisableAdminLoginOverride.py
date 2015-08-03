@@ -32,7 +32,7 @@ import unittest
 import os
 import traceback
 from src.stonix_resources.RuleTestTemplate import RuleTest
-from src.stonix_resources.logdispatcher import LogPriority
+from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.stonixutilityfunctions import createFile, writeFile
 from src.stonix_resources.rules.DisableAdminLoginOverride import DisableAdminLoginOverride
 
