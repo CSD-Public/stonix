@@ -71,11 +71,10 @@ class PasswordExpiration(Rule):
         datatype = 'bool'
         key = 'PASSWORDEXPIRATION'
         instructions = "To disable this rule set the value of " + \
-        "PASSWORDEXPIRATION to False."
+            "PASSWORDEXPIRATION to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.libusercreate, self.libuserinstall, self.useraddcreate, \
-                               self.logindefcreate = False, False, False, False
+        self.libusercreate, self.libuserinstall, self.useraddcreate, self.logindefcreate = False, False, False, False
         self.fixable, self.shadow = True, True
         self.editor1, self.editor2 = "", ""
         self.fixusers = []
@@ -107,31 +106,38 @@ class PasswordExpiration(Rule):
                 self.shadowfile = "/etc/shadow"
                 self.logdeffile = "/etc/login.defs"
                 self.useraddfile = "/etc/default/useradd"
-                self.libuserfile = "/etc/libuser.conf"
+                if self.ph.manager == "apt-get":
+                    self.libuser = "python-libuser"
+                else:
+                    self.libuser = "libuser"
+                if self.ph.manager == "zypper":
+                    self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
+                else:
+                    self.libuserfile = "/etc/libuser.conf"
                 self.pamfile = "/etc/pam.d/common-password"
                 self.compliant = self.reportLinux(self.specs)
             elif self.environ.getosfamily() == "solaris":
-                self.specs = {"PASSLENGTH":"8",
-                              "MINWEEKS":"1",
-                              "MAXWEEKS":"26",
-                              "WARNWEEKS":"4"}
+                self.specs = {"PASSLENGTH": "8",
+                              "MINWEEKS": "1",
+                              "MAXWEEKS": "26",
+                              "WARNWEEKS": "4"}
                 self.shadowfile = "/etc/shadow"
                 self.logdeffile = "/etc/default/passwd"
                 self.compliant = self.reportSolaris(self.specs)
             elif self.environ.getosfamily() == "freebsd":
                 self.specs = {#'warnexpire':'28d',
-                              "warnpassword":"28d",
-                              "minpasswordlen":"8",
-                              "passwordtime":"180d"}
+                              "warnpassword": "28d",
+                              "minpasswordlen": "8",
+                              "passwordtime": "180d"}
                 self.shadowfile = "/etc/master.passwd"
                 self.loginfile = "/etc/login.conf"
                 self.compliant = self.reportFreebsd(self.specs)
             if self.compliant:
                 self.detailedresults += "PasswordExpiration report has " + \
-                "been run and the system is compliant\n"
+                    "been run and the system is compliant\n"
             else:
                 self.detailedresults += "PasswordExpiration report has " + \
-                "been run and the system is not compliant\n"
+                    "been run and the system is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -140,10 +146,10 @@ class PasswordExpiration(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def reportLinux(self, specs):
@@ -155,12 +161,11 @@ class PasswordExpiration(Rule):
             compliant5 = self.chkPam()
         else:
             compliant5 = True
-        if compliant1 and compliant2 and compliant3 and compliant4 and \
-                                                                    compliant5:
+        if compliant1 and compliant2 and compliant3 and compliant4 and compliant5:
             return True
         else:
             return False
-        
+
 ###############################################################################
 
     def reportSolaris(self, specs):
@@ -170,7 +175,7 @@ class PasswordExpiration(Rule):
             return True
         else:
             return False
-        
+
 ###############################################################################
 
     def reportFreebsd(self, specs):
@@ -180,7 +185,7 @@ class PasswordExpiration(Rule):
             return True
         else:
             return False
-        
+
 ###############################################################################
 
     def chkLogDef(self, specs):
@@ -193,29 +198,31 @@ class PasswordExpiration(Rule):
                 setPerms(self.logdeffile, [0, 0, 420], self.logger)
                 tmpfile = self.logdeffile + ".tmp"
                 self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                   "conf", self.logdeffile, tmpfile, specs, "present", "space")
+                                              "conf", self.logdeffile, tmpfile,
+                                              specs, "present", "space")
                 if not self.editor1.report():
                     debug += self.logdeffile + " doesn't contain the " + \
-                    "correct contents\n"
+                        "correct contents\n"
                     compliant = False
             else:
                 self.detailedresults += "Wasn't able to create " + \
-                self.logdeffile + " file\n"
+                    self.logdeffile + " file\n"
                 compliant = False
         else:
             if not checkPerms(self.logdeffile, [0, 0, 420], self.logger):
                 compliant = False
             tmpfile = self.logdeffile + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                   "conf", self.logdeffile, tmpfile, specs, "present", "space")
+                                          "conf", self.logdeffile, tmpfile,
+                                          specs, "present", "space")
             if not self.editor1.report():
                 debug += "chkLogDef editor.report is not compliant\n"
                 compliant = False
         debug += "chkLogDef method is returning " + str(compliant) + \
-    " compliance\n"
+            " compliance\n"
         self.logger.log(LogPriority.DEBUG, debug)
         return compliant
-    
+
 ###############################################################################
 
     def chkShadow(self):
@@ -348,7 +355,7 @@ class PasswordExpiration(Rule):
         debug = "chkShadow method is returning " + str(compliant) + " compliance\n"
         self.logger.log(LogPriority.DEBUG, debug)
         return compliant
-    
+
 ###############################################################################
 
     def chkUserAdd(self):
@@ -359,7 +366,7 @@ class PasswordExpiration(Rule):
                 self.useraddcreate = True
                 setPerms(self.useraddfile, [0, 0, 384], self.logger)
             else:
-                debug += self.useraddfile + " couldn't be created\n" 
+                debug += self.useraddfile + " couldn't be created\n"
                 compliant = False
         else:
             if not checkPerms(self.useraddfile, [0, 0, 384], self.logger):
@@ -370,75 +377,69 @@ class PasswordExpiration(Rule):
             for line in contents:
                 if re.search("^\#", line) or re.match('^\s*$', line):
                     continue
-                if re.search('^INACTIVE', line.strip()) and re.search('=', line):
+                if re.search('^INACTIVE', line.strip()) and re.search('=',
+                                                                      line):
                     found = True
                     temp = line.split('=')
                     if int(temp[1].strip()) <= -1 or int(temp[1].strip()) > 35:
-                        valcorrect  = False
+                        valcorrect = False
                         break
             if not found:
                 compliant = False
                 debug += "INACTIVE key was not found in or" + \
-                self.useraddfile + "\n"
+                    self.useraddfile + "\n"
             if found and not valcorrect:
                 compliant = False
                 debug += "INACTIVE key was found but value is incorrect\n"
-        debug += "chkUserAdd method is returning " + str(compliant) + " compliance\n"
+        debug += "chkUserAdd method is returning " + str(compliant) + \
+            " compliance\n"
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return compliant
-    
+
 ###############################################################################
 
     def chkLibUsers(self):
         compliant = True
         debug = ""
-        libuser = ""
         if re.search("Debian", self.environ.getostype()) or self.ph.manager == "zypper":
             return True
-        elif self.ph.manager == "apt-get":
-            libuser = "python-libuser"
-        else:
-            libuser = "libuser"
-        if self.ph.check(libuser):
-            #libusr is installed but file may not be there
-            if not os.path.exists(self.libuserfile):
-                #file is not there so create it!
-                if createFile(self.libuserfile, self.logger):
-                    #this var will let us know what type of change event
-                    self.libusercreate = True
-        else:
-            #libuser isn't installed, installing will put the 
-            #/etc/libuser.conf file there, install it!
-            if self.ph.install(libuser):
-                #this variable will let us know what type of change event
-                self.libuserinstall = True
-        
-        #the path should be there by now 
+        if not self.ph.check(self.libuser):
+            debug += "libuser not installed\n"
+            self.detailedresults += "libuser not installed\n"
+            compliant = False
+
         if os.path.exists(self.libuserfile):
-            
+
             #check permissions on /etc/libuser.conf
             if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+                self.detailedresults += "permissions incorrect on " + \
+                    self.libuserfile + "\n"
+                debug += "permissions incorrect on " + self.libuserfile
                 compliant = False
             tmpfile = self.libuserfile + ".tmp"
             #create the libuser configuration file editor
             self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                "tagconf", self.libuserfile, tmpfile, self.libuseritems, 
-                                                        "notpresent", "openeq")
+                                          "tagconf", self.libuserfile, tmpfile,
+                                          self.libuseritems, "notpresent",
+                                          "openeq")
             #check the contents of /etc/libuser.conf
             if not self.editor2.report():
-                debug += self.libuserfile + " doesn't contain the correct \
-contents\n"
+                self.detailedresults += self.libuserfile + " doesn't " + \
+                    "contain the correct contents\n"
+                debug += self.libuserfile + " doesn't contain the correct " + \
+                    "contents\n"
                 compliant = False
         else:
-            #for some reason /etc/libuser.conf still doesn't exist
+            self.detailedresults += self.libuserfile + " doesn't exist\n"
             debug += self.libuserfile + " doesn't exist\n"
             compliant = False
-        debug += "chkLibUsers method is returning " + str(compliant) + " compliance\n"
+        debug += "chkLibUsers method is returning " + str(compliant) + \
+            " compliance\n"
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return compliant
-    
+
 ###############################################################################
 
     def chkLogin(self):
@@ -680,7 +681,7 @@ Will not perform fix on shadow file\n"
                 self.ch.executeCommand(cmd)
         #put in sections for bsd and solaris which both use passwd command
         return success
-    
+
 ###############################################################################
 
     def fixUserAdd(self):
@@ -693,16 +694,16 @@ Will not perform fix on useradd file\n"
             if self.useraddcreate:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"creation",
+                event = {"eventtype": "creation",
                          "filepath": self.useraddfile}
                 self.statechglogger.recordchgevent(myid, event)
-        
+
             if not checkPerms(self.useraddfile, [0, 0, 384], self.logger):
                 if not self.useraddcreate:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(self.useraddfile, [0, 0, 384], self.logger,
-                                                    self.statechglogger, myid):
+                                    self.statechglogger, myid):
                         success = False
             tempstring = ""
             contents = readFile(self.useraddfile, self.logger)
@@ -726,96 +727,98 @@ Will not perform fix on useradd file\n"
                 else:
                     tempstring += line
             if not found:
-                tempstring += "INACTIVE=35\n" 
+                tempstring += "INACTIVE=35\n"
             tmpfile = self.useraddfile + ".tmp"
             if not writeFile(tmpfile, tempstring, self.logger):
                 return False
             if not self.useraddcreate:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype':'conf',
-                         'filepath':self.useraddfile}
+                event = {'eventtype': 'conf',
+                         'filepath': self.useraddfile}
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.useraddfile, tmpfile, myid)
+                self.statechglogger.recordfilechange(self.useraddfile, tmpfile,
+                                                     myid)
             os.rename(tmpfile, self.useraddfile)
             os.chown(self.useraddfile, 0, 0)
             os.chmod(self.useraddfile, 384)
             resetsecon(self.useraddfile)
         return success
-    
+
 ###############################################################################
 
     def fixLibUsers(self):
         success = True
         debug = ""
+        created = False
         if re.search("Debian", self.environ.getostype()) or self.ph.manager == "zypper":
             return True
-        if not os.path.exists(self.libuserfile):
-            self.detailedresults += "Unable to install libuser and/or create\
-/etc/libuser.conf\n"
-            debug += "Unable to install libuser and/or create \
-/etc/libuser.conf\n"
-            success = False
-        else:
-            if self.libusercreate:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"creation",
-                         "filepath":self.libuserfile}
-                self.statechglogger.recordchgevent(myid, event)
-                if self.editor2:
-                    if self.editor2.fixables or self.editor2.removeables:
-                        if not self.editor2.fix():
-                            debug += "Editor2.fix did not complete successfully\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            return False
-                        elif not self.editor2.commit():
-                            debug += "Editor2.commit did not complete successfully\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            return False
-                if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
-                    if not setPerms(self.libuserfile, [0, 0, 420], self.logger):
-                        debug += "unable to set permissions on /etc/libuser.conf\n"
-                        success = False
-            
-            elif self.libuserinstall:
-                cmd = self.ph.getRemove()
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"commandstring",
-                         "command":cmd}
-                self.statechglogger.recordchgevent(myid, event)
-                if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
-                    if not setPerms(self.libuserfile, [0, 0, 420], self.logger):
-                        success = False
-            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
-                if not self.libusercreate and not self.libuserinstall:
+        if not self.ph.check(self.libuser):
+            if self.ph.checkAvailable(self.libuser):
+                if not self.ph.install(self.libuser):
+                    self.detailedresults += "Unable to install libuser\n"
+                    return False
+                else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
+                    commandstring = self.ph.getRemove() + self.libuser
+                    event = {"eventtype": "commandstring",
+                             "command": commandstring}
+                    self.statechglogger.recordchgevent(myid, event)
+            else:
+                self.detailedresults += "There is no libuser package " + \
+                    "available for install on this platform\n"
+                return False
+        if not os.path.exists(self.libuserfile):
+            if not createFile(self.libuserfile, self.logger):
+                self.detailedresults += "Unable to create libuser file\n"
+                debug = "Unable to create the libuser file\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+            created = True
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.libuserfile}
+            self.statechglogger.recordchgevent(myid, event)
+        if os.path.exists(self.libuserfile):
+            if not self.editor2:
+                tpath = self.libuserfile + ".tmp"
+                self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "tagconf", self.libuserfile,
+                                              tpath, self.libuseritems,
+                                              "notpresent", "openeq")
+                self.editor2.report()
+            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.libuserfile, [0, 0, 420],
+                                    self.logger, self.stchlogger, myid):
+                        success = False
                 else:
-                    myid = ""
-                if not setPerms(self.libuserfile, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                    if not setPerms(self.libuserfile, [0, 0, 420],
+                                    self.logger):
+                        success = False
+
+            if self.editor2.fixables or self.editor2.removeables:
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor2.setEventID(myid)
+                if not self.editor2.fix():
+                    debug += "Editor2.fix did not complete successfully\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-            if self.editor2:
-                if self.editor2.fixables or self.editor2.removeables:
-                    if not self.libusercreate and not self.libuserinstall:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.editor2.setEventID(myid)
-                    if not self.editor2.fix():
-                        debug += "Editor2.fix did not complete successfully\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
-                    elif not self.editor2.commit():
-                        debug += "Editor2.commit did not complete successfully\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
-                    os.chown(self.libuserfile, 0, 0)
-                    os.chmod(self.libuserfile, 416)
-                    resetsecon(self.libuserfile)
+                elif not self.editor2.commit():
+                    debug += "Editor2.commit did not complete successfully\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+            os.chown(self.libuserfile, 0, 0)
+            os.chmod(self.libuserfile, 420)
+            resetsecon(self.libuserfile)
         return success
-    
+
 ###############################################################################
 
     def fixLogin(self):

@@ -122,6 +122,13 @@ class KVAConf():
         '''
         return self.intent
 ###############################################################################
+    def setConfigType(self, configType):
+        self.configType = configType
+        return True
+###############################################################################
+    def getConfigType(self):
+        return self.configType
+###############################################################################
     def validate(self, key, val):
         '''Private outer method to call submethod getOpenClosedValue() or
         getSpaceValue() depending on the value of self.configType.
@@ -186,25 +193,26 @@ class KVAConf():
                             break
                 return found
 ###############################################################################
+
     def getSpaceValue(self, key, value):
         '''
         Private inner method called by validate that populates self.fixables
         and/or self.removeables lists.  self.fixables list will be populated
         if configuration file has either the correct key but the wrong value
-        or the key is not there at all.  A key that is commented out will be 
-        considered not present. self.removeables list will be populated if 
-        configuration file has keys that are not desired.This method 
-        specifcally handles files where a space separates key value pairs 
+        or the key is not there at all.  A key that is commented out will be
+        considered not present. self.removeables list will be populated if
+        configuration file has keys that are not desired.This method
+        specifcally handles files where a space separates key value pairs
         within the same line.
         @author: dwalker
         @param key: key in a dictionary passed from calling class
         @param val: value part in dictionary passed from calling class
         @return: Bool
         '''
-        fixables = []  # this fixables variable will be used for both desired and non desired keys
+        fixables = []
         removeables = []
         if self.contents:
-            if self.intent == "present":  # self.data contains key val pairs we want in the file
+            if self.intent == "present":  #self.data contains key val pairs we want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
                     for item in value:
                         foundalready = False
@@ -251,8 +259,9 @@ class KVAConf():
                                         found = False
                                         break
                                 except IndexError:
+                                    found = False
                                     self.detailedresults += "Index error\n"
-                                    raise(self.detailedresults)
+                                    break
                     return found
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
@@ -295,6 +304,7 @@ class KVAConf():
                                 break
                     return found
 ###############################################################################
+
     def update(self, fixables, removeables):
         '''
         Private outer method to call submethod setOpenClosedValue() or
@@ -313,6 +323,7 @@ class KVAConf():
         else:
             return "invalid"
 ###############################################################################
+
     def setOpenClosedValue(self, fixables, removeables):
         '''
         Private inner method called by update that makes a list to conform
@@ -367,6 +378,7 @@ class KVAConf():
                     self.contents.append(temp)
         return True
 ###############################################################################
+
     def setSpaceValue(self, fixables, removeables):
         '''
         Private inner method called by update that makes a list to conform
@@ -379,15 +391,18 @@ class KVAConf():
         @param removeables: a dictionary of key val paris not desired in file
         @return: Bool
         '''
-        self.storeContents(self.path)  # re-read the contents of the desired file
+#       re-read the contents of the desired file
+        self.storeContents(self.path)
         contents = self.contents
         if removeables:  # we have items that need to be removed from file
             for key, val in removeables.iteritems():
                 i = 0
-                if isinstance(val, list):  # we have a list where the key can repeat itself
+#               we have a list where the key can repeat itself
+                if isinstance(val, list):
                     for key2 in removeables[key]:
                         for line in contents:
-                            if re.search("^#", line) or re.match("^\s*$", line):  # ignore comments and blank lines
+                            if re.search("^#", line) or re.match("^\s*$",
+                                                                 line):
                                 i += 1
                             else:
                                 temp = line.strip()
@@ -403,7 +418,7 @@ class KVAConf():
                                     i += 1
                 else:
                     for line in contents:
-                        if re.search("^#", line) or re.match("^\s*$", line):  # ignore if comment or blank line
+                        if re.search("^#", line) or re.match("^\s*$", line):
                             i += 1
                         elif re.search(key, line.strip()):
                             temp = line.strip().split(" ")
@@ -461,10 +476,11 @@ class KVAConf():
 #                 return True
         return True
 ###############################################################################
+
     def commit(self):
         '''
         Private method that actually writes the configuration file as desired
-        including fixables and removing desireables.  This method is called 
+        including fixables and removing desireables.  This method is called
         in the calling class that instantiated the object after the update
         methods have been called.
         @author: dwalker
@@ -475,18 +491,19 @@ class KVAConf():
         success = writeFile(self.tmpPath, self.tempstring, self.logger)
         return success
 ###############################################################################
+
     def storeContents(self, path):
         '''
-        Private method that reads in the self.path variable's contents and 
+        Private method that reads in the self.path variable's contents and
         stores in private variable self.contents.
         @author: dwalker
-        @param path: The path which contents need to be read 
+        @param path: The path which contents need to be read
         '''
         try:
             f = open(path, 'r')
         except IOError:
             self.detailedresults = "KVAConf: unable to open the" \
-"specified file"
+                "specified file"
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return False
@@ -495,10 +512,11 @@ class KVAConf():
             self.contents.append(line)
         f.close()
 ###############################################################################
+
     def getValue(self):
         '''
         Private method that puts any items that don't exist or have the wrong
-        value (fixables) and any items that do exist but shouldn't 
+        value (fixables) and any items that do exist but shouldn't
         (removeables) in string form for retrieving.  This method is more for
         debugging to make sure KVAConf is doing the right thing during when
         reporting (validate)
@@ -507,7 +525,7 @@ class KVAConf():
         output = ""
         if self.fixables:
             output += "Keys that have incorrect values:\n" + \
-            str(self.fixables) + "\n"
+                str(self.fixables) + "\n"
         if self.removeables:
             output += "Keys that need to be removed:\n" + \
-            str(self.removeables) + "\n"
+                str(self.removeables) + "\n"

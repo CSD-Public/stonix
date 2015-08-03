@@ -87,13 +87,6 @@ class ConfigureGatekeeper(Rule):
                     "list command\n"
                 compliant = False
             self.compliant = compliant
-            if self.compliant:
-                self.detailedresults += "No gatekeeper profile installed\n"
-                self.detailedresults += "ConfigureGatekeeper has " + \
-                    "been run and is compliant\n"
-            else:
-                self.detailedresults += "ConfigureGatekeeper has " + \
-                    "been run and is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -142,12 +135,6 @@ class ConfigureGatekeeper(Rule):
                         self.ch.getReturnCode() != 0:
                     success = False
             self.rulesuccess = success
-            if self.rulesuccess:
-                self.detailedresults += "PasscodeConfigurationProfile " + \
-                    "ran to completion\n"
-            else:
-                self.detailedresults += "PasscodeConfigurationProfile " + \
-                    "did not run to completion\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
