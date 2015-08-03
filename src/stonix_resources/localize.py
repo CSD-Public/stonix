@@ -33,7 +33,7 @@ run-time failures. Pay attention to comments documenting both the content and
 format of entries.
 
 @author: dkennel
-@change: 2014/07/14 - ekkehard - added foo.bar.com = WIN.LANL.GOV to
+@change: 2014/07/14 - ekkehard - added foo.bar.com = FOO.BAR.COM to
 KERB5
 @change: 2014/08/20 - Added version variable to here and updated all locations
 that access the version variable to use this copy.
@@ -47,7 +47,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.8.18'
+STONIXVERSION = '0.8.19'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -121,6 +121,7 @@ STONIXDEVS = 'stonix-dev@bar.com'
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
 PROXY = 'http://foo.bar.com:8080'
+PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'
@@ -142,11 +143,11 @@ CORPORATENETWORKSERVERS = ["foo.bar.com"]
 
 # Content of the kerb5.conf file
 KERB5 = '''[libdefaults]
-    default_realm = lanl.gov
+    default_realm = bar.com
     allow_weak_crypto = true
     forwardable = true
 [realms]
-    lanl.gov = {
+    bar.com = {
     kdc = foo.bar.com
     kdc = foo.bar.com
     admin_server = foo.bar.com
@@ -155,7 +156,7 @@ KERB5 = '''[libdefaults]
     debug = false
     krb4_convert = false
 [domain_realm]
-    foo.bar.com = WIN.LANL.GOV
+    foo.bar.com = FOO.BAR.COM
     .example.com = EXAMPLE.COM
     example.com = EXAMPLE.COM'''
 
@@ -253,8 +254,3 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
-
-## Proxy setting
-PROXYSERVER = "foo.bar.com"
-PROXYPORT = "8080"
-PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"

@@ -27,7 +27,7 @@ Created on Mar 2, 2015
 @change: 2015/04/15 dkennel updated for new isApplicable
 '''
 from __future__ import absolute_import
-from stonix_resources.ruleKVEditor import RuleKVEditor
+from ..ruleKVEditor import RuleKVEditor
 
 
 class EncryptSwap(RuleKVEditor):

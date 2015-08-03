@@ -40,6 +40,7 @@ given instead of the required five.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/04/28 dkennel changed data dictionary in reportpostfix to
 reference localize.py MAILRELAYSERVER instead of static local value.
+@change: 2015/07/30 eball Changed where setPerms occurs in fix
 '''
 
 from __future__ import absolute_import
@@ -209,7 +210,8 @@ system is not compliant"
         data = {"O SmtpGreetingMessage": "", "O PrivacyOptions": "goaway"}
         # create the kveditor object
         self.sndmailed = KVEditorStonix(self.statechglogger, self.logger,
-            kvtype, path, tpath, data, intent, conftype)
+                                        kvtype, path, tpath, data, intent,
+                                        conftype)
 
         # use kveditor to search the conf file for all the options in
         # postfixdata
@@ -250,7 +252,7 @@ system is not compliant"
                 'smtpd_banner': '$myhostname ESMTP',
                 'mynetworks_style': 'host',
                 'smtpd_recipient_restrictions':
-        'permit_mynetworks, reject_unauth_destination',
+                'permit_mynetworks, reject_unauth_destination',
                 'relayhost': MAILRELAYSERVER}
         tpath = self.postfixpath + '.tmp'
         kvtype = 'conf'
@@ -258,8 +260,8 @@ system is not compliant"
         intent = 'present'
         # create the kveditor object
         self.postfixed = KVEditorStonix(self.statechglogger, self.logger,
-                                        kvtype, self.postfixpath, tpath, data, intent,
-                                        conftype)
+                                        kvtype, self.postfixpath, tpath, data,
+                                        intent, conftype)
 
         # use kveditor to search the conf file for all the options in
         # postfixdata
@@ -280,42 +282,42 @@ system is not compliant"
             self.detailedresults = ""
             if not self.mta.getcurrvalue():
                 return
-            
-            #clear out event history so only the latest fix is recorded
+
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             success = True
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
+
             if self.postfixed:
+                if not self.fixpostfix():
+                    success = False
                 if not checkPerms(self.postfixpath, [0, 0, 420],
-                                                                  self.logger):
+                                  self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(self.postfixpath, [0, 0, 420],
-                                   self.logger, self.statechglogger, myid):
+                                    self.logger, self.statechglogger, myid):
                         success = False
-                if not self.fixpostfix():
-                    success = False
             if self.sndmailed:
                 if self.sndmailed.fixables or self.ds:
                     if not checkPerms("/etc/mail/sendmail.cf", [0, 0, 420],
-                                                                  self.logger):
+                                      self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms("/etc/mail/sendmail.cf", [0, 0, 420],
-                                       self.logger, self.statechglogger, myid):
+                                        self.logger, self.statechglogger, myid):
                             success = False
                     if not self.fixsendmail():
                         success = False
             elif self.ds:
                 if not checkPerms("/etc/mail/sendmail.cf", [0, 0, 420],
-                                                                  self.logger):
+                                  self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms("/etc/mail/sendmail.cf", [0, 0, 420],
-                                   self.logger, self.statechglogger, myid):
+                                    self.logger, self.statechglogger, myid):
                         success = False
                 if not self.fixsendmail():
                     success = False
