@@ -121,6 +121,7 @@ permission.'''
                 # is item world writable?
                 if isWritable(self.logger, item, 'other'):
                     self.compliant = False
+                    self.detailedresults += '\nfound world writable dot file: ' + str(item)
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -184,7 +185,12 @@ permission.'''
         try:
 
             cmd = ["/usr/bin/dscl", ".", "-list", "/Users"]
-            self.cmdhelper.executeCommand(cmd)
+            try:
+                self.cmdhelper.executeCommand(cmd)
+            except OSError as oser:
+                if re.search('DSOpenDirServiceErr', str(oser)):
+                    self.detailedresults += '\n' + str(oser)
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
             output = self.cmdhelper.getOutput()
             error = self.cmdhelper.getError()
             if error:
@@ -193,13 +199,16 @@ permission.'''
 
             if output:
                 for user in output:
-                    if not re.search('^_', user) and not re.search('^root', user):
+                    if not re.search('^_', user) and not re.search('^root', user) and not re.search('^\/$', user):
                         users.append(user.strip())
 
             if users:
                 for user in users:
-                    currpwd = pwd.getpwnam(user)
-                    homedirs.append(currpwd[5])
+                    try:
+                        currpwd = pwd.getpwnam(user)
+                        homedirs.append(currpwd[5])
+                    except KeyError:
+                        continue
 
             if homedirs:
                 for homedir in homedirs:
