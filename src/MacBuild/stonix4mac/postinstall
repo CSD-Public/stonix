@@ -150,6 +150,55 @@ def isvalidlink(path):
     return 1
 
 
+def make_valid_link(my_link, my_link_source, message_level="normal"):
+    """
+    Check if mylink exists, if it does, check if it is a link.
+    If it isn't, move it and create a link.  Otherwise check
+    if it's pointing to the right place. Move the link if it
+    doesn't point to the right place.
+    
+    mylink: the link we want to make
+    mylinksource: the place we want the link to point to
+    
+    @author: Roy Nielsen
+    """
+    move_it = False 
+
+    myDate = time.strftime("%C%y%m%d", time.localtime())
+    myTime = time.strftime("%I%M%S%p", time.localtime())
+
+    if os.path.islink(my_link):
+        # check if it is a valid link
+        validLink = isvalidlink(my_link)
+        # check if it is pointing where we want
+        points_to = os.path.realpath(my_link) == os.path.abspath(my_link_source)
+        
+        if validLink and points_to:
+            move_it = False
+        else:
+            move_it = True
+    else:
+        move_it = True
+        
+    if move_it:
+        #####
+        # append the bak.date to the filename
+        backup = my_link + "." + myDate + "." + myTime
+
+        # move "mylink" to mylink.myDate.myTime
+        try:
+            shutil.move(my_link, backup)
+        except Exception, err:
+            log_message("Exception trying to move file: " + str(my_link))
+            log_message("Associated exception: " + str(err))
+        else:
+            try:
+                os.symlink(my_link, my_link_source)
+            except Exception, err:
+                log_message("Exception trying to create link: " + str(my_link) + " -> " + str(my_link_source))
+                log_message("Associated exception: " + str(err))
+
+
 def verifyAndFixEtcConf(target="", message_level="normal"):
     """
     Check if the /etc/stonix file is a link and if it's ok or not.  If it's not
@@ -385,8 +434,13 @@ def main() :
     
     make_files_executable()
 
-    if not os.path.exists("/usr/bin/stonix"):
-        os.symlink("/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix", "/usr/bin/stonix")
+    stonix = "/usr/bin/stonix"
+    stonix4mac = "/usr/bin/stonix4mac"
+
+
+    #make_valid_link(my_link, my_link_source, message_level="normal"):
+    make_valid_link("/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix", stonix)
+    make_valid_link("/Applications/stonix4mac.app/Contents/MacOS/stonix4mac", stonix4mac)
 
     log_message("Finished stonix4mac package postflight...", "normal", message_level)
 
