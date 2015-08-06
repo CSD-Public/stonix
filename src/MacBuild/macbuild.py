@@ -212,9 +212,8 @@ class MacBuilder():
         print " "
         print " "
 
-    def setupRamdisk(self, size=DEFAULT_RAMDISK_SIZE, mntpnt=""):
-        # TODO: Add debug/verbose options
-        message_level = "normal"
+    def setupRamdisk(self, size=DEFAULT_RAMDISK_SIZE, mntpnt="",
+                     message_level="normal"):
         ramdisk = RamDisk(str(size), mntpnt, message_level)
 
         if not ramdisk.success:
@@ -222,10 +221,7 @@ class MacBuilder():
 
         return ramdisk.getDevice()
 
-    def detachRamdisk(self, device):
-        # TODO: Add debug/verbose options
-        message_level = "normal"
-
+    def detachRamdisk(self, device, message_level="normal"):
         if detach(device, message_level):
             log_message(r"Successfully detached disk: " + str(device).strip(),
                         "verbose", message_level)
