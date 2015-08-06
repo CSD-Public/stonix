@@ -521,7 +521,7 @@ class MacBuilder():
         # Copy the pkg to the local directory for processing
         call(["cp", "-a", "/tmp/the_luggage/" + self.STONIX4MAC + "-" +
               self.APPVERSION + "/payload/" + self.STONIX4MAC + "-" +
-              self.APPVERSION + ".pkg", self.STONIX4MAC + ".pkg"])
+              self.APPVERSION + ".pkg", "."])
 
         #####
         # Eject the dmg
@@ -530,7 +530,8 @@ class MacBuilder():
 
         #####
         # Zip up the pkg - this will be what is served for self-update
-        mbl.makeZip(self.STONIX4MAC + ".pkg", self.STONIX4MAC + ".zip")
+        mbl.makeZip(self.STONIX4MAC + "-" + self.APPVERSION + ".pkg",
+                    self.STONIX4MAC + ".zip")
 
         #####
         # Create the MD5 file - used to ensure package downloads without problem
