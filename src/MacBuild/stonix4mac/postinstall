@@ -196,7 +196,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
             log_message("Associated exception: " + str(err))
         else:
             try:
-                os.symlink(my_link, my_link_source)
+                os.symlink(my_link_source, my_link)
             except Exception, err:
                 log_message("Exception trying to create link: " +
                             str(my_link) + " -> " + str(my_link_source))
@@ -458,8 +458,10 @@ def main():
     stonix4mac = "/usr/bin/stonix4mac"
 
     # make_valid_link(my_link, my_link_source, message_level="normal"):
-    make_valid_link("/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix", stonix)
-    make_valid_link("/Applications/stonix4mac.app/Contents/MacOS/stonix4mac", stonix4mac)
+    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" +
+                    "Resources/stonix.app/Contents/MacOS/stonix")
+    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" +
+                    "MacOS/stonix4mac")
 
     log_message("Finished stonix4mac package postflight...", "normal",
                 message_level)
