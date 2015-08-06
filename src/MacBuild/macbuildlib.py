@@ -27,6 +27,7 @@ Library of functions used to build Mac applications
 @author: Eric Ball
 @change: 2015/03/06 eball - Original implementation
 @change: 2015/08/05 eball - Beautification, improving PEP8 compliance
+@change: 2015/08/06 eball - Removed static paths from getpyuicpath()
 '''
 
 import re
@@ -35,8 +36,8 @@ import tarfile
 import pwd
 import zipfile
 import plistlib as pl
-import PyInstaller.makespec as mkspec
-import PyInstaller.build as build
+from glob import glob
+from PyInstaller import makespec, build
 
 
 def regexReplace(filename, findPattern, replacePattern, outputFile="",
@@ -100,16 +101,17 @@ def pyinstMakespec(scripts, noupx=False, strip=False, console=True,
            which may need to be added in future versions
     '''
     # specpath default cannot be reliably set here; os.getcwd() will return dir
-    # of macbuildlib, not necessarily the current working dir of calling
+    # of macbuildlib, not necessarily the current working dir of the calling
     # script. Therefore, if it is not specified, leave blank and let
     # PyInstaller set default.
     if specpath:
-        return mkspec.main(scripts, noupx=noupx, strip=strip, console=console,
-                           icon_file=icon_file, pathex=pathex,
-                           specpath=specpath)
+        return makespec.main(scripts, noupx=noupx, strip=strip,
+                             console=console, icon_file=icon_file,
+                             pathex=pathex, specpath=specpath)
     else:
-        return mkspec.main(scripts, noupx=noupx, strip=strip, console=console,
-                           icon_file=icon_file, pathex=pathex)
+        return makespec.main(scripts, noupx=noupx, strip=strip,
+                             console=console, icon_file=icon_file,
+                             pathex=pathex)
 
 
 def pyinstBuild(specfile, workpath, distpath, clean_build=False,
@@ -180,7 +182,8 @@ def chmodR(perm, target, writemode):
                             os.chmod(os.path.join(root, mydir), newPerm)
                         # Change permissions for all files
                         for myfile in files:
-                            currentPerm = os.stat(os.path.join(root, myfile))[0]
+                            currentPerm = os.stat(os.path.join(root,
+                                                               myfile))[0]
                             newPerm = currentPerm | perm
                             os.chmod(os.path.join(root, myfile), newPerm)
                 elif writemode[0] == "o":
@@ -221,21 +224,43 @@ def modplist(targetFile, targetKey, newValue):
 
 
 def getpyuicpath():
-    ONE = "/Users/Shared/PyQt/PyQt-mac-gpl-4.10.3/pyuic/pyuic4"
-    TWO = "/Users/Shared/Frameworks/PyQt-mac-gpl-4.9.6/pyuic/pyuic4"
-    THREE = "/Users/Shared/Frameworks/PyQt/PyQt-mac-gpl-4.10.4/pyuic/pyuic4"
-    FOUR = "/Users/Shared/Frameworks/PyQt/PyQt-mac-gpl-4.11.3/pyuic/pyuic4"
-    if os.path.exists(ONE):
-        return ONE
-    elif os.path.exists(TWO):
-        return TWO
-    elif os.path.exists(THREE):
-        return THREE
-    elif os.path.exists(FOUR):
-        return FOUR
-    else:
-        print "PyQt4 path not found. Exiting."
-        exit(1)
+    '''
+    Attempt to find PyQt4
+
+    @author: Eric Ball
+    @return: Path to PyQt4 executable pyuic4
+    '''
+    fwpath = "/Users/Shared/Frameworks/"
+    pathend1 = "/pyuic/pyuic4"
+    pathend2 = "/pyuic4"
+    if os.path.exists(fwpath):
+        cwd = os.getcwd()
+        os.chdir(fwpath)
+        pyqtdirs = glob("PyQt-*")
+        if len(pyqtdirs) == 1:
+            fullpath = fwpath + pyqtdirs[0] + pathend1
+            if os.path.exists(fullpath):
+                os.chdir(cwd)
+                return fullpath
+            else:
+                fullpath = fwpath + pyqtdirs[0] + pathend2
+                if os.path.exists(fullpath):
+                    os.chdir(cwd)
+                    return fullpath
+        elif len(pyqtdirs) == 0:
+            pyqtdirs = glob("PyQt/PyQt-*")
+            if len(pyqtdirs) == 1:
+                fullpath = fwpath + pyqtdirs[0] + pathend1
+                if os.path.exists(fullpath):
+                    os.chdir(cwd)
+                    return fullpath
+                else:
+                    fullpath = fwpath + pyqtdirs[0] + pathend2
+                    if os.path.exists(fullpath):
+                        os.chdir(cwd)
+                        return fullpath
+    print "PyQt4 path not found. Exiting."
+    exit(1)
 
 
 def checkBuildUser():
