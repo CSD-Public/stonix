@@ -194,7 +194,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
         except Exception, err:
             log_message("Exception trying to move file: " + str(my_link))
             log_message("Associated exception: " + str(err))
-        else:
+        finally:
             try:
                 os.symlink(my_link_source, my_link)
             except Exception, err:
