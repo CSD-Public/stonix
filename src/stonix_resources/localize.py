@@ -126,6 +126,9 @@ PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'
 
+# Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
+XINETDALLOW = '192.168.0.1/24'
+
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
 PRINTBROWSESUBNET = ''
