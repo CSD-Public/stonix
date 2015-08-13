@@ -34,7 +34,7 @@ import re
 class Dnf(object):
 
     '''The template class that provides a framework that must be implemented by
-    all platform specific pkgmgr classes.
+    all platform specific pkgmgr classes.  Specifically for Fedora
     :version:
     :author:Derek T Walker 08-13-2015'''
     def __init__(self, logger):
