@@ -23,17 +23,18 @@
 
 import traceback
 from logdispatcher import LogPriority
-from subprocess import Popen,call,PIPE
 from CommandHelper import CommandHelper
 import re
+
+
 class Yum(object):
 
-    '''The template class that provides a framework that must be implemented by 
+    '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
     :version:
     :author:Derek T Walker 08-06-2012'''
-    
-    def __init__(self,logger):
+
+    def __init__(self, logger):
         self.logger = logger
         self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
@@ -42,37 +43,38 @@ class Yum(object):
         self.search = "/usr/bin/yum search "
         self.rpm = "/bin/rpm -q "
 ###############################################################################
+
     def installpackage(self, package):
         '''Install a package. Return a bool indicating success or failure.
-        @param string package : Name of the package to be installed, must be 
+        @param string package : Name of the package to be installed, must be
         recognizable to the underlying package manager.
         @return bool :
         @author'''
         try:
             installed = False
             self.ch.executeCommand(self.install + package)
-            output = self.ch.getOutputString()
             if self.ch.getReturnCode() == 0:
                 installed = True
-                self.detailedresults = package + " pkg installed successfully\n"
+                self.detailedresults = package + \
+                    " pkg installed successfully\n"
             else:
                 self.detailedresults = package + " pkg not able to install\n"
-            self.logger.log(LogPriority.DEBUG,self.detailedresults)
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return installed
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             raise(self.detailedresults)
 ###############################################################################
+
     def removepackage(self, package):
         '''Remove a package. Return a bool indicating success or failure.
-        @param string package : Name of the package to be removed, must be 
+        @param string package : Name of the package to be removed, must be
         recognizable to the underlying package manager.
         @return bool :
         @author'''
-        method = "yum.remove"
         try:
             removed = False
             self.ch.executeCommand(self.remove + package)
@@ -80,29 +82,29 @@ class Yum(object):
                 removed = True
                 self.detailedresults += package + " pkg removed successfully\n"
             else:
-                self.detailedresults += package + " pkg not able to be removed\n"
-            self.logger.log(LogPriority.DEBUG,[method,self.detailedresults])
+                self.detailedresults += package + \
+                    " pkg not able to be removed\n"
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return removed
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR,[method,self.detailedresults])
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
             raise(self.detailedresults)
 ###############################################################################
+
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if 
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
-        @param string package : Name of the package whose installation status 
-            is to be checked, must be recognizable to the underlying package 
+        @param string package : Name of the package whose installation status
+            is to be checked, must be recognizable to the underlying package
             manager.
         @return bool :
         @author'''
         try:
             found = False
             self.ch.executeCommand(self.rpm + package)
-            output = self.ch.getOutputString()
-            #for redhat systems only
             if self.ch.getReturnCode() == 0:
                 found = True
                 self.detailedresults += package + " pkg found\n"
@@ -110,35 +112,38 @@ class Yum(object):
                 self.detailedresults += package + " pkg not found\n"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return found
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             raise(self.detailedresults)
 ###############################################################################
-    def checkAvailable(self,package):
+
+    def checkAvailable(self, package):
         try:
             found = False
             self.ch.executeCommand(self.search + package)
             output = self.ch.getOutputString()
             if re.search("no matches found", output.lower()):
                 self.detailedresults += package + " pkg is not available " + \
-                " or may be misspelled\n"
+                    " or may be misspelled\n"
             elif re.search("matched", output.lower()):
                 self.detailedresults += package + " pkg is available\n"
                 found = True
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return found
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             raise(self.detailedresults)
 ###############################################################################
+
     def getInstall(self):
         return self.install
 ###############################################################################
+
     def getRemove(self):
         return self.remove
