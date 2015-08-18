@@ -30,6 +30,7 @@ with large amounts of original code and comments left intact.
 @change: 2015/03/06 eball - Original implementation
 @change: 2015/03/31 rsn - Removed mkdtemp calls when working in ramdisk
 @change: 2015/08/05 eball - Beautification, improving PEP8 compliance
+@change: 2015/08/18 rsn - removed make self update method
 '''
 import os
 import stat
@@ -77,7 +78,6 @@ class MacBuilder():
         os.environ["COPYFILE_DISABLE"] = "true"
 
         self.RSYNC = "/usr/bin/rsync"
-        self.HDIUTIL = "/usr/bin/hdiutil"
         self.PYUIC = mbl.getpyuicpath()
 
         # Create directory queue to replace pushd/popd
@@ -128,8 +128,8 @@ class MacBuilder():
         os.chmod(self.TMPHOME, 0755)
 
         # Create a ramdisk and mount it to the ${self.TMPHOME}
-        DEVICE = self.setupRamdisk(1300, self.TMPHOME)
-        print "Device for tmp ramdisk is: " + DEVICE
+        self.DEVICE = self.setupRamdisk(1300, self.TMPHOME)
+        print "Device for tmp ramdisk is: " + self.DEVICE
 
         #####
         # Copy src dir to /tmp/<username> so shutil doesn't freak about long
@@ -183,8 +183,6 @@ class MacBuilder():
         self.tarAndBuildStonix4MacAppPkg(self.STONIX4MAC,
                                          self.STONIX4MACVERSION)
 
-        self.makeSelfUpdatePackage()
-
         os.chdir(self.TMPHOME)
 
         #####
@@ -204,7 +202,7 @@ class MacBuilder():
 
         #####
         # Eject the ramdisk.. Not yet ready for prime time
-        self.detachRamdisk(DEVICE)
+        self.detachRamdisk(self.DEVICE)
 
         print " "
         print " "
@@ -503,43 +501,6 @@ class MacBuilder():
         os.chdir(self.dirq.get())
 
         print "tarAndBuildStonix4MacApp... Finished"
-
-    def makeSelfUpdatePackage(self):
-        self.dirq.put(os.getcwd())
-        os.chdir("dmgs")
-
-        #####
-        # Mount the dmg
-        call([self.HDIUTIL, "attach",
-              self.STONIX4MAC + "-" + self.APPVERSION + ".dmg"])
-
-        #####
-        # Copy the pkg to the local directory for processing
-        call(["cp", "-a", "/tmp/the_luggage/" + self.STONIX4MAC + "-" +
-              self.APPVERSION + "/payload/" + self.STONIX4MAC + "-" +
-              self.APPVERSION + ".pkg", "."])
-
-        #####
-        # Eject the dmg
-        call([self.HDIUTIL, "eject",
-              "/Volumes/" + self.STONIX4MAC + "-" + self.APPVERSION])
-
-        #####
-        # Zip up the pkg - this will be what is served for self-update
-        mbl.makeZip(self.STONIX4MAC + "-" + self.APPVERSION + ".pkg",
-                    self.STONIX4MAC + ".zip")
-
-        #####
-        # Create the MD5 file - used to ensure package downloads without problem
-        # (NOT FOR SECURITY'S SAKE)
-        md5 = hashlib.md5(open(self.STONIX4MAC + ".zip", "rb").read())
-        open(self.STONIX4MAC + ".md5.txt", "w").write(md5.hexdigest())
-
-        #####
-        # Create the version file to put up on the server
-        open(self.STONIX4MAC + ".version.txt", "w").write(self.APPVERSION)
-
-        os.chdir(self.dirq.get())
 
 if __name__ == '__main__':
     stonix4mac = MacBuilder()
