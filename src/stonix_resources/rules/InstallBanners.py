@@ -34,6 +34,7 @@ Install and configure warning banners, to be displayed at startup.
     statements to debug messages.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/05/11 breen complete re-write
 '''
 
 from __future__ import absolute_import
@@ -44,10 +45,10 @@ import traceback
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 from ..ruleKVEditor import RuleKVEditor
+from ..KVEditorStonix import KVEditorStonix
 from ..localize import WARNINGBANNER
+from ..localize import ALTWARNINGBANNER
 from ..localize import OSXSHORTWARNINGBANNER
-from ..stonixutilityfunctions import iterate, createFile, writeFile
-from ..stonixutilityfunctions import checkPerms, setPerms, readFile, resetsecon
 
 
 class InstallBanners(RuleKVEditor):
@@ -62,7 +63,6 @@ class InstallBanners(RuleKVEditor):
 
         RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
-        self.commandhelper = CommandHelper(logger)
         self.rulenumber = 51
         self.rulename = 'InstallBanners'
         self.formatDetailedResults("initialize")
@@ -83,37 +83,286 @@ class InstallBanners(RuleKVEditor):
         # init CIs
         datatype = 'bool'
         key = 'InstallBanners'
-        instructions = "To prevent the installation of a warning banner, " + \
+        instructions = "To prevent the installation of warning banners, " + \
         "set the value of InstallBanners to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        # list of known possible banner text file names/paths in *nix
-        self.bannerfilelist = ["/etc/banners/in.ftpd",
-                               "/etc/banners/in.rlogind",
-                               "/etc/banners/in.rshd",
-                               "/etc/banners/in.telnetd",
-                               "/etc/issue",
-                               "/etc/issue.net",
-                               "/etc/motd"]
+        self.cmdhelper = CommandHelper(self.logger)
 
-        self.macbannerfiledict = {'/Library/Security/PolicyBanner.txt':
-                                  WARNINGBANNER,
-                                  '/etc/motd': WARNINGBANNER,
-                                  '/etc/ftpwelcome': WARNINGBANNER}
+        #initial setup and deterministic resolution of variables
+        self.setcommon()
+        self.islinux()
+        self.ismac()
 
-        # list of known possible display manager file names/paths in *nix
-        self.displaymgrconfiglist = ["/etc/X11/gdm/gdm.conf",
-                                    "/etc/X11/xdm/kdmrc",
-                                    "/etc/kde/kdm/kdmrc",
-                                    "/etc/kde4/kdm/kdmrc",
-                                    "/etc/gdm/custom.conf",
-                                    "/etc/gdm/gdm.conf-custom",
-                                    "/etc/sshd_config",
-                                    "/usr/share/config/kdm/kdmrc"]
+###############################################################################
 
-        # used to keep track of the number of changes made (for fix/undo)
-        self.iterator = 1
+    def checkCommand(self, cmd, val, regex=True):
+        '''
+        check the output of a given command to see if it matches given value
+
+        @return: retval
+        @rtype: boolean
+
+        @author: Breen Malmberg
+        '''
+
+        retval = False
+
+        try:
+            self.cmdhelper.executeCommand(cmd)
+            output = self.cmdhelper.getOutputString()
+            if not regex:
+                found = output.find(val)
+                if found != -1:
+                    retval = True
+            else:
+                if re.search(val, output):
+                    retval = True
+        except Exception:
+            raise
+        return retval
+
+    def islinux(self):
+        '''
+        determine whether the current system is linux-based, and set all
+        distro-specific variables
+
+        @author: Breen Malmberg
+        '''
+
+        self.linux = False
+        self.gnome2 = False
+        self.gnome3 = False
+        self.kde = False
+        self.lightdm = False
+
+        try:
+            if self.environ.getosfamily() == 'linux':
+                self.setlinuxcommon()
+                self.isgnome2()
+                self.isgnome3()
+                self.iskde()
+                self.islightdm()
+        except Exception:
+            raise
+
+    def setgnome2(self):
+        '''
+        set up all variables for use with gnome2-based systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.gnome2 = True
+        self.gconfpath = '/etc/gconf/gconf.xml.mandatory'
+        gconfget = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get '
+        gconfset = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory '
+        opt1type = '--type bool --set '
+        opt2type = '--type bool --set '
+        opt3type = '--type string --set '
+        opt1 = '/apps/gdm/simple-greeter/disable_user_list'
+        opt2 = '/apps/gdm/simple-greeter/banner_message_enable'
+        opt3 = '/apps/gdm/simple-greeter/banner_message_text'
+        rep1 = gconfget + opt1
+        rep2 = gconfget + opt2
+        rep3 = gconfget + opt3
+        val1 = 'true'
+        val2 = 'true'
+        val3 = '\'' + ALTWARNINGBANNER + '\''
+        val3report = "This is a Department of Energy (DOE) computer system. DOE computer"
+        fix1 = gconfset + opt1type + opt1 + ' ' + val1
+        fix2 = gconfset + opt2type + opt2 + ' ' + val2
+        fix3 = gconfset + opt3type + opt3 + ' ' + val3
+        self.gnome2reportdict = {rep1: val1,
+                                 rep2: val2,
+                                 rep3: val3report}
+        self.gnome2fixlist = [fix1, fix2, fix3]
+
+    def setgnome3(self):
+        '''
+        set up all variables for use with gnome3-based systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.gnome3 = True
+        profiledir = '/etc/dconf/profile/'
+        profilefile = 'gdm'
+        self.gdmprofile = profiledir + profilefile
+        self.profilelist = ['user-db:user', 'system-db:gdm']
+        self.gdmdir = '/etc/dconf/db/gdm.d/'
+        bannermessagefile = '01-banner-message'
+        self.bannerfile = self.gdmdir + bannermessagefile
+        self.gnome3optlist = ['[org/gnome/login-screen]', 'disable-user-list=true', 'banner-message-enable=true', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
+        self.gnome3optdict = {'disable-user-list': 'true',
+                            'banner-message-enable': 'true',
+                            'banner-message-text': '\'' + OSXSHORTWARNINGBANNER + '\''}
+        dconf = '/usr/bin/dconf'
+        self.dconfupdate = dconf + ' update'
+        gsettings = '/usr/bin/gsettings'
+        schema = 'org.gnome.login-screen'
+        self.gsettingsget = gsettings + ' get ' + schema + ' '
+        self.gsettingsset = gsettings + ' set ' + schema + ' '
+
+    def setkde(self):
+        '''
+        set up all variables for use with kde-based systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.kde = True
+        self.kdelocs = ['/etc/kde/kdm/kdmrc',
+                        '/etc/kde3/kdm/kdmrc',
+                        '/etc/kde4/kdm/kdmrc',
+                        '/usr/share/config/kdm/kdmrc',
+                        '/usr/share/kde4/config/kdm/kdmrc']
+        key1 = 'GreetString'
+        val1 = '\"' + ALTWARNINGBANNER + '\"'
+        key2 = 'UserList'
+        val2 = 'false'
+        key3 = 'UseTheme'
+        val3 = 'false'
+        key4 = 'PreselectUser'
+        val4 = 'None'
+        key5 = 'LogoArea'
+        val5 = 'None'
+        key6 = 'GreeterPos'
+        val6 = '45,45'
+        key7 = 'AntiAliasing'
+        val7 = 'false'
+        key8 = 'SortUsers'
+        val8 = 'false'
+        key9 = 'GreetFont'
+        val9 = 'Serif,20,-1,5,50,0,0,0,0,0'
+        key10 = 'FailFont'
+        val10 = 'Sans Serif,10,-1,5,75,0,0,0,0,0'
+        self.kdedict = {"X-\*-Greeter": {key1: val1,
+                        key2: val2,
+                        key3: val3,
+                        key4: val4,
+                        key5: val5,
+                        key6: val6,
+                        key7: val7,
+                        key8: val8,
+                        key9: val9,
+                        key10: val10}}
+        bkey1 = 'PreselectUser'
+        bval1 = 'None'
+        self.kdedict2 = {"X-:\*-Greeter": {bkey1: bval1}}
+        self.kdefile = '/usr/share/kde4/config/kdm/kdmrc'
+        for loc in self.kdelocs:
+            if os.path.exists(loc):
+                self.kdefile = str(loc)
+        tmpfile = self.kdefile + '.tmp'
+        self.kdeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                          "tagconf", self.kdefile, tmpfile,
+                                          self.kdedict, "present",
+                                          "closedeq")
+        self.kdeditor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                        "tagconf", self.kdefile, tmpfile,
+                                        self.kdedict2, "present")
+
+    def setlightdm(self):
+        '''
+        set up all variables for use with lightdm-based systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.lightdm = True
+        key1 = '/etc/lightdm/lightdm.conf'
+        val1 = ['[SeatDefaults]',
+              'greeter-show-manual-login=true',
+              'greeter-hide-users=true',
+              'session-startup-script=/usr/local/bin/banner.sh']
+        key2 = '/usr/share/xgreeters/unity-greeter.desktop'
+        val2 = ['[Desktop Entry]',
+              'Name=Unity Greeter',
+              'Comment=Unity Greeter',
+              'Exec=/usr/local/bin/banner.sh',
+              'Type=Application',
+              'X-Ubuntu-Gettext-Domain=unity-greeter']
+        key3 = '/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf'
+        val3 = 'allow-guest=false'
+        key4 = '/usr/local/bin/banner.sh'
+        val4 = '''#!/bin/bash
+false
+while [ $? -ne 0 ]; do
+  sleep 1
+  /usr/bin/gdialog --textbox /etc/issue 80 80
+done
+unity-greeter'''
+        key5 = self.motdfile
+        val5 = OSXSHORTWARNINGBANNER
+        self.lightdmdict = {key1: val1,
+                            key2: val2,
+                            key3: val3,
+                            key4: val4,
+                            key5: val5}
+
+    def setlinuxcommon(self):
+        '''
+        set up all variables for use with linux-based systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.linux = True
+        self.motd = WARNINGBANNER
+        if not self.sshdfile:
+            self.sshdfile = '/etc/ssh/sshd_config'
+        self.bannerfiles = ["/etc/banners/in.ftpd",
+                            "/etc/banners/in.rlogind",
+                            "/etc/banners/in.rshd",
+                            "/etc/banners/in.telnetd"]
+        self.bannertext = ALTWARNINGBANNER
+
+    def setcommon(self):
+        '''
+        set up all variables for use with all systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.motdlocs = ["/etc/issue",
+                        "/etc/issue.net",
+                        "/etc/motd"]
+        self.motdfile = '/etc/issue'
+        for loc in self.motdlocs:
+            if os.path.exists(loc):
+                self.motdfile = str(loc)
+        self.sshdlocs = ["/etc/sshd_config",
+                         "/etc/ssh/sshd_config",
+                         "/private/etc/ssh/sshd_config",
+                         "/private/etc/sshd_config"]
+        self.sshdfile = ''
+        for loc in self.sshdlocs:
+            if os.path.exists(loc):
+                self.sshdfile = str(loc)
+        key1 = 'Banner '
+        val1 = 'Banner ' + str(self.motdfile)
+        self.sshdopt = val1
+        self.sshddict = {key1: val1}
+
+    def setmac(self):
+        '''
+        set up all variables for use with darwin-based systems
+
+        @author: Breen Malmberg
+        '''
+
+        self.mac = True
+        self.motd = WARNINGBANNER
+        if not self.sshdfile:
+            self.sshdfile = '/private/etc/ssh/sshd_config'
+        self.ftpwelcomelocs = ["/etc/ftpwelcome", "/private/etc/ftpwelcome"]
+        self.ftpwelcomefile = '/private/etc/ftpwelcome'
+        for loc in self.ftpwelcomelocs:
+            if os.path.exists(loc):
+                self.ftpwelcomefile = str(loc)
+        self.policybanner = "/Library/Security/PolicyBanner.txt"
 
         self.addKVEditor("FileServerBannerText", "defaults",
                          "/Library/Preferences/com.apple.AppleFileServer", "",
@@ -125,13 +374,284 @@ class InstallBanners(RuleKVEditor):
                          self.ci)
         self.addKVEditor("loginwindowBannerText", "defaults",
                          "/Library/Preferences/com.apple.loginwindow", "",
-                         {"LoginWindowText": [re.escape(OSXSHORTWARNINGBANNER),
+                         {"LoginwindowText": [re.escape(OSXSHORTWARNINGBANNER),
                                               '"' + OSXSHORTWARNINGBANNER + \
                                               '"']},
                          "present", "",
                          "To prevent the installation of a warning banner," + \
                          " set the value of InstallBanners to False",
                          self.ci)
+
+    def isgnome2(self):
+        '''
+        determine whether the current system is gnome2-based
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = False
+
+        cmd1 = "ps -ef | grep '/[X]' | grep gdm"
+        val1 = '\/gdm\/'
+        cmd2 = 'gnome-session --version'
+        val2 = '\s2\.'
+
+        try:
+            if self.checkCommand(cmd1, val1):
+                if self.checkCommand(cmd2, val2):
+                    self.setgnome2()
+        except Exception:
+            raise
+        return retval
+
+    def isgnome3(self):
+        '''
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = False
+
+        cmd1 = "ps -ef | grep '/[X]' | grep gdm"
+        val1 = '\/gdm\/'
+        cmd2 = 'gnome-session --version'
+        val2 = '\s3\.'
+        cmd3 = 'gdm --version'
+        val3 = 'GDM\s*3\.'
+        cmd4 = "ps -ef | grep '/[X]' | grep gdm"
+        val4 = '\/gdm3\/'
+
+        try:
+            if self.checkCommand(cmd1, val1):
+                if self.checkCommand(cmd2, val2):
+                    self.setgnome3()
+            if self.checkCommand(cmd3, val3):
+                self.setgnome3()
+            if self.checkCommand(cmd4, val4):
+                self.setgnome3()
+        except Exception:
+            raise
+        return retval
+
+    def islightdm(self):
+        '''
+        determine whether the current system is lightdm-based
+
+        @author: Breen Malmberg
+        '''
+
+        cmd1 = "ps -ef | grep '/[X]' | grep lightdm"
+        val1 = '\/lightdm\/'
+
+        try:
+            if self.checkCommand(cmd1, val1):
+                self.setlightdm()
+        except Exception:
+            raise
+
+    def iskde(self):
+        '''
+        determine whether the current system is kde-based
+
+        @author: Breen Malmberg
+        '''
+
+        cmd1 = "ps -ef | grep '/[X]' | grep kdm"
+        val1 = '\/kdm\/'
+
+        try:
+            if self.checkCommand(cmd1, val1):
+                self.setkde()
+        except Exception:
+            raise
+
+    def ismac(self):
+        '''
+        determine whether the current system is macintosh, or darwin-based
+
+        @author: Breen Malmberg
+        '''
+
+        try:
+            if self.environ.getosfamily() == 'darwin':
+                self.setmac()
+        except Exception:
+            raise
+
+    def getFileContents(self, filepath, returntype='list'):
+        '''
+        retrieve and return file contents (in list format), of a given file path
+
+        @param filepath: string full path to file to read
+        @param returntype: string valid values: 'list', 'string'
+
+        @return filecontents
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        try:
+            if returntype == 'list':
+                filecontents = []
+            elif returntype == 'string':
+                filecontents = ''
+            else:
+                filecontents = ''
+                self.detailedresults += "\nreturntype parameter must be either 'list' or 'string!'"
+            if os.path.exists(filepath):
+                f = open(filepath, 'r')
+                if returntype == 'list':
+                    filecontents = f.readlines()
+                elif returntype == 'string':
+                    filecontents = f.read()
+                f.close()
+            else:
+                self.detailedresults += '\nCould not find specified file: ' + str(filepath) + '. Returning empty value...'
+        except Exception:
+            raise
+        return filecontents
+
+    def setFileContents(self, filepath, contents, mode='w'):
+        '''
+        write (or append) specified contents to specified file
+
+        @param filepath: string full path to file
+        @param contents: list/string object to write to file (can be either list or string)
+        @param mode: string indicates the IO method to use to open the file. valid values are 'w' for write, and 'a' for append
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not mode in ['w', 'a']:
+                retval = False
+                self.detailedresults += '\nmode parameter must be either w or a'
+                return retval
+
+            f = open(filepath, mode)
+            if isinstance(contents, basestring):
+                f.write(contents)
+            elif isinstance(contents, list):
+                newcontents = []
+                for line in contents:
+                    newcontents.append(line + '\n')
+                f.writelines(newcontents)
+            else:
+                self.detailedresults += '\ncontents parameter must be either a string or a list. Returning False'
+                retval = False
+            f.close()
+
+        except IOError:
+            try:
+                pathsplit = os.path.split(filepath)
+                if not os.path.exists(pathsplit[0]):
+                    os.mkdir(pathsplit[0], 0755)
+                    self.setFileContents(filepath, contents, mode)
+                else:
+                    raise
+            except OSError as err:
+                self.detailedresults += '\n' + str(err)
+                retval = False
+        except Exception:
+            raise
+        return retval
+
+    def replaceFileContents(self, filepath, contentdict):
+        '''
+        replace key from contentdict with value from contentdict, in filepath
+
+        @param filepath: string full path to file
+        @param contentdict: dictionary of strings
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        replacedict = {}
+
+        try:
+
+            if isinstance(contentdict, dict):
+                for key in contentdict:
+                    replacedict[contentdict[key]] = False
+            else:
+                self.detailedresults += '\ncontentdict parameter must be of type dictionary. Returning False'
+                retval = False
+                return retval
+
+            if os.path.exists(filepath):
+                contentlines = self.getFileContents(filepath)
+                for key in contentdict:
+                    for line in contentlines:
+                        if re.search(key, line):
+                            contentlines = [c.replace(line, contentdict[key] + '\n') for c in contentlines]
+                            replacedict[contentdict[key]] = True
+                for item in replacedict:
+                    if not replacedict[item]:
+                        contentlines.append('\n' + item)
+                if not self.setFileContents(filepath, contentlines):
+                    retval = False
+                    self.detailedresults += '\n'
+            else:
+                retval = False
+                self.detailedresults += '\nSpecified filepath not found. Returning False'
+
+        except Exception:
+            raise
+        return retval
+
+    def reportFileContents(self, filepath, searchparams):
+        '''
+        verify that the give key:value pairs in contentdict exist in filepath
+
+        @param filepath: string full path to file
+        @param searchparams: list or string to search in file contents
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        booldict = {}
+
+        try:
+            if not os.path.exists(filepath):
+                retval = False
+                return retval
+            if not searchparams:
+                retval = False
+                return retval
+
+            if isinstance(searchparams, list):
+                for line in searchparams:
+                    booldict[line] = False
+                filecontents = self.getFileContents(filepath, 'list')
+                for line in filecontents:
+                    for opt in searchparams:
+                        if re.search(opt, line):
+                            booldict[opt] = True
+                for opt in booldict:
+                    if not booldict[opt]:
+                        retval = False
+            elif isinstance(searchparams, basestring):
+                filecontents = self.getFileContents(filepath, 'string')
+                found = filecontents.find(searchparams)
+                if found == -1:
+                    retval = False
+        except Exception:
+            raise
+        return retval
 
 ###############################################################################
 
@@ -143,53 +663,29 @@ class InstallBanners(RuleKVEditor):
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+        @return self.compliant
+        @rtype: boolean
+
         @author Breen Malmberg
         '''
 
-        compliant = True
-        self.detailedresults = ""
+        self.compliant = True
+        self.detailedresults = ''
 
         try:
-
-            self.detailedresults = ""
-            if os.path.exists('/etc/dconf/db/gdm.d'):
-                self.compliant = self.reportr7()
-                return self.compliant
-            # if mac, run separate reportmac() method instead
-            elif self.environ.getosfamily() == 'darwin':
-                self.compliant = self.reportmac()
-
+            if self.linux:
+                if not self.reportlinux():
+                    self.compliant = False
+            elif self.mac:
+                if not self.reportmac():
+                    self.compliant = False
             else:
-                if not os.path.exists("/etc/banners"):
-                    compliant = False
-                # check if the banner files are properly configured
-                for banner in self.bannerfilelist:
-                    if os.path.exists(banner):
-                        contents = readFile(banner, self.logger)
-                        string = ""
-                        for line in contents:
-                            string += line
-                        if not re.search(re.escape(WARNINGBANNER), string):
-                            compliant = False
-                            self.detailedresults += self.rulename + ' is ' + \
-                            ' not compliant because WARNINGBANNER text ' + \
-                            ' was not found in ' + str(banner) + '\n'
-                        if not checkPerms(banner, [0, 0, 420], self.logger):
-                            self.detailedresults += "Permissions not " + \
-                            "correct on " + banner + "\n"
-                            compliant = False
-                    else:
-                        compliant = False
-                        self.detailedresults += self.rulename + ' is not' + \
-                        ' compliant because ' + banner + ' file was not ' + \
-                        ' found\n'
-                self.compliant = compliant
-
+                self.compliant = False
+                self.detailedresults += '\nCould not identify operating system, or operating system not supported.'
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            self.rulesuccess = False
+        except Exception as err:
+            self.compliant = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
@@ -198,13 +694,10 @@ class InstallBanners(RuleKVEditor):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-###############################################################################
-
-    def reportr7(self):
+    def reportlinux(self):
         '''
-        rhel7 fork fork fork fork fork fork...
-        a different report structure is needed for dconf-based systems to
-        check warning banner compliancy
+        run report functionality for linux-based systems
+
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
@@ -213,109 +706,216 @@ class InstallBanners(RuleKVEditor):
         retval = True
 
         try:
-
-            path = '/etc/dconf/db/gdm.d/01-banner-message'
-            confstr = '[org/gnome/login-screen]\nbanner-message-enable=true\nbanner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'\n'
-
-            path2 = '/etc/dconf/db/gdm.d/00-login-screen'
-            confstr2 = '[org/gnome/login-screen]\ndisable-user-list=true\n'
-
-            if os.path.exists(path):
-                f = open(path, 'r')
-                contents = f.read()
-                f.close()
-                if contents != confstr:
+            if not self.reportlinuxcommon:
+                retval = False
+            if self.gnome2:
+                if not self.reportgnome2():
                     retval = False
-                    self.detailedresults += '\nconf file configuration text is incorrect'
+            elif self.gnome3:
+                if not self.reportgnome3():
+                    retval = False
+            elif self.lightdm:
+                if not self.reportlightdm():
+                    retval = False
+            elif self.kde:
+                if not self.reportkde():
+                    retval = False
             else:
                 retval = False
-                self.detailedresults += '\nconf file not found: ' + str(path)
-
-            if os.path.exists(path2):
-                f = open(path2, 'r')
-                contents = f.read()
-                f.close()
-                if contents != confstr2:
-                    retval = False
-                    self.detailedresults += '\nconf file configuration text is incorrect'
-            else:
-                retval = False
-                self.detailedresults += '\nconf file not found: ' + str(path2)
-
+                self.detailedresults += '\nCould not identify display manager, or display manager not supported.'
         except Exception:
             raise
         return retval
 
-###############################################################################
+    def reportlinuxcommon(self):
+        '''
+        run report functionality which is common to linux platforms
+
+        @return: retval
+        @rtype: boolean
+
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            for f in self.bannerfiles:
+                if os.path.exists(f):
+                    if not self.reportFileContents(f, self.bannertext):
+                        retval = False
+                        self.detailedresults += '\nrequired banner text not found in file: ' + str(f)
+                else:
+                    retval = False
+                    self.detailedresults += '\nrequired file: ' + str(f) + ' not found.'
+            if not self.reportcommon():
+                retval = False
+        except Exception:
+            raise
+        return retval
+
+    def reportcommon(self):
+        '''
+        run report functionality which is common to all platforms
+
+        @return: retval
+        @rtype: boolean
+
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            if os.path.exists(self.sshdfile):
+                if not self.reportFileContents(self.sshdfile, self.sshdopt):
+                    retval = False
+                    self.detailedresults += '\nsshd config file does not contain required config line: ' + str(self.sshdopt)
+            else:
+                retval = False
+                self.detailedresults += '\nrequired sshd config file not found.'
+            for loc in self.motdlocs:
+                if os.path.exists(loc):
+                    if not self.reportFileContents(loc, self.motd):
+                        retval = False
+                        self.detailedresults += '\nrequired warning banner text not found in: ' + str(self.motdfile)
+                else:
+                    retval = False
+                    self.detailedresults += '\nrequired motd config file not found.'
+        except Exception:
+            raise
+        return retval
+
+    def reportgnome2(self):
+        '''
+        run report functionality for gnome2-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            for cmd in self.gnome2reportdict:
+                if not self.checkCommand(cmd, self.gnome2reportdict[cmd], False):
+                    retval = False
+                    self.detailedresults += '\nCommand: ' + str(cmd) + ' did not return the correct output.'
+        except Exception:
+            raise
+        return retval
+
+    def reportgnome3(self):
+        '''
+        run report functionality for gnome3-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            for opt in self.gnome3optdict:
+                if not self.checkCommand(self.gsettingsget + opt, self.gnome3optdict[opt], False):
+                    retval = False
+                    self.detailedresults += '\noption: ' + str(opt) + ' did not have the required value of ' + str(self.gnome3optdict[opt])
+            if not self.reportFileContents(self.gdmprofile, self.profilelist):
+                retval = False
+                self.detailedresults += '\ncould not locate the required configuration options in ' + str(self.gdmprofile)
+            if not self.reportFileContents(self.bannerfile, self.gnome3optlist):
+                retval = False
+                self.detailedresults += '\ncould not locate required configuration options in ' + str(self.bannerfile)
+        except Exception:
+            raise
+        return retval
+
+    def reportlightdm(self):
+        '''
+        run report functionality for lightdm-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            for item in self.lightdmdict:
+                if os.path.exists(item):
+                    if not self.reportFileContents(item, self.lightdmdict[item]):
+                        retval = False
+                        self.detailedresults += '\nrequired configuration text not found in: ' + str(item)
+                else:
+                    retval = False
+                    self.detailedresults += '\nrequired configuration file: ' + str(item) + ' not found.'
+        except Exception:
+            raise
+        return retval
+
+    def reportkde(self):
+        '''
+        run report functionality for kde-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            if not self.kdeditor.report():
+                retval = False
+                self.detailedresults += '\none or more of the required configuration items is missing from ' + str(self.kdefile)
+            if not self.kdeditor2.report():
+                retval = False
+                self.detailedresults += '\none or more of the required configuration items is missing from ' + str(self.kdefile)
+            if not os.path.exists(self.kdefile):
+                retval = False
+                self.detailedresults += '\nrequired configuration file: ' + str(self.kdefile) + ' not found'
+        except Exception:
+            raise
+        return retval
 
     def reportmac(self):
         '''
-        Check content of sshd_config, if it exists
-        Check content of com.apple.loginwindow.plist, if it exists
-        Check content of com.apple.AppleFileServer.plist
+        run report functionality for macintosh, or darwin-based systems
 
-        @return bool
-        @author Breen Malmberg
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
         '''
 
-        # defaults
-        compliant = True
-        motdfound = False
+        retval = True
 
         try:
-            for item in self.macbannerfiledict:
-                if os.path.exists(item):
-                    contents = readFile(item, self.logger)
-                    tempstring = ""
-                    for line in contents:
-                        tempstring += line
-                    if not re.search(re.escape(self.macbannerfiledict[item]),
-                                                                   tempstring):
-                        compliant = False
-                        msg = "bannertext was not found in " + item + " in report\n"
-                        self.resultAppend(msg)
-                    #644
-                    if not checkPerms(item, [0, 0, 420], self.logger):
-                        msg = "permissions on " + item + " aren't correct\n"
-                        self.resultAppend(msg)
-                        compliant = False
-                else:
-                    compliant = False
-
-            sshfile = "/private/etc/sshd_config"
-            if os.path.exists(sshfile):
-                contents = readFile(sshfile, self.logger)
-
-                for line in contents:
-                    if re.search('^Banner[ \t]+/etc/motd', line.strip()):
-                        motdfound = True
-
-                if not motdfound:
-                    compliant = False
-                    msg = sshfile + " does not have /etc/motd in it in report\n"
-                    self.resultAppend(msg)
-
-                if not checkPerms(sshfile, [0, 0, 420], self.logger):
-                    msg = sshfile + " Permissions aren't correct on " + \
-                    sshfile + "\n"
-                    self.resultAppend(msg)
-                    compliant = False
-            else:
-                compliant = False
-                msg = sshfile + " does not exist\n"
-                self.resultAppend(msg)
             if not RuleKVEditor.report(self, True):
-                compliant = False
+                self.detailedresults += '\nEither file server banner text or login window banner text is incorrect, or both'
+                retval = False
+            if os.path.exists(self.ftpwelcomefile):
+                if not self.reportFileContents(self.ftpwelcomefile, WARNINGBANNER):
+                    retval = False
+                    self.detailedresults += '\nincorrect configuration text in: ' + str(self.ftpwelcomefile)
+            else:
+                retval = False
+                self.detailedresults += '\nrequired configuration file: ' + str(self.ftpwelcomefile) + ' not found'
 
-            return compliant
-
-        except OSError:
-            raise
-        except (KeyboardInterrupt, SystemExit):
-            raise
+            if os.path.exists(self.policybanner):
+                if not self.reportFileContents(self.policybanner, WARNINGBANNER):
+                    retval = False
+                    self.detailedresults += '\nincorrect configuration text in: ' + str(self.policybanner)
+            else:
+                retval = False
+                self.detailedresults += '\nrequired configuration file: ' + str(self.policybanner) + ' not found'
+            if not self.reportcommon():
+                retval = False
         except Exception:
             raise
-            return False
+        return retval
 
 ###############################################################################
 
@@ -324,374 +924,249 @@ class InstallBanners(RuleKVEditor):
         Install warning banners, set the warning text and configure the
         file permissions for the warning banner files.
 
+        @return: success
+        @rtype: boolean
+
         @author Breen Malmberg
         '''
 
         success = True
-        self.detailedresults = ""
+        self.detailedresults = ''
 
         try:
-
-            if os.path.exists('/etc/dconf/db/gdm.d'):
-                self.rulesuccess = self.fixr7()
-                return self.rulesuccess
-            # if system is mac, run fixmac instead
-            elif self.environ.getosfamily() == 'darwin':
-                self.rulesuccess = self.fixmac()
+            if self.ci.getcurrvalue():
+                if self.linux:
+                    if not self.fixlinux():
+                        success = False
+                elif self.mac:
+                    if not self.fixmac():
+                        success = False
+                else:
+                    success = False
+                    self.detailedresults += '\nCould not identify operating system, or operating system not supported.'
             else:
-                if not self.ci.getcurrvalue():
-                    return
-                #clear out event history so only the latest fix is recorded
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
-
-                # if banners dir does not exist, create it
-                if not os.path.exists('/etc/banners'):
-                    os.mkdir('/etc/banners')
-                    os.chmod('/etc/banners', 0755)
-                    os.chown('/etc/banners', 0, 0)
-
-                # fix warning banner files
-                for banner in self.bannerfilelist:
-                    if os.path.exists(banner):
-                        if not checkPerms(banner, [0, 0, 420], self.logger):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(banner, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                                success = False
-                        contents = readFile(banner, self.logger)
-                        string = ""
-                        for line in contents:
-                            string += line
-                        self.logdispatch.log(LogPriority.DEBUG,
-                                             ['InstallBanners.fix',
-                                              "string: " + string + "\n"])
-                        if not re.search(re.escape(WARNINGBANNER), string):
-                            tmpfile = banner + ".tmp"
-                            if writeFile(tmpfile, WARNINGBANNER, self.logger):
-
-                                event = {'eventtype': 'conf',
-                                         'filepath': banner}
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(banner,
-                                                            tmpfile, myid)
-                                os.rename(tmpfile, banner)
-                                os.chmod(banner, 420)
-                                os.chown(banner, 0, 0)
-                            else:
-                                success = False
-                    else:
-                        createFile(banner, self.logger)
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": banner}
-                        self.statechglogger.recordchgevent(myid, event)
-                        if not writeFile(banner, WARNINGBANNER, self.logger):
-                            success = False
-                        os.chmod(banner, 420)
-                        os.chown(banner, 0, 0)
-
-                # fix display manager config files
-                for conffile in self.displaymgrconfiglist:
-                    if os.path.exists(conffile):
-                        if re.search('kdm', conffile):
-                            if not self.fixkdm(conffile):
-                                success = False
-                        elif re.search('gdm', conffile):
-                            if not self.fixgdm(conffile):
-                                success = False
-            self.rulesuccess = success
-            if self.rulesuccess:
-                debug = "InstallBanners fix has run to completion\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-            else:
-                debug = "InstallBanners fix has not run to completion\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += '\nThe configuration item for this rule was not enabled so nothing was done.'
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
+        self.formatDetailedResults("fix", success,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
+        return success
 
-###############################################################################
-
-    def fixr7(self):
+    def fixlinux(self):
         '''
-        rhel7 sets up warning banners differently than even other linuces
-        it uses a new dconf database, and you must run a command after
-        setting up the warning banner file and text
+        run fix functionality for linux-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
         '''
 
         retval = True
 
         try:
-
-            path = '/etc/dconf/db/gdm.d/01-banner-message'
-            confstr = '[org/gnome/login-screen]\nbanner-message-enable=true\nbanner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'\n'
-            cmd = '/usr/bin/dconf update'
-
-            path2 = '/etc/dconf/db/gdm.d/00-login-screen'
-            confstr2 = '[org/gnome/login-screen]\ndisable-user-list=true\n'
-
-            pathsplit = os.path.split(path)
-            if not os.path.exists(pathsplit[0]):
-                os.makedirs(pathsplit[0], 0755)
-            pathsplit2 = os.path.split(path2)
-            if not os.path.exists(pathsplit2[0]):
-                os.makedirs(pathsplit2[0], 0755)
-
-            f = open(path, 'w')
-            f.write(confstr)
-            f.close()
-
-            f = open(path2, 'w')
-            f.write(confstr2)
-            f.close()
-
-            self.commandhelper.executeCommand(cmd)
-            errout = self.commandhelper.getErrorString()
-
-            if errout:
+            if not self.fixlinuxcommon():
                 retval = False
-                self.detailedresults += '\ncould not execute command: ' + str(cmd)
-                self.logger.log(LogPriority.DEBUG, str(errout))
-
+            if self.gnome2:
+                if not self.fixgnome2():
+                    retval = False
+            elif self.gnome3:
+                if not self.fixgnome3():
+                    retval = False
+            elif self.lightdm:
+                if not self.fixlightdm():
+                    retval = False
+            elif self.kde:
+                if not self.fixkde():
+                    retval = False
+            else:
+                retval = False
+                self.detailedresults += '\nCould not identify display manager, or display manager not supported.'
         except Exception:
             raise
         return retval
 
-###############################################################################
+    def fixlinuxcommon(self):
+        '''
+        run fix functionality which is common to linux platforms
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            if not self.fixcommon():
+                retval = False
+            for item in self.bannerfiles:
+                if not self.setFileContents(item, WARNINGBANNER, 'w'):
+                    retval = False
+        except Exception:
+            raise
+        return retval
+
+    def fixcommon(self):
+        '''
+        run fix functionlity which is common to all platforms
+
+        @return: retval
+        @rtype: boolean
+
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            if not self.replaceFileContents(self.sshdfile, self.sshddict):
+                retval = False
+            for loc in self.motdlocs:
+                if not self.setFileContents(loc, self.motd, 'w'):
+                    retval = False
+                    self.detailedresults += '\nunable to set warning banner text in ' + str(loc)
+        except Exception:
+            raise
+        return retval
+
+    def fixgnome2(self):
+        '''
+        run fix functionality for gnome2-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            for cmd in self.gnome2fixlist:
+                self.cmdhelper.executeCommand(cmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+        except Exception:
+            raise
+        return retval
+
+    def fixgnome3(self):
+        '''
+        run fix functionality for gnome3-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            for opt in self.gnome3optdict:
+                self.cmdhelper.executeCommand(self.gsettingsset + opt + ' ' + str(self.gnome3optdict[opt]))
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\n' + str(errout)
+            if not self.setFileContents(self.gdmprofile, self.profilelist):
+                retval = False
+                self.detailedresults += '\nunable to create gdm profile file: ' + str(self.gdmprofile)
+            if not self.setFileContents(self.bannerfile, self.gnome3optlist):
+                retval = False
+                self.detailedresults += '\nunable to create gdm banner file: ' + str(self.bannerfile)
+            if not self.cmdhelper.executeCommand(self.dconfupdate):
+                retval = False
+                output = self.cmdhelper.getOutputString()
+                self.detailedresults += '\n'+ str(output)
+        except Exception:
+            raise
+        return retval
+
+    def fixlightdm(self):
+        '''
+        run fix functionality for lightdm-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        contentlines = []
+
+        try:
+            for item in self.lightdmdict:
+                contentlines = []
+                if isinstance(self.lightdmdict[item], list):
+                    for opt in self.lightdmdict[item]:
+                        contentlines.append(opt + '\n')
+                    if not self.setFileContents(item, contentlines):
+                        retval = False
+                else:
+                    if not self.setFileContents(item, self.lightdmdict[item]):
+                        retval = False
+        except Exception:
+            raise
+        return retval
+
+    def fixkde(self):
+        '''
+        run fix functionality for kde-based systems
+
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+            if not self.kdeditor.fix():
+                retval = False
+                self.detailedresults += '\nkveditor fix did not complete successfully'
+            if not self.kdeditor.commit():
+                retval = False
+                self.detailedresults += '\nkveditor commit did not complete successfully'
+            if not self.kdeditor2.fix():
+                retval = False
+                self.detailedresults += '\nkveditor fix did not complete successfully'
+            if not self.kdeditor2.commit():
+                retval = False
+                self.detailedresults += '\nkveditor commit did not complete successfully'
+        except Exception:
+            raise
+        return retval
 
     def fixmac(self):
         '''
-        Fix mac os x mavericks banner files
+        run fix functionality for macintosh, or darwin-based systems
 
-        @author Breen Malmberg
-        @change: dwalker - implemented methods found in stonixutilityfunctions
-            that does the same thing but with less code.
+        @return: retval
+        @rtype: boolean
+        @author: Breen Malmberg
         '''
 
-        # defaults
-        motdfound = False
-        RuleKVEditor.fix(self, True)
-        success = True
-        for banner in self.macbannerfiledict:
-            if os.path.exists(banner):
-                # if it is a com.apple.whatever.plist file,
-                # RuleKVEditor.fix() should take care of it with the
-                # defaults write command
-                if re.search(re.escape('com.apple.'), banner):
-                    os.chmod(banner, 420)
-                    os.chown(banner, 0, 0)
-                    pass
-                tmpfile = banner + ".tmp"
-                if writeFile(tmpfile, self.macbannerfiledict[banner],
-                                                              self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": banner}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(banner, tmpfile, myid)
-                    os.rename(tmpfile, banner)
-                    os.chown(banner, 0, 0)
-                    os.chmod(banner, 420)
-                    resetsecon(banner)
-                else:
-                    success = False
+        retval = True
+
+        try:
+            if not RuleKVEditor.fix(self, True):
+                retval = False
+            if not self.setFileContents(self.ftpwelcomefile, WARNINGBANNER, 'w'):
+                retval = False
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.ftpwelcomefile)
+            if not self.setFileContents(self.policybanner, WARNINGBANNER, 'w'):
+                retval = False
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.policybanner)
             else:
-                if createFile(banner, self.logger):
-                    event = {'eventtype': 'creation',
-                             'filename': banner}
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.statechglogger.recordchgevent(myid, event)
-                    writeFile(banner, self.macbannerfiledict[banner],
-                              self.logger)
-                    os.chmod(banner, 420)
-                    os.chown(banner, 0, 0)
-                    resetsecon(banner)
-                else:
-                    success = False
-        sshfile = "/private/etc/sshd_config"
-        if os.path.exists(sshfile):
-            contents = readFile(sshfile, self.logger)
-
-            for line in contents:
-                if re.search('^Banner[ \t]+/etc/motd', line.strip()):
-                    motdfound = True
-            if not motdfound:
-                tempstring = ""
-                for line in contents:
-                    tempstring += line
-                tempstring += "Banner /etc/motd\n"
-                tmpfile = sshfile + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': sshfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(sshfile, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, sshfile)
-                    os.chmod(sshfile, 420)
-                    os.chown(sshfile, 0, 0)
-                    resetsecon(sshfile)
-                else:
-                    success = False
-        else:
-            if createFile(sshfile, self.logger):
-                event = {'eventtype': 'creation',
-                         'filepath': sshfile}
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.statechglogger.recordchgevent(myid, event)
-                writeFile(sshfile, "Banner /etc/motd\n", self.logger)
-                os.chmod(sshfile, 420)
-                os.chown(sshfile, 0, 0)
-                resetsecon(sshfile)
-            else:
-                success = False
-        return success
-###############################################################################
-    # kdm display manager config files have proprietary parameters
-
-    def fixkdm(self, conffile):
-        '''
-        perform kdm-specific config changes to the given conffile
-        this method is called/used by fix()
-
-        @param conffile str the filename/path string to operate on
-        @author Breen Malmberg
-        '''
-        success = True
-        if os.path.exists(conffile):
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['InstallBanners.fixkdm', "fixing kde files"])
-            changed = False
-            if not checkPerms(conffile, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(conffile, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                    success = False
-            contents = readFile(conffile, self.logger)
-            tempstring = ""
-            found = False
-            for line in contents:
-                if re.search('^GreetString', line):
-                    if re.search("=", line):
-                        temp = line.split("=")
-                        try:
-                            if temp[1] == WARNINGBANNER:
-                                if found:
-                                    continue
-                                found = True
-                                tempstring += line
-                        except IndexError:
-                            continue
-                    else:
-                        continue
-                else:
-                    tempstring += line
-            if not found:
-                tempstring += "GreetString=" + WARNINGBANNER + "\n"
-                changed = True
-            if changed:
-                tmpfile = conffile + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    event = {'eventtype': 'conf',
-                             'filepath': conffile}
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(conffile, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, conffile)
-                    os.chmod(conffile, 420)
-                    os.chown(conffile, 0, 0)
-                    resetsecon(conffile)
-                else:
-                    success = False
-        return success
-###############################################################################
-    # gdm display manager config files have proprietary parameters
-
-    def fixgdm(self, conffile):
-        '''
-        perform gdm-specific config changes to the given conffile
-        this method is called/used by fix()
-
-        @param conffile str the filename/path string to operate on
-        @author Breen Malmberg
-        '''
-        success = True
-        if os.path.exists(conffile):
-            if not checkPerms(conffile, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(conffile, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                    success = False
-            contents = readFile(conffile, self.logger)
-            data = {"Greeter": "/usr/libexec/gdmlogin",
-                    "DefaultWelcome": "false",
-                    "Welcome": WARNINGBANNER,
-                    "RemoteWelcome": WARNINGBANNER}
-            tempstring1 = ""
-            tempstring2 = ""
-            changed = False
-            for item in data:
-                found = False
-                for line in contents:
-                    if re.search("^" + item, line):
-                        if re.search("=", line):
-                            temp = line.split("=")
-                            try:
-                                if temp[1] == data[item]:
-                                    if found:
-                                        continue
-                                    found = True
-                                    tempstring1 += line
-                            except IndexError:
-                                continue
-                        else:
-                            continue
-                    else:
-                        tempstring1 += line
-                if not found:
-                    tempstring1 += item + "=" + data[item]
-                    changed = True
-                tempstring2 = tempstring1
-                tempstring1 = ""
-            if changed:
-                tmpfile = conffile + ".tmp"
-                if writeFile(tmpfile, tempstring2, self.logger):
-                    event = {"eventtype": "conf",
-                             "filepath": conffile}
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(conffile, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, conffile)
-                    os.chmod(conffile, 420)
-                    os.chown(conffile, 0, 0)
-                    resetsecon(conffile)
-                else:
-                    success = False
-        return success
-###############################################################################
+                os.chmod(self.policybanner, 0644)
+            if not self.fixcommon():
+                retval = False
+        except Exception:
+            raise
+        return retval
