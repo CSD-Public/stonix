@@ -154,7 +154,11 @@ directory.'''
         '''
         success = True
         dirlist = os.listdir(directory)
+        if directory[-1] != '/':
+            directory += '/'
+
         for path in dirlist:
+            path = directory + path
             if os.path.isfile(path):
                 pkgName = self.ph.getPackageFromFile(path)
                 if pkgName is not None:
