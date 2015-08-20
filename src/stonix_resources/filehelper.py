@@ -1092,7 +1092,7 @@ class FileHelper(object):
         item = self.filedictionary[self.file_label]
         if not (item == None):
             self.file_path = item["file_path"]
-            self.file_path_original =  item["file_path_original"]
+            self.file_path_backup =  item["file_path_backup"]
             self.file_remove = item["file_remove"]
             self.file_path_not_evaluated = item["file_path_not_evaluated"]
             self.file_path_non_blank = item["file_path_non_blank"]
@@ -1125,7 +1125,7 @@ class FileHelper(object):
         '''
         if not (self.file_label == ""):
             item = {"file_path": self.file_path,
-                    "file_path_original": self.file_path_original,
+                    "file_path_backup": self.file_path_backup,
                     "file_remove": self.file_remove,
                     "file_path_not_evaluated": self.file_path_not_evaluated,
                     "file_path_non_blank": self.file_path_non_blank,
@@ -1161,7 +1161,7 @@ class FileHelper(object):
         '''
         self.file_label = ""
         self.file_path = ""
-        self.file_path_original = ""
+        self.file_path_backup = ""
         self.file_content = None
         self.file_permissions = None
         self.file_owner = None
@@ -1190,31 +1190,30 @@ class FileHelper(object):
 
     def initializeStateChangeLoggerEvent(self):
         if os.path.exists(self.file_path):
-            self.file_path_original = self.file_path
-            self.file_path = self.file_path + str(randint).zfill(4)
-            shutil.copy(self.file_path_original, self.file_path)
+            self.file_path_backup = self.file_path + \
+                str(randint(0, 9999)).zfill(4)
+            shutil.copy(self.file_path, self.file_path_backup)
         return True
 
 ###############################################################################
 
     def recordStateChangeLoggerEvent(self):
         if os.path.exists(self.file_path) and \
-        os.path.exists(self.file_path_original):
+           os.path.exists(self.file_path_backup):
             event = {'eventtype': 'conf',
                      'startstate': 'notconfigured',
                      'endstate': 'configured',
-                     'filepath': self.file_path_original}
+                     'filepath': self.file_path}
             self.statechglogger.recordchgevent(self.file_eventid, event)
-            self.statechglogger.recordfilechange(self.file_path_original,
+            self.statechglogger.recordfilechange(self.file_path_backup,
                                                  self.file_path,
                                                  self.file_eventid)
             try:
-                os.rename(self.file_path, self.file_path_original)
+                os.remove(self.file_path_backup)
             except Exception, err:
-                message = "could not os.rename('" + str(self.file_path) + \
-                "', '" + str(self.file_path_original) + \
-                "'). failed with Error '" + str(err) + "' - " + \
-                traceback.format_exc()
+                message = "Could not remove " + str(self.file_path_backup) + \
+                    ". Failed with Error '" + str(err) + "' - " + \
+                    traceback.format_exc()
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
         return True
