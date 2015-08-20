@@ -29,6 +29,7 @@ dictionary
 @change: 2014/06/17 dkennel - Fixed traceback on Debian
 @change: 2014/07/14 ekkehard - Fixed report to self.fh.evaluateFiles()
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/08/17 eball - Updated to work with Linux
 '''
 from __future__ import absolute_import
 import os
@@ -38,8 +39,9 @@ from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
+from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
-from ..localize import KERB5
+from ..localize import KERB5, KRB5
 
 
 class ConfigureKerberos(RuleKVEditor):
@@ -56,11 +58,11 @@ class ConfigureKerberos(RuleKVEditor):
         self.rulename = 'ConfigureKerberos'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules configure Kerberos On your system."
+        self.helptext = "This rule configures LANL Kerberos on your system."
         self.rootrequired = True
         self.guidance = []
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        self.applicable = {'type': 'white', 'family': 'linux',
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -69,7 +71,7 @@ class ConfigureKerberos(RuleKVEditor):
                           {"path": "/etc/krb5.conf",
                            "remove": False,
                            "content": KERB5,
-                           "permissions": 0o0644,
+                           "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
                            "eventid": None},
@@ -122,15 +124,16 @@ class ConfigureKerberos(RuleKVEditor):
             self.files = {"krb5.conf":
                           {"path": "/etc/krb5.conf",
                            "remove": False,
-                           "content": KERB5,
-                           "permissions": 0o0644,
-                           "owner": os.getuid(),
+                           "content": KRB5,
+                           "permissions": 0644,
+                           "owner": "root",
                            "group": "root",
-                           "eventid": str(self.rulenumber).zfill(4) + \
-                           "kerb5"}}
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
+        if self.environ.getosfamily() == 'linux':
+                self.ph = Pkghelper(self.logdispatch, self.environ)
         self.filepathToConfigure = []
         for filelabel, fileinfo in sorted(self.files.items()):
             self.filepathToConfigure.append(fileinfo["path"])
@@ -143,20 +146,36 @@ class ConfigureKerberos(RuleKVEditor):
                             fileinfo["group"],
                             fileinfo["eventid"]
                             )
-        self.ci = \
-        ConfigurationItem("bool",
-                          "ConfigureFiles",
-                          True,
-                          "",
-                          "When Enabled Add/Remove/Update these files: " + \
-                          str(self.filepathToConfigure))
+        # Configuration item instantiation
+        datatype = "bool"
+        key = "CONFIGUREFILES"
+        instructions = "When Enabled Add/Remove/Update these files: " + \
+            str(self.filepathToConfigure)
+        default = True
+        self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
         try:
-            compliant = False
+            compliant = True
             self.detailedresults = ""
-            compliant = self.fh.evaluateFiles()
-            self.detailedresults = self.fh.getFileMessage()
+            if self.environ.getosfamily() == 'linux':
+                packagesRpm = "pam_krb5 krb5-libs krb5-workstation " + \
+                              "sssd-krb5 sssd-krb5-common"
+                packagesDeb = "krb5-config krb5-clients krb5-user"
+                if self.ph.determineMgr() == "apt-get":
+                    self.packages = packagesDeb
+                    # Set noninteractive env var so that apt does not prompt
+                    # for configuration options
+                    os.environ["DEBIAN_FRONTEND"] = "noninteractive"
+                else:
+                    self.packages = packagesRpm
+                if not self.ph.check(self.packages):
+                    compliant = False
+                    self.detailedresults += "Some packages required for " + \
+                        "Kerberos authentication have not been installed.\n"
+            if not self.fh.evaluateFiles():
+                compliant = False
+                self.detailedresults += self.fh.getFileMessage()
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -175,11 +194,17 @@ class ConfigureKerberos(RuleKVEditor):
 
     def fix(self):
         try:
-            fixsuccess = False
+            fixsuccess = True
             self.detailedresults = ""
             if self.ci.getcurrvalue():
-                fixsuccess = self.fh.fixFiles()
-                self.detailedresults = self.fh.getFileMessage()
+                if self.environ.getosfamily() == 'linux':
+                    if not self.ph.install(self.packages):
+                        fixsuccess = False
+                        self.detailedresults += "Installation of " + \
+                            "Kerberos-related packages did not succeed.\n"
+                if not self.fh.fixFiles():
+                    fixsuccess = False
+                    self.detailedresults += self.fh.getFileMessage()
             else:
                 fixsuccess = False
                 self.detailedresults = str(self.ci.getcurrvalue()) + \
