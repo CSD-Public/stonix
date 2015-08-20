@@ -27,15 +27,15 @@ import traceback
 from logdispatcher import LogPriority
 
 class Pkghelper(object):
-        
     '''
      Package helper class that interacts with rules needing to install, remove 
      or check the status of software packages. Relies on platform specific 
      subclasses to do the heavy lifting.
 
-    :version:
-    :author:Derek T Walker  July 2012'''
-    
+    @author: Derek T Walker  July 2012
+    @change: 2015/08/20 eball - Added getPackageFromFile
+    '''
+
     def __init__(self,logdispatcher, environment):
         self.enviro = environment
         self.logger = logdispatcher
@@ -189,6 +189,16 @@ remove command"
             info = traceback.format_exc()
             raise
             self.logger.log(LogPriority.ERROR,info)
+###############################################################################
+    def getPackageFromFile(self, filename):
+        try:
+            return self.pckgr.getPackageFromFile(filename)
+        except(KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise(self.detailedresults)
 ###############################################################################
     def getInstall(self):
         return self.pckgr.getInstall()

@@ -31,8 +31,10 @@ class AptGet(object):
     '''Linux specific package manager for distributions that use the apt-get
     command to install packages.
 
-    :version:
-    :author:Derek T Walker 08-06-2012'''
+    @author: Derek T Walker
+    @change: 2012/08/06 dwalker - Original Implementation
+    @change: 2015/08/20 eball - Added getPackageFromFile
+    '''
 
     def __init__(self, logger):
         self.logger = logger
@@ -172,6 +174,22 @@ misspelled"
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
             raise
+###############################################################################
+    def getPackageFromFile(self, filename):
+        try:
+            self.ch.executeCommand("dpkg -S " + filename)
+            if self.ch.getReturnCode() == 0:
+                output = self.ch.getOutputString()
+                pkgname = output.split(":")[0]
+                return pkgname
+            else:
+                return None
+        except(KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise(self.detailedresults)
 ###############################################################################
     def getInstall(self):
         return self.install
