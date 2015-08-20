@@ -494,9 +494,13 @@ class MacBuilder():
             "installation purposes..."
         call(["make", "dmg", "PACKAGE_VERSION=" + APPVERSION,
               "USE_PKGBUILD=1"])
-        print "Moving the dmg to the dmgs directory."
+        call(["make", "pkg", "PACKAGE_VERSION=" + APPVERSION,
+              "USE_PKGBUILD=1"])
+        print "Moving dmg and pkg to the dmgs directory."
         dmgname = APPNAME + "-" + APPVERSION + ".dmg"
+        pkgname = APPNAME + "-" + APPVERSION + ".pkg"
         os.rename(dmgname, "../dmgs/" + dmgname)
+        os.rename(pkgname, "../dmgs/" + pkgname)
 
         os.chdir(self.dirq.get())
 
