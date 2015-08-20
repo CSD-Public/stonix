@@ -30,7 +30,7 @@ This is a Unit Test for Rule RemoveSUIDGames
 from __future__ import absolute_import
 import unittest
 from src.stonix_resources.RuleTestTemplate import RuleTest
-from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.logdispatcher import LogPriority
 from src.stonix_resources.pkghelper import Pkghelper
 from src.stonix_resources.rules.RemoveSUIDGames import RemoveSUIDGames
 

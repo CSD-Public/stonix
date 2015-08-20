@@ -39,7 +39,7 @@ class Zypper(object):
     @change: 2014/12/24 bemalmbe - changed search strings to be match exact and
         search for installed or available separately
     @change: 2014/12/24 bemalmbe - fixed multiple pep8 violations
-    @change: 2015/08/20 eball - Added getPackageFromFile
+    @change: 2015/08/20 eball - Added getPackageFromFile and self.rpm var
     '''
 
     def __init__(self, logger):
@@ -50,6 +50,7 @@ class Zypper(object):
         self.remove = "/usr/bin/zypper --non-interactive remove "
         self.searchi = "/usr/bin/zypper --non-interactive search --match-exact -i "
         self.searchu = "/usr/bin/zypper --non-interactive search --match-exact -u "
+        self.rpm = "/bin/rpm -q "
 
 ###############################################################################
     def installpackage(self, package):
