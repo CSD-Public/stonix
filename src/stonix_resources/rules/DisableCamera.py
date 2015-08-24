@@ -52,7 +52,7 @@ class DisableCamera(Rule):
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
 
     def isreadable(self, path):
         '''
