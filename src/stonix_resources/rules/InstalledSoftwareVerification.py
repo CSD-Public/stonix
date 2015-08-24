@@ -24,13 +24,13 @@
 Created on 2015/08/04
 Report-only rule to verify package integrity
 @author: Eric Ball
-@change: 2015/08/04 eball Original implementation
+@change: 2015/08/04 eball - Original implementation
+@change: 2015/08/24 eball - Improve output, remove .pyc files from output
 '''
 
 from __future__ import absolute_import
 import re
 import traceback
-
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
@@ -52,10 +52,45 @@ class InstalledSoftwareVerification(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''This report-only rule will check the integrity of \
-the installed software on this system, and suggest fixes. Since the results \
-of these tests are heavily dependent on user configuration, no changes will \
-be made to the system.\n\nThis rule invokes the "rpm -Va" command, which can \
-take several minutes to complete.'''
+the installed software on this system. Since the results of these tests are \
+heavily dependent on user configuration, no changes will be made to the system.
+
+PLEASE NOTE: This rule invokes the "rpm -Va" command, which can take several \
+minutes to complete.
+
+SUGGESTED CORRECTIVE ACTIONS:
+For files with bad user/group ownership:
+For each file listed in the report output, run the following command as root:
+# rpm --setugids `rpm -qf [filename]`
+This will attempt to return the user and group ownership to the package \
+defaults.
+
+For files with changed permissions:
+To find the expected permissions for the file, begin by running the following \
+command as root:
+# rpm -qf [filename]
+This will output the [package] name. It can also be run in backticks \
+(`rpm -qf [filename]`) in place of [package] in the following commands.
+Next, run:
+# rpm -q --queryformat "[%{FILENAMES} %{FILEMODES:perms}\\n]" [package] | \
+grep [filename]
+You can then compare the result of this to the current permissions by running:
+# ls -alL [filename]
+If the current permissions are more permissive, you can correct them by \
+running:
+# rpm --setperms [package]
+
+For files with changed hashes:
+If you believe that the file's hash has changed due to corruption or \
+malicious activity, begin by running the following command as root:
+# rpm -qf [filename]
+This will output the [package] name. It can also be run in backticks \
+(`rpm -qf [filename]`) in place of [package] in the following commands.
+Next, run:
+# rpm -Uvh [package]
+OR
+# yum reinstall [package]
+'''
         self.rootrequired = True
         self.guidance = ['NSA 2.1.3.2', 'CCE 14931-0']
         self.applicable = {'type': 'white',
@@ -73,7 +108,7 @@ take several minutes to complete.'''
         try:
             cmd = ["rpm", "-Va"]
             self.ch.executeCommand(cmd)
-            results = "\n"
+            results = ""
             rpmout = self.ch.getOutputString()
             rpmoutlines = rpmout.split("\n")
             ownerErr = []
@@ -84,13 +119,17 @@ take several minutes to complete.'''
                 words = line.split()
                 if len(words) >= 2:
                     if re.search("^.....U", line):
-                        ownerErr.append(words[-1])
+                        if not re.search(".pyc$", words[-1]):
+                            ownerErr.append(words[-1])
                     if re.search("^......G", line):
-                        groupErr.append(words[-1])
+                        if not re.search(".pyc$", words[-1]):
+                            groupErr.append(words[-1])
                     if re.search("^.M", line):
-                        permErr.append(words[-1])
+                        if not re.search(".pyc$", words[-1]):
+                            permErr.append(words[-1])
                     if re.search("^..5", line):
-                        if words[1] != 'c':
+                        if not re.search(".pyc$", words[-1]) \
+                           and words[1] != 'c':
                             hashErr.append(words[-1])
 
             if len(ownerErr) > 0:
@@ -103,47 +142,23 @@ take several minutes to complete.'''
                 for line in groupErr:
                     results += line + "\n"
                 results += "\n"
-            if len(ownerErr) + len(groupErr) > 0:
-                results += """Suggested corrective action: for each file \
-listed above, run the following command as root:
-# rpm --setugids `rpm -qf [filename]`
-This will attempt to return the user and group ownership to the package \
-defaults.\n\n"""
 
             if len(permErr) > 0:
                 results += "Files with changed permissions:\n"
                 for line in permErr:
                     results += line + "\n"
-                results += """\nSuggested corrective action: to find the \
-expected permissions for the file, begin by running the following command as \
-root:
-# rpm -qf [filename]
-This will output the [package] name. It can also be run in backticks \
-(`rpm -qf [filename]`) in place of [package].
-Next, run:
-# rpm -q --queryformat "[%{FILENAMES} %{FILEMODES:perms}\\n]" [package] | \
-grep [filename]
-You can then compare the result of this to the current permissions by running:
-# ls -alL [filename]
-If the current permissions are more permissive, you can correct them by running:
-# rpm --setperms [package]\n\n"""
+                results += "\n"
 
             if len(hashErr) > 0:
-                results += "Non-configuration files with changed hashes:\n"
+                results += "Files with changed hashes (excluding those " + \
+                    "marked as config files in their RPM):\n"
                 for line in hashErr:
                     results += line + "\n"
-                results += """\nSuggested corrective action: if you believe \
-that the file's hash has changed due to corruption or malicious activity, \
-begin by running the following command as root:
-# rpm -qf [filename]
-This will output the [package] name. It can also be run in backticks \
-(`rpm -qf [filename]`) in place of [package].
-Next, run:
-# rpm -Uvh [package]
-OR
-# yum reinstall [package]
-"""
+                results += "\n"
 
+            if len(results) > 0:
+                instr = "For suggested corrective actions, see help text.\n"
+                results = instr + results
             self.detailedresults = results
             self.rulesuccess = True
         except (KeyboardInterrupt, SystemExit):
