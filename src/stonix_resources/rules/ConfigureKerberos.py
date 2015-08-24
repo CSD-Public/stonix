@@ -35,7 +35,6 @@ from __future__ import absolute_import
 import os
 import traceback
 from ..ruleKVEditor import RuleKVEditor
-from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
@@ -164,9 +163,6 @@ class ConfigureKerberos(RuleKVEditor):
                 packagesDeb = "krb5-config krb5-clients krb5-user"
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
-                    # Set noninteractive env var so that apt does not prompt
-                    # for configuration options
-                    os.environ["DEBIAN_FRONTEND"] = "noninteractive"
                 else:
                     self.packages = packagesRpm
                 if not self.ph.check(self.packages):
