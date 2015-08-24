@@ -628,25 +628,28 @@ for this portion of the rule\n"
             f = open(kfile, "w")
             f.close()
             created = True
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation", "filepath": kfile}
-            self.statechglogger.recordchgevent(myid, event)
+            if self.environ.geteuid() == 0:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": kfile}
+                self.statechglogger.recordchgevent(myid, event)
 
         uid = getpwnam(user)[2]
         gid = getpwnam(user)[3]
         if not created:
             if not checkPerms(kfile, [uid, gid, 0600], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(kfile, [uid, gid, 0600], self.logger,
-                                self.statechglogger, myid):
-                    success = False
+                if self.environ.geteuid() == 0:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(kfile, [uid, gid, 0600], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
         if not self.searchFile(kfile):
             if self.editor.fixables:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
+                if self.environ.geteuid() == 0:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
                 if not self.editor.fix():
                     return False
                 elif not self.editor.commit():

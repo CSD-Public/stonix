@@ -354,7 +354,7 @@ unity-greeter'''
         '''
 
         self.mac = True
-        self.motd = OSXSHORTWARNINGBANNER
+        self.motd = WARNINGBANNER
         if not self.sshdfile:
             self.sshdfile = '/private/etc/ssh/sshd_config'
         self.ftpwelcomelocs = ["/etc/ftpwelcome", "/private/etc/ftpwelcome"]
@@ -374,7 +374,7 @@ unity-greeter'''
                          self.ci)
         self.addKVEditor("loginwindowBannerText", "defaults",
                          "/Library/Preferences/com.apple.loginwindow", "",
-                         {"LoginWindowText": [re.escape(OSXSHORTWARNINGBANNER),
+                         {"LoginwindowText": [re.escape(OSXSHORTWARNINGBANNER),
                                               '"' + OSXSHORTWARNINGBANNER + \
                                               '"']},
                          "present", "",
@@ -559,7 +559,7 @@ unity-greeter'''
                     raise
             except OSError as err:
                 self.detailedresults += '\n' + str(err)
-                return False
+                retval = False
         except Exception:
             raise
         return retval
@@ -599,7 +599,9 @@ unity-greeter'''
                 for item in replacedict:
                     if not replacedict[item]:
                         contentlines.append('\n' + item)
-                self.setFileContents(filepath, contentlines)
+                if not self.setFileContents(filepath, contentlines):
+                    retval = False
+                    self.detailedresults += '\n'
             else:
                 retval = False
                 self.detailedresults += '\nSpecified filepath not found. Returning False'
@@ -895,7 +897,7 @@ unity-greeter'''
                 self.detailedresults += '\nEither file server banner text or login window banner text is incorrect, or both'
                 retval = False
             if os.path.exists(self.ftpwelcomefile):
-                if not self.reportFileContents(self.ftpwelcomefile, OSXSHORTWARNINGBANNER):
+                if not self.reportFileContents(self.ftpwelcomefile, WARNINGBANNER):
                     retval = False
                     self.detailedresults += '\nincorrect configuration text in: ' + str(self.ftpwelcomefile)
             else:
@@ -903,7 +905,7 @@ unity-greeter'''
                 self.detailedresults += '\nrequired configuration file: ' + str(self.ftpwelcomefile) + ' not found'
 
             if os.path.exists(self.policybanner):
-                if not self.reportFileContents(self.policybanner, OSXSHORTWARNINGBANNER):
+                if not self.reportFileContents(self.policybanner, WARNINGBANNER):
                     retval = False
                     self.detailedresults += '\nincorrect configuration text in: ' + str(self.policybanner)
             else:
@@ -1028,6 +1030,7 @@ unity-greeter'''
             for loc in self.motdlocs:
                 if not self.setFileContents(loc, self.motd, 'w'):
                     retval = False
+                    self.detailedresults += '\nunable to set warning banner text in ' + str(loc)
         except Exception:
             raise
         return retval
@@ -1154,10 +1157,14 @@ unity-greeter'''
         try:
             if not RuleKVEditor.fix(self, True):
                 retval = False
-            if not self.setFileContents(self.ftpwelcomefile, OSXSHORTWARNINGBANNER, 'w'):
+            if not self.setFileContents(self.ftpwelcomefile, WARNINGBANNER, 'w'):
                 retval = False
-            if not self.setFileContents(self.policybanner, OSXSHORTWARNINGBANNER, 'w'):
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.ftpwelcomefile)
+            if not self.setFileContents(self.policybanner, WARNINGBANNER, 'w'):
                 retval = False
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.policybanner)
+            else:
+                os.chmod(self.policybanner, 0644)
             if not self.fixcommon():
                 retval = False
         except Exception:
