@@ -78,7 +78,7 @@ class ConfigureLogging(Rule):
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
 
         datatype = 'bool'
         key = 'CONFIGURELOGGING'

@@ -67,7 +67,7 @@ class ConfigureSpotlight(Rule):
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
 
         datatype1 = "bool"
         key1 = "CONFIGURESPOTLIGHT"

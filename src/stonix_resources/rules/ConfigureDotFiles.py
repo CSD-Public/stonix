@@ -90,7 +90,7 @@ permission.'''
         self.guidance = ['CIS', 'NSA 2.3.4.3', 'CCE-4561-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
 
     def report(self):
         '''

@@ -67,7 +67,7 @@ class ConfigurePowerManagement(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
         self.psconfiguration = \
         {"ACDisableSystemSleep":
          {"HelpText": "Sets the Mac to stay awake if power is plugged-in. Default(AC Power, sleep, 0).",

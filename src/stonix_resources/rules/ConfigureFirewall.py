@@ -55,7 +55,7 @@ class ConfigureFirewall(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.addKVEditor("FirewallOn",
