@@ -38,6 +38,7 @@ from ..CommandHelper import CommandHelper
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
+from ..ServiceHelper import ServiceHelper
 
 
 class ConfigureLANLLDAP(Rule):
@@ -80,6 +81,7 @@ class ConfigureLANLLDAP(Rule):
 
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
+        self.sh = ServiceHelper(self.environ, self.logger)
         self.iditerator = 0
 
     def report(self):
@@ -88,60 +90,71 @@ class ConfigureLANLLDAP(Rule):
             results = ""
             server = self.ldapci.getcurrvalue()
             osver = int(self.environ.getosver().split(".")[0])
-            authfile = '/etc/sysconfig/authconfig'
-            authconfig = {"USEPAMACCESS": "yes",
-                          "CACHECREDENTIALS": "no",
-                          "USESSSDAUTH": "no",
-                          "USESHADOW": "yes",
-                          "USEWINBIND": "no",
-                          "USESSSD": "no",
-                          "PASSWDALGORITHM": "sha512",
-                          "FORCELEGACY": "yes",
-                          "USEFPRINTD": "no",
-                          "USEHESIOD": "no",
-                          "FORCESMARTCARD": "no",
-                          "USELDAPAUTH": "no",
-                          "USELDAP": "yes",
-                          "USECRACKLIB": "no",
-                          "USEWINBINDAUTH": "no",
-                          "USESMARTCARD": "no",
-                          "USELOCAUTHORIZE": "yes",
-                          "USENIS": "no",
-                          "USEKERBEROS": "yes",
-                          "USESYSNETAUTH": "no",
-                          "USESMBAUTH": "no",
-                          "USEDB": "no"}
-            if osver == 6:
-                authconfig["USEPASSWDQC"] = "yes"
-            tmppath = authfile + ".tmp"
-            self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         "conf", authfile, tmppath, authconfig,
-                                         "present", "closedeq")
-            if not os.path.exists(authfile):
-                compliant = False
-                results += authfile + " does not exist.\n"
-            elif not self.editor.report():
-                compliant = False
-                results += "Settings in " + authfile + " are not correct.\n"
-            elif not checkPerms(authfile, [0, 0, 0644], self.logger):
-                compliant = False
-                results += "Settings in " + authfile + " are correct, " + \
-                    "but the file's permissions are incorrect.\n"
+            if not self.ph.determineMgr() == "apt-get":
+                authfile = '/etc/sysconfig/authconfig'
+                self.authfile = authfile
+                authconfig = {"USEPAMACCESS": "yes",
+                              "CACHECREDENTIALS": "no",
+                              "USESSSDAUTH": "no",
+                              "USESHADOW": "yes",
+                              "USEWINBIND": "no",
+                              "USESSSD": "no",
+                              "PASSWDALGORITHM": "sha512",
+                              "FORCELEGACY": "yes",
+                              "USEFPRINTD": "no",
+                              "USEHESIOD": "no",
+                              "FORCESMARTCARD": "no",
+                              "USELDAPAUTH": "no",
+                              "USELDAP": "yes",
+                              "USECRACKLIB": "no",
+                              "USEWINBINDAUTH": "no",
+                              "USESMARTCARD": "no",
+                              "USELOCAUTHORIZE": "yes",
+                              "USENIS": "no",
+                              "USEKERBEROS": "yes",
+                              "USESYSNETAUTH": "no",
+                              "USESMBAUTH": "no",
+                              "USEDB": "no"}
+                if osver == 6:
+                    authconfig["USEPASSWDQC"] = "yes"
+                self.authconfig = authconfig
+                tmppath = authfile + ".tmp"
+                if os.path.exists(authfile):
+                    self.editor = KVEditorStonix(self.statechglogger,
+                                                 self.logger, "conf", authfile,
+                                                 tmppath, authconfig,
+                                                 "present", "closedeq")
+                    if not self.editor.report():
+                        compliant = False
+                        results += "Settings in " + authfile + \
+                            " are not correct\n"
+                    elif not checkPerms(authfile, [0, 0, 0644], self.logger):
+                        compliant = False
+                        results += "Settings in " + authfile + \
+                            " are correct, but the file's permissions are " + \
+                            "incorrect\n"
+                else:
+                    compliant = False
+                    results += authfile + " does not exist.\n"
 
             ldapfile = "/etc/nslcd.conf"
             self.ldapfile = ldapfile
+            if self.ph.determineMgr() == "apt-get":
+                gid = "gid nslcd"
+            else:
+                gid = "gid ldap"
             if re.match('ldap.lanl.gov', server):
                 ldapsettings = ['uri ldap://ldap.lanl.gov',
                                 'base dc=lanl,dc=gov',
                                 'base passwd ou=unixsrv,dc=lanl,dc=gov',
                                 'uid nslcd',
-                                'gid ldap',
+                                gid,
                                 'ssl no',
                                 'nss_initgroups_ignoreusers root']
             else:
                 uri = 'uri ldap://' + server
                 ldapsettings = [uri, 'base dc=lanl,dc=gov', 'uid nslcd',
-                                'gid ldap', 'ssl no',
+                                gid, 'ssl no',
                                 'nss_initgroups_ignoreusers root']
             self.ldapsettings = ldapsettings
             if os.path.exists(ldapfile):
@@ -153,7 +166,7 @@ class ConfigureLANLLDAP(Rule):
                 elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
                     compliant = False
                     results += "Settings in " + ldapfile + " are correct, " + \
-                        "but the file's permissions are incorrect.\n"
+                        "but the file's permissions are incorrect\n"
             else:
                 compliant = False
                 results += ldapfile + " does not exist.\n"
@@ -173,10 +186,10 @@ class ConfigureLANLLDAP(Rule):
                 elif not checkPerms(nsswitchpath, [0, 0, 0644], self.logger):
                     compliant = False
                     results += "Settings in " + ldapfile + " are correct, " + \
-                        "but the file's permissions are incorrect.\n"
+                        "but the file's permissions are incorrect\n"
             else:
                 compliant = False
-                results += nsswitchpath + " does not exist.\n"
+                results += nsswitchpath + " does not exist\n"
 
             self.compliant = compliant
             self.detailedresults = results
@@ -232,12 +245,9 @@ class ConfigureLANLLDAP(Rule):
 
             packagesRpm = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
                            "oddjob-mkhomedir"]
-            packagesDeb = ["krb5-config", "krb5-clients", "krb5-user"]
+            packagesDeb = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
             if self.ph.determineMgr() == "apt-get":
                 packages = packagesDeb
-                # Set noninteractive env var so that apt does not prompt
-                # for configuration options
-                os.environ["DEBIAN_FRONTEND"] = "noninteractive"
             else:
                 packages = packagesRpm
 
@@ -246,28 +256,42 @@ class ConfigureLANLLDAP(Rule):
                     if not self.ph.install(package):
                         success = False
                         results += "Unable to install " + package + "\n"
-
-            edpath = self.editor.getPath()
-            if self.editor.fixables:
-                if self.editor.fix():
-                    if self.editor.commit():
-                        debug = "The contents of " + edpath + \
-                            " have been corrected\n."
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        resetsecon(edpath)
+            if not self.ph.determineMgr() == "apt-get":
+                authfile = self.authfile
+                authconfig = self.authconfig
+                tmppath = authfile + ".tmp"
+                if not os.path.exists(authfile):
+                    createFile(authfile, self.logger)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation", "filepath": authfile}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.editor = KVEditorStonix(self.statechglogger,
+                                                 self.logger, "conf", authfile,
+                                                 tmppath, authconfig,
+                                                 "present", "closedeq")
+                    self.editor.report()
+                if self.editor.fixables:
+                    if self.editor.fix():
+                        if self.editor.commit():
+                            debug = "The contents of " + authfile + \
+                                " have been corrected\n."
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            resetsecon(authfile)
+                        else:
+                            debug = "KVEditor commit to " + authfile + \
+                                " was not successful.\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
                     else:
-                        debug = "KVEditor commit to " + edpath + \
+                        debug = "KVEditor fix of " + authfile + \
                             " was not successful.\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                else:
-                    debug = "KVEditor fix of " + edpath + \
-                        " was not successful.\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-            myid = iterate(self.iditerator, self.rulenumber)
-            setPerms(edpath, [0, 0, 0644], self.logger,
-                     self.statechglogger, myid)
+                myid = iterate(self.iditerator, self.rulenumber)
+                setPerms(authfile, [0, 0, 0644], self.logger,
+                         self.statechglogger, myid)
+                resetsecon(authfile)
 
             ldapfile = self.ldapfile
             tmppath = ldapfile + ".tmp"
@@ -300,12 +324,12 @@ class ConfigureLANLLDAP(Rule):
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
                             debug = "KVEditor commit to " + ldapfile + \
-                                " was not successful.\n"
+                                " was not successful\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                     else:
                         debug = "KVEditor fix of " + ldapfile + \
-                            " was not successful.\n"
+                            " was not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
 
@@ -314,21 +338,10 @@ class ConfigureLANLLDAP(Rule):
                     if not self.__checkconf(ldapconf, [setting]):
                         ldapconf.append(setting + "\n")
 
-                if writeFile(tmppath, "".join(ldapconf), self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf", "filepath": ldapfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(ldapfile, tmppath,
-                                                         myid)
-                    os.rename(tmppath, ldapfile)
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    setPerms(ldapfile, [0, 0, 0600], self.logger,
-                             self.statechglogger, myid)
-                    resetsecon(ldapfile)
-                else:
+                if not self.__writeFile(ldapfile, "".join(ldapconf),
+                                        [0, 0, 0600]):
                     success = False
-                    results += "Problem writing new contents to temporary file"
+                    results += "Problem writing new contents to " + ldapfile
             else:
                 createFile(ldapfile, self.logger)
                 self.iditerator += 1
@@ -336,25 +349,32 @@ class ConfigureLANLLDAP(Rule):
                 event = {"eventtype": "creation", "filepath": ldapfile}
                 self.statechglogger.recordchgevent(myid, event)
 
-                writeFile(tmppath, "\n".join(ldapsettings), self.logger)
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf", "filepath": ldapfile}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(ldapfile, tmppath, myid)
-                os.rename(tmppath, ldapfile)
-                myid = iterate(self.iditerator, self.rulenumber)
-                setPerms(ldapfile, [0, 0, 0600], self.logger,
-                         self.statechglogger, myid)
-                resetsecon(ldapfile)
+                if not self.__writeFile(ldapfile, "\n".join(ldapsettings),
+                                        [0, 0, 0600]):
+                    success = False
+                    results += "Problem writing new contents to " + ldapfile
 
-            self.__fixnss(self.nsswitchpath, self.nsswitchsettings)
+            if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
+                success = False
+                results += "Problem writing new contents to " + \
+                    self.nsswitchpath
 
             if self.pamci.getcurrvalue():
-                self.__fixpam()
+                if not self.__fixpam():
+                    success = False
+                    results += "An error occurred while trying to write " + \
+                        "the PAM files\n"
 
-            cmd = ["authconfig", "--enablemkhomedir", "--updateall"]
-            self.ch.executeCommand(cmd)
+            if self.ph.determineMgr() == "apt-get":
+                cmd = ["/etc/init.d/nscd", "restart"]
+                self.ch.executeCommand(cmd)
+                cmd = ["/etc/init.d/nslcd", "restart"]
+                self.ch.executeCommand(cmd)
+                self.sh.enableservice("nscd")
+                self.sh.enableservice("nslcd")
+            else:
+                cmd = ["authconfig", "--enablemkhomedir", "--updateall"]
+                self.ch.executeCommand(cmd)
 
             self.detailedresults = results
             self.rulesuccess = success
@@ -378,70 +398,97 @@ class ConfigureLANLLDAP(Rule):
         @return: Bool Returns True if all settings are found or written
         @author: Eric Ball
         '''
-        if os.path.exists(path):
-            nsConfLines = readFile(path, self.logger)
-            nsConf = "".join(nsConfLines)
-            settingsSplit = []
-            for setting in settings:
-                settingsSplit.append(setting.split())
-            for ind, setting in enumerate(settingsSplit):
-                reString = "^(" + setting[0] + ".*)$"
-                match = re.search(reString, nsConf, re.M)
-                if match:
-                    confLine = match.group(1)
-                    confLineSplit = confLine.split()
-                    if not confLineSplit == setting:
-                        # Due to LANL's use of Python 2.6, the multiline
-                        # flag is not supported. Hence the use of newlines
-                        reString = "\n" + setting[0] + ".*"
-                        nsConf = re.sub(reString, "\n" + settings[ind], nsConf)
-                    nsConf += "\n" + settings[ind] + "\n"
+        try:
+            if os.path.exists(path):
+                nsConfLines = readFile(path, self.logger)
+                nsConf = "".join(nsConfLines)
+                settingsSplit = []
+                for setting in settings:
+                    settingsSplit.append(setting.split())
+                for ind, setting in enumerate(settingsSplit):
+                    reString = "^(" + setting[0] + ".*)$"
+                    match = re.search(reString, nsConf, re.M)
+                    if match:
+                        confLine = match.group(1)
+                        confLineSplit = confLine.split()
+                        if not confLineSplit == setting:
+                            # Due to LANL's use of Python 2.6, the multiline
+                            # flag is not supported. Hence the use of newlines
+                            reString = "\n" + setting[0] + ".*"
+                            nsConf = re.sub(reString, "\n" + settings[ind],
+                                            nsConf)
+                        nsConf += "\n" + settings[ind] + "\n"
 
-            tmppath = path + ".tmp"
-            writeFile(tmppath, nsConf, self.logger)
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf", "filepath": path}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(path, tmppath, myid)
-            os.rename(tmppath, path)
-            myid = iterate(self.iditerator, self.rulenumber)
-            setPerms(path, [0, 0, 0644], self.logger,
-                     self.statechglogger, myid)
-            resetsecon(path)
-        else:
-            createFile(path, self.logger)
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation", "filepath": path}
-            self.statechglogger.recordchgevent(myid, event)
+                return self.__writeFile(path, nsConf, [0, 0, 0644])
+            else:
+                createFile(path, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": path}
+                self.statechglogger.recordchgevent(myid, event)
 
-            tmppath = path + ".tmp"
-            writeFile(tmppath, "\n".join(settings), self.logger)
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf", "filepath": path}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(path, tmppath, myid)
-            os.rename(tmppath, path)
-            myid = iterate(self.iditerator, self.rulenumber)
-            setPerms(path, [0, 0, 0644], self.logger,
-                     self.statechglogger, myid)
-            resetsecon(path)
+                return self.__writeFile(path, "\n".join(settings),
+                                        [0, 0, 0644])
+        except Exception:
+            raise
 
     def __fixpam(self):
         '''Private method for writing PAM configuration files. This is a
         chainsaw-not-scalpel type of method; it simply rewrites the config
-        files with the below configuration.
+        files with the configuration.
 
-        @param path: Path to the nsswitch.conf file
-        @param settings: List of settings that should be present in the file
         @return: Bool Returns True if all settings are found or written
         @author: Eric Ball
         '''
-        sysauth = "/etc/pam.d/system-auth"
-        passauth = "/etc/pam.d/password-auth"
-        pamconf = '''#%PAM-1.0
+        result = False
+        if self.ph.determineMgr() == "apt-get":
+            prefix = "/etc/pam.d/common-"
+            auth = prefix + "auth"
+            acc = prefix + "account"
+            passwd = prefix + "password"
+            sess = prefix + "session"
+
+            authconf = '''auth        required      pam_env.so
+auth        required      pam_tally2.so silent deny=4  unlock_time=15
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        required      pam_deny.so
+'''
+            accconf = '''account     required      pam_tally2.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+            passwdconf = '''password    requisite     \
+pam_passwdqc.so min=disabled,disabled,16,12,8
+password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
+use_authtok remember=5
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+            sessconf = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0022
+'''
+            try:
+                result = self.__writeFile(auth, authconf, [0, 0, 0644])
+                result &= self.__writeFile(acc, accconf, [0, 0, 0644])
+                result &= self.__writeFile(passwd, passwdconf, [0, 0, 0644])
+                result &= self.__writeFile(sess, sessconf, [0, 0, 0644])
+            except Exception:
+                raise
+        else:
+            sysauth = "/etc/pam.d/system-auth"
+            passauth = "/etc/pam.d/password-auth"
+            pamconf = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
 auth        required      pam_env.so
@@ -473,18 +520,27 @@ quiet use_uid
 session     required      pam_unix.so
 session     optional      pam_krb5.so
 '''
+            try:
+                result = self.__writeFile(sysauth, pamconf, [0, 0, 0644])
+                result &= self.__writeFile(passauth, pamconf, [0, 0, 0644])
+            except Exception:
+                raise
+        return result
+
+    def __writeFile(self, path, contents, perms):
         try:
-            open(sysauth, "w").write(pamconf)
-            open(passauth, "w").write(pamconf)
+            tmppath = path + ".tmp"
+            success = writeFile(tmppath, contents, self.logger)
+            self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            setPerms(sysauth, [0, 0, 0644], self.logger,
-                     self.statechglogger, myid)
-            resetsecon(sysauth)
+            event = {"eventtype": "conf", "filepath": path}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(path, tmppath, myid)
+            os.rename(tmppath, path)
             myid = iterate(self.iditerator, self.rulenumber)
-            setPerms(passauth, [0, 0, 0644], self.logger,
-                     self.statechglogger, myid)
-            resetsecon(passauth)
+            success &= setPerms(path, perms, self.logger,
+                                self.statechglogger, myid)
+            resetsecon(path)
+            return success
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+            raise
