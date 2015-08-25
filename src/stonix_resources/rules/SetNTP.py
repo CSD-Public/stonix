@@ -381,15 +381,18 @@ class SetNTP(Rule):
         # defaults
         self.detailedresults = ""
         self.iditerator = 0
+        self.rulesuccess = True
 
         try:
 
             if self.ci.getcurrvalue():
 
                 if self.environ.getosfamily() == "darwin":
-                    fixsuccessful = self.fix_darwin()
+                    if not self.fix_darwin():
+                        self.rulesuccess = False
                 else:
-                    fixsuccessful = self.fix_non_darwin()
+                    if not self.fix_non_darwin():
+                        self.rulesuccess = False
 
             else:
                 self.detailedresults = str(self.ci.getkey()) + \
@@ -399,14 +402,13 @@ class SetNTP(Rule):
             raise
         except Exception as err:
             self.rulesuccess = False
-            fixsuccessful = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", fixsuccessful,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return fixsuccessful
+        return self.rulesuccess
 
 ###############################################################################
 

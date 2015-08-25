@@ -20,30 +20,30 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
+Created on Aug 13, 2015
 
+@author: dwalker
+'''
 import traceback
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 import re
 
 
-class Yum(object):
+class Dnf(object):
 
     '''The template class that provides a framework that must be implemented by
-    all platform specific pkgmgr classes.
-
-    @author: Derek T Walker
-    @change: 2012/08/06 dwalker - Original Implementation
-    @change: 2015/08/20 eball - Added getPackageFromFile
-    '''
-
+    all platform specific pkgmgr classes.  Specifically for Fedora
+    :version:
+    :author:Derek T Walker 08-13-2015'''
     def __init__(self, logger):
         self.logger = logger
         self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
-        self.install = "/usr/bin/yum install -y "
-        self.remove = "/usr/bin/yum remove -y "
-        self.search = "/usr/bin/yum search "
+        self.install = "/usr/bin/dnf install -y "
+        self.remove = "/usr/bin/dnf remove -y "
+        self.search = "/usr/bin/dnf search "
         self.rpm = "/bin/rpm -q "
 ###############################################################################
 
@@ -100,11 +100,11 @@ class Yum(object):
     def checkInstall(self, package):
         '''Check the installation status of a package. Return a bool; True if
         the package is installed.
-        @param string package : Name of the package whose installation status
+        @param: string package : Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-        @return bool :
-        @author'''
+        @return: bool :
+        @author: dwalker'''
         try:
             found = False
             self.ch.executeCommand(self.rpm + package)

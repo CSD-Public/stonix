@@ -87,8 +87,7 @@ class SecureSSH(Rule):
             self.client = {"Host": "*",
                            "Protocol": "2",
                            "GSSAPIAuthentication": "yes",
-                           "GSSAPIDelegateCredentials": "yes",
-                           "ForwardX11": "no"}
+                           "GSSAPIDelegateCredentials": "yes"}
             self.server = {"Protocol": "2",
                            "SyslogFacility": "AUTHPRIV",
                            "PermitRootLogin": "no",
