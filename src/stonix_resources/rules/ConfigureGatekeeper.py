@@ -57,7 +57,7 @@ class ConfigureGatekeeper(Rule):
             "GATEKEEPER to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.ci = self.initCi(datatype, key, instructions, default)
         self.profPath = os.path.join(os.path.dirname(__file__), "..", "files",
                                      "LANL Security & Privacy.mobileconfig")

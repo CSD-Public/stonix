@@ -79,7 +79,7 @@ of users allowed to access ftp and set the default umask for ftp users.
                          'CCE 4549-2', 'CCE 4554-2', 'CCE 4443-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         # init CI(s)
         datatype = 'bool'

@@ -85,7 +85,7 @@ shells set the value of this to False, or No.'''
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.ci = self.initCi(datatype, key, instructions,
                                                default)
         self.guidance = ['CIS', 'NSA(2.3.1.4)', 'cce-3987-5', '4525-2',

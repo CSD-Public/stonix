@@ -79,7 +79,7 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # init CIs
         datatype = 'bool'
         key = 'InstallBanners'

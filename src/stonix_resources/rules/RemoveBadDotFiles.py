@@ -80,7 +80,7 @@ class RemoveBadDotFiles(Rule):
         self.guidance = ['NSA 2.3.4.5', 'cce-4578-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.homelist = ['/', '/root']
         try:
             mypwd = pwd.getpwall()

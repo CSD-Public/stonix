@@ -68,7 +68,7 @@ class CheckDuplicateIds(Rule):
         "accountability purposes."
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.rootrequired = False
         self.issuelist = []
 
