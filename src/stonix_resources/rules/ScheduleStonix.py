@@ -284,26 +284,23 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         # defaults
         foundcronfile = False
-        configured = False
         cronreportstringfound = False
         cronfixstringfound = False
         userstonix = False
+        self.compliant = True
+        self.detailedresults = ""
 
         try:
-            self.detailedresults = ""
+
             # if on mac run reportmac
             if self.environ.getostype() == "Mac OS X":
-                if self.reportmac():
-                    self.compliant = True
-                    self.detailedresults += "This system is compliant with \
-the ScheduleStonix rule\n"
-                else:
+                if not self.reportmac():
                     self.compliant = False
-                    self.detailedresults += "This system is not compliant \
-with the ScheduleStonix rule"
+
             else:
 
                 self.helper = Pkghelper(self.logger, self.environ)
+
                 if not self.cronfilelocation:
                     if self.helper.manager == 'apt-get':
                         self.cronfilelocation = '/var/spool/cron/crontabs/root'
@@ -341,17 +338,16 @@ with the ScheduleStonix rule"
                         userstonix = True
 
                 # if all 3 conditions are met, set configured = True
-                if cronreportstringfound and cronfixstringfound and userstonix:
-                    configured = True
-
-                if configured:
-                    self.compliant = True
-                    self.detailedresults += \
-                        'This system is compliant with the ScheduleStonix rule'
-                else:
+                if not cronreportstringfound:
                     self.compliant = False
-                    self.detailedresults += \
-                    'This system is not compliant with the ScheduleStonix rule'
+                    self.detailedresults += '\nreport-mode cron job line not found'
+                if not cronfixstringfound:
+                    self.compliant = False
+                    self.detailedresults += '\nfix-mode cron job line not found'
+                if not userstonix:
+                    self.compliant = False
+                    self.detailedresults += '\nuser-mode cron job line not found'
+
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -387,50 +383,46 @@ with the ScheduleStonix rule"
                      self.stonixplistuser}
 
         try:
-            debug = ""
+
             # if a required path is missing, return False
             for path in pathsneeded:
                 if not os.path.exists(path):
-                    self.detailedresults += "Path doesn't exist: " + path + "\n"
                     configured = False
+                    self.detailedresults += "Path doesn't exist: " + path + "\n"
+
                 # if path exists, check for required plist content
                 else:
                     contents = readFile(path, self.logger)
 
                     # get contents of appropriate plist script in a list
                     scrptcontents = plistdict[path].splitlines(True)
-                    # compare contents of plist script to
+
+                    # compare contents of plist script
                     i = 0
                     for i in range(len(contents)):
                         if not re.search('<integer>', contents[i]):
                             if contents[i].strip() != scrptcontents[i].strip():
-                                debug += "line not correct: " + \
-                                                        str(contents[i]) + "\n"
                                 configured = False
+                                self.detailedresults += "line not correct: " + str(contents[i]) + "\n"
+
                         else:
-                            if not \
-                                re.search('<integer>[0-9][1-9]{0,1}</integer>',
-                                                                  contents[i]):
-                                debug += "integer line wrong: " + \
-                                                        str(contents[i]) + "\n"
+                            if not re.search('<integer>[0-9][1-9]{0,1}</integer>', contents[i]):
                                 configured = False
+                                self.detailedresults += "integer line wrong: " + str(contents[i]) + "\n"
 
             for item in plistdict:
                 itemlong = item
                 itemshort = item.split('/')[3][:-6]
                 if not self.svchelper.auditservice(itemlong, itemshort):
-                    self.detailedresults += "Service not running: " + \
-                    itemshort + "\n"
-                    debug += "Service not running: " + self.detailedresults
                     configured = False
-            if debug:
-                self.logger.log(LogPriority.DEBUG, debug)
-            return configured
+                    self.detailedresults += "Service not running: " + itemshort + "\n"
+                    self.detailedresults += "Service not running: " + self.detailedresults
 
         except (IOError, IndexError):
             raise
         except Exception:
             raise
+        return configured
 ###############################################################################
 
     def genRandCronTime(self):
