@@ -51,7 +51,8 @@ class ConfigureLANLLDAP(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.helptext = "This rule will configure LDAP for use at LANL. " + \
-            "It should be run AFTER ConfigureKerberos"
+            "It should be run AFTER ConfigureKerberos.\n\nOn Debian and " + \
+            "Ubuntu systems, this rule will require a restart to take effect."
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 
@@ -90,6 +91,9 @@ class ConfigureLANLLDAP(Rule):
             results = ""
             server = self.ldapci.getcurrvalue()
             osver = int(self.environ.getosver().split(".")[0])
+            self.myos = self.environ.getostype().lower()
+
+            # On Red Hat systems, check authconfig
             if not self.ph.determineMgr() == "apt-get":
                 authfile = '/etc/sysconfig/authconfig'
                 self.authfile = authfile
@@ -137,6 +141,8 @@ class ConfigureLANLLDAP(Rule):
                     compliant = False
                     results += authfile + " does not exist.\n"
 
+            # Check ldap (nslcd) settings. Mostly system agnostic, except the
+            # ldap gid, which is ldap on RH systems and nslcd on Debian systems
             ldapfile = "/etc/nslcd.conf"
             self.ldapfile = ldapfile
             if self.ph.determineMgr() == "apt-get":
@@ -171,6 +177,9 @@ class ConfigureLANLLDAP(Rule):
                 compliant = False
                 results += ldapfile + " does not exist.\n"
 
+            # nsswitch settings. Deb distros prefer "compat" to "files" as the
+            # default, but LANL does not use NSS netgroups, so we will use
+            # "files ldap" for all systems
             nsswitchpath = "/etc/nsswitch.conf"
             self.nsswitchpath = nsswitchpath
             nsswitchsettings = ['passwd:    files ldap',
@@ -190,6 +199,21 @@ class ConfigureLANLLDAP(Rule):
             else:
                 compliant = False
                 results += nsswitchpath + " does not exist\n"
+
+            # On Ubuntu, Unity/LightDM requires an extra setting to add an
+            # option to the login screen for network users
+            if re.search("ubuntu", self.myos):
+                lightdmconf = "/etc/lightdm/lightdm.conf"
+                tmppath = lightdmconf + ".tmp"
+                manLogin = {"greeter-show-manual-login": "true"}
+                self.editor2 = KVEditorStonix(self.statechglogger,
+                                              self.logger, "conf", lightdmconf,
+                                              tmppath, manLogin,
+                                              "present", "closedeq")
+                if not self.editor2.report():
+                    compliant = False
+                    results += '"greeter-show-manual-login=true" not ' + \
+                        "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
             self.detailedresults = results
@@ -312,13 +336,13 @@ class ConfigureLANLLDAP(Rule):
                     else:
                         nonkv.append(setting)
                         ldapsettings.remove(setting)
-                editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                ldapKVE = KVEditorStonix(self.statechglogger, self.logger,
                                          "conf", ldapfile, tmppath,
                                          ldapdict, "present", "space")
-                editor2.report()
-                if editor2.fixables:
-                    if editor2.fix():
-                        if editor2.commit():
+                ldapKVE.report()
+                if ldapKVE.fixables:
+                    if ldapKVE.fix():
+                        if ldapKVE.commit():
                             debug = "The contents of " + ldapfile + \
                                 " have been corrected\n."
                             self.logger.log(LogPriority.DEBUG, debug)
@@ -364,6 +388,25 @@ class ConfigureLANLLDAP(Rule):
                     success = False
                     results += "An error occurred while trying to write " + \
                         "the PAM files\n"
+
+            if re.search("ubuntu", self.myos):
+                lightdmconf = self.editor2.getPath()
+                if self.editor2.fixables:
+                    if self.editor2.fix():
+                        if self.editor2.commit():
+                            debug = "The contents of " + lightdmconf + \
+                                " have been corrected\n."
+                            self.logger.log(LogPriority.DEBUG, debug)
+                        else:
+                            debug = "KVEditor commit to " + lightdmconf + \
+                                " was not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                    else:
+                        debug = "KVEditor fix of " + lightdmconf + \
+                            " was not successful\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
 
             if self.ph.determineMgr() == "apt-get":
                 cmd = ["/etc/init.d/nscd", "restart"]
