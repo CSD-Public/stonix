@@ -160,7 +160,7 @@ class ConfigureKerberos(RuleKVEditor):
             if self.environ.getosfamily() == 'linux':
                 packagesRpm = "pam_krb5 krb5-libs krb5-workstation " + \
                               "sssd-krb5 sssd-krb5-common"
-                packagesDeb = "krb5-config krb5-clients krb5-user libpam-krb5"
+                packagesDeb = "krb5-config krb5-user libpam-krb5"
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
                 else:
@@ -192,6 +192,11 @@ class ConfigureKerberos(RuleKVEditor):
         try:
             fixsuccess = True
             self.detailedresults = ""
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+
             if self.ci.getcurrvalue():
                 if self.environ.getosfamily() == 'linux':
                     if not self.ph.install(self.packages):
