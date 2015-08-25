@@ -94,7 +94,7 @@ the avahi service in order to secure it.'''
                          'CCE 4341-4', 'CCE 4358-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)

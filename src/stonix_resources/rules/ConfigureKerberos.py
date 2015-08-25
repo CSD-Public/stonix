@@ -60,7 +60,7 @@ class ConfigureKerberos(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.

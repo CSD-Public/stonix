@@ -63,7 +63,7 @@ RESTRICTADMINSSH to False.'''
         self.ssh = {"DenyGroups": "admin"}
         self.iditerator = 0
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
 ###############################################################################
 

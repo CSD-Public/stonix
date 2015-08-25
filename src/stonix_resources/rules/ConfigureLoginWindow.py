@@ -59,7 +59,7 @@ class ConfigureLoginWindow(RuleKVEditor):
         self.rootrequired = True
         self.guidance = ['CCE-28310-1']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.addKVEditor("LoginNamePassword",
                          "defaults",
                          "/Library/Preferences/com.apple.loginwindow",

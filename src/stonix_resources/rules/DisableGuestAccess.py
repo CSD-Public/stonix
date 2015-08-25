@@ -57,7 +57,7 @@ class DisableGuestAccess(RuleKVEditor):
         self.helptext = "Configures the Apple File Server (AFS) and " + \
         "the Samba (SMB) server to prohibit anonymous guest access."
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.rootrequired = True
         self.guidance = []
