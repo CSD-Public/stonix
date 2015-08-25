@@ -68,9 +68,10 @@ class Zypper(object):
             if self.ch.getReturnCode() == 0:
                 if search("Abort, retry, ignore", output):
                     self.detailedresults += "There is an error contacting " + \
-                    "one or more repos, aborting\n"
+                        "one or more repos, aborting\n"
                     return False
-                self.detailedresults += package + " pkg installed successfully\n"
+                self.detailedresults += package + \
+                    " pkg installed successfully\n"
                 installed = True
             else:
                 self.detailedresults += package + " pkg not able to install\n"
@@ -101,12 +102,13 @@ class Zypper(object):
             if self.ch.getReturnCode() == 0:
                 if search("Abort, retry, ignore", output):
                     self.detailedresults += "There is an error contacting " + \
-                    "one or more repos, aborting\n"
+                        "one or more repos, aborting\n"
                     return False
                 self.detailedresults += package + " pkg removed successfully\n"
                 removed = True
             else:
-                self.detailedresults += package + " pkg not able to be removed\n"
+                self.detailedresults += package + \
+                    " pkg not able to be removed\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)
             return removed
         except (KeyboardInterrupt, SystemExit):
@@ -142,7 +144,7 @@ class Zypper(object):
                 outputStr = self.ch.getOutputString()
                 if search("Abort, retry, ignore", outputStr):
                     self.detailedresults += "There is an error contacting " + \
-                    "one or more repos, aborting\n"
+                        "one or more repos, aborting\n"
                     return False
                 for line in output:
                     if search(package, line):
@@ -202,6 +204,13 @@ misspelled\n"
 
 ###############################################################################
     def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
         try:
             self.ch.executeCommand(self.rpm + "-f " + filename)
             if self.ch.getReturnCode() == 0:

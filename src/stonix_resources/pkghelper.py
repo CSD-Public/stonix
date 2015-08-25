@@ -191,6 +191,13 @@ remove command"
             self.logger.log(LogPriority.ERROR,info)
 ###############################################################################
     def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
         try:
             return self.pckgr.getPackageFromFile(filename)
         except(KeyboardInterrupt, SystemExit):

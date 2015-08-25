@@ -748,7 +748,16 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                     '/usr/bin/umount',
                     '/usr/bin/ping',
                     '/usr/bin/ping6',
-                    '/usr/bin/mount']
+                    '/usr/bin/mount',
+                    '/usr/lib64/vte-2.90/gnome-pty-helper',
+                    '/usr/lib64/vte-2.91/gnome-pty-helper',
+                    '/usr/libexec/Xorg.wrap',
+                    '/usr/libexec/qemu-bridge-helper',
+                    '/usr/libexec/spice-gtk-x86_64/spice-client-glib-usb-acl-helper',
+                    '/usr/libexec/dbus-1/dbus-daemon-launch-helper',
+                    '/usr/bin/newuidmap',
+                    '/usr/bin/newgidmap',
+                    '/usr/sbin/netreport']
         compliant = False
         try:
             lastrun = open(self.suiddbfile, 'r').readlines()
