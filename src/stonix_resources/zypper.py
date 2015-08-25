@@ -204,6 +204,13 @@ misspelled\n"
 
 ###############################################################################
     def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
         try:
             self.ch.executeCommand(self.rpm + "-f " + filename)
             if self.ch.getReturnCode() == 0:
