@@ -160,15 +160,15 @@ class ConfigureKerberos(RuleKVEditor):
             if self.environ.getosfamily() == 'linux':
                 packagesRpm = "pam_krb5 krb5-libs krb5-workstation " + \
                               "sssd-krb5 sssd-krb5-common"
-                packagesDeb = "krb5-config krb5-clients krb5-user"
+                packagesDeb = "krb5-config krb5-clients krb5-user libpam-krb5"
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
                 else:
                     self.packages = packagesRpm
-                if not self.ph.check(self.packages):
-                    compliant = False
-                    self.detailedresults += "Some packages required for " + \
-                        "Kerberos authentication have not been installed.\n"
+                for package in self.packages.split():
+                    if not self.ph.check(package):
+                        compliant = False
+                        self.detailedresults += package + " is not installed\n"
             if not self.fh.evaluateFiles():
                 compliant = False
                 self.detailedresults += self.fh.getFileMessage()
