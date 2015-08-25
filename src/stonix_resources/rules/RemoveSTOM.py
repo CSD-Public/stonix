@@ -58,7 +58,7 @@ class RemoveSTOM(Rule):
         self.guidance = []
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.files = {"stom2.conf": {"path": "/Library/Preferences/stom2.conf",
                                      "remove": True,

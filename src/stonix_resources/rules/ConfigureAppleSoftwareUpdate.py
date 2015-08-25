@@ -104,7 +104,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                              "10.4", "10.5", "10.6", "10.7",
                                              "10.8"]}]
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.addKVEditor("ConfigureCatalogURL",
                          "defaults",
                          "/Library/Preferences/com.apple.SoftwareUpdate",

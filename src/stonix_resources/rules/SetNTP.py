@@ -77,7 +77,7 @@ class SetNTP(Rule):
 
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.ismobile = self.environ.ismobile()
         self.oncorporatenetwork = self.environ.oncorporatenetwork()

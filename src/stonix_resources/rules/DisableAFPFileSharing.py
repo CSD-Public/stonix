@@ -58,7 +58,7 @@ class DisableAFPFileSharing(Rule):
         self.guidance = ['CIS 1.4.14.3']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         # set up configuration items for this rule
         datatype = 'bool'

@@ -51,7 +51,7 @@ class SecureNFS(Rule):
         self.helptext = "Configures and secures NFS"
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.guidance = ["NSA(3.13.4)", "cce-4241-6", "cce-4465-1",
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]
