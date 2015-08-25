@@ -61,7 +61,7 @@ class AptGet(object):
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return True
             else:
-                #try to install for a second time
+                # try to install for a second time
                 self.ch.executeCommand(self.install + package)
                 if self.ch.getReturnCode() == 0:
                     self.detailedresults = package + \
@@ -178,6 +178,13 @@ misspelled"
 ###############################################################################
 
     def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
         try:
             self.ch.executeCommand("dpkg -S " + filename)
             if self.ch.getReturnCode() == 0:
