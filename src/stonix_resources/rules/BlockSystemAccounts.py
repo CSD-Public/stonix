@@ -40,6 +40,7 @@ by administrators in certain situations.
 @change: 2015/04/14 dkennel Updated for new style isApplicable
 @change: 2015/06/10 Breen Malmberg - updated author names; implemented correct
 mac os x functionality; refactored code for readability; fixed pep8 violations
+@change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
 '''
 
 from __future__ import absolute_import

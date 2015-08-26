@@ -47,7 +47,7 @@ allows the user to remotely control their Mac with a remote control'''
         self.rootrequired = True
         self.guidance = ['CIS 2.4.13.7']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.addKVEditor("DisableIRReceiver",
                          "defaults",
                          "/Library/Preferences/com.apple.driver.AppleIRController.plist",

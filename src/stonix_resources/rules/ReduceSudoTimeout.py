@@ -33,11 +33,11 @@ authorization after a successful sudo authorization is made.
 @change: 04/18/2014 dkennel Replaced mid-style CI invocation.
 @change: 05/07/2014 dwalker testing and refactoring rule
 @change: 2015/04/16 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37776] : ReduceSudoTimeout(151) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 import re
 import os
-import datetime
 import traceback
 
 from ..rule import Rule

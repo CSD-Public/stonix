@@ -32,6 +32,7 @@ Created on Aug 28, 2012
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 variable.
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37774] : NetworkTuning(15) - NCAF - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
