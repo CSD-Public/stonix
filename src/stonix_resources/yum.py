@@ -36,8 +36,8 @@ class Yum(object):
     @change: 2012/08/06 dwalker - Original Implementation
     @change: 2015/08/20 eball - Added getPackageFromFile
     '''
-    
-    def __init__(self,logger):
+
+    def __init__(self, logger):
         self.logger = logger
         self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
@@ -145,6 +145,13 @@ class Yum(object):
 ###############################################################################
 
     def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
         try:
             self.ch.executeCommand(self.rpm + "-f " + filename)
             if self.ch.getReturnCode() == 0:

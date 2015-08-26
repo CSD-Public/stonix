@@ -29,6 +29,7 @@ dictionary
 @change: 03/25/2014 Original Implementation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkeahrd [artf37783] : SecureMailClient(264) - NCAF - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 import re

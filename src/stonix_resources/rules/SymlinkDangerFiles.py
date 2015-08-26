@@ -80,7 +80,7 @@ class SymlinkDangerFiles(Rule):
         self.guidance = ['CIS RHEL 5 Benchmark Appendix A SN.1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         #init CIs
         self.ci = self.initCi("bool",

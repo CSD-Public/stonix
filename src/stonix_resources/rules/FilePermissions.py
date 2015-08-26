@@ -98,7 +98,7 @@ for this system. Please note that this rule may take several minutes to run.'''
                          'CCE-3573-3']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # The vars below are local to this rule and are not overrides of the
         # base class
         self.infodir = '/var/local/info'
