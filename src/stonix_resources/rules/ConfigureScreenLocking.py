@@ -33,6 +33,8 @@ Created on Jul 11, 2013
 @change: 2015/04/14 dkennel update for new isApplicable
 @change: 2015/07/28 eball Fixed path validation problems in fixKde
 @change: 2015/07/28 eball Fixed return value and statechglogging in correctFile
+@change: 2015/08/26 ekkehard - Artifact artf37282 : ConfigureScreenLocking(74) 
+                             - askForPasswordDelay not set to 0
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms
