@@ -33,11 +33,11 @@ authorization after a successful sudo authorization is made.
 @change: 04/18/2014 dkennel Replaced mid-style CI invocation.
 @change: 05/07/2014 dwalker testing and refactoring rule
 @change: 2015/04/16 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37776] : ReduceSudoTimeout(151) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 import re
 import os
-import datetime
 import traceback
 
 from ..rule import Rule
@@ -73,7 +73,7 @@ class ReduceSudoTimeout(Rule):
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
         datatype = 'bool'
         key = 'ReduceSudoTimeout'
         instructions = "If set to yes or true the REDUCESUDOTIMEOUT " + \
