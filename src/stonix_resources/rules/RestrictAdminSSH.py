@@ -29,11 +29,11 @@ Created on Dec 16, 2013
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37779] : RestrictAdminSSH(269) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
 from ..rule import Rule
-from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
 import os

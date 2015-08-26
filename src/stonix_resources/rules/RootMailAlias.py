@@ -38,6 +38,7 @@ was not checked before exectuing fix()
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/04/28 dkennel changed default2 for ci2 to "root@localhost".
     Original had local domain name appended which provides no value.
+@change: 2015/08/26 ekkehard [artf37780] : RootMailAlias(251) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 '''
 
 from __future__ import absolute_import

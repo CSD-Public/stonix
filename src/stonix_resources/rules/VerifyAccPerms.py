@@ -79,7 +79,7 @@ class VerifyAccPerms(Rule):
                          'CCE 3958-6']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.file644 = ['/etc/passwd', '/etc/group']
         self.file400 = ['/etc/shadow', '/etc/gshadow']
         self.fileall = ['/etc/passwd', '/etc/group', '/etc/shadow',
