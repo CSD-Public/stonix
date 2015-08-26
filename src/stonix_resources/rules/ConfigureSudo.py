@@ -28,6 +28,7 @@ Created on Mar 7, 2013
 @change: 02/14/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 dkennel Updated to use new style CI
 @change: 2015/04/14 dkennel upddated to use new isApplicable
+@change: 2015/08/26 ekkehard [artf37769] : ConfigureSudo(56) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import setPerms, checkPerms, readFile
@@ -60,7 +61,7 @@ class ConfigureSudo(Rule):
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
 
         #configuration item instantiation
         datatype = 'string'

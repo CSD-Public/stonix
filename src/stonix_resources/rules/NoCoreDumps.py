@@ -30,6 +30,7 @@ Created on Nov 21, 2012
 @change: 2014/07/29 dkennel Rule was setting Linux permissions to mode 600
 which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37775] : NoCoreDumps(49) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import writeFile, readFile, setPerms, checkPerms

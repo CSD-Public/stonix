@@ -40,6 +40,7 @@ by administrators in certain situations.
 @change: 2015/04/14 dkennel Updated for new style isApplicable
 @change: 2015/06/10 Breen Malmberg - updated author names; implemented correct
 mac os x functionality; refactored code for readability; fixed pep8 violations
+@change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
 '''
 
 from __future__ import absolute_import
@@ -85,7 +86,7 @@ shells set the value of this to False, or No.'''
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
         self.ci = self.initCi(datatype, key, instructions,
                                                default)
         self.guidance = ['CIS', 'NSA(2.3.1.4)', 'cce-3987-5', '4525-2',
