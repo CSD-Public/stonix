@@ -65,6 +65,7 @@ class ConfigureGatekeeper(Rule):
     def report(self):
         try:
             compliant = True
+            self.detailedresults = ""
             cmd = ["/usr/bin/profiles", "-L"]
             notinst = "There are no configuration profiles installed"
             inst = GATEKEEPER
@@ -104,6 +105,7 @@ class ConfigureGatekeeper(Rule):
     def fix(self):
         try:
             success = True
+            self.detailedresults = ""
             cmd = ["/usr/bin/profiles", "-L"]
             notinst = "There are no configuration profiles installed"
             inst = GATEKEEPER
