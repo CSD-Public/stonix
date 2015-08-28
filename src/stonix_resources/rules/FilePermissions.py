@@ -33,6 +33,7 @@ directories.
 systems. Added code to remove world write from files in the root users path.
 @change: 2015/04/13 dkennel changed to use new isApplicable method in template
 rule class
+@change: 2015/08/28 eball - Updated suidlist
 
 '''
 from __future__ import absolute_import
@@ -77,20 +78,21 @@ class FilePermissions(Rule):
         self.rulename = 'FilePermissions'
         self.mandatory = True
         self.formatDetailedResults("initialize")
-        self.helptext = '''The File Permissions rule audits and folders on the system to check for world
-writable files, world writable folders, SUID/SGID programs and files without
-known owners. It ensures that the sticky-bit is set on world writable
-directories and will remove world write permissions from files in the root
-users execution PATH environment variable. Note that file permission changes
-cannot be undone.
-When possible files and folders will be checked with the package
-manager records to see if their presence is authorized by belonging to an
-installed package. Administrators should review the lists of world writable,
-SUID and unowned files and folders carefully since these types of files and
-programs may provide opportunities for attackers to abuse the system. Files
-that contain the output of the search are located at /var/local/info and should
-be reviewed to ensure that the files listed are expected to be in that state
-for this system. Please note that this rule may take several minutes to run.'''
+        self.helptext = '''The File Permissions rule audits and folders on \
+the system to check for world writable files, world writable folders, \
+SUID/SGID programs and files without known owners. It ensures that the \
+sticky-bit is set on world writable directories and will remove world write \
+permissions from files in the root users execution PATH environment variable. \
+Note that file permission changes cannot be undone.
+When possible files and folders will be checked with the package \
+manager records to see if their presence is authorized by belonging to an \
+installed package. Administrators should review the lists of world writable, \
+SUID and unowned files and folders carefully since these types of files and \
+programs may provide opportunities for attackers to abuse the system. Files \
+that contain the output of the search are located at /var/local/info and \
+should be reviewed to ensure that the files listed are expected to be in that \
+state for this system. Please note that this rule may take several minutes to \
+run.'''
         self.guidance = ['NSA 2.2.3.3', 'CCE-3795-2', 'CCE-4351-3',
                          'NSA 2.2.3.2', 'CCE-3399-3', 'NSA 2.2.3.4',
                          'CCE-4178-0', 'CCE-3324-1', 'CCE-4743-1',
@@ -757,7 +759,17 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                     '/usr/libexec/dbus-1/dbus-daemon-launch-helper',
                     '/usr/bin/newuidmap',
                     '/usr/bin/newgidmap',
-                    '/usr/sbin/netreport']
+                    '/usr/sbin/netreport',
+                    '/usr/sbin/postdrop',
+                    '/usr/sbin/postqueue',
+                    '/usr/lib64/dbus-1/dbus-daemon-launch-helper',
+                    '/usr/libexec/sssd/krb5_child',
+                    '/usr/libexec/sssd/ldap_child',
+                    '/usr/libexec/sssd/selinux_child',
+                    '/usr/libexec/kde4/kpac_dhcp_helper',
+                    '/usr/libexec/kde4/kdesud',
+                    '/usr/lib64/nspluginwrapper/plugin-config',
+                    '/usr/lib64/vte/gnome-pty-helper']
         compliant = False
         try:
             lastrun = open(self.suiddbfile, 'r').readlines()
