@@ -33,6 +33,7 @@ directories.
 systems. Added code to remove world write from files in the root users path.
 @change: 2015/04/13 dkennel changed to use new isApplicable method in template
 rule class
+@change: 2015/08/28 eball - Updated suidlist
 
 '''
 from __future__ import absolute_import
@@ -757,7 +758,17 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                     '/usr/libexec/dbus-1/dbus-daemon-launch-helper',
                     '/usr/bin/newuidmap',
                     '/usr/bin/newgidmap',
-                    '/usr/sbin/netreport']
+                    '/usr/sbin/netreport',
+                    '/usr/sbin/postdrop',
+                    '/usr/sbin/postqueue',
+                    '/usr/lib64/dbus-1/dbus-daemon-launch-helper',
+                    '/usr/libexec/sssd/krb5_child',
+                    '/usr/libexec/sssd/ldap_child',
+                    '/usr/libexec/sssd/selinux_child',
+                    '/usr/libexec/kde4/kpac_dhcp_helper',
+                    '/usr/libexec/kde4/kdesud'
+                    '/usr/lib64/nspluginwrapper/plugin-config',
+                    '/usr/lib64/vte/gnome-pty-helper']
         compliant = False
         try:
             lastrun = open(self.suiddbfile, 'r').readlines()
