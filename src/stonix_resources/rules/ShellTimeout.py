@@ -25,7 +25,8 @@ This rule creates scripts to automatically log out bash and csh shells
 after 15 minutes.
 
 @author: Eric Ball
-@change: 2015-07-01 eball Original implementation
+@change: 2015/07/01 eball Original implementation
+@change: 2015/08/28 eball - Fixed permissions changes, cleaned up code
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -83,12 +84,14 @@ Windows, as it will close terminal windows in the X environment.'''
                     results += self.path1 + " permissions incorrect\n"
                 self.tmppath1 = self.path1 + ".tmp"
                 self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", self.path1, self.tmppath1,
-                                              self.data1, "present", "closedeq")
+                                              "conf", self.path1,
+                                              self.tmppath1, self.data1,
+                                              "present", "closedeq")
                 kveReport1 = self.editor1.report()
                 self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", self.path1, self.tmppath1,
-                                              self.data2, "present", "space")
+                                              "conf", self.path1,
+                                              self.tmppath1, self.data2,
+                                              "present", "space")
                 kveReport2 = self.editor2.report()
                 if not kveReport1 or not kveReport2:
                     compliant = False
@@ -149,15 +152,7 @@ Windows, as it will close terminal windows in the X environment.'''
                 event = {"eventtype": "creation",
                          "filepath": self.path1}
                 self.statechglogger.recordchgevent(myid, event)
-            if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
-               not checkPerms(self.path1, [0, 0, 0644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path1, [0, 0, 0644], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-                    results += "Could not set permissions for " + \
-                               self.path1 + "\n"
+
             self.tmppath = self.path1 + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                           "conf", self.path1, self.tmppath,
@@ -179,7 +174,8 @@ Windows, as it will close terminal windows in the X environment.'''
                         debug = "kveditor commit not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                        results += self.path1 + " properties could not be set\n"
+                        results += self.path1 + \
+                            " properties could not be set\n"
                 else:
                     debug = "kveditor fix not successful\n"
                     self.logger.log(LogPriority.DEBUG, debug)
@@ -195,12 +191,22 @@ Windows, as it will close terminal windows in the X environment.'''
                         debug = "kveditor commit not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                        results += self.path1 + " properties could not be set\n"
+                        results += self.path1 + \
+                            " properties could not be set\n"
                 else:
                     debug = "kveditor fix not successful\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                     results += self.path1 + " properties could not be set\n"
+            if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
+               not checkPerms(self.path1, [0, 0, 0644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path1, [0, 0, 0644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
+                    results += "Could not set permissions for " + \
+                               self.path1 + "\n"
 
             if not os.path.exists(self.path2):
                 createFile(self.path2, self.logger)
