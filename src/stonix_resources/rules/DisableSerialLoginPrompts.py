@@ -24,7 +24,8 @@
 This rule disables serial port logins
 
 @author: Eric Ball
-@change: 2015/08/05 eball Original implementation
+@change: 2015/08/05 eball - Original implementation
+@change: 2015/08/28 eball - Missing /etc/securetty no longer makes report false
 '''
 from __future__ import absolute_import
 import os
@@ -77,8 +78,9 @@ virtual console interfaces.'''
                             "uncommented serial ports.\n"
                         break
             else:
-                self.compliant = False
-                self.detailedresults += self.path + " does not exist."
+                debug = self.path + " does not exist. This is considered " + \
+                    "secure, and should disable all root logins.\n"
+                self.logger.log(LogPriority.DEBUG, debug)
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -127,13 +129,6 @@ virtual console interfaces.'''
                     success = False
                     self.detailedresults += "Problem writing new " + \
                                             "contents to temporary file"
-            else:
-                success = False
-                self.detailedresults += self.path + ''' does not exist. STONIX \
-will not attempt to create this file. If the version of Linux you are using \
-is supported by STONIX but does not use securetty, please report this as a \
-bug.\n'''
-
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
