@@ -187,13 +187,32 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.gnome3 = True
-        profiledir = '/etc/dconf/profile/'
+
+        profiledirs = ['/etc/dconf/profile/', '/var/lib/gdm3/dconf/profile/']
+        profiledir = '/etc/dconf/profile/' # default
+        for loc in profiledirs:
+            if os.path.exists(loc):
+                profiledir = loc
+        if not profiledir:
+            self.logger.log(LogPriority.DEBUG, "Unable to locate the gnome3 profile directory")
+
         profilefile = 'gdm'
+
         self.gdmprofile = profiledir + profilefile
-        self.profilelist = ['user-db:user', 'system-db:gdm']
-        self.gdmdir = '/etc/dconf/db/gdm.d/'
+
+        profiledict = {'/etc/dconf/profile/': ['user-db:user', 'system-db:gdm'],
+                       '/var/lib/gdm3/dconf/profile/': ['user', 'gdm']}
+        self.profilelist = profiledict[profiledir]
+
+        gdmdirs = ['/etc/dconf/db/gdm.d/', '/var/lib/gdm3/dconf/db/gdm.d/']
+        self.gdmdir = '/etc/dconf/db/gdm.d/' # default
+        for loc in gdmdirs:
+            if os.path.exists(loc):
+                self.gdmdir = loc
+
         bannermessagefile = '01-banner-message'
         self.bannerfile = self.gdmdir + bannermessagefile
+
         self.gnome3optlist = ['[org/gnome/login-screen]', 'disable-user-list=true', 'banner-message-enable=true', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
         self.gnome3optdict = {'disable-user-list': 'true',
                             'banner-message-enable': 'true',
@@ -310,7 +329,7 @@ unity-greeter'''
         '''
 
         self.linux = True
-        self.motd = WARNINGBANNER
+        self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/etc/ssh/sshd_config'
         self.bannerfiles = ["/etc/banners/in.ftpd",
@@ -354,7 +373,7 @@ unity-greeter'''
         '''
 
         self.mac = True
-        self.motd = WARNINGBANNER
+        self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/private/etc/ssh/sshd_config'
         self.ftpwelcomelocs = ["/etc/ftpwelcome", "/private/etc/ftpwelcome"]
