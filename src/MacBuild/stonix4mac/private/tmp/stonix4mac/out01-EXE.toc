@@ -1,9 +1,0 @@
-('private/tmp/stonix4mac/stonix4mac',
- False,
- False,
- '../stonix_icon.icns',
- None,
- [],
- True,
- False,
- 1440517832)

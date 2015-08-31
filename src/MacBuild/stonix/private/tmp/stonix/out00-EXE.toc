@@ -1,9 +1,0 @@
-('private/tmp/stonix/stonix',
- False,
- False,
- '../stonix_icon.icns',
- None,
- [],
- True,
- False,
- 1440517818)
