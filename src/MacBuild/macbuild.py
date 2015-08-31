@@ -31,26 +31,27 @@ with large amounts of original code and comments left intact.
 @change: 2015/03/31 rsn - Removed mkdtemp calls when working in ramdisk
 @change: 2015/08/05 eball - Beautification, improving PEP8 compliance
 @change: 2015/08/18 rsn - removed make self update method
+@change: 2015/08/31 eball- Refactor
 '''
 import os
 import stat
 import time
 import optparse
-import hashlib
 import macbuildlib as mbl
 from tempfile import mkdtemp
-from Queue import LifoQueue
 from subprocess import call
-from shutil import rmtree, copy2
+from shutil import rmtree, copy2, copytree, ignore_patterns
 # For setupRamdisk() and detachRamdisk()
 from macRamdisk import RamDisk, detach
 from log_message import log_message
 
 
 class MacBuilder():
-    DEFAULT_RAMDISK_SIZE = 2 * 1024 * 500
 
     def __init__(self):
+        '''
+        Build .pkg and .dmg for stonix4mac
+        '''
         parser = optparse.OptionParser()
         parser.add_option("-v", "--version", action="store", dest="version",
                           type="string", default="0",
@@ -62,7 +63,6 @@ class MacBuilder():
                           help="If set, the PyQt files will be recompiled")
         options, __ = parser.parse_args()
 
-        #####
         # If version was not included at command line, use hardcoded version
         # number
         if options.version == "0":
@@ -70,7 +70,6 @@ class MacBuilder():
         else:
             self.APPVERSION = options.version
 
-        #####
         # REQUIRED when tarring up stuff on the Mac filesystem
         # IF this is not done, tar will pick up resource forks from HFS+
         # filesystems, and when un-archiving, create separate files
@@ -79,12 +78,13 @@ class MacBuilder():
 
         self.RSYNC = "/usr/bin/rsync"
         self.PYUIC = mbl.getpyuicpath()
+        self.DEFAULT_RAMDISK_SIZE = 2 * 1024 * 500
 
-        # Create directory queue to replace pushd/popd
-        self.dirq = LifoQueue(0)
-
-        self.dirq.put(os.getcwd())
-        os.chdir("..")
+        # This script should be run from <stonixroot>/src/MacBuild. We must
+        # record the <stonixroot> directory in a variable.
+        os.chdir("../..")
+        self.STONIX_ROOT = os.getcwd()
+        os.chdir("src/MacBuild")
 
         print " "
         print " "
@@ -96,8 +96,6 @@ class MacBuilder():
         print " "
         print " "
 
-        os.chdir(self.dirq.get())
-
         self.STONIX = "stonix"
         self.STONIXICON = "stonix_icon"
         self.STONIXVERSION = self.APPVERSION
@@ -105,54 +103,32 @@ class MacBuilder():
         self.STONIX4MACICON = "stonix_icon"
         self.STONIX4MACVERSION = self.APPVERSION
 
-        #######################################################################
-        #######################################################################
-        #######################################################################
-        #####
-        #     Logical script start
-        #####
-        #######################################################################
-        #######################################################################
-        #######################################################################
+    def driver(self):
+        '''
+        The driver orchestrates the build process.
+        '''
 
-        #####
         # Check that user building stonix has uid 0
-        self.CURRENT_USER, self.RUNNING_ID = mbl.checkBuildUser()
+        current_user, _ = mbl.checkBuildUser()
 
-        #####
         # Create temp home directory for building with pyinstaller
-        DIRECTORY = os.environ["HOME"]
+        directory = os.environ["HOME"]
 
-        self.TMPHOME = mkdtemp(prefix=self.CURRENT_USER + ".")
-        os.environ["HOME"] = self.TMPHOME
-        os.chmod(self.TMPHOME, 0755)
+        tmphome = mkdtemp(prefix=current_user + ".")
+        os.environ["HOME"] = tmphome
+        os.chmod(tmphome, 0755)
 
-        # Create a ramdisk and mount it to the ${self.TMPHOME}
-        self.DEVICE = self.setupRamdisk(1300, self.TMPHOME)
-        print "Device for tmp ramdisk is: " + self.DEVICE
+        # Create a ramdisk and mount it to the tmphome
+        ramdisk = self.setupRamdisk(self.DEFAULT_RAMDISK_SIZE, tmphome)
+        print "Device for tmp ramdisk is: " + ramdisk
 
-        #####
         # Copy src dir to /tmp/<username> so shutil doesn't freak about long
         # filenames.
         # ONLY seems to be a problem on Mavericks..
-        self.dirq.put(os.getcwd())
-        os.chdir("../..")
         call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
-              "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"", "src",
-              self.TMPHOME])
+              "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+              self.STONIX_ROOT + "src", tmphome])
 
-        #####
-        # capture current directory, so we can copy back to it..
-        START_BUILD_DIR = os.getcwd()
-        print START_BUILD_DIR
-
-        #####
-        # Keep track of the directory we're starting from...
-        self.dirq.put(os.getcwd())
-        os.chdir(self.TMPHOME + "/src/MacBuild")
-        print os.getcwd()
-
-        #####
         # Compile .ui files to .py files
         if options.compileGui:
             self.compileStonix4MacAppUiFiles()
@@ -183,14 +159,14 @@ class MacBuilder():
         self.tarAndBuildStonix4MacAppPkg(self.STONIX4MAC,
                                          self.STONIX4MACVERSION)
 
-        os.chdir(self.TMPHOME)
+        os.chdir(tmphome)
 
         #####
         # Copy back to pseudo-build directory
-        call([self.RSYNC, "-aqp", self.TMPHOME + "/src", START_BUILD_DIR])
+        call([self.RSYNC, "-aqp", tmphome + "/src", START_BUILD_DIR])
 
         os.chdir(self.dirq.get())
-        mbl.chownR(self.CURRENT_USER, "src")
+        mbl.chownR(current_user, "src")
         #####
         # chmod so it's readable by everyone, writable by the group
         mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWGRP,
@@ -477,7 +453,7 @@ class MacBuilder():
         ###
         # Currently Makefile does not actually have a LUGGAGE_TMP variable
         mbl.regexReplace("Makefile", r"LUGGAGE_TMP\S+",
-                         "LUGGAGE_TMP=" + self.TMPHOME)
+                         "LUGGAGE_TMP=" + tmphome)
 
         if not os.path.isdir("../dmgs"):
             os.mkdir("../dmgs")
