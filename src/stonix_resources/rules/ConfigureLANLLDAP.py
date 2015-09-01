@@ -53,7 +53,6 @@ class ConfigureLANLLDAP(Rule):
         self.helptext = """This rule will configure LDAP for use at LANL. \
 It should be run AFTER ConfigureKerberos, except on openSUSE, where \
 ConfigureKerberos is not necessary.
-
 On Debian and Ubuntu systems, this rule will require a restart to take \
 effect."""
         self.applicable = {'type': 'white',
@@ -74,14 +73,6 @@ effect."""
         default = "ldap.lanl.gov"
         self.ldapci = self.initCi(datatype, key, instructions, default)
 
-        datatype = "bool"
-        key = "PAMCONF"
-        instructions = "PAMCONF will write a known good config into " + \
-            "/etc/pam.d/system-auth and /etc/pam.d/password-auth. This " + \
-            "will completely overwrite any previous settings or changes."
-        default = True
-        self.pamci = self.initCi(datatype, key, instructions, default)
-
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
         self.sh = ServiceHelper(self.environ, self.logger)
@@ -94,6 +85,31 @@ effect."""
             server = self.ldapci.getcurrvalue()
             osver = int(self.environ.getosver().split(".")[0])
             self.myos = self.environ.getostype().lower()
+
+            packagesRpm = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
+                           "oddjob-mkhomedir"]
+            packagesDeb = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
+            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap"]
+            if self.ph.determineMgr() == "apt-get":
+                packages = packagesDeb
+            elif self.ph.determineMgr() == "zypper":
+                packages = packagesSuse
+            else:
+                packages = packagesRpm
+            self.packages = packages
+            for package in packages:
+                if not self.ph.check(package):
+                    compliant = False
+                    results += package + " is not installed\n"
+
+            pamconf = self.__getpamconf()
+            self.pamconf = pamconf
+            for conffile in pamconf:
+                currentConf = readFile(conffile, self.logger)
+                if not self.__checkconf(currentConf,
+                                        pamconf[conffile].split("\n")):
+                    compliant = False
+                    results += "Settings in " + conffile + " are incorrect\n"
 
             # openSUSE 13 does not support nslcd, so sssd is used instead
             if re.search("suse", self.myos):
@@ -317,9 +333,14 @@ effect."""
         comment = re.compile('^#')
         for line in contents:
             if not comment.match(line):
-                contentsSplit.append(line.strip().split())
+                contentsSplit.append(line.split())
         for setting in settings:
-            if setting.split() not in contentsSplit:
+            if setting == "":
+                continue
+            if not comment.match(setting) and \
+               setting.split() not in contentsSplit:
+                debug = str(setting.split()) + " not in " + str(contentsSplit)
+                self.logger.log(LogPriority.DEBUG, debug)
                 return False
         return True
 
@@ -334,17 +355,7 @@ effect."""
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            packagesRpm = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                           "oddjob-mkhomedir"]
-            packagesDeb = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
-            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap"]
-            if self.ph.determineMgr() == "apt-get":
-                packages = packagesDeb
-            elif self.ph.determineMgr() == "zypper":
-                packages = packagesSuse
-            else:
-                packages = packagesRpm
-
+            packages = self.packages
             for package in packages:
                 if not self.ph.check(package):
                     if not self.ph.install(package):
@@ -356,17 +367,12 @@ effect."""
                 results += "Problem writing new contents to " + \
                     self.nsswitchpath
 
-            if self.pamci.getcurrvalue():
-                if not self.__fixpam():
-                    success = False
-                    results += "An error occurred while trying to write " + \
-                        "the PAM files\n"
+            if not self.__fixpam(self.pamconf):
+                success = False
+                results += "An error occurred while trying to write " + \
+                    "the PAM files\n"
 
             if re.search("suse", self.myos):
-                # Though we are using the KVEditor to check for valid config
-                # details, the exact format of sssd.conf is too complicated for
-                # a KVEditor. Therefore, we will simply write a good config
-                # to the file.
                 if not self.__fixsssd():
                     success = False
                     results += "Failed to write good configuration to " + \
@@ -543,7 +549,6 @@ effect."""
                         if not confLineSplit == setting:
                             # Due to LANL's use of Python 2.6, the multiline
                             # flag is not supported. Hence the use of newlines
-                            #reString = "\n" + setting[0] + ".*"
                             nsConf = re.sub(confLine, settings[ind],
                                             nsConf)
                         else:
@@ -589,6 +594,16 @@ krb5_realm = lanl.gov
         sssdconfpath = self.sssdconfpath
         sssdconfdict = self.sssdconfdict
         tmppath = sssdconfpath + ".tmp"
+        if not os.path.exists(sssdconfpath):
+            createFile(sssdconfpath, self.logger)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation", "filepath": sssdconfpath}
+            self.statechglogger.recordchgevent(myid, event)
+
+        # Though we are using the KVEditor to check for valid config details,
+        # the exact format of sssd.conf is too complicated for a KVEditor.
+        # Therefore, we will simply write a good config to the file.
         self.editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
                                      sssdconfpath, tmppath, sssdconfdict,
                                      "present", "openeq")
@@ -597,29 +612,22 @@ krb5_realm = lanl.gov
         else:
             return self.__writeFile(sssdconfpath, sssdconf, [0, 0, 0600])
 
-    def __fixpam(self):
-        '''Private method for writing PAM configuration files. This is a
-        chainsaw-not-scalpel type of method; it simply rewrites the config
-        files with the configuration.
-
-        @return: Bool Returns True if all settings are found or written
-        @author: Eric Ball
-        '''
-        result = False
-        prefix = "/etc/pam.d/common-"
-        auth = prefix + "auth"
-        acc = prefix + "account"
-        passwd = prefix + "password"
-        sess = prefix + "session"
+    def __getpamconf(self):
+        pamconf = {}
         if self.ph.determineMgr() == "apt-get":
-            authconf = '''auth        required      pam_env.so
+            prefix = "/etc/pam.d/common-"
+            auth = prefix + "auth"
+            acc = prefix + "account"
+            passwd = prefix + "password"
+            sess = prefix + "session"
+            pamconf[auth] = '''auth        required      pam_env.so
 auth        required      pam_tally2.so silent deny=4  unlock_time=15
 auth        sufficient    pam_unix.so nullok try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
 auth        required      pam_deny.so
 '''
-            accconf = '''account     required      pam_tally2.so
+            pamconf[acc] = '''account     required      pam_tally2.so
 account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
@@ -627,14 +635,14 @@ account     sufficient    pam_succeed_if.so uid < 500 quiet
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
-            passwdconf = '''password    requisite     \
+            pamconf[passwd] = '''password    requisite     \
 pam_passwdqc.so min=disabled,disabled,16,12,8
 password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
 use_authtok remember=5
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
-            sessconf = '''session     optional      pam_keyinit.so revoke
+            pamconf[sess] = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond \
 quiet use_uid
@@ -642,30 +650,28 @@ session     required      pam_unix.so
 session     optional      pam_krb5.so
 session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
-            try:
-                result = self.__writeFile(auth, authconf, [0, 0, 0644])
-                result &= self.__writeFile(acc, accconf, [0, 0, 0644])
-                result &= self.__writeFile(passwd, passwdconf, [0, 0, 0644])
-                result &= self.__writeFile(sess, sessconf, [0, 0, 0644])
-            except Exception:
-                raise
         elif self.ph.determineMgr() == "zypper":
-            authconf = '''auth    required        pam_env.so
+            prefix = "/etc/pam.d/common-"
+            auth = prefix + "auth"
+            acc = prefix + "account"
+            passwd = prefix + "password"
+            sess = prefix + "session"
+            pamconf[auth] = '''auth    required        pam_env.so
 auth    optional        pam_gnome_keyring.so
 auth    sufficient      pam_unix.so     try_first_pass
 auth    required        pam_sss.so      use_first_pass
 '''
-            accconf = '''account requisite       pam_unix.so     try_first_pass
+            pamconf[acc] = '''account requisite       pam_unix.so     try_first_pass
 account sufficient      pam_localuser.so
 account required        pam_sss.so      use_first_pass
 '''
-            passwdconf = '''password        requisite       pam_cracklib.so
+            pamconf[passwd] = '''password        requisite       pam_cracklib.so
 password        optional        pam_gnome_keyring.so    use_authtok
 password        sufficient      pam_unix.so     use_authtok nullok shadow \
 try_first_pass
 password        required        pam_sss.so      use_authtok
 '''
-            sessconf = '''session required        pam_limits.so
+            pamconf[sess] = '''session required        pam_limits.so
 session required        pam_unix.so     try_first_pass
 session optional        pam_sss.so
 session optional        pam_umask.so
@@ -675,17 +681,10 @@ only_if=gdm,gdm-password,lxdm,lightdm
 session optional        pam_env.so
 session required        pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
-            try:
-                result = self.__writeFile(auth, authconf, [0, 0, 0644])
-                result &= self.__writeFile(acc, accconf, [0, 0, 0644])
-                result &= self.__writeFile(passwd, passwdconf, [0, 0, 0644])
-                result &= self.__writeFile(sess, sessconf, [0, 0, 0644])
-            except Exception:
-                raise
         else:
             sysauth = "/etc/pam.d/system-auth"
             passauth = "/etc/pam.d/password-auth"
-            pamconf = '''#%PAM-1.0
+            config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
 auth        required      pam_env.so
@@ -718,11 +717,26 @@ quiet use_uid
 session     required      pam_unix.so
 session     optional      pam_krb5.so
 '''
-            try:
-                result = self.__writeFile(sysauth, pamconf, [0, 0, 0644])
-                result &= self.__writeFile(passauth, pamconf, [0, 0, 0644])
-            except Exception:
-                raise
+            pamconf[sysauth] = config
+            pamconf[passauth] = config
+        return pamconf
+
+    def __fixpam(self, pamconf):
+        '''Private method for writing PAM configuration files. This is a
+        chainsaw-not-scalpel type of method; it simply rewrites the config
+        files with the configuration.
+
+        @param pamconf: Dict that resolves filenames to their intended configs
+        @return: Bool Returns True if all settings are found or written
+        @author: Eric Ball
+        '''
+        result = True
+        try:
+            for conffile in pamconf:
+                result &= self.__writeFile(conffile, pamconf[conffile],
+                                           [0, 0, 0644])
+        except Exception:
+            raise
         return result
 
     def __writeFile(self, path, contents, perms):
