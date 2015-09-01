@@ -179,7 +179,7 @@ class ConfigureKerberos(RuleKVEditor):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -209,7 +209,7 @@ class ConfigureKerberos(RuleKVEditor):
             else:
                 fixsuccess = False
                 self.detailedresults = str(self.ci.getcurrvalue()) + \
-                " was disabled no action was taken!"
+                    " was disabled. No action was taken!"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -217,7 +217,7 @@ class ConfigureKerberos(RuleKVEditor):
             self.rulesuccess = False
             fixsuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", fixsuccess,
                                    self.detailedresults)
