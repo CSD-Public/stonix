@@ -47,7 +47,7 @@ class DisableOpenSafeSafari(RuleKVEditor):
         self.logger = self.logdispatch
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # init CIs
         datatype = 'bool'
         key = 'SAFESAFARI'

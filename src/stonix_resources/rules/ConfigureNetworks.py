@@ -57,14 +57,14 @@ class ConfigureNetworks(RuleKVEditor):
         self.helptext = "This rules set the network setup of your OS X " + \
         "system. It disables bluetooth and disables the wireless " + \
         "(WiFi/802.11) interface(s) in the Network System Preference " + \
-        "Panel unless the location name has 'wi-fi', 'wireless', " + \
+        "Panel unless the location name has 'wi-fi', 'wifi', 'wireless', " + \
         "'airport', 'off-site', or 'offsite' (case insensitive) in the " + \
         "location name. We recommend having one location for off-site " + \
         "DHCP, and one for each static IP address."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.nsobject = networksetup(self.logdispatch)
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)

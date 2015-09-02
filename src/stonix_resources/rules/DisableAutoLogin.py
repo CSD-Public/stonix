@@ -60,7 +60,7 @@ class DisableAutoLogin(RuleKVEditor):
         self.rulename = 'DisableAutoLogin'
         self.formatDetailedResults("initialize")
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.mandatory = True
         self.helptext = "The disable Auto Login rule.  Cannot undo this rule."
         self.rootrequired = True

@@ -32,13 +32,14 @@ class Zypper(object):
     '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
 
-    :version:
-    :author:Derek Walker 08-08-2012
+    @author: Derek T Walker
+    @change: 2012/08/08 dwalker - Original Implementation
     @change: 2014/09/10 dkennel - Added -n option to search command string
-    @change: 12/24/2014 bemalmbe - fixed a typo in the old search string
-    @change: 12/24/2014 bemalmbe - changed search strings to be match exact and
+    @change: 2014/12/24 bemalmbe - fixed a typo in the old search string
+    @change: 2014/12/24 bemalmbe - changed search strings to be match exact and
         search for installed or available separately
-    @change: 12/24/2014 bemalmbe - fixed multiple pep8 violations
+    @change: 2014/12/24 bemalmbe - fixed multiple pep8 violations
+    @change: 2015/08/20 eball - Added getPackageFromFile and self.rpm var
     '''
 
     def __init__(self, logger):
@@ -49,6 +50,7 @@ class Zypper(object):
         self.remove = "/usr/bin/zypper --non-interactive remove "
         self.searchi = "/usr/bin/zypper --non-interactive search --match-exact -i "
         self.searchu = "/usr/bin/zypper --non-interactive search --match-exact -u "
+        self.rpm = "/bin/rpm -q "
 
 ###############################################################################
     def installpackage(self, package):
@@ -66,9 +68,10 @@ class Zypper(object):
             if self.ch.getReturnCode() == 0:
                 if search("Abort, retry, ignore", output):
                     self.detailedresults += "There is an error contacting " + \
-                    "one or more repos, aborting\n"
+                        "one or more repos, aborting\n"
                     return False
-                self.detailedresults += package + " pkg installed successfully\n"
+                self.detailedresults += package + \
+                    " pkg installed successfully\n"
                 installed = True
             else:
                 self.detailedresults += package + " pkg not able to install\n"
@@ -99,12 +102,13 @@ class Zypper(object):
             if self.ch.getReturnCode() == 0:
                 if search("Abort, retry, ignore", output):
                     self.detailedresults += "There is an error contacting " + \
-                    "one or more repos, aborting\n"
+                        "one or more repos, aborting\n"
                     return False
                 self.detailedresults += package + " pkg removed successfully\n"
                 removed = True
             else:
-                self.detailedresults += package + " pkg not able to be removed\n"
+                self.detailedresults += package + \
+                    " pkg not able to be removed\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)
             return removed
         except (KeyboardInterrupt, SystemExit):
@@ -140,7 +144,7 @@ class Zypper(object):
                 outputStr = self.ch.getOutputString()
                 if search("Abort, retry, ignore", outputStr):
                     self.detailedresults += "There is an error contacting " + \
-                    "one or more repos, aborting\n"
+                        "one or more repos, aborting\n"
                     return False
                 for line in output:
                     if search(package, line):
@@ -197,6 +201,28 @@ misspelled\n"
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
+
+###############################################################################
+    def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
+        try:
+            self.ch.executeCommand(self.rpm + "-f " + filename)
+            if self.ch.getReturnCode() == 0:
+                return self.ch.getOutputString()
+            else:
+                return None
+        except(KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise(self.detailedresults)
 
 ###############################################################################
     def getInstall(self):

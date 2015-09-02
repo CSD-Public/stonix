@@ -47,7 +47,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.8.19'
+STONIXVERSION = '0.8.20'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -95,6 +95,17 @@ WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
 "DISCLOSURE OF COMPUTER ACTIVITY.\n\n" + \
 "**WARNING**WARNING**WARNING**WARNING**WARNING**"
 
+ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE computer\n" + \
+"systems are provided for the processing of official U.S. Government\n" + \
+"information only. All data contained within DOE computer systems is\n" + \
+"owned by the DOE, and may be audited, intercepted, recorded, read,\n" + \
+"copied, or captured in any manner and disclosed in any manner, by\n" + \
+"authorized personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM.\n" + \
+"System personnel may disclose any potential evidence of crime found on\n" + \
+"DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY\n" + \
+"ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\n" + \
+"AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\n" + \
+"DISCLOSURE OF COMPUTER ACTIVITY.\n\n"
 
 # Warning Banners abbreviated for OS X login Screen
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
@@ -125,6 +136,9 @@ PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'
+
+# Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
+XINETDALLOW = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system

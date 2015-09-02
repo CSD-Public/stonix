@@ -33,11 +33,12 @@ class NoCachedFDEKeys(Rule):
             "NOCACHEDFDEKEYS to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
         try:
+            self.detailedresults = ""
             compliant = True
             self.ch = CommandHelper(self.logger)
             cmd = "/usr/bin/pmset -g"
@@ -76,26 +77,26 @@ class NoCachedFDEKeys(Rule):
 
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
-                return
             self.detailedresults = ""
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
             success = True
-            if not self.compliant:
-                cmd = "/usr/bin/pmset -a destroyfvkeyonstandby 1"
-                if self.ch.executeCommand(cmd):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    undocmd = "/usr/bin/pmset -a destroyfvkeyonstandby 0"
-                    event = {"eventtype": "commandstring",
-                             "command": undocmd}
-                    self.statechglogger.recordchgevent(myid, event)
-                else:
-                    success = False
-            self.rulesuccess = success
+            if self.ci.getcurrvalue():
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+                success = True
+                if not self.compliant:
+                    cmd = "/usr/bin/pmset -a destroyfvkeyonstandby 1"
+                    if self.ch.executeCommand(cmd):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        undocmd = "/usr/bin/pmset -a destroyfvkeyonstandby 0"
+                        event = {"eventtype": "commandstring",
+                                 "command": undocmd}
+                        self.statechglogger.recordchgevent(myid, event)
+                    else:
+                        success = False
+                self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

@@ -29,6 +29,7 @@ Created on Apr 9, 2013
 @change: 06/02/2014 dkennel removed extraneous arg from setperms call on 864
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37772] : DisableIPV6(123) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
