@@ -32,14 +32,13 @@ The EnableSELinux class enables and configures SELinux on support OS platforms.
 '''
 
 from __future__ import absolute_import
+import traceback
 import re
 import os
-import traceback
 from ..rule import Rule
 from ..stonixutilityfunctions import checkPerms, setPerms, readFile, writeFile
 from ..stonixutilityfunctions import iterate, resetsecon
 from ..logdispatcher import LogPriority
-from ..environment import *
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
 
@@ -102,12 +101,12 @@ enter (inside the terminal or window, whichever is available) is done'''
         '''
         determine whether SELinux is already enabled and properly configured.
         self.compliant, self.detailed results and self.currstate properties are
-        updated to reflect the system status. self.rulesuccess will be updated 
+        updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
         @return bool
         @author bemalmbe
-        @change: dwalker 4/04/2014 implemented commandhelper, added more 
+        @change: dwalker 4/04/2014 implemented commandhelper, added more
             accurate implementation per system basis for apt-get systems
             especially.
         '''
@@ -127,17 +126,16 @@ enter (inside the terminal or window, whichever is available) is done'''
                         for line in output:
                             if re.search("check_boot: ERR", line):
                                 self.detailedresults += "Selinux is not " + \
-                                "built into the kernel.  This requires a " + \
-                                "manual fix\n"
-                                self.logger.log(LogPriority.DEBUG, 
-                                                          self.detailedresults)
+                                    "built into the kernel.  This " + \
+                                    "requires a manual fix\n"
+                                self.logger.log(LogPriority.DEBUG,
+                                                self.detailedresults)
                                 self.kernel = False
                                 compliant = False
             else:
                 # the selinux path is the same for all systems
                 self.path1 = "/etc/selinux/config"
                 self.tpath1 = "/etc/selinux/config.tmp"
-    
                 # set the appropriate name of the selinux package
                 if self.ph.manager == "apt-get":
                     if re.search("Debian", self.environ.getostype()):
@@ -148,11 +146,10 @@ enter (inside the terminal or window, whichever is available) is done'''
                     self.selinux = "libselinux"
                 elif self.ph.manager == "zypper":
                     self.selinux = "selinux-policy"
-    
                 # set the grub path for each system and certain values to be found
                 # inside the file
                 if re.search("Red Hat", self.environ.getostype()) or \
-                    re.search("Fedora", self.environ.getostype()):
+                        re.search("Fedora", self.environ.getostype()):
                     if re.search("^7", str(self.environ.getosver()).strip()) or \
                         re.search("^20", str(self.environ.getosver()).strip()):
                         self.setype = "targeted"
@@ -174,16 +171,16 @@ enter (inside the terminal or window, whichever is available) is done'''
                     self.path2 = "/etc/grub.conf"
                     self.tpath2 = "/etc/grub.conf.tmp"
                     self.perms2 = [0, 0, 384]
-    
+
                 if not self.ph.check(self.selinux):
                     compliant = False
                     self.detailedresults += "selinux is not even installed\n"
                     self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                               self.detailedresults)
                     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 else:
                     self.f1 = readFile(self.path1, self.logger)
-                    self.f2 = readFile(self.path2 , self.logger)
+                    self.f2 = readFile(self.path2, self.logger)
                     if self.f1:
                         if not checkPerms(self.path1, [0, 0, 420], self.logger):
                             compliant = False
@@ -213,31 +210,36 @@ enter (inside the terminal or window, whichever is available) is done'''
                                         conf2 = False
                         if not found1 or not found2:
                             self.detailedresults += "The desired contents " + \
-                            "were not found in /etc/selinux/config\n"
+                                "were not found in /etc/selinux/config\n"
                             compliant = False
                         elif not conf1 or not conf2:
                             self.detailedresults += "The desired contents " + \
-                            "were not found in /etc/selinux/config\n"
+                                "were not found in /etc/selinux/config\n"
                             compliant = False
                     else:
                         self.detailedresults += "/etc/selinux/config file " + \
-                        "is blank\n"
+                            "is blank\n"
                         compliant = False
                     if self.f2:
                         conf1 = False
                         conf2 = False
                         if self.ph.manager == "apt-get":
-                            if not checkPerms(self.path2, self.perms2, self.logger):
+                            if not checkPerms(self.path2, self.perms2,
+                                              self.logger):
                                 compliant = False
                             for line in self.f2:
-                                if re.match("^#", line) or re.match("^\s*$", line):
+                                if re.match("^#", line) or re.match("^\s*$",
+                                                                    line):
                                     continue
-                                if re.match("^GRUB_CMDLINE_LINUX_DEFAULT", line.strip()):
+                                if re.match("^GRUB_CMDLINE_LINUX_DEFAULT",
+                                            line.strip()):
                                     if re.search("=", line):
                                         temp = line.split("=")
-                                        if re.search("security=selinux", temp[1].strip()):
+                                        if re.search("security=selinux",
+                                                     temp[1].strip()):
                                             conf1 = True
-                                        if re.search("selinux=0", temp[1].strip()):
+                                        if re.search("selinux=0",
+                                                     temp[1].strip()):
                                             conf2 = True
                             if conf1 or conf2:
                                 self.detailedresults += "Grub file is non compliant\n"
@@ -246,7 +248,8 @@ enter (inside the terminal or window, whichever is available) is done'''
                             conf1 = False
                             conf2 = False
                             for line in self.f2:
-                                if re.match("^#", line) or re.match("^\s*$", line):
+                                if re.match("^#", line) or re.match("^\s*$",
+                                                                    line):
                                     continue
                                 if re.match("^kernel", line.strip()):
                                     if re.search("^selinux=0", line.strip()):
@@ -292,10 +295,10 @@ enter (inside the terminal or window, whichever is available) is done'''
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
@@ -304,7 +307,7 @@ enter (inside the terminal or window, whichever is available) is done'''
         method does not succeed.
 
         @author bemalmbe
-        @change: dwalker 4/04/2014 implemented commandhelper, added more 
+        @change: dwalker 4/04/2014 implemented commandhelper, added more
             accurate implementation per system basis for apt-get systems
             especially.
         '''
@@ -319,7 +322,7 @@ enter (inside the terminal or window, whichever is available) is done'''
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
+
             if not self.ph.check(self.selinux):
                 if self.ph.checkAvailable(self.selinux):
                     if not self.ph.install(self.selinux):
@@ -327,7 +330,7 @@ enter (inside the terminal or window, whichever is available) is done'''
                         self.detailedresults += "selinux was not able to be \
 installed\n"
                         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                                   self.detailedresults)
                         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                         return
                     else:
@@ -337,7 +340,7 @@ installed\n"
 for install on this linux distribution\n"
                     self.rulesuccess = False
                     self.formatDetailedResults("report", self.rulesuccess,
-                                                          self.detailedresults)
+                                               self.detailedresults)
                     return
             self.f1 = readFile(self.path1, self.logger)
             self.f2 = readFile(self.path2, self.logger)
@@ -346,7 +349,7 @@ for install on this linux distribution\n"
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     setPerms(self.path1, [0, 0, 420], self.logger,
-                                                     self.statechglogger, myid)
+                             self.statechglogger, myid)
                     self.detailedresults += "Corrected permissions on file: \
 " + self.path1 + "\n"
                 val1 = ""
@@ -382,10 +385,11 @@ for install on this linux distribution\n"
             if writeFile(self.tpath1, tempstring, self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"conf",
-                         "filepath":self.path1}
+                event = {"eventtype": "conf",
+                         "filepath": self.path1}
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.path1, self.tpath1, myid)
+                self.statechglogger.recordfilechange(self.path1, self.tpath1,
+                                                     myid)
                 os.rename(self.tpath1, self.path1)
                 os.chown(self.path1, 0, 0)
                 os.chmod(self.path1, 420)
@@ -399,7 +403,7 @@ for install on this linux distribution\n"
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     setPerms(self.path2, self.perms2, self.logger,
-                                                     self.statechglogger, myid)
+                             self.statechglogger, myid)
                     self.detailedresults += "Corrected permissions on file: \
 " + self.path2 + "\n"
                 if self.ph.manager == "apt-get":
@@ -439,10 +443,11 @@ for install on this linux distribution\n"
                     if writeFile(self.tpath2, tempstring, self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype":"conf",
-                                 "filepath":self.path2}
+                        event = {"eventtype": "conf",
+                                 "filepath": self.path2}
                         self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.path2, self.tpath2, myid)
+                        self.statechglogger.recordfilechange(self.path2,
+                                                             self.tpath2, myid)
                         os.rename(self.tpath2, self.path2)
                         os.chown(self.path2, self.perms2[0], self.perms2[1])
                         os.chmod(self.path2, self.perms2[2])

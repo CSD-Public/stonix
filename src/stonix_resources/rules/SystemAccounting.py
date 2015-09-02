@@ -145,7 +145,7 @@ class SystemAccounting(Rule):
             self.accpath = '/var/account/acct'
 
         if not os.path.exists(self.accpath):
-            self.detailedresults += '\ncould not locate accounting file'
+            self.detailedresults += '\ncould not locate accounting file: ' + str(self.accpath)
 
     def setOpts(self, ostype='linux'):
         '''
@@ -208,21 +208,21 @@ class SystemAccounting(Rule):
 
             if not os.path.exists(self.enableacc):
                 configured = False
-                self.detailedresults += '\naccounting configuration file not found'
+                self.detailedresults += '\naccounting configuration file not found: ' + str(self.enableacc)
 
             if not os.path.exists(self.accpath):
                 configured = False
-                self.detailedresults += '\naccounting file not found'
+                self.detailedresults += '\naccounting file not found: ' + str(self.accpath)
 
             contentlines = self.getFileContents(self.enableacc)
 
             if self.accopt + '\n' not in contentlines:
                 configured = False
-                self.detailedresults += '\naccounting not enabled'
+                self.detailedresults += '\naccounting not enabled. missing directive: ' + str(self.accopt)
 
             if not self.pkghelper.check(self.pkgname):
                 configured = False
-                self.detailedresults += '\naccounting package not installed'
+                self.detailedresults += '\naccounting package not installed: ' + str(self.pkgname)
 
         except Exception:
             raise
@@ -239,17 +239,17 @@ class SystemAccounting(Rule):
 
             if not os.path.exists(self.accpath):
                 configured = False
-                self.detailedresults += '\naccounting file not found'
+                self.detailedresults += '\naccounting file not found: ' + str(self.accpath)
 
             if not os.path.exists(self.enableacc):
                 configured = False
-                self.detailedresults += '\naccounting configuration file not found'
+                self.detailedresults += '\naccounting configuration file not found: ' + str(self.enableacc)
 
             contentlines = self.getFileContents(self.enableacc)
 
             if self.accopt + '\n' not in contentlines:
                 configured = False
-                self.detailedresults += '\naccounting not enabled'
+                self.detailedresults += '\naccounting not enabled. missing directive: ' + str(self.accopt)
 
         except Exception:
             raise
@@ -394,5 +394,5 @@ class SystemAccounting(Rule):
             f.close()
 
         except IOError:
-            self.detailedresults += '\nCould not find specified filepath, returning empty list'
+            self.detailedresults += '\nCould not find specified filepath: ' + str(filepath) + ' Returning empty list'
         return contentlines

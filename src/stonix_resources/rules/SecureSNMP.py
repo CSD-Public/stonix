@@ -76,7 +76,7 @@ possible. Configure SNMP if necessary.'''
         self.guidance = ['NSA 3.20', 'CCE 4540-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         datatype = 'bool'
         key = 'DisableSNMP'
         instructions = "If there is a mission-critical need for hosts " + \

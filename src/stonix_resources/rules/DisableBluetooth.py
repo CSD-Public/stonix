@@ -128,6 +128,7 @@ class DisableBluetooth(Rule):
             for service in self.servicelist:
                 enabled = self.servicehelper.auditservice(service)
                 if enabled:
+                    self.detailedresults += service + " is enabled\n"
                     compliant = False
 #             self.pkghelper = Pkghelper(self.logger, self.environ)
 #             # check whether bluetooth packages exist
@@ -138,8 +139,14 @@ class DisableBluetooth(Rule):
             # check whether bluetooth drivers are blacklisted
             if os.path.exists(kvpath):
                 self.kve = KVEditorStonix(self.statechglogger, self.logger,
-                   kvtype, kvpath, kvtmppath, self.driverdict, kvintent, kvconftype)
+                                          kvtype, kvpath, kvtmppath,
+                                          self.driverdict, kvintent,
+                                          kvconftype)
                 if not checkPerms(kvpath, [0, 0, 420], self.logger):
+                    self.detailedresults += "Permissions are incorrect on " + \
+                        kvpath + "\n"
+                    debug = "Permissions are incorrect on " + kvpath + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
                 if not self.kve.report():
                     self.detailedresults += "Blacklist file exists but is not \
@@ -155,7 +162,9 @@ correct\n"
                     self.detailedresults += "Created blacklist file for \
 Bluetooth\n"
                     self.kve = KVEditorStonix(self.statechglogger, self.logger,
-                    kvtype, kvpath, kvtmppath, self.driverdict, kvintent, kvconftype)
+                                              kvtype, kvpath, kvtmppath,
+                                              self.driverdict, kvintent,
+                                              kvconftype)
                     self.kve.fixables = self.driverdict
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -166,10 +175,10 @@ Bluetooth\n"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
@@ -177,7 +186,7 @@ Bluetooth\n"
         disable all bluetooth services
         remove all bluetooth packages
         blacklist all bluetooth drivers
-        
+
         @author bemalmbe
         @change: dwalker - implemented kveditor
         @return: bool
@@ -187,8 +196,7 @@ Bluetooth\n"
         try:
             if not self.ci.getcurrvalue():
                 return
-            
-            #clear out event history so only the latest fix is recorded
+
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -220,8 +228,8 @@ Bluetooth\n"
             if self.created:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype":"creation",
-                         "filepath":self.kve.getPath()}
+                event = {"eventtype": "creation",
+                         "filepath": self.kve.getPath()}
 
                 self.statechglogger.recordchgevent(myid, event)
             # blacklist bluetooth drivers
@@ -229,8 +237,8 @@ Bluetooth\n"
                 if not checkPerms(self.kve.getPath(), [0, 0, 420], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.kve.getPath(), [0, 0, 420], self.logger,
-                                                  self.statechglogger, myid):
+                    if not setPerms(self.kve.getPath(), [0, 0, 420],
+                                    self.logger, self.statechglogger, myid):
                         success = False
             if self.kve.fixables:
                 self.iditerator += 1
@@ -256,6 +264,6 @@ Bluetooth\n"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess

@@ -28,6 +28,7 @@ Created on Dec 10, 2013
 @change: 03/26/2014 ekkehard convert to ruleKVEditor
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37771] : DisableCamera(150) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 from ..rule import Rule
