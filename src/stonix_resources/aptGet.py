@@ -77,7 +77,7 @@ class AptGet(object):
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
 ###############################################################################
 
     def removepackage(self, package):
@@ -103,7 +103,7 @@ class AptGet(object):
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
 ###############################################################################
 
     def checkInstall(self, package):
@@ -142,7 +142,7 @@ class AptGet(object):
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
 ###############################################################################
 
     def checkAvailable(self, package):
