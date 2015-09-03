@@ -137,6 +137,9 @@ PROXY = 'http://proxyout.lanl.gov:8080'
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '128.165.0.0/16'
 
+# Specify a subnet to allow in xinetd.conf
+XINETDALLOW = '128.165.0.0/16'
+
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
 PRINTBROWSESUBNET = ''
