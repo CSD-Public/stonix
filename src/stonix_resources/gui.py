@@ -390,12 +390,12 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             trace = traceback.format_exc()
             self.logger.log(LogPriority.ERROR,
                             ['GUI', "Problem in supdate: " + trace])
-            
+
     def abortrun(self):
         """This Method will abort a Fix all, Report all or Revert all run.
         It does this by clearing the self.threads property which allows the
         currently executing thread to finish.
-        
+
         @author: dkennel
         """
         for thread in self.threads:
@@ -699,13 +699,14 @@ class CiFrame(QFrame):
             datatype = opt.getdatatype()
             name = opt.getkey()
             myuc = self.findChild(QPlainTextEdit, 'ucvalue' + name)
-            if datatype == 'string':
+            if datatype == 'string' or datatype == 'int' or \
+            datatype == 'float':
                 mydata = self.findChild(QLineEdit, 'value' + name)
                 mydataval = str(mydata.text())
             elif datatype == 'bool':
                 mydata = self.findChild(QCheckBox, 'value' + name)
                 mydataval = mydata.isChecked()
-            if datatype == 'list':
+            elif datatype == 'list':
                 mydata = self.findChild(QLineEdit, 'value' + name)
                 mydataval = str(mydata.text())
                 mydataval = mydataval.split()
