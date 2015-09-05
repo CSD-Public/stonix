@@ -29,7 +29,7 @@ Created on Mar 4, 2015
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 from ..ServiceHelper import ServiceHelper
-from stonix_resources.logdispatcher import LogPriority
+from ..logdispatcher import LogPriority
 
 
 class DisableFTP(RuleKVEditor):
