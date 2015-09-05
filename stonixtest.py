@@ -752,6 +752,8 @@ def assemble_list_suite(modules = []):
     @author: Roy Nielsen
     """
     testList = []
+
+    #print str(modules)
     
     # - if modules list is passed in
     if modules and isinstance(modules, list) :
@@ -773,131 +775,187 @@ def assemble_list_suite(modules = []):
                 
             found = False
             #Find the path to the test
-            for root, dirnames, filenames in os.walk("src/tests/" + prefix):
-                myfile = ""
-                for myfile in filenames:
-                    #print "\n\n\tFile: " + str(root + "/" + myfile)
-                    if re.match("%s$"%myfile, module):
-                        #print "\n\n\tFile: " + str(root + "/" + myfile)
-                        fname = str(root + "/" + myfile)
-                        found = True
-                        break
-                if found:
-                    break
-
-            testFileName = fname.split("/")[-1]
-            # get the name of the test without the ".py"
-            testName = ".".join(testFileName.split(".")[:-1])
-            # Create a class path with the testName
-            testClassName = ".".join(fname.split("/")[:-1]) + "." + testName
             
-            #print "\n\tTestFileName  : " + str(testFileName)
-            #print "  \tTestName      : " + str(testName)
-            #print "  \tTestClassName : " + str(testClassName) + "\n"
-
-            # Make Sure this rule sould be testing
-            try:
-                #####
-                # A = "dot" path to the library we want to import from
-                # B = Module inside library we want to import
-                # basically perform a "from A import B
-                testToRunMod = __import__(testClassName, fromlist=[testName])
+            
+            if re.match("^rules$", prefix):
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        #print "\n\n\tFile: " + str(root + "/" + myfile)
+                        if re.match("%s$"%myfile, module):
+                            #print "\n\n\tFile: " + str(root + "/" + myfile)
+                            fname = str(root + "/" + myfile)
+                            found = True
+                            break
+                    if found:
+                        break
                 
-            except Exception, err: 
-                print "stonixtest error: " + str(testName) + " Exception: " + str(err)
-            else:
-                # check if we're running in the correct context
+                found = False
+                #Find the path to the test
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        #print "\n\n\tFile: " + str(root + "/" + myfile)
+                        if re.match("%s$"%myfile, module):
+                            #print "\n\n\tFile: " + str(root + "/" + myfile)
+                            fname = str(root + "/" + myfile)
+                            found = True
+                            break
+                    if found:
+                        break
+            
+                # Get the filename of the test, without the path
+                testFileName = fname.split("/")[-1]
+                # get the name of the test without the ".py"
+                testName = ".".join(testFileName.split(".")[:-1])
+                # Create a class path with the testName
+                testClassName = ".".join(fname.split("/")[:-1]) + "." + testName
+                
+                #print "\n\tTestFileName  : " + str(testFileName)
+                #print "  \tTestName      : " + str(testName)
+                #print "  \tTestClassName : " + str(testClassName) + "\n"
+    
+                # Make Sure this rule sould be testing
                 try:
-                    classToTestRegex = re.match("^zzzTestRule(.+)", testName)
-                except:
+                    #####
+                    # A = "dot" path to the library we want to import from
+                    # B = Module inside library we want to import
+                    # basically perform a "from A import B
+                    testToRunMod = __import__(testClassName, fromlist=[testName])
+                    
+                except Exception, err: 
+                    print "stonixtest error: " + str(testName) + " Exception: " + str(err)
+                else:
+                    # check if we're running in the correct context - get the 
+                    # name associated with the test
                     try:
-                        classToTestRegex = re.match("^zzzTestFramework(.+)", testName)
+                        classToTestRegex = re.match("^zzzTestRule(.+)", testName)
                     except Exception, err:
-                        raise err
+                       print "Exception trying to match regex . . ."
+                       print str(err)
+                       raise err                        
                     else:
                         classToTest = classToTestRegex.group(1) + ".py"
-                        
-                else:
-                    classToTest = classToTestRegex.group(1) + ".py"
-                #toTest = getattr(testToRun, testName + ".rule")
-            
-            #print "ClassToTest: " + str(classToTest)
-            #print "----------=====##        ##=====----------"
-            
-            found = False
-            #Find the path to the test
-            for root, dirnames, filenames in os.walk("src/"):
-                myfile = ""
-                for myfile in filenames:
-                    #print "\n\n\tFile: " + str(myfile)
-                    if re.match("^%s$"%myfile, classToTest):
-                        #print "\n\n\tFile: " + str(root + "/" + myfile)
-                        fname = str(root + "/" + myfile)
-                        found = True
+                    #toTest = getattr(testToRun, testName + ".rule")
+                
+                #print "ClassToTest: " + str(classToTest)
+                #print "----------=====##        ##=====----------"
+
+                
+                # load the rule to make sure it is running in the right
+                # context and it is applicable to the platform
+                found = False
+                for root, dirnames, filenames in os.walk("src/"):
+                    myfile = ""
+                    for myfile in filenames:
+                        #print "\n\n\tFile: " + str(myfile)
+                        if re.match("^%s$"%myfile, classToTest):
+                            #print "\n\n\tFile: " + str(root + "/" + myfile)
+                            fname = str(root + "/" + myfile)
+                            found = True
+                            break
+                    if found:
                         break
-                if found:
-                    break
-
-            toTestFileName = fname.split("/")[-1]
-            # get the name of the test without the ".py"
-            toTestName = ".".join(toTestFileName.split(".")[:-1])
-            # Create a class path with the testName
-            toTestClassName = ".".join(fname.split("/")[:-1]) + "." + toTestName
-            
-            #print "\n\tTestFileName  : " + str(toTestFileName)
-            #print "  \tTestName      : " + str(toTestName)
-            #print "  \tTestClassName : " + str(toTestClassName) + "\n"
-
-            # Make Sure this rule sould be testing
-            try:
-                #####
-                # A = "dot" path to the library we want to import from
-                # B = Module inside library we want to import
-                # basically perform a "from A import B
-                toTestToRunMod = __import__(toTestClassName, fromlist=[toTestName])
-                
-            except Exception, err: 
-                print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
-            else:
-            
-                # Define a class/function or set of classes/functions to instantiate, 
-                # must be in a list/array
-                mod2import = [toTestName]
-                
-                # Import specific class - the "top level" module ie:
-                #   the imported file is now the "top level" module
-                tmp_test_mod = __import__(toTestClassName, None, None, mod2import)
-                
-                # set a variable to the module class
-                tmpex = "toTestClass = tmp_test_mod." + str(toTestName)
-                
-                exec(tmpex)
-                
-                environ = Environment()
-                config = Configuration(environ)
-                logdispatcher = LogDispatcher(environ)
-                stchgr = StateChgLogger(logdispatcher, environ)
-                
-                get_attrs = toTestClass(config, environ, logdispatcher, stchgr)
-                
-                
-                # Acquire result of method            
-                is_root_required = get_attrs.getisrootrequired()
-                
-                # Get the effective user id running the process.
-                running_uid = os.geteuid()
-                
-                # Does the running user match if root is required?
-                testCorrectEffectiveUserid = isCorrectEffectiveUserId(running_uid)
     
-                # check if is applicable to this system
-                testIsApplicable = get_attrs.isapplicable()
+                toTestFileName = fname.split("/")[-1]
+                # get the name of the test without the ".py"
+                toTestName = ".".join(toTestFileName.split(".")[:-1])
+                # Create a class path with the testName
+                toTestClassName = ".".join(fname.split("/")[:-1]) + "." + toTestName
                 
+                #print "\n\tTestFileName  : " + str(toTestFileName)
+                #print "  \tTestName      : " + str(toTestName)
+                #print "  \tTestClassName : " + str(toTestClassName) + "\n"
+    
                 # Make Sure this rule sould be testing
-                if testCorrectEffectiveUserid and testIsApplicable:
+                try:
                     #####
-                    # Add the import to a list, to later "map" to a test suite
-                    testList.append(testToRunMod)     
+                    # A = "dot" path to the library we want to import from
+                    # B = Module inside library we want to import
+                    # basically perform a "from A import B
+                    toTestToRunMod = __import__(toTestClassName, fromlist=[toTestName])
+                    
+                except Exception, err: 
+                    print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
+                else:
+                
+                    # Define a class/function or set of classes/functions to instantiate, 
+                    # must be in a list/array
+                    mod2import = [toTestName]
+                    
+                    # Import specific class - the "top level" module ie:
+                    #   the imported file is now the "top level" module
+                    tmp_test_mod = __import__(toTestClassName, None, None, mod2import)
+                    
+                    # set a variable to the module class
+                    tmpex = "toTestClass = tmp_test_mod." + str(toTestName)
+                    
+                    exec(tmpex)
+                    
+                    environ = Environment()
+                    config = Configuration(environ)
+                    logdispatcher = LogDispatcher(environ)
+                    stchgr = StateChgLogger(logdispatcher, environ)
+                    
+                    get_attrs = toTestClass(config, environ, logdispatcher, stchgr)
+                    
+                    
+                    # Acquire result of method            
+                    is_root_required = get_attrs.getisrootrequired()
+                    
+                    # Get the effective user id running the process.
+                    running_uid = os.geteuid()
+                    
+                    # Does the running user match if root is required?
+                    testCorrectEffectiveUserid = isCorrectEffectiveUserId(running_uid)
+        
+                    # check if is applicable to this system
+                    testIsApplicable = get_attrs.isapplicable()
+
+                    # Make Sure this rule sould be testing
+                    if testCorrectEffectiveUserid and testIsApplicable:
+                        #####
+                        # Add the import to a list, to later "map" to a test suite
+                        testList.append(testToRunMod)     
+                
+            elif re.match("^framework$", prefix):
+                #Find the path to the test
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        #print "\n\n\tmodname: " + str(module)
+                        #print "\tFile   : " + str(myfile)
+                        #print "\tRelPath: " + str(root + "/" + myfile)
+                        regex = "^" + str(module) + ".*"
+                        if re.match(regex, myfile):
+                            #print "\n\n\tFile: " + str(root + "/" + myfile)
+                            relpath = str(root + "/" + myfile)
+                            # get the name of the test without the ".py"
+                            testName = myfile.split(".py")[0]
+                            # Create a class path with the testName
+                            testClassName = ".".join(relpath.split("/")[:-1]) + "." + testName
+                            
+                            #print "\n\tTestFileName  : " + str(myfile)
+                            #print "  \tTestName      : " + str(testName)
+                            #print "  \tTestClassName : " + str(testClassName) + "\n"
+                
+                            # Make Sure this rule sould be testing
+                            try:
+                                #####
+                                # A = "dot" path to the library we want to import from
+                                # B = Module inside library we want to import
+                                # basically perform a "from A import B
+                                testToRunMod = __import__(testClassName, fromlist=[testName])
+                                
+                            except Exception, err: 
+                                print "stonixtest error: " + str(testName) + " Exception: " + str(err)
+            
+                            #####
+                            # Add the import to a list, to later "map" to a test suite
+                            testList.append(testToRunMod)     
+            
+            else:
+                raise "Error attempting insert test into test list..."
             
     #####
     # Set up the test loader function
@@ -1103,8 +1161,7 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
         framework=True
         rule=True
 
-    if options.modules:
-        modules = options.modules
+    modules = options.modules
 
     # Set Up test environment
     if "ttrlog" in locals():
