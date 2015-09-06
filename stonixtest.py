@@ -89,20 +89,18 @@ class test_rules_and_unit_test (unittest.TestCase):
     def tearDown(self):
         success = True
         return success
-    """
+    
     def runTest(self):
-        ''
+        '''
         This is to check all os x rules
         @author: ekkehard j. koch
         @note: Make sure it can handle entire rule scenario
-        ''
-        success = True
-        if success:
-            success = self.zzz_for_every_rule()
+        '''
+        success = self.zzz_for_every_rule()
         if success:
             success = self.rule_for_every_zzz()
         return success
-    """
+    
     def zzz_for_every_rule(self):
         success = True
         self.ruleDictionary.gotoFirstRule()
@@ -1186,8 +1184,12 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
                                           " work when combined with -r.")
 
     parser.add_option("-a", "--all-automatable", action="store_true", dest="all",
-                      default=True, help=" Run all unit and network tests - " + \
+                      default=True, help="Run all unit and network tests - " + \
                       "interactive tests not included")
+
+    parser.add_option("--rule-test-consistency", action="store_true", dest="consistency",
+                      default=False, help="Check to make sure there is a " + \
+                      "test for every rule and a rule for every rule test")
 
     parser.add_option('-m', '--modules', action="extend", type="string", 
                       dest='modules', help="Use to run a single or " + \
@@ -1237,8 +1239,11 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
         network=True
         framework=True
         rule=True
+        consistency = True
 
     modules = options.modules
+
+    consistency = options.consistency
 
     # Set Up test environment
     if "ttrlog" in locals():
@@ -1250,7 +1255,17 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     if modules:
         # only process tests passed in via the -m flag
         testsuite = assemble_list_suite(modules)
+    elif consistency:
+        #####
+        # Define a test suite based on the testList.
+        testsuite = unittest.TestSuite()
+        
+        test2run = test_rules_and_unit_test()
+        # Add all the tests for rules
+        testsuite.addTest(test2run)
+
     else:
+
         testsuite = assemble_suite(framework, rule, unit, network, interactive)
     
     # Run the test suite
