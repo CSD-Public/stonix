@@ -84,10 +84,6 @@ class test_rules_and_unit_test (unittest.TestCase):
         success = True
         self.ruleDictionary = RuleDictionary()
         return success
-
-    def tearDown(self):
-        success = True
-        return success
     
     def runTest(self):
         '''
@@ -439,9 +435,6 @@ class RuleDictionary ():
                 elif os.path.isfile("src/tests/rules/interactive/" + self.unittestprefix + str(rulefilename)):
                     class_prefix = "tests.rules.interactive_tests." 
                     self.unittestpath = "src/tests/rules/interactive_tests/"
-                else:
-                    print "continuing . . ."
-                    continue
                 
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
