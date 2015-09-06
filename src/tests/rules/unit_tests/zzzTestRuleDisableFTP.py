@@ -29,7 +29,7 @@ This is a Unit Test for Rule DisableFTP
 '''
 from __future__ import absolute_import
 import unittest
-from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.logdispatcher import LogPriority
 from src.stonix_resources.rules.DisableFTP import DisableFTP
