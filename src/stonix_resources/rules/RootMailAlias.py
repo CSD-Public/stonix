@@ -25,7 +25,7 @@ Created on Nov 4, 2013
 
 Set an alias for root mail on the system so that it is read by an actual human.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 02/16/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/16/2014 ekkehard Implemented isapplicable
 @change: 04/21/2014 dkennel Updated CI invocation, fixed bug where boolean CI
@@ -39,27 +39,27 @@ was not checked before exectuing fix()
 @change: 2015/04/28 dkennel changed default2 for ci2 to "root@localhost".
     Original had local domain name appended which provides no value.
 @change: 2015/08/26 ekkehard [artf37780] : RootMailAlias(251) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
+@change: Breen Malmberg, 9/3/2015, re-write of report and fix methods; added helper methods; added/fixed doc strings;
+            removed unused imports
 '''
 
 from __future__ import absolute_import
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import checkPerms, setPerms
-from ..stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
+from ..stonixutilityfunctions import checkPerms
+from ..stonixutilityfunctions import iterate, resetsecon
 from ..pkghelper import Pkghelper
+
 import os
-from re import search
+import re
 import traceback
-# from Carbon.Aliases import false
 
 
 class RootMailAlias(Rule):
     '''
     Set an alias for root mail on the system so that it is read by an actual
     human.
-
-    @author: bemalmbe
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -73,21 +73,18 @@ class RootMailAlias(Rule):
         self.rulename = 'RootMailAlias'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Set an alias for root mail on the system so that \
-it is read by an actual human.'''
+        self.helptext = 'Set an alias for root mail on the system so that it is read by an actual human.'
         self.guidance = ['none']
 
         datatype = 'bool'
-        key = 'RootMailAlias'
-        instructions = '''To prevent the setting of an alias for root mail, \
-set the value of RootMailAlias to False.'''
+        key = 'Root Mail Alias'
+        instructions = 'To prevent the setting of an alias for root mail, set the value of Root Mail Alias to False.'
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'AliasString'
-        instructions2 = '''Please specify the email address which should \
-receive root mail for this system.'''
+        key2 = 'Root Alias Address'
+        instructions2 = 'Please specify the email address which should receive root mail for this system.'
         default2 = ''
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
 
@@ -95,103 +92,185 @@ receive root mail for this system.'''
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
-        self.emailfound = True
+
+        self.localization()
+
 ###############################################################################
+
+    def localization(self):
+        '''
+        set up common class variables
+        call os-specific variable configuration methods
+        '''
+
+        try:
+
+            self.logger.log(LogPriority.DEBUG, "Beginning localization of class variables, based on OS/distribution type...")
+            if self.environ.getosfamily() == 'linux':
+                self.setlinux()
+                self.ph = Pkghelper(self.logger, self.environ)
+            elif self.environ.getosfamily() == 'darwin':
+                self.setmac()
+            self.logger.log(LogPriority.DEBUG, "Setting up common class variables...")
+            self.fileperms = [0, 0, 420]
+            self.aliasformat = "[^@]+@[^@]+\.[^@]+"
+            self.aliasfiletmp = self.aliasfile + '.stonixtmp'
+
+        except Exception:
+            raise
+
+    def setlinux(self):
+        '''
+        set up class variables for use with linux
+        '''
+
+        try:
+
+            self.logger.log(LogPriority.DEBUG, "Configuring class variables for Linux systems...")
+            self.aliasfile = ''
+            aliasfilelocs = ['/etc/mail/aliases', '/etc/aliases']
+            aliasfiledefault = '/etc/aliases'
+            for loc in aliasfilelocs:
+                if os.path.exists(loc):
+                    self.aliasfile = loc
+            if not self.aliasfile:
+                self.aliasfile = aliasfiledefault
+
+        except Exception:
+            raise
+
+    def setmac(self):
+        '''
+        set up class variables for use with mac os x
+        '''
+
+        try:
+
+            self.logger.log(LogPriority.DEBUG, "Configuring class variables for Mac OS X systems...")
+            self.aliasfile = ''
+            aliasfiledefault = '/private/etc/aliases'
+            aliasfilelocs = ['/private/etc/aliases', '/private/etc/postfix/aliases']
+            for loc in aliasfilelocs:
+                if os.path.exists(loc):
+                    self.aliasfile = loc
+            if not self.aliasfile:
+                self.aliasfile = aliasfiledefault
+
+        except Exception:
+            raise
+
+    def getFileContents(self, filepath):
+        '''
+        retrieve file contents of given file path; return them in a list
+
+        @param filepath: string full path to file to read
+        @return: contentlines
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        contentlines = []
+
+        self.logger.log(LogPriority.DEBUG, "Retrieving contents of " + str(filepath) + " ...")
+        try:
+
+            if not os.path.exists(filepath):
+                self.logger.log(LogPriority.DEBUG, "specified filepath did not exist; returning empty set")
+                return contentlines
+
+            f = open(filepath, 'r')
+            contentlines = f.readlines()
+            f.close()
+
+        except Exception:
+            raise
+        return contentlines
+
+    def checkContents(self, searchterm, contentlines):
+        '''
+        check the given search parameter for a match in given list
+
+        @param searchterm: string regex to look for a match for
+        @param contentlines: list list of strings to check for given search term
+        @return: found
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        found = False
+
+        self.logger.log(LogPriority.DEBUG, "Checking specified file contents for match with search term: " + str(searchterm) + " ...")
+        try:
+
+            if not contentlines:
+                self.logger.log(LogPriority.DEBUG, "specified contentlines is an empty set; returning False")
+                return found
+
+            if not searchterm:
+                self.logger.log(LogPriority.DEBUG, "specified searchterm is an empty string; returning False")
+                return found
+
+            for line in contentlines:
+                if re.search(searchterm, line):
+                    found = True
+
+        except Exception:
+            raise
+        return found
 
     def report(self):
         '''
         Check the /etc/aliases file for the existence of an alias mail address
         to send root's mail to
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         @change: dwalker
+        @change: Breen Malmberg, 9/3/2015, complete re-write of method
         '''
+
+        self.detailedresults = ""
+        self.compliant = True
+
+        if self.ph.manager == 'apt-get':
+            self.searchstring = '^Postmaster:\s+' + str(self.ci2.getcurrvalue())
+            self.fixstring = 'Postmaster: ' + str(self.ci2.getcurrvalue())
+            self.partialstring = '^Postmaster:'
+        else:
+            self.searchstring = '^root:\s+' + str(self.ci2.getcurrvalue())
+            self.fixstring = 'root: ' + str(self.ci2.getcurrvalue())
+            self.partialstring = '^root:'
+
         try:
-            self.detailedresults = ""
-            compliant = True
-            self.ph = Pkghelper(self.logger, self.environ)
-            fp = "/etc/aliases"
-            email = self.ci2.getcurrvalue()
-            if email:
-                if not search("[^@]+@[^@]+\.[^@]+", email):
-                    self.detailedresults += "Your email address is invalid\n"
-                    self.logger.log(LogPriority.WARNING, self.detailedresults)
-                    return
-            if self.ph.manager == "apt-get":
-                if not self.ph.check("mailman"):
-                    compliant = False
-                else:
-                    if os.path.exists(fp):
-                        if not checkPerms(fp, [0, 0, 420], self.logger):
-                            compliant = False
-                        contents = readFile(fp, self.logger)
-                        email = self.ci2.getcurrvalue()
-                        if contents:
-                            for line in contents:
-                                if search("^root:\s+", line.strip()):
-                                    line = line.split()
-                                    if email:
-                                        try:
-                                            if line[1].strip() != email:
-                                                compliant = False
-                                                break
-                                        except IndexError:
-                                            debug = traceback.format_exc() + \
-                                                "\n"
-                                            debug += "Index out of range " + \
-                                                "on line: " + line + "\n"
-                                            self.logger.log(LogPriority.DEBUG,
-                                                            debug)
-                                    else:
-                                        if not search("[^@]+@[^@]+\.[^@]+",
-                                                      line[1].strip()):
-                                            compliant = False
-                        else:
-                            compliant = False
-                    else:
-                        compliant = False
-            elif os.path.exists(fp):
-                if not checkPerms(fp, [0, 0, 420], self.logger):
-                    compliant = False
-                contents = readFile(fp, self.logger)
-                email = self.ci2.getcurrvalue()
-                if contents:
-                    rootfound = False
-                    for line in contents:
-                        if search("^root", line.strip()):
-                            rootfound = True
-                            line = line.split()
-                            if email:
-                                try:
-                                    if line[1].strip() != email:
-                                        self.detailedresults += "email " + \
-                                            "address doesn't match\n"
-                                        compliant = False
-                                        break
-                                except IndexError:
-                                    debug = traceback.format_exc() + "\n"
-                                    debug += "Index out of range on line: " + \
-                                        line + "\n"
-                                    self.logger.log(LogPriority.DEBUG,
-                                                    debug)
-                            else:
-                                if not search("[^@]+@[^@]+\.[^@]+",
-                                              line[1].strip()):
-                                    compliant = False
-                    if not rootfound:
-                        self.detailedresults += "root line not found\n"
-                        compliant = False
-            else:
-                compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "RootMailAlias report has been run \
-and is compliant \n"
-            else:
+
+            # check format of user-entered root mail alias address
+            self.logger.log(LogPriority.DEBUG, "Checking user-entered value for root mail alias for correct format...")
+            if not re.search(self.aliasformat, str(self.ci2.getcurrvalue())):
                 self.compliant = False
-                self.detailedresults += "RootMailAlias report has been run \
-and is not compliant\n"
+                self.detailedresults += '\nUser-entered root mail alias is not a valid email address format'
+
+            # check if the alias file has the correct configuration entry
+            self.logger.log(LogPriority.DEBUG, "Checking root mail alias file for correct configuration...")
+            contentlines = self.getFileContents(self.aliasfile)
+            if not self.checkContents(self.searchstring, contentlines):
+                self.detailedresults += '\nUnable to find root mail alias address in file: ' + str(self.aliasfile)
+                self.compliant = False
+
+            # check if the alias file has the correct permissions
+            self.logger.log(LogPriority.DEBUG, "Checking root mail alias file for correct permissions...")
+            if not checkPerms(self.aliasfile, self.fileperms, self.logger):
+                self.detailedresults += '\nFile ' + str(self.aliasfile) + ' does not have the correct ownership and permissions: ' + ','.join(str(p) for p in self.fileperms)
+                self.compliant = False
+
+            # check if system is apt-get based, and if it is, whether or not mailman package is installed
+            self.logger.log(LogPriority.DEBUG, "Checking if this is an apt-get based system...")
+            if self.ph.manager == "apt-get":
+                self.logger.log(LogPriority.DEBUG, "This is an apt-get based system. Checking if mailman is installed...")
+                if not self.ph.check("mailman"):
+                    self.detailedresults += '\nPackage: mailman is not installed'
+                    self.compliant = False
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -209,154 +288,156 @@ and is not compliant\n"
         '''
         Add an alias for the root mail on the system to the /etc/aliases file
 
-        @author: bemalmbe
+        @return: fixsuccess
+        @rtype: bool
+        @author: Breen Malmberg
         @change: dwalker
+        @change: Breen Malmberg, 9/3/2015, complete re-write of method
         '''
+
+        fixsuccess = True
+        self.detailedresults = ""
+        self.iditerator = 0
+
         try:
+
             if not self.ci1.getcurrvalue():
+                self.logger.log(LogPriority.DEBUG, "Rule was not enabled. Fix did not run.")
                 return
-            elif self.ci2.getcurrvalue():
-                if not search("[^@]+@[^@]+\.[^@]+", self.ci2.getcurrvalue()):
+            if self.ci2.getcurrvalue():
+                if not re.search("[^@]+@[^@]+\.[^@]+", self.ci2.getcurrvalue()):
+                    self.logger.log(LogPriority.DEBUG, "User-entered root mail alias address is not in the correct format. Nothing was done.")
                     return
-            success = True
-            self.detailedresults = ""
 
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
+            # fix the file contents
+            fixsuccess = self.fixFileContents(self.aliasfile)
 
-            tempstring = ""
-            fp = "/etc/aliases"
-            tfp = fp + ".tmp"
-            badfile = False
+            # install mailman, if apt-get based
             if self.ph.manager == "apt-get":
-                print "IT's and apt-get system"
-                if not self.ph.check("mailman"):
-                    if self.ph.checkAvailable("mailman"):
-                        if not self.ph.install("mailman"):
-                            success = False
-                if os.path.exists(fp):
-                    if not checkPerms(fp, [0, 0, 420],
-                                      self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator,
-                                       self.rulenumber)
-                        if not setPerms(fp, [0, 0, 420],
-                                        self.logger,
-                                        self.statechglogger,
-                                        myid):
-                            success = False
-                    contents = readFile(fp, self.logger)
-                    email = self.ci2.getcurrvalue()
-                    if contents:
-                        found = False
-                        for line in contents:
-                            if search("^root:\s+", line.strip()):
-                                if found:
-                                    continue
-                                temp = line.split()
-                                if email:
-                                    try:
-                                        if temp[1].strip() == email:
-                                            found = True
-                                            tempstring += line
-                                        else:
-                                            badfile = True
-                                    except IndexError:
-                                        debug = \
-                                            traceback.format_exc() + \
-                                            "\n"
-                                        debug += "Index out of " + \
-                                            "range on line: " + \
-                                            line + "\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                else:
-                                    if not search("[^@]+@[^@]+\.[^@]+", temp[1].strip()):
-                                        continue
-                            else:
-                                tempstring += line
-                        if not found:
-                            if not email:
-                                fail = "No email was entered " + \
-                                "and no other email for root " + \
-                                "was found.  Nothing can be done\n"
-                                self.detailedresults += fail
-                                self.logger.log(LogPriority.WARNING, fail)
-                                success = False
-                            else:
-                                badfile = True
-                                tempstring += "root:     " + email + "\n"
-            else:
-                if os.path.exists(fp):
-                    if not checkPerms(fp, [0, 0, 420], self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(fp, [0, 0, 420], self.logger,
-                                        self.statechglogger, myid):
-                            success = False
-                    contents = readFile(fp, self.logger)
-                    email = self.ci2.getcurrvalue()
-                    if contents and email:
-                        found = False
-                        for line in contents:
-                            if search("^root:\s+", line.strip()):
-                                if found:
-                                    continue
-                                temp = line.split()
-                                if email:
-                                    try:
-                                        if temp[1].strip() == email:
-                                            found = True
-                                            tempstring += line
-                                        else:
-                                            badfile = True
-                                    except IndexError:
-                                        debug = traceback.format_exc() + "\n"
-                                        debug += "Index out of range on line: " + line + "\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                else:
-                                    if not search("[^@]+@[^@]+\.[^@]+", temp[1].strip()):
-                                        continue
-                            else:
-                                tempstring += line
-                        if not found:
-                            if not email:
-                                fail = "No email was entered " + \
-                                    "and no other email for root " + \
-                                    "was found.  Nothing can be done\n"
-                                self.detailedresults += fail
-                                self.logger.log(LogPriority.WARNING, fail)
-                                success = False
-                            else:
-                                badfile = True
-                                tempstring += "root:     " + email + "\n"
-            if badfile:
-                if writeFile(tfp, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": fp}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(fp, tfp, myid)
-                    self.detailedresults += "corrected contents and wrote to \
-file: " + fp + "\n"
-                    os.rename(tfp, fp)
-                    os.chown(fp, 0, 0)
-                    os.chmod(fp, 420)
-                    resetsecon(fp)
-                else:
-                    self.detailedresults += "Unable to successfully write \
-to the file: " + fp + "\n"
-                    success = False
-            self.rulesuccess = success
+                self.ph.install("mailman")
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
+        self.formatDetailedResults("fix", fixsuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
+        return fixsuccess
+
+    def fixFileContents(self, filepath):
+        '''
+        wrapper for the fix actions
+
+        @param filepath: string full path to file to fix
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not self.replaceFileContents(filepath):
+                retval = self.appendFileContents(filepath)
+
+        except Exception:
+            raise
+        return retval
+
+    def replaceFileContents(self, filepath):
+        '''
+        replace any existing configuration of root mail alias
+
+        @param filepath: string full path to the file to edit
+        @return: replaced
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        replaced = False
+        tmppath = filepath + '.stonixtmp'
+
+        try:
+
+            if not os.path.exists(filepath):
+                self.logger.log(LogPriority.DEBUG, "Specified file path: " + str(filepath) + " does not exist. Will attempt to create it.")
+                return replaced
+
+            contentlines = self.getFileContents(filepath)
+            for line in contentlines:
+                if re.search(self.partialstring, line):
+                    contentlines = [c.replace(line, '# Added by STONIX\n' + self.fixstring + '\n') for c in contentlines]
+                    replaced = True
+            if replaced:
+                f = open(tmppath, 'w')
+                f.writelines(contentlines)
+                f.close
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": filepath}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(filepath, tmppath, myid)
+                os.rename(tmppath, filepath)
+                os.chown(filepath, 0, 0)
+                os.chmod(filepath, 420)
+                resetsecon(filepath)
+                self.logger.log(LogPriority.DEBUG, "Replaced existing config line with correct one")
+
+        except Exception:
+            raise
+        return replaced
+
+    def appendFileContents(self, filepath):
+        '''
+        if the root mail alias configuration line doesn't exist in the file, append it
+
+        @param filepath: string full path to file to edit
+        @return: appended
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        appended = False
+        tmppath = filepath + '.stonixtmp'
+
+        try:
+
+            if not os.path.exists(filepath):
+                contentlines = ['# Created by STONIX\n', self.fixstring + '\n']
+
+                f = open(filepath, 'w')
+                f.writelines(contentlines)
+                f.close()
+                os.chown(filepath, 0, 0)
+                os.chmod(filepath, 420)
+                resetsecon(filepath)
+                appended = True
+            else:
+                contentlines = self.getFileContents(filepath)
+                contentlines.append('\n# Added by STONIX\n' + self.fixstring + '\n')
+
+                f = open(tmppath, 'w')
+                f.writelines(contentlines)
+                f.close
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": filepath}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(filepath, tmppath, myid)
+                os.rename(tmppath, filepath)
+                os.chown(filepath, 0, 0)
+                os.chmod(filepath, 420)
+                resetsecon(filepath)
+                appended = True
+
+            self.logger.log(LogPriority.DEBUG, "Appended correct config line to file " + str(filepath))
+
+        except Exception:
+            raise
+        return appended
