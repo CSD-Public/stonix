@@ -29,7 +29,7 @@ Created on Mar 12, 2013
 @change: 02/16/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates
 @change: 2015/04/17 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37789] : SSHTimeout(127) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
+@change: 2015/09/09 eball Improved feedback
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
@@ -66,7 +66,7 @@ automatically logged out. '''
         self.editor = ""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
 ###############################################################################
 
@@ -78,7 +78,7 @@ automatically logged out. '''
 
         try:
             compliant = True
-            self.detailedresults = ""
+            results = ""
             if self.environ.getostype() == "Mac OS X":
                 self.path = '/private/etc/sshd_config'
                 self.tpath = '/private/etc/sshd_config.tmp'
@@ -93,8 +93,7 @@ automatically logged out. '''
                     openssh = "openssh-server"
                 if not self.ph.check(openssh):
                     compliant = False
-                elif not os.path.exists(self.path):
-                    compliant = False
+                    results += "Package " + openssh + " is not installed\n"
             self.ssh = {"ClientAliveInterval": "900",
                         "ClientAliveCountMax": "0"}
             if os.path.exists(self.path):
@@ -102,22 +101,21 @@ automatically logged out. '''
                 kvtype = "conf"
                 intent = "present"
                 self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                               kvtype, self.path, self.tpath, self.ssh,
-                                                           intent, "space")
+                                             kvtype, self.path, self.tpath,
+                                             self.ssh, intent, "space")
                 if not self.editor.report():
                     compliant = False
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
+                    results += "Settings in " + self.path + " are not " + \
+                        "correct\n"
+                if not checkPerms(self.path, [0, 0, 0644], self.logger):
                     compliant = False
+                    results += self.path + " permissions are incorrect\n"
             else:
                 compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "SSHTimeout report has been run \
-and is compliant\n"
-            else:
-                self.compliant = False
-                self.detailedresults += "SSHTimeout report has been run \
-and is not compliant\n"
+                results += self.path + " does not exist\n"
+
+            self.detailedresults = results
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
