@@ -30,6 +30,7 @@ Created on Feb 19, 2013
 @change: 04/21/2014 ekkehard ci updates and ci fix method implementation
 @change: 06/02/2014 dkennel multiple bug fixes for undefined variable issues.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/08/26 ekkehard [artf37787] : Rule SecureSSH(8) - NCAF - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 import os

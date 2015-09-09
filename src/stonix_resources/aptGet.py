@@ -33,8 +33,10 @@ class AptGet(object):
     '''Linux specific package manager for distributions that use the apt-get
     command to install packages.
 
-    :version:
-    :author:Derek T Walker 08-06-2012'''
+    @author: Derek T Walker
+    @change: 2012/08/06 dwalker - Original Implementation
+    @change: 2015/08/20 eball - Added getPackageFromFile
+    '''
 
     def __init__(self, logger):
         self.logger = logger
@@ -59,7 +61,7 @@ class AptGet(object):
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return True
             else:
-                #try to install for a second time
+                # try to install for a second time
                 self.ch.executeCommand(self.install + package)
                 if self.ch.getReturnCode() == 0:
                     self.detailedresults = package + \
@@ -75,7 +77,7 @@ class AptGet(object):
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
 ###############################################################################
 
     def removepackage(self, package):
@@ -101,7 +103,7 @@ class AptGet(object):
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
 ###############################################################################
 
     def checkInstall(self, package):
@@ -140,7 +142,7 @@ class AptGet(object):
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
 ###############################################################################
 
     def checkAvailable(self, package):
@@ -173,6 +175,30 @@ misspelled"
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             raise
+###############################################################################
+
+    def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
+        try:
+            self.ch.executeCommand("dpkg -S " + filename)
+            if self.ch.getReturnCode() == 0:
+                output = self.ch.getOutputString()
+                pkgname = output.split(":")[0]
+                return pkgname
+            else:
+                return None
+        except(KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise(self.detailedresults)
 ###############################################################################
 
     def getInstall(self):

@@ -41,6 +41,7 @@ given instead of the required five.
 @change: 2015/04/28 dkennel changed data dictionary in reportpostfix to
 reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/07/30 eball Changed where setPerms occurs in fix
+@change: 2015/08/26 ekkehard [artf37785] : SecureMTA(53) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 '''
 
 from __future__ import absolute_import

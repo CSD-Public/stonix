@@ -31,8 +31,11 @@ class Yum(object):
 
     '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
-    :version:
-    :author:Derek T Walker 08-06-2012'''
+
+    @author: Derek T Walker
+    @change: 2012/08/06 dwalker - Original Implementation
+    @change: 2015/08/20 eball - Added getPackageFromFile
+    '''
 
     def __init__(self, logger):
         self.logger = logger
@@ -133,6 +136,28 @@ class Yum(object):
                 found = True
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return found
+        except(KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise(self.detailedresults)
+###############################################################################
+
+    def getPackageFromFile(self, filename):
+        '''Returns the name of the package that provides the given
+        filename/path.
+
+        @param: string filename : The name or path of the file to resolve
+        @return: string name of package if found, None otherwise
+        @author: Eric Ball
+        '''
+        try:
+            self.ch.executeCommand(self.rpm + "-f " + filename)
+            if self.ch.getReturnCode() == 0:
+                return self.ch.getOutputString()
+            else:
+                return None
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:

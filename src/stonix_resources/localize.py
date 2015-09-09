@@ -39,6 +39,7 @@ KERB5
 that access the version variable to use this copy.
 @change: 2015/03/01 - ekkehard - incremented STONIXVERSION = '0.8.15'
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
+@change: 2015/08/20 - eball - Added KRB5 for Linux Kerberos setup
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -136,7 +137,7 @@ PROXY = 'http://proxyout.lanl.gov:8080'
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '128.165.0.0/16'
 
-# specify a subnet to allow in xinetd.conf
+# Specify a subnet to allow in xinetd.conf
 XINETDALLOW = '128.165.0.0/16'
 
 # Specify a subnet to allow printer browsing on
@@ -172,6 +173,35 @@ KERB5 = '''[libdefaults]
     exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
     .lanl.gov = lanl.gov
     .lanl.org = lanl.gov'''
+
+KRB5 = '''[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = lanl.gov
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+ allow_weak_crypto = true
+ clockslew = 300
+
+[realms]
+
+ lanl.gov = {
+  kdc = kerberos.lanl.gov
+  kdc = kerberos-slaves.lanl.gov
+  admin_server = kerberos.lanl.gov
+  default_domain = lanl.gov
+ }
+
+[domain_realm]
+ lanl.gov = lanl.gov
+ .lanl.gov = lanl.gov
+'''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package

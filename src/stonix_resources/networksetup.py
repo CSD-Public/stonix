@@ -314,6 +314,8 @@ class networksetup():
             locationName = pLocationName.lower()
         if 'wi-fi' in locationName:
             success = True
+        elif 'wifi' in locationName:
+            success = True
         elif 'wireless' in locationName:
             success = True
         elif 'airport' in locationName:

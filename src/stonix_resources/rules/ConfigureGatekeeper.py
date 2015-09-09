@@ -57,7 +57,7 @@ class ConfigureGatekeeper(Rule):
             "GATEKEEPER to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.ci = self.initCi(datatype, key, instructions, default)
         self.profPath = os.path.join(os.path.dirname(__file__), "..", "files",
                                      "LANL Security & Privacy.mobileconfig")
@@ -65,6 +65,7 @@ class ConfigureGatekeeper(Rule):
     def report(self):
         try:
             compliant = True
+            self.detailedresults = ""
             cmd = ["/usr/bin/profiles", "-L"]
             notinst = "There are no configuration profiles installed"
             inst = GATEKEEPER
@@ -104,6 +105,7 @@ class ConfigureGatekeeper(Rule):
     def fix(self):
         try:
             success = True
+            self.detailedresults = ""
             cmd = ["/usr/bin/profiles", "-L"]
             notinst = "There are no configuration profiles installed"
             inst = GATEKEEPER

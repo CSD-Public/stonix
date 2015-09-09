@@ -79,7 +79,7 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # init CIs
         datatype = 'bool'
         key = 'InstallBanners'
@@ -187,13 +187,32 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.gnome3 = True
-        profiledir = '/etc/dconf/profile/'
+
+        profiledirs = ['/etc/dconf/profile/', '/var/lib/gdm3/dconf/profile/']
+        profiledir = '/etc/dconf/profile/' # default
+        for loc in profiledirs:
+            if os.path.exists(loc):
+                profiledir = loc
+        if not profiledir:
+            self.logger.log(LogPriority.DEBUG, "Unable to locate the gnome3 profile directory")
+
         profilefile = 'gdm'
+
         self.gdmprofile = profiledir + profilefile
-        self.profilelist = ['user-db:user', 'system-db:gdm']
-        self.gdmdir = '/etc/dconf/db/gdm.d/'
+
+        profiledict = {'/etc/dconf/profile/': ['user-db:user', 'system-db:gdm'],
+                       '/var/lib/gdm3/dconf/profile/': ['user', 'gdm']}
+        self.profilelist = profiledict[profiledir]
+
+        gdmdirs = ['/etc/dconf/db/gdm.d/', '/var/lib/gdm3/dconf/db/gdm.d/']
+        self.gdmdir = '/etc/dconf/db/gdm.d/' # default
+        for loc in gdmdirs:
+            if os.path.exists(loc):
+                self.gdmdir = loc
+
         bannermessagefile = '01-banner-message'
         self.bannerfile = self.gdmdir + bannermessagefile
+
         self.gnome3optlist = ['[org/gnome/login-screen]', 'disable-user-list=true', 'banner-message-enable=true', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
         self.gnome3optdict = {'disable-user-list': 'true',
                             'banner-message-enable': 'true',
@@ -310,7 +329,7 @@ unity-greeter'''
         '''
 
         self.linux = True
-        self.motd = WARNINGBANNER
+        self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/etc/ssh/sshd_config'
         self.bannerfiles = ["/etc/banners/in.ftpd",
@@ -354,7 +373,7 @@ unity-greeter'''
         '''
 
         self.mac = True
-        self.motd = OSXSHORTWARNINGBANNER
+        self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/private/etc/ssh/sshd_config'
         self.ftpwelcomelocs = ["/etc/ftpwelcome", "/private/etc/ftpwelcome"]
@@ -374,7 +393,7 @@ unity-greeter'''
                          self.ci)
         self.addKVEditor("loginwindowBannerText", "defaults",
                          "/Library/Preferences/com.apple.loginwindow", "",
-                         {"LoginWindowText": [re.escape(OSXSHORTWARNINGBANNER),
+                         {"LoginwindowText": [re.escape(OSXSHORTWARNINGBANNER),
                                               '"' + OSXSHORTWARNINGBANNER + \
                                               '"']},
                          "present", "",
@@ -559,7 +578,7 @@ unity-greeter'''
                     raise
             except OSError as err:
                 self.detailedresults += '\n' + str(err)
-                return False
+                retval = False
         except Exception:
             raise
         return retval
@@ -599,7 +618,9 @@ unity-greeter'''
                 for item in replacedict:
                     if not replacedict[item]:
                         contentlines.append('\n' + item)
-                self.setFileContents(filepath, contentlines)
+                if not self.setFileContents(filepath, contentlines):
+                    retval = False
+                    self.detailedresults += '\n'
             else:
                 retval = False
                 self.detailedresults += '\nSpecified filepath not found. Returning False'
@@ -895,7 +916,7 @@ unity-greeter'''
                 self.detailedresults += '\nEither file server banner text or login window banner text is incorrect, or both'
                 retval = False
             if os.path.exists(self.ftpwelcomefile):
-                if not self.reportFileContents(self.ftpwelcomefile, OSXSHORTWARNINGBANNER):
+                if not self.reportFileContents(self.ftpwelcomefile, WARNINGBANNER):
                     retval = False
                     self.detailedresults += '\nincorrect configuration text in: ' + str(self.ftpwelcomefile)
             else:
@@ -903,7 +924,7 @@ unity-greeter'''
                 self.detailedresults += '\nrequired configuration file: ' + str(self.ftpwelcomefile) + ' not found'
 
             if os.path.exists(self.policybanner):
-                if not self.reportFileContents(self.policybanner, OSXSHORTWARNINGBANNER):
+                if not self.reportFileContents(self.policybanner, WARNINGBANNER):
                     retval = False
                     self.detailedresults += '\nincorrect configuration text in: ' + str(self.policybanner)
             else:
@@ -1028,6 +1049,7 @@ unity-greeter'''
             for loc in self.motdlocs:
                 if not self.setFileContents(loc, self.motd, 'w'):
                     retval = False
+                    self.detailedresults += '\nunable to set warning banner text in ' + str(loc)
         except Exception:
             raise
         return retval
@@ -1154,10 +1176,14 @@ unity-greeter'''
         try:
             if not RuleKVEditor.fix(self, True):
                 retval = False
-            if not self.setFileContents(self.ftpwelcomefile, OSXSHORTWARNINGBANNER, 'w'):
+            if not self.setFileContents(self.ftpwelcomefile, WARNINGBANNER, 'w'):
                 retval = False
-            if not self.setFileContents(self.policybanner, OSXSHORTWARNINGBANNER, 'w'):
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.ftpwelcomefile)
+            if not self.setFileContents(self.policybanner, WARNINGBANNER, 'w'):
                 retval = False
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.policybanner)
+            else:
+                os.chmod(self.policybanner, 0644)
             if not self.fixcommon():
                 retval = False
         except Exception:

@@ -40,7 +40,7 @@ class ConfigureComputerName(Rule):
         self.rulenumber = 260
         self.rulename = "ConfigureComputerName"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.formatDetailedResults("initialize")
         self.mil = None
         self.mandatory = True

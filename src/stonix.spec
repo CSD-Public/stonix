@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.8.18
+Version: 0.8.20
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -116,6 +116,35 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Mon Aug 31 2015 David Kennel <dkennel@lanl.gov> - 0.8.20
+- New rule: Remove SUID Games
+- New rule: Disable Admin Login Override
+- New rule: Disable Login Prompts on Serial Ports
+- New rule: Installed Software Verification
+- New rule: Xinetd access control
+- Fixed multiple issues with Install Banners
+- Added wifi to list of allowed names for ConfigureNetworks network locations
+- Corrected man page permissions on .deb versions
+- Added error handling to Configure Dot Files to suppress errors in edge conditions
+- Corrected permissions on /etc/profile.d/tmout.sh for ShellTimeout
+
+* Thu Jul 30 2015 Eric Ball <eball@lanl.gov> - 0.8.19
+- New rule: Disable GUI Logon
+- New rule: Restrict Mounting
+- New rule: Time-out for Login Shells
+- New rule: Secure Squid Proxy
+- New rule: No Cached FDE Keys
+- Added framework unit testing to stonixtest.py
+- Unit test added for DisableFTP
+- Unit test added for SecureDHCP
+- Added undo functionality for DisableCamera
+- Fixed issue that caused tracebacks in ConfigureNetworks
+- Fixed issue that caused tracebacks in ConfigurePowerManagement
+- Improved reliability of ConfigureAIDE
+- Heavily refactored InstallBanners
+- Improved feedback for ConfigureSystemAuthentication non-compliance
+
+
 * Tue Jun 30 2015 David Kennel <dkennel@lanl.gov> - 0.8.18
 - New rule: Secure the ISC DHCP server
 - Fixed an issue that caused tracebacks in SecureMDNS
