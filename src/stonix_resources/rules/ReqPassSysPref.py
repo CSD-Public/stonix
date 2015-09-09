@@ -143,11 +143,14 @@ class ReqPassSysPref(Rule):
                         success = False
                         self.detailedresults += '\n' + str(adderrout)
 
-                event = {"eventtype": "commandstring",
-                         "command": self.plbuddy + " -c 'Set rights:" + str(pref) + ":shared bool " + str(self.origstates[pref]) + " " + self.authplist}
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.statechglogger.recordchgevent(myid, event)
+                try:
+                    event = {"eventtype": "commandstring",
+                             "command": self.plbuddy + " -c 'Set rights:" + str(pref) + ":shared bool " + str(self.origstates[pref]) + " " + self.authplist}
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.statechglogger.recordchgevent(myid, event)
+                except KeyError:
+                    pass
 
         except (KeyboardInterrupt, SystemExit):
             raise
