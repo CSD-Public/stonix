@@ -125,7 +125,7 @@ agent, set the value of SECUREMTA to False.'''
             self.detailedresults = ""
             if not self.environ.operatingsystem == "Mac OS X":
                 self.helper = Pkghelper(self.logger, self.environ)
-            secure = True
+            compliant = True
             sndpath = "/etc/mail/sendmail.cf"
             postfixlist = ['postfix', 'squeeze', 'squeeze-backports',
                            'wheezy', 'jessie', 'sid', 'CNDpostfix', 'lucid',
@@ -149,11 +149,13 @@ agent, set the value of SECUREMTA to False.'''
             # if sendmail installed, run check on sendmail
             if os.path.exists(sndpath):
                 if not checkPerms(sndpath, [0, 0, 420], self.logger):
-                    secure = False
+                    self.detailedresults += "permissions incorrect " + \
+                        "on " + sndpath + " file\n"
+                    compliant = False
                 if not self.reportsendmail():
-                    secure = False
+                    compliant = False
             elif len(self.sendmailfoundlist) > 0:
-                secure = False
+                compliant = False
                 self.sndmailed = False
                 self.detailedresults += "sendmail is installed but \
 /etc/mail/sendmail.cf is missing"
@@ -161,26 +163,22 @@ agent, set the value of SECUREMTA to False.'''
 
             if os.path.exists(self.postfixpath):
                 if not checkPerms(self.postfixpath, [0, 0, 420], self.logger):
-                    secure = False
+                    self.detailedresults += "permissions incorrect " + \
+                        "on " + self.postfixpath + " file\n"
+                    compliant = False
                 if not self.reportpostfix():
-                    secure = False
+                    compliant = False
 
             # if postfix installed, run check on postfix
             elif len(self.postfixfoundlist) > 0:
-                secure = False
+                compliant = False
                 self.postfixed = False
                 self.detailedresults += "You have postfix installed but your \
 /etc/postfix/main.cf is missing"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
             elif not os.path.exists(self.postfixpath):
                 self.postfixed = False
-            if secure:
-                self.detailedresults += "SecureMTA report has been run and the \
-system is compliant"
-            else:
-                self.detailedresults += "SecureMTA report has been run and the \
-system is not compliant"
-            self.compliant = secure
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -216,6 +214,8 @@ system is not compliant"
         # use kveditor to search the conf file for all the options in
         # postfixdata
         if not self.sndmailed.report():
+            self.detailedresults += "Not all directives were found inside " + \
+                path + " file\n"
             secure = False
         # check runtogether keyvalues; may replace with kveditor later if
         # kveditor gets updated to handle runtogether keyvalues
@@ -226,9 +226,13 @@ system is not compliant"
                 if re.search('^DS', line):
                     found = True
                     if not re.search('^DS' + MAILRELAYSERVER, line):
+                        self.detailedresults += "DS line doesn't have " + \
+                            "correct contents inside " + path + " file\n"
                         self.ds = True
                         secure = False
             if not found:
+                self.detailedresults += "DS line not found in " + path + \
+                    " file \n"
                 self.ds = True
                 secure = False
         return secure
@@ -266,6 +270,8 @@ system is not compliant"
         # use kveditor to search the conf file for all the options in
         # postfixdata
         if not self.postfixed.report():
+            self.detailedresults += "Not all directives were found in " + \
+                self.postfixpath + " file\n"
             return False
         else:
             return True
