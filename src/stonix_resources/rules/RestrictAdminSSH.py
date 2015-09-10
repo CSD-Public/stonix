@@ -29,7 +29,7 @@ Created on Dec 16, 2013
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37779] : RestrictAdminSSH(269) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
+@change: 2015/09/09 eball OS X El Capitan compatibility
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
@@ -49,10 +49,7 @@ class RestrictAdminSSH(Rule):
         self.rulename = "RestrictAdminSSH"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule disables root login access to another \
-machine via ssh.  Another important thing to prevent root loging via ssh is \
-the PermitRootLogin no key-value pair but that is already being configured in \
-SecureSSH rule.  This additional k-v pair only needs to exist in MacOSX'''
+        self.helptext = "This rule disables SSH root login access"
         datatype = 'bool'
         key = 'RESTRICTADMINSSH'
         instructions = '''To disable this rule set the value of
@@ -63,30 +60,59 @@ RESTRICTADMINSSH to False.'''
         self.ssh = {"DenyGroups": "admin"}
         self.iditerator = 0
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
-###############################################################################
+    def usesSip(self):
+        """
+        Determines whether this is Mac OS X >= v10.11
+        @author: Eric Ball
+        @return: True if this is Mac OS X >= v10.11
+        """
+        if self.environ.getosfamily() == "darwin":
+            versplit = self.environ.getosver().split(".")
+            verlist = []
+            for num in versplit:
+                verlist.append(int(num))
+            if verlist[0] >= 10 and verlist[1] >= 11:
+                return True
+        return False
 
     def report(self):
         try:
-            self.detailedresults = ""
-            self.path = "/private/etc/sshd_config"
-            self.tmppath = "/private/etc/sshd_config.tmp"
+            results = ""
             compliant = True
-            self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                "conf", self.path, self.tmppath, self.ssh, "present", "space")
-            if not self.editor.report():
-                compliant = False
-            if not checkPerms(self.path, [0, 0, 420], self.logger):
-                compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "RestrictAdminSSH report has been run \
-and is compliant\n"
+            path1 = "/private/etc/sshd_config"
+            path2 = "/private/etc/ssh/sshd_config"
+            if self.usesSip():
+                if os.path.exists(path2):
+                    self.path = path2
+                elif os.path.exists(path1):
+                    self.path = path1
+                else:
+                    compliant = False
+                    results += "Could not find path to sshd_config file\n"
             else:
-                self.compliant = False
-                self.detailedresults += "RestrictAdminSSH report has been run \
-and is not compliant\n"
+                if os.path.exists(path1):
+                    self.path = path1
+                elif os.path.exists(path2):
+                    self.path = path2
+                else:
+                    compliant = False
+                    results += "Could not find path to sshd_config file\n"
+            self.tmppath = self.path + ".tmp"
+            if os.path.exists(self.path):
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tmppath,
+                                             self.ssh, "present", "space")
+                if not self.editor.report():
+                    compliant = False
+                    results += "Settings in " + self.path + " are not " + \
+                        "correct\n"
+                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                    compliant = False
+                    results += self.path + " permissions are incorrect\n"
+            self.detailedresults = results
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -98,50 +124,50 @@ and is not compliant\n"
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
-###############################################################################
 
     def fix(self):
         try:
             if not self.ci.getcurrvalue():
                 return
-            
-            self.detailedresults = ""
+
+            results = ""
             success = True
 
-            #clear out event history so only the latest fix is recorded
+            # Clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if not checkPerms(self.path, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                    success = False
-            if self.editor.fixables or self.editor.removeables:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
-                if not self.editor.fix():
-                    debug = "kveditor fix did not run successfully, returning\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-                elif not self.editor.commit():
-                    debug = "kveditor commit did not run  successfully\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-                os.chown(self.path, 0, 0)
-                os.chmod(self.path, 420)
-                resetsecon(self.path)
-            if success:
-                self.detailedresults += "RestrictAdminSSH seems to have run \
-with no issues\n"
+            if os.path.exists(self.path):
+                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.path, [0, 0, 0644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        results += "Could not set permissions on " + \
+                            self.path + "\n"
+                if self.editor.fixables or self.editor.removeables:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
+                    if not self.editor.fix():
+                        debug = "kveditor fix did not run successfully\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                    elif not self.editor.commit():
+                        debug = "kveditor commit did not run  successfully\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                    os.chown(self.path, 0, 0)
+                    os.chmod(self.path, 0644)
+                    resetsecon(self.path)
             else:
-                self.detailedresults += "RestrictAdminSSH seems to have had \
-issues during the fix\n"
+                success = False
+                results += "Could not find path to sshd_config\n"
+            self.detailedresults = results
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
