@@ -273,7 +273,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         """
         self.controller.releaselock()
         self.logger.postreport()
-        sys.exit()        
+        sys.exit()
 
     def set_listview_item_bgcolor(self, item_text, qcolor_rgb):
         """
@@ -759,18 +759,47 @@ class aboutStonix(QDialog):
         """
         QDialog.__init__(self, parent)
 
+        self.stonixversion = stonixversion
+
         self.textLabel3 = QLabel(self)
+        self.textLabel3.setWordWrap(True)
         self.textLabel3.setGeometry(QRect(10, 10, 400, 201))
 
-        self.stonixversion = stonixversion
+        self.closebutton = QPushButton('Close', self)
+        self.closebutton.clicked.connect(self.close)
+
+        mainlayout = QVBoxLayout()
+        mainlayout.addWidget(self.textLabel3)
+        mainlayout.addStretch()
+        mainlayout.addWidget(self.closebutton)
+
+        self.setLayout(mainlayout)
         self.languageChange()
 
-        self.resize(QSize(410, 227).expandedTo(self.minimumSizeHint()))
+        self.resize(QSize(600, 400).expandedTo(self.minimumSizeHint()))
         # self.clearWState(Qt.WState_Polished)
 
     def languageChange(self):
         self.setWindowTitle("About LANL-STONIX")
-        self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">Copyright 2012 Los Alamos National Security</p>"))
+        copyrightText = '''Copyright 2015.  Los Alamos National Security, LLC. This material was \n
+produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos \n
+National Laboratory (LANL), which is operated by Los Alamos National \n
+Security, LLC for the U.S. Department of Energy. The U.S. Government has \n
+rights to use, reproduce, and distribute this software.  NEITHER THE \n
+GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, \n
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. \n
+If software is modified to produce derivative works, such modified software \n
+should be clearly marked, so as not to confuse it with the version \n
+available from LANL. \n
+
+Additionally, this program is free software; you can redistribute it and/or \n
+modify it under the terms of the GNU General Public License as published by \n
+the Free Software Foundation; either version 2 of the License, or (at your \n
+option) any later version. Accordingly, this program is distributed in the \n
+hope that it will be useful, but WITHOUT ANY WARRANTY; without even the \n
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. \n
+See the GNU General Public License for more details.'''
+        self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">" + copyrightText + "</p>"))
 
     def __tr(self, s, c=None):
         return qApp.translate("aboutStonix", s, c)
