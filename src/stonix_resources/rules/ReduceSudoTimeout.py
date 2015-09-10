@@ -33,7 +33,7 @@ authorization after a successful sudo authorization is made.
 @change: 04/18/2014 dkennel Replaced mid-style CI invocation.
 @change: 05/07/2014 dwalker testing and refactoring rule
 @change: 2015/04/16 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37776] : ReduceSudoTimeout(151) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
+@change: 2015/09/09 eball Improved feedback
 '''
 from __future__ import absolute_import
 import re
@@ -102,59 +102,63 @@ class ReduceSudoTimeout(Rule):
 
         # defaults
         try:
-            self.detailedresults = ""
+            results = ""
             compliant = True
             if self.environ.getostype() == "Mac OS X":
                 sudo = "/private/etc/sudoers"
             else:
                 sudo = "/etc/sudoers"
             if os.path.exists(sudo):
-                if not checkPerms(sudo, [0, 0, 288], self.logger):
+                if not checkPerms(sudo, [0, 0, 0440], self.logger):
                     compliant = False
+                    results += sudo + " does not have the correct " + \
+                        "permissions.\n"
                 contents = readFile(sudo, self.logger)
                 if contents:
                     found = False
                     for line in contents:
-                        if re.search("^Defaults\s+timestamp_timeout", line.strip()):
+                        if re.search("^Defaults\s+timestamp_timeout",
+                                     line.strip()):
                             found = True
                             if re.search("=", line.strip()):
                                 temp = line.split("=")
                                 try:
                                     if temp[1].strip() != "0":
                                         compliant = False
+                                        results += "Timeout is currently " + \
+                                            "set to " + temp[1].strip() + \
+                                            " instead of 0\n"
                                 except IndexError:
                                     debug = traceback.format_exc() + "\n"
-                                    debug += "Index out of range on line: " + line + "\n"
+                                    debug += "Index out of range on line: " + \
+                                        line + "\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                     if not found:
                         compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults = "ReuduceSudoTimeout report has been \
-run and is compliant\n"
-            else:
-                self.compliant = False
-                self.detailedresults = "ReuduceSudoTimeout report has been \
-run and is not compliant\n"
+                        results += "Cannot find line for timestamp_timeout " + \
+                            "in sudoers file\n"
+
+            self.detailedresults = results
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
-            self.complaint = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
         '''
         set the sudo timeout to 0. self.rulesuccess will be updated if this
-        method does not succeed.  In this rule in particular, we will not 
+        method does not succeed.  In this rule in particular, we will not
         attempt to install or create a sudo file if not already present
 
         @author bemalmbe
