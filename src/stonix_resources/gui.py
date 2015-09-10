@@ -776,7 +776,7 @@ class aboutStonix(QDialog):
         self.setLayout(mainlayout)
         self.languageChange()
 
-        self.resize(QSize(600, 400).expandedTo(self.minimumSizeHint()))
+        self.resize(QSize(700, 550).expandedTo(self.minimumSizeHint()))
         # self.clearWState(Qt.WState_Polished)
 
     def languageChange(self):
