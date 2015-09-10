@@ -138,7 +138,17 @@ if __name__ == "__main__" :
             log_message("OS Version: \"" + str(os_vers).strip() + "\"")
             
             minver = re.search("^10\.(\d+)\.\d+$", str(os_vers))
-            minor_version = int(minver.group(1).rstrip())
+            try:
+               minor_version = int(minver.group(1).rstrip())
+            except Exception, err:
+               log_message("Error trying to get minor version: " + str(err))
+               log_message("Trying 2 number version...")
+               try:
+                    minver = re.search("^10\.(\d+)", str(os_vers))
+                    minor_version = int(minver.group(1).rstrip())
+               except Exception, err:
+                   log_message("Having trouble acquiring minor version: " + str(err))
+                   raise err
             
             log_message("minor version: \"" + str(minor_version) + "\"")
             
