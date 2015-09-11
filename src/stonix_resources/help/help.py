@@ -85,6 +85,13 @@ class Help(QDialog):
         # Set to open external links
         self.ui.extendedHelpBrowser.setOpenExternalLinks(True)
         
+        #############################################################
+        #                                                           #
+        # Hiding the search bar until search functionality is built #
+        #                                                           #
+        ###########################################################
+        self.ui.search.hide()
+        
     def finish_my_display(self) :
         """
         Reject slot, print a message before sending the reject signal...
