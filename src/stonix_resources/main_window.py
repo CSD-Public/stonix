@@ -266,6 +266,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.splitter_right_side)
         self.gridLayout.addWidget(self.splitter, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
+        #####
+        # start menu creation
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1020, 23))
         self.menubar.setObjectName("menubar")
@@ -277,10 +279,15 @@ class Ui_MainWindow(object):
         self.menuRule.setObjectName("menuRule")
         self.menuHelp = QtGui.QMenu(self.menubar)
         self.menuHelp.setObjectName("menuHelp")
-        MainWindow.setMenuBar(self.menubar)
         # Section below contains some hand edits
+        self.menuGuiHelp = QtGui.QMenu(self.menubar)
+        self.menuGuiHelp.setObjectName("menuHelp")
+
+        MainWindow.setMenuBar(self.menubar)
+
         self.actionOpen = QtGui.QAction(MainWindow)
         self.actionOpen.setObjectName("actionOpen")
+        
         self.actionLog = QtGui.QAction(MainWindow)
         self.actionLog.setObjectName("actionLog")
         self.actionLog.setShortcut('Ctrl+L')
@@ -292,26 +299,38 @@ class Ui_MainWindow(object):
         self.actionQuit.setObjectName("actionQuit")
         self.actionQuit.setShortcut('Ctrl+Q')
         #self.actionQuit.setStatusTip('Quit application')
+
         self.actionAbout = QtGui.QAction(MainWindow)
         self.actionAbout.setObjectName("actionAbout")
+
         self.actionRun_All = QtGui.QAction(MainWindow)
         self.actionRun_All.setObjectName("actionRun_All")
         self.actionRun_All.setShortcut('Ctrl+R')
+
         #self.actionRun_All.setStatusTip('Run Fix All')
         self.actionReport_All = QtGui.QAction(MainWindow)
         self.actionReport_All.setObjectName("actionReport_All")
         self.actionReport_All.setShortcut('Ctrl+G')
+
         #self.actionReport_All.setStatusTip('Run Report All')
         self.actionRevert_All = QtGui.QAction(MainWindow)
         self.actionRevert_All.setObjectName("actionRevert_All")
+
         #self.actionRevert_All.setStatusTip('Attempt to Revert All Changes')
         #self.actionEdit_Selected = QtGui.QAction(MainWindow)
         #self.actionEdit_Selected.setObjectName("actionEdit_Selected")
+
         self.actionStop = QtGui.QAction(MainWindow)
         self.actionStop.setObjectName("actionStop")
         self.actionStop.setShortcut('Ctrl+K')
         #self.actionStop.setStatusTip('Stop Current Run')
         self.menuFile.addAction(self.actionLog)
+
+        self.actionGuiHelp = QtGui.QAction(MainWindow)
+        self.actionGuiHelp.setObjectName("actionGuiHelp")
+        self.actionGuiHelp.setShortcut('Ctrl+H')
+        self.menuGuiHelp.addAction(self.actionGuiHelp)
+
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionQuit)
         self.menuRule.addAction(self.actionRun_All)
@@ -324,6 +343,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuEdit.menuAction())
         self.menubar.addAction(self.menuRule.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
+        self.menubar.addAction(self.menuGuiHelp.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -354,6 +374,7 @@ class Ui_MainWindow(object):
         self.menuEdit.setTitle(QtGui.QApplication.translate("MainWindow", "Edit", None, QtGui.QApplication.UnicodeUTF8))
         self.menuRule.setTitle(QtGui.QApplication.translate("MainWindow", "Rule", None, QtGui.QApplication.UnicodeUTF8))
         self.menuHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
+        self.menuGuiHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
         self.actionOpen.setText(QtGui.QApplication.translate("MainWindow", "Open", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLog.setText(QtGui.QApplication.translate("MainWindow", "Log", None, QtGui.QApplication.UnicodeUTF8))
         self.actionQuit.setText(QtGui.QApplication.translate("MainWindow", "Quit", None, QtGui.QApplication.UnicodeUTF8))
@@ -362,5 +383,6 @@ class Ui_MainWindow(object):
         self.actionReport_All.setText(QtGui.QApplication.translate("MainWindow", "Report All", None, QtGui.QApplication.UnicodeUTF8))
         self.actionRevert_All.setText(QtGui.QApplication.translate("MainWindow", "Revert All", None, QtGui.QApplication.UnicodeUTF8))
         self.actionStop.setText(QtGui.QApplication.translate("MainWindow", "Stop Run", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionGuiHelp.setText(QtGui.QApplication.translate("MainWindow", "Help Browser", None, QtGui.QApplication.UnicodeUTF8))
         # self.actionEdit_Selected.setText(QtGui.QApplication.translate("MainWindow", "Edit Selected", None, QtGui.QApplication.UnicodeUTF8))
 

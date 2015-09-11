@@ -40,6 +40,7 @@ This is the GUI interface for STONIX (project Dylan). This file and its related
 imports implement the STONIX GUI.
 
 @author: D. Kennel
+@note: 2015-09-11 - rsn - Adding initial attempt at a help browser.
 '''
 
 import os
@@ -50,7 +51,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import main_window
 from logdispatcher import LogPriority
-
+from help.help import Help
 
 class GUI (View, QMainWindow, main_window.Ui_MainWindow):
     """
@@ -108,6 +109,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.actionReport_All.triggered.connect(self.reportall)
         self.actionRevert_All.triggered.connect(self.revertall)
         self.actionStop.triggered.connect(self.abortrun)
+        self.actionGuiHelp.triggered.connect(self.openHelpBrowser)
         self.fix_button.clicked.connect(self.runrule)
         self.report_button.clicked.connect(self.reportrule)
         self.revert_button.clicked.connect(self.revertrule)
@@ -211,6 +213,19 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.raise_()
         self.show()
 
+    def openHelpBrowser(self):
+        """
+        Open the html based gui help system
+        
+        @author: Roy Nielsen
+        """
+        stonixhelp = Help()
+        retval = stonixhelp.exec_()
+        stonixhelp.raise_()
+
+        if retval == 1 :
+            self.accept
+        
     def update_progress(self, curr, total):
         """
         Progress updater for the progress bar.
