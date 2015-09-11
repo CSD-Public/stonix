@@ -383,6 +383,6 @@ class Ui_MainWindow(object):
         self.actionReport_All.setText(QtGui.QApplication.translate("MainWindow", "Report All", None, QtGui.QApplication.UnicodeUTF8))
         self.actionRevert_All.setText(QtGui.QApplication.translate("MainWindow", "Revert All", None, QtGui.QApplication.UnicodeUTF8))
         self.actionStop.setText(QtGui.QApplication.translate("MainWindow", "Stop Run", None, QtGui.QApplication.UnicodeUTF8))
-        self.actionGuiHelp.setText(QtGui.QApplication.translate("MainWindow", "Help Browser", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionGuiHelp.setText(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
         # self.actionEdit_Selected.setText(QtGui.QApplication.translate("MainWindow", "Edit Selected", None, QtGui.QApplication.UnicodeUTF8))
 
