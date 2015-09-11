@@ -112,8 +112,9 @@ class ConfigureSystemAuthentication(Rule):
         @return: bool - True if system is compliant, False if it isn't
         '''
         try:
+            self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
-                self.compliant = self.reportLinux()
+                self.compliant, self.detailedresults = self.reportLinux()
             elif self.environ.getosfamily() == "solaris":
                 self.compliant = self.reportSolaris()
             elif self.environ.getosfamily() == "freebsd":
@@ -140,6 +141,7 @@ class ConfigureSystemAuthentication(Rule):
         self.libuser = "libuser"
         self.libuserfile = "/etc/libuser.conf"
         debug = ""
+        results = ""
         compliant = True
         self.editor1, self.editor2 = "", ""
         self.ph = Pkghelper(self.logger, self.environ)
@@ -178,6 +180,7 @@ class ConfigureSystemAuthentication(Rule):
                 #No? system is not compliant
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                results += debug
                 compliant = False
         #is it not available?
         elif not self.ph.checkAvailable(self.quality):
@@ -188,6 +191,7 @@ class ConfigureSystemAuthentication(Rule):
                     #No? system is not compliant
                     debug = "chkpassword() is not compliant\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    results += debug
                     compliant = False
             #passwdqc is not installed, but is it also not available?
             #if not, check if cracklib is.
@@ -199,6 +203,7 @@ class ConfigureSystemAuthentication(Rule):
                         #No? system is not compliant
                         debug = "chkpassword() is not compliant\n"
                         self.logger.log(LogPriority.DEBUG, debug)
+                        results += debug
                         compliant = False
                 #No?  Is it available?
                 elif not self.ph.checkAvailable(self.cracklib):
@@ -208,21 +213,25 @@ class ConfigureSystemAuthentication(Rule):
                     debug = "there is no password checking program " + \
                     "installed nor available for your system\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    results += debug
                     compliant = False
                 #cracklib is not installed but available for install
                 else:
                     debug = "cracklib not installed but is available\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    results += debug
                     compliant = False
             #passwdqc is not installed but available for install
             else:
                 debug = "passwdqc not installed but is available\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                results += debug
                 compliant = False
         #pwquality is not installed but available for install
         else:
             debug = "pamquality not installed but is available\n"
             self.logger.log(LogPriority.DEBUG, debug)
+            results += debug
             compliant = False
         #######################################################################
 
@@ -230,6 +239,7 @@ class ConfigureSystemAuthentication(Rule):
         if not self.chklockout():
             debug = "chklockout() is not compliant\n"
             self.logger.log(LogPriority.DEBUG, debug)
+            results += debug
             compliant = False
 
         #check if libuser is installed, if so, check contents of libuser file
@@ -237,6 +247,7 @@ class ConfigureSystemAuthentication(Rule):
             if not self.chklibuserhash():
                 debug = "chklibuserhash() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                results += debug
                 compliant = False
         elif not self.ph.checkAvailable(self.libuser):
             debug = "libuser is not available on this system\n"
@@ -244,13 +255,15 @@ class ConfigureSystemAuthentication(Rule):
         else:
             debug = "libuser is available but not installed\n"
             self.logger.log(LogPriority.DEBUG, debug)
+            results += debug
             compliant = False
         #check if the /etc/login.defs file has correct contents
         if not self.chkdefspasshash():
             debug = "chkdefspasshash() is not compliant\n"
             self.logger.log(LogPriority.DEBUG, debug)
+            results += debug
             compliant = False
-        return compliant
+        return compliant, results
     
 ###############################################################################
 
@@ -304,7 +317,7 @@ class ConfigureSystemAuthentication(Rule):
         '''
         try:
             if not self.ci1.getcurrvalue() and not self.ci2.getcurrvalue() \
-                and not self.ci3.getcurrvalue():
+               and not self.ci3.getcurrvalue():
                 return
             #delete past state change records from previous fix
             self.iditerator = 0
@@ -345,6 +358,7 @@ class ConfigureSystemAuthentication(Rule):
 
         success = True
         debug = ""
+        self.detailedresults = ""
         usingcracklib, usingpasswdqc, usingquality = False, False, False
         createFile(self.pam + ".backup", self.logger)
         createFile(self.pam2 + ".backup", self.logger)
