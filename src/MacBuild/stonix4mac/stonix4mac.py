@@ -152,7 +152,7 @@ if __name__ == "__main__" :
             
             log_message("minor version: \"" + str(minor_version) + "\"")
             
-            if int(minor_version) > 8:
+            if int(minor_version) >= 8:
                     """
                     Log and go to the next check..
                     """
@@ -163,24 +163,24 @@ if __name__ == "__main__" :
     
             else :
                 """
-                Warn that the app is not running on 10.9 or above
+                Warn that the app is not running on 10.8 or above
                 """
                 log_message("Setting up Check for 10.8 and below warning dialog...", \
                             "normal", message_level)
                 
                 warningMessage = "<h2>Warning:</h2>" + \
-                "<center>Requires Mavericks (10.9) or above," + \
+                "<center>Requires Mountain Lion (10.8) or above," + \
                 "<br><br>Cannot run on: " + str(os_vers) + \
                 "<br><br>Exiting program.</center>"
                 
                 notMountainLion = GeneralWarning()
                 notMountainLion.setWarningMessage(warningMessage)
-                notMountainLion.setWindowTitle("Requires 10.9 or above")
+                notMountainLion.setWindowTitle("Requires 10.8 or above")
                 notMountainLion.setOpenExternalLinks()
                 notMountainLion.show()
                 notMountainLion.raise_()
             
-                log_message("Finished setting up Check for 10.9 or above warning dialog...", \
+                log_message("Finished setting up Check for 10.8 or above warning dialog...", \
                             "normal", message_level)
             app.exec_()    
         else:
