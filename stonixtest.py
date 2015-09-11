@@ -21,7 +21,6 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-from _curses import ERR
 '''
 This is the test suite for stonix
 @author: ekkehard j. koch, roy s. nielsen
