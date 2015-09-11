@@ -29,6 +29,7 @@
 @change: 2015/03/11 ekkehard streamlined for stonix & comments
 @change: 2015/06/10 ekkehard enhance LDAP lookup
 '''
+import os
 import re
 import traceback
 import types
@@ -740,30 +741,31 @@ class MacInfoLANL():
         @return: string
         '''
         self.LANLAssetTagFilesystem = ""
-        try:
-            fileToOpen = open(self.lanl_property_file, "r")
-        except Exception, err:
-            messagestring = "Cannot open: " + self.lanl_property_file + \
-            "Exception: " + str(err)
-            self.logdispatch.log(LogPriority.ERROR, messagestring)
-        else:
-            try :
-                for line in fileToOpen:
-                    if re.match("[0-9]+", line.strip()):
-                        self.LANLAssetTagFilesystem = line.strip()
-                        messagestring = self.lanl_property_file + \
-                        " property number = " + self.LANLAssetTagFilesystem
-                        self.logdispatch.log(LogPriority.DEBUG, messagestring)
-                        break
-                    else :
-                        self.LANLAssetTagFilesystem = ""
+        if os.path.exists(self.lanl_property_file):
+            try:
+                fileToOpen = open(self.lanl_property_file, "r")
             except Exception, err:
-                messagestring = str(err) + " - Can't find a line in the file: " + \
-                self.LANLAssetTagFilesystem
+                messagestring = "Cannot open: " + self.lanl_property_file + \
+                    "\nException: " + str(err)
                 self.logdispatch.log(LogPriority.ERROR, messagestring)
-                self.LANLAssetTagFilesystem = ""
             else:
-                fileToOpen.close()
+                try:
+                    for line in fileToOpen:
+                        if re.match("[0-9]+", line.strip()):
+                            self.LANLAssetTagFilesystem = line.strip()
+                            messagestring = self.lanl_property_file + \
+                            " property number = " + self.LANLAssetTagFilesystem
+                            self.logdispatch.log(LogPriority.DEBUG, messagestring)
+                            break
+                        else :
+                            self.LANLAssetTagFilesystem = ""
+                except Exception, err:
+                    messagestring = str(err) + " - Can't find a line in the file: " + \
+                    self.LANLAssetTagFilesystem
+                    self.logdispatch.log(LogPriority.ERROR, messagestring)
+                    self.LANLAssetTagFilesystem = ""
+                else:
+                    fileToOpen.close()
         return self.LANLAssetTagFilesystem
 
     def initializeDiskUtilityInfo(self):
