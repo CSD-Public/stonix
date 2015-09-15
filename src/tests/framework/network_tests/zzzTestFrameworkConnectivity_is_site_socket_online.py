@@ -29,7 +29,7 @@ import unittest
 sys.path.append("..")
 
 from src.stonix_resources.Connectivity import Connectivity
-from src.tests.lib.logdispatcher_mock import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 
 from connectivity_test_data import test_case_data_site_socket_online
