@@ -31,7 +31,7 @@ import os
 import time
 import unittest
 from src.stonix_resources.environment import Environment
-from src.tests.lib.logdispatcher_mock import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.ServiceHelper import ServiceHelper
 
 

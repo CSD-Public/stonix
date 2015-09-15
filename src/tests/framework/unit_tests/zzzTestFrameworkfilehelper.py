@@ -30,7 +30,7 @@ import unittest
 import os
 from src.stonix_resources.filehelper import FileHelper as FileHelper
 import src.stonix_resources.environment as environment
-import src.tests.lib.logdispatcher_mock as logdispatcher
+import src.tests.lib.logdispatcher_lite as logdispatcher
 import src.stonix_resources.StateChgLogger as StateChgLogger
 
 
