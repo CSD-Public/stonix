@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.StateChgLogger import StateChgLogger
-from src.tests.lib.logdispatcher_mock import LogDispatcher, LogPriority
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 import unittest
 
 
