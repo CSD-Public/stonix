@@ -29,13 +29,16 @@ Created on Mar 7, 2013
 @change: 04/18/2014 dkennel Updated to use new style CI
 @change: 2015/04/14 dkennel upddated to use new isApplicable
 @change: 2015/08/26 ekkehard [artf37769] : ConfigureSudo(56) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
+@change: 2015/09/06 Breen Malmberg, re-wrote rule
 '''
 from __future__ import absolute_import
-from ..stonixutilityfunctions import setPerms, checkPerms, readFile
-from ..stonixutilityfunctions import writeFile, resetsecon
+
+from ..stonixutilityfunctions import setPerms, checkPerms
+from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
+
 import traceback
 import os
 import re
@@ -78,7 +81,143 @@ CONFIGURESUDO to False.'''
         default2 = True
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
 
-        self.wrongconfig = False
+        self.localization()
+
+    def localization(self):
+        '''
+        set up class variables, specific to OS type
+
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Running localization() method...")
+
+        self.sudoersfile = '/etc/sudoers' # default
+        sudoerslocs = ['/etc/sudoers', '/private/etc/sudoers', '/usr/local/etc/sudoers']
+        for loc in sudoerslocs:
+            if os.path.exists(loc):
+                self.sudoersfile = loc
+
+        try:
+
+            self.pkghelper = Pkghelper(self.logger, self.environ)
+
+            self.searchusl = 'ALL=\(ALL\)' # default
+            self.fixusl = 'ALL=(ALL)' # default
+            if self.environ.getostype() == 'Mac OS X':
+                self.searchusl = "ALL=\(ALL\)"
+                self.fixusl = "ALL=(ALL)"
+            elif self.pkghelper.manager == 'apt-get':
+                self.searchusl = "ALL=\(ALL\:ALL\)"
+                self.fixusl = "ALL=(ALL:ALL)"
+
+        except Exception:
+            raise
+
+    def readFile(self, filepath):
+        '''
+        get and return contents of file filepath
+
+        @param filepath: string full path to file to read from
+        @return: contentlines
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        contentlines = []
+
+        try:
+
+            self.logger.log(LogPriority.DEBUG, "Running readFile() method...")
+            if os.path.exists(filepath):
+                f = open(filepath, 'r')
+                contentlines = f.readlines()
+                f.close()
+            if not contentlines:
+                self.detailedresults += '\nYour sudoers file appears to be completely empty. This is not a good thing.'
+                self.logger.log(LogPriority.DEBUG, "The sudoers file appears to be completely empty!")
+
+        except Exception:
+            raise
+
+        return contentlines
+
+    def findString(self, searchstring):
+        '''
+        search for parameter searchstring, in self.sudoersfile
+
+        @param searchstring: string to search for in self.sudoersfile
+        @return: found
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        found = False
+
+        try:
+
+            self.logger.log(LogPriority.DEBUG, "Running findString() method...")
+            contentlines = self.readFile(self.sudoersfile)
+
+            for line in contentlines:
+                if re.search(searchstring, line):
+                    found = True
+
+        except Exception:
+            raise
+
+        return found
+
+    def fixSudoers(self, fixstring):
+        '''
+        wrapper to run fix actions for sudoers
+
+        @param fixstring: string the string to write to the file
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        replaced = False
+        sudoerstmp = self.sudoersfile + '.stonixtmp'
+        appended = False
+
+        try:
+
+            self.logger.log(LogPriority.DEBUG, "Running fixSudoers() method...")
+
+            contentlines = self.readFile(self.sudoersfile)
+            for line in contentlines:
+                if re.search('^' + self.groupname, line):
+                    contentlines = [c.replace(line, fixstring + '\n') for c in contentlines]
+                    replaced = True
+                    self.logger.log(LogPriority.DEBUG, "Found incorrect entry in file: " + str(self.sudoersfile) + ' and replaced it')
+
+            if not replaced:
+                self.logger.log(LogPriority.DEBUG, "Appended correct config entry to file: " + str(self.sudoersfile))
+                contentlines.append('\n' + fixstring)
+                appended = True
+            f = open(sudoerstmp, 'w')
+            f.writelines(contentlines)
+            f.close()
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "conf",
+                     "filepath": self.sudoersfile}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(self.sudoersfile, sudoerstmp, myid)
+            os.rename(sudoerstmp, self.sudoersfile)
+
+            if not replaced and not appended:
+                retval = False
+                self.logger.log(LogPriority.DEBUG, "Contents were unable to be changed in file: " + str(self.sudoersfile))
+
+        except Exception:
+            raise
+
+        return retval
 
     def report(self):
         '''
@@ -87,75 +226,50 @@ CONFIGURESUDO to False.'''
         @author: dwalker
         @param self - essential if you override this definition
         @return: bool - True if system is compliant, False if it isn't
+        @change: Breen Malmberg, 9/6/2015, re-wrote method
         '''
+
         try:
-            self.present = False
-            compliant = True
+
             self.detailedresults = ""
-            if self.environ.getosfamily() == "linux":
-                self.ph = Pkghelper(self.logger, self.environ)
-                self.path = "/etc/sudoers"
-            elif self.environ.getostype() == "Mac OS X":
-                self.path = "/private/etc/sudoers"
-            elif self.environ.getosfamily() == "freebsd":
-                self.ph = Pkghelper(self.logger, self.environ)
-                self.path = "/usr/local/etc/sudoers"
-            groupname = "%" + self.ci.getcurrvalue()
-            if os.path.exists(self.path):
-                contents = readFile(self.path, self.logger)
-                
-                #make sure sudoers file isn't blank
-                if not contents:
-                    info = "You have some serious issues, /etc/passwd " + \
-                    "is blank"
-                    self.detailedresults = info
-                    self.logger.log(LogPriority.INFO, info)
-                    compliant = False
-                else:
-                    for line in contents:
-                        
-                        #look for the specified group name in the sudoers file
-                        if re.search("^" + groupname, line.strip()):
-                            self.present = True
-                            line = line.split()
-                            try:
-                                #different systems have different file formats
-                                if self.environ.getostype() == "Mac OS X":
-                                    if line[1] != "ALL=(ALL)" or line[2] \
-                                                                       !="ALL":
-                                        self.wrongconfig = True
-                                elif self.ph.manager == "apt-get":
-                                    if line[1] != "ALL=(ALL:ALL)" or line[2] \
-                                                                       !="ALL":
-                                        self.wrongconfig = True
-                                else:
-                                    if line[1] != "ALL=(ALL)" or line[2] \
-                                                                       !="ALL":
-                                        self.wrongconfig = True
-                            except IndexError:
-                                compliant = False
-                                debug = traceback.format_exc() + "\n"
-                                debug += "Index out of range on line: " + line + "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                break
-                    #make sure the sudoers file has correct permissions
-                    if not checkPerms(self.path, [0, 0, 288], self.logger):
-                        self.compliant = False
-            if not self.present or self.wrongconfig:
-                compliant = False
-            self.compliant = compliant
+            self.compliant = True
+
+            # set up some class variables
+            self.groupname = "%" + self.ci.getcurrvalue()
+            self.fixstring = '# Added by STONIX\n' + self.groupname + '\t' + self.fixusl + '\tALL\n'
+            self.searchstring = '^' + self.groupname + '\s*' + self.searchusl + '\s*ALL'
+
+            # make sure the sudoers file exists
+            if not os.path.exists(self.sudoersfile):
+                self.detailedresults += '\nUnable to locate the sudoers file!'
+                self.logger.log(LogPriority.DEBUG, "Unable to locate the sudoers file!")
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
+            else:
+                # make sure the sudoers file contains the correct user specification configuration
+                if not self.findString(self.searchstring):
+                    self.compliant = False
+                    self.detailedresults += '\nCorrect User specification line was not found in sudoers file. Should be:\n' + self.groupname + '\t' + self.fixusl + '\tALL'
+                    self.logger.log(LogPriority.DEBUG, 'Correct User specification line was not found in sudoers file')
+
+                #make sure the sudoers file has correct permissions
+                if not checkPerms(self.sudoersfile, [0, 0, 288], self.logger):
+                    self.compliant = False
+                    self.detailedresults += '\nThe permissions and/or ownership is set incorrectly, on file: ' + str(self.path)
+                    self.logger.log(LogPriority.DEBUG, 'Permissions and/or ownership is set incorrectly on sudoers file')
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
@@ -165,81 +279,41 @@ CONFIGURESUDO to False.'''
         @author: dwalker
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
+        @change: Breen Malmberg, 9/6/2015, re-wrote method
         '''
+
         try:
-            self.detailedresults = ""
-            if not self.ci2.getcurrvalue():
-                return
-            
-            #clear out event history so only the latest fix is recorded
+
             self.iditerator = 0
+            fixresult = True
+            self.detailedresults = ""
+
+            if not self.ci2.getcurrvalue():
+                self.detailedresults += '\nRule was not enabled, so nothing was done'
+                self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
+                return
+
+            #clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            self.logger.log(LogPriority.DEBUG, "Clearing event list for this rule...")
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
+            # run fix actions
+            if not self.fixSudoers(self.fixstring):
+                fixresult = False
+
             #we don't record a change event for permissions
-            if not checkPerms(self.path, [0, 0, 288], self.logger):
-                if not setPerms(self.path, [0, 0, 288], self.logger):
-                    self.rulesuccess = False
-            
-            #get the string value of group name entered by user; default:wheel
-            sudogroup = "%" + self.ci.getcurrvalue()
-            tempstring = ""
-            tmpfile = self.path + ".tmp"
-            contents = readFile(self.path, self.logger)
-            
-            #make sure sudoers file isn't blank
-            if contents:
-                
-                if self.environ.getostype() == "Mac OS X":
-                    add = sudogroup + "     ALL=(ALL)         ALL\n"
-                #apt-get systems have a different format
-                elif self.ph.manager == "apt-get":
-                    add = sudogroup + "     ALL=(ALL:ALL)     ALL\n"
-                else:
-                    add = sudogroup + "     ALL=(ALL)         ALL\n"
-                
-                #the group wasn't present at all
-                if not self.present:
-                    for line in contents:
-                        tempstring = tempstring + line
-                        
-                #group was found but doesn't have proper contents
-                elif self.wrongconfig:
-                    for line in contents:
-                        #we will exclude the line
-                        if re.search("^" + sudogroup, line.strip()):
-                            continue
-                        else:
-                            tempstring += line
-                            
-                #write new file and record event
-                if tempstring:
-                    tempstring += add
-                    if not writeFile(tmpfile, tempstring, self.logger):
-                        self.rulesuccess = False
-                    else:
-                        myid = "0056001"
-                        event = {"eventtype": "conf",
-                                 "filepath": self.path}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.path, 
-                                                                 tmpfile, myid)
-                        os.rename(tmpfile, self.path)
-                        setPerms(self.path, [0, 0, 288], self.logger)
-                        resetsecon(self.path)
-            else:
-                self.detailedresults += "Sudoers file is blank.  Can't do " + \
-                "anything.\n"
-                self.rulesuccess = False
+            if not setPerms(self.sudoersfile, [0, 0, 288], self.logger):
+                    fixresult = False
+                    self.detailedresults += '\nCould not set permissions on file: ' + str(self.sudoersfile)
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+        self.formatDetailedResults("fix", fixresult, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
+        return fixresult
