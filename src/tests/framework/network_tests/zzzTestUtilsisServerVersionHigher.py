@@ -35,12 +35,12 @@ unittest work (python -m unittest -v <testname, without filename extension>)
 import sys
 import unittest
 
-from src.tests.lib.logdispatcher_mock import LogPriority
+from src.tests.lib.logdispatcher_lite import LogPriority
 from src.stonix_resources.stonixutilityfunctions import isServerVersionHigher
 ###############################
 # Import Mocks for testing
 ######
-from src.tests.lib.logdispatcher_mock import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.tests.lib.environment_mac_mock import Environment
 
 ###############################
