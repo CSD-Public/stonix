@@ -33,7 +33,7 @@ import re
 import unittest
 import src.stonix_resources.rule as rule
 import src.stonix_resources.environment as environment
-import src.tests.lib.logdispatcher_mock as logdispatcher
+import src.tests.lib.logdispatcher_lite as logdispatcher
 import src.stonix_resources.StateChgLogger as StateChgLogger
 import src.stonix_resources.configuration as configuration
 

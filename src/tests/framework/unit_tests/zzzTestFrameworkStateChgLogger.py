@@ -31,7 +31,7 @@ import os
 import shutil
 import unittest
 import src.stonix_resources.environment as environment
-import src.tests.lib.logdispatcher_mock as logdispatcher
+import src.tests.lib.logdispatcher_lite as logdispatcher
 import src.stonix_resources.StateChgLogger as StateChgLogger
 
 
