@@ -28,9 +28,9 @@ Created on Jul 14, 2015
 '''
 from __future__ import absolute_import
 import unittest
-from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.logdispatcher import LogPriority
+from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.NoCachedFDEKeys import NoCachedFDEKeys
 
 
