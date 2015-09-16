@@ -59,7 +59,7 @@ class DisableIPV6(Rule):
         self.guidance = ["NSA 2.5.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         #configuration item instantiation
         datatype = 'bool'
@@ -155,18 +155,24 @@ class DisableIPV6(Rule):
         self.cmdhelper = CommandHelper(self.logger)
         cmd = ["/usr/sbin/networksetup", "-listallnetworkservices"]
         if not self.cmdhelper.executeCommand(cmd):
+            self.detailedresults += "Unable to run " + \
+                "networksetup -listallnetworkservices command\n"
             return False
         output = self.cmdhelper.getOutput()
         for item in output:
             item = item.strip()
             cmd = ["/usr/sbin/networksetup", "-getinfo", item]
             if not self.cmdhelper.executeCommand(cmd):
+                self.detailedresults += "Unable to run " + \
+                    "networksetup -getinfo command\n"
                 return False
             output2 = self.cmdhelper.getOutput()
             for item2 in output2:
                 if re.search("^IPv6:", item2):
                     check = item2.split(":")
                     if check[1].strip() != "Off":
+                        self.detailedresults += "IPV6 is not turned off " + \
+                            "for " + item + " interface\n"
                         self.ifaces.append(item)
                         compliant = False
         return compliant
