@@ -654,8 +654,8 @@ development but some existing applications may use insecure side effects.'''
                                   'myfile': conffile}
                         self.statechglogger.recordchgevent(eid1, event1)
                 if os.path.exists(confpath):
-                    if os.path.islink(conffile):
-                        os.remove(conffile)
+                    if os.path.islink(confpath):
+                        os.remove(confpath)
                     else:
                         shutil.move(confpath, disabledir)
                         type2 = 'move'
