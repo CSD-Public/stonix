@@ -32,6 +32,7 @@ updating automatically from a scheduled job where feasible.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/04/20 dkennel updated to check rpmrc files for "nosignature"
          option per DISA STIG.
+@change: 2015/09/11 eball Fix apt-get compatibility
 '''
 from __future__ import absolute_import
 import os
@@ -41,6 +42,8 @@ import traceback
 import random
 
 from ..rule import Rule
+from ..CommandHelper import CommandHelper
+from ..pkghelper import Pkghelper
 from ..stonixutilityfunctions import resetsecon
 from ..logdispatcher import LogPriority
 from ..localize import PROXY, UPDATESERVERS
@@ -66,31 +69,30 @@ class SoftwarePatching(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "The SoftwarePatching rule will check to see if " + \
-        "the patched, is using local update sources if available and is " + \
-        "using gpg secured updates where applicable. This rule will also " + \
-        "ensure that the system has a scheduled (cron) job to install " + \
-        "updates automatically on systems where that is feasible."
+            "all software is patched, if the computer is using local " + \
+            "update sources (if available), and if the package manager is " + \
+            "using GPG secured updates where applicable. This rule will " + \
+            "also ensure that the system has a scheduled (cron) job to " + \
+            "install updates automatically on systems where that is feasible."
         self.rootrequired = True
         self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
         self.ci = self.initCi("bool",
                               "scheduledupdate",
-                              "To disable creation of a scheduled " + \
-                              "update job set the value of this " + \
-                              "setting to no or false. Doing so " + \
-                              "puts a larger burden for keeping " + \
-                              "this system up to date on the system " + \
-                              "administrators. This setting doesn't " + \
-                              "apply to some systems whose updates " + \
-                              "cannot be installed automatically " + \
+                              "To disable creation of a scheduled " +
+                              "update job set the value of this " +
+                              "setting to no or false. Doing so " +
+                              "puts a larger burden for keeping " +
+                              "this system up to date on the system " +
+                              "administrators. This setting doesn't " +
+                              "apply to some systems whose updates " +
+                              "cannot be installed automatically " +
                               "for various reasons.",
                               True)
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
-        self.patchingcurrent = False
-        self.crons = False
-        self.localupdates = False
-        self.updatesec = False
         self.caveats = ''
+        self.ch = CommandHelper(self.logger)
+        self.ph = Pkghelper(self.logger, self.environ)
 
     def updated(self):
         '''
@@ -103,10 +105,14 @@ class SoftwarePatching(Rule):
         @author: dkennel
         '''
         updated = False
+        osEnvBkup = os.environ
         try:
             self.logger.log(LogPriority.DEBUG, 'Looking for packaging system')
             if os.path.exists('/usr/bin/yum'):
                 self.logger.log(LogPriority.DEBUG, 'Found yum')
+                if PROXY is not None:
+                    os.environ["http_proxy"] = PROXY
+                    os.environ["https_proxy"] = PROXY
                 cmd = '/usr/bin/yum -q check-update &> /dev/null'
                 ret = subprocess.call(cmd, shell=True, close_fds=True)
                 self.logger.log(LogPriority.DEBUG,
@@ -121,7 +127,7 @@ class SoftwarePatching(Rule):
                                        stderr=subprocess.PIPE)
                 chkdata = chk.stdout.readlines()
                 self.logger.log(LogPriority.DEBUG,
-                                'Value of freebsd-update fetch: ' + \
+                                'Value of freebsd-update fetch: ' +
                                 str(chkdata))
                 for line in chkdata:
                     if re.search('No updates needed', line):
@@ -129,33 +135,32 @@ class SoftwarePatching(Rule):
             elif os.path.exists('/usr/bin/apt-get'):
                 self.logger.log(LogPriority.DEBUG, 'Found apt-get')
                 cmd = '/usr/bin/apt-get'
-                if not PROXY == None:
-                    cmd = 'export http_proxy=' + PROXY + '; ' + cmd
+                if PROXY is not None:
+                    os.environ["http_proxy"] = PROXY
+                    os.environ["https_proxy"] = PROXY
                 cmd1 = cmd + ' -q update &> /dev/null'
                 cmd2 = cmd + ' -s upgrade'
-                ret = subprocess.call(cmd1, shell=True, close_fds=True)
+                self.ch.executeCommand(cmd1)
+                ret = self.ch.getReturnCode()
                 self.logger.log(LogPriority.DEBUG,
                                 'Value of apt-get update: ' + str(ret))
                 if ret != 0:
                     # we couldn't update the apt-get cache network problem?
                     return False
-                chk = subprocess.Popen(cmd2, shell=True, close_fds=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-                chkdata = chk.stdout.readlines()
+                self.ch.executeCommand(cmd2)
+                chk = self.ch.getReturnCode()
+                chkdata = self.ch.getOutputString()
                 self.logger.log(LogPriority.DEBUG,
-                                'Value of apt-get -s upgrade: ' + \
-                                 str(chkdata))
-                for line in chkdata:
-                    if re.search('^0 upgraded', line):
-                        updated = True
-                        break
+                                'Value of apt-get -s upgrade: ' + chkdata)
+                if re.search('^0 upgraded', chkdata, re.M):
+                    updated = True
             elif os.path.exists('/usr/bin/emerge'):
                 self.logger.log(LogPriority.DEBUG, 'Found emerge')
                 cmd = '/usr/bin/emerge'
                 cmd = '/usr/bin/apt-get'
-                if not PROXY == None:
-                    cmd = 'export http_proxy=' + PROXY + '; ' + cmd
+                if PROXY is not None:
+                    os.environ["http_proxy"] = PROXY
+                    os.environ["https_proxy"] = PROXY
                 cmd1 = cmd + ' --sync'
                 cmd2 = cmd + ' -NuDp'
                 ret = subprocess.call(cmd1, shell=True, close_fds=True)
@@ -178,6 +183,9 @@ class SoftwarePatching(Rule):
                     updated = True
             elif os.path.exists('/usr/bin/zypper'):
                 self.logger.log(LogPriority.DEBUG, 'Found zypper')
+                if PROXY is not None:
+                    os.environ["http_proxy"] = PROXY
+                    os.environ["https_proxy"] = PROXY
                 cmd = '/usr/bin/zypper lp'
                 chk = subprocess.Popen(cmd, shell=True, close_fds=True,
                                        stdout=subprocess.PIPE,
@@ -193,10 +201,11 @@ class SoftwarePatching(Rule):
                     updated = True
             else:
                 self.caveats = self.caveats + 'Could not determine update ' + \
-                'status of this system. '
+                    'status of this system. '
         except(OSError):
             # Something bad happened while checking the status of updates
             return False
+        os.environ = osEnvBkup
         return updated
 
     def report(self):
@@ -208,46 +217,56 @@ class SoftwarePatching(Rule):
         try:
             self.detailedresults = ""
             self.logger.log(LogPriority.DEBUG, 'Checking patching')
-            self.patchingcurrent = self.updated()
+            patchingcurrent = self.updated()
             self.logger.log(LogPriority.DEBUG, 'Checking cron jobs')
-            self.crons = self.cronsconfigured()
-            self.logger.log(LogPriority.DEBUG, 'Checking update source')
-            self.localupdates = self.localupdatesource()
-            self.logger.log(LogPriority.DEBUG, 'Checking update security')
-            self.updatesec = self.updatesecurity()
-            self.logger.log(LogPriority.DEBUG,
-                            'self.patchingcurrent=' + \
-                            str(self.patchingcurrent))
-            self.logger.log(LogPriority.DEBUG,
-                            'self.crons=' + str(self.crons))
-            self.logger.log(LogPriority.DEBUG,
-                            'self.localupdates=' + str(self.localupdates))
-            self.logger.log(LogPriority.DEBUG,
-                            'self.updatesec=' + str(self.updatesec))
+            crons = self.cronsconfigured()
+            if not self.ph.determineMgr() == "apt-get":
+                self.logger.log(LogPriority.DEBUG, 'Checking update source')
+                localupdates = self.localupdatesource()
+                self.logger.log(LogPriority.DEBUG, 'Checking update security')
+                updatesec = self.updatesecurity()
+                self.logger.log(LogPriority.DEBUG,
+                                'patchingcurrent=' +
+                                str(patchingcurrent))
+                self.logger.log(LogPriority.DEBUG,
+                                'crons=' + str(crons))
+                self.logger.log(LogPriority.DEBUG,
+                                'localupdates=' + str(localupdates))
+                self.logger.log(LogPriority.DEBUG,
+                                'updatesec=' + str(updatesec))
+            else:
+                localupdates = True
+                updatesec = True
 
-            if self.patchingcurrent and self.crons and self.localupdates and \
-            self.updatesec:
+            if patchingcurrent and crons and localupdates and \
+               updatesec:
                 self.compliant = True
                 self.currstate = 'configured'
                 self.detailedresults = 'System appears to be up to date ' + \
-                'and all software patching settings look correct.'
+                    'and all software patching settings look correct.\n'
 
             else:
                 self.detailedresults = 'The following problems were ' + \
-                'detected with system software patching: '
-            if not self.patchingcurrent:
+                    'detected with system software patching:\n'
+            if not patchingcurrent:
                 self.detailedresults = self.detailedresults + \
-                'The system is not current on available updates. '
-            if not self.crons:
+                    'The system is not current on available updates.\n'
+            if not crons:
                 self.detailedresults = self.detailedresults + \
-                'The system is not configured for automatic updates. '
-            if not self.localupdates:
+                    'The system is not configured for automatic updates.\n'
+            if not localupdates:
                 self.detailedresults = self.detailedresults + \
-                'The system is not configured to use a local update source. '
-            if not self.updatesec:
+                    'The system is not configured to use a local ' + \
+                    'update source.\n'
+            if not updatesec:
                 self.detailedresults = self.detailedresults + \
-                'The system is not configured to use signed updates.' + \
-                'Check yum.conf, all rpmrc files and all .repo files.'
+                    'The system is not configured to use signed updates.' + \
+                    'Check yum.conf, all rpmrc files and all .repo files.'
+
+            # Make variables available to fix()
+            self.crons = crons
+            self.updatesec = updatesec
+
             self.detailedresults = self.detailedresults + self.caveats
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -255,7 +274,7 @@ class SoftwarePatching(Rule):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -315,7 +334,7 @@ class SoftwarePatching(Rule):
             # check plist value set local = True if correct.
         else:
             self.caveats = self.caveats + \
-            'A local update source may not be available for this platform.'
+                'A local update source may not be available for this platform.'
         return local
 
     def updatesecurity(self):
