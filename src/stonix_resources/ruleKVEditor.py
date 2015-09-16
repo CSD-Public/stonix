@@ -33,6 +33,7 @@ This object is designed to automate rules using the KV Editor paradigm
 @change: 02/19/2014 ekkehard added beforefix and afterfix
 @change: 04/14/2014 ekkeahrd integrate currenthost option feature
 @change: 04/23/2014 ekkeahrd fixed statelogger only records if euid = 0
+@change: 09/16/2015 eball Changed fix() so it won't run if report is successful
 '''
 import traceback
 import types
@@ -267,11 +268,14 @@ LANL-stonix."""
                                           " was set to Disabled. No " + \
                                           "action taken!!")
                         success = True
-                    elif self.kvreportsuccessful  and \
-                    self.kvdatafixalternate == {}:
+                    # If the report was successful, and there either isn't
+                    # alt conf to write or the CI is enabled, skip fix
+                    elif (self.kvreportsuccessful and
+                          (self.kvdatafixalternate == {} or
+                           self.configurationItem.getcurrvalue())):
                         self.logdispatch.log(LogPriority.DEBUG,
                                              [self.prefix(),
-                                             "Compliant no action taken!"])
+                                              "Compliant no action taken!"])
                     elif (self.kvreportonly):
                         self.logdispatch.log(LogPriority.DEBUG,
                                              [self.prefix(),
