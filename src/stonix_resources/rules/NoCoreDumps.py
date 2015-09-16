@@ -128,13 +128,16 @@ class NoCoreDumps(Rule):
             setPerms(path, perms, self.logger)
             self.created1 = True
         elif not checkPerms(path, perms, self.logger):
+            self.detailedresults += "Permissions incorrect on " + path + "\n"
             compliant = False
         self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-        path, tmpPath, lookfor, intent, "closedeq")
-        if not self.editor.report() or not compliant:
-            return False
-        else:
-            return True
+                                     path, tmpPath, lookfor, intent,
+                                     "closedeq")
+        if not self.editor.report():
+            self.detailedresults += "correct contents were not found in " + \
+                path + " file\n"
+            compliant = False
+        return compliant
 
 ###############################################################################
 
