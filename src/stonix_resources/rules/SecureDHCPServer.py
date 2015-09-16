@@ -46,11 +46,11 @@ class SecureDHCPServer(Rule):
         self.rulename = "SecureDHCPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Configures DHCP functionality '''
+        self.helptext = '''Configures dhcp if your computer is acting as a dhcp server '''
         datatype = "bool"
         key = "SECUREDHCPSERVER"
         instructions = '''To disable this rule set the value of \
-        SECUREDHCPSERVER to False.'''
+SECUREDHCPSERVER to False.'''
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -65,6 +65,7 @@ class SecureDHCPServer(Rule):
 
     def report(self):
         try:
+            self.detailedresults = ""
             self.ph = Pkghelper(self.logger, self.environ)
             self.data1 = {"ddns-update-style": "none;",
                           "deny": ["declines;",
@@ -90,6 +91,8 @@ class SecureDHCPServer(Rule):
             #if self.ph.check(self.package):
             if os.path.exists(self.path):
                 if not checkPerms(self.path, [0, 0, 420], self.logger):
+                    self.detailedresults += "The permissions on " + \
+                        self.path + " are incorrect\n"
                     compliant = False
                 self.editor = KVEditorStonix(self.statechglogger,
                                              self.logger, "conf",
@@ -97,6 +100,8 @@ class SecureDHCPServer(Rule):
                                              self.data1, "present",
                                              "space")
                 if not self.editor.report():
+                    self.detailedresults += self.path + " doesn't contain " + \
+                        "the correct contents\n"
                     compliant = False
                 contents = readFile(self.path, self.logger)
                 for line in contents:
@@ -108,10 +113,6 @@ class SecureDHCPServer(Rule):
                             for item in self.data2:
                                 if re.search(item, line[1]):
                                     compliant = False
-#                 self.editor.setData(self.data2)
-#                 self.editor.setIntent("notpresent")
-#                 if not self.editor.report():
-#                     compliant = False
             else:
                 compliant = False
             self.compliant = compliant
