@@ -127,6 +127,8 @@ deployed applications.'''
                         'include_module modules/mod_include.so',
                         'dav_module modules/mod_dav.so',
                         'dav_fs_module modules/mod_dav_fs.so',
+                        'dav_module modules/mod_dav.so',
+                        'dav_lock_module modules/mod_dav_lock.so',
                         'status_module modules/mod_status.so',
                         'info_module modules/mod_info.so',
                         'speling_module modules/mod_speling.so',
@@ -136,9 +138,7 @@ deployed applications.'''
                         'proxy_http_module modules/mod_proxy_http.so',
                         'proxy_connect_module modules/mod_proxy_connect.so',
                         'cache_module modules/mod_cache.so',
-                        'disk_cache_module modules/mod_disk_cache.so',
-                        'file_cache_module modules/mod_file_cache.so',
-                        'mem_cache_module modules/mod_mem_cache.so',
+                        'cache_disk_module modules/mod_cache_disk.so',
                         'ext_filter_module modules/mod_ext_filter.so',
                         'expires_module modules/mod_expires.so',
                         'headers_module modules/mod_headers.so',
@@ -382,7 +382,7 @@ development but some existing applications may use insecure side effects.'''
                 self.logdispatch.log(LogPriority.DEBUG,
                                      ['SecureApacheWebserver.__modcheck',
                                       'Checking ' + str(filetocheck)])
-                rhandle = open(filepath, 'r')
+                rhandle = open(filetocheck, 'r')
                 modconf = rhandle.readlines()
                 rhandle.close()
                 for line in modconf:
@@ -393,6 +393,9 @@ development but some existing applications may use insecure side effects.'''
                             self.logdispatch.log(LogPriority.DEBUG,
                                      ['SecureApacheWebserver.__modcheck',
                                       'Found ' + str(entry)])
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                     ['SecureApacheWebserver.__modcheck',
+                                      'Line searched ' + str(line)])
                             compliant = False
                             results = results + ' File ' + filetocheck + \
                             ' contains module entry ' + entry + \
@@ -431,9 +434,10 @@ development but some existing applications may use insecure side effects.'''
                         'Required directive ' + entry + \
                         ' not found in Apache configuration. \n'
             self.logdispatch.log(LogPriority.DEBUG, 'Checking modules')
-            modcompliant, results = self.__modchk()
+            modcompliant, results = self.__modcheck()
             if not modcompliant:
                 self.modulescompliant = False
+                compliant = False
                 self.detailedresults = self.detailedresults + results
 
             self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
@@ -662,7 +666,7 @@ development but some existing applications may use insecure side effects.'''
                                  'Processing module ' + module])
                 line = 'LoadModule ' + module
                 # this matches the newline and any space + the line
-                pattern = '\n[\s]*' + line
+                pattern = '\n[\s]*' + line + '|^[\s]*' + line
                 newline = '\n# ' + line
                 modconf, numsubs = re.subn(pattern, newline, localconf)
                 self.logdispatch.log(LogPriority.DEBUG,
@@ -675,7 +679,7 @@ development but some existing applications may use insecure side effects.'''
             configtest = ''
             for path in self.binpaths:
                 if os.path.exists(path):
-                    configtest = path + ' -t &> /dev/null'
+                    configtest = path + ' -t  &> /dev/null'
                     retcode = subprocess.call(configtest, shell=True,
                                               close_fds=True)
                     if retcode != 0:
@@ -685,6 +689,7 @@ development but some existing applications may use insecure side effects.'''
                         whandle = open(conffile, 'w')
                         whandle.write(undoconf)
                         whandle.close()
+                        os.remove(tempfile)
                         self.logdispatch.log(LogPriority.INFO,
                                         ['SecureApacheWebserver.__fixapachemodules',
                                          'Conf failed test! Module changes undone.'])
@@ -692,7 +697,13 @@ development but some existing applications may use insecure side effects.'''
                 # We actually wrote our changes into the main config file so we
                 # need to flip flop the temp and primary config files
                 statdata = os.stat(conffile)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                    ['SecureApacheWebserver.__fixapachemodules',
+                                     'Moving : ' + str(conffile) + ' to ' + str(tempfile2)])
                 shutil.move(conffile, tempfile2)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                    ['SecureApacheWebserver.__fixapachemodules',
+                                     'Moving : ' + str(tempfile) + ' to ' + str(conffile)])
                 shutil.move(tempfile, conffile)
                 mytype = 'conf'
                 mystart = 'notconfigured'
@@ -707,6 +718,9 @@ development but some existing applications may use insecure side effects.'''
                 mode = stat.S_IMODE(statdata.st_mode)
                 self.statechglogger.recordchgevent(myid, event)
                 self.statechglogger.recordfilechange(conffile, tempfile2, myid)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                    ['SecureApacheWebserver.__fixapachemodules',
+                                     'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
                 os.rename(tempfile2, conffile)
                 if owner != 0 or group != 0 or mode != 420:
                     mytype2 = 'perm'
