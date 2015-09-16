@@ -384,15 +384,28 @@ development but some existing applications may use insecure side effects.'''
                                       'Checking ' + str(filetocheck)])
                 rhandle = open(filetocheck, 'r')
                 modconf = rhandle.readlines()
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['SecureApacheWebserver.__modcheck',
+                                      'Contents: ' + str(modconf)])
                 rhandle.close()
                 for line in modconf:
                     if self.comment.match(line):
                         continue
                     for entry in self.modules:
-                        if re.search(entry, line):
+                        # Ubuntu is using a different path to modules
+                        # so we split the list elements and re.search on the
+                        # back half which contains the .so
+                        entrysplit = entry.split(' ')
+                        modpath = entrysplit[1]
+#                         This code commented out because of its riduculous
+#                         verbosity but retained in case needed.
+#                         self.logdispatch.log(LogPriority.DEBUG,
+#                                      ['SecureApacheWebserver.__modcheck',
+#                                       'Comparing: ' + str(modpath) + ' ' + line])
+                        if re.search(modpath, line):
                             self.logdispatch.log(LogPriority.DEBUG,
                                      ['SecureApacheWebserver.__modcheck',
-                                      'Found ' + str(entry)])
+                                      'Found ' + str(modpath)])
                             self.logdispatch.log(LogPriority.DEBUG,
                                      ['SecureApacheWebserver.__modcheck',
                                       'Line searched ' + str(line)])
@@ -593,8 +606,9 @@ development but some existing applications may use insecure side effects.'''
         if self.modulescompliant:
             return
         movefile = False
-        if re.search('modules-enabled', conffile):
+        if re.search('mods-enabled', conffile):
             movefile = True
+        disablefile = False
         tempfile = conffile + '.stonixtmp'
         tempfile2 = conffile + '.stonixtmp2'
         changecomplete = True
@@ -613,7 +627,9 @@ development but some existing applications may use insecure side effects.'''
             filecontents = rhandle.read()
             rhandle.close()
             for module in self.modules:
-                if re.search(module, filecontents):
+                modulesplit = module.split(' ')
+                modulepath = modulesplit[1]
+                if re.search(modulepath, filecontents):
                     disablefile = True
             if disablefile:
                 confpath = re.sub('\.load', '.conf', conffile)
@@ -624,27 +640,33 @@ development but some existing applications may use insecure side effects.'''
                 if not os.path.isdir(disabledir):
                     os.makedirs(disabledir, owneronly)
                 if os.path.exists(conffile):
-                    shutil.move(conffile, disabledir)
-                    type1 = 'move'
-                    start1 = conffile
-                    end1 = re.sub('mods-enabled', 'mods-available', conffile)
-                    eid1 = eventid1
-                    event1 = {'eventtype': type1,
-                              'startstate': start1,
-                              'endstate': end1,
-                              'myfile': conffile}
-                    self.statechglogger.recordchgevent(eid1, event1)
+                    if os.path.islink(conffile):
+                        os.remove(conffile)
+                    else:
+                        shutil.move(conffile, disabledir)
+                        type1 = 'move'
+                        start1 = conffile
+                        end1 = re.sub('mods-enabled', 'mods-available', conffile)
+                        eid1 = eventid1
+                        event1 = {'eventtype': type1,
+                                  'startstate': start1,
+                                  'endstate': end1,
+                                  'myfile': conffile}
+                        self.statechglogger.recordchgevent(eid1, event1)
                 if os.path.exists(confpath):
-                    shutil.move(confpath, disabledir)
-                    type2 = 'move'
-                    start2 = confpath
-                    end2 = re.sub('mods-enabled', 'mods-available', confpath)
-                    eid2 = eventid1
-                    event2 = {'eventtype': type2,
-                              'startstate': start2,
-                              'endstate': end2,
-                              'myfile': confpath}
-                    self.statechglogger.recordchgevent(eid2, event2)
+                    if os.path.islink(conffile):
+                        os.remove(conffile)
+                    else:
+                        shutil.move(confpath, disabledir)
+                        type2 = 'move'
+                        start2 = confpath
+                        end2 = re.sub('mods-enabled', 'mods-available', confpath)
+                        eid2 = eventid1
+                        event2 = {'eventtype': type2,
+                                  'startstate': start2,
+                                  'endstate': end2,
+                                  'myfile': confpath}
+                        self.statechglogger.recordchgevent(eid2, event2)
         else:
             # Note to devs. This function calls the configtest function of the
             # apache server to check the config file for correctness. Because of
@@ -1108,6 +1130,9 @@ development but some existing applications may use insecure side effects.'''
                         conffile = event['myfile']
                         self.statechglogger.revertfilechanges(conffile,
                                                       eventid)
+                if event['eventtype'] == 'move':
+                    if event['startstate'] != event['endstate']:
+                        shutil.move(event['endstate'], event['startstate'])
                 if event['eventtype'] == 'perm':
                     if event['startstate'] != event['endstate']:
                         uid = event['startstate'][0]
