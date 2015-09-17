@@ -100,7 +100,7 @@ class ConfigurePowerManagement(Rule):
          "BatteryDiskSleep":
          {"HelpText": "Set Disk Sleep minutes on Battery Power. Default(Battery Power, disksleep, 10).",
           "PowerType": "Battery Power",
-          "PowerSetting": "displaysleep",
+          "PowerSetting": "disksleep",
           "PowerSettingValue": 10,
           "PowerSettingMinimum": 0,
           "PowerSettingMaximum": 60}
