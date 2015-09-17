@@ -31,8 +31,8 @@ from __future__ import absolute_import
 import unittest
 import os
 import time
-from src.tests.lib.logdispatcher_mock import LogPriority
-from src.tests.lib.logdispatcher_mock import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogPriority
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.CommandHelper import CommandHelper
 

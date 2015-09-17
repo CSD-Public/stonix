@@ -21,7 +21,6 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-from _curses import ERR
 '''
 This is the test suite for stonix
 @author: ekkehard j. koch, roy s. nielsen
@@ -44,11 +43,17 @@ import traceback
 
 from optparse import Option, OptionValueError
 
-from src.tests.lib.logdispatcher_mock import LogPriority
-from src.tests.lib.logdispatcher_mock import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogPriority
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.StateChgLogger import StateChgLogger
+
+#####
+# Set global variables
+debug_mode = False
+verbose_mode = False
+
 
 class ConsoleAndFileWriter():
     '''
@@ -84,10 +89,6 @@ class test_rules_and_unit_test (unittest.TestCase):
     def setUp(self):
         success = True
         self.ruleDictionary = RuleDictionary()
-        return success
-
-    def tearDown(self):
-        success = True
         return success
     
     def runTest(self):
@@ -129,10 +130,12 @@ class FrameworkDictionary():
     def __init__(self):
         self.unittestprefix = 'zzzTestFramework'
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
+        # logger & environ - a global variable that has applicable verbose and 
+        # debug values 
         self.environ = Environment()
-        self.environ.setdebugmode(False)
-        self.environ.setverbosemode(True)
         self.effectiveUserID = self.environ.geteuid()
+        self.environ.setdebugmode(debug_mode)
+        self.environ.setverbosemode(verbose_mode)
         self.config = Configuration(self.environ)
         self.logdispatch = LogDispatcher(self.environ)
         self.statechglogger = StateChgLogger(self.logdispatch, self.environ)
@@ -247,7 +250,7 @@ class RuleDictionary ():
     @change: 2015-02-25 - ekkehard - Original Implementation
     '''
     
-    def __init__(self, rule=True, unit=True, network=True, interactive=True):
+    def __init__(self, environ, logdispatcher, rule=True, unit=True, network=True, interactive=True):
         self.framework = framework
         self.rule = rule
         self.unit = unit
@@ -259,8 +262,8 @@ class RuleDictionary ():
         self.unittestprefix = 'zzzTestRule'
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
         self.environ = Environment()
-        self.environ.setdebugmode(False)
-        self.environ.setverbosemode(True)
+        self.environ.setdebugmode(debug_mode)
+        self.environ.setverbosemode(verbose_mode)
         self.effectiveUserID = self.environ.geteuid()
         self.config = Configuration(self.environ)
         self.logdispatch = LogDispatcher(self.environ)
@@ -440,9 +443,6 @@ class RuleDictionary ():
                 elif os.path.isfile("src/tests/rules/interactive/" + self.unittestprefix + str(rulefilename)):
                     class_prefix = "tests.rules.interactive_tests." 
                     self.unittestpath = "src/tests/rules/interactive_tests/"
-                else:
-                    print "continuing . . ."
-                    continue
                 
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
@@ -797,6 +797,8 @@ def isRuleInBounds(fname=""):
         exec(tmpex)
         
         environ = Environment()
+        environ.setdebugmode(debug_mode)
+        environ.setverbosemode(verbose_mode)
         config = Configuration(environ)
         logdispatcher = LogDispatcher(environ)
         stchgr = StateChgLogger(logdispatcher, environ)
@@ -1191,6 +1193,13 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
                       default=False, help="Check to make sure there is a " + \
                       "test for every rule and a rule for every rule test")
 
+    parser.add_option("-v", "--verbose", action="store_true",
+                      dest="verbose", default=False, \
+                      help="Print status messages")
+
+    parser.add_option("-d", "--debug", action="store_true", dest="debug",
+                      default=False, help="Print debug messages")
+
     parser.add_option('-m', '--modules', action="extend", type="string", 
                       dest='modules', help="Use to run a single or " + \
                       "multiple unit tests at once.  Use the test name.")
@@ -1241,6 +1250,9 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
         rule=True
         consistency = True
 
+    debug_mode = options.debug
+    verbose_mode = options.verbose
+     
     modules = options.modules
 
     consistency = options.consistency

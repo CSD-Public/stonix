@@ -22,37 +22,41 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableAdminLoginOverride
+This is a Unit Test for Rule DisableUncommonProtocols
 
 @author: Eric Ball
-@change: 2015/08/03 eball Original Implementation
+@change: 2015/09/10 eball - Original implementation
 '''
 from __future__ import absolute_import
 import unittest
 import os
-import traceback
 from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.stonixutilityfunctions import createFile, writeFile
-from src.stonix_resources.rules.DisableAdminLoginOverride import DisableAdminLoginOverride
+from src.stonix_resources.rules.DisableUncommonProtocols import DisableUncommonProtocols
 
 
-class zzzTestRuleDisableAdminLoginOverride(RuleTest):
+class zzzTestRuleDisableUncommonProtocols(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableAdminLoginOverride(self.config, self.environ,
-                                              self.logdispatch,
-                                              self.statechglogger)
+        self.rule = DisableUncommonProtocols(self.config,
+                                             self.environ,
+                                             self.logdispatch,
+                                             self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
-        if os.path.exists(self.tmppath):
-            try:
-                os.rename(self.tmppath, self.path)
-            except Exception:
-                self.logdispatch.log(LogPriority.ERROR, traceback.format_exc())
+        storconf = "/etc/modprobe.d/stor-protocols.conf"
+        stortmp = "/tmp/stor-protocols.conf"
+        stonixconf = "/etc/modprobe.d/stonix-protocols.conf"
+        stonixtmp = "/tmp/stonix-protocols.conf"
+        if os.path.exists(stortmp):
+            os.rename(stortmp, storconf)
+        if os.path.exists(stonixtmp):
+            os.rename(stonixtmp, stonixconf)
 
     def runTest(self):
         self.simpleRuleTest()
@@ -64,22 +68,15 @@ class zzzTestRuleDisableAdminLoginOverride(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: Eric Ball
         '''
+        storconf = "/etc/modprobe.d/stor-protocols.conf"
+        stortmp = "/tmp/stor-protocols.conf"
+        stonixconf = "/etc/modprobe.d/stonix-protocols.conf"
+        stonixtmp = "/tmp/stonix-protocols.conf"
+        if os.path.exists(storconf):
+            os.rename(storconf, stortmp)
+        if os.path.exists(stonixconf):
+            os.rename(stonixconf, stonixtmp)
         success = True
-        self.path = "/etc/pam.d/screensaver"
-        self.tmppath = self.path + ".utmp"
-        ssText = '''# screensaver: auth account
-auth       optional       pam_krb5.so use_first_pass use_kcminit
-auth       required       pam_opendirectory.so use_first_pass nullok
-account    required       pam_opendirectory.so
-account    sufficient     pam_self.so
-account    required       pam_group.so no_warn group=admin,wheel fail_safe
-account    required       pam_group.so no_warn deny group=admin,wheel ruser \
-fail_safe'''
-        if os.path.exists(self.path):
-            os.rename(self.path, self.tmppath)
-        createFile(self.path, self.logdispatch)
-        writeFile(self.path, ssText, self.logdispatch)
-
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

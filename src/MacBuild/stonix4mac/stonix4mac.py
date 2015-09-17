@@ -138,11 +138,21 @@ if __name__ == "__main__" :
             log_message("OS Version: \"" + str(os_vers).strip() + "\"")
             
             minver = re.search("^10\.(\d+)\.\d+$", str(os_vers))
-            minor_version = int(minver.group(1).rstrip())
+            try:
+               minor_version = int(minver.group(1).rstrip())
+            except Exception, err:
+               log_message("Error trying to get minor version: " + str(err))
+               log_message("Trying 2 number version...")
+               try:
+                    minver = re.search("^10\.(\d+).*", str(os_vers))
+                    minor_version = int(minver.group(1).rstrip())
+               except Exception, err:
+                   log_message("Having trouble acquiring minor version: " + str(err))
+                   raise err
             
             log_message("minor version: \"" + str(minor_version) + "\"")
             
-            if minor_version <= 10:
+            if int(minor_version) >= 8:
                     """
                     Log and go to the next check..
                     """
@@ -153,24 +163,24 @@ if __name__ == "__main__" :
     
             else :
                 """
-                Warn that the app is not running on 10.9 or 10.8
+                Warn that the app is not running on 10.8 or above
                 """
-                log_message("Setting up Check for 10.9 and 10.8 warning dialog...", \
+                log_message("Setting up Check for 10.8 and below warning dialog...", \
                             "normal", message_level)
                 
                 warningMessage = "<h2>Warning:</h2>" + \
-                "<center>Requires Mountain Lion (10.8) or Mavericks (10.9)," + \
+                "<center>Requires Mountain Lion (10.8) or above," + \
                 "<br><br>Cannot run on: " + str(os_vers) + \
                 "<br><br>Exiting program.</center>"
                 
                 notMountainLion = GeneralWarning()
                 notMountainLion.setWarningMessage(warningMessage)
-                notMountainLion.setWindowTitle("Requires 10.8")
+                notMountainLion.setWindowTitle("Requires 10.8 or above")
                 notMountainLion.setOpenExternalLinks()
                 notMountainLion.show()
                 notMountainLion.raise_()
             
-                log_message("Finished setting up Check for 10.8 warning dialog...", \
+                log_message("Finished setting up Check for 10.8 or above warning dialog...", \
                             "normal", message_level)
             app.exec_()    
         else:

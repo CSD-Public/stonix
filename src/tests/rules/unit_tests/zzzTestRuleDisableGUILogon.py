@@ -32,9 +32,9 @@ import unittest
 import os
 import re
 import traceback
-from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.logdispatcher import LogPriority
+from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableGUILogon import DisableGUILogon
 from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix

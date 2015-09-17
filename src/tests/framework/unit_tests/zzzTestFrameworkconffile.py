@@ -33,7 +33,7 @@ import os
 import unittest
 import src.stonix_resources.environment as environment
 import src.stonix_resources.conffile as conffile
-import src.tests.lib.logdispatcher_mock as logdispatcher
+import src.tests.lib.logdispatcher_lite as logdispatcher
 
 
 class zzzTestFrameworkconffile(unittest.TestCase):
