@@ -995,6 +995,7 @@ def assemble_list_suite(modules = []):
                         raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
                     except TestNotFound, err:
                         print "\n\tException: " + str(err.msg)
+                        sys.exit(253)
 
                 #print " *****************************************"
             elif re.match("^framework$", prefix):
@@ -1023,6 +1024,7 @@ def assemble_list_suite(modules = []):
                         raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
                     except TestNotFound, err:
                         print "\n\tException: " + str(err.msg)
+                        sys.exit(254)
 
                 #print " *****************************************"
             
