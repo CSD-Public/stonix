@@ -29,6 +29,7 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/02/15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
 @change: 2015/04/14 dkennel updated to use new isApplicable
+@change: 2015/09/17 ekkehard BatteryDiskSleep should have disksleep value not display sleep.
 '''
 from __future__ import absolute_import
 import traceback
