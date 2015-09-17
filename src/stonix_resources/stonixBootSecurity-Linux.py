@@ -5,6 +5,10 @@ This is most likely called from a job scheduled by the stonix program.
 
 @author: dkennel
 '''
+
+import subprocess
+import os
+
 def main():
     if os.path.exists('/usr/bin/amixer'):
         setlevels = "/usr/bin/amixer sset Capture Volume 0,0 mute"
@@ -17,4 +21,4 @@ def main():
             pass
         
 if __name__ == '__main__':
-    pass
+    main()
