@@ -564,7 +564,6 @@ class Environment:
         """
         Find and return the
         Property number of the local machine
-        FIXME: Do we want to get this info from hostmaster?
         @author: scmcleni
         @author: D. Kennel
         @return: int
