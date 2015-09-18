@@ -82,7 +82,28 @@ secure state at initial startup.'''
         pass
 
     def setsystemd(self):
-        pass
+        fmode = 436  # Integer representation of 664
+        unitFileContents = """[Unit]
+Description=Stonix Boot Security
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/stonix_resources/stonixBootSecurity-Linux.py
+
+[Install]
+WantedBy=multi-user.target
+"""
+        unitFilePath = '/etc/systemd/system/stonixBootSecurity.service'
+        whandle = open(unitFilePath, 'w')
+        whandle.write(unitFileContents)
+        whandle.close()
+        os.chmod(unitFilePath, fmode)
+        reloadcmd = '/bin/systemctl daemon-reload'
+        try:
+            proc = subprocess.Popen(reloadcmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, shell=True)
+        except Exception:
+            pass
 
     def setrclocal(self):
         pass
