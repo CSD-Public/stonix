@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Created on Sep 17, 2015
 Boot security program to turn off wifi, bluetooth, cameras and microphones.

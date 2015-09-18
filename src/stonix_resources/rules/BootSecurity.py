@@ -42,8 +42,8 @@ from ..logdispatcher import LogPriority
 
 class BootSecurity(object):
     '''
-    The Boot Security rule configures the system to run a job at system boot time
-    that handles turning off potential vulnerability points such as: wifi,
+    The Boot Security rule configures the system to run a job at system boot
+    time that handles turning off potential vulnerability points such as: wifi,
     bluetooth, microphones, and cameras.
     '''
 
@@ -64,7 +64,7 @@ secure state at initial startup.'''
         self.mutemicrophone = self.__initializeMuteMicrophone()
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
+                           'family': ['linux'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.type = 'rclocal'
         if os.path.exists('/bin/systemctl'):
@@ -97,6 +97,7 @@ WantedBy=multi-user.target
         whandle = open(unitFilePath, 'w')
         whandle.write(unitFileContents)
         whandle.close()
+        os.chown(unitFilePath, 0, 0)
         os.chmod(unitFilePath, fmode)
         reloadcmd = '/bin/systemctl daemon-reload'
         try:
@@ -106,7 +107,53 @@ WantedBy=multi-user.target
             pass
 
     def setrclocal(self):
-        pass
+        rclocal = '/etc/rc.local'
+        if os.path.islink(rclocal):
+            paths = ['/etc/rc.d/rc.local', '/etc/init.d/rc.local']
+            for rcpath in paths:
+                if os.path.isfile(rcpath):
+                    rclocal = rcpath
+        tempfile = rclocal + '.stonixtmp'
+        command = '/usr/bin/stonix_resources/stonixBootSecurity-Linux.py'
+        fhandle = open(rclocal, 'r')
+        rcdata = fhandle.readlines()
+        fhandle.close()
+        newdata = []
+        inserted = False
+        for line in rcdata:
+            if re.search('^#', line):
+                newdata.append(line)
+            elif re.search('^\n', line) and not inserted:
+                newdata.append(command)
+                newdata.append(line)
+                inserted = True
+            elif re.search('exit 0', line) and not inserted:
+                newdata.append(command)
+                newdata.append(line)
+                inserted = True
+            else:
+                newdata.append(line)
+        if not inserted:
+            newdata.append(command)
+        whandle = open(tempfile, 'w')
+        for line in newdata:
+            whandle.write(line)
+        whandle.close()
+        mytype1 = 'conf'
+        mystart1 = 'not configured'
+        myend1 = 'configured'
+        myid1 = '0018001'
+        self.statechglogger.recordfilechange(rclocal, tempfile, myid1)
+        event1 = {'eventtype': mytype1,
+                  'startstate': mystart1,
+                  'endstate': myend1,
+                  'myfile': rclocal}
+        self.statechglogger.recordchgevent(myid1, event1)
+        os.rename(tempfile, rclocal)
+        os.chown(rclocal, 0, 0)
+        os.chmod(rclocal, 493)  # Integer of 0777
+        self.rulesuccess = True
+        self.currstate = 'configured'
 
     def setmac(self):
         pass
