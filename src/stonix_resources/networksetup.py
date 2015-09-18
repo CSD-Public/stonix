@@ -140,9 +140,43 @@ class networksetup():
                 networkvalues["compliant"] = True
                 messagestring = ""
             if not messagestring == "":
-                messagestring = self.detailedresults + '\n' + \
-                str(key) + " - " + messagestring
+                self.resultAppend(messagestring)
         return fixed
+
+###############################################################################
+
+    def startup(self):
+        disabled = True
+        self.initialize()
+        messagestring = "for location = " + str(self.location)
+        for key in sorted(self.nso):
+            network = self.nso[key]
+            networkvalues = self.ns[network]
+            networkname = networkvalues["name"]
+            networktype = networkvalues["type"]
+            networkenabled = networkvalues["enabled"]
+            if networktype == "bluetooth" and networkenabled:
+                fixedWorked = self.disableNetworkService(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    disabled = False
+            elif networktype == "wi-fi" and networkenabled:
+                fixedWorked = self.disableNetworkService(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    disabled = False
+            else:
+                networkvalues["compliant"] = True
+                messagestring = ""
+            if not messagestring == "":
+                self.resultAppend(messagestring)
+        return disabled
 
 ###############################################################################
 
