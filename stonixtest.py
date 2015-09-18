@@ -934,6 +934,12 @@ def processFrameworkTest(filename=""):
     return modToReturn
     
          
+class TestNotFound(Exception):
+    def __init__(self, arg):
+        # set exception information
+        self.msg = arg
+
+
 def assemble_list_suite(modules = []):
     """
     Only process the list of passed in tests...
@@ -967,12 +973,14 @@ def assemble_list_suite(modules = []):
                 prefix = ""
                 
             if re.match("^rules$", prefix):
+                found = False
                 #Find the path to the test
                 for root, dirnames, filenames in os.walk("src/tests/" + prefix):
                     myfile = ""
                     for myfile in filenames:
                         regex = "^" + str(module) + ".*"
                         if re.match(regex, myfile):
+                            found = True
                             testToRunMod = processRuleTest(root + "/" + myfile)
                             #print "******************************************"
                             #print "Checking out " + str(module)
@@ -982,8 +990,16 @@ def assemble_list_suite(modules = []):
                                 # Add the import to a list, to later "map" to a test suite
                                 testList.append(testToRunMod)
                                 #print "Adding test to suite..."   
-                            #print " *****************************************"
+                if not found: 
+                    try:   
+                        raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
+                    except TestNotFound, err:
+                        print "\n\tException: " + str(err.msg)
+                        sys.exit(253)
+
+                #print " *****************************************"
             elif re.match("^framework$", prefix):
+                found = False
                 #Find the path to the test
                 for root, dirnames, filenames in os.walk("src/tests/" + prefix):
                     myfile = ""
@@ -993,6 +1009,7 @@ def assemble_list_suite(modules = []):
                         #print "\tRelPath: " + str(root + "/" + myfile)
                         regex = "^" + str(module) + ".*"
                         if re.match(regex, myfile):
+                            found = True
                             #print "******************************************"
                             #print "Checking out " + str(myfile)
                             testToRunMod = processFrameworkTest(root + "/" + myfile)
@@ -1002,10 +1019,21 @@ def assemble_list_suite(modules = []):
                                 # Add the import to a list, to later "map" to a test suite
                                 testList.append(testToRunMod)     
                                 #print "Adding test to suite..."   
-                            #print " *****************************************"
+                if not found:
+                    try:   
+                        raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
+                    except TestNotFound, err:
+                        print "\n\tException: " + str(err.msg)
+                        sys.exit(254)
+
+                #print " *****************************************"
             
             else:
-                raise "Error attempting insert test into test list..."
+                try:
+                    raise TestNotFound("Error attempting insert test (" + str(module) + ") into test list...\n")
+                except TestNotFound, err:
+                    print "\n\tException: " + str(err.msg)
+                    sys.exit(255)
             
     #####
     # Set up the test loader function
