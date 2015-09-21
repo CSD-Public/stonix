@@ -146,33 +146,18 @@ class ReqPassSysPref(Rule):
             self.statechglogger.deleteentry(event)
 
         # The output from the "security" command needs to be written to a
-        # plist. "defaults" can then be used for read and write operations to
-        # particular keys, though the output is a binary file. The bin files
-        # are then read back into a string and piped back into "security".
+        # plist. "defaults" made unwanted changes to the list, so regex sub
+        # is used instead. This is then piped back into the security command.
         try:
             for pref in self.plists:
-                tmppath = "/tmp/" + pref + ".plist"
-                debug = "Writing plist info to " + pref
+                contents = self.plists[pref]
+                contents = re.sub(r"(<key>shared</key>\s+<)\w+/>",
+                                  r"\1false/>", contents)
+                p = Popen(["security", "authorizationdb", "write", pref],
+                          stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+                secOut = p.communicate(contents)[0]
+                debug = "Popen result for " + pref + ": " + secOut
                 self.logger.log(LogPriority.DEBUG, debug)
-                open(tmppath, "w").write(self.plists[pref])
-
-                cmd = ["defaults", "write", tmppath, "shared", "-bool",
-                       "false"]
-                if not self.ch.executeCommand(cmd):
-                    success = False
-                    results += "Fix failed to write new value to " + tmppath \
-                        + "\n"
-                cmd = ["defaults", "read", tmppath]
-                if not self.ch.executeCommand(cmd):
-                    success = False
-                    results += "Fix could not read " + tmppath + "\n"
-                else:
-                    plistContents = self.ch.getOutputString()
-                    p = Popen(["security", "authorizationdb", "write", pref],
-                              stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                    secOut = p.communicate(plistContents)[0]
-                    debug = "Popen result for " + pref + ": " + secOut
-                    self.logger.log(LogPriority.DEBUG, debug)
                 if not re.search("YES", secOut):
                     success = False
                     results += "'security authorizationdb write' command " + \
@@ -215,8 +200,7 @@ class ReqPassSysPref(Rule):
                     event = self.statechglogger.getchgevent(entry)
                     # The entire process must be done in reverse. Get the info
                     # from "security", write to a plist, manipulate with
-                    # "defaults", re-write to a string, then pipe back into
-                    # "security".
+                    # re.sub, then pipe back into "security".
                     if event["eventtype"] == "applesec":
                         pref = event["pref"]
                         if not self.ch.executeCommand(["security",
@@ -228,26 +212,14 @@ class ReqPassSysPref(Rule):
                         plist = self.ch.getOutput()
                         del plist[0]
                         plist = "".join(plist)
-                        tmppath = "/tmp/" + pref + ".undo.plist"
-                        open(tmppath, "w").write(plist)
-                        cmd = ["defaults", "write", tmppath, "shared", "-bool",
-                               "true"]
-                        if not self.ch.executeCommand(cmd):
-                            success = False
-                            results += "Undo failed to write new value to " + \
-                                tmppath + "\n"
-                        cmd = ["defaults", "read", tmppath]
-                        if not self.ch.executeCommand(cmd):
-                            success = False
-                            results += "Undo could not read " + tmppath + "\n"
-                        else:
-                            plistContents = self.ch.getOutputString()
-                            p = Popen(["security", "authorizationdb",
-                                       "write", pref],
-                                      stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                            secOut = p.communicate(plistContents)[0]
-                            debug = "Popen result for " + pref + ": " + secOut
-                            self.logger.log(LogPriority.DEBUG, debug)
+                        plist = re.sub(r"(<key>shared</key>\s+<)\w+/>",
+                                       r"\1true/>", plist)
+                        p = Popen(["security", "authorizationdb",
+                                   "write", pref],
+                                  stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+                        secOut = p.communicate(plist)[0]
+                        debug = "Popen result for " + pref + ": " + secOut
+                        self.logger.log(LogPriority.DEBUG, debug)
                         if not re.search("YES", secOut):
                             success = False
                             results += "'security authorizationdb write' " + \
