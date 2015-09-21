@@ -58,40 +58,44 @@ the X11/X Windows GUI.'''
         datatype = "bool"
         key = "DISABLEX"
         instructions = "To enable this item, set the value of DISABLEX " + \
-        "to True. When enabled, this rule will disable the automatic " + \
-        "GUI login, and the system will instead boot to the console " + \
-        "(runlevel 3). This will not remove any GUI components, and the " + \
-        "GUI can still be started using the \"startx\" command."
+            "to True. When enabled, this rule will disable the automatic " + \
+            "GUI login, and the system will instead boot to the console " + \
+            "(runlevel 3). This will not remove any GUI components, and the " + \
+            "GUI can still be started using the \"startx\" command."
         default = False
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "LOCKDOWNX"
         instructions = "To enable this item, set the value of LOCKDOWNX " + \
-        "to True. When enabled, this item will help secure X Windows by " + \
-        "disabling the X Font Server (xfs) service and disabling X " + \
-        "Window System Listening. This item should be enabled if X " + \
-        "Windows is disabled but will be occasionally started via " + \
-        "startx, unless there is a mission-critical need for xfs or " + \
-        "a remote display."
+            "to True. When enabled, this item will help secure X Windows by " + \
+            "disabling the X Font Server (xfs) service and disabling X " + \
+            "Window System Listening. This item should be enabled if X " + \
+            "Windows is disabled but will be occasionally started via " + \
+            "startx, unless there is a mission-critical need for xfs or " + \
+            "a remote display."
         default = False
         self.ci2 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "REMOVEX"
         instructions = "To enable this item, set the value of REMOVEX " + \
-        "to True. When enabled, this item will COMPLETELY remove X Windows " + \
-        "from the system, and on most platforms will disable any currently " + \
-        "running display manager. It is therefore recommended that this " + \
-        "rule be run from a console session rather than from the GUI.\n" + \
-        "REMOVEX cannot be undone."
+            "to True. When enabled, this item will COMPLETELY remove X " + \
+            "Windows from the system, and on most platforms will disable " + \
+            "any currently running display manager. It is therefore " + \
+            "recommended that this rule be run from a console session " + \
+            "rather than from the GUI.\nREMOVEX cannot be undone."
         default = False
         self.ci3 = self.initCi(datatype, key, instructions, default)
 
         self.guidance = ["NSA 3.6.1.1", "NSA 3.6.1.2", "NSA 3.6.1.3",
-                         "CCE 4462-8", "CCE 4422-2", "CCE 4448-7", "CCE 4074-1"]
+                         "CCE 4462-8", "CCE 4422-2", "CCE 4448-7",
+                         "CCE 4074-1"]
         self.iditerator = 0
-        self.created = False
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.ch = CommandHelper(self.logger)
+        self.sh = ServiceHelper(self.environ, self.logger)
+        self.myos = self.environ.getostype().lower()
 
     def report(self):
         '''
@@ -100,10 +104,6 @@ the X11/X Windows GUI.'''
         @return: bool - True if system is compliant, False if it isn't
         '''
         try:
-            self.ph = Pkghelper(self.logger, self.environ)
-            self.ch = CommandHelper(self.logger)
-            self.sh = ServiceHelper(self.environ, self.logger)
-            self.myos = self.environ.getostype().lower()
             compliant = True
             results = ""
 
@@ -165,13 +165,13 @@ the X11/X Windows GUI.'''
                     if not self.xservSecure:
                         compliant = False
                         results += self.serverrc + " does not contain proper " \
-                                   + "settings to disable X Window System " + \
-                                   "Listening/remote display\n"
+                            + "settings to disable X Window System " + \
+                            "Listening/remote display\n"
                 else:
                     compliant = False
                     results += self.serverrc + " does not exist; X Window " + \
-                               "System Listening/remote display has not " + \
-                               "been disabled\n"
+                        "System Listening/remote display has not " + \
+                        "been disabled\n"
 
             self.compliant = compliant
             if self.compliant:
@@ -227,7 +227,8 @@ the X11/X Windows GUI.'''
         for dm in dmlist:
             if self.sh.auditservice(dm):
                 compliant = False
-                results = dm + " is still in init folders; GUI logon is enabled\n"
+                results = dm + \
+                    " is still in init folders; GUI logon is enabled\n"
         return compliant, results
 
     def reportUbuntu(self):
@@ -237,10 +238,10 @@ the X11/X Windows GUI.'''
         grub = "/etc/default/grub"
         if os.path.exists(ldmover):
             lightdmText = readFile(ldmover, self.logger)
-            if not "manual" in lightdmText:
+            if "manual" not in lightdmText:
                 compliant = False
                 results += ldmover + " exists, but does not contain text " + \
-                           '"manual". GUI logon is still enabled\n'
+                                     '"manual". GUI logon is still enabled\n'
         else:
             compliant = False
             results += ldmover + " does not exist; GUI logon is enabled\n"
@@ -252,7 +253,7 @@ the X11/X Windows GUI.'''
             if not editor.report():
                 compliant = False
                 results += grub + " does not contain the correct values: " + \
-                           str(data)
+                    str(data)
         else:
             compliant = False
             results += "Cannot find file " + grub
@@ -281,7 +282,8 @@ the X11/X Windows GUI.'''
 
             if self.ci1.getcurrvalue() or self.ci3.getcurrvalue():
                 if self.initver == "systemd":
-                    cmd = ["/bin/systemctl", "set-default", "multi-user.target"]
+                    cmd = ["/bin/systemctl", "set-default",
+                           "multi-user.target"]
                     if not self.ch.executeCommand(cmd):
                         success = False
                         results += '"systemctl set-default multi-user.target"' \
@@ -298,7 +300,8 @@ the X11/X Windows GUI.'''
                 elif self.initver == "debian":
                     dmlist = ["gdm", "gdm3", "lightdm", "xdm", "kdm"]
                     for dm in dmlist:
-                        if not self.sh.disableservice(dm):
+                        cmd = ["update-rc.d", "-f", dm, "disable"]
+                        if not self.ch.executeCommand(cmd):
                             results += "Failed to disable desktop " + \
                                        "manager " + dm
                         else:
@@ -324,7 +327,8 @@ the X11/X Windows GUI.'''
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "conf", "filepath": ldmover}
                     self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(ldmover, tmpfile, myid)
+                    self.statechglogger.recordfilechange(ldmover, tmpfile,
+                                                         myid)
                     os.rename(tmpfile, ldmover)
                     resetsecon(ldmover)
 
@@ -374,7 +378,7 @@ the X11/X Windows GUI.'''
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "conf", "filepath": inittab}
                             self.statechglogger.recordchgevent(myid, event)
-                            self.statechglogger.recordfilechange(inittab, 
+                            self.statechglogger.recordfilechange(inittab,
                                                                  tmpfile, myid)
                             os.rename(tmpfile, inittab)
                             resetsecon(inittab)
@@ -385,15 +389,14 @@ the X11/X Windows GUI.'''
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "conf", "filepath": inittab}
                             self.statechglogger.recordchgevent(myid, event)
-                            self.statechglogger.recordfilechange(inittab, 
+                            self.statechglogger.recordfilechange(inittab,
                                                                  tmpfile, myid)
                             os.rename(tmpfile, inittab)
                             resetsecon(inittab)
                     else:
                         results += inittab + " not found, no other init " + \
-                                   "system found. If you are using a " + \
-                                   "supported Linux OS, please report " + \
-                                   "this as a bug\n"
+                            "system found. If you are using a supported " + \
+                            "Linux OS, please report this as a bug\n"
 
             if self.ci3.getcurrvalue():
                 # Due to automatic removal of dependent packages, the full
