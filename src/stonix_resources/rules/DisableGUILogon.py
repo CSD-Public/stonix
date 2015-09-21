@@ -300,7 +300,8 @@ the X11/X Windows GUI.'''
                 elif self.initver == "debian":
                     dmlist = ["gdm", "gdm3", "lightdm", "xdm", "kdm"]
                     for dm in dmlist:
-                        if not self.sh.disableservice(dm):
+                        cmd = ["update-rc.d", "-f", dm, "disable"]
+                        if not self.ch.executeCommand(cmd):
                             results += "Failed to disable desktop " + \
                                        "manager " + dm
                         else:
