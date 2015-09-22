@@ -28,6 +28,7 @@
 @change: 2015/03/10 ekkehard original implementation
 @change: 2015/03/11 ekkehard streamlined for stonix & comments
 @change: 2015/06/10 ekkehard enhance LDAP lookup
+@change: 2015/09/22 ekkehard improve evalution of file system asset tag
 '''
 import os
 import re
@@ -679,7 +680,7 @@ class MacInfoLANL():
 # If the Filesystem assetTag value is not equal to the most prominent assetTag that is an issue
                 self.updateAssetTagAccuracy(self.getLANLAssetTagFilesystem() == self.assetTag,
                                             10, "LANLAssetTagFilesystem is not equal to suggested assetTag;")
-            elif not(self.getLANLAssetTagNVRAM() == ""):
+            elif not(self.getLANLAssetTagNVRAM() == "") and not(self.getLANLAssetTagFilesystem() == ""):
                 if not(self.getLANLAssetTagNVRAM() == self.getLANLAssetTagFilesystem()):
 # If the Filesystem assetTag value is not equal to NVRAM assetTag that is an issue
                     self.updateAssetTagAccuracy(self.getLANLAssetTagNVRAM() == self.getLANLAssetTagFilesystem(),
@@ -747,7 +748,7 @@ class MacInfoLANL():
             except Exception, err:
                 messagestring = "Cannot open: " + self.lanl_property_file + \
                     "\nException: " + str(err)
-                self.logdispatch.log(LogPriority.ERROR, messagestring)
+                self.logdispatch.log(LogPriority.DEBUG, messagestring)
             else:
                 try:
                     for line in fileToOpen:
@@ -762,7 +763,7 @@ class MacInfoLANL():
                 except Exception, err:
                     messagestring = str(err) + " - Can't find a line in the file: " + \
                     self.LANLAssetTagFilesystem
-                    self.logdispatch.log(LogPriority.ERROR, messagestring)
+                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
                     self.LANLAssetTagFilesystem = ""
                 else:
                     fileToOpen.close()
