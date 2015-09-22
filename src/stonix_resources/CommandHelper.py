@@ -141,15 +141,15 @@ class CommandHelper(object):
         for line in searchstream:
             reresult = re.search(expression, line)
             groupstr = reresult.group(groupnumber)
-            self.logdispatcher.log(LogPriority.DEBUG,
-                                   "Group(" + str(groupnumber) + ")='" +
-                                   groupstr + "'; line='" + line + "'")
+            msg = "Group(" + str(groupnumber) + ")='" + \
+            groupstr + "'; line='" + line + "'"
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
             returnlist.append(groupstr)
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               "expression = " + str(expression) + ", " + \
-                               "groupnumber = " + str(groupnumber) + ", " + \
-                               "searchgroup = " + str(searchgroup) + " = " + \
-                               "returnlist = " + str(returnlist) + ";")
+        msg = "expression = " + str(expression) + ", " + \
+        "groupnumber = " + str(groupnumber) + ", " + \
+        "searchgroup = " + str(searchgroup) + " = " + \
+        "returnlist = " + str(returnlist) + ";"
+        self.logdispatcher.log(LogPriority.DEBUG, msg)
         return returnlist
 
 ###############################################################################
@@ -182,17 +182,16 @@ class CommandHelper(object):
             reresult = re.search(expression, line)
             if reresult:
                 groupstr = reresult.group(groupnumber)
-                self.logdispatcher.log(LogPriority.DEBUG,
-                                       "Group(" + str(groupnumber) + ")='" +
-                                       groupstr + "'; line='" + line + "'")
+                msg = "Group(" + str(groupnumber) + ")='" + \
+                groupstr + "'; line='" + line + "'"
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
                 returnstring = groupstr
                 break
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               "expression = " + str(expression) + ", " + \
-                               "groupnumber = " + str(groupnumber) + ", " + \
-                               "searchgroup = " + str(searchgroup) + " = " + \
-                               "returnstring = " + str(returnstring) + ";")
+        msg = "expression = " + str(expression) + ", " + \
+        "groupnumber = " + str(groupnumber) + ", " + \
+        "searchgroup = " + str(searchgroup) + " = " + \
+        "returnstring = " + str(returnstring) + ";"
+        self.logdispatcher.log(LogPriority.DEBUG, msg)
         return returnstring
 
 ###############################################################################
@@ -280,9 +279,9 @@ class CommandHelper(object):
                 raise ValueError(msg)
             self.command = command.strip()
             success = True
-            self.logdispatcher.log(LogPriority.DEBUG,
-                                   "Command Set To '" +
-                                   self.command + "'")
+            msg = "Command Set To '" + \
+            self.command + "'"
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
         elif (commandtype is types.ListType):
             self.shell = False
             self.command = []
@@ -300,10 +299,8 @@ class CommandHelper(object):
                     "' has in invalid type of '" + str(commandtype) + "'"
                     self.logdispatcher.log(LogPriority.DEBUG, msg)
                     raise ValueError(msg)
-
-            self.logdispatcher.log(LogPriority.DEBUG,
-                               "Command Set To '" +
-                                str(self.command) + "'")
+            msg = "Command Set To '" + str(self.command) + "'"
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
         else:
             success = False
             msg = "Command '" + str(command) + "' has in invalid type of '" + \
@@ -394,16 +391,14 @@ class CommandHelper(object):
                     self.output = self.stderr + self.stdout
 
                     self.returncode = commandobj.returncode
-
-                    self.logdispatcher.log(self.logpriority,
-                                           "returncode: " +
-                                            str(self.returncode))
+                    msg = "returncode: " + str(self.returncode)
+                    self.logdispatcher.log(self.logpriority, msg)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             success = False
-            messagestring = str(err) + " - " + str(traceback.format_exc())
-            self.logdispatcher.log(LogPriority.DEBUG, messagestring)
+            msg = str(err) + " - " + str(traceback.format_exc())
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
             raise
         else:
             if commandobj is not None:
@@ -412,12 +407,12 @@ class CommandHelper(object):
                 if commandobj.stderr is not None:
                     commandobj.stderr.close()
         finally:
-            logstring = "You should not see this. CommandHelper.executeCommand()"
+            msg = "You should not see this. CommandHelper.executeCommand()"
             if self.returncode is not None:
-                logstring = "returncode:(" + str(self.returncode) + ") output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
+                msg = "returncode:(" + str(self.returncode) + ") output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
             else:
-                logstring = "returncode:(None) output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
-            self.logdispatcher.log(LogPriority.DEBUG, logstring)
+                msg = "returncode:(None) output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
 
         return success
 
@@ -437,7 +432,7 @@ class CommandHelper(object):
         '''
         try:
             searchstring = ""
-            messagestring = ""
+            msg = ""
             success = False
             if searchgroup == "output":
                 searchstream = self.output
@@ -451,73 +446,71 @@ class CommandHelper(object):
                 for line in searchstream:
                     if re.search(expression, line):
                         success = True
-                        if messagestring == "":
-                            messagestring = "found in line = " + str(line)
+                        if msg == "":
+                            msg = "found in line = " + str(line)
                         else:
-                            messagestring = messagestring + \
+                            msg = msg + \
                             ", found in line = " + str(line)
-                    self.logdispatcher.log(self.logpriority, "list item: " + \
-                                           str(line))
+                self.logdispatcher.log(self.logpriority, msg)
             elif dtype == "string":
                 searchstring = self.getOutputString()
-                self.logdispatcher.log(self.logpriority, "string: " + \
-                                           str(searchstring))
+                msg = "string: " + str(searchstring)
+                self.logdispatcher.log(self.logpriority, msg)
                 if self.flag:
                     if self.flag == "DOTALL":
                         if re.search(expression, searchstring, \
                                      flags=re.DOTALL):
                             success = True
-                            messagestring = "flag = " + str(self.flag)
+                            msg = "flag = " + str(self.flag)
                     elif self.flag == "DEBUG":
                         if re.search(expression, searchstring, flags=re.DEBUG):
                             success = True
-                            messagestring = "flag = " + str(self.flag)
+                            msg = "flag = " + str(self.flag)
                     elif self.flag == "LOCALE":
                         if re.search(expression, searchstring, \
                                      flags=re.LOCALE):
                             success = True
-                            messagestring = "flag = " + str(self.flag)
+                            msg = "flag = " + str(self.flag)
                     elif self.flag == "MULTILINE":
                         if re.search(expression, searchstring, \
                                      flags=re.MULTILINE):
                             success = True
-                            messagestring = "flag = " + str(self.flag)
+                            msg = "flag = " + str(self.flag)
                     elif self.flag == "UNICODE":
                         if re.search(expression, searchstring, \
                                      flags=re.UNICODE):
                             success = True
-                            messagestring = "flag = " + str(self.flag)
+                            msg = "flag = " + str(self.flag)
                     elif self.flag == "VERBOSE":
                         if re.search(expression, searchstring, \
                                      flags=re.VERBOSE):
                             success = True
-                            messagestring = "flag = " + str(self.flag)
+                            msg = "flag = " + str(self.flag)
                     else:
                         if re.search(expression, searchstring):
                             success = True
-                        messagestring = "unrecognized flag = " + str(self.flag)
+                        msg = "unrecognized flag = " + str(self.flag)
                 else:
                     if re.search(expression, searchstring):
                         success = True
-                        messagestring = "no flag"
+                        msg = "no flag"
                 if success:
-                    messagestring = messagestring + ", found = " + \
+                    msg = msg + ", found = " + \
                     str(searchstring)
                 else:
-                    messagestring = messagestring + ", not found = " + \
+                    msg = msg + ", not found = " + \
                     str(searchstring)
-
-            self.logdispatcher.log(LogPriority.DEBUG,
-                               "expression = " + str(expression) + ", " + \
-                               "searchgroup = " + str(searchgroup) + ", " + \
-                               "dtype = " + str(dtype) + ", " + \
-                               str(messagestring) + ", " + \
-                               "success = " + str(success) + ";")
+            msg = "expression = " + str(expression) + ", " + \
+            "searchgroup = " + str(searchgroup) + ", " + \
+            "dtype = " + str(dtype) + ", " + \
+            str(msg) + ", " + \
+            "success = " + str(success) + ";"
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             success = False
-            messagestring = str(err) + " - " + str(traceback.format_exc())
-            self.logdispatcher.log(LogPriority.DEBUG, messagestring)
+            msg = str(err) + " - " + str(traceback.format_exc())
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
             raise
         return success
