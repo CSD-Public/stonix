@@ -66,6 +66,8 @@ Mail Client."""
             "Preferences/com.apple.mail.plist"
         sharedplist = "/Library/Preferences/com.apple.mail-shared.plist"
         self.permsdict = {}
+        if not self.environ.getosfamily() == "darwin":
+            return
 
         users = []
         if self.environ.geteuid() == 0:

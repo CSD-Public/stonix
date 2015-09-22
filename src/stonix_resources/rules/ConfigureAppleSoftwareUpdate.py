@@ -25,13 +25,14 @@ This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
 @author: ekkehard j. koch
-@change: 10/16/2013 Original Implementation
-@change: 02/12/2014 ekkehard Implemented self.detailedresults flow
-@change: 02/12/2014 ekkehard Implemented isapplicable
-@change: 04/09/2014 ekkehard Decription Update
-@change: 07/21/2014 ekkehard added AllowPreReleaseInstallation
-@change: 09/15/2014 ekkehard fixed CatalogURL string
+@change: 2013/10/16 Original Implementation
+@change: 2014/02/12 ekkehard Implemented self.detailedresults flow
+@change: 2014/02/12 ekkehard Implemented isapplicable
+@change: 2014/04/09 ekkehard Decription Update
+@change: 2014/07/21 ekkehard added AllowPreReleaseInstallation
+@change: 2014/09/15 ekkehard fixed CatalogURL string
 @change: 2015/04/14 dkennel updated for new style isApplicable
+@change: 2015/09/21 ekkehard OS X El Capitan 10.11 & Implement New Guidance
 '''
 from __future__ import absolute_import
 import re
@@ -95,105 +96,149 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.rootrequired = True
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
-        self.isApplicableWhiteList = [{"0": "darwin",
-                                       "1": "Mac OS X",
-                                       "2": ["10.9", "10.10"]}]
-        self.isApplicableBlackList = [{"0": "darwin",
-                                       "1": "Mac OS X",
-                                       "2": ["10.0", "10.1", "10.2", "10.3",
-                                             "10.4", "10.5", "10.6", "10.7",
-                                             "10.8"]}]
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        self.addKVEditor("ConfigureCatalogURL",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"CatalogURL": [str(APPLESOFTUPDATESERVER),
-                                         str(APPLESOFTUPDATESERVER)]},
-                         "present",
-                         "",
-                         "Set software update server (CatalogURL) to '" +
-                         str(APPLESOFTUPDATESERVER) +
-                         "'. This should always be enabled. If disabled " + \
-                         " it will point to the Apple Software Update " + \
-                         "Server. NOTE: your system will report as not " + \
-                         "compliant if you disable this option.",
-                         None,
-                         False,
-                         {"CatalogURL":
-                          [re.escape("The domain/default pair of (/Library" + \
-                                     "/Preferences/com.apple.Software" + \
-                                     "Update, CatalogURL) does not exist"),
-                           None]})
-        self.addKVEditor("DisableAutomaticDownload",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"AutomaticDownload": ["0", "-bool no"]},
-                         "present",
-                         "",
-                         "Disable Automatic Software Update Downloads. " +
-                         "This should be enabled.",
-                         None,
-                         False,
-                         {"AutomaticDownload": ["1", "-bool yes"]})
-        self.addKVEditor("DisableAutomaticCheckEnabled",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"AutomaticCheckEnabled": ["0", "-bool no"]},
-                         "present",
-                         "",
-                         "Disable Automatic Checking For Downloads. " +
-                         "This should be enabled.",
-                         None,
-                         False,
-                         {"AutomaticCheckEnabled": ["1", "-bool yes"]})
-        self.addKVEditor("DisableConfigDataInstall",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"ConfigDataInstall": ["0", "-bool no"]},
-                         "present",
-                         "",
-                         "Disable Installing of system data files.",
-                         None,
-                         False,
-                         {"ConfigDataInstall": ["1", "-bool yes"]})
-        self.addKVEditor("DisableCriticalUpdateInstall",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"CriticalUpdateInstall": ["0", "-bool no"]},
-                         "present",
-                         "",
-                         "Disable Installing of security updates.",
-                         None,
-                         False,
-                         {"CriticalUpdateInstall": ["1", "-bool yes"]})
-        self.addKVEditor("DisableAllowPreReleaseInstallation",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"AllowPreReleaseInstallation": ["0", "-bool no"]},
-                         "present",
-                         "",
-                         "Disable Installation of Pre Release Software.",
-                         None,
-                         False,
-                         {"AllowPreReleaseInstallation": ["1", "-bool yes"]})
-        self.addKVEditor("RecommendedUpdates",
-                         "defaults",
-                         "/Library/Preferences/com.apple.SoftwareUpdate",
-                         "",
-                         {"RecommendedUpdates": [re.escape("(\n)\n"), None]},
-                         "present",
-                         "",
-                         "List of recommended updates.",
-                         None,
-                         True,
-                         {})
+        
+        if self.environ.getostype() == "Mac OS X":
+            self.addKVEditor("ConfigureCatalogURL",
+                             "defaults",
+                             "/Library/Preferences/com.apple.SoftwareUpdate",
+                             "",
+                             {"CatalogURL": [str(APPLESOFTUPDATESERVER),
+                                             str(APPLESOFTUPDATESERVER)]},
+                             "present",
+                             "",
+                             "Set software update server (CatalogURL) to '" +
+                             str(APPLESOFTUPDATESERVER) +
+                             "'. This should always be enabled. If disabled " + \
+                             " it will point to the Apple Software Update " + \
+                             "Server. NOTE: your system will report as not " + \
+                             "compliant if you disable this option.",
+                             None,
+                             False,
+                             {"CatalogURL":
+                              [re.escape("The domain/default pair of (/Library" + \
+                                         "/Preferences/com.apple.Software" + \
+                                         "Update, CatalogURL) does not exist"),
+                               None]})
+            osxversion = str(self.environ.getosver())
+            if osxversion.startswith("10.9"):
+                self.addKVEditor("DisableAutomaticDownload",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"AutomaticDownload": ["0", "-bool no"]},
+                                 "present",
+                                 "",
+                                 "Disable Automatic Software Update Downloads. " +
+                                 "This should be enabled.",
+                                 None,
+                                 False,
+                                 {"AutomaticDownload": ["1", "-bool yes"]})
+                self.addKVEditor("DisableAutomaticCheckEnabled",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"AutomaticCheckEnabled": ["0", "-bool no"]},
+                                 "present",
+                                 "",
+                                 "Disable Automatic Checking For Downloads. " +
+                                 "This should be enabled.",
+                                 None,
+                                 False,
+                                 {"AutomaticCheckEnabled": ["1", "-bool yes"]})
+                self.addKVEditor("DisableConfigDataInstall",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"ConfigDataInstall": ["0", "-bool no"]},
+                                 "present",
+                                 "",
+                                 "Disable Installing of system data files.",
+                                 None,
+                                 False,
+                                 {"ConfigDataInstall": ["1", "-bool yes"]})
+                self.addKVEditor("DisableCriticalUpdateInstall",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"CriticalUpdateInstall": ["0", "-bool no"]},
+                                 "present",
+                                 "",
+                                 "Disable Installing of security updates.",
+                                 None,
+                                 False,
+                                 {"CriticalUpdateInstall": ["1", "-bool yes"]})
+            else:
+                self.addKVEditor("EnableAutomaticDownload",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"AutomaticDownload": ["1", "-bool yes"]},
+                                 "present",
+                                 "",
+                                 "Enable Automatic Software Update Downloads. " +
+                                 "This should be enabled.",
+                                 None,
+                                 False,
+                                 {"AutomaticDownload": ["0", "-bool no"]})
+                self.addKVEditor("EnableAutomaticCheckEnabled",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"AutomaticCheckEnabled": ["1", "-bool yes"]},
+                                 "present",
+                                 "",
+                                 "Enable Automatic Checking For Downloads. " +
+                                 "This should be enabled.",
+                                 None,
+                                 False,
+                                 {"AutomaticCheckEnabled": ["0", "-bool no"]})
+                self.addKVEditor("EnableConfigDataInstall",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"ConfigDataInstall": ["1", "-bool yes"]},
+                                 "present",
+                                 "",
+                                 "Enable Installing of system data files.",
+                                 None,
+                                 False,
+                                 {"ConfigDataInstall": ["0", "-bool no"]})
+                self.addKVEditor("EnableCriticalUpdateInstall",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"CriticalUpdateInstall": ["1", "-bool yes"]},
+                                 "present",
+                                 "",
+                                 "Enable Installing of security updates.",
+                                 None,
+                                 False,
+                                 {"CriticalUpdateInstall": ["0", "-bool no"]})
+                            
+            self.addKVEditor("DisableAllowPreReleaseInstallation",
+                             "defaults",
+                             "/Library/Preferences/com.apple.SoftwareUpdate",
+                             "",
+                             {"AllowPreReleaseInstallation": ["0", "-bool no"]},
+                             "present",
+                             "",
+                             "Disable Installation of Pre Release Software.",
+                             None,
+                             False,
+                             {"AllowPreReleaseInstallation": ["1", "-bool yes"]})
+            self.addKVEditor("RecommendedUpdates",
+                             "defaults",
+                             "/Library/Preferences/com.apple.SoftwareUpdate",
+                             "",
+                             {"RecommendedUpdates": [re.escape("(\n)\n"), None]},
+                             "present",
+                             "",
+                             "List of recommended updates.",
+                             None,
+                             True,
+                             {})
         self.ch = CommandHelper(self.logdispatch)
         self.softwareupdatehasnotrun = True
 

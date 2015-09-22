@@ -25,6 +25,7 @@ This objects encapsulates the complexities of the networksetup command on OS X
 
 @author: ekkehard j. koch
 @change: 2015/05/07 ekkehard Original Implementation
+@change: 2015/09/18 ekkehard add startup and casper options
 '''
 import re
 import types
@@ -57,6 +58,8 @@ class networksetup():
         self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
         self.pp = fullproxy.split(":")[2]
         self.pf = PROXYCONFIGURATIONFILE
+        self.dns = "128.165.4.4 128.165.4.33"
+        self.searchdomain = "lanl.gov"
         self.logdispatch = logdispatcher
         self.ch = CommandHelper(self.logdispatch)
         self.initialized = False
@@ -64,6 +67,14 @@ class networksetup():
 ###############################################################################
 
     def report(self):
+        '''
+        report is designed to implement the report portion of the stonix rule
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
         compliant = True
         self.initialize()
         if self.locationIsValidWiFiLocation:
@@ -101,6 +112,14 @@ class networksetup():
 ###############################################################################
 
     def fix(self):
+        '''
+        fix is designed to implement the fix portion of the stonix rule
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
         fixed = True
         self.initialize()
         messagestring = "for location = " + str(self.location)
@@ -146,6 +165,11 @@ class networksetup():
 ###############################################################################
 
     def startup(self):
+        '''
+        startup is designed to implement the startup portion of the stonix rule
+        
+        @author: ekkehard j. koch
+        '''
         disabled = True
         self.initialize()
         messagestring = "for location = " + str(self.location)
@@ -181,11 +205,28 @@ class networksetup():
 ###############################################################################
 
     def getDetailedresults(self):
+        '''
+        get the detailed results text
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pLocationName:location name
+        @return: string:detailedresults
+        @note: None
+        '''
         return self.detailedresults
 
 ###############################################################################
 
     def getLocation(self):
+        '''
+        get the location used by on the mac
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
         try:
             success = True
             command = [self.nsc, "-getcurrentlocation"]
@@ -201,10 +242,73 @@ class networksetup():
             success = False
             raise
         return success
+    
+    def setAdvancedNetworkSetup(self, pNetworkName) :
+        """
+        Set proxies up for normal first configuration that has a network
+        connection.
+        
+        @author: Roy Nielsen
+        @param self:essential if you override this definition
+        @param pNetworkName:name of the network to fix
+        @return: boolean - true
+        @note: None
+        """
+        success = True
+# Set the DNS servers
+        command = [self.nsc, "-setdnsservers", pNetworkName, self.dns]
+        self.ch.executeCommand(command)
+        if not self.ch.getError():
+            success = False
+# Set the Search Domain
+        command = [self.nsc, "-setsearchdomains", pNetworkName, self.searchdomain]
+        self.ch.executeCommand(command)
+        if not self.ch.getError():
+            success = False
+# set up the auto proxy URL
+        command = [self.nsc, "-setautoproxyurl", pNetworkName, self.pf]
+        self.ch.executeCommand(command)
+        if not self.ch.getError():
+            success = False
+# Set up the FTP proxy
+        command = [self.nsc, "-setftpproxy", pNetworkName, self.ps, self.pp]
+        self.ch.executeCommand(command)
+        if not self.ch.getError():
+            success = False
+# Set up the HTTPS proxy
+        command = [self.nsc, "-setsecurewebproxy", pNetworkName, self.ps, self.pp]
+        self.ch.executeCommand(command)
+        if not self.ch.getError():
+            success = False
+# Set up the web proxy
+        command = [self.nsc, "-setwebproxy", pNetworkName, self.ps, self.pp]
+        self.ch.executeCommand(command)
+        if not self.ch.getError():
+            success = False
+# Get current proxy bypass domains and add lanl.gov
+        command = [self.nsc, "-getproxybypassdomains", pNetworkName]
+        self.ch.executeCommand(command)
+        command = [self.nsc, "-setproxybypassdomains", pNetworkName]
+        if self.ch.getError():
+            for item in self.ch.getOutput() :
+                if not re.match("^\s*$", item) :
+                    command.append(item)
+        if not "lanl.gov" in command:
+            command.append("lanl.gov")
+            self.ch.executeCommand(command)
+            if not self.ch.getError():
+                success = False
+
+        return success
 
 ###############################################################################
 
     def initialize(self):
+        '''
+        initialize the object
+        
+        @author: ekkehard j. koch
+        '''
         if not self.initialized:
             self.getLocation()
             self.updateCurrentNetworkConfigurationDictionary()
@@ -214,6 +318,14 @@ class networksetup():
 ###############################################################################
 
     def updateCurrentNetworkConfigurationDictionary(self):
+        '''
+        update the network configuration dictianry
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
         try:
             success = True
 # issue networksetup -listallnetworkservices to get all network services
@@ -303,6 +415,15 @@ class networksetup():
 ###############################################################################
 
     def updateNetworkConfigurationDictionaryEntry(self, pKey):
+        '''
+        update a single network configuration dictionary entry 
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pkey:key for the dictinary entry
+        @return: boolean - true
+        @note: None
+        '''
         try:
             success = True
             key = pKey
@@ -341,6 +462,15 @@ class networksetup():
 ###############################################################################
 
     def isValidLocationName(self, pLocationName=""):
+        '''
+        determine if this is a valid wifi location
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pLocationName:location name
+        @return: boolean - true
+        @note: None
+        '''
         success = False
         if pLocationName == "":
             locationName = self.location.lower()
@@ -365,6 +495,15 @@ class networksetup():
 ###############################################################################
 
     def disableNetworkService(self, pNetworkName):
+        '''
+        disable network service
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pNetworkName:name of network
+        @return: boolean - true
+        @note: None
+        '''
         try:
             success = True
             networkName = pNetworkName
@@ -386,6 +525,15 @@ class networksetup():
 ###############################################################################
 
     def enableNetwork(self, pNetworkName):
+        '''
+        enable network service
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pNetworkName:name of network
+        @return: boolean - true
+        @note: None
+        '''
         try:
             success = True
             networkName = pNetworkName
@@ -411,8 +559,9 @@ class networksetup():
         reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
         @param self:essential if you override this definition
+        @param pMessage:message to be appended
         @return: boolean - true
-        @note: kveditorName is essential
+        @note: None
         '''
         datatype = type(pMessage)
         if datatype == types.StringType:

@@ -26,6 +26,7 @@ This is a Unit Test for Rule RemoveSUIDGames
 
 @author: Eric Ball
 @change: 2015/08/20 eball Original Implementation
+@change: 2015/09/22 eball Added error info if gnuchess install fails
 '''
 from __future__ import absolute_import
 import unittest
@@ -59,6 +60,11 @@ class zzzTestRuleRemoveSUIDGames(RuleTest):
         '''
         ph = Pkghelper(self.logdispatch, self.environ)
         success = ph.install("gnuchess")
+        if not success:
+            error = "Could not install gnuchess. Please check that the " + \
+                "package manager cache is updated and that this PC is " + \
+                "online, and then attempt to run unit test again."
+            self.logdispatch.log(LogPriority.ERROR, error)
 
         return success
 
