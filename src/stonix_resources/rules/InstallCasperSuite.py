@@ -66,7 +66,7 @@ class InstallCasperSuite(Rule):
         self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
         self.js = JAMFCASPERSUITESERVER
         self.qa = JAMFCASPERQUICKADD
 
