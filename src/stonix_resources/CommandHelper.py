@@ -22,15 +22,16 @@
 #                                                                             #
 ###############################################################################
 
-@author: ekkehard j. koch
+@author: ekkehard
 @author: rsn
 @author: dwalker
-@change: 11/19/2013 ekkehard original implementation
-@change: 04/01/2014 rsn added getOutputGroup & getFirstOutputGroup
-@change: 04/01/2014 dwalker added setRegexFlag & enhanced findInOutput
-@change: 04/15/2014 ekkehard enhance documentation & pep8 compliance
-@change: 04/15/2014 ekkehard made logging more intelligent
-@change: 10/20/2014 ekkehard fix pep8 viloation
+@change: 2013/11/19 ekkehard original implementation
+@change: 2014/04/01 rsn added getOutputGroup & getFirstOutputGroup
+@change: 2014/04/01 dwalker added setRegexFlag & enhanced findInOutput
+@change: 2014/04/15 ekkehard enhance documentation & pep8 compliance
+@change: 2014/04/15 ekkehard made logging more intelligent
+@change: 2014/10/20 ekkehard fix pep8 viloation
+@change: 2015/09/22 ekkehard Uniform logging
 '''
 import re
 import subprocess
