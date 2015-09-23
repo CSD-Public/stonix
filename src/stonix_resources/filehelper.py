@@ -330,6 +330,21 @@ class FileHelper(object):
 
 ###############################################################################
 
+    def loadFilesFromDirectory(self, absolute_file_path = ""):
+        success = True
+        message = "Loading files from " + str(absolute_file_path)
+        self.logdispatcher.log(LogPriority.DEBUG, message)
+        if os.path.exists(absolute_file_path):
+            message = str(absolute_file_path) + " does exist."
+            self.logdispatcher.log(LogPriority.DEBUG, message)
+        else:
+            success = False
+            message = str(absolute_file_path) + " does not exist!"
+            self.logdispatcher.log(LogPriority.DEBUG, message)
+        return success
+
+###############################################################################
+
     def addFile(self, file_label, file_path="", file_remove=False,
                 file_content=None, file_permissions=None, file_owner=None,
                 file_group=None, file_eventid=None):
