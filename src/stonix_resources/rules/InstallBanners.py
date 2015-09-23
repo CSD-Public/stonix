@@ -617,10 +617,9 @@ unity-greeter'''
                             replacedict[contentdict[key]] = True
                 for item in replacedict:
                     if not replacedict[item]:
-                        contentlines.append('\n' + item)
+                        contentlines.append(item)
                 if not self.setFileContents(filepath, contentlines):
                     retval = False
-                    self.detailedresults += '\n'
             else:
                 retval = False
                 self.detailedresults += '\nSpecified filepath not found. Returning False'
