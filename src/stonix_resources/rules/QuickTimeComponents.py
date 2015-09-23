@@ -84,10 +84,10 @@ class QuickTimeComponents(Rule):
             raise
         except Exception, err:
             self.rulesuccess = False
+            self.compliant = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.compliant = compliant
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
