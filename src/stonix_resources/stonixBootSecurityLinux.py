@@ -14,6 +14,7 @@ in Linux.
 import subprocess
 import os
 
+
 def main():
     setlevels = None
     if os.path.exists('/usr/bin/amixer'):
@@ -25,7 +26,7 @@ def main():
                                     stderr=subprocess.PIPE, shell=True)
         except Exception:
             pass
-    
+
     netmgr = None
     if os.path.exists('/usr/bin/nmcli'):
         netmgr = '/usr/bin/nmcli nm wifi off'
@@ -35,7 +36,7 @@ def main():
                                     stderr=subprocess.PIPE, shell=True)
         except Exception:
             pass
-        
+
     rfkill = None
     if os.path.exists('/usr/sbin/rfkill'):
         netmgr = '/usr/sbin/rfkill block bluetooth'
@@ -45,6 +46,6 @@ def main():
                                     stderr=subprocess.PIPE, shell=True)
         except Exception:
             pass
-        
+
 if __name__ == '__main__':
     main()
