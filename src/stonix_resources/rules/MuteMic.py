@@ -176,6 +176,7 @@ microphone. This rule should always be set to TRUE with few valid exceptions.'''
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        return True
 
     def report(self):
         '''
