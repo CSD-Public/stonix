@@ -41,6 +41,7 @@ was not checked before exectuing fix()
 @change: 2015/08/26 ekkehard [artf37780] : RootMailAlias(251) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 @change: Breen Malmberg, 9/3/2015, re-write of report and fix methods; added helper methods; added/fixed doc strings;
             removed unused imports
+@change: eball 2015/09/24 Stopped Pkghelper calls from being made in OS X
 '''
 
 from __future__ import absolute_import
