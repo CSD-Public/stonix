@@ -6,8 +6,10 @@ from subprocess import Popen, PIPE, call
 # PyQt libraries
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from PyQt4.QtNetwork import *
+from PyQt4.QtWebKit import *
 
-from help2_ui import Ui_HelpDialog2
+from help2_ui import Ui_Help2
 from turtle import Screen
 
 try:
@@ -29,9 +31,15 @@ class Help(QDialog):
         @author: Roy Nielsen
         """
         super(Help, self).__init__(parent)
-        self.ui = Ui_HelpDialog2()
+        self.ui = Ui_Help2()
         self.ui.setupUi(self)
         
+        #####
+        # Open links to external pages in the default system browser
+        self.page = self.ui.webView.page()
+        self.page.setLinkDelegationPolicy(QWebPage.DelegateExternalLinks)
+        self.connect(self.ui.webView, SIGNAL("linkClicked(QUrl)"), self.openExternal)
+
         #####
         # get the current path
         self.working_path = os.getcwd()
@@ -57,40 +65,33 @@ class Help(QDialog):
         self.ui.forwardButton.clicked.connect(self.goForward)
 
         #####
-        # Load icons
-        icon = QIcon()
-        icon.addPixmap(QPixmap(_fromUtf8("house_2.ico")), QIcon.Normal, QIcon.Off)
-        self.ui.homeButton.setIcon(icon)
-        self.ui.homeButton.setIconSize(QSize(24, 24))
-
-        icon1 = QIcon()
-        icon1.addPixmap(QPixmap(_fromUtf8("left.ico")), QIcon.Normal, QIcon.Off)
-        self.ui.backButton.setIcon(icon1)
-        self.ui.backButton.setIconSize(QSize(24, 24))
-        
-        icon2 = QIcon()
-        icon2.addPixmap(QPixmap(_fromUtf8("right.ico")), QIcon.Normal, QIcon.Off)
-        self.ui.forwardButton.setIcon(icon2)
-        self.ui.forwardButton.setIconSize(QSize(24, 24))
-
-        #####
         # Load index
         self.ui.IndexBrowser.setSource(QUrl("index.html"))
 
         #####
         # Load ToC
         self.ui.ToCBrowser.setSource(QUrl("toc.html"))
-        
-        #####
-        # Set to open external links
-        self.ui.extendedHelpBrowser.setOpenExternalLinks(True)
-        
+
         #############################################################
         #                                                           #
         # Hiding the search bar until search functionality is built #
         #                                                           #
         ###########################################################
         self.ui.search.hide()
+
+        #####
+        # Load the intro page
+        self.ui.webView.setUrl(QUrl("intro.html"))
+
+
+    def openExternal(self, url):
+        """
+        Open external links in the default system browser
+        
+        @author: Roy Nielsen
+        """
+        QDesktopServices.openUrl(url)
+        
         
     def finish_my_display(self) :
         """
@@ -114,7 +115,7 @@ class Help(QDialog):
         
         @author: Roy Nielsen
         """
-        self.ui.extendedHelpBrowser.setSource(url)
+        self.ui.webView.setUrl(url)
         self.ui.IndexBrowser.setSource(QUrl("index.html"))
         self.ui.ToCBrowser.setSource(QUrl("toc.html"))
         
@@ -125,7 +126,7 @@ class Help(QDialog):
         
         @author: Roy Nielsen
         """
-        self.ui.extendedHelpBrowser.setSource(QUrl("intro.html"))
+        self.ui.webView.setUrl(QUrl("intro.html"))
         
         
     def goBack(self):
@@ -134,7 +135,7 @@ class Help(QDialog):
         
         @author: Roy Nielsen
         """
-        self.ui.extendedHelpBrowser.backward()
+        self.ui.webView.back()
 
         
     def goForward(self):
@@ -143,6 +144,6 @@ class Help(QDialog):
         
         @author: Roy Nielsen
         """
-        self.ui.extendedHelpBrowser.forward()
+        self.ui.webView.forward()
         
         
