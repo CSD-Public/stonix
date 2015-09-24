@@ -91,9 +91,10 @@ class RootMailAlias(Rule):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.localization()
+        self.myos = self.environ.getostype().lower()
 
 ###############################################################################
 
@@ -233,7 +234,7 @@ class RootMailAlias(Rule):
         self.detailedresults = ""
         self.compliant = True
 
-        if self.ph.manager == 'apt-get':
+        if not re.search("os x", self.myos) and self.ph.manager == 'apt-get':
             self.searchstring = '^Postmaster:\s+' + str(self.ci2.getcurrvalue())
             self.fixstring = 'Postmaster: ' + str(self.ci2.getcurrvalue())
             self.partialstring = '^Postmaster:'
@@ -265,7 +266,7 @@ class RootMailAlias(Rule):
 
             # check if system is apt-get based, and if it is, whether or not mailman package is installed
             self.logger.log(LogPriority.DEBUG, "Checking if this is an apt-get based system...")
-            if self.ph.manager == "apt-get":
+            if not re.search("os x", self.myos) and self.ph.manager == "apt-get":
                 self.logger.log(LogPriority.DEBUG, "This is an apt-get based system. Checking if mailman is installed...")
                 if not self.ph.check("mailman"):
                     self.detailedresults += '\nPackage: mailman is not installed'
@@ -313,7 +314,7 @@ class RootMailAlias(Rule):
             fixsuccess = self.fixFileContents(self.aliasfile)
 
             # install mailman, if apt-get based
-            if self.ph.manager == "apt-get":
+            if not re.search("os x", self.myos) and self.ph.manager == "apt-get":
                 self.ph.install("mailman")
 
         except (KeyboardInterrupt, SystemExit):
