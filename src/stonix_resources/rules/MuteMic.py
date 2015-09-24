@@ -41,6 +41,7 @@ import time
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import resetsecon
 
 
 class MuteMic(Rule):
@@ -71,6 +72,7 @@ so this setting can be easily undone.'''
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        self.pulsedefaults = '/etc/pulse/default.pa'
 
     def __initializeMuteMicrophone(self):
         '''
@@ -86,6 +88,95 @@ microphone. This rule should always be set to TRUE with few valid exceptions.'''
         default = True
         myci = self.initCi(datatype, key, instructions, default)
         return myci
+
+    def findPulseMic(self):
+        '''
+        This method will attempt to determine the indexes of the sources that
+        contain microphone inputs. It will return a list of strings that are
+        index numbers. It is legal for the list to be of zero length in the
+        cases where pulse is not running or there are no sources with
+        microphones.
+
+        @author: dkennel
+        @return: list of numbers in string format
+        '''
+        indexlist = []
+        index = ''
+        listcmd = '/usr/bin/pacmd list-sources'
+        proc = subprocess.Popen(listcmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, shell=True)
+        pulsesourcelist = proc.stdout.readlines()
+        for line in pulsesourcelist:
+            if re.search('index:', line):
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['MuteMic.findPulseMic',
+                                      'Scanning ' + line])
+                try:
+                    elements = line.split(' ')
+                    for element in elements:
+                        if re.search('\d', element):
+                            index = int(element)
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except ValueError:
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                     ['MuteMic.findPulseMic',
+                                      'Ooops! Tried to convert non-integer ' + element])
+            if re.search('input-microphone', line):
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['MuteMic.findPulseMic',
+                                      'Found mic at index ' + str(index)])
+                index = str(index)
+                if index not in indexlist:
+                    indexlist.append(index)
+        return indexlist
+
+    def checkpulseaudio(self):
+        '''
+        Report method for checking the pulse audio configuration to ensure that
+        the Microphone defaults to muted. Returns True if the system is
+        compliant
+
+        @author: dkennel
+        @return: Bool
+        '''
+        linesfound = 0
+        if not os.path.exists(self.pulsedefaults):
+            return True
+
+        expectedlines = []
+        try:
+            indexlist = self.findPulseMic()
+            if len(indexlist) > 0:
+                for index in indexlist:
+                    line = 'set-source-mute ' + index + ' 1\n'
+                    expectedlines.append(line)
+
+                fhandle = open(self.pulsedefaults, 'r')
+                defaultsdata = fhandle.readlines()
+                fhandle.close()
+
+                for eline in expectedlines:
+                    for pulseline in defaultsdata:
+                        if re.search(eline, pulseline):
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                         ['MuteMic.findPulseMic',
+                                          'Found expected line ' + str(pulseline)])
+                            linesfound = linesfound + 1
+                if linesfound == len(indexlist):
+                    return True
+                else:
+                    return False
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception, err:
+            self.rulesuccess = False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        return True
 
     def report(self):
         '''
@@ -175,9 +266,15 @@ microphone. This rule should always be set to TRUE with few valid exceptions.'''
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['MuteMic.report',
                                   'Value of level: ' + str(level)])
-            if level > 0:
+            if level > 0 and self.checkpulseaudio():
                 self.compliant = False
                 self.detailedresults = 'Microphone input not set to zero!'
+            elif level > 0 and not self.checkpulseaudio():
+                self.compliant = False
+                self.detailedresults = 'Microphone input not set to zero! and microphone not set for default mute in Pulse Audio defaults.'
+            elif level == 0 and not self.checkpulseaudio():
+                self.compliant = False
+                self.detailedresults = 'Microphone not set for default mute in Pulse Audio defaults.'
             else:
                 self.compliant = True
                 self.detailedresults = 'Microphone input set to zero.'
@@ -185,6 +282,75 @@ microphone. This rule should always be set to TRUE with few valid exceptions.'''
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def fixPulseAudio(self):
+        '''
+        This method adds lines to the end of the pulse audio services default
+        settings definitions file to ensure that the microphones are muted by
+        default.
+
+        @author: dkennel
+        '''
+        if not os.path.exists(self.pulsedefaults):
+            return True
+
+        if self.checkpulseaudio():
+            return True
+
+        expectedlines = []
+        try:
+            indexlist = self.findPulseMic()
+            if len(indexlist) > 0:
+                for index in indexlist:
+                    line = 'set-source-mute ' + index + ' 1\n'
+                    expectedlines.append(line)
+
+                fhandle = open(self.pulsedefaults, 'r')
+                defaultsdata = fhandle.readlines()
+                fhandle.close()
+
+                for eline in expectedlines:
+                    elinefound = False
+                    for pulseline in defaultsdata:
+                        if re.search(eline, pulseline):
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                         ['fixPulseAudio',
+                                          'Found expected line ' + str(pulseline)])
+                            elinefound = True
+                    if not elinefound:
+                        defaultsdata.append(eline)
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                         ['fixPulseAudio',
+                                          'Appended line ' + str(eline)])
+                tempfile = self.pulsedefaults + '.stonixtmp'
+                whandle = open(tempfile, 'w')
+                for line in defaultsdata:
+                    whandle.write(line)
+                whandle.close()
+                mytype1 = 'conf'
+                mystart1 = self.currstate
+                myend1 = self.targetstate
+                myid1 = '0201001'
+                self.statechglogger.recordfilechange(self.pulsedefaults,
+                                                     tempfile, myid1)
+                event1 = {'eventtype': mytype1,
+                          'startstate': mystart1,
+                          'endstate': myend1,
+                          'myfile': self.pulsedefaults}
+                self.statechglogger.recordchgevent(myid1, event1)
+                os.rename(tempfile, self.pulsedefaults)
+                os.chown(self.pulsedefaults, 0, 0)
+                os.chmod(self.pulsedefaults, 420)  # int of 644
+                resetsecon(self.pulsedefaults)
+
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception, err:
+            self.rulesuccess = False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def fix(self):
         '''
@@ -200,6 +366,8 @@ microphone. This rule should always be set to TRUE with few valid exceptions.'''
             setlevels = "/usr/bin/osascript -e 'set volume input volume 0'"
         elif os.path.exists('/usr/bin/amixer'):
             setlevels = "/usr/bin/amixer sset Capture Volume 0,0 mute"
+        if os.path.exists(self.pulsedefaults):
+            self.fixPulseAudio()
 
         if setlevels != None:
             try:
