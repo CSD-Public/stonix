@@ -25,6 +25,7 @@ Created on Nov 20, 2012
 This class is responsible for securing the Apache webserver configuration.
 @author: dkennel
 @change: 2015/04/17 updated for new isApplicable
+@change: 2015/09/24 eball Fixed potential missing file error in fix()
 '''
 from __future__ import absolute_import
 import os
@@ -1013,6 +1014,10 @@ development but some existing applications may use insecure side effects.'''
                     filesToCheck.append(filename)
 # TODO need control statement here to switch for moving files on ubuntu
             for apacheconf in filesToCheck:
+                # Although paths were checked before, it is possible for a file
+                # to be removed in its partner's self.__fixapachemodules call
+                if not os.path.exists(apacheconf):
+                    continue
                 myidbase = myidbase + 1
                 changeid = self.makeEventId(myidbase)
                 myidbase = myidbase + 1
