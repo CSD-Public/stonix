@@ -152,14 +152,14 @@ class ConfigureSystemAuthentication(Rule):
             self.cracklib = "libpam-cracklib"
             self.quality = "libpwquality-common"
         elif self.ph.manager == "zypper":
-            self.pam = "/etc/pam.d/common-password"
-            self.pam2 = "/etc/pam.d/common-auth"
+            self.pam = "/etc/pam.d/common-password-pc"
+            self.pam2 = "/etc/pam.d/common-auth-pc"
             self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
             self.quality = "libpwquality1"
         else:
-            self.pam = "/etc/pam.d/password-auth"
-            self.pam2 = "/etc/pam.d/system-auth"
+            self.pam = "/etc/pam.d/password-auth-ac"
+            self.pam2 = "/etc/pam.d/system-auth-ac"
             self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
             self.quality = "libpwquality"

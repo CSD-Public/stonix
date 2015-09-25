@@ -22,15 +22,18 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SSHTimeout
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: Eric Ball
+@change: 2015/09/24 eball Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
+import os
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
+from src.stonix_resources.stonixutilityfunctions import setPerms, iterate
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.SSHTimeout import SSHTimeout
 
@@ -58,9 +61,37 @@ class zzzTestRuleSSHTimeout(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
         success = True
+        # Run report() to get variables
+        self.rule.report()
+        ssh = {"ClientAliveInterval": "0",
+               "ClientAliveCountMax": "900"}
+        if os.path.exists(self.rule.path):
+            kvtype = "conf"
+            intent = "present"
+            self.editor = KVEditorStonix(self.statechglogger, self.logdispatch,
+                                         kvtype, self.rule.path,
+                                         self.rule.tpath, ssh, intent, "space")
+            if not self.editor.report():
+                if self.editor.fixables:
+                    if self.editor.fix():
+                        if not self.editor.commit():
+                            success = False
+                            debug = "KVEditor commit did not succeed"
+                            self.logdispatch.log(LogPriority.DEBUG, debug)
+                    else:
+                        success = False
+                        debug = "KVEditor fix() did not succeed"
+                        self.logdispatch.log(LogPriority.DEBUG, debug)
+            self.rule.iditerator = 0
+            myid = iterate(self.rule.iditerator, self.rule.rulenumber)
+            if not setPerms(self.rule.path, [99, 99, 0770], self.logdispatch,
+                            self.statechglogger, myid):
+                success = False
+                debug = "Could not set permissions"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -72,9 +103,9 @@ class zzzTestRuleSSHTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -87,7 +118,7 @@ class zzzTestRuleSSHTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -100,11 +131,11 @@ class zzzTestRuleSSHTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
