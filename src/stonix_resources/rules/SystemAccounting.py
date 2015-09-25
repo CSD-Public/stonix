@@ -23,13 +23,16 @@
 '''
 Created on Apr 15, 2015
 
-System accounting is an optional process which gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 
-minutes, by default. The data may be accessed with the sar command, or by reviewing the nightly report files named /var/
-log/sa/sar*. Once a normal baseline for the system has been established, with frequent monitoring - unauthorized 
-activity (password crackers and other CPU-intensive jobs, and activity outside of normal usage hours) may be detected 
+System accounting is an optional process which gathers baseline system data
+(CPU utilization, disk I/O, etc.) every 10 minutes, by default. The data may be
+accessed with the sar command, or by reviewing the nightly report files named
+/var/ log/sa/sar*. Once a normal baseline for the system has been established,
+with frequent monitoring - unauthorized activity (password crackers and other
+CPU-intensive jobs, and activity outside of normal usage hours) may be detected
 due to departures from the normal system performance curve.
 
 @author: Breen Malmberg
+@change: 2015/09/25 eball Added Deb/Ubuntu compatibility
 '''
 
 from __future__ import absolute_import
@@ -61,11 +64,14 @@ class SystemAccounting(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rootrequired = True
-        self.helptext = 'System accounting is an optional process which gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 ' + \
-'minutes, by default. The data may be accessed with the sar command, or by reviewing the nightly report files named /var/' + \
-'log/sa/sar*. Once a normal baseline for the system has been established, with frequent monitoring - unauthorized ' + \
-'activity (password crackers and other CPU-intensive jobs, and activity outside of normal usage hours) may be detected ' + \
-'due to departures from the normal system performance curve.'
+        self.helptext = '''System accounting is an optional process which \
+gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 \
+minutes, by default. The data may be accessed with the sar command, or by \
+reviewing the nightly report files named /var/log/sa/sar*. Once a normal \
+baseline for the system has been established, with frequent monitoring - \
+unauthorized activity (password crackers and other CPU-intensive jobs, and \
+activity outside of normal usage hours) may be detected due to departures \
+from the normal system performance curve.'''
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',
@@ -75,7 +81,7 @@ class SystemAccounting(Rule):
         datatype = 'bool'
         key = 'SYSTEMACCOUNTING'
         instructions = 'To enable this rule, set the value of ' + \
-        'SYSTEMACCOUNTING to True'
+            'SYSTEMACCOUNTING to True'
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -145,7 +151,8 @@ class SystemAccounting(Rule):
             self.accpath = '/var/account/acct'
 
         if not os.path.exists(self.accpath):
-            self.detailedresults += '\ncould not locate accounting file: ' + str(self.accpath)
+            self.detailedresults += '\ncould not locate accounting file: ' + \
+                str(self.accpath)
 
     def setOpts(self, ostype='linux'):
         '''
@@ -208,21 +215,25 @@ class SystemAccounting(Rule):
 
             if not os.path.exists(self.enableacc):
                 configured = False
-                self.detailedresults += '\naccounting configuration file not found: ' + str(self.enableacc)
+                self.detailedresults += '\naccounting configuration file ' + \
+                    'not found: ' + str(self.enableacc)
 
             if not os.path.exists(self.accpath):
                 configured = False
-                self.detailedresults += '\naccounting file not found: ' + str(self.accpath)
+                self.detailedresults += '\naccounting file not found: ' + \
+                    str(self.accpath)
 
             contentlines = self.getFileContents(self.enableacc)
 
             if self.accopt + '\n' not in contentlines:
                 configured = False
-                self.detailedresults += '\naccounting not enabled. missing directive: ' + str(self.accopt)
+                self.detailedresults += '\naccounting not enabled. missing ' + \
+                    'directive: ' + str(self.accopt)
 
             if not self.pkghelper.check(self.pkgname):
                 configured = False
-                self.detailedresults += '\naccounting package not installed: ' + str(self.pkgname)
+                self.detailedresults += '\naccounting package not installed: ' \
+                    + str(self.pkgname)
 
         except Exception:
             raise
@@ -239,17 +250,20 @@ class SystemAccounting(Rule):
 
             if not os.path.exists(self.accpath):
                 configured = False
-                self.detailedresults += '\naccounting file not found: ' + str(self.accpath)
+                self.detailedresults += '\naccounting file not found: ' + \
+                    str(self.accpath)
 
             if not os.path.exists(self.enableacc):
                 configured = False
-                self.detailedresults += '\naccounting configuration file not found: ' + str(self.enableacc)
+                self.detailedresults += '\naccounting configuration file ' + \
+                    'not found: ' + str(self.enableacc)
 
             contentlines = self.getFileContents(self.enableacc)
 
             if self.accopt + '\n' not in contentlines:
                 configured = False
-                self.detailedresults += '\naccounting not enabled. missing directive: ' + str(self.accopt)
+                self.detailedresults += '\naccounting not enabled. missing ' + \
+                    'directive: ' + str(self.accopt)
 
         except Exception:
             raise
@@ -259,23 +273,18 @@ class SystemAccounting(Rule):
         '''
         @author: Breen Malmberg
         '''
-
         # defaults
         self.detailedresults = ''
         success = True
-
         try:
-
             if self.ci.getcurrvalue():
-
                 if self.islinux():
                     success = self.fixlinux()
                 else:
                     success = self.fixmac()
-
             else:
-
-                self.detailedresults += '\nconfiguration item: SYSTEMACCOUNTING was not enabled, so nothing was done'
+                self.detailedresults += 'Configuration item ' + \
+                    'SYSTEMACCOUNTING was not enabled, so nothing was done\n'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -313,7 +322,8 @@ class SystemAccounting(Rule):
             if contentlines:
                 for line in contentlines:
                     if re.search('^accounting_enable=', line):
-                        contentlines = [c.replace(line, self.accopt + '\n') for c in contentlines]
+                        contentlines = [c.replace(line, self.accopt + '\n')
+                                        for c in contentlines]
                         found = True
 
             if not found:
@@ -325,11 +335,15 @@ class SystemAccounting(Rule):
 
             if not self.pkghelper.install(self.pkgname):
                 success = False
-                self.detailedresults += '\nUnable to install package: ' + self.pkgname
+                self.detailedresults += 'Unable to install package: ' + \
+                    self.pkgname + '\n'
 
-            self.cmdhelper.executeCommand(self.accon + ' ' + self.accpath)
+            cmd = self.accon + ' ' + self.accpath
+            self.cmdhelper.executeCommand(cmd)
             if self.cmdhelper.getErrorString():
                 success = False
+                self.detailedresults += 'Execution of "' + cmd + '" failed ' + \
+                    'with error:\n' + self.cmdhelper.getErrorString()
 
         except Exception:
             raise
@@ -361,7 +375,8 @@ class SystemAccounting(Rule):
             if contentlines:
                 for line in contentlines:
                     if re.search('^accounting_enable=', line):
-                        contentlines = [c.replace(line, self.accopt + '\n') for c in contentlines]
+                        contentlines = [c.replace(line, self.accopt + '\n')
+                                        for c in contentlines]
                         found = True
 
             if not found:
@@ -371,10 +386,12 @@ class SystemAccounting(Rule):
             f.writelines(contentlines)
             f.close()
 
-            self.cmdhelper.executeCommand(self.accon + ' ' + self.accpath)
-            errout = self.cmdhelper.getErrorString()
-            if errout:
+            cmd = self.accon + ' ' + self.accpath
+            self.cmdhelper.executeCommand(cmd)
+            if self.cmdhelper.getErrorString():
                 success = False
+                self.detailedresults += 'Execution of "' + cmd + '" failed ' + \
+                    'with error:\n' + self.cmdhelper.getErrorString()
 
         except Exception:
             raise
