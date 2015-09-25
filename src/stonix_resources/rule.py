@@ -384,8 +384,8 @@ to undo\n"
                             used like a regular user. On these systems some
                             rules aimed at the user environment may not work or
                             actually cause problems. If this option is set to
-                            False (python bool) then this method will return
-                            false if EUID == 0. The default is True.
+                            True (python bool) then this method will return
+                            false if EUID == 0. The default is False.
         default  default    This is the default value in the template class and
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
@@ -523,7 +523,7 @@ to undo\n"
         # Perform the rootless check
         if applies and self.environ.geteuid() == 0:
             if 'noroot' in self.applicable:
-                if self.applicable['noroot'] == False:
+                if self.applicable['noroot'] == True:
                     applies = False
 
         return applies
