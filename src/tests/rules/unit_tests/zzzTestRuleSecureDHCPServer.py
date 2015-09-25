@@ -25,13 +25,13 @@
 This is a Unit Test for Rule SecureDHCPServer
 
 @author: Eric Ball
-@change: 06/30/2015 Original Implementation
+@change: 2015/06/30 eball Original Implementation
+@change: 2015/09/25 eball Modified to improve reliability
 '''
 from __future__ import absolute_import
 import unittest
 from src.stonix_resources.stonixutilityfunctions import setPerms
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.SecureDHCPServer import SecureDHCPServer
 
@@ -46,7 +46,6 @@ class zzzTestRuleSecureDHCPServer(RuleTest):
                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
@@ -62,10 +61,9 @@ class zzzTestRuleSecureDHCPServer(RuleTest):
         @author: Eric Ball
         '''
         success = True
+        # Run report() to populate self.rule.path
         self.rule.report()
         if success:
-            # Open file with 'w' so it is empty, then write unwanted options
-            fo = open(self.rule.path, "w")
             badoptionstring = '''option domain-name example.com;
 option domain-name-servers servers.example.com;
 option nis-domain          example.com;
@@ -74,9 +72,9 @@ option ntp-servers\tntp.example.com;
 option routers 127.0.0.1;
 option time-offset -18000;
 '''
-            fo.write(badoptionstring)
-            # Rule wants 420 perms, set to 660
-            success = setPerms(self.rule.path, [0, 0, 660], self.logdispatch)
+            open(self.rule.path, "a").write(badoptionstring)
+            # Rule wants 644 perms, set to 770
+            success = setPerms(self.rule.path, [0, 0, 0770], self.logdispatch)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
