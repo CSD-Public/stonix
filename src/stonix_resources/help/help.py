@@ -114,7 +114,7 @@ class Help(QDialog):
         #####
         # Return the app to the initial path.
         os.chdir(self.working_path)
-        print "Done........................................."
+        # print "Done........................................."
 
         #####
         # Exit the help browser window
