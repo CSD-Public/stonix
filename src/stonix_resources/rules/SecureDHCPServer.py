@@ -90,7 +90,7 @@ SECUREDHCPSERVER to False.'''
             self.tmppath = self.path + ".tmp"
             compliant = True
             if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
+                if not checkPerms(self.path, [0, 0, 0644], self.logger):
                     self.detailedresults += "The permissions on " + \
                         self.path + " are incorrect\n"
                     compliant = False
@@ -108,11 +108,14 @@ SECUREDHCPSERVER to False.'''
                     if re.match('^#', line) or re.match(r'^\s*$', line):
                         continue
                     if re.search("^option", line):
-                        line = line.split()
-                        if len(line) >= 2:
+                        linesplit = line.split()
+                        if len(linesplit) >= 2:
                             for item in self.data2:
-                                if re.search(item, line[1]):
+                                if re.search(item, linesplit[1]):
                                     compliant = False
+                                    self.detailedresults += "Unwanted " + \
+                                        "option found in " + self.path + \
+                                        ": " + line
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -130,6 +133,7 @@ SECUREDHCPSERVER to False.'''
             if not self.ci.getcurrvalue():
                 return
             success = True
+            # Clean out old undo events
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -150,12 +154,10 @@ SECUREDHCPSERVER to False.'''
                                              self.data1, "present",
                                              "space")
                 self.editor.report()
-                self.editor.setData(self.data2)
-                self.editor.setIntent("notpresent")
-                self.editor.report()
             tempstring = ""
             tmpfile = self.path + ".tmp"
             contents = readFile(self.path, self.logger)
+            changes = False
             for line in contents:
                 found = False
                 if re.match('^#', line) or re.match(r'^\s*$', line):
@@ -167,6 +169,7 @@ SECUREDHCPSERVER to False.'''
                         for item in self.data2:
                             if re.search(item, temp[1]):
                                 found = True
+                                changes = True
                                 break
                         if found:
                             continue
@@ -174,31 +177,34 @@ SECUREDHCPSERVER to False.'''
                             tempstring += line
                 else:
                     tempstring += line
-            if tempstring:
+            if changes:
+                debug = "Writing changes to " + tmpfile
+                self.logger.log(LogPriority.DEBUG, debug)
                 if not writeFile(tmpfile, tempstring, self.logger):
-                    self.detailedresults += "Unable to write changes to " + \
-                        self.path
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    debug = "Unable to write changes to " + tmpfile
+                    self.detailedresults += debug
+                    self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
-                    if not self.editor.fixables:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "conf",
-                                 "filepath": self.path}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.path,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, self.path)
-                        os.chown(self.path, 0, 0)
-                        os.chmod(self.path, 420)
-                        resetsecon(self.path)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": self.path}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.path,
+                                                         tmpfile, myid)
+                    os.rename(tmpfile, self.path)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    setPerms(self.path, [0, 0, 0644], self.logger,
+                             self.statechglogger, myid)
+                    resetsecon(self.path)
             if self.editor.fixables:
                 if not self.created:
-                    if not checkPerms(self.path, [0, 0, 420], self.logger):
+                    if not checkPerms(self.path, [0, 0, 0644], self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path, [0, 0, 420],
+                        if not setPerms(self.path, [0, 0, 0644],
                                         self.logger, self.statechglogger,
                                         myid):
                             success = False
@@ -211,7 +217,7 @@ SECUREDHCPSERVER to False.'''
                             "corrected\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         os.chown(self.path, 0, 0)
-                        os.chmod(self.path, 420)
+                        os.chmod(self.path, 0644)
                         resetsecon(self.path)
                     else:
                         debug = "kveditor commit not successful\n"
