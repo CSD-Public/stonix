@@ -4,7 +4,7 @@ Created on Aug 12, 2015
 The kernel auditing service is provided for system auditing. By default, the service audits about SELinux AVC denials and certain types of
 security-relevant events such as system logins, account modifications, and authentication events.
 
-@author: Breen malmberg
+@author: Breen Malmberg
 '''
 
 from __future__ import absolute_import
@@ -540,17 +540,17 @@ security-relevant events such as system logins, account modifications, and authe
 
                 if not self.audispeditor.fix():
                     fixsuccess = False
-                    self.detailederesults += '\nAudit dispatcher editor fix failed'
+                    self.detailedresults += '\nAudit dispatcher editor fix failed'
                 if not self.audispeditor.commit():
                     fixsuccess = False
-                    self.detailederesults += '\nAudit dispatcher editor commit failed'
+                    self.detailedresults += '\nAudit dispatcher editor commit failed'
 
                 if not self.auditdeditor.fix():
                     fixsuccess = False
                     self.detailedresults += '\nAudit daemon editor fix failed'
                 if not self.auditdeditor.commit():
                     fixsuccess = False
-                    self.detailederesults += '\nAudit daemon editor commit failed'
+                    self.detailedresults += '\nAudit daemon editor commit failed'
 
                 if not self.grubstatus:
                     if self.grubver == 1:
