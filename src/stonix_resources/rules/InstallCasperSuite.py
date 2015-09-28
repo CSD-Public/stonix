@@ -28,6 +28,7 @@ This is the rule for installing puppet.
 @author: ekkehard
 @change: 2014/11/24 original implementation
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/09/28 ekkehard incorporate OS X El Capitan & JAMF 9.8x support
 '''
 from __future__ import absolute_import
 import traceback
@@ -61,9 +62,9 @@ class InstallCasperSuite(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
         self.rulenumber = 9
         self.rulename = 'InstallCasperSuite'
+        self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
@@ -78,7 +79,7 @@ class InstallCasperSuite(Rule):
         default = True
         self.myci.setdefvalue(default)
         self.confitems.append(self.myci)
-        self.jamf = "/usr/sbin/jamf"
+        self.jamf = ["/usr/sbin/jamf", "/usr/local/bin/jamf"]
 
 # Set up CommandHelper instance
         self.ch = CommandHelper(self.logdispatch)
@@ -144,15 +145,22 @@ class InstallCasperSuite(Rule):
             self.compliant = True
             self.detailedresults = ""
             success = True
+            
 # See if jamf command is working
-            command = [self.jamf, "-version"]
             try:
+                command = [self.jamf[0], "-version"]
                 success = self.ch.executeCommand(command)
                 messagestring = str(self.jamf) + " is " + \
                 str(self.ch.getOutputString())
             except:
-                success = False
-                messagestring = str(self.jamf) + " dose not exist!"
+                try:
+                    command = [self.jamf[1], "-version"]
+                    success = self.ch.executeCommand(command)
+                    messagestring = str(self.jamf) + " is " + \
+                    str(self.ch.getOutputString())
+                except:
+                    success = False
+                    messagestring = str(self.jamf) + " dose not exist!"
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.DEBUG, messagestring)
             if not success:
