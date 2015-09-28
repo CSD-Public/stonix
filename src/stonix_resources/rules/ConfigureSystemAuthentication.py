@@ -71,33 +71,37 @@ class ConfigureSystemAuthentication(Rule):
         "for all files except for the login.defs file"
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
-
-        #configuration item instantiation
         datatype = "bool"
-        key = "PASSWORDREQ"
-        instructions = "To disable this rule set the value of " + \
-        "PASSWORDREQ to False.  This configuration item will configure " + \
-        "pam's password requirements when changing to a new password"
+        key = "CONFIGSYSAUTH"
+        instructions = "To disable this rule set the value of CONFIGSYSAUTH to False."
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
-        key = "PASSWORDFAIL"
-        instructions = "To disable this rule set the value of " + \
-        "PASSWORDFAIL to False.  This configuration item will configure " + \
-        "pam's failed login attempts mechanism using either faillock or " + \
-        "tally2."
+        key = "PASSWORDREQ"
+        instructions = "To not configure password requirements set " + \
+        "PASSWORDREQ to False.  This configuration item will configure " + \
+        "pam's password requirements when changing to a new password"
         default = True
         self.ci2 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
+        key = "PASSWORDFAIL"
+        instructions = "To not configure password fail locking set " + \
+        "PASSWORDFAIL to False.  This configuration item will configure " + \
+        "pam's failed login attempts mechanism using either faillock or " + \
+        "tally2."
+        default = True
+        self.ci3 = self.initCi(datatype, key, instructions, default)
+
+        datatype = "bool"
         key = "PWHASHING"
-        instructions = "To disable this rule set the value of " + \
+        instructions = "To not set the hashing algorithm set " + \
         "PWHASHING to False.  This configuration item will configure " + \
         "libuser and/or logindefs which specifies the hashing algorithm " + \
         "to use."
         default = True
-        self.ci3 = self.initCi(datatype, key, instructions, default)
+        self.ci4 = self.initCi(datatype, key, instructions, default)
 
         self.guidance = ["NSA 2.3.3.1,", "NSA 2.3.3.2"]
         self.iditerator = 0
@@ -138,8 +142,6 @@ class ConfigureSystemAuthentication(Rule):
         @return: bool - True if system is compliant, False if it isn't
         '''
         self.logindefs = "/etc/login.defs"
-        self.libuser = "libuser"
-        self.libuserfile = "/etc/libuser.conf"
         debug = ""
         results = ""
         compliant = True
@@ -151,18 +153,21 @@ class ConfigureSystemAuthentication(Rule):
             self.passwdqc = "libpam-passwdqc"
             self.cracklib = "libpam-cracklib"
             self.quality = "libpwquality-common"
+            self.libuserfile = "/etc/libuser.conf"
         elif self.ph.manager == "zypper":
             self.pam = "/etc/pam.d/common-password-pc"
             self.pam2 = "/etc/pam.d/common-auth-pc"
             self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
             self.quality = "libpwquality1"
+            self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
         else:
             self.pam = "/etc/pam.d/password-auth-ac"
             self.pam2 = "/etc/pam.d/system-auth-ac"
             self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
             self.quality = "libpwquality"
+            self.libuserfile = "/etc/libuser.conf"
         quality = "quality"
         passwdqc = "passwdqc"
         cracklib = "cracklib"
@@ -243,20 +248,12 @@ class ConfigureSystemAuthentication(Rule):
             compliant = False
 
         #check if libuser is installed, if so, check contents of libuser file
-        if self.ph.check(self.libuser):
+        if os.path.exists(self.libuserfile):
             if not self.chklibuserhash():
                 debug = "chklibuserhash() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 results += debug
                 compliant = False
-        elif not self.ph.checkAvailable(self.libuser):
-            debug = "libuser is not available on this system\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-        else:
-            debug = "libuser is available but not installed\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            results += debug
-            compliant = False
         #check if the /etc/login.defs file has correct contents
         if not self.chkdefspasshash():
             debug = "chkdefspasshash() is not compliant\n"
@@ -316,8 +313,7 @@ class ConfigureSystemAuthentication(Rule):
         @return: bool - True if fix is successful, False if it isn't
         '''
         try:
-            if not self.ci1.getcurrvalue() and not self.ci2.getcurrvalue() \
-               and not self.ci3.getcurrvalue():
+            if not self.ci1.getcurrvalue():
                 return
             #delete past state change records from previous fix
             self.iditerator = 0
@@ -362,7 +358,7 @@ class ConfigureSystemAuthentication(Rule):
         usingcracklib, usingpasswdqc, usingquality = False, False, False
         createFile(self.pam + ".backup", self.logger)
         createFile(self.pam2 + ".backup", self.logger)
-        if self.ci1.getcurrvalue():
+        if self.ci2.getcurrvalue():
             if self.ph.check(self.quality):
                 usingquality = True
             elif self.ph.checkAvailable(self.quality):
@@ -426,37 +422,19 @@ class ConfigureSystemAuthentication(Rule):
                 self.detailedresults += "unable to set the pam password " + \
                     " authority\n"
                 success = False
-        if self.ci2.getcurrvalue():
+        if self.ci3.getcurrvalue():
             if not self.chklockout():
                 if not self.setlockout():
                     self.detailedresults += "Unable to set the pam " + \
                         "lockout authority\n"
                     success = False
-        if self.ci3.getcurrvalue():
-            if not self.ph.check(self.libuser):
-                if self.ph.checkAvailable(self.libuser):
-                    if not self.ph.install(self.libuser):
-                        debug = "libuser not able to be installed\n"
-                        self.detailedresults += "libuser not able to be " + \
-                            "installed\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
-                    elif not self.chklibuserhash():
-                        if not self.setlibhash():
-                            debug = "setlibhash() failed\n"
-                            self.detailedresults += "unable to configure " + \
-                                "/etc/libuser.conf\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            success = False
-                else:
-                    debug = "libuser is not available for this system\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-            elif not self.chklibuserhash():
+        if self.ci4.getcurrvalue():
+            if not self.chklibuserhash():
                 if not self.setlibhash():
                     debug = "setlibhash() failed\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
                     self.detailedresults += "unable to configure " + \
-                        "/etc/libuser.conf file\n"
+                        "/etc/libuser.conf\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     success = False
             if not self.chkdefspasshash():
                 if not self.setdefpasshash():
@@ -976,7 +954,7 @@ class ConfigureSystemAuthentication(Rule):
             return compliant
         else:
             data = {"MD5_CRYPT_ENAB": "no",
-                    "ENCRYPT_METHOD":"SHA512"}
+                    "ENCRYPT_METHOD": "SHA512"}
             datatype = "conf"
             intent = "present"
             tmppath = self.logindefs + ".tmp"
@@ -998,46 +976,40 @@ class ConfigureSystemAuthentication(Rule):
         @return: bool'''
         compliant = True
         if self.ph.manager in ["yum", "apt-get"]:
-            if os.path.exists(self.libuserfile):
-                data = {"defaults": {"crypt_style": "sha512"}}
-                datatype = "tagconf"
-                intent = "present"
-                tmppath = self.libuserfile + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              datatype, self.libuserfile,
-                                              tmppath, data, intent, "openeq")
-                if not self.editor1.report():
-                    debug = "/etc/libuser.conf doesn't contain the correct " + \
-                        "contents\n"
-                    self.detailedresults += "/etc/libuser.conf doesn't " + \
-                        "contain the correct contents\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
-            else:
+            data = {"defaults": {"crypt_style": "sha512"}}
+            datatype = "tagconf"
+            intent = "present"
+            tmppath = self.libuserfile + ".tmp"
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          datatype, self.libuserfile,
+                                          tmppath, data, intent, "openeq")
+            if not self.editor1.report():
+                debug = "/etc/libuser.conf doesn't contain the correct " + \
+                    "contents\n"
+                self.detailedresults += "/etc/libuser.conf doesn't " + \
+                    "contain the correct contents\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                compliant = False
+            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+                self.detailedresults += "Permissions are incorrect on " + \
+                    self.libuserfile + "\n"
                 compliant = False
         elif self.ph.manager == "zypper":
-            self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
-            if os.path.exists(self.libuserfile):
-                contents = readFile(self.libuserfile, self.logger)
-                if not contents:
-                    self.detailedresults += self.libuserfile + " is blank\n"
-                    return False
-                for line in contents:
-                    if re.match("^\"encryption_method\"", line.strip()):
-                        if re.search(":", line):
-                            temp = line.split(":")
-                            if temp[1].strip() != "\"sha512\"":
-                                compliant = False
-                                break
-            else:
-                self.detailedresults += self.libuserfile + " doesn't exist\n"
-        #libuser not available for these systems
-        elif self.ph.manager in ["portage", "freebsd", "solaris"]:
-            return True
-        if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
-            self.detailedresults += "Permissions are incorrect on " + \
-                self.libuserfile + "\n"
-            compliant = False
+            contents = readFile(self.libuserfile, self.logger)
+            if not contents:
+                self.detailedresults += self.libuserfile + " is blank\n"
+                return False
+            for line in contents:
+                if re.match("^\"encryption_method\"", line.strip()):
+                    if re.search(":", line):
+                        temp = line.split(":")
+                        if temp[1].strip() != "\"sha512\"":
+                            compliant = False
+                            break
+            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+                self.detailedresults += "Permissions are incorrect on " + \
+                    self.libuserfile + "\n"
+                compliant = False
         return compliant
 
 ###############################################################################
@@ -1302,91 +1274,66 @@ class ConfigureSystemAuthentication(Rule):
         @author: dwalker
         @return: bool
         '''
-        #check if libuser is installed, if not, install it
+
         if self.ph.manager in ["apt-get", "yum"]:
-            if not os.path.exists(self.libuserfile):
-                createFile(self.libuserfile, self.logger)
-                self.created = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.libuserfile}
-                self.statechglogger.recordchgevent(myid, event)
-                data = {"defaults": {"crypt_style": "sha512"}}
-                datatype = "tagconf"
-                intent = "present"
-                tmppath = self.libuserfile + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              datatype, self.libuserfile,
-                                              tmppath, data, intent, "openeq")
-                if not self.editor1.report():
-                    debug = "/etc/libuser.conf doesn't contain the correct " + \
-                        "contents\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-            if self.editor1.fixables:
-                if not self.created:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.editor1.setEventID(myid)
-                if self.editor1.fix():
-                    if self.editor1.commit():
-                        debug = "/etc/libuser.conf has been corrected\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
+            if os.path.exists(self.libuserfile):
+                if self.editor1.fixables:
+                    if not self.created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.editor1.setEventID(myid)
+                    if self.editor1.fix():
+                        if self.editor1.commit():
+                            debug = "/etc/libuser.conf has been corrected\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            os.chown(self.libuserfile, 0, 0)
+                            os.chmod(self.libuserfile, 420)
+                            resetsecon(self.libuserfile)
+                        else:
+                            self.detailedresults += "/etc/libuser.conf " + \
+                                "couldn't be corrected\n"
+                            return False
+                    else:
+                        self.detailedresults += "/etc/libuser.conf couldn't " + \
+                            "be corrected\n"
+                        return False
+        else:
+            if self.ph.manager == "zypper":
+                if os.path.exists(self.libuserfile):
+                    contents = readFile(self.libuserfile, self.logger)
+                    tempstring = ""
+                    found = False
+                    for line in contents:
+                        if re.search("^#", line) or re.match('^\s*$', line):
+                            tempstring += line
+                        elif re.search("^\"encryption_method\"", line.strip()):
+                            if re.search(":", line):
+                                temp = line.split(":")
+                                if temp[1] == "sha512":
+                                    found = True
+                                    tempstring += line
+                                else:
+                                    found = False
+                            else:
+                                continue
+                        else:
+                            tempstring += line
+                    if not found:
+                        line = "\"encryption_method\" : \"sha512\"\n"
+                        tempstring += line
+                    tmpfile = self.libuserfile + ".tmp"
+                    if writeFile(tmpfile, tempstring, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'conf',
+                                 'filepath': self.libuserfile}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.libuserfile,
+                                                             tmpfile, myid)
+                        os.rename(tmpfile, self.libuserfile)
                         os.chown(self.libuserfile, 0, 0)
                         os.chmod(self.libuserfile, 420)
                         resetsecon(self.libuserfile)
-                    else:
-                        self.detailedresults += "/etc/libuser.conf " + \
-                            "couldn't be corrected\n"
-                        return False
-                else:
-                    self.detailedresults += "/etc/libuser.conf couldn't " + \
-                        "be corrected\n"
-                    return False
-        else:
-            if self.ph.manager == "zypper":
-                if not os.path.exists(self.libuserfile):
-                    createFile(self.libuserfile, self.logger)
-                    created = True
-                contents = readFile(self.libuserfile, self.logger)
-                tempstring = ""
-                found = False
-                for line in contents:
-                    if re.search("^#", line) or re.match('^\s*$', line):
-                        tempstring += line
-                    elif re.search("^\"encryption_method\"", line.strip()):
-                        if re.search(":", line):
-                            temp = line.split(":")
-                            if temp[1] == "sha512":
-                                found = True
-                                tempstring += line
-                            else:
-                                found = False
-                        else:
-                            continue
-                    else:
-                        tempstring += line
-                if not found:
-                    line = "\"encryption_method\" : \"sha512\"\n"
-                    tempstring += line
-            tmpfile = self.libuserfile + ".tmp"
-            if writeFile(tmpfile, tempstring, self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not created:
-                    event = {'eventtype': 'conf',
-                             'filepath': self.libuserfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.libuserfile,
-                                                         tmpfile, myid)
-                else:
-                    event = {"eventtype": "creation",
-                             "filepath": self.libuserfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                os.rename(tmpfile, self.libuserfile)
-                os.chown(self.libuserfile, 0, 0)
-                os.chmod(self.libuserfile, 420)
-                resetsecon(self.libuserfile)
         return True
 ###############################################################################
 
