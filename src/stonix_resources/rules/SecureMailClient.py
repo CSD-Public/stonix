@@ -69,8 +69,10 @@ Mail Client."""
         if not self.environ.getosfamily() == "darwin":
             return
 
+        users = []
         if self.environ.geteuid() == 0:
-            users = os.listdir("/Users")
+            if os.path.exists('/Users'):
+                users = os.listdir("/Users")
             for user in users:
                 fullpath1 = "/Users/" + user + mailplist
                 fullpath2 = "/Users/" + user + sharedplist

@@ -10,7 +10,6 @@ from PyQt4.QtNetwork import *
 from PyQt4.QtWebKit import *
 
 from help2_ui import Ui_Help2
-from turtle import Screen
 
 try:
     _fromUtf8 = QString.fromUtf8
@@ -40,6 +39,18 @@ class Help(QDialog):
         self.page.setLinkDelegationPolicy(QWebPage.DelegateExternalLinks)
         self.connect(self.ui.webView, SIGNAL("linkClicked(QUrl)"), self.openExternal)
 
+        #####
+        # Auto load images & disable javascript
+        web_settings = self.page.settings()
+        # Disabling:
+        web_settings.setAttribute(QWebSettings.JavascriptEnabled, False)
+        web_settings.setAttribute(QWebSettings.JavaEnabled, False)
+        # Enabling for images
+        web_settings.setAttribute(QWebSettings.LocalContentCanAccessFileUrls, True)
+        web_settings.setAttribute(QWebSettings.LocalStorageEnabled, True)
+        web_settings.setAttribute(QWebSettings.PluginsEnabled, True)
+        web_settings.setAttribute(QWebSettings.AutoLoadImages, True)
+        
         #####
         # get the current path
         self.working_path = os.getcwd()
@@ -102,7 +113,7 @@ class Help(QDialog):
         #####
         # Return the app to the initial path.
         os.chdir(self.working_path)
-        print "Done........................................."
+        # print "Done........................................."
 
         #####
         # Exit the help browser window

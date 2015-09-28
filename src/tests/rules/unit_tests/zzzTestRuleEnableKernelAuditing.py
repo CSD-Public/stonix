@@ -22,34 +22,50 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableCloudServices
+This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 
-@author: ekkehard j. koch
-@change: 2013/03/18 Original Implementation
-@change: 2015/09/25 eball Added Ubuntu test conditions
+@author: Breen Malmberg
 '''
 from __future__ import absolute_import
 import unittest
+import os
+
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableCloudServices import DisableCloudServices
+from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
 
 
-class zzzTestRuleDisableCloudServices(RuleTest):
+class zzzTestRuleConsoleRootOnly(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableCloudServices(self.config,
-                                         self.environ,
-                                         self.logdispatch,
-                                         self.statechglogger)
+        self.rule = EnableKernelAuditing(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
+        # restore backups of original files, made before testing
+#         if self.environ.getosfamily() == 'darwin':
+#             auditcontrolbak = '/etc/security/audit_control.stonixbak'
+#             audituserbak = '/etc/security/audit_user.stonixbak'
+#             if os.path.exists(auditcontrolbak):
+#                 os.rename(auditcontrolbak, '/etc/security/audit_control')
+#             if os.path.exists(audituserbak):
+#                 os.rename(audituserbak, '/etc/security/audit_user')
+#         else:
+#             auditdbaks =['/etc/audit/auditd.conf.stonixbak', '/etc/auditd.conf.stonixbak'] 
+#             auditrulesbaks = ['/etc/audit/audit.rules.stonixbak', '/etc/audit/rules.d/audit.rules.stonixbak']
+#             for bak in auditdbaks:
+#                 if os.path.exists(bak):
+#                     os.rename(bak, bak[:-10])
+#             for bak in auditrulesbaks:
+#                 if os.path.exists(bak):
+#                     os.rename(bak, bak[:-10])
         pass
 
     def runTest(self):
@@ -62,19 +78,26 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
+
         success = True
-        if self.environ.getosfamily() == "darwin":
-            command = ["/usr/bin/defaults",
-                       "-currentHost",
-                       "write",
-                       "NSGlobalDomain",
-                       "NSDocumentSaveNewDocumentsToCloud",
-                       "-bool",
-                       "yes"]
-            success = self.ch.executeCommand(command)
-        else:
-            ph = Pkghelper(self.logdispatch, self.environ)
-            success = ph.install("unity-lens-shopping")
+# 
+#         # make backups of any original files, before testing
+#         if self.environ.getosfamily() == 'darwin':
+#             if os.path.exists('/etc/security/audit_control'):
+#                 os.rename('/etc/security/audit_control', '/etc/security/audit_control.stonixbak')
+#             if os.path.exists('/etc/security/audit_user'):
+#                 os.rename('/etc/security/audit_user', '/etc/security/audit_user.stonixbak')
+#         else:
+#             auditdpaths = ['/etc/audit/auditd.conf', '/etc/auditd.conf']
+#             for path in auditdpaths:
+#                 if os.path.exists(path):
+#                     os.rename(path, path + '.stonixbak')
+#             if os.path.exists('/etc/audisp/audispd.conf'):
+#                 os.rename('/etc/audisp/audispd.conf', '/etc/audisp/audispd.conf.stonixbak')
+#             auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules']
+#             for loc in auditruleslocs:
+#                 if os.path.exists(loc):
+#                     os.rename(loc, loc + '.stonixbak')
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -86,9 +109,9 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -101,7 +124,7 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -114,7 +137,7 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
