@@ -71,33 +71,37 @@ class ConfigureSystemAuthentication(Rule):
         "for all files except for the login.defs file"
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
-
-        #configuration item instantiation
         datatype = "bool"
-        key = "PASSWORDREQ"
-        instructions = "To disable this rule set the value of " + \
-        "PASSWORDREQ to False.  This configuration item will configure " + \
-        "pam's password requirements when changing to a new password"
+        key = "CONFIGSYSAUTH"
+        instructions = "To disable this rule set the value of CONFIGSYSAUTH to False."
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
-        key = "PASSWORDFAIL"
-        instructions = "To disable this rule set the value of " + \
-        "PASSWORDFAIL to False.  This configuration item will configure " + \
-        "pam's failed login attempts mechanism using either faillock or " + \
-        "tally2."
+        key = "PASSWORDREQ"
+        instructions = "To not configure password requirements set " + \
+        "PASSWORDREQ to False.  This configuration item will configure " + \
+        "pam's password requirements when changing to a new password"
         default = True
         self.ci2 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
+        key = "PASSWORDFAIL"
+        instructions = "To not configure password fail locking set " + \
+        "PASSWORDFAIL to False.  This configuration item will configure " + \
+        "pam's failed login attempts mechanism using either faillock or " + \
+        "tally2."
+        default = True
+        self.ci3 = self.initCi(datatype, key, instructions, default)
+
+        datatype = "bool"
         key = "PWHASHING"
-        instructions = "To disable this rule set the value of " + \
+        instructions = "To not set the hashing algorithm set " + \
         "PWHASHING to False.  This configuration item will configure " + \
         "libuser and/or logindefs which specifies the hashing algorithm " + \
         "to use."
         default = True
-        self.ci3 = self.initCi(datatype, key, instructions, default)
+        self.ci4 = self.initCi(datatype, key, instructions, default)
 
         self.guidance = ["NSA 2.3.3.1,", "NSA 2.3.3.2"]
         self.iditerator = 0
@@ -316,8 +320,7 @@ class ConfigureSystemAuthentication(Rule):
         @return: bool - True if fix is successful, False if it isn't
         '''
         try:
-            if not self.ci1.getcurrvalue() and not self.ci2.getcurrvalue() \
-               and not self.ci3.getcurrvalue():
+            if not self.ci1.getcurrvalue():
                 return
             #delete past state change records from previous fix
             self.iditerator = 0
