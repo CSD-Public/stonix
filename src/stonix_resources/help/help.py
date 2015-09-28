@@ -10,7 +10,6 @@ from PyQt4.QtNetwork import *
 from PyQt4.QtWebKit import *
 
 from help2_ui import Ui_Help2
-from turtle import Screen
 
 try:
     _fromUtf8 = QString.fromUtf8
