@@ -24,6 +24,8 @@
 Created on Apr 22, 2015
 
 @author: dwalker
+@change: 2015/09/25 eball Added info to help text and removed failure for
+    missing configuration file
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -46,7 +48,9 @@ class SecureDHCPServer(Rule):
         self.rulename = "SecureDHCPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Configures dhcp if your computer is acting as a dhcp server '''
+        self.helptext = '''Configures the system's dhcpd.conf file to increase \
+the security of the DHCP daemon. If the dhcpd.conf file is not found, the \
+system is considered compliant.'''
         datatype = "bool"
         key = "SECUREDHCPSERVER"
         instructions = '''To disable this rule set the value of \
@@ -78,17 +82,13 @@ SECUREDHCPSERVER to False.'''
                           "routers",
                           "time-offset"]
             if self.ph.manager == "zypper":
-#                 self.package = "dhcp-server"
                 self.path = "/etc/dhcpd.conf"
             elif self.ph.manager == "yum":
-                #self.package = "dhcp"
                 self.path = "/etc/dhcp/dhcpd.conf"
             elif self.ph.manager == "apt-get":
-                #self.package = "isc-dhcp-server"
                 self.path = "/etc/dhcp/dhcpd.conf"
             self.tmppath = self.path + ".tmp"
             compliant = True
-            #if self.ph.check(self.package):
             if os.path.exists(self.path):
                 if not checkPerms(self.path, [0, 0, 420], self.logger):
                     self.detailedresults += "The permissions on " + \
@@ -113,8 +113,6 @@ SECUREDHCPSERVER to False.'''
                             for item in self.data2:
                                 if re.search(item, line[1]):
                                     compliant = False
-            else:
-                compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -136,7 +134,8 @@ SECUREDHCPSERVER to False.'''
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            #if self.ph.check(self.package):
+
+            self.detailedresults = ""
             if not os.path.exists(self.path):
                 createFile(self.path, self.logger)
                 self.created = True
