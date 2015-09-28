@@ -1322,3 +1322,121 @@ def versioncomp(firstver, secondver):
         return 'newer'
     elif LooseVersion(secondver) < LooseVersion(firstver):
         return 'older'
+
+
+def fixInflation(filepath, logger, perms, owner):
+    '''
+    this method is designed to remove newline character (\n) inflation in files
+    it should not modify, nor remove any lines of actual content in the file
+    return True if successful; else return False
+
+    @param filepath: string full path to file
+    @param logger: object reference logging object
+    @param perms: int 4-digit octal permissions (ex: 0644 = rw, r, r)
+    @param owner: list a list of 2 integers (ex: [0, 0] = root:root)
+    @return: retval
+    @rtype: bool
+    @author: Breen Malmberg
+    '''
+
+    retval = True
+
+    try:
+
+        # validate all parameters; log and return if not valid
+        if not logger:
+            print "\nDEBUG:stonixutilityfunctions.fixInflation(): No logging parameter was passed. Cannot log.\n"
+            print "DEBUG:stonixutilityfunctions.fixInflation(): Exiting method fixInflation()... Nothing was done.\n"
+            retval = False
+            return retval
+
+        if not perms:
+            logger.log(LogPriority.DEBUG, "Specified perms parameter was blank. Cannot proceed.")
+            retval = False
+            return retval
+
+        if not isinstance(perms, int):
+            paramtype = type(perms)
+            logger.log(LogPriority.DEBUG, "Specified perms parameter was of type: " + str(paramtype))
+            logger.log(LogPriority.DEBUG, "perms parameter must be an int! Cannot proceed.")
+            retval = False
+            return retval
+
+        if not owner:
+            logger.log(LogPriority.DEBUG, "Specified owner parameter was blank. Cannot proceed.")
+            retval = False
+            return retval
+
+        if not isinstance(owner, list):
+            paramtype = type(owner)
+            logger.log(LogPriority.DEBUG, "Specified owner parameter was of type: " + str(paramtype))
+            logger.log(LogPriority.DEBUG, "owner parameter must be a list! Cannot proceed.")
+            retval = False
+            return retval
+
+        if not len(owner) == 2:
+            numelements = len(owner)
+            logger.log(LogPriority.DEBUG, "Specified owner parameter had " + str(numelements) + " elements.")
+            logger.log(LogPriority.DEBUG, "owner parameter must be a list of exactly 2 elements. Cannot proceed.")
+            retval = False
+            return retval
+
+        if not filepath:
+            logger.log(LogPriority.DEBUG, "Specified filepath parameter was blank. Nothing to fix!")
+            retval = False
+            return retval
+
+        if not isinstance(filepath, basestring):
+            paramtype = type(filepath)
+            logger.log(LogPriority.DEBUG, "Specified filepath parameter was of type: " + str(paramtype))
+            logger.log(LogPriority.DEBUG, "filepath parameter must be a string! Cannot proceed.")
+            retval = False
+            return retval
+
+        if not os.path.exists(filepath):
+            logger.log(LogPriority.DEBUG, "Specified filepath does not exist. Nothing to fix!")
+            retval = False
+            return retval
+
+        # read the file's contents into a list (contentlines)
+        logger.log(LogPriority.DEBUG, "Reading file contents from: " + str(filepath))
+        f = open(filepath, 'r')
+        contentlines = f.readlines()
+        f.close()
+
+        # init variables to defaults
+        i = 0
+        newcontentlines = []
+        blanklinesremoved = 0
+
+        # only allow a maximum of 1 full blank line between lines with actual content
+        # remove all extra blank lines; keep all lines with content in them (all non-blank)
+        logger.log(LogPriority.DEBUG, "Removing extra blank lines from (de-flating) file contents...")
+        for line in contentlines:
+            if re.search('^\s*\n$', line):
+                i += 1
+                if i >= 2:
+                    blanklinesremoved += 1
+                else:
+                    newcontentlines.append(line)
+            else:
+                newcontentlines.append(line)
+                i = 0
+
+        # write the de-flated contents out to the file
+        # preserve the original/intended/specified ownership and permissions
+        # preserve security context if applicable
+        logger.log(LogPriority.DEBUG, "Writing de-flated contents to file: " + str(filepath))
+        f = open(filepath, 'w')
+        f.writelines(newcontentlines)
+        f.close()
+        logger.log(LogPriority.DEBUG, "Removed " + str(blanklinesremoved) + " blank lines from file: " + str(filepath) + ". File should now be de-flated.")
+        os.chown(filepath, owner[0], owner[1])
+        os.chmod(filepath, perms)
+        resetsecon(filepath)
+
+    except Exception as err:
+        logger.log(LogPriority.ERROR, "stonixutilityfunctions.fixInflation(): " + str(err))
+        retval = False
+        return retval
+    return retval
