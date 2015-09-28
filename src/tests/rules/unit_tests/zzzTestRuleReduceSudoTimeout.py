@@ -22,15 +22,17 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ReduceSudoTimeout
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: Eric Ball
+@change: 2015/09/24 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
+import re
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.stonixutilityfunctions import setPerms, readFile
+from src.stonix_resources.stonixutilityfunctions import iterate
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ReduceSudoTimeout import ReduceSudoTimeout
 
@@ -39,13 +41,10 @@ class zzzTestRuleReduceSudoTimeout(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ReduceSudoTimeout(self.config,
-                                                 self.environ,
-                                                 self.logdispatch,
-                                                 self.statechglogger)
+        self.rule = ReduceSudoTimeout(self.config, self.environ,
+                                      self.logdispatch, self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
@@ -58,9 +57,21 @@ class zzzTestRuleReduceSudoTimeout(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
         success = True
+        # This is tested as working on both platforms
+        sudoers = "/etc/sudoers"
+        self.rule.ci.updatecurrvalue(True)
+        self.rule.iditerator = 0
+        myid = iterate(self.rule.iditerator, self.rule.rulenumber)
+        setPerms(sudoers, [99, 99, 0770], self.logdispatch,
+                 self.statechglogger, myid)
+        contents = readFile(sudoers, self.logdispatch)
+        for line in contents:
+            if re.search("^Defaults\s+timestamp_timeout", line.strip()):
+                contents.remove(line)
+                break
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -72,9 +83,9 @@ class zzzTestRuleReduceSudoTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -87,7 +98,7 @@ class zzzTestRuleReduceSudoTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -100,11 +111,11 @@ class zzzTestRuleReduceSudoTimeout(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
