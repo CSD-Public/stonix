@@ -51,7 +51,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import main_window
 from logdispatcher import LogPriority
-from help.help import Help
+#from help.help import Help
 
 class GUI (View, QMainWindow, main_window.Ui_MainWindow):
     """
@@ -109,7 +109,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.actionReport_All.triggered.connect(self.reportall)
         self.actionRevert_All.triggered.connect(self.revertall)
         self.actionStop.triggered.connect(self.abortrun)
-        self.actionGuiHelp.triggered.connect(self.openHelpBrowser)
+        #self.actionGuiHelp.triggered.connect(self.openHelpBrowser)
         self.fix_button.clicked.connect(self.runrule)
         self.report_button.clicked.connect(self.reportrule)
         self.revert_button.clicked.connect(self.revertrule)
@@ -124,7 +124,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         reportallicon = os.path.join(self.icon_path, "system-search.png")
         revertallicon = os.path.join(self.icon_path, "warning_48.png")
         cancelrunicon = os.path.join(self.icon_path, "cancel.png")
-        helpquestionmark = os.path.join(self.icon_path, "help.ico")
+        #helpquestionmark = os.path.join(self.icon_path, "help.ico")
         # Commented out setStatusTip calls to keep them from stomping on run
         # messages
         self.actionLog.setIcon((QIcon(logicon)))
@@ -148,9 +148,9 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.actionRevert_All.setIcon(QIcon(revertallicon))
         self.actionRevert_All.setObjectName("actionRevert_All")
         
-        self.actionGuiHelp.setIcon(QIcon(helpquestionmark))
-        self.actionGuiHelp.setObjectName("actionGuiHelp")
-        self.actionGuiHelp.setShortcut('Ctrl+H')
+        #self.actionGuiHelp.setIcon(QIcon(helpquestionmark))
+        #self.actionGuiHelp.setObjectName("actionGuiHelp")
+        #self.actionGuiHelp.setShortcut('Ctrl+H')
         
         #self.actionRevert_All.setStatusTip('Attempt to Revert All Changes')
         #self.actionEdit_Selected = QtGui.QAction(MainWindow)
@@ -168,7 +168,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.toolbar.addAction(self.actionRun_All)
         self.toolbar.addAction(self.actionReport_All)
         self.toolbar.addAction(self.actionStop)
-        self.toolbar.addAction(self.actionGuiHelp)
+        #self.toolbar.addAction(self.actionGuiHelp)
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         # Build rule list
         self.rule_data = self.controller.getallrulesdata()
@@ -219,20 +219,20 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.statusBar().addPermanentWidget(self.pbar)
         self.raise_()
         self.show()
-
+    """
     def openHelpBrowser(self):
-        """
+        ""
         Open the html based gui help system
         
         @author: Roy Nielsen
-        """
+        ""
         stonixhelp = Help()
         retval = stonixhelp.exec_()
         stonixhelp.raise_()
 
         if retval == 1 :
             self.accept
-        
+    """    
     def update_progress(self, curr, total):
         """
         Progress updater for the progress bar.
