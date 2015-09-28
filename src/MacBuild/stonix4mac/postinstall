@@ -448,7 +448,9 @@ def main():
 
     etcLink(TARGET_DIR, message_level)
 
-    install_launchd_job(SOURCE_DIR, TARGET_DIR, message_level)
+    #####
+    # Decision to remove code not currently working on 9/28/2015
+    # install_launchd_job(SOURCE_DIR, TARGET_DIR, message_level)
 
     fix_app_perms()
 
