@@ -26,6 +26,7 @@ from LANL-stor.
 
 @author: Eric Ball
 @change: 2015/08/11 eball - Original implementation
+@change: 2015/10/01 eball - Refactoring Red Hat code for sssd
 '''
 from __future__ import absolute_import
 import os
@@ -86,8 +87,8 @@ effect."""
             osver = int(self.environ.getosver().split(".")[0])
             self.myos = self.environ.getostype().lower()
 
-            packagesRpm = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                           "oddjob-mkhomedir"]
+            packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd", "krb5-workstation"]
+                          # "oddjob-mkhomedir"]
             packagesDeb = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
             packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap"]
             if self.ph.determineMgr() == "apt-get":
@@ -112,17 +113,19 @@ effect."""
                     results += "Settings in " + conffile + " are incorrect\n"
 
             # openSUSE 13 does not support nslcd, so sssd is used instead
-            if re.search("suse", self.myos):
+            if re.search(".*", self.myos):
+                self.logger.log(LogPriority.WARNING, "Entering sssd section")
                 sssdconfpath = "/etc/sssd/sssd.conf"
                 self.sssdconfpath = sssdconfpath
                 sssdconfdict = {"services": "nss, pam",
                                 "filter_users": "root",
                                 "filter_groups": "root",
+                                "ldap_uri": "ldap://" + server,
                                 "id_provider": "ldap",
                                 "auth_provider": "krb5",
-                                "ldap_uri": "ldap://" + server,
-                                "krb5_server": "kerberos.lanl.gov",
-                                "krb5_realm": "lanl.gov"}
+                                "krb5_realm": "lanl.gov",
+                                "krb5_server": "kerberos.lanl.gov," +
+                                "kerberos-slaves.lanl.gov"}
                 self.sssdconfdict = sssdconfdict
                 if not self.sh.auditservice("sssd"):
                     compliant = False
@@ -137,7 +140,7 @@ effect."""
                     if not self.editor.report():
                         compliant = False
                         results += "The correct settings were not found in " + \
-                            sssdconfpath + "\n"
+                            sssdconfpath + "\n" + str(self.editor.fixables) + "\n"
                 else:
                     compliant = False
                     results += sssdconfpath + " does not exist\n"
@@ -165,97 +168,54 @@ effect."""
                     results += nsswitchpath + " does not exist\n"
             # Settings for Red Hat and Debian distros
             else:
-                if not self.sh.auditservice("nslcd"):
+                self.logger.log(LogPriority.WARNING, "Entering else section")
+                if not self.sh.auditservice("sssd"):
                     compliant = False
-                    results += "nslcd service is not activated\n"
+                    results += "sssd service is not activated\n"
 
-                # On Red Hat systems, check authconfig
-                if not self.ph.determineMgr() == "apt-get":
-                    authfile = '/etc/sysconfig/authconfig'
-                    self.authfile = authfile
-                    authconfig = {"USEPAMACCESS": "yes",
-                                  "CACHECREDENTIALS": "no",
-                                  "USESSSDAUTH": "no",
-                                  "USESHADOW": "yes",
-                                  "USEWINBIND": "no",
-                                  "USESSSD": "no",
-                                  "PASSWDALGORITHM": "sha512",
-                                  "FORCELEGACY": "yes",
-                                  "USEFPRINTD": "no",
-                                  "USEHESIOD": "no",
-                                  "FORCESMARTCARD": "no",
-                                  "USELDAPAUTH": "no",
-                                  "USELDAP": "yes",
-                                  "USECRACKLIB": "no",
-                                  "USEWINBINDAUTH": "no",
-                                  "USESMARTCARD": "no",
-                                  "USELOCAUTHORIZE": "yes",
-                                  "USENIS": "no",
-                                  "USEKERBEROS": "yes",
-                                  "USESYSNETAUTH": "no",
-                                  "USESMBAUTH": "no",
-                                  "USEDB": "no"}
-                    if osver == 6:
-                        authconfig["USEPASSWDQC"] = "yes"
-                    self.authconfig = authconfig
-                    tmppath = authfile + ".tmp"
-                    if os.path.exists(authfile):
-                        self.editor = KVEditorStonix(self.statechglogger,
-                                                     self.logger, "conf",
-                                                     authfile,
-                                                     tmppath, authconfig,
-                                                     "present", "closedeq")
-                        if not self.editor.report():
-                            compliant = False
-                            results += "Settings in " + authfile + \
-                                " are not correct\n"
-                        elif not checkPerms(authfile, [0, 0, 0644],
-                                            self.logger):
-                            compliant = False
-                            results += "Settings in " + authfile + \
-                                " are correct, but the file's permissions " + \
-                                "are incorrect\n"
-                    else:
-                        compliant = False
-                        results += authfile + " does not exist.\n"
-
-                # Check ldap (nslcd) settings. Mostly system agnostic, except
+                # Check ldap settings. Mostly system agnostic, except
                 # the ldap gid, which is ldap on RH systems and nslcd on Debian
                 # systems
-                ldapfile = "/etc/nslcd.conf"
+                ldapfile = "/etc/sssd/sssd.conf"
                 self.ldapfile = ldapfile
-                if self.ph.determineMgr() == "apt-get":
-                    gid = "gid nslcd"
-                else:
-                    gid = "gid ldap"
-                if re.match('ldap.lanl.gov', server):
-                    ldapsettings = ['uri ldap://ldap.lanl.gov',
-                                    'base dc=lanl,dc=gov',
-                                    'base passwd ou=unixsrv,dc=lanl,dc=gov',
-                                    'uid nslcd',
-                                    gid,
-                                    'ssl no',
-                                    'nss_initgroups_ignoreusers root']
-                else:
-                    uri = 'uri ldap://' + server
-                    ldapsettings = [uri, 'base dc=lanl,dc=gov', 'uid nslcd',
-                                    gid, 'ssl no',
-                                    'nss_initgroups_ignoreusers root']
-                self.ldapsettings = ldapsettings
-                if os.path.exists(ldapfile):
-                    ldapconf = readFile(ldapfile, self.logger)
-                    if not self.__checkconf(ldapconf, ldapsettings):
-                        compliant = False
-                        results += "Settings in " + ldapfile + \
-                            " are not correct.\n"
-                    elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
-                        compliant = False
-                        results += "Settings in " + ldapfile + " are " + \
-                            "correct, but the file's permissions are " + \
-                            "incorrect\n"
-                else:
-                    compliant = False
-                    results += ldapfile + " does not exist.\n"
+                sssdSettings = {"services": "nss, pam",
+                                "filter_users": "root",
+                                "filter_groups": "root",
+                                "ldap_uri": "ldap://" + server,
+                                "id_provider": "ldap",
+                                "ldap_search_base": "dc=lanl,dc=gov",
+                                "auth_provider": "krb5",
+                                "krb5_realm": "lanl.gov",
+                                "krb5_server": "kerberos.lanl.gov," +
+                                "kerberos-slaves.lanl.gov"}
+#                 if re.match('ldap.lanl.gov', server):
+#                     ldapsettings = ['uri ldap://ldap.lanl.gov',
+#                                     'base dc=lanl,dc=gov',
+#                                     'base passwd ou=unixsrv,dc=lanl,dc=gov',
+#                                     'uid nslcd',
+#                                     gid,
+#                                     'ssl no',
+#                                     'nss_initgroups_ignoreusers root']
+#                 else:
+#                     uri = 'uri ldap://' + server
+#                     ldapsettings = [uri, 'base dc=lanl,dc=gov', 'uid nslcd',
+#                                     gid, 'ssl no',
+#                                     'nss_initgroups_ignoreusers root']
+#                 self.ldapsettings = ldapsettings
+#                 if os.path.exists(ldapfile):
+#                     ldapconf = readFile(ldapfile, self.logger)
+#                     if not self.__checkconf(ldapconf, ldapsettings):
+#                         compliant = False
+#                         results += "Settings in " + ldapfile + \
+#                             " are not correct.\n"
+#                     elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
+#                         compliant = False
+#                         results += "Settings in " + ldapfile + " are " + \
+#                             "correct, but the file's permissions are " + \
+#                             "incorrect\n"
+#                 else:
+#                     compliant = False
+#                     results += ldapfile + " does not exist.\n"
 
                 # nsswitch settings. Deb distros prefer "compat" to "files" as
                 # the default, but LANL does not use NSS netgroups, so we will
@@ -362,6 +322,11 @@ effect."""
                         success = False
                         results += "Unable to install " + package + "\n"
 
+            cmd = ["authconfig", "--enablesssd", "--enablesssdauth",
+                   "enablelocauthorize", "--enablemkhomedir", "--update"]
+            if re.search("red hat|fedora|centos", self.myos):
+                self.ch.executeCommand(cmd)
+
             if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
                 success = False
                 results += "Problem writing new contents to " + \
@@ -372,12 +337,13 @@ effect."""
                 results += "An error occurred while trying to write " + \
                     "the PAM files\n"
 
-            if re.search("suse", self.myos):
+            if re.search(".*", self.myos):
                 if not self.__fixsssd():
                     success = False
                     results += "Failed to write good configuration to " + \
                         self.sssdconfpath
                 self.sh.disableservice("nscd")
+                self.sh.disableservice("sssd")
                 self.sh.enableservice("sssd")
             else:
                 if not self.ph.determineMgr() == "apt-get":
@@ -572,23 +538,21 @@ effect."""
 config_file_version = 2
 services = nss, pam
 domains = lanlldap
-# SSSD will not start if you do not configure any domains.
-# Add new domain configurations as [domain/<NAME>] sections, and
-# then add the list of domains (in the order you want them to be
-# queried) to the "domains" attribute below and uncomment it.
-; domains = LDAP
 
 [nss]
 filter_users = root
 filter_groups = root
 
 [pam]
+
 [domain/lanlldap]
 id_provider = ldap
 auth_provider = krb5
 ldap_schema = rfc2307
 ldap_uri = ldap://ldap.lanl.gov
-krb5_server = kerberos.lanl.gov
+ldap_search_base = dc=lanl,dc=gov
+
+krb5_server = kerberos.lanl.gov,kerberos-slaves.lanl.gov
 krb5_realm = lanl.gov
 '''
         sssdconfpath = self.sssdconfpath
@@ -711,7 +675,8 @@ password    required      pam_deny.so
 
 session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
-session     optional      pam_oddjob_mkhomedir.so umask=0077
+-session    optional      pam_systemd.so
+session     optional      pam_mkhomedir.so umask=0077
 session     [success=1 default=ignore] pam_succeed_if.so service in crond \
 quiet use_uid
 session     required      pam_unix.so
@@ -733,7 +698,8 @@ session     optional      pam_krb5.so
         result = True
         try:
             for conffile in pamconf:
-                result &= self.__writeFile(conffile, pamconf[conffile],
+                result &= self.__writeFile(os.path.realpath(conffile),
+                                           pamconf[conffile],
                                            [0, 0, 0644])
         except Exception:
             raise
