@@ -9,6 +9,7 @@ Bluetooth and Microphones. There is not a good way to soft disable the camera
 in Linux.
 
 @author: dkennel
+@version: 1.0
 '''
 
 import subprocess
