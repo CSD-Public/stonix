@@ -60,7 +60,7 @@ class InstallCasperSuite(Rule):
         Constructor
         '''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
-        self.rulenumber = 9
+        self.rulenumber = 2
         self.rulename = 'InstallCasperSuite'
         self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.formatDetailedResults("initialize")
