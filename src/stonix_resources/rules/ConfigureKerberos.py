@@ -158,14 +158,17 @@ class ConfigureKerberos(RuleKVEditor):
             compliant = True
             self.detailedresults = ""
             if self.environ.getosfamily() == 'linux':
-                packagesRpm = "pam_krb5 krb5-libs krb5-workstation " + \
-                              "sssd-krb5 sssd-krb5-common"
-                packagesDeb = "krb5-config krb5-user libpam-krb5"
+                packagesRpm = ["pam_krb5", "krb5-libs", "krb5-workstation",
+                               "sssd-krb5", "sssd-krb5-common"]
+                packagesDeb = ["krb5-config", "krb5-user", "libpam-krb5"]
+                packagesSuse = ["pam_krb5", "sssd-krb5", "sssd-krb5-common"]
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
+                elif self.ph.determineMgr() == "zypper":
+                    self.packages = packagesSuse
                 else:
                     self.packages = packagesRpm
-                for package in self.packages.split():
+                for package in self.packages:
                     if not self.ph.check(package):
                         compliant = False
                         self.detailedresults += package + " is not installed\n"
@@ -199,10 +202,12 @@ class ConfigureKerberos(RuleKVEditor):
 
             if self.ci.getcurrvalue():
                 if self.environ.getosfamily() == 'linux':
-                    if not self.ph.install(self.packages):
-                        fixsuccess = False
-                        self.detailedresults += "Installation of " + \
-                            "Kerberos-related packages did not succeed.\n"
+                    for package in self.packages:
+                        if not self.ph.check(package):
+                            if not self.ph.install(package):
+                                fixsuccess = False
+                                self.detailedresults += "Installation of " + \
+                                    package + " did not succeed.\n"
                 if not self.fh.fixFiles():
                     fixsuccess = False
                     self.detailedresults += self.fh.getFileMessage()

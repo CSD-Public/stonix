@@ -288,6 +288,7 @@ from the normal system performance curve.'''
         # defaults
         self.detailedresults = ''
         success = True
+        self.iditerator = 0
         try:
             if self.ci.getcurrvalue():
                 if self.islinux():
