@@ -174,6 +174,35 @@ KERB5 = '''[libdefaults]
     .example.com = EXAMPLE.COM
     example.com = EXAMPLE.COM'''
 
+KRB5 = '''[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = bar.com
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+ allow_weak_crypto = true
+ clockslew = 300
+
+[realms]
+
+ bar.com = {
+  kdc = foo.bar.com
+    kdc = foo.bar.com
+  admin_server = foo.bar.com
+  default_domain = bar.com
+ }
+
+[domain_realm]
+ bar.com = bar.com
+ .bar.com = bar.com
+'''
+
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
 # management like yum and apt-get.
