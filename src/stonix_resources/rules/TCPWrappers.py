@@ -35,6 +35,7 @@ built to make use of the libwrap library.
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/09/29 eball Fixed potential first-run failure
 '''
 
 from __future__ import absolute_import
@@ -76,11 +77,11 @@ class TCPWrappers(Rule):
         self.compliant = False
         self.mandatory = True
         self.helptext = '''TCPWrappers is a library which provides simple
-        access control and standardized logging for supported applications
-        which accept connections over a network. Historically, TCPWrappers was
-        used to support inetd services. Now that inetd is deprecated
-        (see Section 3.2.1), TCPWrappers supports only services which were
-        built to make use of the libwrap library.'''
+access control and standardized logging for supported applications which \
+accept connections over a network. Historically, TCPWrappers was used to \
+support inetd services. Now that inetd is deprecated (see Section 3.2.1), \
+TCPWrappers supports only services which were built to make use of the \
+libwrap library.'''
         self.rootrequired = True
         self.guidance = ['CIS', 'NSA(2.5.4)', '4434-7']
         self.isApplicableWhiteList = []
@@ -90,14 +91,14 @@ class TCPWrappers(Rule):
         # init CIs
         self.ci = self.initCi("bool",
                               "TCPWrappers",
-                              "To prevent TCP Wrappers from being " + \
-                              "configured on this system, set the " + \
+                              "To prevent TCP Wrappers from being " +
+                              "configured on this system, set the " +
                               "value of TCPWrappers to False.",
                               True)
 
         self.allownetCI = self.initCi("string", "Allow Subnet",
-                                      "Enter the subnet you wish to allow " + \
-                                      "services access to on the network." + \
+                                      "Enter the subnet you wish to allow " +
+                                      "services access to on the network." +
                                       " To allow none, leave blank.",
                                       str(ALLOWNET))
 
@@ -130,10 +131,14 @@ class TCPWrappers(Rule):
                 perms = getOctalPerms('/etc/hosts.allow')
                 if perms != 644:
                     self.allowperms = False
+                    self.detailedresults += "Permissions for hosts.allow " + \
+                        "file are incorrect\n"
                 if os.stat('/etc/hosts.allow').st_uid != 0:
                     self.allowperms = False
+                    self.detailedresults += "Incorrect owner for hosts.allow\n"
                 if os.stat('/etc/hosts.allow').st_gid != 0:
                     self.allowperms = False
+                    self.detailedresults += "Incorrect group for hosts.allow\n"
 
                 # check for default deny all line in hosts.allow
                 f = open('/etc/hosts.allow', 'r')
@@ -147,31 +152,38 @@ class TCPWrappers(Rule):
 
                 if not foundallowline:
                     self.allowcfgline = False
+                    self.detailedresults += "Could not find 'all : all : " + \
+                        "deny' line in hosts.allow\n"
 
                 # check for allow sshd cfg lines
                 if str(self.allownetCI.getcurrvalue()).strip() != "":
 
                     for line in contentlines:
-                        if re.search("^sshd: " + \
-                                     str(self.allownetCI.getcurrvalue()) + \
+                        if re.search("^sshd: " +
+                                     str(self.allownetCI.getcurrvalue()) +
                                      " : ALLOW", line):
                             allowsshd = True
 
                     for line in contentlines:
-                        if re.search("^sshdfwd-X11: " + \
-                                     str(self.allownetCI.getcurrvalue()) + \
+                        if re.search("^sshdfwd-X11: " +
+                                     str(self.allownetCI.getcurrvalue()) +
                                      " : ALLOW", line):
                             allowsshdfwdx = True
 
                     if not allowsshd:
                         self.allowcfgline = False
+                        self.detailedresults += "Could not find 'sshd:' " + \
+                            "line for allowhost in hosts.allow\n"
 
                     if not allowsshdfwdx:
                         self.allowcfgline = False
+                        self.detailedresults += "Could not find 'sshdfwd-X11:'" + \
+                            " line for allowhost in hosts.allow\n"
 
             else:
 
                 configured = False
+                self.detailedresults += "Could not find /etc/hosts.allow\n"
 
             if os.path.exists('/etc/hosts.deny'):
 
@@ -179,10 +191,14 @@ class TCPWrappers(Rule):
                 perms = getOctalPerms('/etc/hosts.deny')
                 if perms != 644:
                     self.denyperms = False
+                    self.detailedresults += "Permissions for hosts.deny " + \
+                        "file are incorrect\n"
                 if os.stat('/etc/hosts.deny').st_uid != 0:
                     self.denyperms = False
+                    self.detailedresults += "Incorrect owner for hosts.deny\n"
                 if os.stat('/etc/hosts.deny').st_gid != 0:
                     self.denyperms = False
+                    self.detailedresults += "Incorrect group for hosts.deny\n"
 
                 # check for deny banners line in hosts.deny
                 f = open('/etc/hosts.deny', 'r')
@@ -196,13 +212,16 @@ class TCPWrappers(Rule):
 
                 if not founddenyline:
                     self.denycfgline = False
+                    self.detailedresults += "Could not find 'all : all : " + \
+                        "deny' line in hosts.allow\n"
 
             else:
 
                 configured = False
+                self.detailedresults += "Could not find /etc/hosts.deny\n"
 
             if self.allowperms and self.allowcfgline and self.denyperms and \
-            self.denycfgline and configured:
+               self.denycfgline and configured:
                 self.compliant = True
             else:
                 self.compliant = False
@@ -212,7 +231,7 @@ class TCPWrappers(Rule):
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -287,10 +306,8 @@ class TCPWrappers(Rule):
                         os.rename('/etc/hosts.allow.stonixtmp',
                                   '/etc/hosts.allow')
 
-                if not self.allowperms:
-
-                    os.chmod('/etc/hosts.allow', 0644)
-                    os.chown('/etc/hosts.allow', 0, 0)
+                        os.chmod('/etc/hosts.allow', 0644)
+                        os.chown('/etc/hosts.allow', 0, 0)
 
                 # If file hosts.deny does not exist, create it with the correct
                 # config
@@ -329,17 +346,15 @@ class TCPWrappers(Rule):
                         os.rename('/etc/hosts.deny.stonixtmp',
                                   '/etc/hosts.deny')
 
-                if not self.denyperms:
-
-                    os.chmod('/etc/hosts.deny', 0644)
-                    os.chown('/etc/hosts.deny', 0, 0)
+                        os.chmod('/etc/hosts.deny', 0644)
+                        os.chown('/etc/hosts.deny', 0, 0)
             else:
                 self.detailedresults = str(self.ci.getkey()) + \
-                " was disabled. No action was taken."
+                    " was disabled. No action was taken."
 
         except (OSError, IOError):
             self.detailedresults = self.detailedresults + \
-            str(traceback.format_exc())
+                str(traceback.format_exc())
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -347,7 +362,7 @@ class TCPWrappers(Rule):
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
