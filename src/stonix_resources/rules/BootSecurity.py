@@ -208,6 +208,7 @@ WantedBy=multi-user.target
                                         stderr=subprocess.PIPE, shell=True)
             except Exception:
                 pass
+            self.servicehelper.enableservice('stonixBootSecurity')
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
