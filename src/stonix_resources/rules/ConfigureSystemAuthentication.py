@@ -247,7 +247,7 @@ class ConfigureSystemAuthentication(Rule):
             results += debug
             compliant = False
 
-        #check if libuser is installed, if so, check contents of libuser file
+        #check if libuser file is present, if so check its contents
         if os.path.exists(self.libuserfile):
             if not self.chklibuserhash():
                 debug = "chklibuserhash() is not compliant\n"
