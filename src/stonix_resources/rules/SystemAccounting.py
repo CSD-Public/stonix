@@ -33,6 +33,7 @@ due to departures from the normal system performance curve.
 
 @author: Breen Malmberg
 @change: 2015/09/25 eball Added Deb/Ubuntu compatibility
+@change: 2015/09/29 Breen Malmberg - Added initialization of variable self.iditerator in fix()
 '''
 
 from __future__ import absolute_import
@@ -288,6 +289,7 @@ from the normal system performance curve.'''
         # defaults
         self.detailedresults = ''
         success = True
+        self.iditerator = 0
         try:
             if self.ci.getcurrvalue():
                 if self.islinux():
