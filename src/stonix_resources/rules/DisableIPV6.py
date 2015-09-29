@@ -671,6 +671,7 @@ contain the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
         if self.sh.auditservice("ip6tables"):
+            print "auditservice returned: " + str(self.sh.auditservice("ip6tables")) + "\n\n\n"
             if not self.sh.disableservice("ip6tables"):
                 success = False
                 debug = "Unable to disable ip6tables service\n"
