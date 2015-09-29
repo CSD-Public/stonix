@@ -670,10 +670,11 @@ contain the correct contents\n"
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
-        if not self.sh.disableservice("ip6tables"):
-            success = False
-            debug = "Unable to disable ip6tables service\n"
-            self.logger.log(LogPriority.DEBUG, debug)
+        if self.sh.auditservice("ip6tables"):
+            if not self.sh.disableservice("ip6tables"):
+                success = False
+                debug = "Unable to disable ip6tables service\n"
+                self.logger.log(LogPriority.DEBUG, debug)
 #---------------------------fix Sysctl----------------------------------------#
         if self.created:
             self.iditerator += 1
