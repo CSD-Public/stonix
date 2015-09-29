@@ -71,14 +71,11 @@ class InstallCasperSuite(Rule):
         self.js = JAMFCASPERSUITESERVER
         self.qa = JAMFCASPERQUICKADD
 
-        self.myci = ConfigurationItem('bool')
         key = self.rulename
-        self.myci.setkey(key)
         instructions = '''To disable the installation of the JAMF Casper Recon client set the InstallCasperSuite option to no or False.'''
-        self.myci.setinstructions(instructions)
         default = True
-        self.myci.setdefvalue(default)
-        self.confitems.append(self.myci)
+
+        self.myci = ConfigurationItem('bool', key, default, instructions)
         self.jamf = ["/usr/sbin/jamf", "/usr/local/bin/jamf"]
 
 # Set up CommandHelper instance
@@ -216,15 +213,19 @@ class InstallCasperSuite(Rule):
             fixsuccess = False
             self.detailedresults = ""
             if not self.myci.getcurrvalue():
-                self.logdispatch.log(LogPriority.INFO,
-                                     str(self.rulename) + " is user disabled")
+                msg = str(self.rulename) + " is user disabled"
+                self.logdispatch.log(LogPriority.DEBUG, msg)
             else:
+                msg = str(self.rulename) + " is user enabled"
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+
 # If there network, install, else no network, log
                 hasconnection = has_connection_to_server(self.logdispatch,
                                                          self.js)
                 if hasconnection:
-                    self.logdispatch.log(LogPriority.ERROR,
-                                         "Connected to " + str(self.js))
+                    msg = "Connected to " + str(self.js)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+
 # Set up the installation
                     installing = IHmac(self.environ,
                                        self.qa,
@@ -244,7 +245,7 @@ class InstallCasperSuite(Rule):
                 else:
                     messagestring = "Could not connect to " + str(self.js)
                     self.detailedresults = messagestring
-                    self.logdispatch.log(LogPriority.ERROR, messagestring)
+                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
