@@ -71,6 +71,7 @@ class InstallPuppet(Rule):
         Constructor
         '''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
+        self.logdispatch = logdispatch
         self.rulenumber = 248
         self.rulename = 'InstallPuppet'
         self.formatDetailedResults("initialize")
@@ -947,7 +948,7 @@ class InstallPuppet(Rule):
             self.notOnCorperateNetwork = False
             #####
             # Check connection to server that has puppet.zip
-            if has_connection_to_server(self.puppetpkgserver):
+            if has_connection_to_server(self.logdispatcher, self.puppetpkgserver):
                 self.notConnectedToServer = False
                 if not os.path.exists("/usr/bin/puppet"):
                     compliant = False
