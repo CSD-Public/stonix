@@ -116,6 +116,17 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Wed Sep 30 2015 David Kennel <dkennel@lanl.gov> - 0.9.0
+- Updated isApplicable() to filter on whether rules should or should not run under the root users context
+- Fix to bug in the interaction of installBAnners and SecureSSH that was causing oversized sshd_conf files
+- New Rule BootSecurity, mutes the microphone, turns off wireless and turns off bluetooth at every system boot
+- Fix subtle bug in ruleKVEditor that caused false positives
+- New Rule SecureLDAP checks security on the LDAP server
+- Improved feedback in multiple rules
+- SecureApacheWebserver now correctly handles RHEL 7 style module layouts
+- New Rule EnableKernelAuditing configures auditd according to guidance
+- Fixed bug that caused the 'About Stonix' window to be unclosable on gnome 3
+
 * Mon Aug 31 2015 David Kennel <dkennel@lanl.gov> - 0.8.20
 - New rule: Remove SUID Games
 - New rule: Disable Admin Login Override
