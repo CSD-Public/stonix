@@ -105,13 +105,17 @@ class SHrcupdate(object):
         confsuccess = True
         svcoff = True
         runlevel = self.findrunlevel(service)
-        ret = subprocess.call(self.cmd + 'delete ' +  service + ' ' + runlevel \
-                              + ' &> /dev/null', shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + 'delete ' + service + ' ' + runlevel,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if self.isrunning(service):
-            ret2 = subprocess.call(self.svc + service + ' stop &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret2 = subprocess.call(self.svc + service + ' stop',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcoff = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -136,13 +140,17 @@ class SHrcupdate(object):
             return False
         confsuccess = True
         svcon = True
-        ret = subprocess.call(self.cmd + 'add ' +  service + ' &> /dev/null',
-                              shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + 'add ' + service,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.svc + service + ' start &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret2 = subprocess.call(self.svc + service + ' start',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcon = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -217,10 +225,14 @@ class SHrcupdate(object):
         if not os.path.exists('/etc/init.d/' + service):
             return False
         if not self.environment.getinstallmode():
-            ret = subprocess.call(self.svc + service + ' stop &> /dev/null',
-                                   shell=True, close_fds=True )
-            ret = subprocess.call(self.svc + service + ' start &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret = subprocess.call(self.svc + service + ' stop',
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+            ret = subprocess.call(self.svc + service + ' start',
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             self.logdispatcher.log(LogPriority.DEBUG,
                                    'SHrcupdate.reload ' + service + str(ret))
             return True

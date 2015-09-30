@@ -65,8 +65,10 @@ class SHrcconf(object):
         except Exception:
             confsuccess = False
         if self.isrunning(service):
-            ret2 = subprocess.call(self.svc + service + ' stop &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret2 = subprocess.call(self.svc + service + ' stop',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcoff = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -97,8 +99,10 @@ class SHrcconf(object):
         except Exception:
             confsuccess = False
         if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.svc + service + ' start &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret2 = subprocess.call(self.svc + service + ' start',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcon = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -172,8 +176,10 @@ class SHrcconf(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.reload ' + service)
         if not self.environment.getinstallmode():
-            ret = subprocess.call(self.svc + service + ' restart &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret = subprocess.call(self.svc + service + ' restart',
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.reload ' + service + str(ret))
             if ret != 0:
