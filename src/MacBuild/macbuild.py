@@ -66,7 +66,7 @@ class MacBuilder():
         # If version was not included at command line, use hardcoded version
         # number
         if options.version == "0":
-            self.APPVERSION = "0.9.0.0"
+            self.APPVERSION = "0.9.1.0"
         else:
             self.APPVERSION = options.version
 
