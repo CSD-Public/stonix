@@ -55,8 +55,10 @@ class SHsvcadm(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.disable ' + service)
         confsuccess = True
-        ret = subprocess.call(self.cmd + 'disable ' + service + ' &> /dev/null',
-                              shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + 'disable ' + service,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -74,8 +76,10 @@ class SHsvcadm(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.enable ' + service)
         confsuccess = True
-        ret = subprocess.call(self.cmd +'enable ' + service + ' &> /dev/null',
-                              shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + 'enable ' + service,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -145,8 +149,10 @@ class SHsvcadm(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.reload ' + service)
         if not self.environment.getinstallmode():
-            ret = subprocess.call(self.cmd + 'refresh '+ service + ' &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret = subprocess.call(self.cmd + 'refresh ' + service,
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.reload ' + service + str(ret))
             if ret != 0:
