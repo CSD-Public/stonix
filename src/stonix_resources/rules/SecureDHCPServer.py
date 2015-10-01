@@ -24,6 +24,8 @@
 Created on Apr 22, 2015
 
 @author: dwalker
+@change: 2015/09/25 eball Added info to help text and removed failure for
+    missing configuration file
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -46,11 +48,13 @@ class SecureDHCPServer(Rule):
         self.rulename = "SecureDHCPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Configures DHCP functionality '''
+        self.helptext = '''Configures the system's dhcpd.conf file to increase \
+the security of the DHCP daemon. If the dhcpd.conf file is not found, the \
+system is considered compliant.'''
         datatype = "bool"
         key = "SECUREDHCPSERVER"
         instructions = '''To disable this rule set the value of \
-        SECUREDHCPSERVER to False.'''
+SECUREDHCPSERVER to False.'''
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -65,6 +69,7 @@ class SecureDHCPServer(Rule):
 
     def report(self):
         try:
+            self.detailedresults = ""
             self.ph = Pkghelper(self.logger, self.environ)
             self.data1 = {"ddns-update-style": "none;",
                           "deny": ["declines;",
@@ -77,19 +82,17 @@ class SecureDHCPServer(Rule):
                           "routers",
                           "time-offset"]
             if self.ph.manager == "zypper":
-#                 self.package = "dhcp-server"
                 self.path = "/etc/dhcpd.conf"
             elif self.ph.manager == "yum":
-                #self.package = "dhcp"
                 self.path = "/etc/dhcp/dhcpd.conf"
             elif self.ph.manager == "apt-get":
-                #self.package = "isc-dhcp-server"
                 self.path = "/etc/dhcp/dhcpd.conf"
             self.tmppath = self.path + ".tmp"
             compliant = True
-            #if self.ph.check(self.package):
             if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
+                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                    self.detailedresults += "The permissions on " + \
+                        self.path + " are incorrect\n"
                     compliant = False
                 self.editor = KVEditorStonix(self.statechglogger,
                                              self.logger, "conf",
@@ -97,23 +100,22 @@ class SecureDHCPServer(Rule):
                                              self.data1, "present",
                                              "space")
                 if not self.editor.report():
+                    self.detailedresults += self.path + " doesn't contain " + \
+                        "the correct contents\n"
                     compliant = False
                 contents = readFile(self.path, self.logger)
                 for line in contents:
                     if re.match('^#', line) or re.match(r'^\s*$', line):
                         continue
                     if re.search("^option", line):
-                        line = line.split()
-                        if len(line) >= 2:
+                        linesplit = line.split()
+                        if len(linesplit) >= 2:
                             for item in self.data2:
-                                if re.search(item, line[1]):
+                                if re.search(item, linesplit[1]):
                                     compliant = False
-#                 self.editor.setData(self.data2)
-#                 self.editor.setIntent("notpresent")
-#                 if not self.editor.report():
-#                     compliant = False
-            else:
-                compliant = False
+                                    self.detailedresults += "Unwanted " + \
+                                        "option found in " + self.path + \
+                                        ": " + line
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -131,11 +133,13 @@ class SecureDHCPServer(Rule):
             if not self.ci.getcurrvalue():
                 return
             success = True
+            # Clean out old undo events
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            #if self.ph.check(self.package):
+
+            self.detailedresults = ""
             if not os.path.exists(self.path):
                 createFile(self.path, self.logger)
                 self.created = True
@@ -150,12 +154,10 @@ class SecureDHCPServer(Rule):
                                              self.data1, "present",
                                              "space")
                 self.editor.report()
-                self.editor.setData(self.data2)
-                self.editor.setIntent("notpresent")
-                self.editor.report()
             tempstring = ""
             tmpfile = self.path + ".tmp"
             contents = readFile(self.path, self.logger)
+            changes = False
             for line in contents:
                 found = False
                 if re.match('^#', line) or re.match(r'^\s*$', line):
@@ -167,6 +169,7 @@ class SecureDHCPServer(Rule):
                         for item in self.data2:
                             if re.search(item, temp[1]):
                                 found = True
+                                changes = True
                                 break
                         if found:
                             continue
@@ -174,31 +177,34 @@ class SecureDHCPServer(Rule):
                             tempstring += line
                 else:
                     tempstring += line
-            if tempstring:
+            if changes:
+                debug = "Writing changes to " + tmpfile
+                self.logger.log(LogPriority.DEBUG, debug)
                 if not writeFile(tmpfile, tempstring, self.logger):
-                    self.detailedresults += "Unable to write changes to " + \
-                        self.path
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    debug = "Unable to write changes to " + tmpfile
+                    self.detailedresults += debug
+                    self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
-                    if not self.editor.fixables:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "conf",
-                                 "filepath": self.path}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.path,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, self.path)
-                        os.chown(self.path, 0, 0)
-                        os.chmod(self.path, 420)
-                        resetsecon(self.path)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": self.path}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.path,
+                                                         tmpfile, myid)
+                    os.rename(tmpfile, self.path)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    setPerms(self.path, [0, 0, 0644], self.logger,
+                             self.statechglogger, myid)
+                    resetsecon(self.path)
             if self.editor.fixables:
                 if not self.created:
-                    if not checkPerms(self.path, [0, 0, 420], self.logger):
+                    if not checkPerms(self.path, [0, 0, 0644], self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path, [0, 0, 420],
+                        if not setPerms(self.path, [0, 0, 0644],
                                         self.logger, self.statechglogger,
                                         myid):
                             success = False
@@ -211,7 +217,7 @@ class SecureDHCPServer(Rule):
                             "corrected\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         os.chown(self.path, 0, 0)
-                        os.chmod(self.path, 420)
+                        os.chmod(self.path, 0644)
                         resetsecon(self.path)
                     else:
                         debug = "kveditor commit not successful\n"

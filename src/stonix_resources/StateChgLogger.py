@@ -82,24 +82,23 @@ class StateChgLogger(object):
         self.environment = environment
         self.verbose = self.environment.getverbosemode()
         self.debug = self.environment.getdebugmode()
-        self.diffdir = '/usr/share/stonix/diffdir'
-        self.archive = '/usr/share/stonix/archive'
+        self.diffdir = '/var/db/stonix/diffdir'
+        self.archive = '/var/db/stonix/archive'
         self.privmode = True
         try:
-            if not os.path.exists('/usr/share/stonix') and \
-            self.environment.geteuid() == 0:
-                os.makedirs('/usr/share/stonix', 448)
+            if not os.path.exists('/var/db/stonix') and \
+               self.environment.geteuid() == 0:
+                os.makedirs('/var/db/stonix', 0700)
             if self.environment.geteuid() == 0:
-                self.eventlog = shelve.open('/usr/share/stonix/eventlog', 'c',
+                self.eventlog = shelve.open('/var/db/stonix/eventlog', 'c',
                                             None, True)
             else:
                 self.privmode = False
             for node in [self.diffdir, self.archive]:
                 if not os.path.exists(node) and self.environment.geteuid() == 0:
-                    os.makedirs(node, 448)
+                    os.makedirs(node, 0700)
         except(OSError):
-            # We probably don't have privileges needed
-            pass
+            raise
 
     def __del__(self):
         """

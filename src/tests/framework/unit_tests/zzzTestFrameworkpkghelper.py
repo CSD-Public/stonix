@@ -30,7 +30,7 @@ Created on Jul 31, 2012
 
 import unittest
 import src.stonix_resources.pkghelper as pkghelper
-from src.tests.lib.logdispatcher_mock import LogPriority,LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogPriority,LogDispatcher
 import src.stonix_resources.environment as environment
 
 class zzzTestFrameworkpkghelper(unittest.TestCase):

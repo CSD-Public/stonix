@@ -49,6 +49,7 @@ from ..KVEditorStonix import KVEditorStonix
 from ..localize import WARNINGBANNER
 from ..localize import ALTWARNINGBANNER
 from ..localize import OSXSHORTWARNINGBANNER
+from ..stonixutilityfunctions import fixInflation
 
 
 class InstallBanners(RuleKVEditor):
@@ -345,13 +346,7 @@ unity-greeter'''
         @author: Breen Malmberg
         '''
 
-        self.motdlocs = ["/etc/issue",
-                        "/etc/issue.net",
-                        "/etc/motd"]
-        self.motdfile = '/etc/issue'
-        for loc in self.motdlocs:
-            if os.path.exists(loc):
-                self.motdfile = str(loc)
+        self.motdfile = '/etc/motd'
         self.sshdlocs = ["/etc/sshd_config",
                          "/etc/ssh/sshd_config",
                          "/private/etc/ssh/sshd_config",
@@ -375,7 +370,7 @@ unity-greeter'''
         self.mac = True
         self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
-            self.sshdfile = '/private/etc/ssh/sshd_config'
+            self.sshdfile = '/private/etc/sshd_config'
         self.ftpwelcomelocs = ["/etc/ftpwelcome", "/private/etc/ftpwelcome"]
         self.ftpwelcomefile = '/private/etc/ftpwelcome'
         for loc in self.ftpwelcomelocs:
@@ -561,7 +556,7 @@ unity-greeter'''
             elif isinstance(contents, list):
                 newcontents = []
                 for line in contents:
-                    newcontents.append(line + '\n')
+                    newcontents.append(line)
                 f.writelines(newcontents)
             else:
                 self.detailedresults += '\ncontents parameter must be either a string or a list. Returning False'
@@ -613,14 +608,13 @@ unity-greeter'''
                 for key in contentdict:
                     for line in contentlines:
                         if re.search(key, line):
-                            contentlines = [c.replace(line, contentdict[key] + '\n') for c in contentlines]
+                            contentlines = [c.replace(line, contentdict[key]) for c in contentlines]
                             replacedict[contentdict[key]] = True
                 for item in replacedict:
                     if not replacedict[item]:
-                        contentlines.append('\n' + item)
+                        contentlines.append(item)
                 if not self.setFileContents(filepath, contentlines):
                     retval = False
-                    self.detailedresults += '\n'
             else:
                 retval = False
                 self.detailedresults += '\nSpecified filepath not found. Returning False'
@@ -793,14 +787,14 @@ unity-greeter'''
             else:
                 retval = False
                 self.detailedresults += '\nrequired sshd config file not found.'
-            for loc in self.motdlocs:
-                if os.path.exists(loc):
-                    if not self.reportFileContents(loc, self.motd):
-                        retval = False
-                        self.detailedresults += '\nrequired warning banner text not found in: ' + str(self.motdfile)
-                else:
+
+            if os.path.exists(self.motdfile):
+                if not self.reportFileContents(self.motdfile, self.motd):
                     retval = False
-                    self.detailedresults += '\nrequired motd config file not found.'
+                    self.detailedresults += '\nrequired warning banner text not found in: ' + str(self.motdfile)
+            else:
+                retval = False
+                self.detailedresults += '\nrequired motd config file: ' + str(self.motdfile) + ' not found.'
         except Exception:
             raise
         return retval
@@ -1046,10 +1040,11 @@ unity-greeter'''
         try:
             if not self.replaceFileContents(self.sshdfile, self.sshddict):
                 retval = False
-            for loc in self.motdlocs:
-                if not self.setFileContents(loc, self.motd, 'w'):
-                    retval = False
-                    self.detailedresults += '\nunable to set warning banner text in ' + str(loc)
+            if not fixInflation(self.sshdfile, self.logger, 0644, [0, 0]):
+                retval = False
+            if not self.setFileContents(self.motdfile, self.motd, 'w'):
+                retval = False
+                self.detailedresults += '\nunable to set warning banner text in ' + str(self.motdfile)
         except Exception:
             raise
         return retval

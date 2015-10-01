@@ -58,13 +58,17 @@ class SHupdaterc(object):
                                'SHupdaterc.disableservice ' + service)
         confsuccess = True
         svcoff = True
-        ret = subprocess.call(self.cmd + '-f ' + service + ' remove &> /dev/null',
-                              shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + '-f ' + service + ' remove',
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if self.isrunning(service):
-            ret2 = subprocess.call(self.svc + service + ' stop &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret2 = subprocess.call(self.svc + service + ' stop',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcoff = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -89,13 +93,17 @@ class SHupdaterc(object):
             return False
         confsuccess = True
         svcon = True
-        ret = subprocess.call(self.cmd + service + ' defaults &> /dev/null',
-                              shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + service + ' defaults',
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.svc + service + ' start &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret2 = subprocess.call(self.svc + service + ' start',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcon = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -165,8 +173,10 @@ class SHupdaterc(object):
         if not os.path.exists('/etc/init.d/' + service):
             return False
         if not self.environment.getinstallmode():
-            ret = subprocess.call(self.svc + service + ' reload &> /dev/null',
-                                   shell=True, close_fds=True )
+            ret = subprocess.call(self.svc + service + ' reload',
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             self.logdispatcher.log(LogPriority.DEBUG,
                                    'SHupdaterc.reload ' + service + str(ret))
             if ret != 0:

@@ -6,10 +6,10 @@ Created on Jun 10, 2015
 from __future__ import absolute_import
 import unittest
 import re
-from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.tests.lib.RuleTestTemplate import RuleTest
+from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureGatekeeper import ConfigureGatekeeper
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.logdispatcher import LogPriority
 
 
 class zzzTestRuleConfigureGatekeeper(RuleTest):

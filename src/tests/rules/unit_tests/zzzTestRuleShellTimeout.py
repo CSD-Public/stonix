@@ -29,11 +29,10 @@ This is a Unit Test for Rule ShellTimeout
 '''
 from __future__ import absolute_import
 import unittest
-from stonix_resources.stonixutilityfunctions import setPerms
-from stonix_resources.RuleTestTemplate import RuleTest
-from stonix_resources.CommandHelper import CommandHelper
-from stonix_resources.logdispatcher import LogPriority
-from stonix_resources.rules.ShellTimeout import ShellTimeout
+from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.rules.ShellTimeout import ShellTimeout
 
 
 class zzzTestRuleShellTimeout(RuleTest):
@@ -67,7 +66,7 @@ class zzzTestRuleShellTimeout(RuleTest):
                        "SHELLTIMEOUT to False."
         default = True
         self.rule.ci = self.rule.initCi(datatype, key, instructions, default)
-        
+
         cmd = ["/bin/rm", "-f", "/etc/profile.d/tmout.sh"]
         success = self.ch.executeCommand(cmd)
         cmd = ["/bin/rm", "-f", "/etc/profile.d/autologout.csh"]

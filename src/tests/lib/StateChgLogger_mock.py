@@ -21,7 +21,7 @@
 #                                                                             #
 ###############################################################################
 
-from logdispatcher_mock import LogDispatcher
+from logdispatcher_lite import LogDispatcher
 
 class StateChgLogger(object):
     """

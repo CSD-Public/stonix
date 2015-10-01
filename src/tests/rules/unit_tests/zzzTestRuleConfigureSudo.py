@@ -62,24 +62,33 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
+
         success = True
+        groupname = "%wheel"
+
         if self.environ.getostype() == "Mac OS X":
             self.path = "/private/etc/sudoers"
+            groupname = "%admin"
         elif self.environ.getosfamily() == "linux":
             self.path = "/etc/sudoers"
         elif self.environ.getosfamily() == "freebsd":
             self.path = "/usr/local/etc/sudoers"
+
         contents = readFile(self.path, self.logdispatch)
         tempstring = ""
+
         for line in contents:
-            if re.search("^%wheel",line):
+            if re.search("^" + groupname, line):
                 continue
             else:
                 tempstring += line
+
         writeFile(self.path + ".tmp", tempstring, self.logdispatch)
         os.rename(self.path + ".tmp", self.path)
-        if checkPerms(self.path, [0,0,288], self.logdispatch):
+
+        if checkPerms(self.path, [0, 0, 288], self.logdispatch):
             os.chmod(self.path, 256)
+
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

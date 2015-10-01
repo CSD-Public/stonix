@@ -32,7 +32,7 @@ import time
 import unittest
 import src.stonix_resources.KVEditorStonix as KVEditorStonix
 from src.stonix_resources.environment import Environment as Environment
-from src.tests.lib.logdispatcher_mock import LogDispatcher as LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher as LogDispatcher
 from src.stonix_resources.StateChgLogger import StateChgLogger as StateChgLogger
 from src.stonix_resources.localize import APPLESOFTUPDATESERVER as APPLESOFTUPDATESERVER
 

@@ -65,13 +65,17 @@ class SHchkconfig(object):
         svcoff = True
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHchkconfig.disableservice: ' + service)
-        ret = subprocess.call(self.cmd + service + ' off &> /dev/null',
-                              shell=True, close_fds=True)
+        ret = subprocess.call(self.cmd + service + ' off',
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if self.isrunning(service):
-            ret2 = subprocess.call(self.svc + service + ' stop &> /dev/null',
-                                   shell=True, close_fds=True)
+            ret2 = subprocess.call(self.svc + service + ' stop',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcoff = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -96,13 +100,17 @@ class SHchkconfig(object):
             return False
         confsuccess = True
         svcon = True
-        ret = subprocess.call(self.cmd + service + ' on &> /dev/null',
-                              shell=True, close_fds=True)
+        ret = subprocess.call(self.cmd + service + ' on',
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.svc + service + ' start &> /dev/null',
-                                   shell=True, close_fds=True)
+            ret2 = subprocess.call(self.svc + service + ' start',
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcon = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -174,8 +182,10 @@ class SHchkconfig(object):
         if not os.path.exists('/etc/init.d/' + service):
             return False
         if not self.environment.getinstallmode():
-            ret = subprocess.call(self.svc + service + ' reload &> /dev/null',
-                                   shell=True, close_fds=True)
+            ret = subprocess.call(self.svc + service + ' reload',
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             self.logdispatcher.log(LogPriority.DEBUG,
                                'SHchkconfig.reloadservice ' + service + str(ret))
             if ret != 0:

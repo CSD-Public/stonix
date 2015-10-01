@@ -25,16 +25,16 @@
 This is a Unit Test for Rule DisableGUILogon
 
 @author: Eric Ball
-@change: 07/20/2015 Original Implementation
+@change: 2015/07/20 eball - Original Implementation
+@change: 2015/09/21 eball - Removed file backup and added undo() to tearDown
 '''
 from __future__ import absolute_import
 import unittest
 import os
 import re
-import traceback
-from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.logdispatcher import LogPriority
+from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableGUILogon import DisableGUILogon
 from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
@@ -50,15 +50,9 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
-        self.inittab = False
 
     def tearDown(self):
-        if self.inittab:
-            tmppath = self.inittab + ".utmp"
-            try:
-                os.rename(tmppath, self.inittab)
-            except Exception:
-                self.logdispatch.log(LogPriority.ERROR, traceback.format_exc())
+        self.rule.undo()
 
     def runTest(self):
         self.simpleRuleTest()
@@ -79,7 +73,7 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         # but due to the severity of the changes caused by this rule, it is
         # disabled by default. To enable, simply set it to True instead.
         self.rule.ci3.updatecurrvalue(False)
-        
+
         # Ensure GUI logon is enabled
         self.myos = self.environ.getostype().lower()
         self.logdispatch.log(LogPriority.DEBUG, self.myos)
@@ -114,20 +108,10 @@ class zzzTestRuleDisableGUILogon(RuleTest):
                     else:
                         success = False
         else:
-            self.inittab = "/etc/inittab"
-            if os.path.exists(self.inittab):
-                tmppath = self.inittab + ".utmp"
-                try:
-                    os.rename(self.inittab, tmppath)
-                    open(self.inittab, "w").write("id:5:initdefault:")
-                except Exception:
-                    success = False
-                    self.logdispatch.log(LogPriority.ERROR,
-                                         traceback.format_exc())
-            else:
-                self.logdispatch.log(LogPriority.ERROR, self.inittab +
+            inittab = "/etc/inittab"
+            if not os.path.exists(inittab):
+                self.logdispatch.log(LogPriority.ERROR, inittab +
                                      " not found, init system unknown")
-                self.inittab = False
                 success = False
         return success
 

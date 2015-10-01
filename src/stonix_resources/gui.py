@@ -40,6 +40,7 @@ This is the GUI interface for STONIX (project Dylan). This file and its related
 imports implement the STONIX GUI.
 
 @author: D. Kennel
+@note: 2015-09-11 - rsn - Adding initial attempt at a help browser.
 '''
 
 import os
@@ -50,7 +51,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import main_window
 from logdispatcher import LogPriority
-
+#from help.help import Help
 
 class GUI (View, QMainWindow, main_window.Ui_MainWindow):
     """
@@ -108,6 +109,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.actionReport_All.triggered.connect(self.reportall)
         self.actionRevert_All.triggered.connect(self.revertall)
         self.actionStop.triggered.connect(self.abortrun)
+        #self.actionGuiHelp.triggered.connect(self.openHelpBrowser)
         self.fix_button.clicked.connect(self.runrule)
         self.report_button.clicked.connect(self.reportrule)
         self.revert_button.clicked.connect(self.revertrule)
@@ -122,6 +124,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         reportallicon = os.path.join(self.icon_path, "system-search.png")
         revertallicon = os.path.join(self.icon_path, "warning_48.png")
         cancelrunicon = os.path.join(self.icon_path, "cancel.png")
+        #helpquestionmark = os.path.join(self.icon_path, "help.ico")
         # Commented out setStatusTip calls to keep them from stomping on run
         # messages
         self.actionLog.setIcon((QIcon(logicon)))
@@ -144,6 +147,11 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         #self.actionReport_All.setStatusTip('Run Report All')
         self.actionRevert_All.setIcon(QIcon(revertallicon))
         self.actionRevert_All.setObjectName("actionRevert_All")
+        
+        #self.actionGuiHelp.setIcon(QIcon(helpquestionmark))
+        #self.actionGuiHelp.setObjectName("actionGuiHelp")
+        #self.actionGuiHelp.setShortcut('Ctrl+H')
+        
         #self.actionRevert_All.setStatusTip('Attempt to Revert All Changes')
         #self.actionEdit_Selected = QtGui.QAction(MainWindow)
         #self.actionEdit_Selected.setObjectName("actionEdit_Selected")
@@ -155,11 +163,12 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.compliant = os.path.join(self.icon_path, "security-high.png")
         self.notcompliant = os.path.join(self.icon_path, "security-low.png")
         self.warning = os.path.join(self.icon_path, "security-medium.png")
-
+        
         self.toolbar = self.addToolBar('Run Controls')
         self.toolbar.addAction(self.actionRun_All)
         self.toolbar.addAction(self.actionReport_All)
         self.toolbar.addAction(self.actionStop)
+        #self.toolbar.addAction(self.actionGuiHelp)
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         # Build rule list
         self.rule_data = self.controller.getallrulesdata()
@@ -210,7 +219,20 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.statusBar().addPermanentWidget(self.pbar)
         self.raise_()
         self.show()
+    """
+    def openHelpBrowser(self):
+        ""
+        Open the html based gui help system
+        
+        @author: Roy Nielsen
+        ""
+        stonixhelp = Help()
+        retval = stonixhelp.exec_()
+        stonixhelp.raise_()
 
+        if retval == 1 :
+            self.accept
+    """    
     def update_progress(self, curr, total):
         """
         Progress updater for the progress bar.
@@ -273,7 +295,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         """
         self.controller.releaselock()
         self.logger.postreport()
-        sys.exit()        
+        sys.exit()
 
     def set_listview_item_bgcolor(self, item_text, qcolor_rgb):
         """
@@ -390,12 +412,12 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             trace = traceback.format_exc()
             self.logger.log(LogPriority.ERROR,
                             ['GUI', "Problem in supdate: " + trace])
-            
+
     def abortrun(self):
         """This Method will abort a Fix all, Report all or Revert all run.
         It does this by clearing the self.threads property which allows the
         currently executing thread to finish.
-        
+
         @author: dkennel
         """
         for thread in self.threads:
@@ -699,13 +721,14 @@ class CiFrame(QFrame):
             datatype = opt.getdatatype()
             name = opt.getkey()
             myuc = self.findChild(QPlainTextEdit, 'ucvalue' + name)
-            if datatype == 'string':
+            if datatype == 'string' or datatype == 'int' or \
+            datatype == 'float':
                 mydata = self.findChild(QLineEdit, 'value' + name)
                 mydataval = str(mydata.text())
             elif datatype == 'bool':
                 mydata = self.findChild(QCheckBox, 'value' + name)
                 mydataval = mydata.isChecked()
-            if datatype == 'list':
+            elif datatype == 'list':
                 mydata = self.findChild(QLineEdit, 'value' + name)
                 mydataval = str(mydata.text())
                 mydataval = mydataval.split()
@@ -758,18 +781,47 @@ class aboutStonix(QDialog):
         """
         QDialog.__init__(self, parent)
 
+        self.stonixversion = stonixversion
+
         self.textLabel3 = QLabel(self)
+        self.textLabel3.setWordWrap(True)
         self.textLabel3.setGeometry(QRect(10, 10, 400, 201))
 
-        self.stonixversion = stonixversion
+        self.closebutton = QPushButton('Close', self)
+        self.closebutton.clicked.connect(self.close)
+
+        mainlayout = QVBoxLayout()
+        mainlayout.addWidget(self.textLabel3)
+        mainlayout.addStretch()
+        mainlayout.addWidget(self.closebutton)
+
+        self.setLayout(mainlayout)
         self.languageChange()
 
-        self.resize(QSize(410, 227).expandedTo(self.minimumSizeHint()))
+        self.resize(QSize(700, 550).expandedTo(self.minimumSizeHint()))
         # self.clearWState(Qt.WState_Polished)
 
     def languageChange(self):
         self.setWindowTitle("About LANL-STONIX")
-        self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">Copyright 2012 Los Alamos National Security</p>"))
+        copyrightText = '''Copyright 2015.  Los Alamos National Security, LLC. This material was \n
+produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos \n
+National Laboratory (LANL), which is operated by Los Alamos National \n
+Security, LLC for the U.S. Department of Energy. The U.S. Government has \n
+rights to use, reproduce, and distribute this software.  NEITHER THE \n
+GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, \n
+EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. \n
+If software is modified to produce derivative works, such modified software \n
+should be clearly marked, so as not to confuse it with the version \n
+available from LANL. \n
+
+Additionally, this program is free software; you can redistribute it and/or \n
+modify it under the terms of the GNU General Public License as published by \n
+the Free Software Foundation; either version 2 of the License, or (at your \n
+option) any later version. Accordingly, this program is distributed in the \n
+hope that it will be useful, but WITHOUT ANY WARRANTY; without even the \n
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. \n
+See the GNU General Public License for more details.'''
+        self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">" + copyrightText + "</p>"))
 
     def __tr(self, s, c=None):
         return qApp.translate("aboutStonix", s, c)
