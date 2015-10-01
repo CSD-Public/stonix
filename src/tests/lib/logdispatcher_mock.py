@@ -75,7 +75,8 @@ class LogDispatcher (Observable):
         self.reportlog = os.path.join(self.logpath, reportfile)
         self.xmllog = os.path.join(self.logpath, xmlfile)
         if self.debug:
-            print 'LOGDISPATCHER: xml log path: ' + self.xmllog
+            #print 'LOGDISPATCHER: xml log path: ' + self.xmllog
+            pass
         if os.path.isfile(self.xmllog):
             try:
                 if os.path.exists(self.xmllog + '.old'):

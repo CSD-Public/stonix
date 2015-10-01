@@ -499,6 +499,12 @@ class SetNTP(Rule):
                 tf.writelines(contentlines)
                 tf.close()
 
+                if not os.path.exists(tmpntpfile):
+                    self.logger.log(LogPriority.DEBUG, "temporary ntp file was not found or created; unable to apply changes to " + str(self.ntpfile))
+                    self.logger.log(LogPriority.DEBUG, "fix_darwin was not run to completion")
+                    fixresult = False
+                    return fixresult
+
                 event = {'eventtype': 'conf',
                          'filepath': self.ntpfile}
                 self.iditerator += 1
@@ -517,6 +523,11 @@ class SetNTP(Rule):
                 f = open(self.ntpfile, 'w')
                 f.writelines(contentlines)
                 f.close()
+
+                if not os.path.exists(self.ntpfile):
+                    self.logger.log(LogPriority.DEBUG, "unable to create ntp file; fix_darwin was not run to completion")
+                    fixresult = False
+                    return fixresult
 
                 event = {'eventtype': 'creation',
                          'filepath': self.ntpfile}
@@ -612,6 +623,12 @@ class SetNTP(Rule):
                 tf = open(tmpfile, 'w')
                 tf.writelines(contentlines)
                 tf.close()
+
+                if not os.path.exists(tmpfile):
+                    self.logger.log(LogPriority.DEBUG, "temporary ntp file was not found or created; unable to apply changes to " + str(self.ntpfile))
+                    self.logger.log(LogPriority.DEBUG, "fix_non_darwin was not run to completion")
+                    fixresult = False
+                    return fixresult
 
                 event = {'eventtype': 'conf',
                          'filepath': conffile}

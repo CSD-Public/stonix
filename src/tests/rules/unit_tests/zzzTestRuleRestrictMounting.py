@@ -30,9 +30,9 @@ This is a Unit Test for Rule RestrictMounting
 from __future__ import absolute_import
 import unittest
 import os
-from src.stonix_resources.RuleTestTemplate import RuleTest
+from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.logdispatcher import LogPriority
+from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.RestrictMounting import RestrictMounting
 from src.stonix_resources.pkghelper import Pkghelper
 from src.stonix_resources.ServiceHelper import ServiceHelper
@@ -73,11 +73,11 @@ class zzzTestRuleRestrictMounting(RuleTest):
                                                default)
         key = "DISABLEAUTOFS"
         self.rule.autofsCi = self.rule.initCi(datatype, key, instructions,
-                                               default)
+                                              default)
         key = "DISABLEGNOMEAUTOMOUNT"
         self.rule.gnomeCi = self.rule.initCi(datatype, key, instructions,
-                                               default)
-        
+                                             default)
+
         self.path1 = "/etc/security/console.perms.d/50-default.perms"
         self.path2 = "/etc/security/console.perms"
         self.data1 = ["<floppy>=/dev/fd[0-1]* \\",
@@ -119,7 +119,7 @@ class zzzTestRuleRestrictMounting(RuleTest):
                 debug = "Could not write to file " + self.path2 + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
-        
+
         # If autofs is installed, enable and start it. If it is not
         # installed, it will not be tested.
         if self.ph.check("autofs"):

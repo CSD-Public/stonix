@@ -384,8 +384,7 @@ DisablePrintBrowsing to True.'
                     secure = False
             elif self.PrintBrowseSubnet.getcurrvalue() and \
             PRINTBROWSESUBNET == '':
-                self.detailedresults += ' No value entered for print browse \
-                subnet'
+                self.detailedresults += '\nThe constant PRINTBROWSESUBNET was blank. This needs to be set. This can be done in localize.py'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 secure = False
 

@@ -25,6 +25,7 @@ Created on Nov 20, 2012
 This class is responsible for securing the Apache webserver configuration.
 @author: dkennel
 @change: 2015/04/17 updated for new isApplicable
+@change: 2015/09/24 eball Fixed potential missing file error in fix()
 '''
 from __future__ import absolute_import
 import os
@@ -88,7 +89,8 @@ deployed applications.'''
                 self.conffiles.append(location)
         confdirs = ['/etc/httpd/conf.d', '/etc/apache2/extra', '/etc/apache',
                     '/etc/apache2', '/etc/apache2/other',
-                    '/etc/apache2/users']
+                    '/etc/apache2/users', '/etc/apache2/conf-enabled',
+                    '/etc/apache2/sites-enabled']
         self.confdir = []
         for dirname in confdirs:
             if os.path.isdir(dirname):
@@ -101,6 +103,13 @@ deployed applications.'''
                 if os.path.exists(phploc):
                     self.phpfile = phploc
                     break
+        self.binpaths = ['/usr/sbin/httpd', '/usr/local/sbin/httpd',
+                         '/usr/sbin/apache2', '/usr/apache/bin/httpd',
+                         '/usr/apache2/bin/httpd']
+        self.controlpaths = ['/usr/sbin/apachectl',
+                             '/usr/local/sbin/apachectl',
+                             '/usr/sbin/apachctl', '/usr/apache/bin/apachectl',
+                             '/usr/apache2/bin/apachectl']
         self.comment = re.compile('^#|^;')
         self.secureapache = self.__initializeSecureApache()
         self.domodules = self.__initializeSecureApacheMods()
@@ -119,6 +128,8 @@ deployed applications.'''
                         'include_module modules/mod_include.so',
                         'dav_module modules/mod_dav.so',
                         'dav_fs_module modules/mod_dav_fs.so',
+                        'dav_module modules/mod_dav.so',
+                        'dav_lock_module modules/mod_dav_lock.so',
                         'status_module modules/mod_status.so',
                         'info_module modules/mod_info.so',
                         'speling_module modules/mod_speling.so',
@@ -128,9 +139,7 @@ deployed applications.'''
                         'proxy_http_module modules/mod_proxy_http.so',
                         'proxy_connect_module modules/mod_proxy_connect.so',
                         'cache_module modules/mod_cache.so',
-                        'disk_cache_module modules/mod_disk_cache.so',
-                        'file_cache_module modules/mod_file_cache.so',
-                        'mem_cache_module modules/mod_mem_cache.so',
+                        'cache_disk_module modules/mod_cache_disk.so',
                         'ext_filter_module modules/mod_ext_filter.so',
                         'expires_module modules/mod_expires.so',
                         'headers_module modules/mod_headers.so',
@@ -292,7 +301,7 @@ development but some existing applications may use insecure side effects.'''
         '''SecureApacheWebserver.__readconf() Private method to read the
         contents of the httpd.conf file. Returns the file content as a list.
         @author: dkennel
-        @return: list - file content as returned by readlines        
+        @return: list - file content as returned by readlines
         '''
         config = []
         if os.path.exists(conffile):
@@ -340,6 +349,76 @@ development but some existing applications may use insecure side effects.'''
                          'Found key: ' + str(entry)])
         return founddict
 
+    def __modcheck(self):
+        '''SecureApacheWebserver.__modcheck() is a private method to check for
+        modules that should be disabled. It is mirrored by the
+        __fixapachemodules() method.
+        @return: Tuple - two elements, bool indicating compliance, string
+        with detailed results.
+        @author: dkennel
+        '''
+        modulesd = '/etc/httpd/conf.modules.d'
+        enabled = '/etc/apache2/mods-enabled'
+        results = ''
+        compliant = True
+        filesToCheck = []
+
+        if os.path.exists(modulesd) or os.path.exists(enabled):
+            if os.path.exists(modulesd):
+                modulesdirpath = modulesd
+            elif os.path.exists(enabled):
+                modulesdirpath = enabled
+
+            for filename in os.listdir(modulesdirpath):
+                filepath = os.path.join(modulesdirpath, filename)
+                filesToCheck.append(filepath)
+        for filename in self.conffiles:
+            if os.path.exists(filename):
+                filesToCheck.append(filename)
+        self.logdispatch.log(LogPriority.DEBUG,
+                             ['SecureApacheWebserver.__modcheck',
+                              'Checking files: ' + str(filesToCheck)])
+        for filetocheck in filesToCheck:
+            if os.path.isfile(filetocheck):
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['SecureApacheWebserver.__modcheck',
+                                      'Checking ' + str(filetocheck)])
+                rhandle = open(filetocheck, 'r')
+                modconf = rhandle.readlines()
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['SecureApacheWebserver.__modcheck',
+                                      'Contents: ' + str(modconf)])
+                rhandle.close()
+                for line in modconf:
+                    if self.comment.match(line):
+                        continue
+                    for entry in self.modules:
+                        # Ubuntu is using a different path to modules
+                        # so we split the list elements and re.search on the
+                        # back half which contains the .so
+                        entrysplit = entry.split(' ')
+                        modpath = entrysplit[1]
+#                         This code commented out because of its riduculous
+#                         verbosity but retained in case needed.
+#                         self.logdispatch.log(LogPriority.DEBUG,
+#                                      ['SecureApacheWebserver.__modcheck',
+#                                       'Comparing: ' + str(modpath) + ' ' + line])
+                        if re.search(modpath, line):
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                     ['SecureApacheWebserver.__modcheck',
+                                      'Found ' + str(modpath)])
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                     ['SecureApacheWebserver.__modcheck',
+                                      'Line searched ' + str(line)])
+                            compliant = False
+                            results = results + ' File ' + filetocheck + \
+                            ' contains module entry ' + entry + \
+                            ' This should be disabled if possible.'
+            else:
+                continue
+
+        return compliant, results
+
     def report(self):
         '''SecureApacheWebserver.report() Public method to report on the
         configuration status of the Apache webserver.
@@ -368,17 +447,14 @@ development but some existing applications may use insecure side effects.'''
                         self.detailedresults = self.detailedresults + \
                         'Required directive ' + entry + \
                         ' not found in Apache configuration. \n'
-                self.logdispatch.log(LogPriority.DEBUG, 'Checking modules')
-                founddict2 = self.__chkvalues(self.modules, conf)
-                for entry in self.modules:
-                    if founddict2[entry] == True:
-                        compliant = False
-                        self.modulescompliant = False
-                        self.detailedresults = self.detailedresults + \
-                        'Module ' + entry + \
-                        ' should be removed from Apache configuration if ' + \
-                        ' possible. \n'
-                self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
+            self.logdispatch.log(LogPriority.DEBUG, 'Checking modules')
+            modcompliant, results = self.__modcheck()
+            if not modcompliant:
+                self.modulescompliant = False
+                compliant = False
+                self.detailedresults = self.detailedresults + results
+
+            self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
             for filename in self.sslfiles:
                 rhandle3 = open(filename, 'r')
                 conf3 = rhandle3.readlines()
@@ -525,97 +601,163 @@ development but some existing applications may use insecure side effects.'''
         @param eventid2: eventid number for permissions changes to the conf
         file. (May not be needed).
         '''
-        # Note to devs. This function calls the configtest function of the
-        # apache server to check the config file for correctness. Because of
-        # this we copy the config, then work on the live file. Then we do a
-        # series of file swaps to put things in the right spots for the call
-        # to the statechglogger.recordfilechange() function, before putting
-        # things back where they're supposed to go. The gymnastics has to do
-        # with the fact that the recordfilechange() and revertfilechange() use
-        # the patch utility so file names are important.
         self.logdispatch.log(LogPriority.DEBUG,
                         ['SecureApacheWebserver.__fixapachemodules',
                          'Entering function'])
         if self.modulescompliant:
             return
+        movefile = False
+        if re.search('mods-enabled', conffile):
+            movefile = True
+        disablefile = False
         tempfile = conffile + '.stonixtmp'
         tempfile2 = conffile + '.stonixtmp2'
         changecomplete = True
-        # copy the current config to a tempfile, this is our 'before'
-        shutil.copyfile(conffile, tempfile)
-        rhandle = open(conffile, 'r+')
-        localconf = rhandle.read()
-        rhandle.close()
-        undoconf = localconf
-        modconf = ''
-        for module in self.modules:
+        owneronly = 448  # Integer representation of 0700
+
+        # This is the code path for Apache laid out ubuntu 14.04 style
+        # In this style the mods-enabled and mods-available directory contain
+        # .load files which contain the module load directive and in some
+        # cases .conf files which contain configuration for the module. To
+        # succeed both files must be moved into the mods-available directory.
+        if movefile:
             self.logdispatch.log(LogPriority.DEBUG,
-                            ['SecureApacheWebserver.__fixapachemodules',
-                             'Processing module ' + module])
-            line = 'LoadModule ' + module
-            # this matches the newline and any space + the line
-            pattern = '\n[\s]*' + line
-            newline = '\n# ' + line
-            modconf, numsubs = re.subn(pattern, newline, localconf)
-            self.logdispatch.log(LogPriority.DEBUG,
-                            ['SecureApacheWebserver.__fixapachemodules',
-                             'RE made ' + str(numsubs) + ' changes.'])
-            localconf = modconf
-        whandle = open(conffile, 'w')
-        whandle.write(localconf)
-        whandle.close()
-        configtest = ''
-        binpaths = ['/usr/sbin/httpd', '/usr/local/sbin/httpd',
-                    '/usr/sbin/apache2', '/usr/apache/bin/httpd',
-                    '/usr/apache2/bin/httpd']
-        for path in binpaths:
-            if os.path.exists(path):
-                configtest = path + ' -t &> /dev/null'
-                retcode = subprocess.call(configtest, shell=True,
-                                          close_fds=True)
-                if retcode != 0:
-                    # Configuration failed selftest rollback the change!
-                    changecomplete = False
-                    localconf = undoconf
-                    whandle = open(conffile, 'w')
-                    whandle.write(undoconf)
-                    whandle.close()
-                    self.logdispatch.log(LogPriority.INFO,
+                                 ['SecureApacheWebserver.__fixapachemodules',
+                                  'Processing conf file ' + conffile])
+            rhandle = open(conffile, 'r+')
+            filecontents = rhandle.read()
+            rhandle.close()
+            for module in self.modules:
+                modulesplit = module.split(' ')
+                modulepath = modulesplit[1]
+                if re.search(modulepath, filecontents):
+                    disablefile = True
+            if disablefile:
+                confpath = re.sub('\.load', '.conf', conffile)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                 ['SecureApacheWebserver.__fixapachemodules',
+                                  'Disabling: ' + conffile + ' ' + confpath])
+                disabledir = '/etc/apache2/mods-available'
+                if not os.path.isdir(disabledir):
+                    os.makedirs(disabledir, owneronly)
+                if os.path.exists(conffile):
+                    if os.path.islink(conffile):
+                        os.remove(conffile)
+                    else:
+                        shutil.move(conffile, disabledir)
+                        type1 = 'move'
+                        start1 = conffile
+                        end1 = re.sub('mods-enabled', 'mods-available', conffile)
+                        eid1 = eventid1
+                        event1 = {'eventtype': type1,
+                                  'startstate': start1,
+                                  'endstate': end1,
+                                  'myfile': conffile}
+                        self.statechglogger.recordchgevent(eid1, event1)
+                if os.path.exists(confpath):
+                    if os.path.islink(confpath):
+                        os.remove(confpath)
+                    else:
+                        shutil.move(confpath, disabledir)
+                        type2 = 'move'
+                        start2 = confpath
+                        end2 = re.sub('mods-enabled', 'mods-available', confpath)
+                        eid2 = eventid1
+                        event2 = {'eventtype': type2,
+                                  'startstate': start2,
+                                  'endstate': end2,
+                                  'myfile': confpath}
+                        self.statechglogger.recordchgevent(eid2, event2)
+        else:
+            # Note to devs. This function calls the configtest function of the
+            # apache server to check the config file for correctness. Because of
+            # this we copy the config, then work on the live file. Then we do a
+            # series of file swaps to put things in the right spots for the call
+            # to the statechglogger.recordfilechange() function, before putting
+            # things back where they're supposed to go. The gymnastics has to do
+            # with the fact that the recordfilechange() and revertfilechange()
+            # use the patch utility so file names are important.
+            shutil.copyfile(conffile, tempfile)
+            rhandle = open(conffile, 'r+')
+            localconf = rhandle.read()
+            rhandle.close()
+            undoconf = localconf
+            modconf = ''
+            for module in self.modules:
+                self.logdispatch.log(LogPriority.DEBUG,
+                                ['SecureApacheWebserver.__fixapachemodules',
+                                 'Processing module ' + module])
+                line = 'LoadModule ' + module
+                # this matches the newline and any space + the line
+                pattern = '\n[\s]*' + line + '|^[\s]*' + line
+                newline = '\n# ' + line
+                modconf, numsubs = re.subn(pattern, newline, localconf)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                ['SecureApacheWebserver.__fixapachemodules',
+                                 'RE made ' + str(numsubs) + ' changes.'])
+                localconf = modconf
+            whandle = open(conffile, 'w')
+            whandle.write(localconf)
+            whandle.close()
+            configtest = ''
+            for path in self.binpaths:
+                if os.path.exists(path):
+                    configtest = path + ' -t  &> /dev/null'
+                    retcode = subprocess.call(configtest, shell=True,
+                                              close_fds=True)
+                    if retcode != 0:
+                        # Configuration failed selftest rollback the change!
+                        changecomplete = False
+                        localconf = undoconf
+                        whandle = open(conffile, 'w')
+                        whandle.write(undoconf)
+                        whandle.close()
+                        os.remove(tempfile)
+                        self.logdispatch.log(LogPriority.INFO,
+                                        ['SecureApacheWebserver.__fixapachemodules',
+                                         'Conf failed test! Module changes undone.'])
+            if changecomplete:
+                # We actually wrote our changes into the main config file so we
+                # need to flip flop the temp and primary config files
+                statdata = os.stat(conffile)
+                self.logdispatch.log(LogPriority.DEBUG,
                                     ['SecureApacheWebserver.__fixapachemodules',
-                                     'Conf failed test! Module changes undone.'])
-        if changecomplete:
-            # We actually wrote our changes into the main config file so we
-            # need to flip flop the temp and primary config files
-            statdata = os.stat(conffile)
-            shutil.move(conffile, tempfile2)
-            shutil.move(tempfile, conffile)
-            mytype = 'conf'
-            mystart = 'notconfigured'
-            myend = 'configured'
-            myid = eventid1
-            event = {'eventtype': mytype,
-                     'startstate': mystart,
-                     'endstate': myend,
-                     'myfile': conffile}
-            owner = statdata.st_uid
-            group = statdata.st_gid
-            mode = stat.S_IMODE(statdata.st_mode)
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(conffile, tempfile2, myid)
-            os.rename(tempfile2, conffile)
-            if owner != 0 or group != 0 or mode != 420:
-                mytype2 = 'perm'
-                mystart2 = [owner, group, mode]
-                myend2 = [0, 0, 420]
-                myid2 = eventid2
-                event2 = {'eventtype': mytype2,
-                          'startstate': mystart2,
-                          'endstate': myend2,
-                          'myfile': conffile}
-                self.statechglogger.recordchgevent(myid2, event2)
-            os.chown(conffile, 0, 0)
-            os.chmod(conffile, 420)
-            resetsecon(conffile)
+                                     'Moving : ' + str(conffile) + ' to ' + str(tempfile2)])
+                shutil.move(conffile, tempfile2)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                    ['SecureApacheWebserver.__fixapachemodules',
+                                     'Moving : ' + str(tempfile) + ' to ' + str(conffile)])
+                shutil.move(tempfile, conffile)
+                mytype = 'conf'
+                mystart = 'notconfigured'
+                myend = 'configured'
+                myid = eventid1
+                event = {'eventtype': mytype,
+                         'startstate': mystart,
+                         'endstate': myend,
+                         'myfile': conffile}
+                owner = statdata.st_uid
+                group = statdata.st_gid
+                mode = stat.S_IMODE(statdata.st_mode)
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(conffile, tempfile2, myid)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                    ['SecureApacheWebserver.__fixapachemodules',
+                                     'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
+                os.rename(tempfile2, conffile)
+                if owner != 0 or group != 0 or mode != 420:
+                    mytype2 = 'perm'
+                    mystart2 = [owner, group, mode]
+                    myend2 = [0, 0, 420]
+                    myid2 = eventid2
+                    event2 = {'eventtype': mytype2,
+                              'startstate': mystart2,
+                              'endstate': myend2,
+                              'myfile': conffile}
+                    self.statechglogger.recordchgevent(myid2, event2)
+                os.chown(conffile, 0, 0)
+                os.chmod(conffile, 420)
+                resetsecon(conffile)
 
     def __fixsslconfig(self, sslfile, eventid1, eventid2):
         '''SecureApacheWebserver.__fixsslconfig() private method to configure
@@ -830,7 +972,9 @@ development but some existing applications may use insecure side effects.'''
                     self.detailedresults = self.detailedresults + \
                     traceback.format_exc()
                     self.rulesuccess = False
-                    self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+                    self.logdispatch.log(LogPriority.ERROR,
+                                         self.detailedresults)
+
         myidbase = 200
         if self.domodules.getcurrvalue() and not self.modulescompliant:
             rangebase = str(self.rulenumber).zfill(4) + '2'
@@ -852,7 +996,28 @@ development but some existing applications may use insecure side effects.'''
                 traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-            for apacheconf in self.conffiles:
+            modulesd = '/etc/httpd/conf.modules.d'
+            enabled = '/etc/apache2/mods-enabled'
+            filesToCheck = []
+
+            if os.path.exists(modulesd) or os.path.exists(enabled):
+                if os.path.exists(modulesd):
+                    modulesdirpath = modulesd
+                elif os.path.exists(enabled):
+                    modulesdirpath = enabled
+# TODO need control statement here to switch for moving files on ubuntu
+                for filename in os.listdir(modulesdirpath):
+                    filepath = os.path.join(modulesdirpath, filename)
+                    filesToCheck.append(filepath)
+            for filename in self.conffiles:
+                if os.path.exists(filename):
+                    filesToCheck.append(filename)
+# TODO need control statement here to switch for moving files on ubuntu
+            for apacheconf in filesToCheck:
+                # Although paths were checked before, it is possible for a file
+                # to be removed in its partner's self.__fixapachemodules call
+                if not os.path.exists(apacheconf):
+                    continue
                 myidbase = myidbase + 1
                 changeid = self.makeEventId(myidbase)
                 myidbase = myidbase + 1
@@ -869,6 +1034,7 @@ development but some existing applications may use insecure side effects.'''
                     self.rulesuccess = False
                     self.logdispatch.log(LogPriority.ERROR,
                                          self.detailedresults)
+
         myidbase = 300
         if self.dossl.getcurrvalue() and not self.sslcompliant:
             rangebase = str(self.rulenumber).zfill(4) + '3'
@@ -969,6 +1135,9 @@ development but some existing applications may use insecure side effects.'''
                         conffile = event['myfile']
                         self.statechglogger.revertfilechanges(conffile,
                                                       eventid)
+                if event['eventtype'] == 'move':
+                    if event['startstate'] != event['endstate']:
+                        shutil.move(event['endstate'], event['startstate'])
                 if event['eventtype'] == 'perm':
                     if event['startstate'] != event['endstate']:
                         uid = event['startstate'][0]
@@ -1005,7 +1174,7 @@ development but some existing applications may use insecure side effects.'''
     def makeEventId(self, iditerator):
         '''Method to create event ID numbers for use with the state change
         logger. Modified from D.Walkers original for use by this rule.
-        
+
         @author: dkennel
         @return: string'''
         if iditerator < 10:

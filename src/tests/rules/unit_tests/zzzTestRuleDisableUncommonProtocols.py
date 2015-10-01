@@ -22,31 +22,41 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableUncommonProtocols
 
-@author: ekkehard j. koch
-@change: 02/27/2013 Original Implementation
+@author: Eric Ball
+@change: 2015/09/10 eball - Original implementation
 '''
 from __future__ import absolute_import
 import unittest
+import os
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.InstallPuppet import InstallPuppet
+from src.stonix_resources.rules.DisableUncommonProtocols import DisableUncommonProtocols
 
 
-class zzzTestRuleInstallPuppet(RuleTest):
+class zzzTestRuleDisableUncommonProtocols(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = InstallPuppet(self.config, self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = DisableUncommonProtocols(self.config,
+                                             self.environ,
+                                             self.logdispatch,
+                                             self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
-        pass
+        storconf = "/etc/modprobe.d/stor-protocols.conf"
+        stortmp = "/tmp/stor-protocols.conf"
+        stonixconf = "/etc/modprobe.d/stonix-protocols.conf"
+        stonixtmp = "/tmp/stonix-protocols.conf"
+        if os.path.exists(stortmp):
+            os.rename(stortmp, storconf)
+        if os.path.exists(stonixtmp):
+            os.rename(stonixtmp, stonixconf)
 
     def runTest(self):
         self.simpleRuleTest()
@@ -56,8 +66,16 @@ class zzzTestRuleInstallPuppet(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
+        storconf = "/etc/modprobe.d/stor-protocols.conf"
+        stortmp = "/tmp/stor-protocols.conf"
+        stonixconf = "/etc/modprobe.d/stonix-protocols.conf"
+        stonixtmp = "/tmp/stonix-protocols.conf"
+        if os.path.exists(storconf):
+            os.rename(storconf, stortmp)
+        if os.path.exists(stonixconf):
+            os.rename(stonixconf, stonixtmp)
         success = True
         return success
 
@@ -70,9 +88,9 @@ class zzzTestRuleInstallPuppet(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -85,7 +103,7 @@ class zzzTestRuleInstallPuppet(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -98,7 +116,7 @@ class zzzTestRuleInstallPuppet(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success

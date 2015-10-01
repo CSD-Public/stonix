@@ -33,7 +33,7 @@ import re
 import unittest
 import src.stonix_resources.rule as rule
 import src.stonix_resources.environment as environment
-import src.tests.lib.logdispatcher_mock as logdispatcher
+import src.tests.lib.logdispatcher_lite as logdispatcher
 import src.stonix_resources.StateChgLogger as StateChgLogger
 import src.stonix_resources.configuration as configuration
 
@@ -101,6 +101,10 @@ class zzzTestFramework(unittest.TestCase):
         self.failUnlessEqual(self.to.isapplicable(), True)
         environ = environment.Environment()
         myfamily = environ.getosfamily()
+        if environ.geteuid() == 0:
+            root = True
+        else:
+            root = False
         myostype = environ.getostype()
         myver = environ.getosver()
         if re.search('Red Hat Enterprise Linux', myostype):
@@ -114,54 +118,65 @@ class zzzTestFramework(unittest.TestCase):
             #self.to.applicable = {'type': 'brown', 'family': 'linux'}
             #self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
-                                  'os' :{'Red Hat Enterprise Linux': ['6.0', '+']}}
+                                  'os': {'Red Hat Enterprise Linux': ['6.0', '+']}}
             self.failUnlessEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
-                                  'os' :{'Red Hat Enterprise Linux': ['6.0', '+']}}
+                                  'os': {'Red Hat Enterprise Linux': ['6.0', '+']}}
             self.failUnlessEqual(self.to.isapplicable(), False)
+            if not root:
+                self.to.applicable = {'type': 'white',
+                                      'os': {'Red Hat Enterprise Linux': ['6.0', '+']},
+                                      'noroot': True}
+                self.failUnlessEqual(self.to.isapplicable(), True)
+            else:
+                self.to.applicable = {'type': 'white',
+                                      'os': {'Red Hat Enterprise Linux': ['6.0', '+']},
+                                      'noroot': True}
+                self.failUnlessEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Red Hat Enterprise Linux': ['6.0', '+', '7.0']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
-                                  'os' :{'Red Hat Enterprise Linux': ['7.0', '-']}}
+                                  'os': {'Red Hat Enterprise Linux': ['7.9', '-']}}
             self.failUnlessEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
-                                  'os' :{'Red Hat Enterprise Linux': ['7.0', '-']}}
+                                  'os': {'Red Hat Enterprise Linux': ['7.9', '-']}}
             self.failUnlessEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Red Hat Enterprise Linux': ['7.0', '-', '6.0']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
-                                  'os' :{'Red Hat Enterprise Linux': ['7.0', 'r', '5.0']}}
+                                  'os': {'Red Hat Enterprise Linux': ['7.9', 'r', '5.0']}}
             self.failUnlessEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
-                                  'os' :{'Red Hat Enterprise Linux': ['7.0', 'r', '5.0']}}
+                                  'os': {'Red Hat Enterprise Linux': ['7.9', 'r', '5.0']}}
             self.failUnlessEqual(self.to.isapplicable(), False)
+
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Red Hat Enterprise Linux': ['7.0', 'r']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
-            if myver == '7.0':
+            if myver == '7.1':
                 self.to.applicable = {'type': 'white',
-                                      'os' :{'Red Hat Enterprise Linux': ['7.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['7.1']}}
                 self.failUnlessEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
-                                      'os' :{'Red Hat Enterprise Linux': ['7.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['7.1']}}
                 self.failUnlessEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
-                                      'os' :{'Red Hat Enterprise Linux': ['7.0', '6.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['7.1', '6.0']}}
                 self.failUnlessEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
-                                      'os' :{'Red Hat Enterprise Linux': ['7.0', '6.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['7.1', '6.0']}}
                 self.failUnlessEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
-                                      'os' :{'Red Hat Enterprise Linux': ['6.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['6.0']}}
                 self.failUnlessEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'black',
-                                      'os' :{'Red Hat Enterprise Linux': ['6.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['6.0']}}
                 self.failUnlessEqual(self.to.isapplicable(), True)
             if myver == '6.0':
                 self.to.applicable = {'type': 'white',
-                                      'os' :{'Red Hat Enterprise Linux': ['6.0']}}
+                                      'os': {'Red Hat Enterprise Linux': ['6.0']}}
                 self.failUnlessEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Red Hat Enterprise Linux': ['6.0']}}
@@ -184,6 +199,14 @@ class zzzTestFramework(unittest.TestCase):
             self.failUnlessEqual(self.to.isapplicable(), False)
             self.to.applicable = {'type': 'white', 'family': 'darwin'}
             self.failUnlessEqual(self.to.isapplicable(), True)
+            if root:
+                self.to.applicable = {'type': 'black', 'family': 'darwin',
+                                      'noroot': True}
+                self.failUnlessEqual(self.to.isapplicable(), False)
+            else:
+                self.to.applicable = {'type': 'white', 'family': 'darwin',
+                                      'noroot': True}
+                self.failUnlessEqual(self.to.isapplicable(), True)
             #self.to.applicable = {'type': 'brown', 'family': 'linux'}
             #self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',

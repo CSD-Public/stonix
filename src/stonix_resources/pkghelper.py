@@ -34,6 +34,8 @@ class Pkghelper(object):
 
     @author: Derek T Walker  July 2012
     @change: 2015/08/20 eball - Added getPackageFromFile
+    @change: 2015/09/04 rsn - Gave default value to self.pckgr for OSs that
+                              are not included, specifically OS X.
     '''
 
     def __init__(self,logdispatcher, environment):
@@ -69,6 +71,10 @@ class Pkghelper(object):
             '''FOR PKGADD (SOLARIS)'''
         elif self.manager is "solaris":
             self.pckgr = solaris.Solaris(self.logger)
+        
+        else :
+            self.pckgr = None
+        
 ###############################################################################
     def determineMgr(self):
         '''determines the package manager for the current os'''
@@ -115,7 +121,7 @@ class Pkghelper(object):
         @author: Derek T Walker July 2012'''
         
         try:
-            if self.enviro.geteuid() is 0:
+            if self.enviro.geteuid() is 0 and self.pckgr :
                 if self.pckgr.installpackage(package):
                     return True
                 else:

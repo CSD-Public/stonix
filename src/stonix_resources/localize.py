@@ -47,7 +47,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.8.20'
+STONIXVERSION = '0.9.0'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -173,6 +173,35 @@ KERB5 = '''[libdefaults]
     foo.bar.com = FOO.BAR.COM
     .example.com = EXAMPLE.COM
     example.com = EXAMPLE.COM'''
+
+KRB5 = '''[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = bar.com
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+ allow_weak_crypto = true
+ clockslew = 300
+
+[realms]
+
+ bar.com = {
+  kdc = foo.bar.com
+    kdc = foo.bar.com
+  admin_server = foo.bar.com
+  default_domain = bar.com
+ }
+
+[domain_realm]
+ bar.com = bar.com
+ .bar.com = bar.com
+'''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package

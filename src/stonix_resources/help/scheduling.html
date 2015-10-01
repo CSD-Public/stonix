@@ -1,0 +1,16 @@
+<h2>Scheduling</h2>
+
+Stonix uses the native OS facility for scheduling regular Stonix runs in the
+background.  On Linux, it uses Cron, and on MacOS it uses launchd jobs.
+<p>
+Two jobs are scheduled to run in elevated (root) mode when the machine boots,
+and on a regularly scheduled basis.  One run is in "report" mode, and one run
+is in "fix" mode. 
+<p>
+The user based job is also scheduled to run on a regular basis in fix mode. 
+*nix systems can have user home directories mounted from network shares, 
+which can be mounted so root can not access them.  This is the reason for the
+stonix run scheduled to be run as a user on the system.
+<p>
+The Stonix rule ScheduleStonix sets up the regularly scheduled
+Stonix runs.

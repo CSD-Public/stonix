@@ -1,0 +1,93 @@
+<!DOCTYPE html?
+<! Note - Images are loaded relative to the page they are loaded in >
+
+<html>
+<head>
+<style>
+img {
+    width:100%;
+}
+</style>
+</head>
+<body>
+<h2>Graphical User Interface</h2>
+
+<h3>User Mode</h3>
+
+When run from the command line without any options, stonix will bring up the following interface.
+
+
+This mode is running Stonix in User mode.  Some configurations need to be run
+in the user's home directory, and when mounting remote directories, the root
+user may be prevented from setting any values in that users home directory, so
+some rules need to be run in "User" mode to ensure user configurations are set
+securely.
+<p>
+<img src="stonix-user-mode-mac-numbered.png" alt="Stonix in User mode">
+<p>
+<ol>
+<li>Toolbar - One can operate the full list of rules from these buttons.</li>
+<li>List of rules to be run in the current user/root context.</li>
+<li>Name of the highlighted rule.</li>
+<li>Description of the highlighted rule.</li>
+<li>The results of a Stonix run for the currently highlighted rule.</li>
+<li>Run the currently highlighted rule in report mode.</li>
+<li>Run the currently highlighted rule in fix mode.</li>
+<li>If the rule has an "undo" feature, this button will be enabled.</li>
+<li>If the rule has a configurable configuration item, save changes to the configuration.</li>
+<li>Cancel the run of the rule.</li>
+</ol>
+<p>
+Note that all the rules in the rule list have a grey background, with a question
+mark to the left of the rule.  This means the rule hasn't been run yet in this
+stonix session.
+
+<h3>Admin Mode</h3>
+
+
+The rule list will have the background of each rule change color once the fix/report
+run is complete.
+
+<ul>
+<li>Green: System correctly configured for this rule.</li>
+<li>Yellow: Optional rule - Not configured correctly for this rule.</li>
+<li>Red: System <b><i>NOT</i></b> configured correctly for this rule.</li>
+<li>Grey: Rule not yet run this stonix session.</li>
+</ul>
+
+The following is an image of Stonix running in Admin context in Report mode, 
+where some of the rules have not yet completed their run.
+<p>
+<img src="RunningInAdminContext.png" alt="Stonix running in Admin mode">
+<p>
+The <a href="macgui.html">Mac OS version</a> has a wrapper that allows a regular user to run Stonix as 
+an administrator.
+<p>
+<h3>Configuration Items</h3>
+<p>
+If available, configuration items allow modification of how a stonix rule runs.
+<p>
+The following is a rule that shows multiple configuration items, with different
+data types.
+<p>
+<img src="ConfigurationItems.png" alt="Configuration Items">
+<p>
+
+An explanation of the numbered items on the picture:
+
+<ol>
+<li>Configuration Item Name: SetDefaultUserUmask.</li>
+<li>Description for this rule.</li>
+<li>Boolean variable that can be changed.</li>
+<li>User comment: Any note the user wants to make about the rule, or changes
+they make to the configuration item.</li>
+<li>Configuration Item Name: DefaultUserUmask.</li>
+<li>Description for this rule.</li>
+<li>What to set the umask to.</li>
+<li>User comment.</li>
+<li>Save the changes on exit of Stonix.</li>
+<li>Cancel saving the changes on exit of Stonix.</li>
+</ol>
+
+</body>
+</html>

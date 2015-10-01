@@ -22,15 +22,17 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableCloudServices
 
 @author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@change: 2013/03/18 Original Implementation
+@change: 2015/09/25 eball Added Ubuntu test conditions
 '''
 from __future__ import absolute_import
 import unittest
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableCloudServices import DisableCloudServices
 
@@ -40,9 +42,9 @@ class zzzTestRuleDisableCloudServices(RuleTest):
     def setUp(self):
         RuleTest.setUp(self)
         self.rule = DisableCloudServices(self.config,
-                                        self.environ,
-                                        self.logdispatch,
-                                        self.statechglogger)
+                                         self.environ,
+                                         self.logdispatch,
+                                         self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -61,7 +63,7 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        if success:
+        if self.environ.getosfamily() == "darwin":
             command = ["/usr/bin/defaults",
                        "-currentHost",
                        "write",
@@ -70,6 +72,9 @@ class zzzTestRuleDisableCloudServices(RuleTest):
                        "-bool",
                        "yes"]
             success = self.ch.executeCommand(command)
+        else:
+            ph = Pkghelper(self.logdispatch, self.environ)
+            success = ph.install("unity-lens-shopping")
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -81,9 +86,9 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -96,7 +101,7 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -109,7 +114,7 @@ class zzzTestRuleDisableCloudServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
