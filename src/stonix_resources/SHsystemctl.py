@@ -62,13 +62,17 @@ class SHsystemctl(object):
                                'SHsystemctl.disable ' + service)
         confsuccess = True
         svcoff = True
-        ret = subprocess.call(self.cmd + '-q disable ' + service + ' &> /dev/null',
-                              shell=True, close_fds=True)
+        ret = subprocess.call(self.cmd + '-q disable ' + service,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if self.isrunning(service):
-            ret2 = subprocess.call(self.cmd + 'stop ' + service + ' &> /dev/null',
-                                   shell=True, close_fds=True)
+            ret2 = subprocess.call(self.cmd + 'stop ' + service,
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcoff = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -91,13 +95,17 @@ class SHsystemctl(object):
                                'SHsystemctl.enable ' + service)
         confsuccess = True
         svcon = True
-        ret = subprocess.call(self.cmd + '-q enable ' + service + ' &> /dev/null',
-                              shell=True, close_fds=True )
+        ret = subprocess.call(self.cmd + '-q enable ' + service,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
         if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.cmd + 'start ' + service + ' &> /dev/null',
-                                   shell=True, close_fds=True)
+            ret2 = subprocess.call(self.cmd + 'start ' + service,
+                                   shell=True, close_fds=True,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             if ret2 != 0:
                 svcon = False
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -118,8 +126,10 @@ class SHsystemctl(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.audit ' + service)
         running = False
-        chk = subprocess.call(self.cmd + '-q is-enabled ' + service + ' &> /dev/null',
-                              shell=True, close_fds=True)
+        chk = subprocess.call(self.cmd + '-q is-enabled ' + service,
+                              shell=True, close_fds=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
         if chk == 0:
             running = True
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -164,8 +174,10 @@ class SHsystemctl(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.reload ' + service)
         if not self.environment.getinstallmode():
-            ret = subprocess.call(self.cmd + 'reload-or-restart ' + service + ' &> /dev/null',
-                                  shell=True, close_fds=True)
+            ret = subprocess.call(self.cmd + 'reload-or-restart ' + service,
+                                  shell=True, close_fds=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.reload ' + service + str(ret))
         return True
