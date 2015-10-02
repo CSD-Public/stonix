@@ -28,6 +28,7 @@ This is the rule for installing puppet.
 @author: ekkehard
 @change: 2014/11/24 original implementation
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/09/28 ekkehard incorporate OS X El Capitan & JAMF 9.8x support
 '''
 from __future__ import absolute_import
 import traceback
@@ -59,26 +60,23 @@ class InstallCasperSuite(Rule):
         Constructor
         '''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
-        self.rulenumber = 9
+        self.rulenumber = 2
         self.rulename = 'InstallCasperSuite'
+        self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
         self.js = JAMFCASPERSUITESERVER
         self.qa = JAMFCASPERQUICKADD
 
-        self.myci = ConfigurationItem('bool')
         key = self.rulename
-        self.myci.setkey(key)
         instructions = '''To disable the installation of the JAMF Casper Recon client set the InstallCasperSuite option to no or False.'''
-        self.myci.setinstructions(instructions)
         default = True
-        self.myci.setdefvalue(default)
-        self.confitems.append(self.myci)
-        self.jamf = "/usr/sbin/jamf"
+
+        self.myci = ConfigurationItem('bool', key, default, instructions)
+        self.jamf = ["/usr/sbin/jamf", "/usr/local/bin/jamf"]
 
 # Set up CommandHelper instance
         self.ch = CommandHelper(self.logdispatch)
@@ -144,15 +142,22 @@ class InstallCasperSuite(Rule):
             self.compliant = True
             self.detailedresults = ""
             success = True
+            
 # See if jamf command is working
-            command = [self.jamf, "-version"]
             try:
+                command = [self.jamf[0], "-version"]
                 success = self.ch.executeCommand(command)
                 messagestring = str(self.jamf) + " is " + \
                 str(self.ch.getOutputString())
             except:
-                success = False
-                messagestring = str(self.jamf) + " dose not exist!"
+                try:
+                    command = [self.jamf[1], "-version"]
+                    success = self.ch.executeCommand(command)
+                    messagestring = str(self.jamf) + " is " + \
+                    str(self.ch.getOutputString())
+                except:
+                    success = False
+                    messagestring = str(self.jamf) + " dose not exist!"
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.DEBUG, messagestring)
             if not success:
@@ -208,15 +213,19 @@ class InstallCasperSuite(Rule):
             fixsuccess = False
             self.detailedresults = ""
             if not self.myci.getcurrvalue():
-                self.logdispatch.log(LogPriority.INFO,
-                                     str(self.rulename) + " is user disabled")
+                msg = str(self.rulename) + " is user disabled"
+                self.logdispatch.log(LogPriority.DEBUG, msg)
             else:
+                msg = str(self.rulename) + " is user enabled"
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+
 # If there network, install, else no network, log
                 hasconnection = has_connection_to_server(self.logdispatch,
                                                          self.js)
                 if hasconnection:
-                    self.logdispatch.log(LogPriority.ERROR,
-                                         "Connected to " + str(self.js))
+                    msg = "Connected to " + str(self.js)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+
 # Set up the installation
                     installing = IHmac(self.environ,
                                        self.qa,
@@ -236,7 +245,7 @@ class InstallCasperSuite(Rule):
                 else:
                     messagestring = "Could not connect to " + str(self.js)
                     self.detailedresults = messagestring
-                    self.logdispatch.log(LogPriority.ERROR, messagestring)
+                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
