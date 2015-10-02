@@ -21,8 +21,8 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Nov 24, 2012
-This is the rule for installing puppet.
+Created on Nov 24, 2014
+This is the rule for installing the JAMF Casper Suite on a client machine.
 
 @operating system: OS X
 @author: ekkehard
@@ -30,6 +30,7 @@ This is the rule for installing puppet.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/09/28 ekkehard incorporate OS X El Capitan & JAMF 9.8x support
 @change: 2015/10/02 ekkehard Only support 9.8 +
+@change: 2015/10/02 ekkeahrd Move Server from puppet-prod to jds001.lanl.gov
 '''
 from __future__ import absolute_import
 import traceback
@@ -48,8 +49,8 @@ from ..filehelper import FileHelper
 from ..IHmac import IHmac
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERQUICKADD = "http://puppet-prod.lanl.gov/support/casper/Puppet-Stonix-quickadd.zip"
-JAMFCASPERSUITESERVER = "puppet-prod.lanl.gov"
+JAMFCASPERQUICKADD = " https://jds001.lanl.gov/CasperShare/stonix-quickadd.pkg"
+JAMFCASPERSUITESERVER = "jds001.lanl.gov"
 
 
 class InstallCasperSuite(Rule):
