@@ -29,6 +29,7 @@ This is the rule for installing puppet.
 @change: 2014/11/24 original implementation
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/09/28 ekkehard incorporate OS X El Capitan & JAMF 9.8x support
+@change: 2015/10/02 ekkehard Only support 9.8 +
 '''
 from __future__ import absolute_import
 import traceback
@@ -76,7 +77,7 @@ class InstallCasperSuite(Rule):
         default = True
 
         self.myci = ConfigurationItem('bool', key, default, instructions)
-        self.jamf = ["/usr/sbin/jamf", "/usr/local/bin/jamf"]
+        self.jamf = "/usr/local/bin/jamf"
 
 # Set up CommandHelper instance
         self.ch = CommandHelper(self.logdispatch)
@@ -145,19 +146,13 @@ class InstallCasperSuite(Rule):
             
 # See if jamf command is working
             try:
-                command = [self.jamf[0], "-version"]
+                command = [self.jamf, "-version"]
                 success = self.ch.executeCommand(command)
                 messagestring = str(self.jamf) + " is " + \
                 str(self.ch.getOutputString())
             except:
-                try:
-                    command = [self.jamf[1], "-version"]
-                    success = self.ch.executeCommand(command)
-                    messagestring = str(self.jamf) + " is " + \
-                    str(self.ch.getOutputString())
-                except:
-                    success = False
-                    messagestring = str(self.jamf) + " dose not exist!"
+                success = False
+                messagestring = str(self.jamf) + " dose not exist!"
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.DEBUG, messagestring)
             if not success:
