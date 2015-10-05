@@ -29,6 +29,7 @@
 @change: 2015/03/11 ekkehard streamlined for stonix & comments
 @change: 2015/06/10 ekkehard enhance LDAP lookup
 @change: 2015/09/22 ekkehard improve evalution of file system asset tag
+@change: 2015/10/05 ekkeahrd change to new jamf location
 '''
 import os
 import re
@@ -84,10 +85,14 @@ class MacInfoLANL():
         self.ipAddress = ""
         self.ipAddressActive = []
         self.ldapnotworking = False
+        jamflocation = "/usr/local/jamf"
+        if not os.path.exists(jamflocation):
+            jamflocation = "/usr/sbin/jamf"
+        self.jamf = jamflocation
 # Make sure we have the full path for all commands
         self.ns = "/usr/sbin/networksetup"
         self.scutil = "/usr/sbin/scutil"
-        self.jamf = "/usr/sbin/jamf"
+        self.jamf = jamflocation
         self.nvram = "/usr/sbin/nvram"
         self.ldap = "/usr/bin/ldapsearch"
         self.lanl_property_file = "/Library/Preferences/lanl_property_number.txt"
