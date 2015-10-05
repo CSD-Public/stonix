@@ -85,7 +85,7 @@ class MacInfoLANL():
         self.ipAddress = ""
         self.ipAddressActive = []
         self.ldapnotworking = False
-        jamflocation = "/usr/local/jamf"
+        jamflocation = "/usr/local/bin/jamf"
         if not os.path.exists(jamflocation):
             jamflocation = "/usr/sbin/jamf"
         self.jamf = jamflocation
