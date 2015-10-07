@@ -29,6 +29,7 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/12/02 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -63,10 +64,9 @@ dictionary
         self.rulename = 'DisableCloudServices'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules disables listed cloud based services " + \
-        "on your system."
+        self.helptext = "This rule disables iCloud services on OS X or " + \
+            "Unity Webapps and Lens Shopping on Ubuntu."
         self.rootrequired = True
-        # for compatibility with logging in rule.py's undo() method...
         self.logger = self.logdispatch
         self.guidance = []
         self.applicable = {'type': 'white',
@@ -79,7 +79,7 @@ dictionary
         datatype = 'bool'
         key = 'DisableCloudServices'
         instructions = "To prevent cloud services from being disabled, " + \
-        "set the value of DisableCloudServices to False."
+            "set the value of DisableCloudServices to False."
         default = True
         self.DisableCloudServices = self.initCi(datatype, key, instructions,
                                                 default)
@@ -88,17 +88,18 @@ dictionary
                              "defaults",
                              "NSGlobalDomain",
                              "",
-                             {"NSDocumentSaveNewDocumentsToCloud": ["0",
-                                                                    "-bool no"]},
+                             {"NSDocumentSaveNewDocumentsToCloud":
+                              ["0", "-bool no"]},
                              "present",
                              "",
                              "Save new documents to disk not to iCloud.",
                              None,
                              False,
-                             {"NSDocumentSaveNewDocumentsToCloud": ["1",
-                                                                    "-bool yes"]})
-
-        self.debianpkglist = ['unity-webapps-common', 'unity-lens-shopping']
+                             {"NSDocumentSaveNewDocumentsToCloud":
+                              ["1", "-bool yes"]})
+        else:
+            self.debianpkglist = ['unity-webapps-common',
+                                  'unity-lens-shopping']
 
     def report(self):
         '''
@@ -135,7 +136,7 @@ dictionary
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -185,6 +186,7 @@ dictionary
             self.rulesuccess = False
             self.detailedresults += "\n" + str(err) + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
