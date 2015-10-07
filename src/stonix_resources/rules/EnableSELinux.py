@@ -29,6 +29,7 @@ The EnableSELinux class enables and configures SELinux on support OS platforms.
 @change: dwalker 3/10/2014
 @change: dkennel 04/18/2014 Replaced old style CI invocation
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -57,19 +58,16 @@ class EnableSELinux(Rule):
         self.rulename = 'EnableSELinux'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The EnableSELinux class enables and configures \
-SELinux on support OS platforms.  For debian and ubuntu systems, due to the \
-way that these systems manage selinux, after the fix, your system may still \
-show non compliant but may just need a restart of the system.  debian and \
-debian based systems need a reboot if selinux wasn't previously installed \
-or if selinux was installed but had the wrong configuration file contents.  \
-Be sure to run report again after rebooting system for those particular \
-distributions.  For ubuntu, if selinux needs to be installed, a prompt \
-window may or may not appear during the installation.  Please be aware of \
-this as stonix will pause until interraction with the window i.e. hitting \
-enter (inside the terminal or window, whichever is available) is done'''
-        self.detailedresults = '''The EnableSELinux rule has not yet been run.'''
-        self.guidance = ['NSA(2.1.1.6)(2.4.2), CCE-3977-6, CCE-3999-0, CCE-3624-4']
+        self.helptext = '''The EnableSELinux rule enables and configures \
+SELinux on supported platforms. Debian and Debian-based systems (e.g. Ubuntu, \
+Mint) may need a reboot if SELinux wasn't previously installed, or if it was \
+installed but had the wrong configuration file contents. Be sure to run the \
+report again after rebooting system for those particular distributions.
+For Ubuntu, if SELinux needs to be installed, a prompt window may or may not \
+appear during the installation. Please be aware of this as STONIX will pause \
+until interaction with the window is complete.'''
+        self.guidance = ['NSA(2.1.1.6)(2.4.2)', 'CCE-3977-6', 'CCE-3999-0',
+                         'CCE-3624-4']
         self.setype = "targeted"
         self.universal = "#The following lines were added by stonix\n"
         self.iditerator = 0
@@ -78,18 +76,18 @@ enter (inside the terminal or window, whichever is available) is done'''
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = "bool"
         key = "ENABLESELINUX"
         instructions = "To prevent the configuration of selinux, set the " + \
-        "value of ENABLESELINUX to False."
+            "value of ENABLESELINUX to False."
         default = True
         self.EnableSELinux = self.initCi(datatype, key, instructions, default)
 
         datatype2 = "string"
         key2 = "MODE"
         instructions2 = "Please type in permissive or enforcing for the " + \
-        "mode of selinux to operate in.  Default value is permissive"
+            "mode of selinux to operate in.  Default value is permissive"
         default2 = "permissive"
         self.modeci = self.initCi(datatype2, key2, instructions2, default2)
         self.statuscfglist = ['SELinux status:(\s)+enabled',
