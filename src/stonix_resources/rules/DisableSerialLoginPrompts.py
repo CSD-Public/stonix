@@ -26,12 +26,14 @@ This rule disables serial port logins
 @author: Eric Ball
 @change: 2015/08/05 eball - Original implementation
 @change: 2015/08/28 eball - Missing /etc/securetty no longer makes report false
+@change: 2015/10/07 eball - Added check and set for permissions
 '''
 from __future__ import absolute_import
 import os
 import re
 import traceback
 from ..stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
+from ..stonixutilityfunctions import checkPerms, setPerms
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 
@@ -61,6 +63,7 @@ virtual console interfaces.'''
 
         self.guidance = ["NSA 2.3.1.1", "CCE 4111-1", "CCE 4256-4"]
         self.iditerator = 0
+        self.myos = self.environ.getostype().lower()
 
     def report(self):
         try:
@@ -68,6 +71,12 @@ virtual console interfaces.'''
             self.serialRE = r"^ttyS\d"
             self.compliant = True
             self.detailedresults = ""
+
+            if re.search("red hat|centos|fedora", self.myos):
+                perms = [0, 0, 0600]
+            else:
+                perms = [0, 0, 0644]
+            self.perms = perms
 
             if os.path.exists(self.path):
                 sttyText = readFile(self.path, self.logger)
@@ -77,9 +86,13 @@ virtual console interfaces.'''
                         self.detailedresults += self.path + " contains " + \
                             "uncommented serial ports.\n"
                         break
+                if not checkPerms(self.path, perms, self.logger):
+                    self.compliant = False
+                    self.detailedresults += self.path + " permissions " + \
+                        "are incorrect.\n"
             else:
                 debug = self.path + " does not exist. This is considered " + \
-                    "secure, and should disable all root logins.\n"
+                    "secure, and should disable all serial ports.\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 
         except (KeyboardInterrupt, SystemExit):
@@ -124,6 +137,11 @@ virtual console interfaces.'''
                     self.statechglogger.recordfilechange(self.path,
                                                          tmpfile, myid)
                     os.rename(tmpfile, self.path)
+
+                    perms = self.perms
+                    setPerms(self.path, perms, self.logger,
+                             self.statechglogger, myid)
+
                     resetsecon(self.path)
                 else:
                     success = False
