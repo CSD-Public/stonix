@@ -27,6 +27,7 @@ Created on Nov 12, 2013
 @change: dkennel 04/18/2014 Replaced old style CI with new
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import readFile, writeFile, checkPerms
@@ -49,13 +50,13 @@ class DisableScreenSavers(Rule):
         self.rulename = "DisableScreenSavers"
         self.mandatory = True
         self.formatDetailedResults("initialize")
-        self.helptext = "Disable certain Screen savers that may contain " + \
-        "disk contents including CUI text or images"
+        self.helptext = "Disable certain screen savers that may contain " + \
+            "disk contents, including CUI text or images."
         self.detailedresults = "DisableScreenSavers has not yet been run."
         datatype = 'bool'
         key = 'DISABLESCREEN'
         instructions = "To disable this rule set the value of " + \
-        "DISABLESCREEN to False."
+            "DISABLESCREEN to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.guidance = ["NSA 2.3.1.3"]
@@ -64,29 +65,27 @@ class DisableScreenSavers(Rule):
 
     def report(self):
         try:
-            # need to do permission checks but not sure what the permissions
-            # are supposed to be on these files
             compliant = True
             self.detailedresults = ""
             self.helper = Pkghelper(self.logger, self.environ)
             config = ""
-            self.paths = {"/usr/share/kde4/services/ScreenSavers/":".desktop",
-                     "/usr/share/applnk/System/ScreenSavers/":"desktop",
-                     "/usr/share/applications/screensavers/":"dekstop",
-                     "/usr/share/kde4/services/ScreenSavers/":"desktop",
-                     "/usr/X11R6/lib/xscreensaver/":"desktop",
-                     "/usr/libexec/xscreensaver/":"desktop",
-                     "/usr/lib/xscreensaver/":"desktop",
-                     "/usr/lib64/xscreensaver/":"desktop"}
+            self.paths = {"/usr/share/kde4/services/ScreenSavers/": ".desktop",
+                          "/usr/share/applnk/System/ScreenSavers/": "desktop",
+                          "/usr/share/applications/screensavers/": "dekstop",
+                          "/usr/share/kde4/services/ScreenSavers/": "desktop",
+                          "/usr/X11R6/lib/xscreensaver/": "desktop",
+                          "/usr/libexec/xscreensaver/": "desktop",
+                          "/usr/lib/xscreensaver/": "desktop",
+                          "/usr/lib64/xscreensaver/": "desktop"}
             self.path = "/usr/lib/X11/app-defaults/XScreenSaver"
             self.badsavers = ["antspotlight", "apple2", "blitspin", "bsod",
-                              "bumps", "carousel", "decayscreen", "distort", 
-                              "flag", "flipscreen3d", "fontglide", "gflux", 
-                              "glslideshow", "gltext", "jigsaw", "Kgravity", 
+                              "bumps", "carousel", "decayscreen", "distort",
+                              "flag", "flipscreen3d", "fontglide", "gflux",
+                              "glslideshow", "gltext", "jigsaw", "Kgravity",
                               "KScience", "KSlideshow", "media", "mirrorblob",
-                              "noseguy", "phosphor", "photopile", "ripples", 
-                              "rotzoomer", "science", "slidescreen", "slip", 
-                              "spotlight", "starwars", "twang", "vidwhacker", 
+                              "noseguy", "phosphor", "photopile", "ripples",
+                              "rotzoomer", "science", "slidescreen", "slip",
+                              "spotlight", "starwars", "twang", "vidwhacker",
                               "xanalogtv", "xteevee", "xsublim", "zoom"]
             self.badkss = ["kscience.kss", "kslideshow.kss", "kgravity.kss"]
             if os.path.exists(self.path):
@@ -126,7 +125,7 @@ class DisableScreenSavers(Rule):
             for saver in self.badsavers:
                 for k, v in self.paths.iteritems():
                     if os.path.exists(k + saver) or \
-                                                 os.path.exists(k + saver + v):
+                       os.path.exists(k + saver + v):
                         compliant = False
             for saver in self.badkss:
                 if os.path.exists('/usr/bin/' + saver):
@@ -142,7 +141,7 @@ class DisableScreenSavers(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
+
     def fix(self):
         try:
             if not self.ci.getcurrvalue():
@@ -168,15 +167,15 @@ class DisableScreenSavers(Rule):
                         elif search("^\*lock:", line):
                             continue
                         elif len(splitline) == 1 and splitline[0] not in \
-                        self.badsavers:
+                             self.badsavers:
                             config2.append(line)
                         elif len(splitline) == 2 and splitline[0] not in \
-                        self.badsavers and splitline[1] not in self.badsavers:
+                             self.badsavers and splitline[1] not in self.badsavers:
                             config2.append(line)
                         elif len(splitline) > 2 and splitline[0] not in \
-                        self.badsavers and splitline[1] not in \
-                        self.badsavers and splitline[2] not in \
-                        self.badsavers:
+                             self.badsavers and splitline[1] not in \
+                             self.badsavers and splitline[2] not in \
+                             self.badsavers:
                             config2.append(line)
                         else:
                             config2.append(line)
@@ -203,7 +202,7 @@ class DisableScreenSavers(Rule):
                             os.remove(k + saver + v)
                     except(OSError):
                         self.detailedresults += "The following file had " + \
-                        "issues being removed:" + saver + "\n"
+                            "issues being removed:" + saver + "\n"
                         self.rulesuccess = False
 
             for saver in self.badkss:
@@ -212,7 +211,7 @@ class DisableScreenSavers(Rule):
                         os.remove("/usr/bin/" + saver)
                 except(OSError):
                     self.detailedresults += "The following file had " + \
-                    "issues being removed" + saver + "\n"
+                        "issues being removed" + saver + "\n"
                     self.rulesuccess = False
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -225,9 +224,9 @@ class DisableScreenSavers(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-###############################################################################
+
     def undo(self):
-        '''There is no undo method for this rule since we don't ever want 
+        '''There is no undo method for this rule since we don't ever want
         these screensaver files to exist'''
         try:
             self.detailedresults = "no undo available\n"

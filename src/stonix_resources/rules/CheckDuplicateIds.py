@@ -29,6 +29,7 @@ on a system must have unique UIDs.
 @change: 02/12/2014 ekkehard Implemented isapplicable
 @change: 08/05/2014 ekkehard added duplicate uid & gid check for OS X
 @change: 2015/04/14 dkennel updated to use new style isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 import os
@@ -62,10 +63,10 @@ class CheckDuplicateIds(Rule):
         self.rulename = 'CheckDupIDs'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The check for duplicate IDs rule is an audit " + \
-        "only rule that will examine local account databases for accounts " + \
-        "that have duplicate UID values. All accounts must be unique for " + \
-        "accountability purposes."
+        self.helptext = "This rule is an audit-only rule that will " + \
+            "examine local account databases for accounts that " + \
+            "have duplicate UID values. All accounts must be unique for " + \
+            "accountability purposes."
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
@@ -89,16 +90,16 @@ class CheckDuplicateIds(Rule):
                 self.currstate = 'configured'
             else:
                 self.detailedresults = "One or more Duplicate IDs was " + \
-                "detected on this system. For accountability purposes all " + \
-                "accounts are required to have unique UID values. " + \
-                str(self.issuelist)
+                    "detected on this system. For accountability purposes " + \
+                    "all accounts are required to have unique UID values. " + \
+                    str(self.issuelist)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + " " + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -137,7 +138,7 @@ class CheckDuplicateIds(Rule):
                     self.issuelist.append(issue)
                     oscheckresult = False
 # Check for duplicate groups
-            cmd = ["/usr/bin/dscl", "." , "list", "/groups", "gid"]
+            cmd = ["/usr/bin/dscl", ".", "list", "/groups", "gid"]
             self.commandhelper.executeCommand(cmd)
             output = self.commandhelper.getOutput()
             grouplist = []
@@ -233,7 +234,7 @@ class CheckDuplicateIds(Rule):
             raise
         except Exception:
             self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
+                traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             return False
