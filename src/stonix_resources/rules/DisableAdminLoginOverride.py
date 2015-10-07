@@ -26,7 +26,6 @@ locked session.
 
 @author: Eric Ball
 @change: 2015-08-03 eball Original implementation
-@change: 2015/08/26 ekkehard [artf37770] : DisableAdminLoginOverride(177) - NCAF - OS X El Capitan 10.11
 '''
 from __future__ import absolute_import
 import os

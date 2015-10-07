@@ -28,6 +28,7 @@ file system support from the kernel.
 @author: dkennel
 @change: dkennel 04/18/2014 Replaced old style CI with new
 @change: 2015/04/15 dkennel updated for new style isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 import os
@@ -35,11 +36,9 @@ import re
 import traceback
 import stat
 
-# The period was making python complain. Adding the correct paths to PyDev
-# made this the working scenario.
 from ..rule import Rule
-from ..stonixutilityfunctions import *
 from ..logdispatcher import LogPriority
+from ..stonixutilityfunctions import resetsecon
 
 
 class DisableUnusedFs(Rule):
@@ -60,29 +59,28 @@ class DisableUnusedFs(Rule):
         self.rulenumber = 256
         self.rulename = 'DisableUnusedFs'
         self.mandatory = True
-        self.helptext = '''The disable unused file systems rule will remove
-support for uncommon filesystems on this platform. Unused file system
-support increases the system attack profile while providing no benefit
-to the system operators. Options are given for disabling this rule or
-tuning the list of filesystems that should be disabled. Tuning is
+        self.helptext = '''This rule will remove \
+support for uncommon filesystems on this platform. Unused file system \
+support increases the system attack profile while providing no benefit \
+to the system operators. Options are given for disabling this rule or \
+tuning the list of filesystems that should be disabled. Tuning is \
 preferable to disabling the rule.'''
         self.rootrequired = True
-        self.detailedresults = '''The DisableUnusedFs rule has not yet been run.'''
         self.blacklistfile = '/etc/modprobe.d/usgcb-blacklist.conf'
 
         datatype = 'bool'
         key = 'disablefs'
-        instructions = '''To disable this rule set the value of DISABLEFS to
+        instructions = '''To disable this rule set the value of DISABLEFS to \
 False.'''
         default = True
         self.disablefs = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
         key2 = 'fslist'
-        instructions2 = '''This list contains file system types that will be
-disabled. If you need to use a file system currently listed remove it and the
-support for that file system type will not be disabled. This list should be
-space separated.'''
+        instructions2 = '''This list contains file system types that will be \
+disabled. If you need to use a file system currently listed, remove it and \
+the support for that file system type will not be disabled. This list should \
+be space separated.'''
         default2 = ['cramfs', 'freevxfs', 'jffs2', 'hfs', 'hfsplus',
                     'squashfs']
         self.fslist = self.initCi(datatype2, key2, instructions2, default2)
@@ -98,7 +96,8 @@ space separated.'''
             if not os.path.exists(self.blacklistfile):
                 compliant = False
                 self.logger.log(LogPriority.DEBUG,
-                        ['DisableUnusedFs.report', "blacklist not found"])
+                                ['DisableUnusedFs.report',
+                                 "blacklist not found"])
             else:
                 fhandle = open(self.blacklistfile, 'r')
                 fdata = fhandle.readlines()
@@ -144,7 +143,8 @@ support modules are not disabled."""
             return True
         if not self.compliant:
             self.logger.log(LogPriority.DEBUG,
-                        ['DisableUnusedFs.fix', "Report is False starting fix"])
+                            ['DisableUnusedFs.fix',
+                             "Report is False starting fix"])
             try:
                 tempfile = self.blacklistfile + '.stonixtmp'
                 if os.path.exists(self.blacklistfile):
@@ -162,7 +162,7 @@ support modules are not disabled."""
                     whandle.write(line)
                 whandle.close()
                 self.logger.log(LogPriority.DEBUG,
-                        ['DisableUnusedFs.fix', "Recording changes"])
+                                ['DisableUnusedFs.fix', "Recording changes"])
                 if os.path.exists(self.blacklistfile):
                     mytype = 'conf'
                     mystart = self.currstate
@@ -196,7 +196,7 @@ support modules are not disabled."""
                     event2 = {'eventtype': mytype2,
                               'startstate': mystart2,
                               'endstate': myend2}
-                    self.statechglogger.recordchgevent(myid, event2)
+                    self.statechglogger.recordchgevent(myid2, event2)
                 os.rename(tempfile, self.blacklistfile)
                 os.chown(self.blacklistfile, 0, 0)
                 os.chmod(self.blacklistfile, 420)
@@ -208,20 +208,21 @@ support modules are not disabled."""
                     myfslist = self.fslist.getcurrvalue()
                     fsstring = ', '.join(myfslist)
 
-                    self.detailedresults = '''DisableUnusedFs: Change not successful. Please verify
-configuration manually. /etc/modprobe.d/usgcb-blacklist.conf should contain the following entries
+                    self.detailedresults = '''DisableUnusedFs: Change not \
+successful. Please verify configuration manually. \
+/etc/modprobe.d/usgcb-blacklist.conf should contain the following entries \
 followed by /bin/true: ''' + fsstring
                     return False
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
 
-            except Exception, err:
+            except Exception:
                 self.detailedresults = traceback.format_exc()
                 self.rulesuccess = False
                 self.logger.log(LogPriority.ERROR,
-                            ['DisableUnusedFs.fix',
-                             self.detailedresults])
+                                ['DisableUnusedFs.fix',
+                                 self.detailedresults])
                 return False
 
         return self.report()
@@ -236,14 +237,15 @@ followed by /bin/true: ''' + fsstring
         try:
             event3 = self.statechglogger.getchgevent('0256003')
             if event3['startstate'] == 'notpresent' and \
-            event3['endstate'] == 'present':
+               event3['endstate'] == 'present':
                 try:
                     os.remove(self.blacklistfile)
                 except(OSError):
                     pass
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
-                        ['DisableUnusedFs.undo', "EventID 0256003 not found"])
+                            ['DisableUnusedFs.undo',
+                             "EventID 0256003 not found"])
         try:
             event1 = self.statechglogger.getchgevent('0256001')
             if event1['startstate'] != event1['endstate']:
@@ -251,7 +253,8 @@ followed by /bin/true: ''' + fsstring
                                                       '0256001')
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
-                        ['DisableUnusedFs.undo', "EventID 0256001 not found"])
+                            ['DisableUnusedFs.undo',
+                             "EventID 0256001 not found"])
         try:
             event2 = self.statechglogger.getchgevent('0256002')
             if event2['startstate'] != event2['endstate']:
@@ -264,7 +267,8 @@ followed by /bin/true: ''' + fsstring
                     resetsecon(self.blacklistfile)
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
-                        ['DisableUnusedFs.undo', "EventID 0256002 not found"])
+                            ['DisableUnusedFs.undo',
+                             "EventID 0256002 not found"])
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -272,11 +276,12 @@ followed by /bin/true: ''' + fsstring
             self.detailedresults = traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
-                        ['DisableUnusedFs.undo',
-                         self.detailedresults])
+                            ['DisableUnusedFs.undo',
+                             self.detailedresults])
         self.report()
         if self.currstate == self.targetstate:
-            self.detailedresults = '''DisableUnusedFs: Changes successfully reverted'''
+            self.detailedresults = "DisableUnusedFs: Changes successfully " + \
+                "reverted"
 
     def isapplicable(self):
         """

@@ -38,6 +38,7 @@ checked in fix method.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/04/30 Breen corrected mac implementation and separated mac and linux functionality
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -74,16 +75,17 @@ class ConfigureDotFiles(Rule):
         self.rulename = 'ConfigureDotFiles'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''A user who can modify another user's configuration files can likely execute 
-commands with the other user's privileges, including stealing data, destroying
-files, or launching further attacks on the system. This rule ensures that no
-dot files within users' home directories possess the world/other - writable
-permission.'''
+        self.helptext = '''A user who can modify another user's configuration \
+files can likely execute commands with the other user's privileges, including \
+stealing data, destroying files, or launching further attacks on the system. \
+This rule ensures that no dot files within users' home directories possess \
+the world/other - writable permission.'''
         self.rootrequired = False
         self.compliant = False
         datatype = 'bool'
         key = 'ConfigureDotFiles'
-        instructions = '''To prevent dot files in user home directories from being made non-world-writable, set the value of ConfigureDotFiles to False.'''
+        instructions = '''To prevent dot files in user home directories from \
+being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         default = True
         self.ConfigureDotFiles = self.initCi(datatype, key,
                                              instructions, default)

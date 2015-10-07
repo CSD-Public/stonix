@@ -29,6 +29,7 @@ dictionary
 @change: 2/4/2015 dwalker finishing rule
 @change: 2012-03-01 - ekkehard Fixed detailed result initialization
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball PEP8 cleanup
 '''
 from __future__ import absolute_import
 import re
@@ -60,10 +61,10 @@ class ConfigureSpotlight(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "The first configuration item of this rule " + \
-        "configures the SpotLight Preference Pane and the second " + \
-        "configuration item of this rule configures the Safari Spotlight " + \
-        "Search on your system both to prevent info from being sent to " + \
-        "Apple, Google, Microsoft, etc.  "
+            "configures the SpotLight Preference Pane and the second " + \
+            "configuration item of this rule configures the Safari Spotlight " + \
+            "Search on your system both to prevent info from being sent to " + \
+            "Apple, Google, Microsoft, etc.  "
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',
@@ -72,120 +73,73 @@ class ConfigureSpotlight(Rule):
         datatype1 = "bool"
         key1 = "CONFIGURESPOTLIGHT"
         instructions1 = "To disable this configuration set the value of " + \
-        "CONFIGURESPOTLIGHT to False."
+            "CONFIGURESPOTLIGHT to False."
         default1 = True
         self.ci1 = self.initCi(datatype1, key1, instructions1, default1)
 
         datatype2 = "bool"
         key2 = "SAFARISEARCH"
         instructions2 = "To disable this configuration set the value of " + \
-        "SAFARISEARCH to False."
+            "SAFARISEARCH to False."
         default2 = True
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
-
-#         self.addKVEditor("ConfigureSpotlight",
-#                          "defaults",
-#                          "~/Library/Preferences/com.apple.Spotlight",
-#                          "",
-#                          {"orderedItems": [slvlook, slvset]},
-#                          "present",
-#                          "",
-#                          "Turn off spotlight suggestions and Bing Web " + \
-#                          "Searches to prevent data being sent to Apple, " + \
-#                          "Google, Microsoft, etc.",
-#                          None,
-#                          False,
-#                          {"orderedItems":
-#                           [re.escape("The domain/default pair of (~/Library" + \
-#                                      "/Preferences/com.apple.Spotlight, " + \
-#                                      "orderedItems) does not exist"),
-#                            None]})
-#         self.addKVEditor("DisableSafariUniversalSearch",
-#                          "defaults",
-#                          "com.apple.Safari",
-#                          "",
-#                          {"UniversalSearchEnabled": ["0", "-bool no"]},
-#                          "present",
-#                          "",
-#                          "Turn off Safari Universal Search to prevent " + \
-#                          "data being sent to Apple, Google, Microsoft, etc.",
-#                          None,
-#                          False,
-#                          {"UniversalSearchEnabled":
-#                           [re.escape("/Library/Preferences/com.apple." + \
-#                                      "Spotlight Update, " + \
-#                                      "UniversalSearchEnabled) does not exist"),
-#                            None]})
 
     def report(self):
         try:
             self.detailedresults = ""
             self.slv = {0: {'enabled': '1', 'name': 'APPLICATIONS'},
-                   1: {'enabled': '0', 'name': '\"MENU_SPOTLIGHT_SUGGESTIONS\"'},
-                   2: {'enabled': '1', 'name': '\"MENU_CONVERSION\"'},
-                   3: {'enabled': '1', 'name': '\"MENU_EXPRESSION\"'},
-                   4: {'enabled': '1', 'name': '\"MENU_DEFINITION\"'},
-                   5: {'enabled': '1', 'name': '\"SYSTEM_PREFS\"'},
-                   6: {'enabled': '1', 'name': 'DOCUMENTS'},
-                   7: {'enabled': '1', 'name': 'DIRECTORIES'},
-                   8: {'enabled': '1', 'name': 'PRESENTATIONS'},
-                   9: {'enabled': '1', 'name': 'SPREADSHEETS'},
-                   10: {'enabled': '1', 'name': 'PDF'},
-                   11: {'enabled': '1', 'name': 'MESSAGES'},
-                   12: {'enabled': '1', 'name': 'CONTACT'},
-                   13: {'enabled': '1', 'name': '\"EVENT_TODO\"'},
-                   14: {'enabled': '1', 'name': 'IMAGES'},
-                   15: {'enabled': '1', 'name': 'BOOKMARKS'},
-                   16: {'enabled': '1', 'name': 'MUSIC'},
-                   17: {'enabled': '1', 'name': 'MOVIES'},
-                   18: {'enabled': '1', 'name': 'FONTS'},
-                   19: {'enabled': '1', 'name': '\"MENU_OTHER\"'},
-                   20: {'enabled': '0', 'name': '\"MENU_WEBSEARCH\"'}}
+                        1: {'enabled': '0', 'name':
+                            '\"MENU_SPOTLIGHT_SUGGESTIONS\"'},
+                        2: {'enabled': '1', 'name': '\"MENU_CONVERSION\"'},
+                        3: {'enabled': '1', 'name': '\"MENU_EXPRESSION\"'},
+                        4: {'enabled': '1', 'name': '\"MENU_DEFINITION\"'},
+                        5: {'enabled': '1', 'name': '\"SYSTEM_PREFS\"'},
+                        6: {'enabled': '1', 'name': 'DOCUMENTS'},
+                        7: {'enabled': '1', 'name': 'DIRECTORIES'},
+                        8: {'enabled': '1', 'name': 'PRESENTATIONS'},
+                        9: {'enabled': '1', 'name': 'SPREADSHEETS'},
+                        10: {'enabled': '1', 'name': 'PDF'},
+                        11: {'enabled': '1', 'name': 'MESSAGES'},
+                        12: {'enabled': '1', 'name': 'CONTACT'},
+                        13: {'enabled': '1', 'name': '\"EVENT_TODO\"'},
+                        14: {'enabled': '1', 'name': 'IMAGES'},
+                        15: {'enabled': '1', 'name': 'BOOKMARKS'},
+                        16: {'enabled': '1', 'name': 'MUSIC'},
+                        17: {'enabled': '1', 'name': 'MOVIES'},
+                        18: {'enabled': '1', 'name': 'FONTS'},
+                        19: {'enabled': '1', 'name': '\"MENU_OTHER\"'},
+                        20: {'enabled': '0', 'name': '\"MENU_WEBSEARCH\"'}}
             self.spotRead = "/usr/bin/defaults read com.apple.Spotlight " + \
-            "orderedItems "
+                "orderedItems "
             self.spotwrite = "/usr/bin/defaults write com.apple.Spotlight " + \
-            "orderedItems "
+                "orderedItems "
             self.safRead = "/usr/bin/defaults read com.apple.Safari " + \
-            "UniversalSearchEnabled "
+                "UniversalSearchEnabled "
             self.safWrite = "/usr/bin/defaults write com.apple.Safari " + \
-            "UniversalSearchEnabled "
-#             self.slvlook = "(\n"
-#             self.slvlook = "([ \t]*\n"
+                "UniversalSearchEnabled "
             compliant = True
             self.slvlook = "("
             self.slvset = "\'("
-            for k, v in sorted(self.slv.items()):
+            for _, v in sorted(self.slv.items()):
                 self.slvset += "{\"enabled\"=" + str(v['enabled']) + "; " + \
-                "\"name\"=" + str(v['name']) + ";},"
+                    "\"name\"=" + str(v['name']) + ";},"
             self.slvset += ")\';"
             i = 0
-            for k, v in sorted(self.slv.items()):
+            for _, v in sorted(self.slv.items()):
                 if i == 20:
-#                     self.slvlook += "[ \t]+{\n[ \t]+enabled = " + str(v['enabled']) + \
-#                     ";\n[ \t]+" + "name = " + str(v['name']) + ";\n" + "[ \t]+}\n"
-
-#                     self.slvlook += "[ \t]*{[ \t]*\n[ \t]*enabled = " + str(v["enabled"]) + \
-#                     ";[ \t]*\n[ \t]*name = " + str(v["name"]) + ";[ \t]*\n[ \t]*}[ \t]*\n"
-                    
                     self.slvlook += "{enabled=" + str(v["enabled"]) + ";" + \
-                    "name=" + str(v["name"]) + ";}"
+                        "name=" + str(v["name"]) + ";}"
                     break
                 else:
-#                     self.slvlook += "[ \t]+{\n[ \t]+enabled = " + str(v['enabled']) + \
-#                     ";\n[ \t]+" + "name = " + str(v['name']) + ";\n" + "[ \t]+},\n"
-
-#                     self.slvlook += "[ \t]*{[ \t]*\n[ \t]*enabled = " + str(v["enabled"]) + \
-#                     ";[ \t]*\n[ \t]*name = " + str(v["name"]) + ";[ \t]*\n[ \t]*},[ \t]*\n"
-                    
                     self.slvlook += "{enabled=" + str(v["enabled"]) + ";" + \
-                    "name=" + str(v["name"]) + ";},"
+                        "name=" + str(v["name"]) + ";},"
                 i += 1
             self.slvlook += ")"
-            lookstring = "The regex we are looking for from the defaults read " + \
-            "command: " + self.slvlook + "\n"
+            lookstring = "The regex we are looking for from the defaults " + \
+                "read command: " + self.slvlook + "\n"
             self.logdispatch.log(LogPriority.DEBUG, lookstring)
-            setstring = "The plist string we will set defaults write command " + \
-            "to: " + self.slvset + "\n"
+            setstring = "The plist string we will set defaults write " + \
+                "command to: " + self.slvset + "\n"
             self.logdispatch.log(LogPriority.DEBUG, setstring)
             self.ch = CommandHelper(self.logdispatch)
             if self.ch.executeCommand(self.spotRead):
@@ -195,13 +149,13 @@ class ConfigureSpotlight(Rule):
                 if output:
                     if not re.search(self.slvlook, output):
                         self.detailedresults += "Output for orderedItems " + \
-                        "key in com.apple.Spotlight plist isn't correct\n"
+                            "key in com.apple.Spotlight plist isn't correct\n"
                         compliant = False
                 elif error:
                     if re.search("does not exist", error):
                         self.detailedresults += "Either com.apple." + \
-                        "Spotlight plist doesn't exist or the key " + \
-                        "orderedItems doesn't exist\n"
+                            "Spotlight plist doesn't exist or the key " + \
+                            "orderedItems doesn't exist\n"
                         compliant = False
             output, error = "", ""
             if self.ch.executeCommand(self.safRead):
@@ -210,21 +164,21 @@ class ConfigureSpotlight(Rule):
                 if output:
                     if not re.search("0", output):
                         self.detailedresults += "Output for " + \
-                        "UniversalSearchEnabled key in com.apple.Safari " + \
-                        "plist isn't correct\n"
+                            "UniversalSearchEnabled key in " + \
+                            "com.apple.Safari plist isn't correct\n"
                         compliant = False
                 elif error:
                     if re.search("does not exist", error):
                         self.detailedresults += "Either com.apple.Safari " + \
-                        "plist doesn't exist or the key " + \
-                        "UniversalSearchEnabled doesn't exist\n"
+                            "plist doesn't exist or the key " + \
+                            "UniversalSearchEnabled doesn't exist\n"
             self.compliant = compliant
             if self.compliant:
                 self.detailedresults += "ConfigureSpotlight has been run " + \
-                "and is compliant\n"
+                    "and is compliant\n"
             else:
                 self.detailedresults += "ConfigureSpotlight has been run " + \
-                "and is not compliant\n"
+                    "and is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -232,18 +186,18 @@ class ConfigureSpotlight(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
-    
+
     def fix(self):
         try:
             if not self.ci1.getcurrvalue() and not self.ci2.getcurrvalue():
                 return
             self.detailedresults = ""
-            
+
             success = True
             if self.ch.executeCommand(self.spotRead):
                 output = self.ch.getOutputString()
@@ -255,16 +209,18 @@ class ConfigureSpotlight(Rule):
                         cmd = self.spotwrite + self.slvset
                         if not self.ch.executeCommand(cmd):
                             self.detailedresults += "Unable to perform " + \
-                            "defaults write command for com.apple.Spotlight\n"
+                                "defaults write command for " + \
+                                "com.apple.Spotlight\n"
                             success = False
                 elif error:
                     if re.search("does not exist", error):
                         cmd = self.spotwrite + self.slvset
                         if not self.ch.executeCommand(cmd):
-                            self.detailedresults += "Unable to perform" + \
-                            " defaults write command for com.apple.Safari\n" 
+                            self.detailedresults += "Unable to perform " + \
+                                "defaults write command for " + \
+                                "com.apple.Safari\n"
                             success = False
-                            
+
             output, error = "", ""
             if self.ch.executeCommand(self.safRead):
                 output = self.ch.getOutputString()
@@ -274,21 +230,21 @@ class ConfigureSpotlight(Rule):
                         cmd = self.safWrite + "-bool no"
                         if not self.ch.executeCommand(cmd):
                             self.detailedresults += "Unable to perform " + \
-                            "defaults write command for com.apple.Safari\n"
+                                "defaults write command for com.apple.Safari\n"
                             success = False
                 elif error:
                     if re.search("does not exist", error):
                         cmd = self.safWrite + "-bool no"
                         if not self.ch.executeCommand(cmd):
                             self.detailedresults += "Unable to perform " + \
-                            "defaults write command for com.apple.Safari\n" 
+                                "defaults write command for com.apple.Safari\n"
             self.rulesuccess = success
             if self.rulesuccess:
                 self.detailedresults += "ConfigureSpotlight rule ran to " + \
-                "completion successfully\n"
+                    "completion successfully\n"
             else:
                 self.detailedresults += "ConfigureSpotlight rule did not " + \
-                "run to completion successfully\n"
+                    "run to completion successfully\n"
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -296,12 +252,12 @@ class ConfigureSpotlight(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-    
+
 ###############################################################################
-    
+
     def undo(self):
         try:
             self.detailedresults = "no undo available"
@@ -310,4 +266,4 @@ class ConfigureSpotlight(Rule):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults) 
+            self.logger.log(LogPriority.ERROR, self.detailedresults)

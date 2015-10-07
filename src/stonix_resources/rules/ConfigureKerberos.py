@@ -30,6 +30,7 @@ dictionary
 @change: 2014/07/14 ekkehard - Fixed report to self.fh.evaluateFiles()
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/08/17 eball - Updated to work with Linux
+@change: 2015/10/07 eball - Help text cleanup
 '''
 from __future__ import absolute_import
 import os
@@ -57,7 +58,8 @@ class ConfigureKerberos(RuleKVEditor):
         self.rulename = 'ConfigureKerberos'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures LANL Kerberos on your system."
+        self.helptext = "This rule configures Kerberos on your system, " + \
+            "based on the settings in the localize.py file."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',

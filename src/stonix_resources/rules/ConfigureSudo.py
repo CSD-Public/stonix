@@ -29,12 +29,12 @@ Created on Mar 7, 2013
 @change: 04/18/2014 dkennel Updated to use new style CI
 @change: 2015/04/14 dkennel upddated to use new isApplicable
 @change: 2015/09/06 Breen Malmberg, re-wrote rule
+@change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/09 eball Fixed bad variable name in report
 '''
 from __future__ import absolute_import
 
-from ..stonixutilityfunctions import setPerms, checkPerms
-from ..stonixutilityfunctions import iterate
+from ..stonixutilityfunctions import setPerms, checkPerms, iterate
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
@@ -53,13 +53,16 @@ class ConfigureSudo(Rule):
         self.rulename = "ConfigureSudo"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Ensure that the group entered in the text field " + \
-        "exists, and that the usernames of all administrators who should " + \
-        "be allowed to execute commands as root are members of that " + \
-        "group.  This rule will not be applicable to Solaris.  ***Please " + \
-        "be aware that the default group for this rule if nothing is " + \
-        "entered, is wheel.  If you would like to change the group, enter " + \
-        "the desired group in the text field and hit save before running"
+        self.helptext = """This rule will check for proper settings for \
+"wheel" (or another administrative group, if specified below) in the sudoers \
+file.
+If the rule is non-compliant after you have run the fix, ensure that the \
+group entered in the text field exists, and that the usernames of all \
+administrators who should be allowed to execute commands as root are members \
+of that group. This rule will not be applicable to Solaris.
+***Please be aware that the default group for this rule is wheel. If you \
+would like to change the group, enter the desired group in the text field \
+below and hit save before running.***"""
 
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',

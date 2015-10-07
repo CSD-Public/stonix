@@ -30,6 +30,7 @@ dictionary
 @change: 02/13/2014 ekkehard Implemented self.detailedresults flow
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Fixed help text, which was for DisableInternetSharing
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -37,11 +38,6 @@ from ..ruleKVEditor import RuleKVEditor
 
 class DisableMediaAutomaticActions(RuleKVEditor):
     '''
-    defaults write /Library/Preferences/com.apple.digihub NAT -dict Enabled -int 0
-    defaults read /Library/Preferences/SystemConfiguration/com.apple.nat NAT
-    {
-        Enabled = 0;
-    }
     @author: ekkehard j. koch
     '''
 
@@ -51,13 +47,8 @@ class DisableMediaAutomaticActions(RuleKVEditor):
         self.rulename = 'DisableMediaAutomaticActions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Internet Sharing uses the open source natd " + \
-        "process to share an internet connection with other computers and " +\
-        "devices on a local network. Unless specifically required, " +\
-        "Internet Sharing should be turned off. If used, it should only " + \
-        "be turned on when actual sharing is needed. A much better " + \
-        "solution is a dedicated router. Apple makes a number of " + \
-        "certified compatible routers."
+        self.helptext = """This rule disables automatic media actions, such \
+as those taken when an audio CD or video DVD is inserted."""
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',

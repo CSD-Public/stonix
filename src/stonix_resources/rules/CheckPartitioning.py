@@ -28,6 +28,7 @@ have been followed. The class is audit only.
 @change: 02/12/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/12/2014 ekkehard Implemented isapplicable
 @change: 2015/04/14 dkennel updated to use new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -58,10 +59,11 @@ class CheckPartitioning(Rule):
         self.rulename = 'CheckPartitioning'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The check for partitioning is an audit only rule that will
-not change system settings. Best *NIX partitioning practices recommend that the
-following areas of the filesystem, if present, be placed on their own
-partitions: /home, /tmp, ,/var, /var/tmp, /var/log, /var/log/audit.'''
+        self.helptext = '''The check for partitioning is an audit only rule \
+that will not change system settings. Best *NIX partitioning practices \
+recommend that the following areas of the filesystem, if present, be placed \
+on their own partitions: /home, /tmp, ,/var, /var/tmp, /var/log, \
+/var/log/audit.'''
         self.rootrequired = False
         self.guidance = ['CCE 14161-4', 'CCE 14777-7', 'CCE 14011-1',
                          'CCE 14171-3', 'CCE 14559-9']

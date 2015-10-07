@@ -38,6 +38,7 @@ OS X Mavericks not Mountain Lion, Lion, etc.
     an optional rule designed for very high security environments.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -64,43 +65,43 @@ class DisableRemoveableStorage(Rule):
         self.logger = logger
         self.rulenumber = 29
         self.rulename = 'DisableRemoveableStorage'
+        self.mandatory = False
         self.formatDetailedResults("initialize")
-        self.helptext = "DisableRemovablestorage. This rule is optional, " + \
-        "and disables USB storage devices from accessing, or being able " + \
-        "to be accessed from the system."
+        self.helptext = "This optional rule disables USB storage devices " + \
+            "from accessing, or being accessed from, the system."
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = "bool"
         key = "DISABLEUSB"
         instructions = "To disable usb storage devices on this system, " + \
-        "set the value of DISABLEUSB to True"
-        default = False  #change back to False after testing
+            "set the value of DISABLEUSB to True"
+        default = False
         self.usbci = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "DISABLEFIREWIRE"
         instructions = "To disable Firewire storage devices on this " + \
-        "system set the value of DISABLEFIREWIRE to True."
-        default = False #change back to False after testing
+            "system set the value of DISABLEFIREWIRE to True."
+        default = False
         self.fwci = self.initCi(datatype, key, instructions, default)
 
         if self.environ.getostype() == "Mac OS X":
             datatype = "bool"
             key = "DISABLETHUNDER"
             instructions = "To disable thunderbolt storage devices on " + \
-            "this system set the value of DISABLETHUNDER to True."
-            default = False  #change back to False after testing
+                "this system set the value of DISABLETHUNDER to True."
+            default = False
             self.tbci = self.initCi(datatype, key, instructions, default)
 
             datatype = "bool"
             key = "DISABLESDCARD"
             instructions = "To disable SD card functionality on this " + \
-            "system set the value of DISABLESDCARD to True"
-            default = False  #change back to False after testing
+                "system set the value of DISABLESDCARD to True"
+            default = False
             self.sdci = self.initCi(datatype, key, instructions, default)
 
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
@@ -118,7 +119,7 @@ class DisableRemoveableStorage(Rule):
         @author bemalmbe
         @change: dwalker - implementing kveditor and completely revamped rule
             logic. added event deletion at the beginning of the fix
-        @change: dwalker 8/13/2014 changed name of rule to 
+        @change: dwalker 8/13/2014 changed name of rule to
             DisableRemoveableStorage and rule now supports disabling other
             ports such thunderbolt and firewire
         '''
@@ -144,12 +145,12 @@ class DisableRemoveableStorage(Rule):
                                 if re.search("^kernel", line):
                                     if not re.search("\s+nousb\s+", line):
                                         debug = "/etc/grub file doesn't " + \
-                                        "contain line with nousb\n"
+                                            "contain line with nousb\n"
                                         self.detailedresults += "/etc/grub" + \
-                                        " file doesn't contain line with " + \
-                                        "nousb\n"
-                                        self.logger.log(LogPriority.DEBUG, 
-                                                                         debug)
+                                            " file doesn't contain line with " + \
+                                            "nousb\n"
+                                        self.logger.log(LogPriority.DEBUG,
+                                                        debug)
                                         compliant = False
 
                 # check if usb kernel module exists, non compliant if yes
@@ -159,10 +160,11 @@ class DisableRemoveableStorage(Rule):
                 output = self.ch.getOutput()
                 if output:
                     output = output[0].strip()
-                    if os.path.exists("/lib/modules/" + output + \
-                                 "/kernel/drivers/usb/storage/usb-storage.ko"):
+                    if os.path.exists("/lib/modules/" + output +
+                                      "/kernel/drivers/usb/storage/usb-storage.ko"):
                         debug = "Kernel module exists but shouldn't\n"
-                        self.detailedresults += "Kernel module exists but shouldn't\n"
+                        self.detailedresults += "Kernel module exists " + \
+                            "but shouldn't\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         compliant = False
 
@@ -171,13 +173,14 @@ class DisableRemoveableStorage(Rule):
                 for item in self.pcmcialist:
                     if self.ph.check(item):
                         self.detailedresults += item + " is installed " + \
-                        "and shouldn't be\n"
+                            "and shouldn't be\n"
                         compliant = False
                 found = True
                 self.blacklist = {}
                 # directives are different for different distros
                 if self.usbci.getcurrvalue():
-                    if self.ph.manager == "apt-get" or self.ph.manager == "zypper":
+                    if self.ph.manager == "apt-get" or \
+                       self.ph.manager == "zypper":
                         self.blacklist["blacklist usb_storage"] = False
                         self.blacklist["install usbcore /bin/true"] = False
                     elif self.ph.manager == "yum":
@@ -197,7 +200,7 @@ class DisableRemoveableStorage(Rule):
                                 for line in contents:
                                     if re.search("^" + item, line.strip()):
                                         self.blacklist[item] = True
-                                    
+
                             for item in self.blacklist:
                                 if not self.blacklist[item]:
                                     compliant = False
@@ -209,7 +212,7 @@ class DisableRemoveableStorage(Rule):
                             if createFile("/etc/modprobe.d/50-blacklist.conf"):
                                 self.created = True
                             debug += "/etc/modrobe.d/50-blacklist.conf " + \
-                            "file doesn't exist\n"
+                                "file doesn't exist\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             compliant = False
                     else:
@@ -231,14 +234,15 @@ class DisableRemoveableStorage(Rule):
                         # one directive in one of the files in modprobe.d
                         for item in self.blacklist:
                             if not self.blacklist[item]:
-                                found = False 
+                                found = False
                         if not found:
                             if os.path.exists("/etc/modprobe.conf"):
                                 contents = readFile("/etc/modprobe.conf")
                                 if contents:
                                     for item in self.blacklist:
                                         for line in contents:
-                                            if re.search("^" + item, line.strip()):
+                                            if re.search("^" + item,
+                                                         line.strip()):
                                                 self.blacklist[item] = True
                             for item in self.blacklist:
                                 if not self.blacklist[item]:
@@ -256,7 +260,8 @@ class DisableRemoveableStorage(Rule):
                                     self.blacklist[item] = True
                     for item in self.blacklist:
                         if not self.blacklist[item]:
-                            debug = "modprobe.conf doesn't contain " + item + "\n"
+                            debug = "modprobe.conf doesn't contain " + item + \
+                                "\n"
                             compliant = False
                 for item in self.blacklist:
                     if self.blacklist[item]:
@@ -290,17 +295,17 @@ class DisableRemoveableStorage(Rule):
         cmd = check + "| grep " + usb
         self.ch.executeCommand(cmd)
 
-        #if return code is 0, the kernel module is loaded, thus we need
-        #to disable it
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
-            debug += "Usb Kernel module is loaded\n"
-            self.detailedresults += "Usb Kernel module is loaded\n"
+            debug += "USB Kernel module is loaded\n"
+            self.detailedresults += "USB Kernel module is loaded\n"
         fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
-        #if return code is 0, the kernel module is loaded, thus we need
-        #to disable it
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "Firewire kernel module is loaded\n"
@@ -308,8 +313,8 @@ class DisableRemoveableStorage(Rule):
         tb = "AppleThunderboltUTDM"
         cmd = check + "| grep " + tb
         self.ch.executeCommand(cmd)
-        #if return code is 0, the kernel module is loaded, thus we need
-        #to disable it
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "Thunderbolt kernel module is loaded\n"
@@ -317,8 +322,8 @@ class DisableRemoveableStorage(Rule):
         sd = "AppleSDXC"
         cmd = check + "| grep " + sd
         self.ch.executeCommand(cmd)
-        #if return code is 0, the kernel module is loaded, thus we need
-        #to disable it
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
         if self.ch.getReturnCode() == 0:
             compliant = False
             debug += "SD card kernel module is loaded\n"
@@ -342,7 +347,7 @@ class DisableRemoveableStorage(Rule):
         try:
             success = True
             self.detailedresults = ""
-            #clear out event history so only the latest fix is recorded
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -429,9 +434,9 @@ class DisableRemoveableStorage(Rule):
                             os.chmod(modfile, 420)
                             resetsecon(modfile)
                 else:
-                    #Check if self.blacklist still contains values, if it
-                    #does, then we didn't find all the blacklist values
-                    #in report
+                    # Check if self.blacklist still contains values, if it
+                    # does, then we didn't find all the blacklist values
+                    # in report
                     if self.blacklist:
                         # didn't find one or both directives in the files
                         # inside modprobe.d so we now check an alternate
@@ -466,7 +471,8 @@ class DisableRemoveableStorage(Rule):
                             event = {"eventtype": "conf",
                                      "filepath": blacklistf}
                             self.statechglogger.recordchgevent(myid, event)
-                            self.statechglogger.recordfilechange(blacklistf, tmpfile, myid)
+                            self.statechglogger.recordfilechange(blacklistf,
+                                                                 tmpfile, myid)
                             os.rename(tmpfile, blacklistf)
                             os.chown(blacklistf, 0, 0)
                             os.chmod(blacklistf, 420)
@@ -478,11 +484,11 @@ class DisableRemoveableStorage(Rule):
                 output = self.ch.getOutput()
                 if output:
                     output = output[0].strip()
-                    if os.path.exists("/lib/modules/" + output + \
+                    if os.path.exists("/lib/modules/" + output +
                                       "/kernel/drivers/usb/storage/usb-storage.ko"):
-                        os.rename("/lib/modules/" + output + \
-                            "/kernel/drivers/usb/storage/usb-storage.ko",
-                                                         "/usb-storage.ko")
+                        os.rename("/lib/modules/" + output +
+                                  "/kernel/drivers/usb/storage/usb-storage.ko",
+                                  "/usb-storage.ko")
 
                 for item in self.pcmcialist:
                     if self.ph.check(item):
@@ -504,12 +510,12 @@ class DisableRemoveableStorage(Rule):
 
     def fixMac(self):
         '''This method will attempt to disable certain storage ports by moving
-        certain kernel extensions.  If the check box is checked we will 
-        move the kernel (if present) associated with that storage port/device 
-        into a folder designated for those disabled extensions.  If the 
-        check box is unchecked, we will assume the user doesn't want this 
+        certain kernel extensions.  If the check box is checked we will
+        move the kernel (if present) associated with that storage port/device
+        into a folder designated for those disabled extensions.  If the
+        check box is unchecked, we will assume the user doesn't want this
         disabled and if the kernel is no longer where it should be, we will
-        check the disabled extensions folder to see if it was previously 
+        check the disabled extensions folder to see if it was previously
         disabled.  If it's in that folder, we will move it back.
         @author: bemalmbe
         @return: bool
@@ -526,8 +532,8 @@ class DisableRemoveableStorage(Rule):
             cmd = check + "| grep " + usb
             self.ch.executeCommand(cmd)
 
-            #if return code is 0, the kernel module is loaded, thus we need
-            #to disable it
+            # if return code is 0, the kernel module is loaded, thus we need
+            # to disable it
             if self.ch.getReturnCode() == 0:
                 cmd = unload + filepath + usb + ".kext/"
                 if not self.ch.executeCommand(cmd):
@@ -545,12 +551,12 @@ class DisableRemoveableStorage(Rule):
             cmd = check + "| grep " + fw
             self.ch.executeCommand(cmd)
 
-            #if return code is 0, the kernel module is loaded, thus we need
-            #to disable it
+            # if return code is 0, the kernel module is loaded, thus we need
+            # to disable it
             if self.ch.getReturnCode() == 0:
                 cmd = unload + filepath + fw + ".kext/"
                 if not self.ch.executeCommand(cmd):
-                    debug += "Unable to disable firewire\n"
+                    debug += "Unable to disable Firewire\n"
                     success = False
                 else:
                     self.iditerator += 1
@@ -564,12 +570,12 @@ class DisableRemoveableStorage(Rule):
             cmd = check + "| grep " + tb
             self.ch.executeCommand(cmd)
 
-            #if return code is 0, the kernel module is loaded, thus we need
-            #to disable it
+            # if return code is 0, the kernel module is loaded, thus we need
+            # to disable it
             if self.ch.getReturnCode() == 0:
                 cmd = unload + "/System/Library/Extensions/" + tb + ".kext/"
                 if not self.ch.executeCommand(cmd):
-                    debug += "Unable to disable thunderbolt\n"
+                    debug += "Unable to disable Thunderbolt\n"
                     success = False
                 else:
                     self.iditerator += 1
@@ -583,8 +589,8 @@ class DisableRemoveableStorage(Rule):
             cmd = check + "| grep " + sd
             self.ch.executeCommand(cmd)
 
-            #if return code is 0, the kernel module is loaded, thus we need
-            #to disable it
+            # if return code is 0, the kernel module is loaded, thus we need
+            # to disable it
             if self.ch.getReturnCode() == 0:
                 cmd = unload + "/System/Library/Extensions/" + sd + ".kext/"
                 if not self.ch.executeCommand(cmd):

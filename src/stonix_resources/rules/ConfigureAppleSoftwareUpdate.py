@@ -33,6 +33,7 @@ dictionary
 @change: 2014/09/15 ekkehard fixed CatalogURL string
 @change: 2015/04/14 dkennel updated for new style isApplicable
 @change: 2015/09/21 ekkehard OS X El Capitan 10.11 & Implement New Guidance
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 import re
@@ -67,7 +68,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     5. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate DisableCriticalUpdateInstall
     6. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AllowPreReleaseInstallation
     7. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates
-    
+
     OS X Yosemite considerations:
     defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
     defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool [TRUE|FALSE]
@@ -84,21 +85,21 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.rulename = 'ConfigureAppleSoftwareUpdate'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules set the default to get software " + \
-        "updates from " + str(APPLESOFTUPDATESERVER) + " disables the " + \
-        "Check for Updates in the Software Update System Preference Panel " + \
-        "for most users. Does not disable this option when the account is " + \
-        "an admin account and the update server is set to the our ASUS " + \
-        "server and disable the Download Updates in Background option of " + \
-        "the Software Update System Preference Panel for most users. Does " + \
-        "not disable this option when the account is an admin account and " + \
-        "the update server is set to the our ASUS server."
+        self.helptext = """This rule will set the default to get software \
+updates from """ + str(APPLESOFTUPDATESERVER) + """, and disables the "Check \
+for Updates" option in the Software Update System Preference Panel for most \
+users. Does not disable this option when the account is an admin account and \
+the update server is set to our ASUS server.
+This rule will also disable the "Download Updates in Background" option of \
+the Software Update System Preference Panel for most users. Does not disable \
+this option when the account is an admin account and the update server is set \
+to our ASUS server."""
         self.rootrequired = True
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        
+
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("ConfigureCatalogURL",
                              "defaults",
@@ -216,7 +217,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                  None,
                                  False,
                                  {"CriticalUpdateInstall": ["0", "-bool no"]})
-                            
+
             self.addKVEditor("DisableAllowPreReleaseInstallation",
                              "defaults",
                              "/Library/Preferences/com.apple.SoftwareUpdate",

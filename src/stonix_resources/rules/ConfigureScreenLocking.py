@@ -33,8 +33,9 @@ Created on Jul 11, 2013
 @change: 2015/04/14 dkennel update for new isApplicable
 @change: 2015/07/28 eball Fixed path validation problems in fixKde
 @change: 2015/07/28 eball Fixed return value and statechglogging in correctFile
-@change: 2015/08/26 ekkehard - Artifact artf37282 : ConfigureScreenLocking(74) 
+@change: 2015/08/26 ekkehard - Artifact artf37282 : ConfigureScreenLocking(74)
                              - askForPasswordDelay not set to 0
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms
@@ -69,14 +70,14 @@ class ConfigureScreenLocking(RuleKVEditor):
             self.helptext = "This rule will configure screen saver " + \
                             "settings."
         else:
-            self.helptext = "This rule will configure Screen locking " + \
-            "after 15 minutes of continuous inactivity.  This rule will " + \
-            "only configure screen locking for gnome and kde.  Other " + \
-            "Desktop Managers may be supported in the future. This rule " + \
-            "should work the same for all operating systems due to the " + \
-            "consistency of kde and gnome. If either or both kde and " + \
-            "gnome are not installed this will count as a pass. ***Please " + \
-            "be advised: there is no undo method for this rule***"
+            self.helptext = "This rule will configure screen locking " + \
+                "after 15 minutes of continuous inactivity.  This rule will " + \
+                "only configure screen locking for GNOME and KDE.  Other " + \
+                "desktop managers may be supported in the future. This rule " + \
+                "should work the same for all operating systems due to the " + \
+                "consistency of GNOME and KDE. If a desktop manager is not " + \
+                "installed, it is considered to be in compliance.\n***Please " + \
+                "be advised: there is no undo method for this rule***"
         self.formatDetailedResults("initialize")
         self.guidance = ["NSA 2.3.5.6.1"]
         if self.environ.getosfamily() == "darwin":

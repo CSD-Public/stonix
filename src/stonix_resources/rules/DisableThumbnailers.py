@@ -25,6 +25,7 @@
 Created on Apr 22, 2015
 
 @author: dwalker
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate
@@ -49,7 +50,8 @@ class DisableThumbnailers(Rule):
         self.guidance = ["NSA 2.2.2.6"]
         self.rulename = "DisableThumbnailers"
         datatype = 'bool'
-        self.helptext = '''This rule disables thumbnailers for gnome.'''
+        self.helptext = '''This rule disables file thumbnail creation in \
+the GNOME environment.'''
         key = 'DISABLETHUMBNAILERS'
         instructions = "To disable this rule set the value of " + \
             "DISABLETHUMBNAILERS to False."
