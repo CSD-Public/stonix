@@ -21,14 +21,16 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Nov 24, 2012
-This is the rule for installing puppet.
+Created on Nov 24, 2014
+This is the rule for installing the JAMF Casper Suite on a client machine.
 
 @operating system: OS X
 @author: ekkehard
 @change: 2014/11/24 original implementation
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/09/28 ekkehard incorporate OS X El Capitan & JAMF 9.8x support
+@change: 2015/10/02 ekkehard Only support 9.8 +
+@change: 2015/10/02 ekkeahrd Move Server from puppet-prod to jds001.lanl.gov
 '''
 from __future__ import absolute_import
 import traceback
@@ -47,8 +49,8 @@ from ..filehelper import FileHelper
 from ..IHmac import IHmac
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERQUICKADD = "http://puppet-prod.lanl.gov/support/casper/Puppet-Stonix-quickadd.zip"
-JAMFCASPERSUITESERVER = "puppet-prod.lanl.gov"
+JAMFCASPERQUICKADD = " https://jds001.lanl.gov/CasperShare/stonix-quickadd.pkg"
+JAMFCASPERSUITESERVER = "jds001.lanl.gov"
 
 
 class InstallCasperSuite(Rule):
@@ -76,7 +78,7 @@ class InstallCasperSuite(Rule):
         default = True
 
         self.myci = ConfigurationItem('bool', key, default, instructions)
-        self.jamf = ["/usr/sbin/jamf", "/usr/local/bin/jamf"]
+        self.jamf = "/usr/local/bin/jamf"
 
 # Set up CommandHelper instance
         self.ch = CommandHelper(self.logdispatch)
@@ -145,19 +147,13 @@ class InstallCasperSuite(Rule):
             
 # See if jamf command is working
             try:
-                command = [self.jamf[0], "-version"]
+                command = [self.jamf, "-version"]
                 success = self.ch.executeCommand(command)
                 messagestring = str(self.jamf) + " is " + \
                 str(self.ch.getOutputString())
             except:
-                try:
-                    command = [self.jamf[1], "-version"]
-                    success = self.ch.executeCommand(command)
-                    messagestring = str(self.jamf) + " is " + \
-                    str(self.ch.getOutputString())
-                except:
-                    success = False
-                    messagestring = str(self.jamf) + " dose not exist!"
+                success = False
+                messagestring = str(self.jamf) + " dose not exist!"
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.DEBUG, messagestring)
             if not success:

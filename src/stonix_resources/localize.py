@@ -50,7 +50,6 @@ that access the version variable to use this copy.
 
 STONIXVERSION = '0.9.1'
 
-
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
 REPORTSERVER = 'csd-web.lanl.gov'
@@ -202,6 +201,35 @@ KRB5 = '''[logging]
 [domain_realm]
  lanl.gov = lanl.gov
  .lanl.gov = lanl.gov
+'''
+
+KRB5 = '''[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = bar.com
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+ allow_weak_crypto = true
+ clockslew = 300
+
+[realms]
+
+ bar.com = {
+  kdc = foo.bar.com
+    kdc = foo.bar.com
+  admin_server = foo.bar.com
+  default_domain = bar.com
+ }
+
+[domain_realm]
+ bar.com = bar.com
+ .bar.com = bar.com
 '''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and

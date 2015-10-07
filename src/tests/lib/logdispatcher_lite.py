@@ -44,37 +44,127 @@ minus the xml related functionality.
 @note: rsn - started logdispatcher lite
 '''
 
-import logging
-import logging.handlers
-import os.path
 import os
+import re
+import time
 import socket
+import logging
 import inspect
-import traceback
+import os.path
 import weakref
+import datetime
+import traceback
 import subprocess
+import logging.handlers
 from shutil import move
-import src.stonix_resources.localize as localize
+from logging.handlers import RotatingFileHandler
 
 class LogDispatcher ():
     """
-    Responsible for taking any log data and formating both a human readable log
-    containing machine info and run errors.
+    Responsible for taking any log data and formating both a human readable 
+    log containing machine info and run errors.
+
+    Parameters -
+      environment: Environment object from Stonix - optional parameter.
+      
+      debug_mode: Whether or not to turn on debug mode.  Bool
+      
+      verbose_mode: Whether or not to turn on verbose mode.  Bool
+       
     :version: 1
     :author: scmcleni
+    :note: rsn - 2015-09-19 Adding additional parameters and extensions to 
+                            log files.  Also added log rotation.  Removed mail
+                            and xml functionality.  
     """
 
-    def __init__(self, environment):
-        self.environment = environment
-        self.debug = self.environment.getdebugmode()
-        self.verbose = self.environment.getverbosemode()
-        reportfile = 'stonix-report.log'
-        self.logpath = self.environment.get_log_path()
-        self.reportlog = os.path.join(self.logpath, reportfile)
-        self.metadataopen = False
-        self.__initializelogs()
-        self.last_message_received = ""
-        self.last_prio = LogPriority.ERROR
+    def __init__(self, environment=None, debug_mode=False, verbose_mode=False):
+        if environment:
+            self.environment = environment
+            self.debug = self.environment.getdebugmode()
+            self.verbose = self.environment.getverbosemode()
+        else:
+            self.debug = debug_mode
+            self.verbose = verbose_mode
+            
+   ##########################################################################
+
+    def logEnv(self):
+        """
+        Log environment information to the console.  Taken from original
+        __initializeLogs method, this needs to be an optional method for
+        logdispatcher_lite
+        
+        @author: Roy Nielsen
+        """
+        if self.environment:
+            # start machine specific information
+            self.log(LogPriority.WARNING,
+                     ["Hostname", self.environment.hostname])
+            self.log(LogPriority.WARNING,
+                     ["IPAddress", self.environment.ipaddress])
+            self.log(LogPriority.WARNING,
+                     ["MACAddress", self.environment.macaddress])
+            self.log(LogPriority.WARNING,
+                     ["OS", str(self.environment.getosreportstring())])
+            self.log(LogPriority.WARNING,
+                     ["STONIXversion", self.environment.getstonixversion()])
+            self.log(LogPriority.WARNING,
+                     ['RunTime', self.environment.getruntime()])
+            self.log(LogPriority.WARNING,
+                     ['PropertyNumber',
+                      str(self.environment.get_property_number())])
+            self.log(LogPriority.WARNING,
+                     ['SystemSerialNo',
+                      self.environment.get_system_serial_number()])
+            self.log(LogPriority.WARNING,
+                     ['ChassisSerialNo',
+                      self.environment.get_chassis_serial_number()])
+            self.log(LogPriority.WARNING,
+                     ['SystemManufacturer',
+                      self.environment.get_system_manufacturer()])
+            self.log(LogPriority.WARNING,
+                     ['ChassisManufacturer',
+                      self.environment.get_chassis_manfacturer()])
+            self.log(LogPriority.WARNING,
+                     ['UUID', self.environment.get_sys_uuid()])
+            self.log(LogPriority.WARNING,
+                     ['PropertyNumber', self.environment.get_property_number()])
+            self.log(LogPriority.DEBUG,
+                     ['ScriptPath', self.environment.get_script_path()])
+            self.log(LogPriority.DEBUG,
+                     ['ResourcePath', self.environment.get_resources_path()])
+            self.log(LogPriority.DEBUG,
+                     ['RulePath', self.environment.get_rules_path()])
+            self.log(LogPriority.DEBUG,
+                     ['ConfigurationPath', self.environment.get_config_path()])
+            self.log(LogPriority.DEBUG,
+                     ['LogPath', self.environment.get_log_path()])
+            self.log(LogPriority.DEBUG,
+                     ['IconPath', self.environment.get_icon_path()])
+            # --- End machine specific information
+
+    ##########################################################################
+
+    def setDebug(self, debug):
+        """
+        Setter for debug mode
+        
+        @author: Roy Nielsen
+        """
+        self.debug = debug
+
+    ##########################################################################
+
+    def setVerbose(self, verbose):
+        """
+        Setter for verbose mode
+        
+        @author: Roy Nielsen
+        """
+        self.verbose = verbose
+
+    ##########################################################################
 
     def log(self, priority, msg_data):
         """
@@ -99,7 +189,7 @@ class LogDispatcher ():
         @author: dkennel
         """
 
-        entry = self.format_message_data(msg_data)
+        entry = self.formatMessageData(msg_data)
 
         self.last_message_received = entry
         self.last_prio = priority
@@ -147,7 +237,9 @@ class LogDispatcher ():
             # Invalid log priority
             pass
 
-    def format_message_data(self, msg_data):
+    ##########################################################################
+
+    def formatMessageData(self, msg_data):
         """
         If the expected 2 item array is passed then attach those items to
         a MessageData object. Index 0 is expected to be a tag, Index 1 is
@@ -167,6 +259,8 @@ class LogDispatcher ():
 
         return entry
 
+    ##########################################################################
+
     def getconsolemessage(self):
         """
         Returns the current message if called while in a dirty state.
@@ -176,6 +270,8 @@ class LogDispatcher ():
         """
         return self.last_message_received
 
+    ##########################################################################
+
     def getmessageprio(self):
         """
         Returns the message priority of the last message received.
@@ -184,159 +280,204 @@ class LogDispatcher ():
         @author: dkennel
         """
         return self.last_prio
+    
+    ##########################################################################
 
-    def displaylastrun(self):
+    def rotateLog(self):
         """
-        Read through the entirety of the stonix_last.log file and return it.
-
-        @return: string
-        @author: scmcleni
+        Rotate the log if the log handler has been set up
+        
+        @author: Roy Nielsen
         """
-        # Make sure the file exists first
-        if os.path.isfile(self.reportlog + '.old'):
-            try:
-                last_log = open(self.reportlog + '.old').readlines()
-                # removed DK because it's a noop
-                # last_log = filter(None, last_log)
-                return ''.join(last_log)
+        try:
+            if self.rotHandler:
+                self.rotHandler.doRollover()
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
 
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
-                return False
+    ##########################################################################
 
-    def logRuleCount(self):
-        '''
-        This method logs the rule count. This is part of the run metadata but
-        is processed seperately due to timing issues in the controller's init
-
-        @author: dkennel
-        '''
-        self.metadataopen = True
-        self.log(LogPriority.WARNING,
-                 ['RuleCount', self.environment.getnumrules()])
-        self.metadataopen = False
-
-    def __initializelogs(self):
+    def markStartLog(self):
         """
-        Open a handle to a text file (stonix.log) making it available for
-        writing (append) mode. Also need to look for an old log file (prior run)
-        and move it to stonix_last.log.
+        Mark the beginning of a log session.  Rely on if/when a programmer wants
+        to use this functionality.
+
+        @author: Roy Nielsen
+        """        
+        logging.warning("############### Starting Log... ##################")
+
+    ##########################################################################
+
+    def markEndLog(self):
+        """
+        Mark the end of a log session.  Rely on if/when a programmer wants
+        to use this functionality.
+
+        @author: Roy Nielsen
+        """
+        logging.warning("################## End Log... ####################")
+
+    ##########################################################################
+
+    def markSeparator(self):
+        """
+        Mark a separator in the log.
+        
+        @author: Roy Nielsen
+        """
+        logging.warning("##################################################")
+    
+    ##########################################################################
+
+    def initializeLogs(self, filename = "", 
+                             extension_type="inc", 
+                             log_count=10, 
+                             size=10000000, 
+                             syslog=True,
+                             myconsole=True):
+        """
+        Parameters -
+          filename: Name of the file you would like to log to. String
+          
+          extension_type: type of extension to use on the filename. String
+                  none: overwrite the file currently with the passed in name
+                 epoch: time since epoch
+                  time: date/time stamp .ccyymmdd.hhmm.ss in military time
+                   inc: will increment log number similar to logrotate.
+                           
+          log_count:  if "inc" is used above, the count of logs to keep
+                      Default keep the last 10 logs.  Int
+
+          size     :  if "inc", the size to allow logs to get. Default 10Mb. Int
+          
+          syslog: Whether or not to log to syslog. Bool
+          
+          console: Whether or not to log to the console. Bool
+
+        Open a handle to a text file making it available for writing (append) 
+        mode. Also need to look for an old log file (prior run) and move it 
+        to stonix_last.log.
 
         @return: void
         @author: scmcleni
         @author: D. Kennel
+        @note: R. Nielsen - Making console, rotate and syslog optional
         """
+        rotate = False
+        
+        if not filename:
+            filename = "/tmp/" + str(os.geteuid()) + "." + "stonixtest.log"
+            
+        self.last_prio = LogPriority.ERROR
+        self.last_message_received = ""
 
-        # Check for old log file and move it to a different file name
-        # overwriting any old one if it exists.
-        if not os.path.isdir(self.logpath):
-            try:
-                os.makedirs(self.logpath, 0750)
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
-                return False
-        if os.path.isfile(self.reportlog):
-            try:
-                if os.path.exists(self.reportlog + '.old'):
-                    os.remove(self.reportlog + '.old')
-                move(self.reportlog, self.reportlog + '.old')
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
-                return False
-
-        # It's important that this happens after the attempt to move
-        # the old log file.
-        # Configure the python logging utility. Set the minimum reported log
-        # data to warning or higher. (INFO and DEBUG messages will be ignored)
-
-        if self.environment.getdebugmode():
-            logging.basicConfig(filename=self.reportlog,
-                                level=logging.DEBUG)
-        elif self.environment.getverbosemode():
-            logging.basicConfig(filename=self.reportlog,
-                                level=logging.INFO)
+        rotate = False
+        if extension_type in ["none", "epoch", "time", "inc"]:
+            if extension_type == "none":
+                #####
+                # Overwrite self.reportlog
+                self.reportlog = filename
+                
+            elif extension_type == "epoch":
+                #####
+                # Set filename to <filename>.<seconds-since-epoch>
+                self.reportlog = filename + "." + str(time.time())
+                
+            elif extension_type == "time":
+                #####
+                # Set filename to <filename>.<YYYYMMDD>.<HHMM>.<SS>
+                self.reportlog = filename + "." + str(datetime.datetime.now().strftime("%Y%m%d.%H%M.%s"))
+            elif extension_type == "inc":
+                #####
+                # Rotate logs similar to logrotate
+                rotate = True
+                self.reportlog = filename
+                
+        elif re.match("^\s+$", filename) or re.match("^$", filename):
+            print " ... no filename given ..."
         else:
-            logging.basicConfig(filename=self.reportlog,
-                                level=logging.WARNING)
-        console = logging.StreamHandler()
-        if self.environment.getdebugmode():
-            console.setLevel(logging.DEBUG)
-        elif self.environment.getverbosemode():
-            console.setLevel(logging.INFO)
-        else:
-            console.setLevel(logging.WARNING)
-        try:
-            syslogs = logging.handlers.SysLogHandler()
-            syslogs.setLevel(logging.WARNING)
-            logging.getLogger('').addHandler(syslogs)
-            logging.getLogger('').addHandler(console)
-        except socket.error:
-            logging.getLogger('').addHandler(console)
-            self.log(LogPriority.ERROR,
-                     ['LogDispatcher',
-                      'SYSLOG not accepting connections!'])
+            self.reportlog = filename
 
-        self.metadataopen = True
-        self.log(LogPriority.WARNING,
-                 ["Hostname", self.environment.hostname])
-        self.log(LogPriority.WARNING,
-                 ["IPAddress", self.environment.ipaddress])
-        self.log(LogPriority.WARNING,
-                 ["MACAddress", self.environment.macaddress])
-        self.log(LogPriority.WARNING,
-                 ["OS", str(self.environment.getosreportstring())])
-        self.log(LogPriority.WARNING,
-                 ["STONIXversion", self.environment.getstonixversion()])
-        self.log(LogPriority.WARNING,
-                 ['RunTime', self.environment.getruntime()])
-        self.log(LogPriority.WARNING,
-                 ['PropertyNumber',
-                  str(self.environment.get_property_number())])
-        self.log(LogPriority.WARNING,
-                 ['SystemSerialNo',
-                  self.environment.get_system_serial_number()])
-        self.log(LogPriority.WARNING,
-                 ['ChassisSerialNo',
-                  self.environment.get_chassis_serial_number()])
-        self.log(LogPriority.WARNING,
-                 ['SystemManufacturer',
-                  self.environment.get_system_manufacturer()])
-        self.log(LogPriority.WARNING,
-                 ['ChassisManufacturer',
-                  self.environment.get_chassis_manfacturer()])
-        self.log(LogPriority.WARNING,
-                 ['UUID', self.environment.get_sys_uuid()])
-        self.log(LogPriority.WARNING,
-                 ['PropertyNumber', self.environment.get_property_number()])
-        self.log(LogPriority.DEBUG,
-                 ['ScriptPath', self.environment.get_script_path()])
-        self.log(LogPriority.DEBUG,
-                 ['ResourcePath', self.environment.get_resources_path()])
-        self.log(LogPriority.DEBUG,
-                 ['RulePath', self.environment.get_rules_path()])
-        self.log(LogPriority.DEBUG,
-                 ['ConfigurationPath', self.environment.get_config_path()])
-        self.log(LogPriority.DEBUG,
-                 ['LogPath', self.environment.get_log_path()])
-        self.log(LogPriority.DEBUG,
-                 ['IconPath', self.environment.get_icon_path()])
-        # --- End machine specific information
+        if rotate or syslog or myconsole or self.reportlog:
+            #####
+            # Safe initialization as the variable may be used elsewhere in
+            # the class
+            self.rotHandler = None
+            
+            # Check for old log file and move it to a different file name
+            # overwriting any old one if it exists.
+            if not os.path.isdir(os.path.basename(self.reportlog)):
+                try:
+                    os.makedirs(os.path.basename(self.reportlog), 0750)
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except Exception, err:
+                    print 'logdispatcher: '
+                    print traceback.format_exc()
+                    print err
+                    return False
+    
+            if myconsole:
+                #####
+                #set up console logging
+                console = logging.StreamHandler()
+    
+                #####
+                # Setting the log priority
+                if self.debug:
+                    console.setLevel(logging.DEBUG)
+                elif self.verbose:
+                    console.setLevel(logging.INFO)
+                else:
+                    console.setLevel(logging.WARNING)
+                logging.getLogger('').addHandler(console)
+                    
+            if not rotate:
+                # Configure the python logging utility. Set the minimum reported log
+                # data to warning or higher. (INFO and DEBUG messages will be ignored)
+                if self.debug:
+                    logging.basicConfig(filename=self.reportlog,
+                                        level=logging.DEBUG)
+                elif self.verbose:
+                    logging.basicConfig(filename=self.reportlog,
+                                        level=logging.INFO)
+                else:
+                    logging.basicConfig(filename=self.reportlog,
+                                        level=logging.WARNING)
+            else:
+                # create a rotating handler
+                self.rotHandler = RotatingFileHandler(self.reportlog, 
+                                                      maxBytes=size,
+                                                      backupCount=log_count)
+                #####
+                # Setting the log priority
+                if self.debug:
+                    self.rotHandler.setLevel(logging.DEBUG)
+                elif self.verbose:
+                    self.rotHandler.setLevel(logging.INFO)
+                else:
+                    self.rotHandler.setLevel(logging.WARNING)
 
+                logging.getLogger('').addHandler(self.rotHandler)
+    
+            if syslog:
+                #####
+                # Set up syslog logging
+                try:
+                    syslogs = logging.handlers.SysLogHandler()
+                    syslogs.setLevel(logging.WARNING)
+                    logging.getLogger('').addHandler(syslogs)
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except socket.error:
+                    self.log(LogPriority.ERROR,
+                             ['LogDispatcher',
+                              'SYSLOG not accepting connections!'])
+
+##############################################################################
 
 class MessageData:
     """
@@ -346,6 +487,7 @@ class MessageData:
     Tag = "None"
     Detail = "None"
 
+##############################################################################
 
 class LogPriority:
     """
