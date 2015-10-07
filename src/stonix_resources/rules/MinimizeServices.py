@@ -29,6 +29,7 @@ Created on Aug 9, 2012
 @change: 2014/07/23 dkennel: Added additional services to systemd list based on
 RHEL 7
 @change: 2015/04/15 dkennel: updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 
@@ -57,17 +58,15 @@ class MinimizeServices(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 12
         self.rulename = 'MinimizeServices'
-        self.detailedresults = "The " + str(self.rulename) + "(" + \
-        str(self.rulenumber) + ") rule has not yet been run yet."
         self.mandatory = True
-        self.helptext = '''The MinimizeServices rule will minimize the services that the
-system is running. Each running service is a potential avenue for exploitation
-by an attacker or malicious software. Running only a minimum of services reduces
-vulnerability and helps preserve system resources. Most workstations will leave
-this rule enabled but some server administrators may want to disable this rule.
+        self.helptext = '''The MinimizeServices rule will minimize the \
+services that the system is running. Each running service is a potential \
+avenue for exploitation by an attacker or malicious software. Running only a \
+minimum of services reduces vulnerability and helps preserve system \
+resources. Most workstations will leave this rule enabled but some server \
+administrators may want to disable this rule.
 '''
         self.rootrequired = True
-        self.detailedresults = '''The MinimizeServices rule has not yet been run.'''
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
         self.servicehelper = ServiceHelper(self.environ, self.logger)

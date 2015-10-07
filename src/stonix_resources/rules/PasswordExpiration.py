@@ -32,10 +32,12 @@ Created on Jun 17, 2013
 @note: May need to be passed to Ekkehard or Roy for Mac portion
 @note: No OS X Implementation blacklisted darwin
 @change: 2015/04/16 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, writeFile, readFile, resetsecon, getUserGroupName
+from ..stonixutilityfunctions import iterate, writeFile, readFile, resetsecon
 from ..stonixutilityfunctions import checkPerms, setPerms, createFile
+from ..stonixutilityfunctions import getUserGroupName
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
@@ -59,11 +61,11 @@ class PasswordExpiration(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule configures the password configuration " + \
-        "for each entry in the shadow file and any other files that " + \
-        "pertain to pw expiration, length, warning time, etc.  ***For " + \
-        "solaris, please be aware, that there is no undo for the content " + \
-        "change of the shadow file but there will be a permissions change " + \
-        "undo if the permissions were originally incorrect"
+            "for each entry in the shadow file, and any other files that " + \
+            "pertain to password expiration, length, warning time, etc.\n" + \
+            "***For Solaris, please be aware that there is no undo for the " + \
+            "content change of the shadow file. Any permissions change " + \
+            "can still be undone."
         self.iditerator = 0
         self.guidance = ["2.3.1.7"]
         self.applicable = {'type': 'black', 'family': ['darwin']}
