@@ -49,7 +49,9 @@ class ConfigureGatekeeper(Rule):
         self.rulenumber = 256
         self.rulename = "ConfigureGatekeeper"
         self.formatDetailedResults("initialize")
-        self.helptext = ""
+        self.helptext = "This rule configures the System Preferences > " + \
+        "Security & Privacy > Allow apps downloaded from: Anywhere to " + \
+        "be compliant with current LANL requirements."
         self.rootrequired = True
         datatype = "bool"
         key = "GATEKEEPER"
