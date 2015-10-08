@@ -580,6 +580,7 @@ session     [success=1 default=ignore] pam_succeed_if.so service in crond \
 quiet use_uid
 session     required      pam_unix.so
 session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
 '''
             if self.mkhomedirci.getcurrvalue():
                 pamconf[sess] += "session     required      " + \
