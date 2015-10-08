@@ -38,6 +38,7 @@ reference the CI before executing FIX.
     override them. Refactoring rule completely, current implementation doesn't
     check efficiently enough for compliance.
 @change: 2015/04/16 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -46,9 +47,8 @@ import re
 import traceback
 
 from ..rule import Rule
-from ..stonixutilityfunctions import cloneMeta, readFile, iterate
-from ..stonixutilityfunctions import setPerms, checkPerms, writeFile, resetsecon, createFile
-from ..configurationitem import ConfigurationItem
+from ..stonixutilityfunctions import readFile, writeFile, createFile, iterate
+from ..stonixutilityfunctions import setPerms, checkPerms, resetsecon
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 
@@ -72,10 +72,10 @@ class ReqAuthSingleUserMode(Rule):
         self.rulename = 'ReqAuthSingleUserMode'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The ReqAuthSingleUserMode class checks if the \
-system currently requires authentication for single-user mode or not, and if \
-it does not then it makes the necessary config file changes to require \
-authentication for single-user mode.'''
+        self.helptext = '''This rule checks if the system currently requires \
+authentication for single-user mode or not, and if it does not then it makes \
+the necessary config file changes to require authentication for single-user \
+mode.'''
         self.guidance = ['CIS, NSA(2.3.5.3)']
         self.applicable = {'type': 'black',
                            'family': ['darwin']}

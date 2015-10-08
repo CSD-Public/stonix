@@ -29,17 +29,16 @@ Created on Oct 15, 2013
 @change: 02/12/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
 import traceback
 
 from ..rule import Rule
-from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import *
 from ..pkghelper import Pkghelper
-from ..environment import Environment
+from ..stonixutilityfunctions import iterate
 
 
 class SetupLogwatch(Rule):
@@ -58,19 +57,19 @@ class SetupLogwatch(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "Logwatch is used for reporting on unusual items " + \
-        "in syslog. Logwatch is valuable because it provides a parser for " + \
-        "the syslog entry format and a number of signatures for types of " + \
-        "lines which are considered to be mundane or noteworthy. it is " + \
-        "recommended that all Linux sites which do not have time to " + \
-        "deploy a third-party log monitoring application run Logwatch in " + \
-        "its default configuration. This provides some useful information " + \
-        "about system activity in exchange for very little administrator " + \
-        "effort."
+            "in syslog. Logwatch is valuable because it provides a parser " + \
+            "for the syslog entry format and a number of signatures for " + \
+            "types of lines which are considered to be mundane or " + \
+            "noteworthy. It is recommended that all Linux sites which do " + \
+            "not have time to deploy a third-party log monitoring " + \
+            "application run Logwatch in its default configuration. This " + \
+            "provides some useful information about system activity in " + \
+            "exchange for very little administrator effort."
         self.guidance = ['NSA(2.6.1.6)', 'CCE 4323-2']
         self.ci = self.initCi("bool",
                               "SetupLogwatch",
-                              "To prevent logwatch from being " + \
-                              "installed, set the value of " + \
+                              "To prevent logwatch from being " +
+                              "installed, set the value of " +
                               "SetupLogwatch to False.",
                               True)
         self.iditerator = 0
@@ -83,9 +82,6 @@ class SetupLogwatch(Rule):
         @author bemalmbe
         '''
 
-        #defaults
-        installed = False
-
         try:
             self.detailedresults = ""
             self.compliant = False
@@ -97,14 +93,14 @@ class SetupLogwatch(Rule):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = str(err) + " - " + \
-            str(traceback.format_exc())
+                str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
+
     def fix(self):
         '''
 
@@ -112,7 +108,7 @@ class SetupLogwatch(Rule):
         '''
         try:
             if not self.ci.getcurrvalue():
-                return 
+                return
             self.detailedresults = ""
             if self.environ.geteuid() == 0:
                 self.iditerator = 0
@@ -121,8 +117,8 @@ class SetupLogwatch(Rule):
                     self.statechglogger.deleteentry(event)
             if self.ph.install('logwatch'):
                 rmv = self.ph.getRemove() + "logwatch"
-                event = {'eventtype':'commandstring',
-                         'command':rmv}
+                event = {'eventtype': 'commandstring',
+                         'command': rmv}
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.statechglogger.recordchgevent(myid, event)
@@ -133,7 +129,7 @@ class SetupLogwatch(Rule):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = str(err) + " - " + \
-            str(traceback.format_exc())
+                str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
         self.formatDetailedResults("fix", self.rulesuccess,
