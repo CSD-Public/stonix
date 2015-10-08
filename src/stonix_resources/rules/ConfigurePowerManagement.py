@@ -135,12 +135,11 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
                     powerSetting = psinfo["PowerSetting"]
-                    powerSettingDefaultValue = psinfo["PowerSettingValue"]
-                    powerSettingValue = self.ci[pslabel].getcurrvalue()
+                    powerSettingValue = psinfo["PowerSettingValue"]
                     powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
+                    powerSettingActualValue = int(powerSettingActual)
                     powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
                     ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual) +"])"
-                    powerSettingActualValue = int(powerSettingActual)
                     if powerSettingValue == powerSettingActualValue:
                         self.resultAppend(pslabel + " is compliant. " + powerSettingInfo)
                     else:
@@ -177,16 +176,20 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
                     powerSetting = psinfo["PowerSetting"]
-                    powerSettingDefaultValue = psinfo["PowerSettingValue"]
-                    powerSettingValue = self.ci[pslabel].getcurrvalue()
+                    powerSettingValue = psinfo["PowerSettingValue"]
                     powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
+                    powerSettingActualValue = int(powerSettingActual)
                     powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
                     ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
-                    if powerSettingValue == powerSettingActual:
+                    if powerSettingValue == powerSettingActualValue:
                         self.resultAppend(pslabel + " was correctly set. " + powerSettingInfo)
                     else:
                         newPowerSettingValue = self.setPowerSetting(powerType, powerSetting, powerSettingValue)
-                        if newPowerSettingValue == self.getPowerSetting(powerType, powerSetting):
+                        powerSettingActual = self.getPowerSetting(powerType, powerSetting, True)
+                        powerSettingActualValue = int(powerSettingActual)
+                        powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
+                        ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
+                        if newPowerSettingValue == powerSettingActualValue:
                             self.resultAppend(pslabel + " is now compliant! "  + powerSettingInfo)
                         else:
                             self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
@@ -225,7 +228,8 @@ class ConfigurePowerManagement(Rule):
             item = {}
             command = [self.pmset, "-g", "disk"]
             self.ch.executeCommand(command)
-            for line in self.ch.getOutput():
+            output = self.ch.getOutput()
+            for line in output:
                 linestripped = line.strip()
                 values = linestripped.split()
                 if linestripped == "Battery Power:":
@@ -261,7 +265,7 @@ class ConfigurePowerManagement(Rule):
 
     def getPowerSetting(self, powerType, powerSetting, forceUpdate=False):
         '''
-        Set a power setting on a system
+        Get a power setting on a system
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param powerType:Like AC Power or Battery Power
