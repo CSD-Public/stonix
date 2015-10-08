@@ -297,7 +297,8 @@ class InstallBanners(RuleKVEditor):
         val1 = ['[SeatDefaults]',
                 'allow-guest=false',
                 'greeter-hide-users=true',
-                'greeter-show-manual-login=true']
+                'greeter-show-manual-login=true',
+                'autologin-user=']
         key2 = self.motdfile
         val2 = ALTWARNINGBANNER
         key3 = '/etc/lightdm/lightdm.conf.d/stonixlightdm.conf'
@@ -1141,7 +1142,38 @@ class InstallBanners(RuleKVEditor):
                     retval = False
                     output = self.cmdhelper.getOutputString()
                     self.detailedresults += '\n'+ str(output)
-
+            if os.path.exists('/etc/gdm3/daemon.conf'):
+                f = open('/etc/gdm3/daemon.conf', 'r')
+                contentlines = f.readlines()
+                f.close()
+                autologinreplaced = False
+                autologindisabled = False
+                for line in contentlines:
+                    if re.search('^AutomaticLoginEnable\s*=\s*', line):
+                        contentlines = [c.replace(line, 'AutomaticLoginEnable = false\n') for c in contentlines]
+                        autologinreplaced = True
+                if not autologinreplaced:
+                    for line in contentlines:
+                        if re.search('^\[daemon\]', line):
+                            contentlines = [c.replace(line, line + '# disabling auto login; added by STONIX\nAutomaticLoginEnable = false\n') for c in contentlines]
+                            autologindisabled = True
+                if autologinreplaced or autologindisabled:
+                    tf = open('/etc/gdm3/daemon.conf.stonixtmp', 'w')
+                    tf.writelines(contentlines)
+                    tf.close()
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'conf',
+                             'filepath': '/etc/gdm3/daemon.conf'}
+                    self.statechglogger.recordfilechange('/etc/gdm3/daemon.conf', '/etc/gdm3/daemon.conf.stonixtmp', myid)
+                    self.statechglogger.recordchgevent(myid, event)
+                    os.rename('/etc/gdm3/daemon.conf.stonixtmp', '/etc/gdm3/daemon.conf')
+                    os.chmod('/etc/gdm3/daemon.conf', 0644)
+                    os.chown('/etc/gdm3/daemon.conf', 0, 0)
+                    self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
+                    errout = self.cmdhelper.getErrorString()
+                    if errout:
+                        retval = False
+                        self.detailedresults += '\nEncountered a problem trying to run command: dpkg-reconfigure gdm3\nError was: ' + str(errout)
         except Exception:
             raise
         return retval
