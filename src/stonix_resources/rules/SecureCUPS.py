@@ -39,6 +39,7 @@ With this rule, you can:
 @change: 04/21/2014 dkennel Updated CI invocation, fixed bug where master CI
 not referenced before fix.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -86,14 +87,14 @@ class SecureCUPS(Rule):
         self.compliant = False
         self.mandatory = True
         self.helptext = '''With this rule, you can:
-        Disable the CUPS service
-        Disable firewall access to CUPS service
-        Configure CUPS service
-        Disable Printer Browsing
-        Limit Printer Browsing
-        Disable Print Server Capabilities
-        Set the Default Auth Type
-        Setup default set of policy blocks for CUPS'''
+Disable the CUPS service
+Disable firewall access to CUPS service
+Configure CUPS service
+Disable Printer Browsing
+Limit Printer Browsing
+Disable Print Server Capabilities
+Set the Default Auth Type
+Setup default set of policy blocks for CUPS'''
         self.rootrequired = True
         self.guidance = ['CCE 4420-6', 'CCE 4407-3']
         self.isApplicableWhiteList = []
@@ -109,7 +110,7 @@ class SecureCUPS(Rule):
         self.DisableGenericPort = self.__initializeDisableGenericPort()
         self.SetDefaultAuthType = self.__initializeSetDefaultAuthType()
         self.SetupDefaultPolicyBlocks = \
-        self.__initializeSetupDefaultPolicyBlocks()
+            self.__initializeSetupDefaultPolicyBlocks()
 
         # class variables
         self.defaultpolicyblocks = """# Restrict access to the server...

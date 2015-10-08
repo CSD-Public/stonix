@@ -31,6 +31,7 @@ The SetNTP class configures ntp for each client.
 @change: 2014/08/27 - ekkehard - added self.ss = "/usr/sbin/systemsetup" to make sure we use the full path
 @change: 08/27/2014 bemalmbe added colons after each docblock parameter
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -61,7 +62,9 @@ class SetNTP(Rule):
         self.rulename = 'SetNTP'
         self.formatDetailedResults("initialize")
         self.logger = logger
-        self.helptext = "Configures Network Time Protocol (NTP) servers."
+        self.helptext = """This rule configures the Network Time Protocol \
+(NTP) to use the internal and external servers specified in localize.py \
+(NTPSERVERSINTERNAL and NTPSERVERSEXTERNAL)."""
         self.compliant = False
         self.mandatory = True
         self.rootrequired = True
@@ -71,7 +74,7 @@ class SetNTP(Rule):
         # init CI
         self.ci = self.initCi("bool",
                               "SetNTP",
-                              "To prevent stonix from setting a time " + \
+                              "To prevent STONIX from setting a time " +
                               "server, set the value of SetNTP to False",
                               True)
 

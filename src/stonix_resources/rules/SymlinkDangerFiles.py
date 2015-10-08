@@ -23,9 +23,9 @@
 ###############################################################################
 
 Created on Oct 24, 2012
-The Symlink Dangerous Files class checks for the presence of certain files - 
-namely /root/.rhosts, /root/.shosts, and /etc/hosts.equiv, and symlinks them to 
-/dev/null in order to prevent a potentially exploitable weak form of access 
+The Symlink Dangerous Files class checks for the presence of certain files -
+namely /root/.rhosts, /root/.shosts, and /etc/hosts.equiv, and symlinks them to
+/dev/null in order to prevent a potentially exploitable weak form of access
 control.
 
 @author: bemalmbe
@@ -35,6 +35,7 @@ control.
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
 @change: 2014/08/11 ekkehard fixed isApplicable
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -70,19 +71,19 @@ class SymlinkDangerFiles(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = "The SymlinkDangerousFiles class checks for the " + \
-        "presence of certain files - namely /root/.rhosts, /root/.shosts, " + \
-        "and /etc/hosts.equiv, and symlinks them to /dev/null in order to " + \
-        "prevent a potentially exploitable weak form of access control." + \
-        " Note that no undo operation is permitted for this rule due to " + \
-        "security reasons."
+        self.helptext = "This rule checks for the presence of certain " + \
+            "files (/root/.rhosts, /root/.shosts, /etc/hosts.eqiv, and " + \
+            "/etc/shosts.equiv), and symlinks them to /dev/null in order " + \
+            "to prevent a potentially exploitable weak form of access " + \
+            "control. \nNote that no undo operation is permitted for " + \
+            "this rule due to security reasons."
         self.rootrequired = True
         self.guidance = ['CIS RHEL 5 Benchmark Appendix A SN.1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
-        #init CIs
+        # init CIs
         self.ci = self.initCi("bool",
                               "SymlinkDangerFiles",
                               "Execute Symlink Danger Files fix.",

@@ -33,6 +33,7 @@ these daemons.
 @change: dkennel 04/21/2014 Updated CI invocation, fixed CI instruction text,
 fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -68,11 +69,11 @@ class SecureATCRON(Rule):
         self.rulename = 'SecureATCRON'
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''The AT and CRON job schedulers are used to schedule jobs for running at a later
-date/time. These daemons should be configured defensively. The SecureATCRON
-class restricts permissions on the files and directories associated with these
-daemons to authorized users only and enables and configures logging for
-these daemons'''
+        self.helptext = '''The AT and CRON job schedulers are used to \
+schedule jobs for running at a later date/time. These daemons should be \
+configured defensively. The SecureATCRON rule restricts permissions on the \
+files and directories associated with these daemons to authorized users only, \
+and enables and configures logging for these daemons.'''
         self.rootrequired = True
         self.detailedresults = 'The SecureATCRON rule has not yet been run'
         self.compliant = False
@@ -82,26 +83,26 @@ these daemons'''
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
 
-        #init CIs
+        # init CIs
         datatype = 'bool'
         key = 'SecureATCRON'
-        instructions = '''To prevent the restriction of access to the AT and CRON utilities
-set the vaule of SECUREATCRON to False.'''
+        instructions = '''To prevent the restriction of access to the AT and \
+CRON utilities, set the vaule of SECUREATCRON to False.'''
         default = True
         self.SecureATCRON = self.initCi(datatype, key, instructions, default)
 
         # setup class vars
         self.cronchownfilelist = ['/etc/cron.hourly', '/etc/cron.daily',
-                                '/etc/cron.weekly', '/etc/cron.monthly',
-                                '/etc/cron.d', '/etc/crontab',
-                                '/etc/anacrontab', '/var/cron/log',
-                                'cron.allow', 'at.allow']
+                                  '/etc/cron.weekly', '/etc/cron.monthly',
+                                  '/etc/cron.d', '/etc/crontab',
+                                  '/etc/anacrontab', '/var/cron/log',
+                                  'cron.allow', 'at.allow']
         self.cronchmodfiledict = {'/etc/crontab': 0644,
-                                 '/etc/anacrontab': 0600,
-                                 '/var/spool/cron': 0700,
-                                 '/var/cron/log': 0600,
-                                 '/etc/cron.allow': 0400,
-                                 '/etc/at.allow': 0400}
+                                  '/etc/anacrontab': 0600,
+                                  '/var/spool/cron': 0700,
+                                  '/var/cron/log': 0600,
+                                  '/etc/cron.allow': 0400,
+                                  '/etc/at.allow': 0400}
 
     def report(self):
         '''

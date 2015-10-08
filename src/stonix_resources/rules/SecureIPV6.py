@@ -26,6 +26,7 @@ Created on Jan 14, 2014
 @author: dwalker
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -50,7 +51,9 @@ class SecureIPV6(Rule):
         self.rulename = "SecureIPV6"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Configures IPV6 functionality '''
+        self.helptext = '''This rule will configure IPv6 functionality by \
+disabling automatic configuration, enabling privacy extensions for address \
+generation, and limiting network-transmitted configuration information.'''
         datatype = "bool"
         key = "SECUREIPV6"
         instructions = '''To disable this rule set the value of SECUREIPV6 to \
