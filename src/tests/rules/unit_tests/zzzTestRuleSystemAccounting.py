@@ -27,6 +27,7 @@ This is a Unit Test for Rule SystemAccounting
 @author: Breen Malmberg
 @change: 2015/09/25 eball Updated to enable CI so that rule runs during test
 @change: 2015/09/25 eball Added Debian/Ubuntu setup
+@change: 2015/10/09 eball Updated Deb setup to improve automated testing compat
 '''
 from __future__ import absolute_import
 import unittest
@@ -34,6 +35,7 @@ import re
 import os
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.localize import PROXY
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.SystemAccounting import SystemAccounting
 
@@ -75,10 +77,19 @@ class zzzTestRuleSystemAccounting(RuleTest):
                 else:
                     settings = "ENABLED=false"
                 open(sysstat, "w").write(settings)
+                # apt does a very poor job install packages when it hasn't been
+                # updated in a while, which is problematic with VMs. These next
+                # few lines are intended to deal with that issue.
+                if not re.search("foo.bar", PROXY):
+                    os.environ["http_proxy"] = PROXY
+                    os.environ["https_proxy"] = PROXY
+                cmd = ["apt-get", "update"]
+                self.ch.executeCommand(cmd)
             else:
-                f = open('/etc/rc.conf', 'w+')
-                if os.path.exists('/etc/rc.conf'):
-                    contentlines = f.readlines()
+                path1 = "/etc/rc.conf"
+                path2 = "/var/account/acct"
+                if os.path.exists(path1):
+                    contentlines = open(path1, "r").readlines()
                     for line in contentlines:
                         if re.search('accounting_enable=', line):
                             contentlines = [c.replace(line,
@@ -86,11 +97,10 @@ class zzzTestRuleSystemAccounting(RuleTest):
                                             for c in contentlines]
                     if 'accounting_enable=NO\n' not in contentlines:
                         contentlines.append('accounting_enable=NO\n')
-                    f.writelines(contentlines)
-                    f.close()
+                    open(path1, "w").writelines(contentlines)
 
-                if os.path.exists('/var/account/acct'):
-                    os.remove('/var/account/acct')
+                if os.path.exists(path2):
+                    os.remove(path2)
 
         except Exception:
             success = False
