@@ -492,9 +492,6 @@ correct format as of the line: " + line + "\n"
 in setting the proper permissions: " + str(badhomes) + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
 
-            # fix any modifications to /dev/null permissions
-            if self.environ.geteuid() == 0:
-                os.chmod('/dev/null', 0666)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
