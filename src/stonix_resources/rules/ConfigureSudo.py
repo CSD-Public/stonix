@@ -28,8 +28,8 @@ Created on Mar 7, 2013
 @change: 02/14/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 dkennel Updated to use new style CI
 @change: 2015/04/14 dkennel upddated to use new isApplicable
-@change: 2015/08/26 ekkehard [artf37769] : ConfigureSudo(56) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
 @change: 2015/09/06 Breen Malmberg, re-wrote rule
+@change: 2015/10/09 eball Fixed bad variable name in report
 '''
 from __future__ import absolute_import
 
@@ -64,7 +64,7 @@ class ConfigureSudo(Rule):
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         #configuration item instantiation
         datatype = 'string'
@@ -257,7 +257,7 @@ CONFIGURESUDO to False.'''
                 #make sure the sudoers file has correct permissions
                 if not checkPerms(self.sudoersfile, [0, 0, 288], self.logger):
                     self.compliant = False
-                    self.detailedresults += '\nThe permissions and/or ownership is set incorrectly, on file: ' + str(self.path)
+                    self.detailedresults += '\nThe permissions and/or ownership is set incorrectly, on file: ' + str(self.sudoersfile)
                     self.logger.log(LogPriority.DEBUG, 'Permissions and/or ownership is set incorrectly on sudoers file')
 
         except (KeyboardInterrupt, SystemExit):

@@ -22,20 +22,20 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule RootMailAlias
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
+import os
+import re
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.RootMailAlias import RootMailAlias
-import re
 from src.stonix_resources.stonixutilityfunctions import readFile, writeFile
-import os
 
 
 class zzzTestRuleRootMailAlias(RuleTest):
@@ -64,22 +64,26 @@ class zzzTestRuleRootMailAlias(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        aliasfile = "/etc/aliases"
-        contents = readFile(aliasfile, self.logdispatch)
-        tempstring = ""
-        for line in contents:
-            if re.search("^root:", line):
-                continue
-            else:
-                tempstring += line
 
-        tmpfile = "/etc/aliases.tmp"
-        writeFile(tmpfile, tempstring, self.logdispatch)
-        os.rename(tmpfile, aliasfile)
-        #set incorrect permissions
-        os.chown(aliasfile, 8, 8)
-        os.chmod(aliasfile, 500)
-        self.rule.ci2.updatecurrvalue('bemalmbe@lanl.gov')
+        self.rule.ci1.updatecurrvalue(True)
+        self.rule.ci2.updatecurrvalue("foo@bar.com")
+
+        aliasfile = "/etc/aliases"
+        if os.path.exists(aliasfile):
+            contents = readFile(aliasfile, self.logdispatch)
+            tempstring = ""
+            for line in contents:
+                if re.search("^root:", line):
+                    continue
+                else:
+                    tempstring += line
+
+            tmpfile = "/etc/aliases.tmp"
+            writeFile(tmpfile, tempstring, self.logdispatch)
+            os.rename(tmpfile, aliasfile)
+            # set incorrect permissions
+            os.chown(aliasfile, 8, 8)
+            os.chmod(aliasfile, 0500)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -91,9 +95,9 @@ class zzzTestRuleRootMailAlias(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -106,7 +110,7 @@ class zzzTestRuleRootMailAlias(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -119,7 +123,7 @@ class zzzTestRuleRootMailAlias(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
