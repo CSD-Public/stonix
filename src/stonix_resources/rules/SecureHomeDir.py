@@ -72,20 +72,20 @@ False.'''
 ###############################################################################
 
     def report(self):
+
         try:
+
             self.detailedresults = ""
-            compliant = True
+            self.compliant = True
 
             self.wrong = {}
             self.homedirs = []
+
             if self.environ.getostype() == "Mac OS X":
-                compliant = self.reportMac()
+                self.compliant = self.reportMac()
             else:
-                compliant = self.reportOther()
-            if compliant:
-                self.compliant = True
-            else:
-                self.compliant = False
+                self.compliant = self.reportOther()
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -100,37 +100,62 @@ False.'''
 ###############################################################################
 
     def reportMac(self):
-        debug = ""
+        '''
+        run report actions for Mac OS X systems
+
+        @return: retval
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 10/13/2015 - moved grpvals variable up to top where it should be; fixed logging;
+                                                will no longer report on /var/empty or /dev/null permissions
+        '''
+
         users = []
         templist = []
-        compliant = True
+        retval = True
+        grpvals = ("7", "2", "3", "6")
+
         if self.environ.geteuid() == 0:
+
             cmd = ["/usr/bin/dscl", ".", "-list", "/Users"]
+
             if not self.cmdhelper.executeCommand(cmd):
-                debug += "Unable to run the /usr/bin/dscl command\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Unable to run the /usr/bin/dscl command\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
+
             output = self.cmdhelper.getOutput()
             error = self.cmdhelper.getError()
+
             if output:
                 for item in output:
-                    if not re.search("^_", item) and \
-                                                  not re.search("^root", item):
+                    if not re.search("^_", item) and not re.search("^root", item):
                         users.append(item.strip())
+
             elif error:
-                debug += "There was an error in getting users on system\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "There was an error in getting users on system\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
+
             if users:
-                grpvals = ("7", "2", "3", "6")
+
                 for user in users:
                     templist = []
                     currpwd = pwd.getpwnam(user)
+
                     try:
+
                         homedir = currpwd[5]
+
                         if not os.path.exists(homedir):
                             continue
-                        try:
+                        # skip homedir if it is /var/empty
+                        elif re.search('\/var\/empty', homedir):
+                            continue
+                        # skip homedir if it is /dev/null
+                        elif re.search('\/dev\/null', homedir):
+                            continue
+                        else:
                             #get info about user's directory
                             statdata = os.stat(homedir)
 
@@ -153,70 +178,60 @@ False.'''
                             #following numbers, it is group writeable
                             if grpval in grpvals:
                                 templist.append("gw")
-                                compliant = False
+                                retval = False
                             if world != "0":
                                 templist.append("wr")
-                                compliant = False
+                                retval = False
                             if templist:
                                 self.wrong[homedir] = templist
-                        except IndexError:
-                            compliant = False
-                            debug += traceback.format_exc() + "\n"
+                                self.detailedresults += '\nUser: ' + str(user) + ' has either group writeable or world readable permissions on: ' + str(homedir)
+
                     except IndexError:
-                        compliant = False
-                        debug += "Not enough information to obtain home \
-directory for user: " + user + "\n"
+                        retval = False
+                        self.detailedresults += "Not enough information to obtain home directory for user: " + user + "\n"
         else:
             currpwd = pwd.getpwuid(self.environ.geteuid())
             try:
                 homedir = currpwd[5]
                 if not os.path.exists(homedir):
-                    compliant = False
-                    debug += "This home directory doesn't exist: " + homedir + "\n"
-                    try:
-                        #get info about user's directory
-                        statdata = os.stat(homedir)
+                    retval = False
+                    self.detailedresults += '\nHome directory: ' + str(homedir) + ' does not exist. Returning...'
+                    return retval
+                else:
+                    #get info about user's directory
+                    statdata = os.stat(homedir)
 
-                        #permission returns in integer format
-                        mode = stat.S_IMODE(statdata.st_mode)
+                    #permission returns in integer format
+                    mode = stat.S_IMODE(statdata.st_mode)
 
-                        #convert permission to octal format
-                        octval = oct(mode)
+                    #convert permission to octal format
+                    octval = oct(mode)
 
-                        #remove leading 0
-                        octval = re.sub("^0", "", octval)
+                    #remove leading 0
+                    octval = re.sub("^0", "", octval)
 
-                        #split numeric integer value of permissions
-                        #into separate numbers
-                        perms = list(octval)
+                    #split numeric integer value of permissions
+                    #into separate numbers
+                    perms = list(octval)
 
-                        grpval = perms[1]
-                        world = perms[2]
-                        #if the group value equals any of the
-                        #following numbers, it is group writeable
-                        if grpval in grpvals:
-                            templist.append("gw")
-                            compliant = False
-                        if world != "0":
-                            templist.append("wr")
-                            compliant = False
-                        if templist:
-                            self.wrong[homedir] = templist
-                    except IndexError:
-                        compliant = False
-                        debug += traceback.format_exc() + "\n"
+                    grpval = perms[1]
+                    world = perms[2]
+                    #if the group value equals any of the
+                    #following numbers, it is group writeable
+                    if grpval in grpvals:
+                        templist.append("gw")
+                        retval = False
+                    if world != "0":
+                        templist.append("wr")
+                        retval = False
+                    if templist:
+                        self.wrong[homedir] = templist
+                        self.detailedresults += '\nUser ID: ' + str(self.environ.geteuid()) + ' has either group writeable or world readable permissions on: ' + str(homedir)
+
             except IndexError:
-                compliant = False
-                debug += "Not enough information to obtain home directory\n"
-        if self.wrong:
-            badhomes = ""
-            for item in self.wrong:
-                badhomes += item + "\n"
-            self.detailedresults += "The following directories were \
-either group writeable or world readable:\n" + str(badhomes) + "\n" 
-        if debug:
-            self.logger.log(LogPriority.DEBUG, debug)
-        return compliant
+                retval = False
+                self.detailedresults += "\nNot enough information to obtain home directory\n"
+        return retval
 
 ###############################################################################
 
@@ -333,18 +348,17 @@ correct format as of the line: " + line + "\n"
 
                                 #permission returns in integer format
                                 mode = stat.S_IMODE(statdata.st_mode)
-                                
+
                                 #convert permission to octal format
                                 octval = oct(mode)
-                                
+
                                 #remove leading 0
                                 octval = re.sub("^0", "", octval)
-                                
+
                                 #split numeric integer value of permissions
                                 #into separate numbers
                                 perms = list(octval)
-                                
-                                
+
                                 grpval = perms[1]
                                 world = perms[2]
                                 #if the group value equals any of the 
@@ -363,7 +377,7 @@ correct format as of the line: " + line + "\n"
                                 debug += traceback.format_exc() + "\n"
                                 debug += "Index out of range on line: " + line + "\n"
                                 break
-                                
+
         else:
             user = os.getlogin()
             output = os.listdir(homebase)
@@ -374,23 +388,23 @@ correct format as of the line: " + line + "\n"
                     try:
                         #get file information each file
                         statdata = os.stat(home)
-                        
+
                         #permission returns in integer format
                         mode = stat.S_IMODE(statdata.st_mode)
-                        
+
                         #convert permission to octal format
                         octval = oct(mode)
-                        
+
                         #remove leading 0
                         octval = re.sub("^0", "", octval)
-                        
+
                         #split numeric integer value of permissions
                         #into separate numbers
                         perms = list(octval)
-                        
+
                         #group permissions
                         grpval = perms[1]
-                        
+
                         #other permissions(world)
                         world = perms[2]
                         #if the group value equals any of the 
@@ -411,12 +425,23 @@ correct format as of the line: " + line + "\n"
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return compliant
-    
+
 ###############################################################################
 
     def fix(self):
+        '''
+        run fix actions if ci is enabled; set secure permissions on home directories
+
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 10/13/2015 - will now fix /dev/null permissions when run;
+                                                will no longer modify /var/empty or /dev/null
+        '''
+
         try:
             if not self.ci.getcurrvalue():
+                self.detailedresults += '\nCI was not enabled. Nothing was done...'
                 return
             self.detailedresults = ""
             if self.environ.geteuid() == 0:
@@ -457,7 +482,7 @@ correct format as of the line: " + line + "\n"
                         continue
                     if self.environ.geteuid() == 0:
                         self.statechglogger.recordchgevent(myid, event)
-                    
+
                 if unsuccessful:
                     badhomes = ""
                     for item in unsuccessful:
@@ -466,6 +491,10 @@ correct format as of the line: " + line + "\n"
                     debug = "the following home directories were unsuccessful \
 in setting the proper permissions: " + str(badhomes) + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+
+            # fix any modifications to /dev/null permissions
+            if self.environ.geteuid() == 0:
+                os.chmod('/dev/null', 0666)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -477,4 +506,3 @@ in setting the proper permissions: " + str(badhomes) + "\n"
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-###############################################################################
