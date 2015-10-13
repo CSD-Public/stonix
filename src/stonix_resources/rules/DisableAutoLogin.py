@@ -31,6 +31,7 @@ the system.  This rule is specific to Mac systems.
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 
 '''
 from __future__ import absolute_import
@@ -43,7 +44,6 @@ from ..ruleKVEditor import RuleKVEditor
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import *
 
 
 class DisableAutoLogin(RuleKVEditor):
@@ -62,7 +62,8 @@ class DisableAutoLogin(RuleKVEditor):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.mandatory = True
-        self.helptext = "The disable Auto Login rule.  Cannot undo this rule."
+        self.helptext = "This rule will disable auto login on this " + \
+            "computer. This cannot be undone/reverted."
         self.rootrequired = True
         self.files = {"kcpassword": {"path": "/etc/kcpassword",
                                      "remove": True,
@@ -71,7 +72,7 @@ class DisableAutoLogin(RuleKVEditor):
                                      "owner": None,
                                      "group": None,
                                      "eventid":
-                                     str(self.rulenumber).zfill(4) + \
+                                     str(self.rulenumber).zfill(4) +
                                      "kcpassword"}}
         self.addKVEditor("DisableAutoLogin",
                          "defaults",
@@ -80,7 +81,7 @@ class DisableAutoLogin(RuleKVEditor):
                          {"autoLoginUser": [re.escape("The domain/default pair of (/Library/Preferences/com.apple.loginwindow, autoLoginUser) does not exist"), None]},
                          "present",
                          "",
-                         "This variable is to determine whether or not to " + \
+                         "This variable is to determine whether or not to " +
                          "disable auto login",
                          None,
                          False,
@@ -88,15 +89,14 @@ class DisableAutoLogin(RuleKVEditor):
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
         self.ch = CommandHelper(self.logdispatch)
         for filelabel, fileinfo in sorted(self.files.items()):
-            addfilereturn = self.fh.addFile(filelabel,
-                                            fileinfo["path"],
-                                            fileinfo["remove"],
-                                            fileinfo["content"],
-                                            fileinfo["permissions"],
-                                            fileinfo["owner"],
-                                            fileinfo["group"],
-                                            fileinfo["eventid"]
-                                            )
+            self.fh.addFile(filelabel,
+                            fileinfo["path"],
+                            fileinfo["remove"],
+                            fileinfo["content"],
+                            fileinfo["permissions"],
+                            fileinfo["owner"],
+                            fileinfo["group"],
+                            fileinfo["eventid"])
 
     def report(self):
         '''
@@ -110,13 +110,13 @@ class DisableAutoLogin(RuleKVEditor):
             self.fhcompliant = False
             self.kvcompliant = RuleKVEditor.report(self)
             if not self.kvcompliant:
-                self.detailedresults = "DisableAutoLogin is Not compliant!"
+                self.detailedresults = "DisableAutoLogin is not compliant!"
             else:
                 self.detailedresults = "DisableAutoLogin is compliant!"
             self.fhcompliant = self.fh.evaluateFiles()
             if not self.fhcompliant:
                 self.detailedresults = self.detailedresults + "\n" + \
-                self.fh.getFileMessage()
+                    self.fh.getFileMessage()
             if not self.fhcompliant or not self.kvcompliant:
                 self.compliant = False
         except (KeyboardInterrupt, SystemExit):
@@ -124,7 +124,7 @@ class DisableAutoLogin(RuleKVEditor):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -147,7 +147,7 @@ class DisableAutoLogin(RuleKVEditor):
                 self.fhfix = self.fh.fixFiles()
                 if self.fhfix:
                     self.detailedresults = self.detailedresults + "\n" + \
-                    self.fh.getFileMessage()
+                        self.fh.getFileMessage()
             if not self.kvfix or not self.fhfix:
                 fixed = False
         except (KeyboardInterrupt, SystemExit):
@@ -156,7 +156,7 @@ class DisableAutoLogin(RuleKVEditor):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", fixed,
                                    self.detailedresults)

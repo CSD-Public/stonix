@@ -34,6 +34,7 @@ authorization after a successful sudo authorization is made.
 @change: 05/07/2014 dwalker testing and refactoring rule
 @change: 2015/04/16 dkennel updated for new isApplicable
 @change: 2015/09/09 eball Improved feedback
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 import re
@@ -65,20 +66,20 @@ class ReduceSudoTimeout(Rule):
         self.rulename = 'ReduceSudoTimeout'
         self.formatDetailedResults("initialize")
         self.helptext = "ReduceSudoTimeout ensures that the sudoers file " + \
-        "has a timeout value of 0 so that a password is required for " + \
-        "every sudo call.  This is mandatory for Mac users but optional " + \
-        "for all other platforms. ***Please note, for all systems besides " + \
-        "Mac OS X, this rule is disabled by default.  To enable, click " + \
-        "the enable box then click save before running fix****"
+            "has a timeout value of 0 so that a password is required for " + \
+            "every sudo call. This is mandatory for Mac users but optional " + \
+            "for all other platforms.\n***Please note, for all systems " + \
+            "besides Mac OS X, this rule is disabled by default. To enable, " + \
+            "click the enable box then click save before running fix***"
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
         datatype = 'bool'
         key = 'ReduceSudoTimeout'
-        instructions = "If set to yes or true the REDUCESUDOTIMEOUT " + \
-        "variable will set the sudo timeout to 0 requiring a password " + \
-        "for each command."
+        instructions = "If set to true, the REDUCESUDOTIMEOUT " + \
+            "variable will set the sudo timeout to 0, requiring a password " + \
+            "for each sudo call."
         if self.environ.getostype() == 'Mac OS X':
             self.mandatory = True
             default = True
@@ -167,13 +168,13 @@ class ReduceSudoTimeout(Rule):
         try:
             if not self.ci.getcurrvalue():
                 return
-            
-            #clear out event history so only the latest fix is recorded
+
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
+
             self.detailedresults = ""
             if self.environ.getostype() == "Mac OS X":
                 sudo = "/private/etc/sudoers"
@@ -188,7 +189,7 @@ class ReduceSudoTimeout(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if setPerms(sudo, [0, 0, 288], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                         self.detailedresults += "successfully corrected \
 permissions on file: " + sudo + "\n"
                     else:
@@ -199,7 +200,8 @@ set permissions on file: " + sudo + "\n"
                 if contents:
                     found = False
                     for line in contents:
-                        if re.search("^Defaults\s+timestamp_timeout", line.strip()):
+                        if re.search("^Defaults\s+timestamp_timeout",
+                                     line.strip()):
                             if re.search("=", line.strip()):
                                 temp = line.split("=")
                                 try:
@@ -211,7 +213,8 @@ set permissions on file: " + sudo + "\n"
                                 except IndexError:
                                     badfile = True
                                     debug = traceback.format_exc() + "\n"
-                                    debug += "Index out of range on line: " + line + "\n"
+                                    debug += "Index out of range on line: " + \
+                                        line + "\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                             else:
                                 badfile = True
@@ -224,14 +227,14 @@ set permissions on file: " + sudo + "\n"
                     if writeFile(tsudo, tempstring, self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype":"conf",
-                                 "filepath":sudo}
+                        event = {"eventtype": "conf",
+                                 "filepath": sudo}
                         self.statechglogger.recordchgevent(myid, event)
                         self.statechglogger.recordfilechange(sudo, tsudo, myid)
                         self.detailedresults += "corrected sudo timeout \
 contents of " + sudo + "\n"
                         os.rename(tsudo, sudo)
-                        os.chown(sudo, 0 , 0)
+                        os.chown(sudo, 0, 0)
                         os.chmod(sudo, 288)
                         resetsecon(sudo)
                     else:

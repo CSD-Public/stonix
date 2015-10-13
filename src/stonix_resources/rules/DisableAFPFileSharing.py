@@ -25,6 +25,7 @@ This method disables AFP file sharing on mac os x systems
 
 @author: Breen Malmberg
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -52,7 +53,8 @@ class DisableAFPFileSharing(Rule):
         self.rulename = 'DisableAFPFileSharing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This method disables AFP file sharing on mac os x systems"
+        self.helptext = "This method disables AFP file sharing on Mac OS X " + \
+            "systems."
         self.rootrequired = True
         self.logger = logger
         self.guidance = ['CIS 1.4.14.3']
@@ -64,7 +66,7 @@ class DisableAFPFileSharing(Rule):
         datatype = 'bool'
         key = 'DisableAFPFileSharing'
         instructions = 'To disable this rule, set the value of ' + \
-        'DisableAFPFileSharing to False'
+            'DisableAFPFileSharing to False'
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 

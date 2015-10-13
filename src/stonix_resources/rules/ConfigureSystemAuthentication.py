@@ -27,6 +27,7 @@ Created on Sep 11, 2013
 @change: 2014/04/18 dkennel Implemented new style CI in place of old style.
 @change: 2014/12/15 dkennel replaced print statement with logger debug call.
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 
@@ -51,55 +52,54 @@ class ConfigureSystemAuthentication(Rule):
         self.rulename = "ConfigureSystemAuthentication"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures the pam stack for password " + \
-        "requirements and password failed login attempts.  It also " + \
-        "ensures the system uses SHA512 encryption.  There are three " + \
-        "configuration items.  Two of these configuration involve " + \
-        "configuring PAM, PASSWORDREQ and PASSWORDFAIL. " + \
-        "Please be advised, due to the complexity and sensitivity of PAM, " + \
-        "portions of the pam files that these two CI's configure will be " + \
-        "completely overwritten, therefore if you have configured PAM " + \
-        "withother modules, you may want to avoid enabling these two " + \
-        "items and configure them by hand.  Also, if on a yum based " + \
-        "package manager system such as redhat, fedora, or centos, both " + \
-        "pam files have to recieve the same contents.  Due to this, no " + \
-        "undo events will be recorded for the first two configuration " + \
-        "items.  However backups will be made in the /etc/pam.d directory " + \
-        "to restore them back to the way before the rule was run.  Run " + \
-        "these rules at your own risk. If your system uses portage for a " + \
-        "package manager i.e. gentoo, you will need to do fix manually " + \
-        "for all files except for the login.defs file"
+        self.helptext = """This rule configures the PAM stack for password \
+requirements and failed login attempts. It also ensures the system uses \
+SHA512 encryption.
+There are three configuration items. Two of these \
+configuration involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please \
+be advised, due to the complexity and sensitivity of PAM, portions of the PAM \
+files that these two CIs configure will be completely overwritten, therefore \
+if you have configured PAM with other modules, you may want to avoid enabling \
+these two items and configure them by hand. Also, if on a yum-based package \
+manager system such as Red Hat, Fedora, or CentOS, both PAM files have to \
+receive the same contents. Due to this, no undo events will be recorded for \
+the first two configuration items. However, backups will be made in the \
+/etc/pam.d directory to restore them back to the way before the rule was run. \
+Run these rules at your own risk. If your system uses portage for a package \
+manager (i.e. Gentoo), you will need to do fix manually for all files except \
+for the login.defs file"""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
         datatype = "bool"
         key = "CONFIGSYSAUTH"
-        instructions = "To disable this rule set the value of CONFIGSYSAUTH to False."
+        instructions = "To disable this rule set the value of " + \
+            "CONFIGSYSAUTH to False."
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "PASSWORDREQ"
         instructions = "To not configure password requirements set " + \
-        "PASSWORDREQ to False.  This configuration item will configure " + \
-        "pam's password requirements when changing to a new password"
+            "PASSWORDREQ to False.  This configuration item will configure " + \
+            "pam's password requirements when changing to a new password"
         default = True
         self.ci2 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "PASSWORDFAIL"
         instructions = "To not configure password fail locking set " + \
-        "PASSWORDFAIL to False.  This configuration item will configure " + \
-        "pam's failed login attempts mechanism using either faillock or " + \
-        "tally2."
+            "PASSWORDFAIL to False.  This configuration item will " + \
+            "configure pam's failed login attempts mechanism using either " + \
+            "faillock or tally2."
         default = True
         self.ci3 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "PWHASHING"
         instructions = "To not set the hashing algorithm set " + \
-        "PWHASHING to False.  This configuration item will configure " + \
-        "libuser and/or logindefs which specifies the hashing algorithm " + \
-        "to use."
+            "PWHASHING to False.  This configuration item will configure " + \
+            "libuser and/or logindefs which specifies the hashing " + \
+            "algorithm to use."
         default = True
         self.ci4 = self.initCi(datatype, key, instructions, default)
 

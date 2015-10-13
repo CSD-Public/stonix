@@ -32,7 +32,7 @@ Created on Aug 28, 2012
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 variable.
 @change: 2015/04/15 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37774] : NetworkTuning(15) - NCAF - OS X El Capitan 10.11
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -61,17 +61,16 @@ class NetworkTuning(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule configures the system's network stack " + \
-            "settings.For Solaris systems, this rule requires a full " + \
-            "system reboot to take effect so the rule after running fix " + \
-            "may still show that it is non compliant until system is " + \
-            "rebooted.  For solaris systems, if you have a startup script " + \
-            "that configures your network stack, as is the only efficient " + \
-            "way to do it, firstly this file should appear in /etc/init.d " + \
-            "and secondly, in order to pass compliance, it will check for " + \
-            "the existence for a file named S70ndd-nettune.  Of course, " + \
+            "settings.\nFor Solaris systems, this rule requires a full " + \
+            "system reboot to take effect, and may show up as non-compliant " + \
+            "until the system is rebooted. Also for Solaris systems, if you " + \
+            "have a startup script that configures your network stack, " + \
+            "this file should appear in /etc/init.d " + \
+            "and, in order to pass compliance, it will check for " + \
+            "the existence for a file named S70ndd-nettune. Of course, " + \
             "this may not be the name of your file that controls your " + \
-            "network parameter tuning, so please keep in mind, your " + \
-            "system may fail compliance due to this issue."
+            "network parameter tuning, so the system may fail compliance " + \
+            "due to this issue."
 
         if self.environ.getostype() == "Mac OS X":
             self.networkTuning2 = self.__InitializeNetworkTuning2()

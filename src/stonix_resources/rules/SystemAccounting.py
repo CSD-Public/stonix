@@ -34,6 +34,7 @@ due to departures from the normal system performance curve.
 @author: Breen Malmberg
 @change: 2015/09/25 eball Added Deb/Ubuntu compatibility
 @change: 2015/09/29 Breen Malmberg - Added initialization of variable self.iditerator in fix()
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -71,7 +72,7 @@ class SystemAccounting(Rule):
 gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 \
 minutes, by default. The data may be accessed with the sar command, or by \
 reviewing the nightly report files named /var/log/sa/sar*. Once a normal \
-baseline for the system has been established, with frequent monitoring - \
+baseline for the system has been established, with frequent monitoring, \
 unauthorized activity (password crackers and other CPU-intensive jobs, and \
 activity outside of normal usage hours) may be detected due to departures \
 from the normal system performance curve.'''

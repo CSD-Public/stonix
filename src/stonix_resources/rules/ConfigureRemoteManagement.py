@@ -29,6 +29,7 @@ are vulnerable to exploit and monitoring.
 
 @author: bemalmbe
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -39,7 +40,6 @@ from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 
 import traceback
-import re
 
 
 class ConfigureRemoteManagement(Rule):
@@ -59,9 +59,9 @@ class ConfigureRemoteManagement(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = 'Remote management should only be enabled on ' + \
-        'trusted networks with strong user controls present in a Directory' + \
-        ' system, mobile devices without strict controls are vulnerable to' + \
-        ' exploit and monitoring.'
+            'trusted networks with strong user controls present in a ' + \
+            'Directory system. Mobile devices without strict controls are ' + \
+            'vulnerable to exploit and monitoring.'
         self.rootrequired = True
         self.guidance = ['CIS 2.4.9', 'Apple HT201710']
 
@@ -78,9 +78,9 @@ class ConfigureRemoteManagement(Rule):
         self.compliant = True
 
         reportdict = {"ARD_AllLocalUsers": "0",
-                     "ScreenSharingReqPermEnabled": "1",
-                     "VNCLegacyConnectionsEnabled": "0",
-                     "LoadRemoteManagementMenuExtra": "1"}
+                      "ScreenSharingReqPermEnabled": "1",
+                      "VNCLegacyConnectionsEnabled": "0",
+                      "LoadRemoteManagementMenuExtra": "1"}
         self.origstate = {}
 
         try:
@@ -89,7 +89,8 @@ class ConfigureRemoteManagement(Rule):
                 self.cmdhelper.executeCommand("defaults read /Library/Preferences/com.apple.RemoteManagement " + key)
                 output = self.cmdhelper.getOutputString()
                 if not reportdict[key] == output.strip():
-                    self.detailedresults += '\n' + key + ' not set to ' + reportdict[key]
+                    self.detailedresults += '\n' + key + ' not set to ' + \
+                        reportdict[key]
                     self.compliant = False
                 if output.strip() == "0":
                     self.origstate[key] = "False"
