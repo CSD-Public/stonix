@@ -41,6 +41,8 @@ not referenced before fix.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/10/13 eball PEP8 cleanup
+@change: 2015/10/13 eball Added feedback for report methods, and improved logic
+so that a system without CUPS is compliant
 '''
 
 from __future__ import absolute_import
@@ -466,6 +468,7 @@ DisablePrintBrowsing to True.'
 
                     if not re.search(self.defaultauthtype, content):
                         secure = False
+                        self.detailedresults += "\nDefaultAuthType not found"
 
             return secure
 
@@ -503,6 +506,8 @@ DisablePrintBrowsing to True.'
 
                     if not re.search('<Policy default>', content):
                         secure = False
+                        self.detailedresults += "\n<Policy default> block " + \
+                            "not found"
 
             return secure
 
@@ -544,6 +549,10 @@ DisablePrintBrowsing to True.'
                                   '/etc/sysconfig/ip6tables']
 
                 # search the config file(s) for the firewall exception entries
+                line1 = '^-A RH-Firewall-1-INPUT -p udp -m udp --dport ' + \
+                    '631 -j ACCEPT'
+                line2 = '^-A RH-Firewall-1-INPUT -p tcp -m tcp --dport ' + \
+                    '631 -j ACCEPT'
                 for item in configfilelist:
                     if os.path.exists(item):
                         f = open(item, 'r')
@@ -551,13 +560,14 @@ DisablePrintBrowsing to True.'
                         f.close()
 
                         for line in contentlines:
-                            if re.search('^-A RH-Firewall-1-INPUT -p udp -m ' +
-                                         'udp --dport 631 -j ACCEPT', line):
+                            if re.search(line1, line):
                                 secure = False
-                            elif re.search('^-A RH-Firewall-1-INPUT -p tcp ' +
-                                           '-m tcp --dport 631 -j ACCEPT',
-                                           line):
+                                self.detailedresults += "\n" + item + \
+                                    " contains unwanted entry: " + line1
+                            elif re.search(line2, line):
                                 secure = False
+                                self.detailedresults += "\n" + item + \
+                                    " contains unwanted entry: " + line2
 
                 if secure and not svcstatus:
                     retval = True
@@ -585,12 +595,12 @@ DisablePrintBrowsing to True.'
 
         # defaults
         directives = ['Browsing Off', 'BrowseAllow none']
-        dfound = 0
-        secure = False
+        secure = True
 
         try:
 
             for location in self.cupsdconflocations:
+                dfound = 0
                 if os.path.exists(location):
                     f = open(location, 'r')
                     contentlines = f.readlines()
@@ -601,10 +611,11 @@ DisablePrintBrowsing to True.'
                             if re.search('^' + directive, line):
                                 dfound += 1
 
-            if dfound == 2:
-                secure = True
-            else:
-                secure = False
+                    if dfound < 2:
+                        secure = False
+                        self.detailedresults += "\nPrinter browsing not " + \
+                            "disabled, " + location + " does not contain " + \
+                            "both the necessary directives: " + str(directives)
 
             return secure
 
@@ -630,14 +641,15 @@ DisablePrintBrowsing to True.'
 
         # defaults
         printbrowsesubnetstring = self.PrintBrowseSubnet.getcurrvalue()
-        dfound = 0
         directives = ['BrowseDeny all', 'BrowseAllow ' +
                       printbrowsesubnetstring]
+        secure = True
 
         try:
 
             if printbrowsesubnetstring != '':
                 for location in self.cupsdconflocations:
+                    dfound = 0
                     if os.path.exists(location):
                         f = open(location, 'r')
                         contentlines = f.readlines()
@@ -647,8 +659,14 @@ DisablePrintBrowsing to True.'
                             for directive in directives:
                                 if re.search('^' + directive, line):
                                     dfound += 1
+                        if dfound < 2:
+                            secure = False
+                            self.detailedresults += "\nPrinter browsing " + \
+                                "subnet settings incorrect, " + location + \
+                                " does not contain both the necessary " + \
+                                "directives: " + str(directives)
             else:
-                self.detailedresults += ' No value entered for print browse \
+                self.detailedresults += '\nNo value entered for print browse \
                 subnet'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
@@ -685,13 +703,13 @@ DisablePrintBrowsing to True.'
         # defaults
         port = 'Port 631'
         newport = 'Listen localhost:631'
-        found = 0
         secure = True
 
         try:
 
             for location in self.cupsdconflocations:
                 if os.path.exists(location):
+                    found = 0
                     f = open(location, 'r')
                     contentlines = f.readlines()
                     f.close()
@@ -699,15 +717,19 @@ DisablePrintBrowsing to True.'
                     for line in contentlines:
                         if re.search('^' + port, line):
                             secure = False
+                            self.detailedresults += "\nInsecure setting '" + \
+                                port + "' found in " + location
 
                     for line in contentlines:
                         if re.search('^' + newport, line):
                             found += 1
 
-            if found == 1 and secure:
-                return True
-            else:
-                return False
+                    if found < 1:
+                        secure = False
+                        self.detailedresults += "\nSecure port setting '" + \
+                            newport + "' not found in " + location
+
+            return secure
 
         except (KeyboardInterrupt, SystemExit):
             raise
