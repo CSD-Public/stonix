@@ -242,10 +242,15 @@ class ConfigureSystemAuthentication(Rule):
 
         #check if pam file has correct contents for screen lock out
         if not self.chklockout():
-            debug = "chklockout() is not compliant\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            results += debug
-            compliant = False
+            if self.ph.manager == "zypper":
+                self.detailedresults += "zypper based systems do not have " + \
+                    "a lockout program\n"
+            else:
+                self.detailedresults += "chklockout() is not compliant\n"
+                debug = "chklockout() is not compliant\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                results += debug
+                compliant = False
 
         #check if libuser file is present, if so check its contents
         if os.path.exists(self.libuserfile):
@@ -838,13 +843,13 @@ class ConfigureSystemAuthentication(Rule):
                     "the complexity of pam stonix will not attempt to " + \
                     "create this file\n"
                 return False
-        regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
-        "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit deny=5 unlock_time=900\n" + \
-        "auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
-        "auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
-        "auth[ \t]+sufficient[ \t]+pam_faillock.so authsucc audit deny=5\n" + \
-        "auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
-        "auth[ \t]+required[ \t]+pam_deny.so\n"
+        regex1 = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit deny=5 unlock_time=900\n" + \
+            "auth[ \t]+required[ \t]+pam_env.so\n" + \
+            "auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
+            "auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
+            "auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
+            "auth[ \t]+required[ \t]+pam_deny.so\n" + \
+            "auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n"
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
         for pam in pamfiles:
             tmpconfig1, tmpconfig2 = [], []
@@ -860,8 +865,8 @@ class ConfigureSystemAuthentication(Rule):
                 try:
                     if re.search("^auth", line):
                         while re.search("^auth", config[i]) or \
-                                            re.search("^#", config[i]) or \
-                                                 re.search("^\s*$", config[i]):
+                            re.search("^#", config[i]) or \
+                                re.search("^\s*$", config[i]):
                             tmpconfig1.append(config[i])
                             i += 1
                         break
@@ -1340,7 +1345,11 @@ class ConfigureSystemAuthentication(Rule):
     def setlockout(self):
         if self.ph.manager == "portage":
             return True
-        elif self.ph.manager == "zypper" or self.ph.manager == "apt-get":
+        elif self.ph.manager == "zypper":
+            self.detailedresults += "zypper based systems do not contain " + \
+                "a pam lockout module\n"
+            return True
+        elif self.ph.manager == "apt-get":
             success = self.setPamtally2()
         else:
             success = self.setFaillock()
@@ -1377,21 +1386,21 @@ class ConfigureSystemAuthentication(Rule):
                     "the complexity of pam stonix will not attempt to create " + \
                     "this file\n"
                 return False
-        regex1 = ["^auth[ \t]+required[ \t]+pam_env.so\n",
-        "auth[ \t]+required[ \t]pam_faillock.so preauth silent audit deny=5 unlock_time=900\n",
-        "auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n",
-        "auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n",
-        "auth[ \t]+sufficient[ \t]+pam_faillock.so authsucc audit deny=5\n",
-        "auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n",
-        "auth[ \t]+required[ \t]+pam_deny.so"]
+        regex1 = ["^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit deny=5 unlock_time=900\n",
+                  "auth[ \t]+required[ \t]+pam_env.so\n",
+                  "auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n",
+                  "auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n",
+                  "auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n",
+                  "auth[ \t]+required[ \t]+pam_deny.so\n",
+                  "auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n"]
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
-        data1 = ["auth\trequired\tpam_env.so\n",
-        "auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900\n",
-        "auth\tsufficient\tpam_unix.so nullok try_first_pass\n",
-        "auth\t[default=die]\tpam_faillock.so authfail audit deny=5\n",
-        "auth\tsufficient\tpam_faillock.so authsucc audit deny=5\n",
-        "auth\trequisite\tpam_succeed_if.so uid >= 500 quiet\n",
-        "auth\trequired\tpam_deny.so\n"]
+        data1 = ["auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900\n",
+                 "auth\trequired\tpam_env.so\n",
+                 "auth\tsufficient\tpam_unix.so nullok try_first_pass\n",
+                 "auth\trequisite\tpam_succeed_if.so uid >= 500 quiet\n",
+                 "auth\tsufficient\tpam_krb5.so use_first_pass\n",
+                 "auth\trequired\tpam_deny.so\n",
+                 "auth\t[default=die]\tpam_faillock.so authfail audit deny=5\n"]
         data2 = "account\trequired\tpam_faillock.so\n"
         for pam in pamfiles:
             changed1, changed2 = False, False
@@ -1405,7 +1414,7 @@ class ConfigureSystemAuthentication(Rule):
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
             config = readFile(pam, self.logger)
-            #if the file is blank just add the two required lines
+            #if the file is blank don't do anything
             if not config:
                 debug += "pam file required to configure " + \
                 "faillock is blank.  Will not attempt to configure this file\n"
