@@ -54,33 +54,42 @@ def regexReplace(filename, findPattern, replacePattern, outputFile="",
                        output will be written back to the origin file
     @param backupname: optional name of backup for origin file
     '''
-    if backupname != "":
-        open(backupname, "w").write(open(filename, "r").read())
+    try:
+        if backupname != "":
+            open(backupname, "w").write(open(filename, "r").read())
 
-    fileText = open(filename, "r").read()
-    find = re.compile(findPattern, re.M)  # re.M = multiline flag
-    result = find.sub(replacePattern, fileText)
+        fileText = open(filename, "r").read()
+        find = re.compile(findPattern, re.M)  # re.M = multiline flag
+        result = find.sub(replacePattern, fileText)
 
-    if outputFile == "":
-        open(filename, "w").write(result)
-    else:
-        open(outputFile, "w").write(result)
+        if outputFile == "":
+            open(filename, "w").write(result)
+        else:
+            open(outputFile, "w").write(result)
+    except Exception:
+        raise
 
 
 def makeTarball(source, dest):
     '''
     A quick and easy method to create a .tar.gz out of a single file or folder
     '''
-    with tarfile.open(dest, "w:gz") as tar:
-        tar.add(source)
+    try:
+        with tarfile.open(dest, "w:gz") as tar:
+            tar.add(source)
+    except Exception:
+        raise
 
 
 def makeZip(source, dest):
     '''
     A quick and easy method to create a .zip out of a single file or folder
     '''
-    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(source)
+    try:
+        with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as myzip:
+            myzip.write(source)
+    except Exception:
+        raise
 
 
 def pyinstMakespec(scripts, noupx=False, strip=False, console=True,
@@ -104,14 +113,17 @@ def pyinstMakespec(scripts, noupx=False, strip=False, console=True,
     # of macbuildlib, not necessarily the current working dir of the calling
     # script. Therefore, if it is not specified, leave blank and let
     # PyInstaller set default.
-    if specpath:
-        return makespec.main(scripts, noupx=noupx, strip=strip,
-                             console=console, icon_file=icon_file,
-                             pathex=pathex, specpath=specpath)
-    else:
-        return makespec.main(scripts, noupx=noupx, strip=strip,
-                             console=console, icon_file=icon_file,
-                             pathex=pathex)
+    try:
+        if specpath:
+            return makespec.main(scripts, noupx=noupx, strip=strip,
+                                 console=console, icon_file=icon_file,
+                                 pathex=pathex, specpath=specpath)
+        else:
+            return makespec.main(scripts, noupx=noupx, strip=strip,
+                                 console=console, icon_file=icon_file,
+                                 pathex=pathex)
+    except Exception:
+        raise
 
 
 def pyinstBuild(specfile, workpath, distpath, clean_build=False,
@@ -130,8 +142,13 @@ def pyinstBuild(specfile, workpath, distpath, clean_build=False,
     @note: PyInstaller.build accepts further options,
            which may need to be added in future versions
     '''
-    kwargs = {'workpath': workpath, 'loglevel': 'INFO', 'distpath': distpath,
-              'upx_dir': None, 'ascii': None, 'clean_build': clean_build}
+    try:
+        kwargs = {'workpath': workpath, 'loglevel': 'INFO', 'distpath':
+                  distpath, 'upx_dir': None, 'ascii': None, 'clean_build':
+                  clean_build}
+    except Exception:
+        raise
+
     return build.main(None, specfile, noconfirm, **kwargs)
 
 
@@ -150,6 +167,8 @@ def chownR(user, target):
                     os.chown(os.path.join(root, myfile), uid, -1)
     except TypeError:
         print "Error: Cannot chownR, target must be a directory"
+        raise
+    except Exception:
         raise
 
 
@@ -207,6 +226,8 @@ def chmodR(perm, target, writemode):
         print "Error: Invalid writemode specified. Please use [a]ppend " + \
             "or [o]verwrite"
         raise
+    except Exception:
+        raise
 
 
 def modplist(targetFile, targetKey, newValue):
@@ -218,9 +239,12 @@ def modplist(targetFile, targetKey, newValue):
     @param targetKey: The particular key within the plist to be modified
     @param newValue: The new value for the targetKey within the targetFile
     '''
-    mypl = pl.readPlist(targetFile)
-    mypl[targetKey] = newValue
-    pl.writePlist(mypl, targetFile)
+    try:
+        mypl = pl.readPlist(targetFile)
+        mypl[targetKey] = newValue
+        pl.writePlist(mypl, targetFile)
+    except Exception:
+        raise
 
 
 def getpyuicpath():
@@ -230,6 +254,8 @@ def getpyuicpath():
     @author: Eric Ball
     @return: Path to PyQt4 executable pyuic4
     '''
+    # This method is called before ramdisk creation, so it does not use the
+    # try/except block that most methods do
     fwpath = "/Users/Shared/Frameworks/"
     pathend1 = "/pyuic/pyuic4"
     pathend2 = "/pyuic4"
@@ -270,6 +296,8 @@ def checkBuildUser():
     @author: Roy Nielsen, Eric Ball
     @return: Tuple containing the current user's login name and UID
     '''
+    # This method is called before ramdisk creation, so it does not use the
+    # try/except block that most methods do
     print "Starting checkBuildUser..."
 
     CURRENT_USER = os.getlogin()
