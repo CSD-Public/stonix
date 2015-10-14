@@ -589,7 +589,14 @@ security-relevant events such as system logins, account modifications, and authe
 
         retval = True
 
-        if not self.auditrulesfile:
+        try:
+
+            if not self.auditrulesfile:
+                self.detailedresults += '\nAudit rules configuration file path undefined. Returning False...'
+                retval = False
+                return retval
+
+        except AttributeError:
             self.detailedresults += '\nAudit rules configuration file path undefined. Returning False...'
             retval = False
             return retval
