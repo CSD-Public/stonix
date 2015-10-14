@@ -27,34 +27,37 @@ Created on Jul 18, 2011
 @author: dkennel
 '''
 import unittest
-import re
+import os
 import src.stonix_resources.environment as environment
 import src.stonix_resources.configuration as configuration
 
+
 class zzzTestFrameworkconfiguration(unittest.TestCase):
 
-
     def setUp(self):
+        if not os.path.exists("/etc/stonix.conf"):
+            open("/etc/stonix.conf", "w")
         self.env = environment.Environment()
         self.to = configuration.Configuration(self.env)
 
     def tearDown(self):
         pass
-    
+
     def testConfValueSetGet(self):
         self.to.setconfvalue('UnitTest', 'unit', True)
-        self.failUnless(self.to.getconfvalue('UnitTest', 'unit'))
-    
+        self.assertTrue(self.to.getconfvalue('UnitTest', 'unit'))
+
     def testSetCommentText(self):
         self.to.setcommenttxt('UnitTest', '# Unit test comment\n')
-    
+
     def testSetSimple(self):
         self.to.setsimple('UnitTest', True)
         self.to.setsimple('UnitTest', False)
-    
+
     def testUserComment(self):
         self.to.setusercomment('UnitTest', 'unit', 'Unit test user comment')
-        self.failUnless(self.to.getusercomment('UnitTest', 'unit'))
+        self.assertEqual(self.to.getusercomment('UnitTest', 'unit'),
+                         'Unit test user comment')
 
 
 if __name__ == "__main__":
