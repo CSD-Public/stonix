@@ -76,27 +76,24 @@ class KVEditor(object):
         self.idcontainer = []
         if self.kvtype == "tagconf":
             if not self.getPath:
-                return False
+                return None
             self.editor = KVATaggedConf.KVATaggedConf(self.path, self.tmpPath,
                                                       self.intent,
                                                       self.configType,
                                                       self.logger)
-            return True
         elif self.kvtype == "conf":
             if not self.getPath:
-                return False
+                return None
             self.editor = KVAConf.KVAConf(self.path, self.tmpPath, self.intent,
                                           self.configType, self.logger)
-            return True
         elif self.kvtype == "defaults":
             self.editor = KVADefault.KVADefault(self.path, self.logger,
                                                 self.data)
-            return True
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
                             ["KVEditor.__init__", self.detailedresults])
-            return False
+            return None
 ###############################################################################
     def setData(self, data):
         if data is None:
@@ -114,11 +111,7 @@ class KVEditor(object):
         self.data = data
 ###############################################################################
     def setIntent(self, intent):
-        if intent == "present":
-            self.intent = intent
-            self.editor.setIntent(intent)
-            return True
-        elif intent == "notpresent":
+        if intent == "present" or intent == "notpresent":
             self.intent = intent
             self.editor.setIntent(intent)
             return True
@@ -135,6 +128,7 @@ class KVEditor(object):
             return False
         else:
             self.path = path
+            self.editor.setPath(path)
             return True
 ###############################################################################
     def getPath(self):
@@ -148,6 +142,7 @@ class KVEditor(object):
 ###############################################################################
     def setTmpPath(self, tmpPath):
         self.tmpPath = tmpPath
+        self.editor.setTmpPath(tmpPath)
         return True
 ###############################################################################
     def getTmpPath(self):

@@ -126,9 +126,6 @@ class KVEditorStonix(KVEditor):
     def setEventID(self, eid):
         self.eid = eid
 ###############################################################################
-    def setPath(self,path):
-        self.path = path
-###############################################################################
     def updatedata(self,data):
         success = self.editor.updateData(data)
         return success

@@ -28,46 +28,53 @@ Created on Jun 13, 2013
 @author: dwalker
 '''
 import unittest
-import src.stonix_resources.KVEditor as KVEditor
 import src.stonix_resources.KVEditorStonix as KVEditorStonix
+from src.stonix_resources.environment import Environment
+from src.stonix_resources.logdispatcher import LogDispatcher
+from src.stonix_resources.StateChgLogger import StateChgLogger
+
 
 class zzzTestFrameworkKVAConf(unittest.TestCase):
 
     def setUp(self):
-        self.edit = KVEditor.KVEditor()
-        self.editor = KVEditorStonix.KVEditorStonix('16')
+        kvpath = "/tmp/kvaconfUT"
+        open(kvpath, "w").write("I'm a test file!")
+        kvpath2 = "/tmp/sysctl.bak"
+        open(kvpath2, "w").write("I'm another test file!")
+
+        env = Environment()
+        logger = LogDispatcher(env)
+        scl = StateChgLogger(logger, env)
+        self.editor = KVEditorStonix.KVEditorStonix(scl, logger, "conf",
+                                                    kvpath, kvpath + ".tmp",
+                                                    {}, "present", "openeq")
 
     def tearDown(self):
         pass
 
     def testSimple(self):
-        self.failUnlessEqual(self.editor.setPath("/etc/sysctl.bak"), True,
-                              "Set Path Failed")
-        self.failUnlessEqual(self.editor.setTmpPath("/etc/sysctl.bak.tmp"),
-                             True,"SetTmpPath Failed")
-        self.failUnlessEqual(self.editor.setType("conf"), True,
-                              "Set Type Failed")
-        self.failUnlessEqual(self.editor.setData(\
-                {'net.ipv4.conf.all.secure_redirects':0,                  
-                'net.ipv4.conf.all.accept_redirects':0,  
-                'net.ipv4.conf.all.rp_filter':1,     
-                'net.ipv4.conf.all.log_martians':1,     
-                'net.ipv4.conf.all.accept_source_route':0,
-                'net.ipv4.conf.default.accept_redirects':0, 
-                'net.ipv4.conf.default.secure_redirects':0,
-                'net.ipv4.conf.default.rp_filter':1,
-                'net.ipv4.conf.default.accept_source_route':0,    
-                'net.ipv4.icmp_ignore_bogus_error_messages':1,           
-                'net.ipv4.tcp_syncookies':1,                             
-                'net.ipv4.icmp_echo_ignore_broadcasts':1,                  
-                'net.ipv4.tcp_max_syn_backlog':4096
-                }
-                ), True, "Set Data Failed")
-        self.failUnlessEqual(self.editor.report(), True,
-                              "Set Validate Failed")
-        self.failUnlessEqual(self.editor.fix(),True,
-                              "Update Failed")
-        
+        self.assertTrue(self.editor.setPath("/tmp/sysctl.bak"))
+        self.assertTrue(self.editor.setTmpPath("/tmp/sysctl.bak.tmp"))
+        self.assertTrue(self.editor.setType("conf"))
+        self.assertTrue(self.editor.setData(
+            {'net.ipv4.conf.all.secure_redirects': '0',
+             'net.ipv4.conf.all.accept_redirects': '0',
+             'net.ipv4.conf.all.rp_filter': '1',
+             'net.ipv4.conf.all.log_martians': '1',
+             'net.ipv4.conf.all.accept_source_route': '0',
+             'net.ipv4.conf.default.accept_redirects': '0',
+             'net.ipv4.conf.default.secure_redirects': '0',
+             'net.ipv4.conf.default.rp_filter': '1',
+             'net.ipv4.conf.default.accept_source_route': '0',
+             'net.ipv4.icmp_ignore_bogus_error_messages': '1',
+             'net.ipv4.tcp_syncookies': '1',
+             'net.ipv4.icmp_echo_ignore_broadcasts': '1',
+             'net.ipv4.tcp_max_syn_backlog': '4096'}))
+        self.assertFalse(self.editor.report())
+        self.assertTrue(self.editor.fix())
+        self.assertTrue(self.editor.commit())
+        self.assertTrue(self.editor.report())
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
