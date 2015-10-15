@@ -217,7 +217,7 @@ class ServiceHelper(object):
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- START (' + service + ', ' + servicename +
+                               '--START SET(' + service + ', ' + servicename +
                                ')')
         setservicesuccessall = False
         setservicesuccess = False
@@ -277,7 +277,7 @@ class ServiceHelper(object):
             setservicesuccessall = False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END (' + service + ', ' + servicename +
+                               '-- END SET(' + service + ', ' + servicename +
                                ') = ' + str(setservicesuccessall))
 
         return setservicesuccessall
@@ -291,7 +291,7 @@ class ServiceHelper(object):
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- START (' + service + ', ' + servicename +
+                               '--START DISABLE(' + service + ', ' + servicename +
                                 ')')
         servicesuccess = False
         chksingle = False
@@ -312,7 +312,8 @@ class ServiceHelper(object):
                 else:
                     servicesuccess = False
             else:
-                if self.auditservice(self.getService()):
+                if self.auditservice(self.getService()) or \
+                   self.isrunning(self.getService()):
                     self.logdispatcher.log(LogPriority.DEBUG,
                                            ['ServiceHelper.disableservice',
                                             'Audit Successful (' + service + ')'])
@@ -330,7 +331,7 @@ class ServiceHelper(object):
             servicesuccess = False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END (' + service + ', ' + servicename +
+                               '-- END DISABLE(' + service + ', ' + servicename +
                                ') = ' + str(servicesuccess))
         return servicesuccess
 
@@ -344,7 +345,7 @@ class ServiceHelper(object):
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START (' + service + ', ' + servicename +
+                               '--START ENABLE(' + service + ', ' + servicename +
                                ')')
         servicesuccess = False
         chksingle = False
@@ -380,7 +381,7 @@ class ServiceHelper(object):
             servicesuccess = False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END (' + service + ', ' + servicename +
+                               '-- END ENABLE(' + service + ', ' + servicename +
                                ') = ' + str(servicesuccess))
         return servicesuccess
 
@@ -394,7 +395,7 @@ class ServiceHelper(object):
         @return: Bool, True if the service is configured to run
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START (' + service + ', ' + servicename +
+                               '--START AUDIT(' + service + ', ' + servicename +
                                ')')
         servicesuccess = False
         if (self.setService(service, servicename)):
@@ -437,7 +438,7 @@ class ServiceHelper(object):
             servicesuccess = False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END (' + service + ', ' + servicename +
+                               '-- END AUDIT(' + service + ', ' + servicename +
                                ') = ' + str(servicesuccess))
         return servicesuccess
 
@@ -452,8 +453,8 @@ class ServiceHelper(object):
         @return: bool, True if the service is already running
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START (' + service + ', ' + servicename +
-                               ')')
+                               '--START ISRUNNING(' + service + ', ' +
+                               servicename + ')')
         servicesuccess = False
         if (self.setService(service, servicename)):
             runsecond = False
@@ -479,8 +480,8 @@ class ServiceHelper(object):
             servicesuccess = False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END (' + service + ', ' + servicename +
-                                ') = ' + str(servicesuccess))
+                               '-- END ISRUNNING(' + service + ', ' +
+                               servicename + ') = ' + str(servicesuccess))
         return servicesuccess
 
     def reloadservice(self, service, servicename=""):
@@ -498,7 +499,7 @@ class ServiceHelper(object):
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START (' + service + ', ' + servicename +
+                               '--START RELOAD(' + service + ', ' + servicename +
                                 ')')
         servicesuccess = False
         if (self.setService(service, servicename)):
@@ -530,7 +531,7 @@ class ServiceHelper(object):
             servicesuccess = False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END (' + service + ', ' + servicename +
+                               '-- END RELOAD(' + service + ', ' + servicename +
                                ') = ' + str(servicesuccess))
         return servicesuccess
 
