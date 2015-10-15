@@ -34,6 +34,7 @@ per day
 @change: 2014/04/30 dkennel Corrected overly greedy regexes
 @change: 2014/09/02 ekkehard self.rootrequired = True & OS X 10.10 compliant
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -71,8 +72,8 @@ class ScheduleStonix(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "Schedule Stonix to run randomly throughout the week \
-and once in a user context per day"
+        self.helptext = "Schedule a random time for STONIX to run in admin/" + \
+            "root context once per week, and in user context once per day."
         self.guidance = ['']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

@@ -31,6 +31,7 @@ This class will restrict access to the root log on to console only
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/12/15 dkennel Replaced print statements with logger debug calls
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -63,8 +64,8 @@ class ConsoleRootOnly(Rule):
         self.rulenumber = 35
         self.rulename = 'ConsoleRootOnly'
         self.mandatory = True
-        self.helptext = "This class will restrict access to the root log " + \
-        "on to console only"
+        self.helptext = "This rule will restrict access to the root logon " + \
+            "to console only"
         self.formatDetailedResults("initialize")
         self.guidance = ['CIS, NSA(2.3.1.1), cce3820-8, 3485-0, 4111-1']
         self.applicable = {'type': 'white',
@@ -74,7 +75,7 @@ class ConsoleRootOnly(Rule):
         datatype = 'bool'
         key = 'CONSOLEROOTONLY'
         instructions = "To prevent the limiting of root logon to console " + \
-        "only, set the value of CONSOLEROOTONLY to False."
+            "only, set the value of CONSOLEROOTONLY to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 

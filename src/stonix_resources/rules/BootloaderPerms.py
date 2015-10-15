@@ -32,6 +32,7 @@ root:root and 600
 @change: 04/18/2014 dkennel - Moved to new style CI. Fixed bug in fix
     method where CI was not referenced before executing fix actions.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -70,16 +71,16 @@ class BootloaderPerms(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = 'This rule will verify the permissions on the boot \
-        loader config file to be root:root and 600'
+        self.helptext = 'This rule will verify the permissions on the boot ' + \
+            'loader config file to be root:root and 600'
         self.rootrequired = True
         self.guidance = ['NSA(2.3.5.2)', 'cce-4144-2', '3923-0, 4197-0']
 
         # init CIs
         datatype = 'bool'
         key = 'BootLoaderPerms'
-        instructions = 'To prevent setting of permissions on the grub \
-        bootloader file, set the value of BootLoaderPerms to False'
+        instructions = 'To prevent setting of permissions on the grub ' + \
+            'bootloader file, set the value of BootLoaderPerms to False'
         default = True
         self.BootloaderPerms = self.initCi(datatype, key, instructions,
                                            default)
