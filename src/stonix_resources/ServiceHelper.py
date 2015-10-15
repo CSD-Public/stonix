@@ -24,6 +24,8 @@
 Created on Aug 9, 2012
 
 @author: dkennel
+@change: 2015/10/15 eball Added method names to debug output
+@change: 2015/10/15 eball disableservice now checks audit and isrunning
 '''
 import os
 import types
