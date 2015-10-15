@@ -226,8 +226,8 @@ users path are very dangerous.'''
                                     ['FilePermissions.multifind',
                                      'No last run files detected, setting ' +
                                      'first run to true'])
-                if os.path.exists(dbsets[set]['db']):
-                    os.rename(dbsets[set]['db'], dbsets[set]['last'])
+                if os.path.exists(dbsets[dbset]['db']):
+                    os.rename(dbsets[dbset]['db'], dbsets[set]['last'])
 
             fslist = self.getfilesystems()
             for filesystem in fslist:
