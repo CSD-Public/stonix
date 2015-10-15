@@ -274,20 +274,24 @@ class CommandHelper(object):
                 self.commandblank = False
             else:
                 self.commandblank = True
-                msg = "The command is of type '" + str(commandtype) + \
-                "' is blank!"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
+                msg = "The command of type '" + str(commandtype) + \
+                    "' is blank!"
+                self.logdispatcher.log(LogPriority.ERROR, msg)
                 raise ValueError(msg)
             self.command = command.strip()
             success = True
-            msg = "Command Set To '" + \
-            self.command + "'"
+            msg = "Command Set To '" + self.command + "'"
             self.logdispatcher.log(LogPriority.DEBUG, msg)
         elif (commandtype is types.ListType):
             self.shell = False
             self.command = []
             self.commandblank = True
             success = True
+            if len(command) == 0:
+                msg = "The command of type '" + str(commandtype) + \
+                    "' is blank!"
+                self.logdispatcher.log(LogPriority.ERROR, msg)
+                raise ValueError(msg)
             for commandlistitem in command:
                 commandtype = type(commandlistitem)
                 if (commandtype is types.StringType):
@@ -297,15 +301,15 @@ class CommandHelper(object):
                 else:
                     success = False
                     msg = "Command List Item '" + str(commandlistitem) + \
-                    "' has in invalid type of '" + str(commandtype) + "'"
+                        "' has in invalid type of '" + str(commandtype) + "'"
                     self.logdispatcher.log(LogPriority.DEBUG, msg)
-                    raise ValueError(msg)
+                    raise TypeError(msg)
             msg = "Command Set To '" + str(self.command) + "'"
             self.logdispatcher.log(LogPriority.DEBUG, msg)
         else:
             success = False
             msg = "Command '" + str(command) + "' has in invalid type of '" + \
-            str(commandtype) + "'"
+                str(commandtype) + "'"
             self.logdispatcher.log(LogPriority.DEBUG, msg)
             raise TypeError(msg)
         return success
@@ -399,7 +403,7 @@ class CommandHelper(object):
         except Exception, err:
             success = False
             msg = str(err) + " - " + str(traceback.format_exc())
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
+            self.logdispatcher.log(LogPriority.ERROR, msg)
             raise
         else:
             if commandobj is not None:
@@ -413,7 +417,7 @@ class CommandHelper(object):
                 msg = "returncode:(" + str(self.returncode) + ") output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
             else:
                 msg = "returncode:(None) output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
+            self.logdispatcher.log(LogPriority.ERROR, msg)
 
         return success
 
