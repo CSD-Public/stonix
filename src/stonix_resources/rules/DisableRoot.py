@@ -29,6 +29,7 @@ Created on Dec 2, 2013
 @change: 04/18/2014 dkennel Replaced old style CI with new
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -49,16 +50,16 @@ class DisableRoot(Rule):
         self.rulename = "DisableRoot"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Disables the root user since administrative " + \
-        "escalations can be performed using sudo.  This is a MacOSX rule only"
+        self.helptext = "Disables the root user. Administrative " + \
+            "escalations should be performed using sudo."
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = 'bool'
         key = 'DISABLEROOT'
         instructions = "To disable this rule set the value of DISABLEROOT " + \
-        "to False."
+            "to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -76,10 +77,10 @@ class DisableRoot(Rule):
             self.detailedresults = ""
             compliant = False
             cmd = ["/usr/bin/dscl", ".", "-read", "/Users/root",
-            "AuthenticationAuthority"]
+                   "AuthenticationAuthority"]
             if not self.cmdhelper.executeCommand(cmd):
                 self.detailedresults += "Unable to run the /usr/bin/dscl " + \
-                "command."
+                    "command."
                 compliant = False
             else:
                 output = self.cmdhelper.getOutput()
@@ -96,11 +97,11 @@ class DisableRoot(Rule):
                             break
             if compliant:
                 self.detailedresults += "DisableRoot report has been run " + \
-                "and is compliant\n"
+                    "and is compliant\n"
                 self.compliant = compliant
             else:
                 self.detailedresults += "DisableRoot report has been run " + \
-                "and is not compliant\n"
+                    "and is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -134,10 +135,10 @@ class DisableRoot(Rule):
                       "passwd", "*"]
             if not self.cmdhelper.executeCommand(delete):
                 self.detailedresults += "wasn't able to run the command " + \
-                str(delete) + "\n"
+                    str(delete) + "\n"
             elif not self.cmdhelper.executeCommand(create):
                 self.detailedresults += "wasn't able to run the command " + \
-                str(create) + "\n"
+                    str(create) + "\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -146,6 +147,6 @@ class DisableRoot(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess

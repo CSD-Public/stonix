@@ -34,6 +34,7 @@ This rule is optional and will install and configure AIDE when it is run.
     be modifying rule as well
 CI was not referenced in the fix and report method.
 @change: 2015/04/14 dkennel updated to use new is applicable
+@change: 2015/10/07 eball PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -63,16 +64,16 @@ class ConfigureAIDE(Rule):
         self.rulename = 'ConfigureAIDE'
         self.formatDetailedResults("initialize")
         self.helptext = 'Install and configure Advanced Intrusion Detection ' + \
-'Environment (AIDE). This rule is optional and will install and configure AIDE ' + \
-'when it is run.'
+            'Environment (AIDE). This rule is optional and will install and ' + \
+            'configure AIDE when it is run.'
         self.guidance = ['NSA(2.1.3)', 'cce-4209-3']
 
         # init CIs
         datatype = 'bool'
         key = 'configureaide'
-        instructions = 'If you set the ConfigureAIDE variable to yes, or true, ' + \
-'ConfigureAIDE will install and set up the Advanced Intrusion ' + \
-'Detection Environment on this system.'
+        instructions = 'If you set the ConfigureAIDE variable to yes, or ' + \
+            'true, ConfigureAIDE will install and set up the Advanced ' + \
+            'Intrusion Detection Environment on this system.'
         default = False
         self.applicable = {'type': 'white',
                            'family': ['linux']}

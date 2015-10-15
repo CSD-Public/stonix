@@ -35,6 +35,7 @@ Check to see if all of the above operations have been done or not - report()
 @change: 02/14/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 dkennel Replaced old style CI with new
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -43,7 +44,6 @@ import traceback
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
-from ..pkghelper import Pkghelper
 from ..KVEditorStonix import KVEditorStonix
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, resetsecon
 
@@ -65,17 +65,15 @@ class DisableBluetooth(Rule):
         self.rulename = 'DisableBluetooth'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Disable all bluetooth services, Blacklist all " + \
-        "bluetooth drivers, Remove all bluetooth packages, Check to see " + \
-        "if all of the above operations have been done or not - report() " + \
-        "Currently there is no undo for the disabling of bluetooth " + \
-        "services.  Will be implemented very soon"
+        self.helptext = "This rule will disable all Bluetooth services, " + \
+            "blacklist all Bluetooth drivers, and remove all Bluetooth " + \
+            "packages."
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = 'bool'
         key = 'DISABLEBLUETOOTH'
-        instructions = "To prevent the disabling of bluetooth services, " + \
-        "set the value of DISABLEBLUETOOTH to False."
+        instructions = "To prevent the disabling of Bluetooth services, " + \
+            "set the value of DISABLEBLUETOOTH to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.applicable = {'type': 'white',
@@ -83,22 +81,24 @@ class DisableBluetooth(Rule):
         self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.guidance = ["NSA(3.3.14)", "CCE 14948-4", "CCE 4377-8",
                          "CCE 4355-4"]
-        self.driverdict = { "blacklist":["bluetooth", "btusb", "bcm203x", 
-                            "bfusb", "bluecard_cs", "bpa10x", "bt3c_cs", 
-                            "btuart_cs", "dtl1_cs", "hci_uart", "hci_usb", 
-                            "hci_vhci", "bnep", "cmtp", "hidp", "rfcomm", 
-                            "sco", "sdp", "tcs-bin", "bluez", "hid-control", 
-                            "avctp", "upnp", "hid-interrupt", 
-                            "tcs-bin-cordless", "bfusb"]}
+        self.driverdict = {"blacklist": ["bluetooth", "btusb", "bcm203x",
+                                         "bfusb", "bluecard_cs", "bpa10x",
+                                         "bt3c_cs", "btuart_cs", "dtl1_cs",
+                                         "hci_uart", "hci_usb", "hci_vhci",
+                                         "bnep", "cmtp", "hidp", "rfcomm",
+                                         "sco", "sdp", "tcs-bin", "bluez",
+                                         "hid-control", "avctp", "upnp",
+                                         "hid-interrupt", "tcs-bin-cordless",
+                                         "bfusb"]}
         self.iditerator = 0
         self.created = False
 
     def report(self):
         '''
         The report method examines the current configuration and determines
-        whether or not it is correct. If the config is correct then the 
+        whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
-        updated to reflect the system status. self.rulesuccess will be updated 
+        updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
         @return bool
@@ -116,11 +116,6 @@ class DisableBluetooth(Rule):
             kvconftype = 'space'
             kvintent = 'present'
 
-#             self.packagelist = ['bluez-libs', 'bluez-libs-devel',
-#             'libbtctl-devel', 'libbtctl', 'gnome-bluetooth-libs',
-#             'gnome-bluetooth', 'gnome-bluetooth-devel', 'openobex-apps',
-#             'openobex-devel', 'bluez']
-
             # Solaris doesn't support bluetooth and there is no bsd package
             self.servicelist = ['bluetooth', 'dund', 'pand', 'hidd',
                                 'ubthidhci', 'bthidd']
@@ -130,12 +125,6 @@ class DisableBluetooth(Rule):
                 if enabled:
                     self.detailedresults += service + " is enabled\n"
                     compliant = False
-#             self.pkghelper = Pkghelper(self.logger, self.environ)
-#             # check whether bluetooth packages exist
-#             for package in self.packagelist:
-#                 installed = self.pkghelper.check(package)
-#                 if installed:
-#                     compliant = False
             # check whether bluetooth drivers are blacklisted
             if os.path.exists(kvpath):
                 self.kve = KVEditorStonix(self.statechglogger, self.logger,
@@ -207,34 +196,28 @@ Bluetooth\n"
             # disable bluetooth services
             for service in self.servicelist:
                 if self.servicehelper.auditservice(service):
-                    if not self.servicehelper.disableservice(service):
+                    if self.servicehelper.disableservice(service):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "servicehelper",
+                                 "servicename": service,
+                                 "startstate": "enabled",
+                                 "endstate": "disabled"}
+                        self.statechglogger.recordchgevent(myid, event)
+                    else:
                         success = False
                         debug += "Unable to disable " + service + "\n"
 
-#             # remove bluetooth packages
-#             for package in self.packagelist:
-#                 if self.pkghelper.check(package):
-#                     if self.pkghelper.remove(package):
-#                         self.iditerator += 1
-#                         myid = iterate(self.iditerator, self.rulenumber)
-#                         cmd = self.pkghelper.getInstall()
-#                         cmd += package
-#                         event = {"eventtype":"commandstring",
-#                                  "command":cmd}
-#                         self.statechglogger.recordchgevent(myid, event)
-#                     else:
-#                         success = False
-#                         debug += "Unable to remove " + package + "\n"
             if self.created:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation",
                          "filepath": self.kve.getPath()}
-
                 self.statechglogger.recordchgevent(myid, event)
             # blacklist bluetooth drivers
             if os.path.exists(self.kve.getPath()):
-                if not checkPerms(self.kve.getPath(), [0, 0, 420], self.logger):
+                if not checkPerms(self.kve.getPath(), [0, 0, 420],
+                                  self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(self.kve.getPath(), [0, 0, 420],

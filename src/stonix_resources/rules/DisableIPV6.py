@@ -29,7 +29,7 @@ Created on Apr 9, 2013
 @change: 06/02/2014 dkennel removed extraneous arg from setperms call on 864
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37772] : DisableIPV6(123) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -54,18 +54,18 @@ class DisableIPV6(Rule):
         self.rulenumber = 123
         self.rulename = "DisableIPV6"
         self.formatDetailedResults("initialize")
-        self.helptext = "Disables IPV6 functionality.  For solaris " + \
-        "systems only the report will be run"
+        self.helptext = "Disables IPV6 functionality. For Solaris " + \
+            "systems, only the report will be run."
         self.guidance = ["NSA 2.5.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = 'bool'
         key = 'DISABLEIPV6'
         instructions = "To disable this rule set the value of DISABLEIPV6 " + \
-        "to False."
+            "to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -93,7 +93,7 @@ class DisableIPV6(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -105,7 +105,7 @@ class DisableIPV6(Rule):
                 return
             self.detailedresults = ""
 
-            #clear out event history so only the latest fix is recorded
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -127,7 +127,7 @@ class DisableIPV6(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
@@ -185,7 +185,8 @@ class DisableIPV6(Rule):
                     event = {'eventtype': 'comm',
                              'startstate': 'notconfigured',
                              'endstate': 'configured',
-                             'command':['/usr/sbin/networksetup', 'setv6automatic', item]}
+                             'command': ['/usr/sbin/networksetup',
+                                         'setv6automatic', item]}
                     self.statechglogger.recordchgevent(myid, event)
         return self.rulesuccess
 
@@ -196,12 +197,12 @@ class DisableIPV6(Rule):
         self.editor1, self.editor2 = "", ""
 
         directives1 = {"ipv6_network_interfaces": "none",
-                      "ipv6_activate_all_interfaces": "NO",
-                      "ip6addrctl_enable": "NO",
-                      "ip6addrctl_policy": "NO"}
+                       "ipv6_activate_all_interfaces": "NO",
+                       "ip6addrctl_enable": "NO",
+                       "ip6addrctl_policy": "NO"}
         directives2 = {"net.ipv6.conf.all.disable_ipv6": "1",
-                      "net.ipv6.conf.default.disable_ipv6": "1",
-                      "net.ipv6.conf.lo.disable_ipv6": "1"}
+                       "net.ipv6.conf.default.disable_ipv6": "1",
+                       "net.ipv6.conf.lo.disable_ipv6": "1"}
 
         path1 = "/etc/rc.conf"
         path2 = "/etc/sysctl.conf"
@@ -213,13 +214,15 @@ class DisableIPV6(Rule):
             if not createFile(path1, self.logger):
                 compliant = False
                 self.detailedresults += "Unable to create the file: " + \
-path1 + " so this file will not be configured resulting in failed compliance\n"
+                    path1 + ", so this file will not be configured, " + \
+                    "resulting in failed compliance\n"
 
         if os.path.exists(path1):
             if not checkPerms(path1, [0, 0, 420], self.logger):
                 compliant = False
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                   "conf", path1, tmpfile1, directives1, "present", "closedeq")
+                                          "conf", path1, tmpfile1, directives1,
+                                          "present", "closedeq")
             if not self.editor1.report():
                 compliant = False
 
@@ -228,13 +231,15 @@ path1 + " so this file will not be configured resulting in failed compliance\n"
             if not createFile(path2, self.logger):
                 compliant = False
                 self.detailedresults += "Unable to create the file: " + \
-path2 + " so this file will not be configured resulting in failed compliance\n"
+                    path2 + " so this file will not be configured " + \
+                    "resulting in failed compliance\n"
 
         if os.path.exists(path2):
             if not checkPerms(path2, [0, 0, 384], self.logger):
                 compliant = False
             self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                   "conf", path2, tmpfile2, directives2, "present", "closedeq")
+                                          "conf", path2, tmpfile2, directives2,
+                                          "present", "closedeq")
             if not self.editor2.report():
                 compliant = False
         else:
@@ -266,7 +271,7 @@ path2 + " so this file will not be configured resulting in failed compliance\n"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.path, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
             if self.editor1:
                 if self.editor1.fixables:
@@ -275,13 +280,13 @@ path2 + " so this file will not be configured resulting in failed compliance\n"
                     self.editor1.setEventID(myid)
                     if not self.editor1.fix():
                         debug += "Kveditor unable to correct file: " + \
-path1 + "\n"
+                            path1 + "\n"
                         self.detailedresults += "Unable to correct " + path1 + \
-"\n"
+                            "\n"
                         success = False
                     elif not self.editor1.commit():
                         self.detailedresults += "Unable to correct " + path1 + \
-"\n"
+                            "\n"
                         debug += "commit for kveditor1 was not successful\n"
                         success = False
             else:
@@ -301,7 +306,7 @@ and/or wasn't able to be created\n"
 
                 # set permissions if wrong
                 if not setPerms(self.path, [0, 0, 384, self.logger],
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
             # check if editor is present
             if self.editor2:
@@ -311,13 +316,13 @@ and/or wasn't able to be created\n"
                     self.editor2.setEventID(myid)
                     if not self.editor2.fix():
                         debug += "Kveditor unable to correct file: " + \
-path2 + "\n"
+                            path2 + "\n"
                         self.detailedresults += "Unable to correct " + path2 + \
-"\n"
+                            "\n"
                         success = False
                     elif not self.editor2.commit():
                         self.detailedresults += "Unable to correct " + path2 + \
-"\n"
+                            "\n"
                         debug += "commit for kveditor2 was not successful\n"
                         success = False
             else:
@@ -369,7 +374,8 @@ and/or wasn't able to be created\n"
             compliant = False
             debug = "ip6tables is still set to run\n"
             self.logger.log(LogPriority.DEBUG, debug)
-        # we will search for directives2 in any file in modprobe.d and modprobe.conf
+        # we will search for directives2 in any file in modprobe.d and
+        # modprobe.conf
         self.modprobes1 = {"options ipv6 disable": "1"}
         self.modprobes2 = {"options ipv6 disable": "1"}
         remove1 = []
@@ -382,7 +388,8 @@ and/or wasn't able to be created\n"
             output = cmdhelper.getOutput()
             for line in output:
                 if re.search("^inet6", line.strip()):
-                    self.detailedresults += "inet6 exists in the ifconfig output\n"
+                    self.detailedresults += "inet6 exists in the " + \
+                        "ifconfig output\n"
                     compliant = False
                     break
 #----------------------check for ipv6 address in hostname file----------------#
@@ -414,8 +421,9 @@ the correct contents\n"
             if not checkPerms(sysctl, [0, 0, 420], self.logger):
                 compliant = False
             tmpfile = sysctl + ".tmp"
-            self.editor1 = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                                     sysctl, tmpfile, sysctls, "present", "openeq")
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          "conf", sysctl, tmpfile, sysctls,
+                                          "present", "openeq")
             if not self.editor1.report():
                 self.detailedresults += "/etc/sysctl file doesn't contain \
 the correct contents\n"
@@ -546,7 +554,7 @@ blacklist item: " + key + "\n"
                         self.created2 = True
         else:
             compliant = False
-#-----------------------------------------------------------------------------#
+
         if ifacefile:
             dirs = glob.glob(ifacefile + '*')
             for loc in dirs:
@@ -559,7 +567,8 @@ blacklist item: " + key + "\n"
                         for key in interface:
                             found = False
                             for line in contents:
-                                if re.search("^#", line) or re.match("^\s*$", line):
+                                if re.search("^#", line) or re.match("^\s*$",
+                                                                     line):
                                     continue
                                 if re.search("^" + key, line):
                                     if re.search("=", line):
@@ -573,24 +582,25 @@ blacklist item: " + key + "\n"
                                     else:
                                         compliant = False
                                         self.detailedresults += loc + \
-                                        " file in bad format\n"
+                                            " file in bad format\n"
                             if not found:
                                 self.detailedresults += "contents of " + \
-                                loc + " file is wrong\n"
+                                    loc + " file is wrong\n"
                                 compliant = False
                                 break
                             else:
                                 continue
                     else:
                         compliant = False
-#-----------------------------------------------------------------------------#
+
         if netwrkfile:
             if os.path.exists(netwrkfile):
                 if not checkPerms(netwrkfile, [0, 0, 420], self.logger):
                     compliant = False
                 tmpfile = netwrkfile + ".tmp"
                 self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                 "conf", netwrkfile, tmpfile, interface, "present", "closedeq")
+                                              "conf", netwrkfile, tmpfile,
+                                              interface, "present", "closedeq")
                 if not self.editor2.report():
                     self.detailedresults += netwrkfile + " doesn't contain \
 the correct contents\n"
@@ -599,7 +609,6 @@ the correct contents\n"
                 self.detailedresults += netwrkfile + " doesn't exist\n"
                 compliant = False
 
-#-----------------------------------------------------------------------------#
         '''This subpart is only for apt-get based systems'''
         if self.helper.manager == "apt-get":
             data = {"AddressFamily": "inet"}
@@ -609,7 +618,8 @@ the correct contents\n"
             intent = "present"
             configtype = "space"
             self.editor3 = KVEditorStonix(self.statechglogger, self.logger,
-                                    kvtype, path, tmpPath, data, intent, configtype)
+                                          kvtype, path, tmpPath, data, intent,
+                                          configtype)
             if not self.editor3.report():
                 self.detailedresults += "/etc/ssh/ssdh_config doesn't \
 contain the correct contents\n"
@@ -660,7 +670,8 @@ contain the correct contents\n"
                 event = {"eventtype": "conf",
                          "filepath": "/etc/hosts"}
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange("/etc/hosts", tmpfile, myid)
+                self.statechglogger.recordfilechange("/etc/hosts", tmpfile,
+                                                     myid)
                 os.rename(tmpfile, "/etc/hosts")
                 os.chown("/etc/hosts", 0, 0)
                 os.chmod("/etc/hosts", 420)
@@ -671,7 +682,9 @@ contain the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
         if self.sh.auditservice("ip6tables"):
-            print "auditservice returned: " + str(self.sh.auditservice("ip6tables")) + "\n\n\n"
+            debug = "auditservice returned: " + \
+                str(self.sh.auditservice("ip6tables")) + "\n\n\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             if not self.sh.disableservice("ip6tables"):
                 success = False
                 debug = "Unable to disable ip6tables service\n"
@@ -688,7 +701,7 @@ contain the correct contents\n"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(sysctl, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
                     debug = "Unable to set permissions on /etc/sysctl.conf\n"
                     self.logger.log(LogPriority.DEBUG, debug)
@@ -701,12 +714,12 @@ contain the correct contents\n"
                     if not self.editor1.fix():
                         success = False
                         debug = "Unable to complete kveditor fix method" + \
-                        "for /etc/sysctl.conf file\n"
+                            "for /etc/sysctl.conf file\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     elif not self.editor1.commit():
                         success = False
                         debug = "Unable to complete kveditor commit " + \
-                        "method for /etc/sysctl.conf file\n"
+                            "method for /etc/sysctl.conf file\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     os.chown(sysctl, 0, 0)
                     os.chmod(sysctl, 420)
@@ -726,9 +739,10 @@ contain the correct contents\n"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(modprobefile, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                self.statechglogger, myid):
                     success = False
-                    debug = "Unable to set permissions on " + modprobefile + "\n"
+                    debug = "Unable to set permissions on " + modprobefile + \
+                        "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
             contents = readFile(modprobefile, self.logger)
             if contents:
@@ -769,8 +783,8 @@ contain the correct contents\n"
                             if writeFile(tmpfile, tempstring, self.logger):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype":"conf",
-                                         "filepath":modprobefile}
+                                event = {"eventtype": "conf",
+                                         "filepath": modprobefile}
                                 self.statechglogger.recordchgevent(myid, event)
                                 self.statechglogger.recordfilechange(modprobefile, tmpfile, myid)
                                 os.rename(tmpfile, modprobefile)
@@ -779,7 +793,8 @@ contain the correct contents\n"
                                 resetsecon(modprobefile)
                             else:
                                 success = False
-                                debug = "Unable to write to file " + modprobefile + "\n"
+                                debug = "Unable to write to file " + \
+                                    modprobefile + "\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                     if found:
                         del(self.modprobes1[key])  # may need to get rid of these two lines
@@ -829,10 +844,11 @@ optional so your system's compliance is not effected by it's absence\n"
                     if writeFile(tmpfile, tempstring, self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype":"conf",
-                                 "filepath":loc}
+                        event = {"eventtype": "conf",
+                                 "filepath": loc}
                         self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(loc, tmpfile, myid)
+                        self.statechglogger.recordfilechange(loc, tmpfile,
+                                                             myid)
                         os.rename(tmpfile, loc)
                         os.chown(loc, 0, 0)
                         os.chmod(loc, 420)
@@ -878,7 +894,8 @@ optional so your system's compliance is not effected by it's absence\n"
                     event = {"eventtype": "conf",
                              "filepath": filename}
                     self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(filename, tmpfile, myid)
+                    self.statechglogger.recordfilechange(filename, tmpfile,
+                                                         myid)
                     os.rename(tmpfile, filename)
                     os.chown(filename, 0, 0)
                     os.chmod(filename, 420)
@@ -907,19 +924,22 @@ optional so your system's compliance is not effected by it's absence\n"
                             filename = loc
                             tmpfile = filename + ".tmp"
                             contents = readFile(filename, self.logger)
-                            if not checkPerms(filename, [0, 0, 420], self.logger):
+                            if not checkPerms(filename, [0, 0, 420],
+                                              self.logger):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                if not setPerms(filename, [0, 0, 420], self.logger,
-                                                         self.statechglogger, myid):
+                                if not setPerms(filename, [0, 0, 420],
+                                                self.logger,
+                                                self.statechglogger, myid):
                                     debug = "Unable to set permissions on " + \
-                                    filename + "\n"
+                                        filename + "\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     success = False
                             for key in interface:
                                 found = False
                                 for line in contents:
-                                    if re.search("^#", line) or re.match("^\s*$", line):
+                                    if re.search("^#", line) or \
+                                       re.match("^\s*$", line):
                                         continue
                                     if re.search("^" + key, line):
                                         if re.search("=", line):
@@ -936,7 +956,8 @@ optional so your system's compliance is not effected by it's absence\n"
                                 tempstring += line
                             tempstring += universal
                             for key in interface2:
-                                tempstring += key + "=" + interface2[key] + "\n"
+                                tempstring += key + "=" + interface2[key] + \
+                                    "\n"
                             if not writeFile(tmpfile, tempstring, self.logger):
                                 success = False
                                 debug = "Unable to write to file " + loc + "\n"
@@ -946,7 +967,8 @@ optional so your system's compliance is not effected by it's absence\n"
                             event = {'eventtype': 'conf',
                                      'filepath': filename}
                             self.statechglogger.recordchgevent(myid, event)
-                            self.statechglogger.recordfilechange(filename, tmpfile, myid)
+                            self.statechglogger.recordfilechange(filename,
+                                                                 tmpfile, myid)
                             os.rename(tmpfile, filename)
                             os.chown(filename, 0, 0)
                             os.chmod(filename, 420)
@@ -970,15 +992,17 @@ optional so your system's compliance is not effected by it's absence\n"
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(netwrkfile, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                        self.statechglogger, myid):
                             debug = "Unable to set permissions on " + \
                                     netwrkfile + "\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                     tmpfile = netwrkfile + ".tmp"
-                    self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                        "conf", netwrkfile, tmpfile, interface, "present", 
-                                                                    "closedeq")
+                    self.editor2 = KVEditorStonix(self.statechglogger,
+                                                  self.logger, "conf",
+                                                  netwrkfile, tmpfile,
+                                                  interface, "present",
+                                                  "closedeq")
                     if not self.editor2.report():
                         self.detailedresults += netwrkfile + " doesn't contain \
 the correct contents\n"
@@ -990,12 +1014,12 @@ the correct contents\n"
                     if not self.editor2.fix():
                         success = False
                         debug = "Unable to complete kveditor fix method" + \
-                        "for " + netwrkfile + "\n"
+                            "for " + netwrkfile + "\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     elif not self.editor2.commit():
                         success = False
                         debug = "Unable to complete kveditor commit " + \
-                        "method for " + netwrkfile + "\n"
+                            "method for " + netwrkfile + "\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     os.chown(netwrkfile, 0, 0)
                     os.chmod(netwrkfile, 420)
@@ -1009,13 +1033,15 @@ the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, msg)
                 success = False
             else:
-                if not checkPerms("/etc/ssh/sshd_config", [0, 0, 420], self.logger):
+                if not checkPerms("/etc/ssh/sshd_config", [0, 0, 420],
+                                  self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms("/etc/ssh/sshd_config", [0, 0, 420], self.logger,
-                                                        self.statechglogger, myid):
+                    if not setPerms("/etc/ssh/sshd_config", [0, 0, 420],
+                                    self.logger, self.statechglogger, myid):
                         success = False
-                        debug = "Unable to set permissions on /etc/ssh/sshd_config\n"
+                        debug = "Unable to set permissions on " + \
+                            "/etc/ssh/sshd_config\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                 if self.editor3:
                     if self.editor3.fixables:
@@ -1025,12 +1051,12 @@ the correct contents\n"
                         if not self.editor3.fix():
                             success = False
                             debug = "Unable to complete kveditor fix method" + \
-                            "for /etc/ssh/sshd_config file\n"
+                                "for /etc/ssh/sshd_config file\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                         elif not self.editor3.commit():
                             success = False
                             debug = "Unable to complete kveditor commit " + \
-                            "method for /etc/ssh/sshd_config file\n"
+                                "method for /etc/ssh/sshd_config file\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                         os.chown("/etc/ssh/sshd_config", 0, 0)
                         os.chmod("/etc/ssh/sshd_config", 420)

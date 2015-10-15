@@ -36,6 +36,7 @@ built to make use of the libwrap library.
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/29 eball Fixed potential first-run failure
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -76,12 +77,13 @@ class TCPWrappers(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''TCPWrappers is a library which provides simple
+        self.helptext = '''TCPWrappers is a library which provides simple \
 access control and standardized logging for supported applications which \
 accept connections over a network. Historically, TCPWrappers was used to \
-support inetd services. Now that inetd is deprecated (see Section 3.2.1), \
-TCPWrappers supports only services which were built to make use of the \
-libwrap library.'''
+support inetd services. Now that inetd is deprecated, TCPWrappers supports \
+only services which were built to make use of the libwrap library.
+This rule will ensure a secure configuration for the hosts.allow and \
+hosts.deny files.'''
         self.rootrequired = True
         self.guidance = ['CIS', 'NSA(2.5.4)', '4434-7']
         self.isApplicableWhiteList = []

@@ -31,6 +31,7 @@ Created on Feb 19, 2013
 @change: 06/02/2014 dkennel multiple bug fixes for undefined variable issues.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/23 eball Removed Banner setting to resolve InstallBanners conflict
+@change: 2015/10/08 eball Help text cleanup
 '''
 from __future__ import absolute_import
 import os
@@ -61,11 +62,11 @@ class SecureSSH(Rule):
         self.rulename = 'SecureSSH'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The SecureSSH class makes a number of configuration\
- changes to SSH in order to ensure secure use of the functionality.  This rule
- will not attempt to install ssh server or client if it is not installed
- however it will create the appropriate files if not present and put the
- appropriate contents in them whether installed or not.'''
+        self.helptext = '''This rule makes a number of configuration \
+changes to SSH in order to ensure its security.  This rule \
+will not attempt to install the SSH server or client if it is not installed. \
+However, it will create the appropriate files if not present and put the \
+appropriate contents in them whether installed or not.'''
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}

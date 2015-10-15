@@ -29,13 +29,13 @@ This is a rule for Verifying and/or setting the state of the LoginWindow.
 @change: 02/13/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 2015/04/14 dkennel updated for new stype isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 
 # The period was making python complain. Adding the correct paths to PyDev
 # made this the working scenario.
 from ..ruleKVEditor import RuleKVEditor
-from ..stonixutilityfunctions import *
 
 
 class ConfigureLoginWindow(RuleKVEditor):
@@ -52,10 +52,11 @@ class ConfigureLoginWindow(RuleKVEditor):
         self.rulename = 'ConfigureLoginWindow'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule sets the login window to display the " + \
-                        "names of the accounts on the computer may make " + \
-                        "breaking in easier. Force the user to enter a " +\
-                        "login name and password to log in."
+        self.helptext = "This rule sets the login window to no longer " + \
+                        "display the names of the accounts on the computer, " + \
+                        "since this may make breaking in easier. This " + \
+                        "forces the user to enter a login name and password " + \
+                        "to log in."
         self.rootrequired = True
         self.guidance = ['CCE-28310-1']
         self.applicable = {'type': 'white',
@@ -67,7 +68,7 @@ class ConfigureLoginWindow(RuleKVEditor):
                          {"SHOWFULLNAME": ["1", "-bool yes"]},
                          "present",
                          "",
-                         "Forces the user to enter a username and " + \
+                         "Forces the user to enter a username and " +
                          "password at the login window when enabled.",
                          None,
                          False,
@@ -79,8 +80,8 @@ class ConfigureLoginWindow(RuleKVEditor):
                          {"DisableConsoleAccess": ["1", "-bool yes"]},
                          "present",
                          "",
-                         'If console login is enabled, the user can type ' + \
-                         '">console" for the user name to get a console ' + \
+                         'If console login is enabled, the user can type ' +
+                         '">console" for the user name to get a console ' +
                          'login.',
                          None,
                          False,
