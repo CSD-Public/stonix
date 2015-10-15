@@ -30,12 +30,12 @@ import re
 import os
 from logdispatcher import LogPriority
 
+
 class SHupdaterc(object):
     '''
     SHupdaterc is the Service Helper for systems using the rcupdate command to
-    configure services. (Debian, Ubuntu and variants) 
+    configure services. (Debian, Ubuntu and variants)
     '''
-
 
     def __init__(self, environment, logdispatcher):
         '''
@@ -45,11 +45,11 @@ class SHupdaterc(object):
         self.logdispatcher = logdispatcher
         self.cmd = '/usr/sbin/update-rc.d '
         self.svc = '/usr/sbin/service '
-        
+
     def disableservice(self, service):
         '''
         Disables the service and terminates it if it is running.
-        
+
         @param string: Name of the service to be disabled
         @return: Bool indicating success status
         '''
@@ -72,17 +72,18 @@ class SHupdaterc(object):
             if ret2 != 0:
                 svcoff = False
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.disableservice ' + service + ' ' + str(confsuccess) + str(svcoff))
+                               'SHupdaterc.disableservice ' + service + ' ' +
+                               str(confsuccess) + " " + str(svcoff))
         if confsuccess and svcoff:
             return True
         else:
-            return False        
-    
+            return False
+
     def enableservice(self, service):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
-        
+
         @param string: Name of the service to be enabled
         @return: Bool indicating success status
         '''
@@ -107,17 +108,18 @@ class SHupdaterc(object):
             if ret2 != 0:
                 svcon = False
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.enableservice ' + service + ' ' + str(confsuccess) + str(svcon))
+                               'SHupdaterc.enableservice ' + service + ' ' +
+                               str(confsuccess) + str(svcon))
         if confsuccess and svcon:
             return True
         else:
-            return False 
-    
+            return False
+
     def auditservice(self, service):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
-        
+
         @param string: Name of the service to audit
         @return: Bool, True if the service is configured to run
         '''
@@ -131,13 +133,14 @@ class SHupdaterc(object):
             if re.search('S..' + service, entry):
                 running = True
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.auditservice ' + service + ' '+ str(running))
+                               'SHupdaterc.auditservice ' + service + ' ' +
+                               str(running))
         return running
-    
+
     def isrunning(self, service):
         '''
         Check to see if a service is currently running.
-        
+
         @param sting: Name of the service to check
         @return: bool, True if the service is already running
         '''
@@ -145,26 +148,30 @@ class SHupdaterc(object):
                                'SHupdaterc.isrunning ' + service)
         running = False
         chk = subprocess.Popen(self.svc + service + ' status',
-                               stdout = subprocess.PIPE,
-                               stderr = subprocess.PIPE, shell = True,
-                               close_fds = True)
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, shell=True,
+                               close_fds=True)
+        # wait() can be a risky call, but in this case, the service command
+        # will almost never output more than a few lines
+        chk.wait()
         message = chk.stdout.readlines()
         # some services don't return any output (sysstat) so we call audit
         if len(message) == 0:
             running = self.auditservice(service)
         for line in message:
-            if re.search('running', line):
+            if re.search('running', line) and chk.returncode == 0:
                 running = True
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.isrunning ' + service + ' '+ str(running))
+                               'SHupdaterc.isrunning ' + service + ' ' +
+                               str(running))
         return running
-    
+
     def reloadservice(self, service):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
-        
+
         @param string: Name of the service to reload
         @return: bool indicating success status
         '''
@@ -183,11 +190,11 @@ class SHupdaterc(object):
                 return False
             else:
                 return True
-            
+
     def listservices(self):
         '''
         Return a list containing strings that are service names.
-        
+
         @return: list
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
