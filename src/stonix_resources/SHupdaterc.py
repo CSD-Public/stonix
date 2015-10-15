@@ -24,6 +24,7 @@
 Created on Sep 19, 2012
 
 @author: dkennel
+@change: 2015/10/15 eball Added chk.wait() and chk.returncode == 0 to isrunning
 '''
 import subprocess
 import re
