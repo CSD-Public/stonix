@@ -26,6 +26,8 @@ Created on Oct 4, 2012
 ###############################################################################
 
 @author: dkennel
+@change: 2015/10/15 eball Updated deprecated unittest methods, added
+    cron.service for openSUSE and Debian 8 compatibility
 '''
 import os
 import time
@@ -51,7 +53,9 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
             self.myservice = 'svc:/system/cron:default'
         elif self.enviro.getosfamily() == 'freebsd':
             self.myservice = 'cron'
-        elif os.path.exists('/bin/systemctl'):
+        elif os.path.exists('/usr/lib/systemd/system/cron.service'):
+            self.myservice = 'cron.service'
+        elif os.path.exists('/usr/lib/systemd/system/crond.service'):
             self.myservice = 'crond.service'
         elif os.path.exists('/etc/init.d/vixie-cron'):
             self.myservice = 'vixie-cron'
@@ -63,30 +67,31 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
 
     def testListServices(self):
         svcslist = self.mysh.listservices()
-        #print "Services:"
-        #print svcslist
-        self.failUnless(len(svcslist) > 0)
+        self.assertTrue(len(svcslist) > 0)
 
     def testDisableEnable(self):
-        if (self.mysh.isrunning(self.myservice, self.myservicename)):
-            self.mysh.disableservice(self.myservice, self.myservicename)
-        auditresult = self.mysh.auditservice(self.myservice, self.myservicename)
-        print 'Audit result: ' + str(auditresult)
-        self.failUnlessEqual(auditresult, False,
-                             "Service not disabled or return from audit not valid")
-        time.sleep(5)
-        self.failUnlessEqual(self.mysh.isrunning(self.myservice, self.myservicename), False,
-                             "Service is still running or return from isrunning not valid")
+        self.mysh.disableservice(self.myservice)
+        auditresult = self.mysh.auditservice(self.myservice,
+                                             self.myservicename)
+        self.assertFalse(auditresult,
+                         "Service not disabled or return from audit not valid")
+        time.sleep(3)
+        self.assertFalse(self.mysh.isrunning(self.myservice,
+                                             self.myservicename),
+                         "Service is still running or return from isrunning not valid")
         self.mysh.enableservice(self.myservice)
-        self.failUnlessEqual(self.mysh.auditservice(self.myservice, self.myservicename), True,
-                             "Service not enabled or return from audit not valid")
-        time.sleep(5)
-        self.failUnlessEqual(self.mysh.isrunning(self.myservice, self.myservicename), True,
-                             "Service is not running or return from isrunning not valid")
+        self.assertTrue(self.mysh.auditservice(self.myservice,
+                                               self.myservicename),
+                        "Service not enabled or return from audit not valid")
+        time.sleep(3)
+        self.assertTrue(self.mysh.isrunning(self.myservice,
+                                            self.myservicename),
+                        "Service is not running or return from isrunning not valid")
 
     def testReloadService(self):
-        self.failUnlessEqual(self.mysh.reloadservice(self.myservice, self.myservicename), True,
-                             'Service reload returned false')
+        self.assertTrue(self.mysh.reloadservice(self.myservice,
+                                                self.myservicename),
+                        'Service reload returned false')
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
