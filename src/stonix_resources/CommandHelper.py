@@ -417,7 +417,7 @@ class CommandHelper(object):
                 msg = "returncode:(" + str(self.returncode) + ") output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
             else:
                 msg = "returncode:(None) output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
-            self.logdispatcher.log(LogPriority.ERROR, msg)
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
 
         return success
 
