@@ -26,6 +26,7 @@ This class is responsible for securing the Apache webserver configuration.
 @author: dkennel
 @change: 2015/04/17 updated for new isApplicable
 @change: 2015/09/24 eball Fixed potential missing file error in fix()
+@change: 2015/10/08 eball Help text cleanup
 '''
 from __future__ import absolute_import
 import os
@@ -62,16 +63,16 @@ class SecureApacheWebserver(Rule):
         self.rulename = 'SecureApacheWebserver'
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The Secure Apache Webserver rule will apply secure configurations to the
-Apache webserver configuration file httpd.conf and included files in conf.d or
-other configuration directories. It also applies secure configurations to the
-PHP interpreter's php.ini file if present. There are a series of config options
-for this rule. In general the Apache webserver should not be running on desktop
-systems and should be disabled by the Minimize Services rule. On servers and in
-the case where a developer needs a local instance of the web server running it
-should be properly configured. Server admins running webservers will want to
-review the actions taken by this rule to ensure that it will not affect their
-deployed applications.'''
+        self.helptext = '''The Secure Apache Webserver rule will apply secure \
+configurations to the Apache webserver configuration file httpd.conf and \
+included files in conf.d or other configuration directories. It also applies \
+secure configurations to the PHP interpreter's php.ini file if present. There \
+are a series of config options for this rule. In general the Apache webserver \
+should not be running on desktop systems and should be disabled by the \
+Minimize Services rule. On servers and in the case where a developer needs a \
+local instance of the web server running it should be properly configured. \
+Server admins running webservers will want to review the actions taken by \
+this rule to ensure that it will not affect their deployed applications.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

@@ -27,6 +27,7 @@ that handles turning off potential vulnerability points such as: wifi,
 bluetooth, microphones, and cameras.
 
 @author: dkennel
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -56,10 +57,10 @@ class BootSecurity(Rule):
         self.rulename = 'BootSecurity'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The BootSecurity rule configures the system to run a job at
-system boot time that ensures that wifi and bluetooth are turned off
-and that microphone inputs are muted. This helps ensure that the system is in a
-secure state at initial startup.'''
+        self.helptext = '''The BootSecurity rule configures the system to run \
+a job at system boot time that ensures that WiFi and Bluetooth are turned off, \
+and that microphone inputs are muted. This helps ensure that the system is in \
+a secure state at initial startup.'''
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
@@ -98,8 +99,8 @@ secure state at initial startup.'''
 
         datatype = 'bool'
         key = 'bootsecurity'
-        instructions = '''To disable this rule set the value of BOOTSECURITY to
-False.'''
+        instructions = '''To disable this rule set the value of BOOTSECURITY \
+to False.'''
         default = True
         self.bootci = self.initCi(datatype, key, instructions, default)
 

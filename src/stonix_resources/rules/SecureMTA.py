@@ -41,7 +41,7 @@ given instead of the required five.
 @change: 2015/04/28 dkennel changed data dictionary in reportpostfix to
 reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/07/30 eball Changed where setPerms occurs in fix
-@change: 2015/08/26 ekkehard [artf37785] : SecureMTA(53) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -72,17 +72,18 @@ configure needed MTAs as defensively as possible.
         self.rulename = 'SecureMTA'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Mail servers are used to send and receive mail
-over a network on behalf of site users. Mail is a very common service, and
-MTAs are frequent targets of network attack. Ensure that machines are not
-running MTAs unnecessarily, and configure needed MTAs as defensively as
-possible. Please be advised, in one section of this rule,
-the /etc/mail/sendmail.cf is modified two different times.  Because of this
-the undo event that handles this file if a change is made will only revert one
- change, the change that is not reverted is the insertion or modification of
-the line that begins with DS.  If you can't remember the original format of
-that line, take a look in the /usr/share/stonix folder for the original file
-before clicking undo'''
+        self.helptext = '''Mail servers are used to send and receive mail \
+over a network on behalf of site users. Mail is a very common service, and \
+MTAs are frequent targets of network attack. Ensure that machines are not \
+running MTAs unnecessarily, and configure needed MTAs as defensively as \
+possible.
+Please be advised, in one section of this rule, the \
+/etc/mail/sendmail.cf is modified two different times.  Because of this, the \
+undo event that handles this file if a change is made will only revert one \
+change, the change that is not reverted is the insertion or modification of \
+the line that begins with DS.  If you can't remember the original format of \
+that line, take a look in the /usr/share/stonix folder for the original file \
+before clicking undo.'''
         self.guidance = ['CCE 4416-4', 'CCE 4663-1', 'CCE 14495-6',
                          'CCE 14068-1', 'CCE 15018-5', 'CCE 4293-7']
         self.applicable = {'type': 'white',

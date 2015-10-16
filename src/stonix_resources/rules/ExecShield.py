@@ -26,14 +26,13 @@ This class is responsible for auditing and correcting the setting of the
 ExecShield overflow prevention and the randomize_va_space ASLR mechanism.
 @author: dkennel
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 import os
 import re
 import traceback
-import stat
 import subprocess
-import shutil
 
 from ..rule import Rule
 from ..stonixutilityfunctions import resetsecon
@@ -59,11 +58,12 @@ class ExecShield(Rule):
         self.rulename = 'ExecShield'
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The ExecShield rule will audit, and if needed correct the settings
-of the kernel functions that provide protection against memory corruption
-attacks such as buffer overflows. These features include ExecShield which
-prevents execution of memory locations that should only hold data and
-va_randomize which randomizes the locations of various memory regions.'''
+        self.helptext = '''The ExecShield rule will audit, and if needed \
+correct the settings of the kernel functions that provide protection against \
+memory corruption attacks such as buffer overflows. These features include \
+ExecShield, which prevents execution of memory locations that should only \
+hold data, and va_randomize, which randomizes the locations of various memory \
+regions.'''
         self.rootrequired = True
         self.comment = re.compile('^#|^;')
         self.sysctlconf = '/etc/sysctl.conf'
@@ -93,7 +93,10 @@ va_randomize which randomizes the locations of various memory regions.'''
         '''
         datatype = 'bool'
         key = 'execshield'
-        instructions = 'If set to yes or true the EXECSHIELD action will, if needed correct the kernel settings for the ExecShield and virtual address randomization functions. This should be safe for all systems.'
+        instructions = 'If set to yes or true the EXECSHIELD action will, ' + \
+            'if needed correct the kernel settings for the ExecShield and ' + \
+            'virtual address randomization functions. This should be safe ' + \
+            'for all systems.'
         default = True
         myci = self.initCi(datatype, key, instructions, default)
         return myci
@@ -120,11 +123,11 @@ va_randomize which randomizes the locations of various memory regions.'''
             raise
         except Exception:
             self.detailedresults = 'ExecShield.checkproc: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults += traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                            ['ExecShield.checkproc',
-                             self.detailedresults])
+                                 ['ExecShield.checkproc',
+                                  self.detailedresults])
 
     def report(self):
         '''
@@ -139,16 +142,19 @@ va_randomize which randomizes the locations of various memory regions.'''
                 execval = int(self.checkproc(self.shieldprocpath))
                 if execval == 1:
                     self.execshieldcompliant = True
-                    self.detailedresults += 'Exec-Shield present and compliant\n'
+                    self.detailedresults += 'Exec-Shield present and ' + \
+                        'compliant\n'
                 else:
-                    self.detailedresults += 'Exec-Shield present but not compliant. Current value: ' + str(execval) +'\n'
+                    self.detailedresults += 'Exec-Shield present but not ' + \
+                        'compliant. Current value: ' + str(execval) + '\n'
             va_path = '/proc/sys/kernel/randomize_va_space'
             vaval = int(self.checkproc(va_path))
             if vaval == 2:
                 self.varandomcompliant = True
                 self.detailedresults += 'Randomize_va_space compliant\n'
             else:
-                self.detailedresults += 'Randomize_va_space not compliant. Current value: ' + str(vaval) +'\n'
+                self.detailedresults += 'Randomize_va_space not compliant. ' + \
+                    'Current value: ' + str(vaval) + '\n'
             if self.execshieldapplies:
                 if self.execshieldcompliant and self.varandomcompliant:
                     self.compliant = True
@@ -160,11 +166,11 @@ va_randomize which randomizes the locations of various memory regions.'''
             raise
         except Exception:
             self.detailedresults = 'ExecShield.report: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults += traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                            ['ExecShield.report',
-                             self.detailedresults])
+                                 ['ExecShield.report',
+                                  self.detailedresults])
         return self.compliant
 
     def fix(self):
@@ -187,9 +193,9 @@ va_randomize which randomizes the locations of various memory regions.'''
                                          self.directives, intent, "openeq")
             if self.execshieldapplies:
                 cmdshield = '/sbin/sysctl -w kernel.exec-shield=1'
-                cmdproc = subprocess.call(cmdshield, shell=True)
+                subprocess.call(cmdshield, shell=True)
             cmdvarand = '/sbin/sysctl -w kernel.randomize_va_space=2'
-            cmdvaproc = subprocess.call(cmdvarand, shell=True)
+            subprocess.call(cmdvarand, shell=True)
 
             if not self.editor.report():
                 if self.editor.fixables:
@@ -208,10 +214,10 @@ va_randomize which randomizes the locations of various memory regions.'''
             raise
         except Exception:
             self.detailedresults = 'ExecShield.fix: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults += traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                            ['ExecShield.fix',
-                             self.detailedresults])
+                                 ['ExecShield.fix',
+                                  self.detailedresults])
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)

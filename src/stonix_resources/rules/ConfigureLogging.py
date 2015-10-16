@@ -31,6 +31,7 @@ Created on May 20, 2013
 @change: 04/18/2014 dkennel updated to use new CI class
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 
 '''
 from __future__ import absolute_import
@@ -57,23 +58,21 @@ class ConfigureLogging(Rule):
         self.rulename = "ConfigureLogging"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule combines several tasks.  Log Rotation " + \
-            "to ensure that logs don't completely fill up disk space.  " + \
-            "Configures logwatch on the central log server.  After the " + \
-            "fix runs, you may want to check the configuration files that " + \
-            "were altered to be reformatted to line up correctly with " + \
-            "columns such as in newsyslog.conf in freebsd.  This is " + \
-            "purely personal preference. For operating systems such as " + \
-            "linux, many log file entries may have their own block as " + \
-            "well, many of the blocks may contain the same contents. Feel " + \
-            "free to combine all of these on one line.  If an entry in " + \
-            "the linux fix has incorrect log specs inside the brackets, " + \
-            "the log entry is removed where it previously existed and " + \
-            "then rewritten with the recommended specs and does not " + \
-            "retain any of the user's previous specs.  However, where " + \
-            "that log was removed, the specs inside the brackets may " + \
-            "remain with no log file to accompany it.  Delete these as " + \
-            "they will make your configuration file invalid"
+        self.helptext = """This rule combines several tasks. Log Rotation \
+ensures that logs don't completely fill up disk space. It also configures \
+logwatch on the central log server.
+After the fix runs, you may want to reformat the configuration files that were \
+altered to line up correctly with columns (such as in newsyslog.conf in \
+FreeBSD). This is purely personal preference.
+For operating systems such as Linux, many log file entries may have their own \
+block as well, and many of the blocks may contain the same contents. Feel \
+free to combine all of these on one line.  If an entry in the Linux fix has \
+incorrect log specs inside the brackets, the log entry is removed where it \
+previously existed and then rewritten with the recommended specs. It does not \
+retain any of the user's previous specs.  However, where that log was \
+removed, the specs inside the brackets may remain with no log file to \
+accompany it.  Delete these, as they will make your configuration file \
+invalid."""
 
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',

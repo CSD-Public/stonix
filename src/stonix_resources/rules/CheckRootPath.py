@@ -32,6 +32,7 @@ for user/world-writable entries and report any found.
 @change: 04/21/2013 ekkehard Renamed from SecureRootPath to CheckRootPath
 @change: 04/21/2014 ekkehard remove ci as it is a report only rule
 @change: 2015/04/14 dkennel updated to use new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -63,9 +64,9 @@ class CheckRootPath(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''The Secure Root Path class checks all directories in the root $PATH variable 
-for user/world-writable entries, and if any are found then remove them from the 
-root $PATH.'''
+        self.helptext = '''The Secure Root Path class checks all directories \
+in the root $PATH variable for user/world-writable entries, and if any are \
+found then remove them from the root $PATH.'''
         self.rootrequired = True
         self.guidance = ['NSA RHEL 2.3.4.1, 2.3.4.1.1, 2.3.4.1.2']
         self.applicable = {'type': 'white',
@@ -108,7 +109,7 @@ root $PATH.'''
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)

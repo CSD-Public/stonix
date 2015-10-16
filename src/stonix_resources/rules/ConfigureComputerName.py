@@ -25,6 +25,7 @@ Created on Dec 3, 2014
 
 @author: dwalker
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -45,7 +46,7 @@ class ConfigureComputerName(Rule):
         self.mil = None
         self.mandatory = True
         self.helptext = "This rule sets the name of the computer based on " + \
-        "information on the mac and information available in LDAP."
+            "information on the Mac and information available in LDAP."
         self.rootrequired = True
         self.guidance = [""]
         self.CN = ""
@@ -55,7 +56,7 @@ class ConfigureComputerName(Rule):
         datatype = 'bool'
         key = 'CONFIGURECOMPUTERNAME'
         instructions = "To disable this rule set the value of " + \
-        "CONFIGURECOMPUTERNAME to False."
+            "CONFIGURECOMPUTERNAME to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
