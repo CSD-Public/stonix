@@ -227,7 +227,7 @@ users path are very dangerous.'''
                                      'No last run files detected, setting ' +
                                      'first run to true'])
                 if os.path.exists(dbsets[dbset]['db']):
-                    os.rename(dbsets[dbset]['db'], dbsets[set]['last'])
+                    os.rename(dbsets[dbset]['db'], dbsets[dbset]['last'])
 
             fslist = self.getfilesystems()
             for filesystem in fslist:
