@@ -93,18 +93,26 @@ class ReqPassSysPref(Rule):
         self.undovals = {}
 
     def report(self):
-        results = ""
+        self.detailedresults = ""
         self.compliant = True
         plists = {}
 
         try:
             for pref in self.prefslist:
-                if not self.ch.executeCommand(["security", "authorizationdb",
-                                               "read", pref]):
+                if not self.ch.executeCommand(["security", "authorizationdb", "read", pref]):
                     self.compliant = False
-                    error = "Report could not execute security command"
-                    self.logger.log(LogPriority.ERROR, error)
+                    self.detailedresults += "\nReport could not execute security command"
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
+
                 plist = self.ch.getOutput()
+                if not plist:
+                    self.compliant = False
+                    self.detailedresults += "\nsecurity command returned no output. cannot continue..."
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
                 # First line of output is a success/failure code from the
                 # security command, which must be deleted to get a valid plist
                 del plist[0]
@@ -113,13 +121,13 @@ class ReqPassSysPref(Rule):
                 self.logger.log(LogPriority.DEBUG, debug)
                 if not re.search(r"<key>shared</key>\s+<false/>", plist):
                     self.compliant = False
-                    results += pref + " is not set to require a password\n"
+                    self.detailedresults += "\n" + pref + " is not set to require a password"
                     plists[pref] = plist
                     debug = "Correct value not found in " + pref + ". " + \
                         "Adding to plists dictionary."
                     self.logger.log(LogPriority.DEBUG, debug)
             self.plists = plists
-            self.detailedresults = results
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
