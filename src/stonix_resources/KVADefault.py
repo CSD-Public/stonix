@@ -83,7 +83,35 @@ class KVADefault():
         self.dc = "/usr/bin/defaults"
         self.output = ""
         self.currentHost = True
-###############################################################################
+
+    def setPath(self, path):
+        '''
+        Private method to set the path of the configuration file
+        @author: dwalker
+        @param path: the path to file to be handled
+        '''
+        self.path = path
+        return True
+
+    def getPath(self):
+        '''
+        Private method to retrieve the path of the configuration file
+        @author: dwalker
+        @return: Bool
+        '''
+        return self.path
+
+    def setData(self, data):
+        if data is None:
+            return False
+        elif data == "":
+            return False
+        else:
+            self.data = data
+            return True
+
+    def getData(self):
+        return self.data
 
     def validate(self):
         '''self.data should contain the lowest atomic key value therefore the
