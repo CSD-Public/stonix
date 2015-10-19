@@ -26,54 +26,47 @@ Created on 04/29/2012
 ###############################################################################
 
 @author: ekkehard
+@change: 2015/10/15 eball Refactored KVEditor unit test to KVADefault test
 '''
-#import KVEditor
-import time
 import unittest
 import src.stonix_resources.KVEditorStonix as KVEditorStonix
-from src.stonix_resources.environment import Environment as Environment
-from src.tests.lib.logdispatcher_lite import LogDispatcher as LogDispatcher
-from src.stonix_resources.StateChgLogger import StateChgLogger as StateChgLogger
-from src.stonix_resources.localize import APPLESOFTUPDATESERVER as APPLESOFTUPDATESERVER
+from src.stonix_resources.environment import Environment
+from src.tests.lib.logdispatcher_lite import LogDispatcher
+from src.stonix_resources.StateChgLogger import StateChgLogger
+from src.stonix_resources.localize import APPLESOFTUPDATESERVER
 
 
-class zzzTestFrameworkKVEditor(unittest.TestCase):
+class zzzTestFrameworkKVADefault(unittest.TestCase):
+
     def tearDown(self):
         pass
+
     def setUp(self):
-        #path = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
         kvtype = "defaults"
-        data = {"CatalogURL":[APPLESOFTUPDATESERVER, APPLESOFTUPDATESERVER],
-                "LastResultCode":["100","100"]}
-#         data = {"NAT":{"-dict Enabled":["-int 0","Enabled = 0;"],
-#                        "-dict Start":["-string off","Start = off"]}}
-        #path = "/Library/Preferences/SystemConfiguration/com.apple.nat"
+        data = {"CatalogURL": [APPLESOFTUPDATESERVER, APPLESOFTUPDATESERVER],
+                "LastResultCode": ["100", "100"]}
         path = "/Library/Preferences/com.apple.SoftwareUpdate"
         self.environ = Environment()
+        if not self.environ.getosfamily() == "darwin":
+            return
         self.logger = LogDispatcher(self.environ)
-        stchglogger = StateChgLogger(self.logger,self.environ)
-        self.editor = KVEditorStonix.KVEditorStonix(stchglogger,kvtype,path,"",data,"","",self.logger,262)
-        #self.editor.create()
+        stchglogger = StateChgLogger(self.logger, self.environ)
+        self.editor = KVEditorStonix.KVEditorStonix(stchglogger, self.logger,
+                                                    kvtype, path,
+                                                    path + ".tmp", data,
+                                                    "present", "openeq")
+
     def testSimple(self):
-        self.editor.report()
-        self.editor.fix()
-        self.editor.commit()
-        time.sleep(10)
-        self.editor.undo()
-#     def setUp(self):
-#         path = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
-#         kvtype = "defaults"
-#         data = ""
-#         self.environ = Environment()
-#         self.logger = LogDispatcher(self.environ)
-#         stchglogger = StateChgLogger(self.logger,self.environ)
-#         self.editor = KVEditorStonix.KVEditorStonix(stchglogger,kvtype,path,"",data,"","")
-#         self.editor.create()
-#     def testSimple(self):
-#         self.editor.report()
-#         self.editor.setEventID("0042001")
-#         self.editor.fix()
-#         self.editor.commit()
-#     '''for kveditorstonix defaults'''
+        if not self.environ.getosfamily() == "darwin":
+            return
+
+        data = {"GuestEnabled": "0"}
+        self.assertTrue(self.editor.setData(data))
+        self.assertEqual(data, self.editor.getData())
+
+        path = "/Library/Preferences/com.apple.loginwindow.plist"
+        self.assertTrue(self.editor.setPath(path))
+        self.assertEqual(path, self.editor.getPath())
+
 if __name__ == "__main__":
     unittest.main()
