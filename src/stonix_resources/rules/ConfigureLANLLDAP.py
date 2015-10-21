@@ -52,7 +52,7 @@ class ConfigureLANLLDAP(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.helptext = """This rule will configure LDAP for use at LANL. \
-It should be run AFTER ConfigureKerberos.
+For full functionality, the ConfigureKerberos rule will also need to be run.
 On Debian and Ubuntu systems, this rule will require a restart to take \
 effect."""
         self.applicable = {'type': 'white',
@@ -320,16 +320,6 @@ effect."""
                         success = False
                         results += "Unable to install " + package + "\n"
 
-            if re.search("red hat|fedora|centos", self.myos):
-                if self.mkhomedirci.getcurrvalue():
-                    cmd = ["authconfig", "--enablesssd", "--enablesssdauth",
-                           "enablelocauthorize", "--enablemkhomedir",
-                           "--update"]
-                else:
-                    cmd = ["authconfig", "--enablesssd", "--enablesssdauth",
-                           "enablelocauthorize", "--update"]
-                self.ch.executeCommand(cmd)
-
             if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
                 success = False
                 results += "Problem writing new contents to " + \
@@ -553,7 +543,7 @@ krb5_realm = lanl.gov
             passwd = prefix + "password"
             sess = prefix + "session"
             pamconf[auth] = '''auth        required      pam_env.so
-auth        required      pam_tally2.so silent deny=4  unlock_time=15
+auth        required      pam_tally2.so deny=5 unlock_time=600 onerr=fail
 auth        sufficient    pam_unix.so nullok try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
@@ -593,6 +583,7 @@ session     optional      pam_krb5.so
             passwd = prefix + "password"
             sess = prefix + "session"
             pamconf[auth] = '''auth    required        pam_env.so
+auth    required        pam_tally2.so deny=5 unlock_time=600 onerr=fail
 auth    optional        pam_gnome_keyring.so
 auth    sufficient      pam_unix.so     try_first_pass
 auth    required        pam_sss.so      use_first_pass
@@ -627,11 +618,12 @@ session optional        pam_env.so
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
 auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent deny=4  unlock_time=15
+auth        required      pam_faillock.so preauth silent audit deny=5 unlock_time=900
 auth        sufficient    pam_unix.so nullok try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_sss.so use_first_pass
 auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail deny=4  unlock_time=15
+auth        [default=die] pam_faillock.so authfail audit deny=5
 auth        required      pam_deny.so
 
 account     required      pam_faillock.so
@@ -639,12 +631,14 @@ account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
 account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_sss.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 
 password    requisite     pam_passwdqc.so min=disabled,disabled,16,12,8
 password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=5
+use_authtok remember=6
+password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 
@@ -658,6 +652,7 @@ session     required      pam_limits.so
             config += '''session     [success=1 default=ignore] \
 pam_succeed_if.so service in crond quiet use_uid
 session     required      pam_unix.so
+session     optional      pam_sss.so
 session     optional      pam_krb5.so
 '''
             pamconf[sysauth] = config
