@@ -30,6 +30,7 @@ The ConfigureMACPolicy class enables and configures SELinux on support OS platfo
 @change: dkennel 04/18/2014 Replaced old style CI invocation
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: dwalker 10/20/2015 Update report and fix methods for applicability
 '''
 
 from __future__ import absolute_import
