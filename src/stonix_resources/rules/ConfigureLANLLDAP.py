@@ -98,7 +98,8 @@ effect."""
             packagesUbu = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
             packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
                            "libpam-passwdqc", "libpam-krb5"]
-            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap"]
+            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
+                            "pam_pwquality"]
             if self.ph.determineMgr() == "apt-get":
                 if re.search("ubuntu", self.myos):
                     packages = packagesUbu
@@ -560,7 +561,7 @@ account     required      pam_permit.so
             pamconf[passwd] = '''password    requisite     \
 pam_passwdqc.so min=disabled,disabled,16,12,8
 password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=5
+use_authtok remember=6
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
@@ -592,10 +593,11 @@ auth    required        pam_sss.so      use_first_pass
 account sufficient      pam_localuser.so
 account required        pam_sss.so      use_first_pass
 '''
-            pamconf[passwd] = '''password        requisite       pam_cracklib.so
+            pamconf[passwd] = '''password        requisite       \
+pam_pwquality.so minlen=8 minclass=3
+password        sufficient      pam_unix.so sha512 shadow nullok \
+try_first_pass use_authtok remember=6
 password        optional        pam_gnome_keyring.so    use_authtok
-password        sufficient      pam_unix.so     use_authtok nullok shadow \
-try_first_pass
 password        required        pam_sss.so      use_authtok
 '''
             pamconf[sess] = '''session required        pam_limits.so
@@ -614,6 +616,8 @@ session optional        pam_env.so
         else:
             sysauth = "/etc/pam.d/system-auth"
             passauth = "/etc/pam.d/password-auth"
+            majorverString = self.environ.getosver().split(".")[0]
+            majorver = int(majorverString)
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
@@ -635,9 +639,16 @@ account     [default=bad success=ok user_unknown=ignore] pam_sss.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 
-password    requisite     pam_passwdqc.so min=disabled,disabled,16,12,8
-password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=6
+'''
+            if re.search("fedora|centos", self.myos) or majorver >= 7:
+                config += "password    requisite     " + \
+                    "pam_pwquality.so minlen=8 minclass=3\n"
+            else:
+                config += "password    requisite     " + \
+                    "pam_passwdqc.so min=disabled,disabled,16,12,8\n"
+
+            config += '''password    sufficient    pam_unix.so sha512 shadow \
+nullok try_first_pass use_authtok remember=6
 password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
