@@ -203,13 +203,14 @@ KRB5 = '''[logging]
  .lanl.gov = lanl.gov
 '''
 
+
 KRB5 = '''[logging]
  default = FILE:/var/log/krb5libs.log
  kdc = FILE:/var/log/krb5kdc.log
  admin_server = FILE:/var/log/kadmind.log
 
 [libdefaults]
- default_realm = bar.com
+ default_realm = lanl.gov
  dns_lookup_realm = false
  dns_lookup_kdc = false
  ticket_lifetime = 24h
@@ -220,16 +221,16 @@ KRB5 = '''[logging]
 
 [realms]
 
- bar.com = {
-  kdc = foo.bar.com
-    kdc = foo.bar.com
-  admin_server = foo.bar.com
-  default_domain = bar.com
+ lanl.gov = {
+  kdc = kerberos.lanl.gov
+  kdc = kerberos-slaves.lanl.gov
+  admin_server = kerberos.lanl.gov
+  default_domain = lanl.gov
  }
 
 [domain_realm]
- bar.com = bar.com
- .bar.com = bar.com
+ lanl.gov = lanl.gov
+ .lanl.gov = lanl.gov
 '''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
