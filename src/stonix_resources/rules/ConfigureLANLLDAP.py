@@ -124,9 +124,8 @@ effect."""
                     compliant = False
                     results += "Settings in " + conffile + " are incorrect\n"
 
-            # openSUSE 13 does not support nslcd, so sssd is used instead
+            # All systems except ubuntu use sssd
             if not re.search("ubuntu", self.myos):
-                self.logger.log(LogPriority.WARNING, "Entering sssd section")
                 sssdconfpath = "/etc/sssd/sssd.conf"
                 self.sssdconfpath = sssdconfpath
                 sssdconfdict = {"services": "nss, pam",
@@ -179,15 +178,11 @@ effect."""
                 else:
                     compliant = False
                     results += nsswitchpath + " does not exist\n"
-            # Settings for Red Hat and Debian distros
             else:
                 if not self.sh.auditservice("nslcd"):
                     compliant = False
                     results += "nslcd service is not activated\n"
 
-                # Check ldap (nslcd) settings. Mostly system agnostic, except
-                # the ldap gid, which is ldap on RH systems and nslcd on Debian
-                # systems
                 ldapfile = "/etc/nslcd.conf"
                 self.ldapfile = ldapfile
                 if re.match('ldap.lanl.gov', server):
@@ -243,19 +238,18 @@ effect."""
 
                 # On Ubuntu, Unity/LightDM requires an extra setting to add an
                 # option to the login screen for network users
-                if re.search("ubuntu", self.myos):
-                    lightdmconf = "/etc/lightdm/lightdm.conf"
-                    tmppath = lightdmconf + ".tmp"
-                    manLogin = {"greeter-show-manual-login": "true"}
-                    self.editor2 = KVEditorStonix(self.statechglogger,
-                                                  self.logger, "conf",
-                                                  lightdmconf,
-                                                  tmppath, manLogin,
-                                                  "present", "closedeq")
-                    if not self.editor2.report():
-                        compliant = False
-                        results += '"greeter-show-manual-login=true" not ' + \
-                            "present in " + lightdmconf + "\n"
+                lightdmconf = "/etc/lightdm/lightdm.conf"
+                tmppath = lightdmconf + ".tmp"
+                manLogin = {"greeter-show-manual-login": "true"}
+                self.editor2 = KVEditorStonix(self.statechglogger,
+                                              self.logger, "conf",
+                                              lightdmconf,
+                                              tmppath, manLogin,
+                                              "present", "closedeq")
+                if not self.editor2.report():
+                    compliant = False
+                    results += '"greeter-show-manual-login=true" not ' + \
+                        "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
             self.detailedresults = results
@@ -429,8 +423,9 @@ effect."""
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
 
-                cmd = ["/etc/init.d/nscd", "restart"]
-                self.ch.executeCommand(cmd)
+                if os.path.exists("/etc/init.d/nscd"):
+                    cmd = ["/etc/init.d/nscd", "restart"]
+                    self.ch.executeCommand(cmd)
                 cmd = ["/etc/init.d/nslcd", "restart"]
                 self.ch.executeCommand(cmd)
                 self.sh.enableservice("nscd")
@@ -622,7 +617,8 @@ session optional        pam_env.so
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
 auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent audit deny=5 unlock_time=900
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900
 auth        sufficient    pam_unix.so nullok try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_sss.so use_first_pass
