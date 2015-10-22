@@ -163,7 +163,8 @@ class ConfigureKerberos(RuleKVEditor):
                 packagesRpm = ["pam_krb5", "krb5-libs", "krb5-workstation",
                                "sssd-krb5", "sssd-krb5-common"]
                 packagesDeb = ["krb5-config", "krb5-user", "libpam-krb5"]
-                packagesSuse = ["pam_krb5", "sssd-krb5", "sssd-krb5-common"]
+                packagesSuse = ["pam_krb5", "sssd-krb5", "sssd-krb5-common",
+                                "krb5-client"]
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
                 elif self.ph.determineMgr() == "zypper":

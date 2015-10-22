@@ -118,7 +118,8 @@ for the login.defs file"""
         try:
             self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
-                self.compliant, self.detailedresults = self.reportLinux()
+                self.compliant, results = self.reportLinux()
+                self.detailedresults += results
             elif self.environ.getosfamily() == "solaris":
                 self.compliant = self.reportSolaris()
             elif self.environ.getosfamily() == "freebsd":
@@ -159,7 +160,7 @@ for the login.defs file"""
             self.pam2 = "/etc/pam.d/common-auth-pc"
             self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
-            self.quality = "libpwquality1"
+            self.quality = "pam_pwquality"
             self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
         else:
             self.pam = "/etc/pam.d/password-auth-ac"
@@ -174,32 +175,29 @@ for the login.defs file"""
 
         ######This section to configure password regulations###################
 
-        #is pwquality installed?    
+        # is pwquality installed?
         if self.ph.check(self.quality):
-            #is it configured correctly?
+            # is it configured correctly?
             if self.ph.manager == "apt-get":
-                #for apt-get systems, pwquality doesn't work
-                #we will use passwdqc until pwquality is fixed
+                # for apt-get systems, pwquality doesn't work
+                # we will use passwdqc until pwquality is fixed
                 quality = passwdqc
             if not self.chkpassword(quality):
-                #No? system is not compliant
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
                 compliant = False
-        #is it not available?
+        # is it not available?
         elif not self.ph.checkAvailable(self.quality):
-            #No? then is passwdqc installed?
+            # No? then is passwdqc installed?
             if self.ph.check(self.passwdqc):
-                #is it configured correctly?
+                # is it configured correctly?
                 if not self.chkpassword(passwdqc):
-                    #No? system is not compliant
+                    # No? system is not compliant
                     debug = "chkpassword() is not compliant\n"
                     self.logger.log(LogPriority.DEBUG, debug)
-                    results += debug
                     compliant = False
-            #passwdqc is not installed, but is it also not available?
-            #if not, check if cracklib is.
+            # passwdqc is not installed, but is it also not available?
+            # if not, check if cracklib is.
             elif not self.ph.checkAvailable(self.passwdqc):
                 #as a last resort is cracklib installed?
                 if self.ph.check(self.cracklib):
@@ -208,7 +206,6 @@ for the login.defs file"""
                         #No? system is not compliant
                         debug = "chkpassword() is not compliant\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        results += debug
                         compliant = False
                 #No?  Is it available?
                 elif not self.ph.checkAvailable(self.cracklib):
@@ -246,10 +243,8 @@ for the login.defs file"""
                 self.detailedresults += "zypper based systems do not have " + \
                     "a lockout program\n"
             else:
-                self.detailedresults += "chklockout() is not compliant\n"
                 debug = "chklockout() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
                 compliant = False
 
         #check if libuser file is present, if so check its contents
@@ -257,16 +252,14 @@ for the login.defs file"""
             if not self.chklibuserhash():
                 debug = "chklibuserhash() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
                 compliant = False
         #check if the /etc/login.defs file has correct contents
         if not self.chkdefspasshash():
             debug = "chkdefspasshash() is not compliant\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            results += debug
             compliant = False
         return compliant, results
-    
+
 ###############################################################################
 
     def reportSolaris(self):
@@ -377,7 +370,7 @@ for the login.defs file"""
                     return False
                 else:
                     usingquality = True
-            #want passwdqc if possible
+            # want passwdqc if possible
             elif self.ph.check(self.passwdqc):
                 usingpasswdqc = True
             elif self.ph.checkAvailable(self.passwdqc):
@@ -391,7 +384,7 @@ for the login.defs file"""
                     return False
                 else:
                     usingpasswdqc = True
-            #otherwise check if cracklib is installed or and available alt
+            # otherwise check if cracklib is installed or and available alt
             elif self.ph.check(self.cracklib):
                 usingcracklib = True
             elif self.ph.checkAvailable(self.cracklib):
@@ -415,16 +408,21 @@ for the login.defs file"""
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
 
-
-            #configure pam to use passwdqc if passwdqc is avail and inst.
+            # configure pam to use passwdqc if passwdqc is avail and inst.
             if usingquality:
                 package = "quality"
             elif usingpasswdqc:
                 package = "passwdqc"
             elif usingcracklib:
                 package = "cracklib"
+            else:
+                error = "Could not find pwquality/passwdqc/cracklib pam " + \
+                    "module. Fix failed."
+                self.logger.log(LogPriority.ERROR, error)
+                self.detailedresults += error + "\n"
+                return False
             if not self.setpassword(package):
-                self.detailedresults += "unable to set the pam password " + \
+                self.detailedresults += "Unable to set the pam password " + \
                     " authority\n"
                 success = False
         if self.ci3.getcurrvalue():
@@ -437,7 +435,7 @@ for the login.defs file"""
             if not self.chklibuserhash():
                 if not self.setlibhash():
                     debug = "setlibhash() failed\n"
-                    self.detailedresults += "unable to configure " + \
+                    self.detailedresults += "Unable to configure " + \
                         "/etc/libuser.conf\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
@@ -606,13 +604,14 @@ for the login.defs file"""
         @author: dwalker
         @return: bool
         '''
-        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow nullok try_first_pass use_authtok remember=6"
+        regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
+            "nullok try_first_pass use_authtok remember=6"
         if package == "quality":
-            regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so minlen=8 minclass=3"
+            regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so minlen=8 minclass=3"
         elif package == "passwdqc":
-            regex1 = "^password[ \t]+requisite[ \t]+pam_passwdqc.so min=disabled,disabled,16,12,8"
+            regex1 = r"^password[ \t]+requisite[ \t]+pam_passwdqc.so min=disabled,disabled,16,12,8"
         elif package == "cracklib":
-            regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so minlen=8 minclass=3"
+            regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so minlen=8 minclass=3"
         compliant = self.chkPwCheck(regex1, regex2, package)
         return compliant
 
@@ -620,7 +619,6 @@ for the login.defs file"""
 
     def chkPwCheck(self, regex1, regex2, package):
         compliant = True
-        debug = ""
         pamfiles = []
         if self.ph.manager == "yum":
             pamfiles.append(self.pam)
@@ -649,7 +647,9 @@ for the login.defs file"""
                     if re.search("pam_dhkeys.so.1", line):
                         pamunixso = True
                     elif re.search("pam_passwdqc.so", line):
-                        if re.search("other[ \t]password[ \t]requisite[ \t]/usr/lib/security/pam_passwdqc.so[ \t]min=disabled,disabled,16,12,8", line):
+                        if re.search("other[ \t]password[ \t]requisite[ \t]" +
+                                     "/usr/lib/security/pam_passwdqc.so[ \t]" +
+                                     "min=disabled,disabled,16,12,8", line):
                             if pamunixso:
                                 compliant = True
                                 break
@@ -666,32 +666,30 @@ for the login.defs file"""
                 return True
             for pam in pamfiles:
                 tmpconfig1, tmpconfig2 = [], []
-                i = 0
+                found = False
                 if not os.path.exists(pam):
                     self.detailedresults += "Pam file required to configure " + \
                         package + " does not exist\n"
                     return False
                 config = readFile(pam, self.logger)
-                #if the file is blank just add the two required lines
+                # if the file is blank just add the two required lines
                 if not config:
                     self.detailedresults += "pam file required to " + \
                         "configure" + package + " is blank.  Will not " + \
                         "attempt to configure this file\n"
                     return False
+                # Find lines that start with password, which will be in a
+                # block. Copy all lines that start with password, are comments,
+                # or blank, until we find a line that doesn't start with any of
+                # those.
                 for line in config:
-                    try:
-                        if re.search("^password", line):
-                            while re.search("^password", config[i]) or \
-                                re.search("^#", config[i]) or \
-                                    re.search("^\s*$", config[i]):
-                                tmpconfig1.append(config[i])
-                                i += 1
-                            break
-                        else:
-                            i += 1
-                    except IndexError:
-                        debug += "index out of range\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
+                    if re.search("^password", line):
+                        tmpconfig1.append(line)
+                        found = True
+                    elif re.search(r"^#|^\s*$", line) and found:
+                        tmpconfig1.append(line)
+                    elif found:
+                        break
                 if not len(tmpconfig1) >= 2:
                     self.detailedresults += pam + " file has incorrect " + \
                         "format\n"
@@ -701,14 +699,12 @@ for the login.defs file"""
                         if re.search("^password", line):
                             tmpconfig2.append(line)
                     if not re.search(regex1, tmpconfig2[0].strip()):
-                        self.detailedresults += "didn't find the correct " + \
-                            "line(s) in " + pam + " file for password " + \
-                            "requirements\n"
+                        self.detailedresults += 'Could not match "' + regex1 + \
+                            '" to the first password line in ' + pam + "\n"
                         compliant = False
                     if not re.search(regex2, tmpconfig2[1].strip()):
-                        self.detailedresults += "didn't find the correct " + \
-                            "line(s) in " + pam + " file for password " + \
-                            "requirements\n"
+                        self.detailedresults += 'Could not match "' + regex2 + \
+                            '" to the second password line in ' + pam + "\n"
                         compliant = False
         return compliant
 
@@ -759,7 +755,6 @@ for the login.defs file"""
         '''
         pamfiles = []
         compliant = True
-        debug = ""
         if self.ph.manager == "yum":
             pamfiles.append(self.pam)
             pamfiles.append(self.pam2)
@@ -776,36 +771,33 @@ for the login.defs file"""
                     "the complexity of pam, stonix will not attempt to " + \
                     "create this file\n"
                 return False
-        regex1 = "^auth[ \t]+required[ \t]+pam_env.so"
-        regex2 = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 unlock_time=600 onerr=fail"
+        regex1 = r"^auth[ \t]+required[ \t]+pam_env.so"
+        regex2 = r"^auth[ \t]+required[ \t]+pam_tally2.so deny=5 unlock_time=600 onerr=fail"
         for pam in pamfiles:
             tmpconfig1, tmpconfig2 = [], []
-            i = 0
+            found = False
             if not os.path.exists(pam):
                 self.detailedresults += "Pam file required to configure " + \
                     "pamtally2 does not exist\n"
                 return False
             config = readFile(pam, self.logger)
-            #if the file is blank just add the two required lines
+            # if the file is blank just add the two required lines
             if not config:
                 self.detailedresults += "pam file required to configure " + \
                     "pamtally2 is blank.  Will not attempt to configure " + \
                     "this file"
                 return False
+            # Find lines that start with auth, which will be in a block. Copy
+            # all lines that start with auth, are comments, or blank, until we
+            # find a line that doesn't start with any of those.
             for line in config:
-                try:
-                    if re.search("^auth", line):
-                        while re.search("^auth", config[i]) or \
-                            re.search("^#", config[i]) or \
-                                re.search("^\s*$", config[i]):
-                            tmpconfig1.append(config[i])
-                            i += 1
-                        break
-                    else:
-                        i += 1
-                except IndexError:
-                    debug += "index out of range\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
+                if re.search("^auth", line):
+                    tmpconfig1.append(line)
+                    found = True
+                elif re.search(r"^#|^\s*$", line) and found:
+                    tmpconfig1.append(line)
+                elif found:
+                    break
             if not len(tmpconfig1) >= 2:
                 self.detailedresults += pam + " file is in bad format\n"
                 compliant = False
@@ -814,12 +806,12 @@ for the login.defs file"""
                     if re.search("^auth", line):
                         tmpconfig2.append(line)
                 if not re.search(regex1, tmpconfig2[0].strip()):
-                    self.detailedresults += "didn't find the correct " + \
-                        "line(s) in " + pam + " file for pamtally2\n"
+                    self.detailedresults += 'Could not match "' + regex1 + \
+                        '" to the first auth line in ' + pam + "\n"
                     compliant = False
                 if not re.search(regex2, tmpconfig2[1].strip()):
-                    self.detailedresults += "didn't find the correct " + \
-                        "line(s) in " + pam + " file for pamtally2\n"
+                    self.detailedresults += 'Could not match "' + regex2 + \
+                        '" to the second auth line in ' + pam + "\n"
                     compliant = False
         return compliant
 
@@ -828,7 +820,6 @@ for the login.defs file"""
     def chkPamfaillock(self):
         compliant = True
         pamfiles = []
-        debug = ""
         if self.ph.manager == "yum":
             pamfiles.append(self.pam)
             pamfiles.append(self.pam2)
@@ -843,38 +834,36 @@ for the login.defs file"""
                     "the complexity of pam stonix will not attempt to " + \
                     "create this file\n"
                 return False
-        regex1 = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit deny=5 unlock_time=900\n" + \
-            "auth[ \t]+required[ \t]+pam_env.so\n" + \
-            "auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
-            "auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
-            "auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            "auth[ \t]+required[ \t]+pam_deny.so\n" + \
-            "auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n"
-        regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
+        regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
+            "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
+            "deny=5 unlock_time=900\n" + \
+            ".*auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
+            ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
+            ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
+            ".*auth[ \t]+required[ \t]+pam_deny.so"
+        regex2 = r"^account[ \t]+required[ \t]+pam_faillock.so"
         for pam in pamfiles:
             tmpconfig1, tmpconfig2 = [], []
             tmpstring = ""
-            i = 0
+            found = False
             config = readFile(pam, self.logger)
             if not config:
                 self.detailedresults += "pam file required to configure " + \
                     "faillock is blank.  Will not attempt to configure " + \
                     "this file\n"
                 return False
+            # Find lines that start with auth, which will be in a block. Copy
+            # all lines that start with auth, are comments, or blank, until we
+            # find a line that doesn't start with any of those.
             for line in config:
-                try:
-                    if re.search("^auth", line):
-                        while re.search("^auth", config[i]) or \
-                            re.search("^#", config[i]) or \
-                                re.search("^\s*$", config[i]):
-                            tmpconfig1.append(config[i])
-                            i += 1
-                        break
-                    else:
-                        i += 1
-                except IndexError:
-                    debug += "index out of range\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
+                if re.search("^auth", line):
+                    tmpconfig1.append(line)
+                    found = True
+                elif re.search(r"^#|^\s*$", line) and found:
+                    tmpconfig1.append(line)
+                elif found:
+                    break
             if not len(tmpconfig1) >= 2:
                 compliant = False
             else:
@@ -883,20 +872,21 @@ for the login.defs file"""
                         tmpconfig2.append(line)
                 for line in tmpconfig2:
                     tmpstring += line
-                if not re.search(regex1, tmpstring):
+                # Doing re.search with re.S flag, to include newlines in '.'
+                if not re.search(regex1, tmpstring, re.S):
                     self.detailedresults += "Didn't find the correct " + \
                         "contents for faillock inside " + pam + " file\n"
                     compliant = False
             config = readFile(pam, self.logger)
             accountfound = False
-            #for the account section of the pam file, the first line should
-            #be the pam_faillock.so line
+            # for the account section of the pam file, the first line should
+            # be the pam_faillock.so line
             for line in config:
                 if re.search("^account", line):
                     accountfound = True
                     if not re.search(regex2, line.strip()):
-                        self.detailedresults += "Didn't find the correct " + \
-                            "contents for faillock inside " + pam + " file\n"
+                        self.detailedresults += 'Could not match "' + regex2 + \
+                            '" to the first account line in ' + pam + "\n"
                         compliant = False
                     break
             if not accountfound:
@@ -1386,112 +1376,101 @@ for the login.defs file"""
                     "the complexity of pam stonix will not attempt to create " + \
                     "this file\n"
                 return False
-        regex1 = ["^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit deny=5 unlock_time=900\n",
-                  "auth[ \t]+required[ \t]+pam_env.so\n",
-                  "auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n",
-                  "auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n",
-                  "auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n",
-                  "auth[ \t]+required[ \t]+pam_deny.so\n",
-                  "auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n"]
+        regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
+            "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
+            "deny=5 unlock_time=900\n" + \
+            ".*auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
+            ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
+            ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
+            ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
-        data1 = ["auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900\n",
-                 "auth\trequired\tpam_env.so\n",
-                 "auth\tsufficient\tpam_unix.so nullok try_first_pass\n",
-                 "auth\trequisite\tpam_succeed_if.so uid >= 500 quiet\n",
-                 "auth\tsufficient\tpam_krb5.so use_first_pass\n",
-                 "auth\trequired\tpam_deny.so\n",
-                 "auth\t[default=die]\tpam_faillock.so authfail audit deny=5\n"]
+        data1 = """auth\trequired\tpam_env.so
+auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900
+auth\tsufficient\tpam_unix.so nullok try_first_pass
+auth\trequisite\tpam_succeed_if.so uid >= 500 quiet
+auth\tsufficient\tpam_krb5.so use_first_pass
+auth\t[default=die]\tpam_faillock.so authfail audit deny=5
+auth\trequired\tpam_deny.so
+"""
         data2 = "account\trequired\tpam_faillock.so\n"
         for pam in pamfiles:
             changed1, changed2 = False, False
             newconfig = []
-            tmpconfig1, tmpconfig2, tmpconfig3 = [], [], []
-            tmpstring1, tmpstring2, regex1str, regex2str = "", "", "", ""
-            changed1, changed2 = True, True
+            tmpconfig1, tmpconfig2, tmpconfig3 = "", "", ""
             if not os.path.exists(pam):
-                debug += "Pam file required to configure " + \
-                "pam_faillock does not exist\n"
+                debug += pam + " is required to configure " + \
+                    "pam_faillock, but does not exist\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
             config = readFile(pam, self.logger)
-            #if the file is blank don't do anything
+            # if the file is blank don't do anything
             if not config:
-                debug += "pam file required to configure " + \
-                "faillock is blank.  Will not attempt to configure this file\n"
+                debug += pam + "is required to configure faillock, but is " + \
+                    "blank. Will not attempt to configure this file\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
+            foundAuth = False
+            foundAcc = False
             for line in config:
-                #when we get to the auth lines, store in tmpconfig1 to compare
-                if re.search("^auth", line.strip()):
-                    tmpconfig1.append(line)
-                #when we get to an account line, store in tmpfconfig2 to compare
-                elif re.search("^account", line.strip()):
-                    tmpconfig2.append(line)
-                #add all other lines we don't care about to tmpconfig3
+                if re.search("^auth", line) or (re.search("^#", line) and
+                                                foundAuth):
+                    tmpconfig1 += line
+                    foundAuth = True
+                    foundAcc = False
+                elif re.search("^\s+$", line) and foundAuth:
+                    tmpconfig1 += line
+                    foundAuth = False
+                elif re.search("^account", line) or (re.search("^#", line) and
+                                                     foundAcc):
+                    tmpconfig2 += line
+                    foundAcc = True
+                    foundAuth = False
+                elif re.search("^\s+$", line) and foundAcc:
+                    tmpconfig2 += line
+                    foundAcc = False
                 else:
-                    tmpconfig3.append(line)
-            #put contents of tmpconfig1 list in a string for comparison
-            for line in tmpconfig1:
-                tmpstring1 += line
+                    tmpconfig3 += line
 
-            #put contents of regex1 list in a string for comparison
-            for line in regex1:
-                regex1str += line
-
-            #do a string to string comparison
-            #if lines don't match set tmpconfig1 equal to data1
-            if not re.search(regex1str, tmpstring1.strip()):
+            # If lines don't match set tmpconfig1 equal to data1
+            if not re.search(regex1, tmpconfig1):
                 debug = "auth lines don't match what we're looking for\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 tmpconfig1 = data1
                 changed1 = True
 
-            #put contents of tmpconfig2 list in a string for comparison   
-
-            #compare 
-            if not re.search(regex2, tmpconfig2[0].strip()):
-                tmpconfig2v2 = tmpconfig2
-                tmpconfig2 = []
-                tmpconfig2.append(data2)
-                for item in tmpconfig2v2:
-                    tmpconfig2.append(item)
+            if not re.search(regex2, tmpconfig2):
+                tmpconfig2 = data2 + tmpconfig2
                 changed2 = True
-            for item in tmpconfig3:
-                newconfig.append(item)
-            if changed1:
-                for item in tmpconfig1:
-                    newconfig.append(item)
-            if changed2:
-                for item in tmpconfig2:
-                    newconfig.append(item)
-            tempstring = ""
-            for line in newconfig:
-                tempstring += line
+
+            newconfig = tmpconfig3 + tmpconfig1 + tmpconfig2
             self.logger.log(LogPriority.DEBUG,
                             ['ConfigureSystemAuthentication',
-                             'Tempstring: ' + tempstring])
+                             'Tempstring: ' + newconfig])
             tmpfile = pam + ".tmp"
-            if writeFile(tmpfile, tempstring, self.logger):
-                if self.ph.manager != "yum":
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': pam}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(pam, tmpfile, myid)
-                    os.rename(tmpfile, pam)
-                    os.chown(pam, 0, 0)
-                    os.chmod(pam, 420)
-                    resetsecon(pam)
+            if changed1 or changed2:
+                if writeFile(tmpfile, newconfig, self.logger):
+                    if self.ph.manager != "yum":
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'conf',
+                                 'filepath': pam}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(pam, tmpfile,
+                                                             myid)
+                        os.rename(tmpfile, pam)
+                        os.chown(pam, 0, 0)
+                        os.chmod(pam, 420)
+                        resetsecon(pam)
+                    else:
+                        os.rename(tmpfile, pam)
+                        os.chown(pam, 0, 0)
+                        os.chmod(pam, 420)
+                        resetsecon(pam)
                 else:
-                    os.rename(tmpfile, pam)
-                    os.chown(pam, 0, 0)
-                    os.chmod(pam, 420)
-                    resetsecon(pam)
-            else:
-                self.detailedresults += "unable to write changes to: " + \
-                    pam + "\n"
-                success = False
+                    self.detailedresults += "unable to write changes to: " + \
+                        pam + "\n"
+                    success = False
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return success
@@ -1500,15 +1479,10 @@ for the login.defs file"""
     def setPamtally2(self):
         pamfiles = []
         success = True
-        debug = ""
         regex1 = "^auth[ \t]+required[ \t]+pam_env.so"
         regex2 = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 unlock_time=600 onerr=fail"
         data1 = "auth\trequired\tpam_env.so\n"
         data2 = "auth\trequired\tpam_tally2.so deny=5 unlock_time=600 onerr=fail\n"
-#         if self.ph.manager == "zypper":
-#             ln3 = "auth\trequired\tpam_unix.so nullok try_first_pass\n"
-#         else:
-#             ln3 = "auth\tsufficient\tpam_unix.so nullok try_first_pass\n"
         if self.ph.manager == "yum":
             pamfiles.append(self.pam)
             pamfiles.append(self.pam2)

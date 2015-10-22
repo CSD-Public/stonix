@@ -26,6 +26,7 @@ from LANL-stor.
 
 @author: Eric Ball
 @change: 2015/08/11 eball - Original implementation
+@change: 2015/10/01 eball - Refactoring Red Hat code for sssd
 '''
 from __future__ import absolute_import
 import os
@@ -51,8 +52,7 @@ class ConfigureLANLLDAP(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.helptext = """This rule will configure LDAP for use at LANL. \
-It should be run AFTER ConfigureKerberos, except on openSUSE, where \
-ConfigureKerberos is not necessary.
+For full functionality, the ConfigureKerberos rule will also need to be run.
 On Debian and Ubuntu systems, this rule will require a restart to take \
 effect."""
         self.applicable = {'type': 'white',
@@ -73,6 +73,14 @@ effect."""
         default = "ldap.lanl.gov"
         self.ldapci = self.initCi(datatype, key, instructions, default)
 
+        datatype = "bool"
+        key = "MAKEHOMEDIRS"
+        instructions = "To have a home directory automatically created " + \
+            "upon a user's first login, enable MAKEHOMEDIRS. Note that " + \
+            "this may be required for GUI logins of LDAP accounts."
+        default = False
+        self.mkhomedirci = self.initCi(datatype, key, instructions, default)
+
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
         self.sh = ServiceHelper(self.environ, self.logger)
@@ -83,15 +91,20 @@ effect."""
             compliant = True
             results = ""
             server = self.ldapci.getcurrvalue()
-            osver = int(self.environ.getosver().split(".")[0])
             self.myos = self.environ.getostype().lower()
 
-            packagesRpm = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                           "oddjob-mkhomedir"]
-            packagesDeb = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
-            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap"]
+            packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
+                           "krb5-workstation", "oddjob-mkhomedir"]
+            packagesUbu = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
+            packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
+                           "libpam-passwdqc", "libpam-krb5"]
+            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
+                            "pam_pwquality"]
             if self.ph.determineMgr() == "apt-get":
-                packages = packagesDeb
+                if re.search("ubuntu", self.myos):
+                    packages = packagesUbu
+                else:
+                    packages = packagesDeb
             elif self.ph.determineMgr() == "zypper":
                 packages = packagesSuse
             else:
@@ -111,18 +124,19 @@ effect."""
                     compliant = False
                     results += "Settings in " + conffile + " are incorrect\n"
 
-            # openSUSE 13 does not support nslcd, so sssd is used instead
-            if re.search("suse", self.myos):
+            # All systems except ubuntu use sssd
+            if not re.search("ubuntu", self.myos):
                 sssdconfpath = "/etc/sssd/sssd.conf"
                 self.sssdconfpath = sssdconfpath
                 sssdconfdict = {"services": "nss, pam",
                                 "filter_users": "root",
                                 "filter_groups": "root",
+                                "ldap_uri": "ldap://" + server,
                                 "id_provider": "ldap",
                                 "auth_provider": "krb5",
-                                "ldap_uri": "ldap://" + server,
-                                "krb5_server": "kerberos.lanl.gov",
-                                "krb5_realm": "lanl.gov"}
+                                "krb5_realm": "lanl.gov",
+                                "krb5_server": "kerberos.lanl.gov," +
+                                "kerberos-slaves.lanl.gov"}
                 self.sssdconfdict = sssdconfdict
                 if not self.sh.auditservice("sssd"):
                     compliant = False
@@ -137,7 +151,8 @@ effect."""
                     if not self.editor.report():
                         compliant = False
                         results += "The correct settings were not found in " + \
-                            sssdconfpath + "\n"
+                            sssdconfpath + "\n" + str(self.editor.fixables) + \
+                            "\n"
                 else:
                     compliant = False
                     results += sssdconfpath + " does not exist\n"
@@ -163,85 +178,24 @@ effect."""
                 else:
                     compliant = False
                     results += nsswitchpath + " does not exist\n"
-            # Settings for Red Hat and Debian distros
             else:
                 if not self.sh.auditservice("nslcd"):
                     compliant = False
                     results += "nslcd service is not activated\n"
 
-                # On Red Hat systems, check authconfig
-                if not self.ph.determineMgr() == "apt-get":
-                    authfile = '/etc/sysconfig/authconfig'
-                    self.authfile = authfile
-                    authconfig = {"USEPAMACCESS": "yes",
-                                  "CACHECREDENTIALS": "no",
-                                  "USESSSDAUTH": "no",
-                                  "USESHADOW": "yes",
-                                  "USEWINBIND": "no",
-                                  "USESSSD": "no",
-                                  "PASSWDALGORITHM": "sha512",
-                                  "FORCELEGACY": "yes",
-                                  "USEFPRINTD": "no",
-                                  "USEHESIOD": "no",
-                                  "FORCESMARTCARD": "no",
-                                  "USELDAPAUTH": "no",
-                                  "USELDAP": "yes",
-                                  "USECRACKLIB": "no",
-                                  "USEWINBINDAUTH": "no",
-                                  "USESMARTCARD": "no",
-                                  "USELOCAUTHORIZE": "yes",
-                                  "USENIS": "no",
-                                  "USEKERBEROS": "yes",
-                                  "USESYSNETAUTH": "no",
-                                  "USESMBAUTH": "no",
-                                  "USEDB": "no"}
-                    if osver == 6:
-                        authconfig["USEPASSWDQC"] = "yes"
-                    self.authconfig = authconfig
-                    tmppath = authfile + ".tmp"
-                    if os.path.exists(authfile):
-                        self.editor = KVEditorStonix(self.statechglogger,
-                                                     self.logger, "conf",
-                                                     authfile,
-                                                     tmppath, authconfig,
-                                                     "present", "closedeq")
-                        if not self.editor.report():
-                            compliant = False
-                            results += "Settings in " + authfile + \
-                                " are not correct\n"
-                        elif not checkPerms(authfile, [0, 0, 0644],
-                                            self.logger):
-                            compliant = False
-                            results += "Settings in " + authfile + \
-                                " are correct, but the file's permissions " + \
-                                "are incorrect\n"
-                    else:
-                        compliant = False
-                        results += authfile + " does not exist.\n"
-
-                # Check ldap (nslcd) settings. Mostly system agnostic, except
-                # the ldap gid, which is ldap on RH systems and nslcd on Debian
-                # systems
                 ldapfile = "/etc/nslcd.conf"
                 self.ldapfile = ldapfile
-                if self.ph.determineMgr() == "apt-get":
-                    gid = "gid nslcd"
-                else:
-                    gid = "gid ldap"
                 if re.match('ldap.lanl.gov', server):
-                    ldapsettings = ['uri ldap://ldap.lanl.gov',
-                                    'base dc=lanl,dc=gov',
-                                    'base passwd ou=unixsrv,dc=lanl,dc=gov',
-                                    'uid nslcd',
-                                    gid,
-                                    'ssl no',
-                                    'nss_initgroups_ignoreusers root']
-                else:
-                    uri = 'uri ldap://' + server
-                    ldapsettings = [uri, 'base dc=lanl,dc=gov', 'uid nslcd',
-                                    gid, 'ssl no',
-                                    'nss_initgroups_ignoreusers root']
-                self.ldapsettings = ldapsettings
+                    self.ldapsettings = ['uri ldap://' +
+                                         self.ldapci.getcurrvalue(),
+                                         'base dc=lanl,dc=gov',
+                                         'base passwd ou=unixsrv,dc=lanl,' +
+                                         'dc=gov',
+                                         'uid nslcd',
+                                         'gid nslcd',
+                                         'ssl no',
+                                         'nss_initgroups_ignoreusers root']
+                ldapsettings = self.ldapsettings
                 if os.path.exists(ldapfile):
                     ldapconf = readFile(ldapfile, self.logger)
                     if not self.__checkconf(ldapconf, ldapsettings):
@@ -284,19 +238,18 @@ effect."""
 
                 # On Ubuntu, Unity/LightDM requires an extra setting to add an
                 # option to the login screen for network users
-                if re.search("ubuntu", self.myos):
-                    lightdmconf = "/etc/lightdm/lightdm.conf"
-                    tmppath = lightdmconf + ".tmp"
-                    manLogin = {"greeter-show-manual-login": "true"}
-                    self.editor2 = KVEditorStonix(self.statechglogger,
-                                                  self.logger, "conf",
-                                                  lightdmconf,
-                                                  tmppath, manLogin,
-                                                  "present", "closedeq")
-                    if not self.editor2.report():
-                        compliant = False
-                        results += '"greeter-show-manual-login=true" not ' + \
-                            "present in " + lightdmconf + "\n"
+                lightdmconf = "/etc/lightdm/lightdm.conf"
+                tmppath = lightdmconf + ".tmp"
+                manLogin = {"greeter-show-manual-login": "true"}
+                self.editor2 = KVEditorStonix(self.statechglogger,
+                                              self.logger, "conf",
+                                              lightdmconf,
+                                              tmppath, manLogin,
+                                              "present", "closedeq")
+                if not self.editor2.report():
+                    compliant = False
+                    results += '"greeter-show-manual-login=true" not ' + \
+                        "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
             self.detailedresults = results
@@ -365,59 +318,30 @@ effect."""
             if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
                 success = False
                 results += "Problem writing new contents to " + \
-                    self.nsswitchpath
+                    self.nsswitchpath + "\n"
 
             if not self.__fixpam(self.pamconf):
                 success = False
                 results += "An error occurred while trying to write " + \
                     "the PAM files\n"
 
-            if re.search("suse", self.myos):
+            if not re.search("ubuntu", self.myos):
                 if not self.__fixsssd():
                     success = False
                     results += "Failed to write good configuration to " + \
-                        self.sssdconfpath
-                self.sh.disableservice("nscd")
-                self.sh.enableservice("sssd")
+                        self.sssdconfpath + "\n"
+                if not self.sh.disableservice("nscd"):
+                    success = False
+                    results += "Failed to disable nscd\n"
+                if self.sh.isrunning("sssd"):
+                    if not self.sh.reloadservice("sssd"):
+                        success = False
+                        results += "Failed to reload sssd service\n"
+                if not self.sh.auditservice("sssd"):
+                    if not self.sh.enableservice("sssd"):
+                        success = False
+                        results += "Failed to enable sssd service\n"
             else:
-                if not self.ph.determineMgr() == "apt-get":
-                    authfile = self.authfile
-                    authconfig = self.authconfig
-                    tmppath = authfile + ".tmp"
-                    if not os.path.exists(authfile):
-                        createFile(authfile, self.logger)
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation", "filepath": authfile}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.editor = KVEditorStonix(self.statechglogger,
-                                                     self.logger, "conf",
-                                                     authfile,
-                                                     tmppath, authconfig,
-                                                     "present", "closedeq")
-                        self.editor.report()
-                    if self.editor.fixables:
-                        if self.editor.fix():
-                            if self.editor.commit():
-                                debug = "The contents of " + authfile + \
-                                    " have been corrected\n."
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                resetsecon(authfile)
-                            else:
-                                debug = "KVEditor commit to " + authfile + \
-                                    " was not successful.\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                success = False
-                        else:
-                            debug = "KVEditor fix of " + authfile + \
-                                " was not successful.\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            success = False
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    setPerms(authfile, [0, 0, 0644], self.logger,
-                             self.statechglogger, myid)
-                    resetsecon(authfile)
-
                 ldapfile = self.ldapfile
                 tmppath = ldapfile + ".tmp"
                 ldapsettings = self.ldapsettings
@@ -481,35 +405,31 @@ effect."""
                         results += "Problem writing new contents to " + \
                             ldapfile
 
-                if re.search("ubuntu", self.myos):
-                    lightdmconf = self.editor2.getPath()
-                    if self.editor2.fixables:
-                        if self.editor2.fix():
-                            if self.editor2.commit():
-                                debug = "The contents of " + lightdmconf + \
-                                    " have been corrected\n."
-                                self.logger.log(LogPriority.DEBUG, debug)
-                            else:
-                                debug = "KVEditor commit to " + lightdmconf + \
-                                    " was not successful\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                success = False
+                lightdmconf = self.editor2.getPath()
+                if self.editor2.fixables:
+                    if self.editor2.fix():
+                        if self.editor2.commit():
+                            debug = "The contents of " + lightdmconf + \
+                                " have been corrected\n."
+                            self.logger.log(LogPriority.DEBUG, debug)
                         else:
-                            debug = "KVEditor fix of " + lightdmconf + \
+                            debug = "KVEditor commit to " + lightdmconf + \
                                 " was not successful\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
+                    else:
+                        debug = "KVEditor fix of " + lightdmconf + \
+                            " was not successful\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
 
-                if self.ph.determineMgr() == "apt-get":
+                if os.path.exists("/etc/init.d/nscd"):
                     cmd = ["/etc/init.d/nscd", "restart"]
                     self.ch.executeCommand(cmd)
-                    cmd = ["/etc/init.d/nslcd", "restart"]
-                    self.ch.executeCommand(cmd)
-                    self.sh.enableservice("nscd")
-                    self.sh.enableservice("nslcd")
-                else:
-                    self.sh.reloadservice("nslcd")
-                    self.sh.enableservice("nslcd")
+                cmd = ["/etc/init.d/nslcd", "restart"]
+                self.ch.executeCommand(cmd)
+                self.sh.enableservice("nscd")
+                self.sh.enableservice("nslcd")
 
             self.detailedresults = results
             self.rulesuccess = success
@@ -572,23 +492,21 @@ effect."""
 config_file_version = 2
 services = nss, pam
 domains = lanlldap
-# SSSD will not start if you do not configure any domains.
-# Add new domain configurations as [domain/<NAME>] sections, and
-# then add the list of domains (in the order you want them to be
-# queried) to the "domains" attribute below and uncomment it.
-; domains = LDAP
 
 [nss]
 filter_users = root
 filter_groups = root
 
 [pam]
+
 [domain/lanlldap]
 id_provider = ldap
 auth_provider = krb5
 ldap_schema = rfc2307
 ldap_uri = ldap://ldap.lanl.gov
-krb5_server = kerberos.lanl.gov
+ldap_search_base = dc=lanl,dc=gov
+
+krb5_server = kerberos.lanl.gov,kerberos-slaves.lanl.gov
 krb5_realm = lanl.gov
 '''
         sssdconfpath = self.sssdconfpath
@@ -621,7 +539,7 @@ krb5_realm = lanl.gov
             passwd = prefix + "password"
             sess = prefix + "session"
             pamconf[auth] = '''auth        required      pam_env.so
-auth        required      pam_tally2.so silent deny=4  unlock_time=15
+auth        required      pam_tally2.so deny=5 unlock_time=600 onerr=fail
 auth        sufficient    pam_unix.so nullok try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
@@ -638,7 +556,7 @@ account     required      pam_permit.so
             pamconf[passwd] = '''password    requisite     \
 pam_passwdqc.so min=disabled,disabled,16,12,8
 password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=5
+use_authtok remember=6
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
@@ -648,8 +566,12 @@ session     [success=1 default=ignore] pam_succeed_if.so service in crond \
 quiet use_uid
 session     required      pam_unix.so
 session     optional      pam_krb5.so
-session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+-session    optional      pam_systemd.so
 '''
+            if self.mkhomedirci.getcurrvalue():
+                pamconf[sess] += "session     required      " + \
+                    "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
+
         elif self.ph.determineMgr() == "zypper":
             prefix = "/etc/pam.d/common-"
             auth = prefix + "auth"
@@ -657,6 +579,7 @@ session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
             passwd = prefix + "password"
             sess = prefix + "session"
             pamconf[auth] = '''auth    required        pam_env.so
+auth    required        pam_tally2.so deny=5 unlock_time=600 onerr=fail
 auth    optional        pam_gnome_keyring.so
 auth    sufficient      pam_unix.so     try_first_pass
 auth    required        pam_sss.so      use_first_pass
@@ -665,10 +588,11 @@ auth    required        pam_sss.so      use_first_pass
 account sufficient      pam_localuser.so
 account required        pam_sss.so      use_first_pass
 '''
-            pamconf[passwd] = '''password        requisite       pam_cracklib.so
+            pamconf[passwd] = '''password        requisite       \
+pam_pwquality.so minlen=8 minclass=3
+password        sufficient      pam_unix.so sha512 shadow nullok \
+try_first_pass use_authtok remember=6
 password        optional        pam_gnome_keyring.so    use_authtok
-password        sufficient      pam_unix.so     use_authtok nullok shadow \
-try_first_pass
 password        required        pam_sss.so      use_authtok
 '''
             pamconf[sess] = '''session required        pam_limits.so
@@ -679,20 +603,27 @@ session optional        pam_systemd.so
 session optional        pam_gnome_keyring.so    auto_start \
 only_if=gdm,gdm-password,lxdm,lightdm
 session optional        pam_env.so
-session required        pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
+            if self.mkhomedirci.getcurrvalue():
+                pamconf[sess] += "session     required      " + \
+                    "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
+
         else:
             sysauth = "/etc/pam.d/system-auth"
             passauth = "/etc/pam.d/password-auth"
+            majorverString = self.environ.getosver().split(".")[0]
+            majorver = int(majorverString)
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
 auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent deny=4  unlock_time=15
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900
 auth        sufficient    pam_unix.so nullok try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_sss.so use_first_pass
 auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail deny=4  unlock_time=15
+auth        [default=die] pam_faillock.so authfail audit deny=5
 auth        required      pam_deny.so
 
 account     required      pam_faillock.so
@@ -700,21 +631,35 @@ account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
 account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_sss.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 
-password    requisite     pam_passwdqc.so min=disabled,disabled,16,12,8
-password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=5
+'''
+            if re.search("fedora|centos", self.myos) or majorver >= 7:
+                config += "password    requisite     " + \
+                    "pam_pwquality.so minlen=8 minclass=3\n"
+            else:
+                config += "password    requisite     " + \
+                    "pam_passwdqc.so min=disabled,disabled,16,12,8\n"
+
+            config += '''password    sufficient    pam_unix.so sha512 shadow \
+nullok try_first_pass use_authtok remember=6
+password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 
 session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
-session     optional      pam_oddjob_mkhomedir.so umask=0077
-session     [success=1 default=ignore] pam_succeed_if.so service in crond \
-quiet use_uid
+-session    optional      pam_systemd.so
+'''
+            if self.mkhomedirci.getcurrvalue():
+                config += "session     optional      " + \
+                    "pam_mkhomedir.so umask=0077\n"
+            config += '''session     [success=1 default=ignore] \
+pam_succeed_if.so service in crond quiet use_uid
 session     required      pam_unix.so
+session     optional      pam_sss.so
 session     optional      pam_krb5.so
 '''
             pamconf[sysauth] = config
@@ -733,7 +678,8 @@ session     optional      pam_krb5.so
         result = True
         try:
             for conffile in pamconf:
-                result &= self.__writeFile(conffile, pamconf[conffile],
+                result &= self.__writeFile(os.path.realpath(conffile),
+                                           pamconf[conffile],
                                            [0, 0, 0644])
         except Exception:
             raise
