@@ -185,7 +185,6 @@ for the login.defs file"""
             if not self.chkpassword(quality):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                # results += debug
                 compliant = False
         # is it not available?
         elif not self.ph.checkAvailable(self.quality):
@@ -196,7 +195,6 @@ for the login.defs file"""
                     # No? system is not compliant
                     debug = "chkpassword() is not compliant\n"
                     self.logger.log(LogPriority.DEBUG, debug)
-                    #results += debug
                     compliant = False
             # passwdqc is not installed, but is it also not available?
             # if not, check if cracklib is.
@@ -208,7 +206,6 @@ for the login.defs file"""
                         #No? system is not compliant
                         debug = "chkpassword() is not compliant\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        #results += debug
                         compliant = False
                 #No?  Is it available?
                 elif not self.ph.checkAvailable(self.cracklib):
@@ -255,16 +252,14 @@ for the login.defs file"""
             if not self.chklibuserhash():
                 debug = "chklibuserhash() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                #results += debug
                 compliant = False
         #check if the /etc/login.defs file has correct contents
         if not self.chkdefspasshash():
             debug = "chkdefspasshash() is not compliant\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            #results += debug
             compliant = False
         return compliant, results
-    
+
 ###############################################################################
 
     def reportSolaris(self):
@@ -375,7 +370,7 @@ for the login.defs file"""
                     return False
                 else:
                     usingquality = True
-            #want passwdqc if possible
+            # want passwdqc if possible
             elif self.ph.check(self.passwdqc):
                 usingpasswdqc = True
             elif self.ph.checkAvailable(self.passwdqc):
@@ -389,7 +384,7 @@ for the login.defs file"""
                     return False
                 else:
                     usingpasswdqc = True
-            #otherwise check if cracklib is installed or and available alt
+            # otherwise check if cracklib is installed or and available alt
             elif self.ph.check(self.cracklib):
                 usingcracklib = True
             elif self.ph.checkAvailable(self.cracklib):
@@ -413,16 +408,21 @@ for the login.defs file"""
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
 
-
-            #configure pam to use passwdqc if passwdqc is avail and inst.
+            # configure pam to use passwdqc if passwdqc is avail and inst.
             if usingquality:
                 package = "quality"
             elif usingpasswdqc:
                 package = "passwdqc"
             elif usingcracklib:
                 package = "cracklib"
+            else:
+                error = "Could not find pwquality/passwdqc/cracklib pam " + \
+                    "module. Fix failed."
+                self.logger.log(LogPriority.ERROR, error)
+                self.detailedresults += error + "\n"
+                return False
             if not self.setpassword(package):
-                self.detailedresults += "unable to set the pam password " + \
+                self.detailedresults += "Unable to set the pam password " + \
                     " authority\n"
                 success = False
         if self.ci3.getcurrvalue():
@@ -435,7 +435,7 @@ for the login.defs file"""
             if not self.chklibuserhash():
                 if not self.setlibhash():
                     debug = "setlibhash() failed\n"
-                    self.detailedresults += "unable to configure " + \
+                    self.detailedresults += "Unable to configure " + \
                         "/etc/libuser.conf\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
@@ -678,6 +678,10 @@ for the login.defs file"""
                         "configure" + package + " is blank.  Will not " + \
                         "attempt to configure this file\n"
                     return False
+                # Find lines that start with password, which will be in a
+                # block. Copy all lines that start with password, are comments,
+                # or blank, until we find a line that doesn't start with any of
+                # those.
                 for line in config:
                     if re.search("^password", line):
                         tmpconfig1.append(line)
@@ -777,12 +781,15 @@ for the login.defs file"""
                     "pamtally2 does not exist\n"
                 return False
             config = readFile(pam, self.logger)
-            #if the file is blank just add the two required lines
+            # if the file is blank just add the two required lines
             if not config:
                 self.detailedresults += "pam file required to configure " + \
                     "pamtally2 is blank.  Will not attempt to configure " + \
                     "this file"
                 return False
+            # Find lines that start with auth, which will be in a block. Copy
+            # all lines that start with auth, are comments, or blank, until we
+            # find a line that doesn't start with any of those.
             for line in config:
                 if re.search("^auth", line):
                     tmpconfig1.append(line)
@@ -804,7 +811,7 @@ for the login.defs file"""
                     compliant = False
                 if not re.search(regex2, tmpconfig2[1].strip()):
                     self.detailedresults += 'Could not match "' + regex2 + \
-                        '" to the first auth line in ' + pam + "\n"
+                        '" to the second auth line in ' + pam + "\n"
                     compliant = False
         return compliant
 
@@ -846,6 +853,9 @@ for the login.defs file"""
                     "faillock is blank.  Will not attempt to configure " + \
                     "this file\n"
                 return False
+            # Find lines that start with auth, which will be in a block. Copy
+            # all lines that start with auth, are comments, or blank, until we
+            # find a line that doesn't start with any of those.
             for line in config:
                 if re.search("^auth", line):
                     tmpconfig1.append(line)
