@@ -26,6 +26,8 @@ Created on Jul 13, 2011
 ###############################################################################
 
 @author: dkennel
+@change: 2015/10/23 eball Updated deprecated unit test methods, added dummy
+    PN file creation
 '''
 import os
 import re
@@ -33,99 +35,104 @@ import pwd
 import unittest
 import src.stonix_resources.environment as environment
 
+
 class zzzTestFrameworkenvironment(unittest.TestCase):
 
     def setUp(self):
         self.to = environment.Environment()
-    
+        self.created = False
+        if not os.path.exists("/etc/property-number"):
+            open("/etc/property-number", "w").write("0123456798")
+            self.created = True
+
     def tearDown(self):
-        pass
-    
+        if self.created:
+            os.remove("/etc/property-number")
+
     def testGetostype(self):
-        validtypes = ['Red Hat Enterprise Linux Workstation release 6.0 (Santiago)',
-                      'Red Hat Enterprise Linux Workstation release 6.3 (Santiago)',
-                      'Red Hat Enterprise Linux Server release 7.0 (Maipo)',
-                      'Mac OS X']
-        self.failIf( self.to.getostype() not in validtypes )
-    
+        validtypes = 'Red Hat Enterprise Linux|Debian|Ubuntu|CentOS|Fedora|' + \
+                     'openSUSE|Mac OS X'
+        print 'OS Type: ' + self.to.getostype()
+        self.assertTrue(re.search(validtypes, self.to.getostype()))
+
     def testGetosfamily(self):
         validfamilies = ['linux', 'darwin', 'solaris', 'freebsd']
-        self.failIf( self.to.getosfamily() not in validfamilies )
+        self.assertTrue(self.to.getosfamily() in validfamilies)
 
     def testGetosver(self):
-        self.failUnless(re.search('([0-9]{1,3})|(([0-9]{1,3})\.([0-9]{1,3}))',
+        self.assertTrue(re.search('([0-9]{1,3})|(([0-9]{1,3})\.([0-9]{1,3}))',
                                   self.to.getosver()))
-    
+
     def testGetipaddress(self):
-        self.failUnless(re.search('(([0-9]{1,3}\.){3}[0-9]{1,3})',
+        self.assertTrue(re.search('(([0-9]{1,3}\.){3}[0-9]{1,3})',
                                   self.to.getipaddress()))
-    
+
     def testGetmacaddr(self):
-        self.failUnless(re.search('(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})', 
+        self.assertTrue(re.search('(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})',
                                   self.to.getmacaddr()))
-        
+
     def testGeteuid(self):
         uid = os.geteuid()
-        self.failUnless(self.to.geteuid() == uid)
-        
+        self.assertTrue(self.to.geteuid() == uid)
+
     def testSetGetInstall(self):
         self.to.setinstallmode(True)
-        self.failUnlessEqual(self.to.getinstallmode(), True)
+        self.assertTrue(self.to.getinstallmode())
         self.to.setinstallmode(False)
-        self.failUnlessEqual(self.to.getinstallmode(), False)
-        
+        self.assertFalse(self.to.getinstallmode())
+
     def testSetGetVerbose(self):
         self.to.setverbosemode(True)
-        self.failUnlessEqual(self.to.getverbosemode(), True)
+        self.assertTrue(self.to.getverbosemode())
         self.to.setverbosemode(False)
-        self.failUnlessEqual(self.to.getverbosemode(), False)
-        
+        self.assertFalse(self.to.getverbosemode())
+
     def testSetGetDebug(self):
         self.to.setdebugmode(True)
-        self.failUnlessEqual(self.to.getdebugmode(), True)
+        self.assertTrue(self.to.getdebugmode())
         self.to.setdebugmode(False)
-        self.failUnlessEqual(self.to.getdebugmode(), False)
-        
+        self.assertFalse(self.to.getdebugmode())
+
     def testGetEuidHome(self):
-        self.failUnlessEqual(self.to.geteuidhome(),
+        self.assertEqual(self.to.geteuidhome(),
                              pwd.getpwuid(os.geteuid())[5])
-        
+
     def testGetPropNum(self):
-        self.failUnless(re.search('[0-9]{7}', self.to.get_property_number()))
+        self.assertTrue(re.search('[0-9]{7}', self.to.get_property_number()))
         print 'PN: ' + self.to.get_property_number()
-        
+
     def testGetSysSerNo(self):
         self.assertTrue(self.to.get_system_serial_number())
         print 'SysSer: ' + self.to.get_system_serial_number()
-        
+
     def testGetChassisSerNo(self):
         self.assertTrue(self.to.get_chassis_serial_number())
         print 'Ser: ' + self.to.get_chassis_serial_number()
-        
+
     def testGetSysMfg(self):
         mfg = self.to.get_system_manufacturer()
         print 'SysMFG: ' + mfg
         self.assertTrue(mfg)
-    
+
     def testGetChassisMfg(self):
         mfg = self.to.get_chassis_manfacturer()
         print 'MFG: ' + mfg
         self.assertTrue(mfg)
-        
+
     def testGetSysUUID(self):
         uuid = self.to.get_sys_uuid()
         print 'UUID: ' + uuid
         self.assertTrue(uuid)
-        
+
     def testIsMobile(self):
         self.assertFalse(self.to.ismobile(),
                          'This should fail on mobile systems')
-        
+
     def testSetNumRules(self):
         num = 20
         self.to.setnumrules(num)
-        self.failUnlessEqual(self.to.getnumrules(), num)
-        
+        self.assertEqual(self.to.getnumrules(), num)
+
     def testSetNumRulesErr(self):
         self.assertRaises(TypeError, self.to.setnumrules, 'foo')
         self.assertRaises(ValueError, self.to.setnumrules, -1)
