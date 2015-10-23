@@ -27,6 +27,7 @@ from LANL-stor.
 @author: Eric Ball
 @change: 2015/08/11 eball - Original implementation
 @change: 2015/10/01 eball - Refactoring Red Hat code for sssd
+@change: 2015/10/23 eball - Adding undo methods to new code in fix()
 '''
 from __future__ import absolute_import
 import os
@@ -314,6 +315,14 @@ effect."""
                     if not self.ph.install(package):
                         success = False
                         results += "Unable to install " + package + "\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "pkghelper",
+                                 "pkgname": package,
+                                 "startstate": "removed",
+                                 "endstate": "installed"}
+                        self.statechglogger.recordchgevent(myid, event)
 
             if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
                 success = False
@@ -333,6 +342,14 @@ effect."""
                 if not self.sh.disableservice("nscd"):
                     success = False
                     results += "Failed to disable nscd\n"
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "servicehelper",
+                             "servicename": "nscd",
+                             "startstate": "enabled",
+                             "endstate": "disabled"}
+                    self.statechglogger.recordchgevent(myid, event)
                 if self.sh.isrunning("sssd"):
                     if not self.sh.reloadservice("sssd"):
                         success = False
@@ -341,6 +358,14 @@ effect."""
                     if not self.sh.enableservice("sssd"):
                         success = False
                         results += "Failed to enable sssd service\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "servicehelper",
+                                 "servicename": "sssd",
+                                 "startstate": "disabled",
+                                 "endstate": "enabled"}
+                        self.statechglogger.recordchgevent(myid, event)
             else:
                 ldapfile = self.ldapfile
                 tmppath = ldapfile + ".tmp"
