@@ -22,12 +22,13 @@
 #                                                                             #
 ###############################################################################
 
-@change: 01/06/2014 Original Implementation
-@version: 0.8.0
 @author: ekkehard j. koch
+@change: 2014/01/06 Original implementation
+@change: 2015/10/26 eball Fixed logic errors, cleaned up code
 '''
 import unittest
 import os
+from shutil import rmtree
 from src.stonix_resources.filehelper import FileHelper as FileHelper
 import src.stonix_resources.environment as environment
 import src.tests.lib.logdispatcher_lite as logdispatcher
@@ -46,7 +47,7 @@ class zzzTestFrameworkfilehelper(unittest.TestCase):
         self.fh = FileHelper(self.logdispatch)
 
     def tearDown(self):
-        pass
+        rmtree(self.homedirectory + "/temp")
 
     def test_create_file_and_remove(self):
         # Create Files
@@ -92,54 +93,55 @@ class zzzTestFrameworkfilehelper(unittest.TestCase):
         self.files["tf3"]["remove"] = True
         for filelabel, fileinfo in sorted(self.files.items()):
             updatefilereturn = self.fh.updateFile(filelabel,
-                                               fileinfo["path"],
-                                               fileinfo["remove"],
-                                               fileinfo["content"],
-                                               fileinfo["permissions"],
-                                               fileinfo["owner"],
-                                               fileinfo["group"]
-                                               )
+                                                  fileinfo["path"],
+                                                  fileinfo["remove"],
+                                                  fileinfo["content"],
+                                                  fileinfo["permissions"],
+                                                  fileinfo["owner"],
+                                                  fileinfo["group"]
+                                                  )
             if not updatefilereturn:
                 updatefilesuccess = False
         self.assertTrue(updatefilesuccess, "1st updating of Files to FileHelper failed!")
         filesremoval = self.fh.fixFiles()
         self.assertTrue(filesremoval, "1st removal of Files Failed!")
         self.fh.setDefaultRemoveEmptyParentDirectories(True)
-# Remove Files without removing directories
+        # Remove Files without removing directories
         updatefilesuccess = True
         self.files["tf1"]["remove"] = False
         self.files["tf2"]["remove"] = False
         self.files["tf3"]["remove"] = False
         for filelabel, fileinfo in sorted(self.files.items()):
             updatefilereturn = self.fh.updateFile(filelabel,
-                                               fileinfo["path"],
-                                               fileinfo["remove"],
-                                               fileinfo["content"],
-                                               fileinfo["owner"],
-                                               fileinfo["group"]
-                                               )
+                                                  fileinfo["path"],
+                                                  fileinfo["remove"],
+                                                  fileinfo["content"],
+                                                  fileinfo["permissions"],
+                                                  fileinfo["owner"],
+                                                  fileinfo["group"]
+                                                  )
             if not updatefilereturn:
                 updatefilesuccess = False
         filescreated = self.fh.fixFiles()
         self.assertTrue(filescreated, "2nd creation of Files Failed!")
         filesremoval = self.fh.fixFiles()
-# Remove Files with removing directories
+        # Remove Files with removing directories
         updatefilesuccess = True
         self.files["tf1"]["remove"] = True
         self.files["tf2"]["remove"] = True
         self.files["tf3"]["remove"] = True
         for filelabel, fileinfo in sorted(self.files.items()):
             updatefilereturn = self.fh.updateFile(filelabel,
-                                               fileinfo["path"],
-                                               fileinfo["remove"],
-                                               fileinfo["content"],
-                                               fileinfo["permissions"],
-                                               fileinfo["owner"],
-                                               fileinfo["group"]
-                                               )
+                                                  fileinfo["path"],
+                                                  fileinfo["remove"],
+                                                  fileinfo["content"],
+                                                  fileinfo["permissions"],
+                                                  fileinfo["owner"],
+                                                  fileinfo["group"]
+                                                  )
             if not updatefilereturn:
                 updatefilesuccess = False
-        self.assertTrue(updatefilesuccess, "2nd updateing of Files to FileHelper failed!")
+        self.assertTrue(updatefilesuccess, "2nd updating of Files to FileHelper failed!")
         filesremoval = self.fh.fixFiles()
         self.assertTrue(filesremoval, "2nd removal of Files Failed!")
 
