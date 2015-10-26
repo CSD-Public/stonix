@@ -27,6 +27,9 @@ This is a Unit Test for Rule DisableGUILogon
 @author: Eric Ball
 @change: 2015/07/20 eball - Original Implementation
 @change: 2015/09/21 eball - Removed file backup and added undo() to tearDown
+@change: 2015/10/26 eball - Added feedback to inform user about expected
+    failure, and changed how ci3 is handled. Removed disabling of ci3, so that
+    a custom stonix.conf can make this True.
 '''
 from __future__ import absolute_import
 import unittest
@@ -55,7 +58,11 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.rule.undo()
 
     def runTest(self):
-        self.simpleRuleTest()
+        result = self.simpleRuleTest()
+        self.assertTrue(result, "DisableGUILogon(105): rule.iscompliant() " +
+                        "is 'False' after rule.fix() and rule.report() have " +
+                        "run. This is expected behavior, unless the value " +
+                        "of self.rule.ci3 has been manually set to 'True'.")
 
     def setConditionsForRule(self):
         '''
@@ -71,8 +78,8 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         # CI 3 is REMOVEX, which will remove X Windows entirely. STONIX unit
         # tests should generally only be run in virtual environments anyway,
         # but due to the severity of the changes caused by this rule, it is
-        # disabled by default. To enable, simply set it to True instead.
-        self.rule.ci3.updatecurrvalue(False)
+        # disabled by default. To enable, uncomment the line below.
+        #self.rule.ci3.updatecurrvalue(True)
 
         # Ensure GUI logon is enabled
         self.myos = self.environ.getostype().lower()
