@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigureMACPolicy
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
@@ -32,17 +32,17 @@ import unittest
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.EnableSELinux import EnableSELinux
+from src.stonix_resources.rules.ConfigureMACPolicy import ConfigureMACPolicy
 
 
-class zzzTestRuleEnableSELinux(RuleTest):
+class zzzTestRuleConfigureMACPolicy(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = EnableSELinux(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = ConfigureMACPolicy(self.config,
+                                       self.environ,
+                                       self.logdispatch,
+                                       self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
