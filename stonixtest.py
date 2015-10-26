@@ -52,12 +52,6 @@ from src.stonix_resources.environment import Environment
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.StateChgLogger import StateChgLogger
 
-#####
-# Set global variables
-debug_mode = False
-verbose_mode = False
-
-
 class ConsoleAndFileWriter():
     '''
     This class provides an object that can be passed to
@@ -135,10 +129,14 @@ class FrameworkDictionary():
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
         # logger & environ - a global variable that has applicable verbose and 
         # debug values 
+        global Environ
         self.environ = ENVIRON
         self.effectiveUserID = self.environ.geteuid()
+        global SYSCONFIG
         self.config = SYSCONFIG
+        global LOGGER 
         self.logdispatch = LOGGER
+        global STATECHANGELOGGER
         self.statechglogger = STATECHANGELOGGER
         self.scriptPath = self.environ.get_script_path()
         self.stonixPath = self.environ.get_resources_path()
@@ -378,10 +376,14 @@ class RuleDictionary ():
         
         self.unittestprefix = 'zzzTestRule'
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
+        global ENVIRON
         self.environ = ENVIRON
         self.effectiveUserID = self.environ.geteuid()
+        global SYSCONFIG
         self.config = SYSCONFIG
+        global LOGGER
         self.logdispatch = LOGGER
+        global STATECHANGELOGGER
         self.statechglogger = STATECHANGELOGGER
         self.scriptPath = self.environ.get_script_path()
         self.stonixPath = self.environ.get_resources_path()
@@ -911,6 +913,10 @@ def isRuleInBounds(fname=""):
         
         exec(tmpex)
         
+        global ENVIRON
+        global SYSCONFIG
+        global LOGGER
+        global STATECHANGELOGGER
         environ = ENVIRON
         config = SYSCONFIG
         logdispatcher = LOGGER
@@ -1414,8 +1420,10 @@ debug_mode = options.debug
 verbose_mode = options.verbose
  
 ENVIRON = Environment()
-ENVIRON.setdebugmode(debug_mode)
-ENVIRON.setverbosemode(verbose_mode)
+#ENVIRON.setdebugmode(debug_mode)
+#ENVIRON.setverbosemode(verbose_mode)
+ENVIRON.setdebugmode(True)
+ENVIRON.setverbosemode(True)
 LOGGER = LogDispatcher(ENVIRON)
 SYSCONFIG = Configuration(ENVIRON)
 STATECHANGELOGGER = StateChgLogger(LOGGER, ENVIRON)
@@ -1427,6 +1435,10 @@ def setUpModule():
     
     @author: Roy Nielsen
     """
+    global ENVIRON
+    global LOGGER
+    global SYSCONFIG
+    global STATECHANGELOGGER
     testenvironment = ENVIRON
     logdispatch = LOGGER
     config = SYSCONFIG
