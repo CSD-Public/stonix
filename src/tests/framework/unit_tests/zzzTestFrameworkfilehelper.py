@@ -49,15 +49,15 @@ class zzzTestFrameworkfilehelper(unittest.TestCase):
         pass
 
     def test_create_file_and_remove(self):
-# Create Files
+        # Create Files
         addfilesuccess = True
         self.fh.removeAllFiles()
         self.files = {"tf3": {"path": self.homedirectory + "/temp/temp/temp/tf3.txt",
                               "remove": False,
                               "content": None,
-                              "permissions": 0o0777,
+                              "permissions": 0777,
                               "owner": os.getuid(),
-                              "group": "wheel"},
+                              "group": os.getegid()},
                       "tf2": {"path": self.homedirectory + "/temp/temp/tf2.txt",
                               "remove": False,
                               "content": "This is a test",
@@ -85,7 +85,7 @@ class zzzTestFrameworkfilehelper(unittest.TestCase):
         self.assertTrue(addfilesuccess, "Initial adding of Files to FileHelper failed!")
         filescreated = self.fh.fixFiles()
         self.assertTrue(filescreated, "1st creation of Files Failed!")
-# Remove Files without removing directories
+        # Remove Files without removing directories
         updatefilesuccess = True
         self.files["tf1"]["remove"] = True
         self.files["tf2"]["remove"] = True
@@ -101,7 +101,7 @@ class zzzTestFrameworkfilehelper(unittest.TestCase):
                                                )
             if not updatefilereturn:
                 updatefilesuccess = False
-        self.assertTrue(updatefilesuccess, "1st updateing of Files to FileHelper failed!")
+        self.assertTrue(updatefilesuccess, "1st updating of Files to FileHelper failed!")
         filesremoval = self.fh.fixFiles()
         self.assertTrue(filesremoval, "1st removal of Files Failed!")
         self.fh.setDefaultRemoveEmptyParentDirectories(True)
