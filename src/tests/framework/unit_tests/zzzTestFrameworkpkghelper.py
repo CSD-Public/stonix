@@ -26,35 +26,40 @@ Created on Jul 31, 2012
 ###############################################################################
 
 @author: dwalker
+@change: 2015/10/26 eball Refactored test to make it functional on all systems
+    and to be less error-prone.
 '''
 
 import unittest
 import src.stonix_resources.pkghelper as pkghelper
-from src.tests.lib.logdispatcher_lite import LogPriority,LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 import src.stonix_resources.environment as environment
 
+
 class zzzTestFrameworkpkghelper(unittest.TestCase):
-    
+
     def setUp(self):
-        print "in set up method...\n"
         self.enviro = environment.Environment()
         self.logger = LogDispatcher(self.enviro)
-        self.helper = pkghelper.Pkghelper(self.logger,self.enviro)
+        self.helper = pkghelper.Pkghelper(self.logger, self.enviro)
+        self.pkg = "zsh"
+
     def tearDown(self):
         pass
-    def testInstall(self):
-        print "inside test Install method...\n"
-        self.failUnless(self.helper.install("php"))
-        self.failUnless(self.helper.check("php"))
-    def testRemove(self):
-        print "inside remove method...\n"
-        self.failUnless(self.helper.remove("php"))
-        self.failIf(self.helper.check("php"))   
-    def testCheck1(self):
-        print "inside test check method...\n"
-        self.helper.install("php")
-        self.failUnless(self.helper.check("php"))
-        self.helper.remove("php")
-        self.failIf(self.helper.check("php"))
+
+    def testPkgHelper(self):
+        if self.helper.check(self.pkg):
+            self.assertTrue(self.helper.remove(self.pkg))
+            self.assertFalse(self.helper.check(self.pkg))
+
+            self.assertTrue(self.helper.install(self.pkg))
+            self.assertTrue(self.helper.check(self.pkg))
+        else:
+            self.assertTrue(self.helper.install(self.pkg))
+            self.assertTrue(self.helper.check(self.pkg))
+
+            self.assertTrue(self.helper.remove(self.pkg))
+            self.assertFalse(self.helper.check(self.pkg))
+
 if __name__ == "__main__":
     unittest.main()
