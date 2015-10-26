@@ -754,7 +754,7 @@ class FileHelper(object):
         if success:
             removeEmptyDirectory = self.defaultRemoveEmptyParentDirectories
             try:
-                while removeEmptyDirectory:
+                if removeEmptyDirectory and not os.listdir(directory):
                     os.rmdir(directory)
                     message = "removed " + directory + " via os.rmdir(" + \
                     directory + ")."
