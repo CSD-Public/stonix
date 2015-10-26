@@ -28,6 +28,7 @@ This is a Unit Test for Rule SystemAccounting
 @change: 2015/09/25 eball Updated to enable CI so that rule runs during test
 @change: 2015/09/25 eball Added Debian/Ubuntu setup
 @change: 2015/10/09 eball Updated Deb setup to improve automated testing compat
+@change: 2015/10/26 eball Comment fix, added informative text for test failure
 '''
 from __future__ import absolute_import
 import unittest
@@ -56,7 +57,12 @@ class zzzTestRuleSystemAccounting(RuleTest):
         pass
 
     def runTest(self):
-        self.simpleRuleTest()
+        result = self.simpleRuleTest()
+        self.assertTrue(result, "SystemAccounting(9): rule.iscompliant() is " +
+                        "'False' after rule.fix() and rule.report() have " +
+                        "run. This may be due to a proxy error; if the " +
+                        "proper proxy is not set in localize.py, set it and " +
+                        "run this test again.")
 
     def setConditionsForRule(self):
         '''
@@ -72,14 +78,14 @@ class zzzTestRuleSystemAccounting(RuleTest):
                 sysstat = "/etc/default/sysstat"
                 if os.path.exists(sysstat):
                     settings = open(sysstat, "r").read()
-                    settings = re.sub(r"ENABLED=.+\n", "ENABLED=false",
+                    settings = re.sub(r"ENABLED=.+\n", "ENABLED=false\n",
                                       settings)
                 else:
-                    settings = "ENABLED=false"
+                    settings = "ENABLED=false\n"
                 open(sysstat, "w").write(settings)
-                # apt does a very poor job install packages when it hasn't been
-                # updated in a while, which is problematic with VMs. These next
-                # few lines are intended to deal with that issue.
+                # apt does a very poor job installing packages when it hasn't
+                # been updated in a while, which is problematic with VMs. These
+                # next few lines are intended to deal with that issue.
                 if not re.search("foo.bar", PROXY):
                     os.environ["http_proxy"] = PROXY
                     os.environ["https_proxy"] = PROXY
