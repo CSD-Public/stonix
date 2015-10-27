@@ -366,7 +366,7 @@ valid exceptions.'''
             setlevels = "/usr/bin/osascript -e 'set volume input volume 0'"
         elif os.path.exists('/usr/bin/amixer'):
             setlevels = "/usr/bin/amixer sset Capture Volume 0,0 mute"
-        if os.path.exists(self.pulsedefaults):
+        if os.path.exists(self.pulsedefaults) and self.environ.geteuid() == 0:
             self.fixPulseAudio()
 
         if setlevels != None:
