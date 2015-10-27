@@ -309,7 +309,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
         self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables")
         self.grubver = 2
-        self.grubcfgfile = ''
+        self.grubcfgloc = ''
         grubcfglocs = ['/boot/grub/grub.cfg', '/boot/grub2/grub.cfg']
         for loc in grubcfglocs:
             if os.path.exists(loc):
@@ -322,7 +322,7 @@ this system, set the value of EnableKernelAuditing to False"""
         for name in grubmkconfignames:
             if os.path.exists(name):
                 grubmkconfigname = name
-        self.grubupdatecmd = grubmkconfigname + ' -o ' + self.grubcfgfile
+        self.grubupdatecmd = grubmkconfigname + ' -o ' + self.grubcfgloc
 
     def report(self):
         '''
@@ -385,6 +385,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 if self.pkghelper.check(pkg):
                     self.auditpkgstatus = True
                     self.auditdpkg = pkg
+            # if we have no audit installation to report on, we cannot continue
             if not self.auditpkgstatus:
                 self.compliant = False
                 self.detailedresults += '\nKernel auditing package is not ' + \
@@ -633,8 +634,14 @@ this system, set the value of EnableKernelAuditing to False"""
                             self.auditpkgstatus = True
                             self.auditdpkg = pkg
                             self.report()
+                # if we have no installation upon which to act, we cannot continue
                 if not self.auditpkgstatus:
                     fixsuccess = False
+                    self.detailedresults += '\nFailed to install audit package on this system. ' + \
+                    'Please check your package manager configuration and connection and try again.'
+                    self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return fixsuccess
 
                 if not self.fixAuditRules():
                     fixsuccess = False
@@ -665,8 +672,8 @@ this system, set the value of EnableKernelAuditing to False"""
                             fixsuccess = False
 
             else:
-                self.logger.log(LogPriority.DEBUG,
-                                "Rule was not enabled. Nothing was done...")
+                self.detailedresults += '\nRule was not enabled. Nothing was done...'
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
             raise

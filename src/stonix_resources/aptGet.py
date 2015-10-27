@@ -42,8 +42,7 @@ class AptGet(object):
         self.logger = logger
         self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
-        self.install = "sudo DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get \
--y install "
+        self.install = "sudo DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -y --force-yes install "
         self.remove = "/usr/bin/apt-get -y remove "
 ###############################################################################
 

@@ -57,7 +57,7 @@ class ConfigureMACPolicy(Rule):
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 107
-        self.rulename = 'CONFIGMACPOLICY'
+        self.rulename = 'ConfigureMACPolicy'
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''The ConfigureMACPolicy rule configures either \
