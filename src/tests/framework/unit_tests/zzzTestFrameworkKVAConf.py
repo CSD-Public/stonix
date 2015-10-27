@@ -55,7 +55,6 @@ class zzzTestFrameworkKVAConf(unittest.TestCase):
     def testSimple(self):
         self.assertTrue(self.editor.setPath("/tmp/sysctl.bak"))
         self.assertTrue(self.editor.setTmpPath("/tmp/sysctl.bak.tmp"))
-        self.assertTrue(self.editor.setType("conf"))
         self.assertTrue(self.editor.setData(
             {'net.ipv4.conf.all.secure_redirects': '0',
              'net.ipv4.conf.all.accept_redirects': '0',
