@@ -35,7 +35,7 @@ Created on May 20, 2013
 
 '''
 from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, resetsecon, createFile
+from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
 from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
 from ..rule import Rule
 from ..pkghelper import Pkghelper
@@ -47,6 +47,9 @@ from subprocess import PIPE, Popen
 import os
 import traceback
 import re
+import grp
+import pwd
+import stat
 
 
 class ConfigureLogging(Rule):
@@ -348,7 +351,31 @@ daemon config file: " + self.logpath
         self.logrotpath = self.checkLogRotation()
         if self.logrotpath:
             if os.path.exists(self.logrotpath):
-                if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
+                if re.search("Red Hat*6\.", self.environ.getostype()):
+                    statdata = os.stat(self.logrotpath)
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    ownergrp = getUserGroupName(self.logrotpath)
+                    owner = ownergrp[0]
+                    group = ownergrp[1]
+                    if mode != 420:
+                        self.detailedresults += "permissions on " + \
+                            self.logrotpath + " aren't 644\n"
+                        debug = "permissions on " + self.logrotpath + " aren't 644\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        compliant = False
+                    if owner != "root":
+                        self.detailedresults += "Owner of " + self.logrotpath + \
+                            " isn't root\n"
+                        debug = "Owner of " + self.logrotpath + " isn't root\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        compliant = False
+                    if group != "sys":
+                        self.detailedresults += "Group owner of " + \
+                            self.logrotpath + " isn't sys\n"
+                        debug = "Group owner of " + self.logrotpath + " isn't sys\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        compliant = False
+                elif not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
                     self.detailedresults += "permissions aren't correct on log \
     rotation config file: " + self.logrotpath
                     compliant = False
@@ -645,6 +672,33 @@ daemon config file: " + self.logpath
                     self.created2 = True
                     self.detailedresults += "successfully created log \
 rotation config file: " + self.logrotpath + "\n"
+                if re.search("Red Hat*6\.", self.environ.getostype):
+                    statdata = os.stat(self.logrotpath)
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    ownergrp = getUserGroupName(self.logrotpath)
+                    owner = ownergrp[0]
+                    group = ownergrp[1]
+                    if mode != 420 or owner != "root" or group != "sys":
+                        origuid = statdata.st_uid
+                        origgid = statdata.st_gid
+                        if grp.getgrnam("sys")[2]:
+                            gid = grp.getgrnam("sys")[2]
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "perm",
+                                     "startstate": [origuid, origgid, mode],
+                                     "endstate": [0, gid, 420],
+                                     "filepath": self.logrotpath}
+                            self.statechglogger.recordchgevent(myid, event)
+                            os.chmod(self.logrotpath, 416)
+                            os.chown(self.logrotpath, 0, gid)
+                            resetsecon(self.logrotpath)
+                        else:
+                            success = False
+                            debug = "Unable to determine the id " + \
+                                "number of sys group.  Will not change " + \
+                                "permissions on " + self.logrotpath + " file\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                 if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
                     if not setPerms(self.logrotpath, [0, 0, 420], self.logger):
                         debug = "Unable to set " + \
