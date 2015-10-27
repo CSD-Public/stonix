@@ -114,8 +114,8 @@ invalid."""
                                 "/var/log/cron",
                                 "/var/log/maillog",
                                 "/var/log/local",
-                                "/var/log/ftp",
-                                "/var/log/boot.log"]
+                                "/var/log/ftp"]
+            self.bootlog = "/var/log/boot.log"
             self.logfiles = {"*.*,mark.info": "/var/log/messages",
                              "daemon.info": "/var/log/daemon",
                              "auth.info,mark.info": "/var/log/auth",
@@ -284,17 +284,23 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         # check if all necessary dirs are present and correct perms
         for item in self.directories:
             if not os.path.exists(item):
-                self.detailedresults += "All required logging directories \
-aren\'t present\n"
+                self.detailedresults += "All required logging files \
+aren't present\n"
                 compliant = False
                 break
             else:
                 if not checkPerms(item, [0, 0, 384], self.logger):
                     self.detailedresults += "Permissions are not correct on \
-all required logging directories"
+all required logging files"
                     compliant = False
                     break
-
+        if not os.path.exists(self.bootlog):
+            self.detailedresults += "All required logging files \
+aren\'t present\n"
+            compliant = False
+        elif not checkPerms(self.bootlog, [0, 0, 420], self.logger):
+            self.detailedresults += "Permissions are not correct on \
+all required logging files"
         if self.logs["rsyslog"]:
             self.logpath = "/etc/rsyslog.conf"
         elif self.logs["syslog"]:
@@ -547,17 +553,36 @@ daemon config file: " + self.logpath
                     success = False
                 else:
                     self.detailedresults += "Successfully created file: " + \
-                    item + "\n"
+                        item + "\n"
                     os.chown(item, 0, 0)
                     os.chmod(item, 384)
                     resetsecon(item)
+        if os.path.exists(self.bootlog):
+            if not checkPerms(self.bootlog, [0, 0, 420], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.bootlog, [0, 0, 420], self.logger,
+                                self.statechglogger, myid):
+                    debug = "Unable to set " + "permissions on " + self.bootlog + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+        elif not createFile(self.bootlog, self.logger):
+            debug = "Unable to create necessary log file: " + self.bootlog + "\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            success = False
+        else:
+            self.detailedresults += "Successfully created file: " + \
+                self.bootlog + "\n"
+            os.chown(self.bootlog, 0, 0)
+            os.chmod(self.bootlog, 384)
+            resetsecon(self.bootlog)
 #-----------------------------------------------------------------------------#
         # correct rsyslog/syslog file
         if self.config:
             if not os.path.exists(self.logpath):
                 if not createFile(self.logpath, self.logger):
                     debug = "Unable to create missing log daemon config " + \
-                    "file: " + self.logpath + "\n"
+                        "file: " + self.logpath + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
@@ -565,15 +590,15 @@ daemon config file: " + self.logpath
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "creation",
-                             "filepath":self.logpath}
+                             "filepath": self.logpath}
                     self.statechglogger.recordchgevent(myid, event)
                     debug = "successfully create log daemon config file: " + \
-                    self.logpath + "\n"
+                        self.logpath + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     if not checkPerms(self.logpath, [0, 0, 420], self.logger):
                         if not setPerms(self.logpath, [0, 0, 420], self.logger):
                             debug = "Unable to set " + \
-                            "permissions on " + self.logpath + "\n"
+                                "permissions on " + self.logpath + "\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                         resetsecon(self.logpath)
@@ -583,9 +608,9 @@ daemon config file: " + self.logpath
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             if not setPerms(self.logpath, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                            self.statechglogger, myid):
                 debug = "Unable to set permissions on " + \
-                self.logpath + "\n"
+                    self.logpath + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
         contents = readFile(self.logpath, self.logger)
@@ -613,7 +638,7 @@ daemon config file: " + self.logpath
             if not os.path.exists(self.logrotpath):
                 if not createFile(self.logrotpath, self.logger):
                     debug = "Unable to create missing log rotation config " + \
-                    "file: " + self.logrotpath + "\n"
+                        "file: " + self.logrotpath + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
