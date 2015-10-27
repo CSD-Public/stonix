@@ -63,6 +63,7 @@ class CheckDuplicateIds(Rule):
         self.rulename = 'CheckDupIDs'
         self.formatDetailedResults("initialize")
         self.mandatory = True
+        self.rootrequired = True
         self.helptext = "This rule is an audit-only rule that will " + \
             "examine local account databases for accounts that " + \
             "have duplicate UID values. All accounts must be unique for " + \
