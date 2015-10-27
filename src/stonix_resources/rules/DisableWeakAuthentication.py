@@ -28,6 +28,7 @@ Created on Aug 12, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated to use new isApplicable
 @change: 2015/07/27 eball Fixed help text typos and improved PEP8 compliance
+@change: 2015/10/27 eball Added feedback to report()
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import readFile, writeFile, setPerms, checkPerms
@@ -93,6 +94,7 @@ class DisableWeakAuthentication(Rule):
             for item in self.rsh:
                 if self.helper.check(item):
                     compliant = False
+                    self.detailedresults += item + " is still installed\n"
                     break
             for item in self.pams:
                 found = False
@@ -106,11 +108,15 @@ class DisableWeakAuthentication(Rule):
                             elif re.search("pam_rhosts", line):
                                 found = True
                                 compliant = False
+                                self.detailedresults += "pam_rhosts line " + \
+                                    "found in " + item + "\n"
                                 break
                         if found:
                             self.incorrects.append(item)
                         if not checkPerms(item, [0, 0, 420], self.logger):
                             compliant = False
+                            self.detailedresults += "Permissions for " + \
+                                item + " are incorrect\n"
             if os.path.exists("/etc/pam.d/"):
                 fileItems = glob.glob("/etc/pam.d/*")
                 for item in fileItems:
@@ -126,21 +132,18 @@ class DisableWeakAuthentication(Rule):
                         elif re.search("pam_rhosts", line):
                             found = True
                             compliant = False
+                            self.detailedresults += "pam_rhosts line " + \
+                                "found in " + item + "\n"
                             break
                     if found:
                         self.incorrects.append(item)
                 for item in fileItems:
                     if not checkPerms(item, [0, 0, 420], self.logger):
                         compliant = False
+                        self.detailedresults += "Permissions for " + \
+                            item + " are incorrect\n"
                         break
 
-            if compliant:
-                self.detailedresults = "DisableWeakAuthentication report " + \
-                                       "has been run and is compliant\n"
-            else:
-                self.detailedresults = "DisableWeakAuthentication report " + \
-                                       "has been run and is not compliant\n"
-            self.logger.log(LogPriority.INFO, self.detailedresults)
             self.compliant = compliant
         except(KeyboardInterrupt, SystemExit):
             raise
