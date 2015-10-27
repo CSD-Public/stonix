@@ -348,7 +348,6 @@ CONFIGURELDAPSERV to False.'''
                                 "number of ldap group.  Will not change " + \
                                 "permissions on " + slapd + " file\n"
                             self.logger.log(LogPriority.DEBUG, debug)
-                print "inside fix\n\n\n"
                 #apt-get systems
                 slapd = "/etc/ldap/ldap.conf"
                 if os.path.exists(slapd):
