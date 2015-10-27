@@ -81,6 +81,7 @@ class CheckDuplicateIds(Rule):
         '''
         try:
             self.detailedresults = ""
+            self.issuelist = []
             if self.environ.getosfamily() == 'darwin':
                 self.compliant = self.osxcheck()
             else:
@@ -115,6 +116,7 @@ class CheckDuplicateIds(Rule):
             result = False
             nixcheckresult = self.nixcheck()
             oscheckresult = True
+            issue = ""
 # Check for duplicate users
             cmd = ["/usr/bin/dscl", ".", "list", "/users", "uid"]
             self.commandhelper.executeCommand(cmd)
