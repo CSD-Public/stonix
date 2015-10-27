@@ -28,6 +28,8 @@ Created on Sep 11, 2013
 @change: 2014/12/15 dkennel replaced print statement with logger debug call.
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2015/10/22 eball Rebased code in several spots for readability, and to
+    correct logic errors (e.g. unreachable code, unused vars)
 '''
 from __future__ import absolute_import
 
@@ -1144,13 +1146,8 @@ for the login.defs file"""
         if self.ph.manager == "apt-get":
             package = "passwdqc"
         if package == "quality":
-            #for apt-get systems it must be required instead of requisite
-            if self.ph.manager == "apt-get":
-                regex1 = "^password[ \t]+required[ \t]+pam_pwquality.so minlen=8 minclass=3"
-                data1 = "password\trequired\tpam_pwquality.so minlen=8 minclass=3\n"
-            else:
-                regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so minlen=8 minclass=3"
-                data1 = "password\trequisite\tpam_pwquality.so minlen=8 minclass=3\n"
+            regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so minlen=8 minclass=3"
+            data1 = "password\trequisite\tpam_pwquality.so minlen=8 minclass=3\n"
         elif package == "passwdqc":
             regex1 = "^password[ \t]+requisite[ \t]+pam_passwdqc.so min=disabled,disabled,16,12,8"
             data1 = "password\trequisite\tpam_passwdqc.so min=disabled,disabled,16,12,8\n"

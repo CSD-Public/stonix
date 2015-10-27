@@ -86,6 +86,10 @@ class LogDispatcher ():
         else:
             self.debug = debug_mode
             self.verbose = verbose_mode
+
+        # Temporary
+        self.debug = True
+        self.verbose = True
             
    ##########################################################################
 
@@ -405,20 +409,6 @@ class LogDispatcher ():
             # the class
             self.rotHandler = None
             
-            # Check for old log file and move it to a different file name
-            # overwriting any old one if it exists.
-            if not os.path.isdir(os.path.basename(self.reportlog)):
-                try:
-                    os.makedirs(os.path.basename(self.reportlog), 0750)
-                except (KeyboardInterrupt, SystemExit):
-                    # User initiated exit
-                    raise
-                except Exception, err:
-                    print 'logdispatcher: '
-                    print traceback.format_exc()
-                    print err
-                    return False
-    
             if myconsole:
                 #####
                 #set up console logging
