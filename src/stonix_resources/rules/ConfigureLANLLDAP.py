@@ -100,7 +100,7 @@ effect."""
             packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
                            "libpam-passwdqc", "libpam-krb5"]
             packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
-                            "pam_pwquality"]
+                            "pam_pwquality", "krb5"]
             if self.ph.determineMgr() == "apt-get":
                 if re.search("ubuntu", self.myos):
                     packages = packagesUbu
@@ -112,7 +112,8 @@ effect."""
                 packages = packagesRpm
             self.packages = packages
             for package in packages:
-                if not self.ph.check(package):
+                if not self.ph.check(package) and \
+                   self.ph.checkAvailable(package):
                     compliant = False
                     results += package + " is not installed\n"
 
@@ -312,17 +313,18 @@ effect."""
             packages = self.packages
             for package in packages:
                 if not self.ph.check(package):
-                    if not self.ph.install(package):
-                        success = False
-                        results += "Unable to install " + package + "\n"
-                    else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "pkghelper",
-                                 "pkgname": package,
-                                 "startstate": "removed",
-                                 "endstate": "installed"}
-                        self.statechglogger.recordchgevent(myid, event)
+                    if self.ph.checkAvailable(package):
+                        if not self.ph.install(package):
+                            success = False
+                            results += "Unable to install " + package + "\n"
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": package,
+                                     "startstate": "removed",
+                                     "endstate": "installed"}
+                            self.statechglogger.recordchgevent(myid, event)
 
             if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
                 success = False
