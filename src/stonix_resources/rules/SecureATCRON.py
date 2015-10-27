@@ -34,6 +34,7 @@ these daemons.
 fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2015/10/27 eball Added feedback to report()
 '''
 
 from __future__ import absolute_import
@@ -121,18 +122,23 @@ CRON utilities, set the vaule of SECUREATCRON to False.'''
         cronlogfound = False
         rootcronallow = False
         rootatallow = False
+        results = ""
+        self.detailedresults = ""
 
         try:
 
             # check for files that shouldn't exist
             if os.path.exists('/etc/cron.deny'):
                 retval = False
+                results += "/etc/cron.deny should not exist\n"
             if os.path.exists('/etc/at.deny'):
                 retval = False
+                results += "/etc/at.deny should not exist\n"
 
             # check for files that need to exist
             if not os.path.exists('/etc/cron.allow'):
                 retval = False
+                results += "/etc/cron.allow does not exist\n"
             else:
                 # check for correct configuration of cron.allow
                 f = open('/etc/cron.allow', 'r')
@@ -145,8 +151,10 @@ CRON utilities, set the vaule of SECUREATCRON to False.'''
 
                 if not rootcronallow:
                     retval = False
+                    results += "'root' line in cron.allow does not exist\n"
             if not os.path.exists('/etc/at.allow'):
                 retval = False
+                results += "/etc/at.allow does not exist\n"
             else:
                 # check for correct configuration of at.allow
                 f = open('/etc/at.allow', 'r')
@@ -159,6 +167,7 @@ CRON utilities, set the vaule of SECUREATCRON to False.'''
 
                 if not rootatallow:
                     retval = False
+                    results += "'root' line in at.allow does not exist\n"
 
             # check if cron logging is enabled
             if os.path.exists('/etc/default/cron'):
@@ -172,9 +181,11 @@ CRON utilities, set the vaule of SECUREATCRON to False.'''
 
                 if not cronlogfound:
                     retval = False
+                    results += "'CRONLOG=YES' not found in /etc/default/cron\n"
 
             else:
                 retval = False
+                results += "/etc/default/cron does not exist\n"
 
             # check ownership/permissions on cron/at files
             for item in self.cronchmodfiledict:
@@ -182,28 +193,24 @@ CRON utilities, set the vaule of SECUREATCRON to False.'''
                     perms = [0, 0, self.cronchmodfiledict[item]]
                     if not checkPerms(item, perms, self.logger):
                         retval = False
+                        results += "Permissions for " + item + " are not " + \
+                            "correct\n"
 
-            if retval:
-                self.compliant = True
-                self.detailedresults = 'This system is compliant with the SecureATCron rule'
-                self.currstate = 'configured'
-            else:
-                self.compliant = False
-                self.detailedresults = 'This system is not compliant with the SecureATCron rule'
-                self.currstate = 'notconfigured'
+            self.detailedresults = results
+            self.compliant = retval
 
-            return retval
-
-        except IOError:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, ['SecureATCRON.report ',
-                                               self.detailedresults])
         except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception, err:
             self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, ['SecureATCRON.report ',
-                                                self.detailedresults])
-            return False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+                " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
 
     def fix(self):
         '''
