@@ -164,7 +164,7 @@ class ConfigureKerberos(RuleKVEditor):
                                "sssd-krb5", "sssd-krb5-common"]
                 packagesDeb = ["krb5-config", "krb5-user", "libpam-krb5"]
                 packagesSuse = ["pam_krb5", "sssd-krb5", "sssd-krb5-common",
-                                "krb5-client"]
+                                "krb5-client", "krb5"]
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
                 elif self.ph.determineMgr() == "zypper":
@@ -172,7 +172,8 @@ class ConfigureKerberos(RuleKVEditor):
                 else:
                     self.packages = packagesRpm
                 for package in self.packages:
-                    if not self.ph.check(package):
+                    if not self.ph.check(package) and \
+                       self.ph.checkAvailable(package):
                         compliant = False
                         self.detailedresults += package + " is not installed\n"
             if not self.fh.evaluateFiles():
@@ -207,10 +208,11 @@ class ConfigureKerberos(RuleKVEditor):
                 if self.environ.getosfamily() == 'linux':
                     for package in self.packages:
                         if not self.ph.check(package):
-                            if not self.ph.install(package):
-                                fixsuccess = False
-                                self.detailedresults += "Installation of " + \
-                                    package + " did not succeed.\n"
+                            if self.ph.checkAvailable(package):
+                                if not self.ph.install(package):
+                                    fixsuccess = False
+                                    self.detailedresults += "Installation of " + \
+                                        package + " did not succeed.\n"
                 if not self.fh.fixFiles():
                     fixsuccess = False
                     self.detailedresults += self.fh.getFileMessage()
