@@ -100,7 +100,7 @@ effect."""
             packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
                            "libpam-passwdqc", "libpam-krb5"]
             packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
-                            "pam_pwquality", "krb5"]
+                            "pam_pwquality", "sssd", "krb5"]
             if self.ph.determineMgr() == "apt-get":
                 if re.search("ubuntu", self.myos):
                     packages = packagesUbu
