@@ -30,6 +30,7 @@ on a system must have unique UIDs.
 @change: 08/05/2014 ekkehard added duplicate uid & gid check for OS X
 @change: 2015/04/14 dkennel updated to use new style isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2015/10/28 ekkehard fix name and file name
 '''
 from __future__ import absolute_import
 import os
@@ -42,7 +43,7 @@ from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 
 
-class CheckDuplicateIds(Rule):
+class CheckDupIDs(Rule):
     '''
     This class checks the local accounts database for duplicate IDs. All
     accounts on a system must have unique UIDs. This class inherits the base
