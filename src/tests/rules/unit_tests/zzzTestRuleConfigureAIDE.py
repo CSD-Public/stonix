@@ -22,15 +22,15 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigureAIDE
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
+@change: 2015/10/28 eball Enabled CI, fixed PEP8 compliance
 '''
 from __future__ import absolute_import
 import unittest
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureAIDE import ConfigureAIDE
 
@@ -45,7 +45,7 @@ class zzzTestRuleConfigureAIDE(RuleTest):
                                   self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
+        self.rule.ci.updatecurrvalue(True)
 
     def tearDown(self):
         pass
@@ -72,9 +72,9 @@ class zzzTestRuleConfigureAIDE(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -87,7 +87,7 @@ class zzzTestRuleConfigureAIDE(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -100,11 +100,11 @@ class zzzTestRuleConfigureAIDE(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
