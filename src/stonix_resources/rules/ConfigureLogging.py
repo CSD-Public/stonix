@@ -257,6 +257,12 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "endscript"]
+        self.expression = "\s*/var/log/user/\s+/var/log/daemon\s+/var/log/auth\s+/var/log/kern\s+/var/log/lpr\s+/var/log/syslog\s+/var/log/cron\s+/var/log/maillog\s+/var/log/local\s+/var/log/ftp\s*\{\s*" + \
+            "\s*rotate 4\s+weekly\s+missingok\s+notifempty\s+compress\s+delaycompress\s+sharedscripts\s+postrotate\s+" + \
+            "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
+            "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
+            "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
+            "endscript\s*\}"
 #        opensuse 13 and later uses systemd-logger instead of rsyslog
 #        this logging daemon doesn't have the functionality we need so
 #        we remove it firsthand and install rsyslog in the fix.
@@ -304,6 +310,7 @@ aren\'t present\n"
         elif not checkPerms(self.bootlog, [0, 0, 420], self.logger):
             self.detailedresults += "Permissions are not correct on \
 all required logging files"
+            compliant = False
         if self.logs["rsyslog"]:
             self.logpath = "/etc/rsyslog.conf"
         elif self.logs["syslog"]:
@@ -339,6 +346,8 @@ daemon config file: " + self.logpath
                 if not found:
                     self.config.append(key + "\t\t\t" + self.logfiles[key] +
                                        "\n")
+                    self.detailedresults += key + " and value " + self.logfiles[key] + \
+                        " not found in " + self.logpath + "\n"
                     compliant = False
         else:
             self.detailedresults += self.logpath + "doesn\'t exist\n"
@@ -347,11 +356,16 @@ daemon config file: " + self.logpath
             compliant = False
         self.logger.log(LogPriority.DEBUG, debug)
 
+
+
+
+
         # check if correct contents of logrotate file exist
         self.logrotpath = self.checkLogRotation()
         if self.logrotpath:
             if os.path.exists(self.logrotpath):
-                if re.search("Red Hat*6\.", self.environ.getostype()):
+                if re.search("Red Hat", self.environ.getostype()) and \
+                        re.search("^6", self.environ.getosver()):
                     statdata = os.stat(self.logrotpath)
                     mode = stat.S_IMODE(statdata.st_mode)
                     ownergrp = getUserGroupName(self.logrotpath)
@@ -379,121 +393,147 @@ daemon config file: " + self.logpath
                     self.detailedresults += "permissions aren't correct on log \
     rotation config file: " + self.logrotpath
                     compliant = False
+
                 contents = readFile(self.logrotpath, self.logger)
-                length = len(contents) - 1
-                for key in self.directories:
-                    current = False
-                    found1 = False
-                    contents2 = []
-                    contents3 = []
-                    iterator = 0
-                    for item1 in contents:
-                        if re.match('^#', item1.strip()) or \
-                                re.match('^\s*$', item1.strip()):
-                            iterator = iterator + 1
-                            continue
-                        if current:
-                            if re.search('{', item1.strip()):
-                                # open bracket is on it's own line
-                                if re.match('^{$', item1.strip()):
-                                    contents2 = contents[iterator + 1:]
-                                # bracket is on line with a spec
-                                elif re.match('^{(.)*', item1.strip()):
-                                    contents2 = contents[iterator:]
-                                    contents2[0] = re.sub('{', "",
-                                                          contents2[0])
-                                # bracket after another dir
-                                elif re.match('(.)+{$', item1.strip()):
-                                    contents2 = contents[iterator + 1:]
-                                else:
-                                    debug += "bad configuration file format\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                iterator2 = 0
-                                for item2 in contents2:
-                                    if re.search('}$', item2.strip()):
-                                        # closing bracket is on its own line
-                                        if re.match('^}$', item2.strip()):
-                                            contents3 = contents2[0:iterator2]
-                                        # closing bracket is on a line after a spec
-                                        elif re.match('(.)+}$', item2.strip()):
-                                            contents3 = contents2[0:iterator2]
-                                            contents[iterator2] = re.sub('}', "", \
-                                                            contents3[iterator2])
-                                        contents3 = contents2[0:iterator2]
-                                        current = None
-                                        for spec in specs:
-                                            temp = False
-                                            found2 = False
-                                            for item3 in contents3:
-                                                if re.match('^#', item3.strip()) or\
-                                                 re.match('^\s*$', item3.strip()):
-                                                    continue
-                                                elif re.match(spec + '$',
-                                                              item3.strip()):
-                                                    found2 = True
-                                                    break
-                                            if found2:
-                                                continue
-                                            else:
-                                                compliant = False
-                                                temp = True
-                                        if temp:
-                                            current = False
-                                            self.wronglogrot.append(key)
-                                            break
-                                    else:
-                                        iterator2 += 1
-                                        continue
-                            else:
-                                iterator += 1
-                                continue
-                        else:
-                            if re.search(key + '(\s)+', item1) or re.search(key + '{', item1):
-                                found1 = True
-                                current = key
-                                if re.search('{$', item1.strip()):  # open bracket is on that line
-                                    contents2 = contents[iterator:]
-                                    iterator2 = 0
-                                    for item2 in contents2:
-                                        if re.match('}$', item2.strip()):
-                                            contents3 = contents2[1: iterator2 + 1]
-                                            current = None
-                                            for spec in specs:
-                                                temp = False
-                                                found2 = False
-                                                for item3 in contents3:
-                                                    if re.match('^#', item3.strip()\
-                                                    ) or re.match('^\s*$', item3.strip()):
-                                                        continue
-                                                    elif re.match(spec + '$', item3.strip()):
-                                                        found2 = True
-                                                        break
-                                                if found2:
-                                                    continue
-                                                else:
-                                                    compliant = False
-                                                    temp = True
-                                            if temp:
-                                                self.wronglogrot.append(key)
-                                                break
-                                        else:
-                                            iterator2 += 1
-                                else:
-                                    iterator += 1
-                                    continue
-                            elif iterator < length:
-                                iterator += 1
-                                continue
-                            elif iterator == length:
-                                if not found1:
-                                    compliant = False
-                                    self.missinglogrot.append(key)
-                                continue
-        else:
-            self.detailedresults += "Log rotation file doesn\'t exist"
-            compliant = False
-            for key in self.directories:
-                self.missinglogrot.append(key)
+                contentstring = ""
+
+                for line in contents:
+                    contentstring += line
+                if not re.search(self.expression, contentstring):
+                    self.detailedresults = "logrotate file doesn't " + \
+                        "contain the correct log contents\n"
+                    compliant = False
+#                 length = len(contents) - 1
+#                 self.fixables = {}
+#                 for key in self.directories:
+#                     current = False
+#                     found1 = False
+#                     contents2 = []
+#                     contents3 = []
+#                     iterator = 0
+#                     for item1 in contents:
+#                         #blank line or comment, skip
+#                         if re.match('^#', item1.strip()) or re.match('^\s*$', item1.strip()):
+#                             iterator = iterator + 1
+#                             continue
+#                         if current:
+#                             if re.search('{', item1.strip()):
+#                                 # open bracket is on it's own line
+#                                 if re.match('^{$', item1.strip()):
+#                                     contents2 = contents[iterator + 1:]
+#                                 # bracket is on line with a spec
+#                                 elif re.match('^{(.)*', item1.strip()):
+#                                     contents2 = contents[iterator:]
+#                                     contents2[0] = re.sub('{', "",
+#                                                           contents2[0])
+#                                 # bracket after another dir
+#                                 elif re.match('(.)+{$', item1.strip()):
+#                                     contents2 = contents[iterator + 1:]
+#                                 else:
+#                                     debug += "bad configuration file format\n"
+#                                     self.logger.log(LogPriority.DEBUG, debug)
+#                                 iterator2 = 0
+#                                 for item2 in contents2:
+#                                     if re.search('}$', item2.strip()):
+#                                         # closing bracket is on its own line
+#                                         if re.match('^}$', item2.strip()):
+#                                             contents3 = contents2[0:iterator2]
+#                                         # closing bracket is on a line after a spec
+#                                         elif re.match('(.)+}$', item2.strip()):
+#                                             contents3 = contents2[0:iterator2]
+#                                             contents[iterator2] = re.sub('}', "", \
+#                                                             contents3[iterator2])
+#                                         contents3 = contents2[0:iterator2]
+#                                         current = None
+#                                         for spec in specs:
+#                                             temp = False
+#                                             found2 = False
+#                                             for item3 in contents3:
+#                                                 if re.match('^#', item3.strip()) or re.match('^\s*$', item3.strip()):
+#                                                     continue
+#                                                 elif re.match(spec + '$',
+#                                                               item3.strip()):
+#                                                     found2 = True
+#                                                     break
+#                                             if found2:
+#                                                 continue
+#                                             else:
+#                                                 self.detailedresults += \
+#                                                     key + " file doesn't " + \
+#                                                     "contain the correct " + \
+#                                                     "contents\n"
+#                                                 compliant = False
+#                                                 temp = True
+#                                         if temp:
+#                                             current = False
+#                                             self.wronglogrot.append(key)
+#                                             break
+#                                     else:
+#                                         iterator2 += 1
+#                                         continue
+#                             else:
+#                                 iterator += 1
+#                                 continue
+#                         else:
+#                             #found the key on this line
+#                             if re.search(key + '(\s)+', item1) or re.search(key + '\s*{', item1):
+#                                 print "found the key: " + key + " on line: " + item1 + "\n\n"
+#                                 found1 = True
+#                                 current = key
+#                                 #current line also contains an open bracket at end
+#                                 if re.search('{$', item1.strip()):
+#                                     contents2 = contents[iterator:]
+#                                     iterator2 = 0
+#                                     for item2 in contents2:
+#                                         if re.match('}$', item2.strip()):
+#                                             contents3 = contents2[1: iterator2 + 1]
+#                                             current = None
+#                                             for spec in specs:
+#                                                 print "current spec: " + spec + "\n\n"
+#                                                 temp = False
+#                                                 found2 = False
+#                                                 for item3 in contents3:
+#                                                     if re.match('^#', item3.strip()) or re.match('^\s*$', item3.strip()):
+#                                                         continue
+#                                                     elif re.match(spec + '$', item3.strip()):
+#                                                         found2 = True
+#                                                         break
+#                                                 if found2:
+#                                                     continue
+#                                                 else:
+#                                                     print "didn't find the spec: " + spec + "\n\n"
+#                                                     compliant = False
+#                                                     temp = True
+#                                                 if temp:
+#                                                     print "putting " + spec + " inside wronglot list\n\n"
+#                                                     self.wronglogrot.append(spec)
+#                                                     #break
+#                                             if self.wronglogrot:
+#                                                 self.fixables[key] = self.wronglogrot
+#                                                 self.wronglogrot = []
+#                                             break
+#                                         else:
+#                                             iterator2 += 1
+#                                 else:
+#                                     iterator += 1
+#                                     continue
+#                             #didn't find key but not at the end of file, continue
+#                             elif iterator < length:
+#                                 iterator += 1
+#                                 continue
+#                             #at the end of file and didn't find key
+#                             elif iterator == length:
+#                                 if not found1:
+#                                     compliant = False
+#                                     self.missinglogrot.append(key)
+#                                 continue
+#         else:
+#             self.detailedresults += "Log rotation file doesn\'t exist"
+#             compliant = False
+#             for key in self.directories:
+#                 self.missinglogrot.append(key)
+#         print "self.missinglogrot: " + str(self.missinglogrot) + "\n"
+#         print "self.fixables: " + str(self.fixables) + "\n"
         return compliant
 
 ###############################################################################
@@ -523,6 +563,12 @@ daemon config file: " + self.logpath
                  "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true"]
+        addon = "/var/log/user/ /var/log/daemon /var/log/auth /var/log/kern /var/log/lpr /var/log/syslog /var/log/cron /var/log/maillog /var/log/local /var/log/ftp {\n" + \
+            "rotate 4\nweekly\nmissingok\nnotifempty\ncompress\ndelaycompress\nsharedscripts\npostrotate\n" + \
+            "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true\n" + \
+            "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true\n" + \
+            "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true\n" + \
+            "endscript}\n"
 #-----------------------------------------------------------------------------#
         #this should actually remove systemd-logger and automatically install
         #rsyslog.  For opensuse systems only
@@ -661,106 +707,115 @@ daemon config file: " + self.logpath
         resetsecon(self.logpath)
 #-----------------------------------------------------------------------------#
         # correct log rotate file
-        if self.missinglogrot or self.wronglogrot:
-            if not os.path.exists(self.logrotpath):
-                if not createFile(self.logrotpath, self.logger):
-                    debug = "Unable to create missing log rotation config " + \
-                        "file: " + self.logrotpath + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    return False
-                else:
-                    self.created2 = True
-                    self.detailedresults += "successfully created log \
-rotation config file: " + self.logrotpath + "\n"
-                if re.search("Red Hat*6\.", self.environ.getostype):
-                    statdata = os.stat(self.logrotpath)
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(self.logrotpath)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
-                    if mode != 420 or owner != "root" or group != "sys":
-                        origuid = statdata.st_uid
-                        origgid = statdata.st_gid
-                        if grp.getgrnam("sys")[2]:
-                            gid = grp.getgrnam("sys")[2]
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "perm",
-                                     "startstate": [origuid, origgid, mode],
-                                     "endstate": [0, gid, 420],
-                                     "filepath": self.logrotpath}
-                            self.statechglogger.recordchgevent(myid, event)
-                            os.chmod(self.logrotpath, 416)
-                            os.chown(self.logrotpath, 0, gid)
-                            resetsecon(self.logrotpath)
-                        else:
-                            success = False
-                            debug = "Unable to determine the id " + \
-                                "number of sys group.  Will not change " + \
-                                "permissions on " + self.logrotpath + " file\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
-                    if not setPerms(self.logrotpath, [0, 0, 420], self.logger):
-                        debug = "Unable to set " + \
-                        "permissions on " + self.logrotpath + "\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
-            else:
-                if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.logrotpath, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                        debug = "Unable to set " + \
-                        "permissions on " + self.logrotpath + "\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
-            contents = readFile(self.logrotpath, self.logger)
-            tempstring1 = ""
-            tempstring2 = ""
-            tmpfile = self.logrotpath + '.tmp'
-            if self.missinglogrot:
-                for key in self.missinglogrot:
-                    tempstring2 += key + " "
-                tempstring2 += "{\n"
-                for spec in specs:
-                    tempstring2 += spec + "\n"
-                tempstring2 += "}\n"
-                for key in self.wronglogrot:
-                    tempcontents = []
-                    for line in contents:
-                        if re.search("(.)*" + key + "(.)*", line):
-                            line = re.sub(key, "", line)
-                            line = line.strip()
-                            tempcontents.append(line)
-                        else:
-                            tempcontents.append(line)
-                    contents = tempcontents
-            if self.wronglogrot:
-                for key in self.wronglogrot:
-                    tempstring2 += key + " "
-                tempstring2 += "{\n"
-                for spec in specs:
-                    tempstring2 += spec + "\n"
-                tempstring2 += "}\n"
-                for line in contents:
-                    tempstring1 += line
-                tempstring1 += tempstring2
 
-            if not writeFile(tmpfile, tempstring1, self.logger):
-                return
-            if not self.created2:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf",
+        #if logrotation file doesn't exist, create it, record createfile event
+        if not os.path.exists(self.logrotpath):
+            if not createFile(self.logrotpath, self.logger):
+                debug = "Unable to create missing log rotation config " + \
+                    "file: " + self.logrotpath + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+            else:
+                self.created2 = True
+                self.detailedresults += "successfully created log \
+rotation config file: " + self.logrotpath + "\n"
+                event = {"eventtype": "creation",
                          "filepath": self.logrotpath}
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.logrotpath, tmpfile,
-                                                     myid)
-            os.rename(tmpfile, self.logrotpath)
+        #if system is redhat 6 we need to make sure the group owner is sys
+        if re.search("^Red Hat*", self.environ.getostype().strip()) and \
+                re.search("^6*", self.environ.getosver()):
+            gid = grp.getgrnam("sys")[2]
+            statdata = os.stat(self.logrotpath)
+            mode = stat.S_IMODE(statdata.st_mode)
+            ownergrp = getUserGroupName(self.logrotpath)
+            owner = ownergrp[0]
+            group = ownergrp[1]
+            if mode != 420 or owner != "root" or group != "sys":
+                origuid = statdata.st_uid
+                origgid = statdata.st_gid
+                if grp.getgrnam("sys")[2]:
+                    if not self.created2:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "perm",
+                                 "startstate": [origuid, origgid, mode],
+                                 "endstate": [0, gid, 420],
+                                 "filepath": self.logrotpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                    os.chmod(self.logrotpath, 420)
+                    os.chown(self.logrotpath, 0, gid)
+                    resetsecon(self.logrotpath)
+                else:
+                    success = False
+                    debug = "Unable to determine the id " + \
+                        "number of sys group.  Will not change " + \
+                        "permissions on " + self.logrotpath + " file\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+        elif not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
+            if not setPerms(self.logrotpath, [0, 0, 420], self.logger):
+                debug = "Unable to set " + "permissions on " + self.logrotpath + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+        contentstring = ""
+        contents = readFile(self.logrotpath, self.logger)
+        for line in contents:
+            contentstring += line
+        if not re.search(self.expression, contentstring):
+            contentstring += addon
+        tmpfile = self.logrotpath + ".tmp"
+        if not writeFile(tmpfile, contentstring, self.logger):
+            return False
+        if not self.created2:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "conf",
+                     "filepath": self.logrotpath}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(self.logrotpath, tmpfile, myid)
+        os.rename(tmpfile, self.logrotpath)
+        if re.search("^Red Hat", self.environ.getostype().strip()) and \
+                re.search("^6", self.environ.getosver()):
+            os.chown(self.logrotpath, 0, gid)
+        else:
             os.chown(self.logrotpath, 0, 0)
-            os.chmod(self.logrotpath, 420)
-            resetsecon(self.logrotpath)
+        os.chmod(self.logrotpath, 420)
+        resetsecon(self.logrotpath)
+#         if self.missinglogrot or self.fixables:
+#             contents = readFile(self.logrotpath, self.logger)
+#             tempstring1 = ""
+#             tempstring2 = ""
+#             tmpfile = self.logrotpath + '.tmp'
+#             if self.missinglogrot:
+#                 for key in self.missinglogrot:
+#                     tempstring2 += key + " "
+#                 tempstring2 += "{\n"
+#                 for spec in specs:
+#                     tempstring2 += spec + "\n"
+#                 tempstring2 += "}\n"
+#             if self.fixables:
+#                 for key in self.fixables:
+#                     tempstring2 += key + " "
+#                     tempstring2 += "{\n"
+#                     for item in self.fixables[key]:
+#                         tempstring2 += item + "\n"
+#                     tempstring2 += "}\n"
+#             for line in contents:
+#                 tempstring1 += line
+#             tempstring1 += tempstring2
+# 
+#             if not writeFile(tmpfile, tempstring1, self.logger):
+#                 return
+#             if not self.created2:
+#                 self.iditerator += 1
+#                 myid = iterate(self.iditerator, self.rulenumber)
+#                 event = {"eventtype": "conf",
+#                          "filepath": self.logrotpath}
+#                 self.statechglogger.recordchgevent(myid, event)
+#                 self.statechglogger.recordfilechange(self.logrotpath, tmpfile,
+#                                                      myid)
+#             os.rename(tmpfile, self.logrotpath)
+
 #-----------------------------------------------------------------------------#
         # restart log daemon
         if not self.ch.executeCommand("/sbin/service " + self.logd + " reload-or-restart"):
