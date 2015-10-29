@@ -371,7 +371,9 @@ administrators may want to disable this rule.
                               'unbound-anchor.service', 'virtlockd.service',
                               'xdm', 'xdm.service',
                               'YaST2-Second-Stage.service',
-                              'ypbind.service']
+                              'ypbind.service',
+                              'sysstat-collect.service',
+                              'sysstat-summary.service']
         datatype = 'bool'
         key = 'minimizesvcs'
         instructions = '''To disable this rule set the value of MINIMIZESVCS to
