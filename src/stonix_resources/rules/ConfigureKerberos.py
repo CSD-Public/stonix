@@ -31,6 +31,7 @@ dictionary
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/08/17 eball - Updated to work with Linux
 @change: 2015/10/07 eball - Help text cleanup
+@change: 2015/11/02 eball - Added undo events to package installation
 '''
 from __future__ import absolute_import
 import os
@@ -41,6 +42,7 @@ from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
+from ..stonixutilityfunctions import iterate
 from ..localize import KERB5, KRB5
 
 
@@ -63,7 +65,7 @@ class ConfigureKerberos(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -209,7 +211,17 @@ class ConfigureKerberos(RuleKVEditor):
                     for package in self.packages:
                         if not self.ph.check(package):
                             if self.ph.checkAvailable(package):
-                                if not self.ph.install(package):
+                                if self.ph.install(package):
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator,
+                                                   self.rulenumber)
+                                    event = {"eventtype": "pkghelper",
+                                             "pkgname": package,
+                                             "startstate": "removed",
+                                             "endstate": "installed"}
+                                    self.statechglogger.recordchgevent(myid,
+                                                                       event)
+                                else:
                                     fixsuccess = False
                                     self.detailedresults += "Installation of " + \
                                         package + " did not succeed.\n"
@@ -218,7 +230,7 @@ class ConfigureKerberos(RuleKVEditor):
                     self.detailedresults += self.fh.getFileMessage()
             else:
                 fixsuccess = False
-                self.detailedresults = str(self.ci.getcurrvalue()) + \
+                self.detailedresults = str(self.ci.getkey()) + \
                     " was disabled. No action was taken!"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
