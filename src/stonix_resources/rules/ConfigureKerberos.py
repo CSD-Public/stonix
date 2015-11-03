@@ -77,10 +77,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                           "eventid": str(self.rulenumber).zfill(4) + \
-#                           "kerb5"},
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": True,
@@ -88,10 +85,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                       "eventid": str(self.rulenumber).zfill(4) + \
-#                       "Kerberos"},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "Kerberos"},
                           "edu.mit.Kerberos.krb5kdc.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd",
                            "remove": True,
@@ -99,7 +94,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "krb5kdc"},
                           "kerb5.conf":
                           {"path": "/etc/kerb5.conf",
                            "remove": True,
@@ -107,10 +103,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                       "eventid": str(self.rulenumber).zfill(4) + \
-#                       "krb5kdc"},
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
                           "edu.mit.Kerberos.kadmind.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd",
                            "remove": True,
@@ -118,10 +111,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None}
-    # FIXME: Once StateChgLogger supports file deletion
-    #                       "eventid": str(self.rulenumber).zfill(4) + \
-    #                       "kadmind"}
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "kadmind"},
                           }
         else:
             self.files = {"krb5.conf":
@@ -131,7 +122,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": "root",
                            "group": "root",
-                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"}}
+                           "eventid": str(self.rulenumber).zfill(4) + "krb5"}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
