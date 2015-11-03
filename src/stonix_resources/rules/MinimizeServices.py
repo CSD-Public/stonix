@@ -30,6 +30,7 @@ Created on Aug 9, 2012
 RHEL 7
 @change: 2015/04/15 dkennel: updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2015/10/30 dwalker: added additional services to allowed list.
 '''
 from __future__ import absolute_import
 
