@@ -30,6 +30,7 @@ on a system must have unique UIDs.
 @change: 08/05/2014 ekkehard added duplicate uid & gid check for OS X
 @change: 2015/04/14 dkennel updated to use new style isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2015/10/28 ekkehard fix name and file name
 '''
 from __future__ import absolute_import
 import os
@@ -42,7 +43,7 @@ from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 
 
-class CheckDuplicateIds(Rule):
+class CheckDupIDs(Rule):
     '''
     This class checks the local accounts database for duplicate IDs. All
     accounts on a system must have unique UIDs. This class inherits the base
@@ -63,6 +64,7 @@ class CheckDuplicateIds(Rule):
         self.rulename = 'CheckDupIDs'
         self.formatDetailedResults("initialize")
         self.mandatory = True
+        self.rootrequired = True
         self.helptext = "This rule is an audit-only rule that will " + \
             "examine local account databases for accounts that " + \
             "have duplicate UID values. All accounts must be unique for " + \
@@ -70,7 +72,6 @@ class CheckDuplicateIds(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        self.rootrequired = False
         self.issuelist = []
 
     def report(self):
@@ -81,6 +82,7 @@ class CheckDuplicateIds(Rule):
         '''
         try:
             self.detailedresults = ""
+            self.issuelist = []
             if self.environ.getosfamily() == 'darwin':
                 self.compliant = self.osxcheck()
             else:
@@ -115,6 +117,7 @@ class CheckDuplicateIds(Rule):
             result = False
             nixcheckresult = self.nixcheck()
             oscheckresult = True
+            issue = ""
 # Check for duplicate users
             cmd = ["/usr/bin/dscl", ".", "list", "/users", "uid"]
             self.commandhelper.executeCommand(cmd)
