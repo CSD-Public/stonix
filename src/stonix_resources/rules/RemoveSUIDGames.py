@@ -217,7 +217,7 @@ directory.'''
                     self.statechglogger.recordchgevent(myid, event)
                 else:
                     success = False
-                    results += "Unable to remove " + game
+                    results += "Unable to remove " + game + "\n"
 
             if not self.__cleandir("/usr/games"):
                 success = False
