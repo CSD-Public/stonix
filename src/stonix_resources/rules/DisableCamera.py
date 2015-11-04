@@ -49,12 +49,19 @@ class DisableCamera(Rule):
         self.rulenumber = 150
         self.rulename = "DisableCamera"
         self.formatDetailedResults("initialize")
-        self.mandatory = True
+        self.mandatory = False
         self.helptext = '''This rule disables the built-in iSight camera.'''
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+        # configuration item instantiation
+        datatype = 'bool'
+        key = 'DISABLECAMERA'
+        instructions = "To disable this rule set the value of " + \
+            "DISABLECAMERA to False."
+        default = False
+        self.ci = self.initCi(datatype, key, instructions, default)
 
     def isreadable(self, path):
         '''
