@@ -35,6 +35,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 
+import re
 import os
 import traceback
 import stat
@@ -95,29 +96,49 @@ class DisableCamera(Rule):
         @rtype: boolean
         @author: Breen Malmberg
         '''
-
-        self.detailedresults = ""
-        self.compliant = True
-        self.pathlist = ['/System/Library/QuickTime/QuickTimeUSBVDCDigitizer.component/Contents/MacOS/QuickTimeUSBVDCDigitizer',
-                         '/System/Library/PrivateFrameworks/CoreMediaIOServicesPrivate.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-                         '/System/Library/PrivateFrameworks/CoreMediaIOServices.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-                         '/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-                         '/Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/MacOS/AppleCamera']
-        self.cmdhelper = CommandHelper(self.logdispatch)
-
         try:
-
-            for path in self.pathlist:
-                if self.isreadable(path):
+            self.detailedresults = ""
+            self.compliant = True
+            self.cmdhelper = CommandHelper(self.logdispatch)
+            cmd = ["/usr/sbin/kextstat"]
+            cameradriver = "com.apple.driver.AppleCameraInterface"
+            if self.cmdhelper.executeCommand(cmd):
+                found = False
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    for line in output:
+                        if re.search(cameradriver, line):
+                            found = True
+                            break
+                    if found:
+                        self.detailedresults += "The camera is not disabled\n"
+                        self.compliant = False
+                elif error:
+                    self.detailedresults += "There was an error running " + \
+                        "kextstat command.  Unable to determine whether " + \
+                        "the camera is disabled or enabled\n"
                     self.compliant = False
-                    self.detailedresults += '\nfile: ' + str(path) + ' is still readable'
+#         self.pathlist = ['/System/Library/QuickTime/QuickTimeUSBVDCDigitizer.component/Contents/MacOS/QuickTimeUSBVDCDigitizer',
+#                          '/System/Library/PrivateFrameworks/CoreMediaIOServicesPrivate.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+#                          '/System/Library/PrivateFrameworks/CoreMediaIOServices.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+#                          '/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
+#                          '/Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/MacOS/AppleCamera']
+#         self.cmdhelper = CommandHelper(self.logdispatch)
+# 
+#         try:
+# 
+#             for path in self.pathlist:
+#                 if self.isreadable(path):
+#                     self.compliant = False
+#                     self.detailedresults += '\nfile: ' + str(path) + ' is still readable'
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -132,29 +153,45 @@ class DisableCamera(Rule):
         @rtype: boolean
         @author: Breen Malmberg
         '''
-
-        self.detailedresults = ""
-        success = True
-        cmd = "chmod a-r "
-
         try:
-
-            for path in self.pathlist:
-                if os.path.exists(path):
-                    self.cmdhelper.executeCommand(cmd + path)
-                    error = self.cmdhelper.getErrorString()
-                    if error:
-                        success = False
-                        self.detailedresults += '\nthere was an error running command: ' + cmd + path
-
+            if not self.ci.getcurrvalue():
+                return
+            self.detailedresults = ""
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            self.rulesuccess = True
+            cmd = ["/usr/sbin/kextunload", "-b", "com.apple.driver.AppleCameraInterface"]
+            if self.cmdhelper.executeCommand(cmd):
+                retval = self.cmdhelper.getReturnCode()
+                if retval != 0:
+                    self.detailedresults += "kextunload command unable to " + \
+                        "run successfully.  Unable to disable camera\n"
+                    self.rulesuccess = False
+            else:
+                self.detailedresults += "kextunload command unable to " + \
+                    "run successfully.  Unable to disable camera\n"
+                self.rulesuccess = False
+#         cmd = "chmod a-r "
+# 
+#         try:
+# 
+#             for path in self.pathlist:
+#                 if os.path.exists(path):
+#                     self.cmdhelper.executeCommand(cmd + path)
+#                     error = self.cmdhelper.getErrorString()
+#                     if error:
+#                         success = False
+#                         self.detailedresults += '\nthere was an error running command: ' + cmd + path
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return success
+        return self.rulesuccess
