@@ -26,6 +26,7 @@ Created on Dec 3, 2014
 @author: dwalker
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2015/11/05 ekkehard Added LDAP Entry reporting if not compliant 
 '''
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -68,6 +69,8 @@ class ConfigureComputerName(Rule):
             self.mil.messageReset()
             self.compliant = self.mil.getComputerInfoCompliance()
             self.resultAppend(self.mil.messageGet())
+            if not self.compliant:
+                self.resultAppend(self.mil.reportLDAP())
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
