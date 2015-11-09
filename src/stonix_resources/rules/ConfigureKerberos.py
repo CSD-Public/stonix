@@ -31,6 +31,7 @@ dictionary
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/08/17 eball - Updated to work with Linux
 @change: 2015/10/07 eball - Help text cleanup
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 import os
@@ -63,7 +64,7 @@ class ConfigureKerberos(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.

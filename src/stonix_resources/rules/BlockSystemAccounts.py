@@ -41,6 +41,7 @@ by administrators in certain situations.
 @change: 2015/06/10 Breen Malmberg - updated author names; implemented correct
 mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 
 from __future__ import absolute_import
