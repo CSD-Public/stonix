@@ -29,6 +29,7 @@ Created on Dec 10, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/08/26 ekkehard [artf37771] : DisableCamera(150) - NCAF & Lack of detail in Results - OS X El Capitan 10.11
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 from ..rule import Rule
@@ -54,7 +55,7 @@ class DisableCamera(Rule):
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # configuration item instantiation
         datatype = 'bool'
         key = 'DISABLECAMERA'
