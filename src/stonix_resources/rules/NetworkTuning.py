@@ -33,6 +33,7 @@ Created on Aug 28, 2012
 variable.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -80,7 +81,7 @@ class NetworkTuning(Rule):
         self.guidance = ["NSA 2.5.1.1", "NSA 2.5.1.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.iditerator = 0
         self.rep1success = True
         self.rep2success = True

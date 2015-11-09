@@ -42,6 +42,7 @@ given instead of the required five.
 reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/07/30 eball Changed where setPerms occurs in fix
 @change: 2015/10/08 eball Help text cleanup
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 
 from __future__ import absolute_import
@@ -88,7 +89,7 @@ before clicking undo.'''
                          'CCE 14068-1', 'CCE 15018-5', 'CCE 4293-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.postfixfoundlist = []
         self.sendmailfoundlist = []

@@ -41,6 +41,7 @@ configuration changes to the avahi service
 @change: 2015/03/17 ekkehard modernized OS X approach
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/08/26 ekkehard [artf37784] : SecureMDNS(135) - NCAF - OS X El Capitan 10.11
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 
 from __future__ import absolute_import
@@ -95,7 +96,7 @@ the avahi service in order to secure it.'''
                          'CCE 4341-4', 'CCE 4358-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
