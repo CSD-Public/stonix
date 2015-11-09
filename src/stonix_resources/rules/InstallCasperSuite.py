@@ -28,6 +28,7 @@ This is the rule for installing puppet.
 @author: ekkehard
 @change: 2014/11/24 original implementation
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 import traceback
@@ -59,14 +60,14 @@ class InstallCasperSuite(Rule):
         Constructor
         '''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
-        self.rulenumber = 9
+        self.rulenumber = 2
         self.rulename = 'InstallCasperSuite'
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''This rule installs the JAMF Casper Suite.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.js = JAMFCASPERSUITESERVER
         self.qa = JAMFCASPERQUICKADD
 
