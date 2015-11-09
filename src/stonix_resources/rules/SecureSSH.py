@@ -32,6 +32,7 @@ Created on Feb 19, 2013
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/23 eball Removed Banner setting to resolve InstallBanners conflict
 @change: 2015/10/08 eball Help text cleanup
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 import os
@@ -69,7 +70,7 @@ However, it will create the appropriate files if not present and put the \
 appropriate contents in them whether installed or not.'''
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         datatype = 'bool'
         key = 'SECURESSH'
         instructions = "To disable this rule set the value " + \
