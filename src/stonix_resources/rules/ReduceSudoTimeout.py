@@ -35,6 +35,7 @@ authorization after a successful sudo authorization is made.
 @change: 2015/04/16 dkennel updated for new isApplicable
 @change: 2015/09/09 eball Improved feedback
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 import re
@@ -74,7 +75,7 @@ class ReduceSudoTimeout(Rule):
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         datatype = 'bool'
         key = 'ReduceSudoTimeout'
         instructions = "If set to true, the REDUCESUDOTIMEOUT " + \
