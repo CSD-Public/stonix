@@ -30,6 +30,7 @@ authentication events.
 
 @author: Breen Malmberg
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 
 from __future__ import absolute_import
@@ -75,7 +76,7 @@ modifications, and authentication events."""
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # init CIs
         datatype = 'bool'
         key = 'EnableKernelAuditing'
