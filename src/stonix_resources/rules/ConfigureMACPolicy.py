@@ -31,6 +31,7 @@ The ConfigureMACPolicy class enables and configures SELinux on support OS platfo
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: dwalker 10/20/2015 Update report and fix methods for applicability
+@change: Breen Malmberg - 10/26/2015 - merged apparmor code with selinux code; added method doc strings
 '''
 
 from __future__ import absolute_import
@@ -65,7 +66,7 @@ selinux or apparmor, based on the os platform.  on supported platforms.  \
 These programs are called Mandatory Access Control programs and are essential \
 for enforcing what certain programs are allowed and not allowed to do.'''
         self.guidance = ['NSA(2.1.1.6)(2.4.2)', 'CCE-3977-6', 'CCE-3999-0',
-                         'CCE-3624-4']
+                         'CCE-3624-4', 'CIS 1.7']
         self.setype = "targeted"
         self.universal = "#The following lines were added by stonix\n"
         self.iditerator = 0
@@ -73,44 +74,280 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.kernel = True
         self.applicable = {'type': 'white',
                            'family': ['linux']}
-        self.ph = Pkghelper(self.logger, self.environ)
-        # configuration item instantiation
+
         datatype = "bool"
         key = "CONFIGUREMAC"
         instructions = "To prevent the configuration of a mandatory " + \
             "access control policy set the value of CONFIGUREMAC to " + \
-            "False."
+            "False. Note: The 'mandatory access control' is either SELinux or AppArmor, depending on your system type."
         default = True
         self.ConfigureMAC = self.initCi(datatype, key, instructions, default)
-        if self.ph.manager in ("yum", "portage"):
-            datatype2 = "string"
-            key2 = "MODE"
-            instructions2 = "Please type in permissive or enforcing for the " + \
-                "mode of selinux to operate in.  Default value is permissive"
-            default2 = "permissive"
-            self.modeci = self.initCi(datatype2, key2, instructions2, default2)
+
+        datatype2 = "string"
+        key2 = "MODE"
+        default2 = "permissive"
+        instructions2 = "Valid modes for SELinux are: permissive or enforcing. Valid modes for AppArmor are: complain or enforce"
+        self.modeci = self.initCi(datatype2, key2, instructions2, default2)
+
         self.statuscfglist = ['SELinux status:(\s)+enabled',
                               'Current mode:(\s)+(permissive|enforcing)',
                               'Mode from config file:(\s)+(permissive|enforcing)',
                               'Policy from config file:(\s)+(targeted|default)|Loaded policy name:(\s)+(targeted|default)']
+        self.localization()
+
+    def localization(self):
+        '''
+        wrapper for setting up initial variables and helper objects based on which OS type you have
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.initobjs()
+        self.setcommon()
+
+        if self.pkghelper.manager == "zypper":
+            self.setopensuse()
+        if self.pkghelper.manager == "apt-get":
+            self.setubuntu()
+
+    def setcommon(self):
+        '''
+        set common variables for use with both/either ubuntu and/or opensuse
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.ubuntu = False
+        self.opensuse = False
+        self.detailedresults = ""
+
+        # for generating a new profile, you need the command, plus the target profile name
+        self.genprofcmd = 'aa-genprof'
+        self.aaprofiledir = '/etc/apparmor.d/'
+        self.aastatuscmd = 'apparmor_status'
+        self.aaunconf = '/usr/sbin/aa-unconfined'
+
+        self.initobjs()
+
+    def initobjs(self):
+        '''
+        initialize helper objects
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        try:
+
+            self.cmdhelper = CommandHelper(self.logger)
+            self.pkghelper = Pkghelper(self.logger, self.environ)
+
+        except Exception:
+            raise
+
+    def setopensuse(self):
+        '''
+        set variables for opensuse systems
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.opensuse = True
+        self.pkgdict = {'libapparmor1': True,
+                        'apparmor-profiles': True,
+                        'apparmor-utils': True,
+                        'apparmor-parser': True,
+                        'yast2-apparmor': True,
+                        'apparmor-docs': True}
+        self.aastartcmd = 'rcapparmor start'
+        self.aareloadprofscmd = 'rcapparmor reload'
+        self.aastatuscmd = 'rcapparmor status'
+
+    def setubuntu(self):
+        '''
+        set variables for ubuntu systems
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.ubuntu = True
+        self.pkgdict = {'apparmor': True,
+                        'apparmor-utils': True,
+                        'apparmor-profiles': True}
+
+        self.aastartcmd = 'invoke-rc.d apparmor start'
+        self.aaupdatecmd = 'update-rc.d apparmor start 5 S'
+        self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
+        self.aadefscmd = 'update-rc.d apparmor defaults'
 
     def report(self):
+        '''
+        decide which report method(s) to run, based on package manager
+
+        @return: self.compliant
+        @rtype: bool
+        @author: Derek Walker
+        @change: Breen Malmberg - 10/26/2015 - filled in stub method; added method doc string
+        '''
+
+        self.compliant = True
+        self.detailedresults = ''
+
         try:
-            if self.ph.manager in ("yum", "portage"):
-                self.compliant = self.reportSELinux()
-            elif self.ph.manager in ("zypper", "apt-get"):
-                self.compliant = self.reportAppArmor()
+            if self.pkghelper.manager in ("yum", "portage"):
+                if not self.reportSELinux():
+                    self.compliant = False
+            elif self.pkghelper.manager in ("zypper", "apt-get"):
+                if not self.reportAppArmor():
+                    self.compliant = False
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def reportAppArmor(self):
+        '''
+        run report actions for each piece of apparmor in sequence
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not self.reportAApkg():
+                retval = False
+            if not self.reportAAstatus():
+                retval = False
+            if not self.reportAAprofs():
+                retval = False
+
+        except Exception:
+            raise
+        return retval
+
+    def reportAApkg(self):
+        '''
+        check whether the apparmor package is installed
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        # defaults
+        retval = True
+        for pkg in self.pkgdict:
+            self.pkgdict[pkg] = True
+
+        try:
+
+            if not self.pkgdict:
+                self.logger.log(LogPriority.DEBUG, "The list of packages needed is blank")
+
+            for pkg in self.pkgdict:
+                if not self.pkghelper.check(pkg):
+                    self.pkgdict[pkg] = False
+            for pkg in self.pkgdict:
+                if not self.pkgdict[pkg]:
+                    retval = False
+                    self.detailedresults += '\nPackage: ' + str(pkg) + ' is not installed'
+
+        except Exception:
+            raise
+        return retval
+
+    def reportAAstatus(self):
+        '''
+        check whether the apparmor module is loaded
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            # we cannot use the apparmor utilities to check the status, if they are not installed!
+            if not self.pkgdict['apparmor-utils']:
+                self.detailedresults += '\nCannot check apparmor status without apparmor-utils installed'
+                retval = False
+                return retval
+
+            self.cmdhelper.executeCommand(self.aastatuscmd)
+            output = self.cmdhelper.getOutputString()
+            errout = self.cmdhelper.getErrorString()
+            if errout != '':
+                retval = False
+                self.detailedresults += '\nThere was an error while attempting to run command: ' + str(self.aastatuscmd)
+                self.detailedresults += '\nThe error was: ' + str(errout)
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            if not re.search('apparmor module is loaded', output):
+                retval = False
+                self.detailedresults += '\napparmor module is not loaded'
+
+        except Exception:
+            raise
+        return retval
+
+    def reportAAprofs(self):
+        '''
+        check whether or not there are any unconfined (by apparmor) services or applications
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        self.unconflist = []
+        unconfined = False
+        retval = True
+
+        try:
+
+            if not self.pkgdict['apparmor-utils']:
+                self.detailedresults += '\nCannot check apparmor profile status without apparmor-utils installed'
+                retval = False
+                return retval
+            if not self.pkgdict['apparmor-profiles']:
+                self.detailedresults += '\nCannot accurately determine profile status without apparmor-profiles installed'
+                retval = False
+                return retval
+
+            self.cmdhelper.executeCommand(self.aaunconf)
+            errout = self.cmdhelper.getErrorString()
+            if errout:
+                self.detailedresults += '\nThere was an error running command: ' + str(self.aaunconf)
+                self.detailedresults += '\nThe error was: ' + str(errout)
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            output = self.cmdhelper.getOutput()
+            for line in output:
+                if re.search('not confined', line):
+                    retval = False
+                    unconfined = True
+                    sline = line.split()
+                    self.unconflist.append(str(sline[1]))
+                    self.detailedresults += '\n' + str(sline[1]) + ' is not confined by apparmor'
+            if unconfined:
+                self.detailedresults += "\n\nIf you have services or applications which are unconfined by apparmor, this can only be corrected manually, by the administrator of your system. (See the man page for apparmor)."
+
+        except Exception:
+            raise
+        return retval
 
     def reportSELinux(self):
         '''
@@ -133,12 +370,12 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.path1 = "/etc/selinux/config"
         self.tpath1 = "/etc/selinux/config.tmp"
         # set the appropriate name of the selinux package
-        if self.ph.manager == "apt-get":
+        if self.pkghelper.manager == "apt-get":
             if re.search("Debian", self.environ.getostype()):
                 self.selinux = "selinux-basics"
             else:
                 self.selinux = "selinux"
-        elif self.ph.manager == "yum":
+        elif self.pkghelper.manager == "yum":
             self.selinux = "libselinux"
         # set the grub path for each system and certain values to be found
         # inside the file
@@ -155,7 +392,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 self.path2 = "/etc/grub.conf"
                 self.tpath2 = "/etc/grub.conf.tmp"
                 self.perms2 = [0, 0, 384]
-        elif self.ph.manager == "apt-get" or self.ph.manager == "zypper":
+        elif self.pkghelper.manager == "apt-get" or self.pkghelper.manager == "zypper":
             self.setype = "default"
             self.path2 = "/etc/default/grub"
             self.tpath2 = "/etc/default/grub.tmp"
@@ -166,7 +403,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             self.tpath2 = "/etc/grub.conf.tmp"
             self.perms2 = [0, 0, 384]
 
-        if not self.ph.check(self.selinux):
+        if not self.pkghelper.check(self.selinux):
             compliant = False
             self.detailedresults += "selinux is not even installed\n"
             self.formatDetailedResults("report", self.compliant,
@@ -217,7 +454,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             if self.f2:
                 conf1 = False
                 conf2 = False
-                if self.ph.manager == "apt-get":
+                if self.pkghelper.manager == "apt-get":
                     if not checkPerms(self.path2, self.perms2,
                                       self.logger):
                         compliant = False
@@ -265,7 +502,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                                 found = True
                                 break
                         if not found:
-                            if self.ph.manager == "apt-get":
+                            if self.pkghelper.manager == "apt-get":
                                 if self.seinstall:
                                     self.detailedresults += "Since stonix \
 just installed selinux, you will need to reboot your system before this rule \
@@ -284,22 +521,183 @@ the sestatus command to see if selinux is configured properly\n"
 
 ###############################################################################
     def fix(self):
+        '''
+        decide which fix method(s) to run, based on package manager
+
+        @return: fixresult
+        @rtype: bool
+        @author: Derek Walker
+        @change: Breen Malmberg - 10/26/2015 - filled in stub method; added doc string; 
+                                                changed method to use correct return variable
+        '''
+
+        fixresult = True
+        self.detailedresults = ''
+
         try:
-            if self.ph.manager in ("yum", "portage"):
-                self.rulesuccess = self.fixSELinux()
-            elif self.ph.manager in ("zypper", "apt-get"):
-                self.rulesuccess = self.fixAppArmor()
+
+            if self.ConfigureMAC.getcurrvalue():
+
+                if self.pkghelper.manager in ("yum", "portage"):
+                    if not self.fixSELinux():
+                        fixresult = False
+                elif self.pkghelper.manager in ("zypper", "apt-get"):
+                    if not self.fixAppArmor():
+                        fixresult = False
+                else:
+                    self.detailedresults += '\nCould not identify your OS type, or OS not supported for this rule.'
+
+            else:
+                self.detailedresults += '\nThe CI for this rule was not enabled. Nothing was done.'
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", fixresult, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
+        return fixresult
+
+    def fixAppArmor(self):
+        '''
+        wrapper to decide which fix actions to run and in what order, for apparmor
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if self.modeci.getcurrvalue() in ['complain', 'permissive']:
+                aamode = 'aa-complain'
+            elif self.modeci.getcurrvalue() == ['enforce', 'enforcing']:
+                aamode = 'aa-enforce'
+            if not aamode:
+                self.detailedresults += '\nNo valid mode was specified for apparmor profiles. Valid modes include: enforce, or complain.'
+                self.detailedresults += '\nFix was not run to completion. Please enter a valid mode and try again.'
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                retval = False
+                return retval
+
+            self.aaprofcmd = aamode + ' ' + self.aaprofiledir + '*'
+
+            if not self.fixAApkg():
+                retval = False
+            if not self.fixAAstatus():
+                retval = False
+
+        except Exception:
+            raise
+        return retval
+
+    def fixAApkg(self):
+        '''
+        install all packages which are required for apparmor to function properly
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            for pkg in self.pkgdict:
+                if not self.pkgdict[pkg]:
+                    if not self.pkghelper.install(pkg):
+                        retval = False
+                        self.detailedresults += '\nFailed to install package: ' + str(pkg)
+
+        except Exception:
+            raise
+        return retval
+
+    def fixAAstatus(self):
+        '''
+        ensure that apparmor is configured correctly and running
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if self.ubuntu:
+
+                self.cmdhelper.executeCommand(self.aadefscmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aadefscmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+
+                self.cmdhelper.executeCommand(self.aaprofcmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+
+                self.cmdhelper.executeCommand(self.aareloadprofscmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+
+                self.cmdhelper.executeCommand(self.aaupdatecmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaupdatecmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+
+                    self.cmdhelper.executeCommand(self.aastartcmd)
+                    errout2 = self.cmdhelper.getErrorString()
+                    if errout2:
+                        retval = False
+                        self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
+                        self.detailedresults += '\nThe error was: ' + str(errout2)
+
+            elif self.opensuse:
+
+                self.cmdhelper.executeCommand(self.aaprofcmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+
+                self.cmdhelper.executeCommand(self.aareloadprofscmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+
+                self.cmdhelper.executeCommand(self.aastartcmd)
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    retval = False
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+            else:
+                self.detailedresults += "\nCould not identify your OS type, or OS not supported"
+                retval = False
+                return retval
+        except Exception:
+            raise
+        return retval
 
     def fixSELinux(self):
         '''
@@ -322,9 +720,9 @@ the sestatus command to see if selinux is configured properly\n"
         for event in eventlist:
             self.statechglogger.deleteentry(event)
 
-        if not self.ph.check(self.selinux):
-            if self.ph.checkAvailable(self.selinux):
-                if not self.ph.install(self.selinux):
+        if not self.pkghelper.check(self.selinux):
+            if self.pkghelper.checkAvailable(self.selinux):
+                if not self.pkghelper.install(self.selinux):
                     self.rulesuccess = False
                     self.detailedresults += "selinux was not able to be \
 installed\n"
@@ -405,7 +803,7 @@ for install on this linux distribution\n"
                          self.statechglogger, myid)
                 self.detailedresults += "Corrected permissions on file: \
 " + self.path2 + "\n"
-            if self.ph.manager == "apt-get":
+            if self.pkghelper.manager == "apt-get":
                 tempstring = ""
                 for line in self.f2:
                     if re.match("^GRUB_CMDLINE_LINUX_DEFAULT", line.strip()):
@@ -456,7 +854,7 @@ the file: " + self.path2 + " to be compliant\n"
                 else:
                     self.rulesuccess = False
         if not self.seinstall:
-            if self.ph.manager == "apt-get":
+            if self.pkghelper.manager == "apt-get":
                 if re.search("Debian", self.environ.getostype()):
                     cmd = ["/usr/sbin/selinux-activate"]
                 elif re.search("Ubuntu", self.environ.getostype()):
