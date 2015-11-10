@@ -29,4 +29,4 @@ Packaging for OS X
 
 If you have all the correct frameworks Luggage, PyQt, QT, SIP, PyInstaller
 installed in the correct location you can build a mac package by executing
-the /stonix/src/MacBuild/macbuild.py script.
+the .../stonix/src/MacBuild/macbuild.py script.
