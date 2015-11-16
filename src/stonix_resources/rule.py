@@ -152,6 +152,7 @@ LANL-stonix."""
                 self.formatDetailedResults("undo", None, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return undosuccessful
+            #eventlist.reverse()
             for entry in eventlist:
                 try:
                     event = self.statechglogger.getchgevent(entry)
@@ -159,21 +160,25 @@ LANL-stonix."""
                         perms = event["startstate"]
                         os.chmod(event["filepath"], perms[2])
                         os.chown(event["filepath"], perms[0], perms[1])
-                        
+
                     elif event["eventtype"] == "conf":
-                        self.statechglogger.revertfilechanges(event["filepath"], entry)
-                        
+                        self.statechglogger.revertfilechanges(event["filepath"],
+                                                              entry)
+
                     elif event["eventtype"] == "comm" or \
                          event["eventtype"] == "commandstring":
-                        ch = CommandHelper(self.logger)
+                        ch = CommandHelper(self.logdispatch)
                         command = event["command"]
                         ch.executeCommand(command)
                         if ch.getReturnCode() != 0:
-                            self.detailedresults = "couldn\'t run the command \
-to undo\n"
-                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                            self.detailedresults = "Couldn't run the " + \
+                                "command to undo\n"
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                                 self.detailedresults)
+
                     elif event["eventtype"] == "creation":
                         os.remove(event["filepath"])
+
                     elif event["eventtype"] == "pkghelper":
                         ph = Pkghelper(self.logdispatch, self.environ)
                         if event["startstate"] == "installed":
@@ -181,11 +186,12 @@ to undo\n"
                         elif event["startstate"] == "removed":
                             ph.remove(event["pkgname"])
                         else:
-                            self.detailedresults = "Invalid startstate for " \
-                            + "eventtype \"pkghelper\". startstate should " + \
-                            "either be \"installed\" or \"removed\"\n"
-                            self.logger.log(LogPriority.ERROR,
-                                            self.detailedresults)
+                            self.detailedresults = 'Invalid startstate for ' \
+                                + 'eventtype "pkghelper". startstate should ' \
+                                + 'either be "installed" or "removed"\n'
+                            self.logdispatch.log(LogPriority.ERROR,
+                                                 self.detailedresults)
+
                     elif event["eventtype"] == "servicehelper":
                         sh = ServiceHelper(self.environ, self.logdispatch)
                         if event["startstate"] == "enabled":
@@ -193,21 +199,22 @@ to undo\n"
                         elif event["startstate"] == "disabled":
                             sh.disableservice(event["servicename"])
                         else:
-                            self.detailedresults = "Invalid startstate for " \
-                            + "eventtype \"servicehelper\". startstate " + \
-                            "should either be \"enabled\" or \"disabled\"\n"
-                            self.logger.log(LogPriority.ERROR,
-                                            self.detailedresults)
+                            self.detailedresults = 'Invalid startstate for ' \
+                                + 'eventtype "servicehelper". startstate ' + \
+                                'should either be "enabled" or "disabled"\n'
+                            self.logdispatch.log(LogPriority.ERROR,
+                                                 self.detailedresults)
                 except(IndexError, KeyError):
                     self.detailedresults = "EventID " + entry + " not found"
-                    self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         self.detailedresults)
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             undosuccessful = False
             self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, [self.rulename + ".undo",
-                                                         self.detailedresults])
+                                                     self.detailedresults])
         self.formatDetailedResults("undo", undosuccessful,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
