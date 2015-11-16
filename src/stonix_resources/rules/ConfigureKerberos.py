@@ -31,7 +31,8 @@ dictionary
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/08/17 eball - Updated to work with Linux
 @change: 2015/10/07 eball - Help text cleanup
-@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2015/11/02 eball - Added undo events to package installation
+@change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 '''
 from __future__ import absolute_import
 import os
@@ -42,6 +43,7 @@ from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
+from ..stonixutilityfunctions import iterate
 from ..localize import KERB5, KRB5
 
 
@@ -76,10 +78,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                           "eventid": str(self.rulenumber).zfill(4) + \
-#                           "kerb5"},
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": True,
@@ -87,10 +86,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                       "eventid": str(self.rulenumber).zfill(4) + \
-#                       "Kerberos"},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "Kerberos"},
                           "edu.mit.Kerberos.krb5kdc.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd",
                            "remove": True,
@@ -98,7 +95,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "krb5kdc"},
                           "kerb5.conf":
                           {"path": "/etc/kerb5.conf",
                            "remove": True,
@@ -106,10 +104,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                       "eventid": str(self.rulenumber).zfill(4) + \
-#                       "krb5kdc"},
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
                           "edu.mit.Kerberos.kadmind.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd",
                            "remove": True,
@@ -117,10 +112,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None}
-    # FIXME: Once StateChgLogger supports file deletion
-    #                       "eventid": str(self.rulenumber).zfill(4) + \
-    #                       "kadmind"}
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "kadmind"},
                           }
         else:
             self.files = {"krb5.conf":
@@ -130,7 +123,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": "root",
                            "group": "root",
-                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"}}
+                           "eventid": str(self.rulenumber).zfill(4) + "krb5"}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
@@ -210,7 +203,17 @@ class ConfigureKerberos(RuleKVEditor):
                     for package in self.packages:
                         if not self.ph.check(package):
                             if self.ph.checkAvailable(package):
-                                if not self.ph.install(package):
+                                if self.ph.install(package):
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator,
+                                                   self.rulenumber)
+                                    event = {"eventtype": "pkghelper",
+                                             "pkgname": package,
+                                             "startstate": "removed",
+                                             "endstate": "installed"}
+                                    self.statechglogger.recordchgevent(myid,
+                                                                       event)
+                                else:
                                     fixsuccess = False
                                     self.detailedresults += "Installation of " + \
                                         package + " did not succeed.\n"
@@ -219,7 +222,7 @@ class ConfigureKerberos(RuleKVEditor):
                     self.detailedresults += self.fh.getFileMessage()
             else:
                 fixsuccess = False
-                self.detailedresults = str(self.ci.getcurrvalue()) + \
+                self.detailedresults = str(self.ci.getkey()) + \
                     " was disabled. No action was taken!"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
