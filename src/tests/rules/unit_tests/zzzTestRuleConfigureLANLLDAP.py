@@ -26,6 +26,7 @@ This is a Unit Test for Rule ConfigureLANLLDAP
 
 @author: Eric Ball
 @change: 2015/08/11 - Original Implementation
+@change: 2015/11/16 - Updated for Ubuntu/RHEL6 nslcd, all else sssd
 '''
 from __future__ import absolute_import
 import unittest
@@ -66,10 +67,11 @@ class zzzTestRuleConfigureLANLLDAP(RuleTest):
         @author: Eric Ball
         '''
         success = True
-        self.myos = self.environ.getostype().lower()
+        myos = self.environ.getostype().lower()
+        majorVer = int(self.environ.getosver().split(".")[0])
         self.backups = {}
 
-        if re.search("suse", self.myos):
+        if not re.search("ubuntu", myos) and majorVer > 6:
             sssdconfpath = "/etc/sssd/sssd.conf"
             if os.path.exists(sssdconfpath):
                 self.backups[sssdconfpath] = open(sssdconfpath, "r").read()
