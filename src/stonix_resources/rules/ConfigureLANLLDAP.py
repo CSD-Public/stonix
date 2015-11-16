@@ -28,6 +28,7 @@ from LANL-stor.
 @change: 2015/08/11 eball - Original implementation
 @change: 2015/10/01 eball - Refactoring Red Hat code for sssd
 @change: 2015/10/23 eball - Adding undo methods to new code in fix()
+@change: 2015/11/16 eball - Moving RHEL6 back to nslcd
 '''
 from __future__ import absolute_import
 import os
@@ -54,6 +55,9 @@ class ConfigureLANLLDAP(Rule):
         self.mandatory = False
         self.helptext = """This rule will configure LDAP for use at LANL. \
 For full functionality, the ConfigureKerberos rule will also need to be run.
+Note that there is a configuration item below, "MAKEHOMEDIRS", which is \
+disabled by default for security reasons. For graphical logins, this item \
+should be enabled.
 On Debian and Ubuntu systems, this rule will require a restart to take \
 effect."""
         self.applicable = {'type': 'white',
@@ -93,9 +97,20 @@ effect."""
             results = ""
             server = self.ldapci.getcurrvalue()
             self.myos = self.environ.getostype().lower()
+            self.majorVer = self.environ.getosver().split(".")[0]
+            self.majorVer = int(self.majorVer)
+
+            # All systems except RHEL 6 and Ubuntu use sssd
+            if (re.search("red hat", self.myos) and self.majorVer < 7) or \
+               re.search("ubuntu", self.myos):
+                self.nslcd = True
+            else:
+                self.nslcd = False
 
             packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
                            "krb5-workstation", "oddjob-mkhomedir"]
+            packagesRhel6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
+                             "oddjob-mkhomedir"]
             packagesUbu = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
             packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
                            "libpam-passwdqc", "libpam-krb5"]
@@ -108,6 +123,8 @@ effect."""
                     packages = packagesDeb
             elif self.ph.determineMgr() == "zypper":
                 packages = packagesSuse
+            elif re.search("red hat", self.myos) and self.majorVer < 7:
+                packages = packagesRhel6
             else:
                 packages = packagesRpm
             self.packages = packages
@@ -126,8 +143,7 @@ effect."""
                     compliant = False
                     results += "Settings in " + conffile + " are incorrect\n"
 
-            # All systems except ubuntu use sssd
-            if not re.search("ubuntu", self.myos):
+            if not self.nslcd:
                 sssdconfpath = "/etc/sssd/sssd.conf"
                 self.sssdconfpath = sssdconfpath
                 sssdconfdict = {"services": "nss, pam",
@@ -187,6 +203,10 @@ effect."""
 
                 ldapfile = "/etc/nslcd.conf"
                 self.ldapfile = ldapfile
+                if re.search("ubuntu", self.myos):
+                    gid = "gid nslcd"
+                else:
+                    gid = "gid ldap"
                 if re.match('ldap.lanl.gov', server):
                     self.ldapsettings = ['uri ldap://' +
                                          self.ldapci.getcurrvalue(),
@@ -194,7 +214,7 @@ effect."""
                                          'base passwd ou=unixsrv,dc=lanl,' +
                                          'dc=gov',
                                          'uid nslcd',
-                                         'gid nslcd',
+                                         gid,
                                          'ssl no',
                                          'nss_initgroups_ignoreusers root']
                 ldapsettings = self.ldapsettings
@@ -240,25 +260,26 @@ effect."""
 
                 # On Ubuntu, Unity/LightDM requires an extra setting to add an
                 # option to the login screen for network users
-                lightdmconf = "/etc/lightdm/lightdm.conf"
-                tmppath = lightdmconf + ".tmp"
-                manLogin = {"greeter-show-manual-login": "true"}
-                self.editor2 = KVEditorStonix(self.statechglogger,
-                                              self.logger, "conf",
-                                              lightdmconf,
-                                              tmppath, manLogin,
-                                              "present", "closedeq")
-                if not self.editor2.report():
-                    compliant = False
-                    results += '"greeter-show-manual-login=true" not ' + \
-                        "present in " + lightdmconf + "\n"
+                if re.search("ubuntu", self.myos):
+                    lightdmconf = "/etc/lightdm/lightdm.conf"
+                    tmppath = lightdmconf + ".tmp"
+                    manLogin = {"greeter-show-manual-login": "true"}
+                    self.editor2 = KVEditorStonix(self.statechglogger,
+                                                  self.logger, "conf",
+                                                  lightdmconf,
+                                                  tmppath, manLogin,
+                                                  "present", "closedeq")
+                    if not self.editor2.report():
+                        compliant = False
+                        results += '"greeter-show-manual-login=true" not ' + \
+                            "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
             self.detailedresults = results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
@@ -336,7 +357,7 @@ effect."""
                 results += "An error occurred while trying to write " + \
                     "the PAM files\n"
 
-            if not re.search("ubuntu", self.myos):
+            if not self.nslcd:
                 if not self.__fixsssd():
                     success = False
                     results += "Failed to write good configuration to " + \
@@ -432,23 +453,24 @@ effect."""
                         results += "Problem writing new contents to " + \
                             ldapfile
 
-                lightdmconf = self.editor2.getPath()
-                if self.editor2.fixables:
-                    if self.editor2.fix():
-                        if self.editor2.commit():
-                            debug = "The contents of " + lightdmconf + \
-                                " have been corrected\n."
-                            self.logger.log(LogPriority.DEBUG, debug)
+                if re.search("ubuntu", self.myos):
+                    lightdmconf = self.editor2.getPath()
+                    if self.editor2.fixables:
+                        if self.editor2.fix():
+                            if self.editor2.commit():
+                                debug = "The contents of " + lightdmconf + \
+                                    " have been corrected\n."
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            else:
+                                debug = "KVEditor commit to " + lightdmconf + \
+                                    " was not successful\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                success = False
                         else:
-                            debug = "KVEditor commit to " + lightdmconf + \
+                            debug = "KVEditor fix of " + lightdmconf + \
                                 " was not successful\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
-                    else:
-                        debug = "KVEditor fix of " + lightdmconf + \
-                            " was not successful\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
 
                 if os.path.exists("/etc/init.d/nscd"):
                     cmd = ["/etc/init.d/nscd", "restart"]
@@ -635,11 +657,52 @@ session optional        pam_env.so
                 pamconf[sess] += "session     required      " + \
                     "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
 
+        elif self.nslcd:
+            sysauth = "/etc/pam.d/system-auth"
+            passauth = "/etc/pam.d/password-auth"
+            config = '''#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5
+auth        required      pam_deny.so
+
+account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+
+password    requisite     pam_passwdqc.so min=disabled,disabled,16,12,8
+password    sufficient    pam_unix.so sha512 shadow \
+nullok try_first_pass use_authtok remember=6
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+'''
+            if self.mkhomedirci.getcurrvalue():
+                config += "session     optional      " + \
+                    "pam_mkhomedir.so umask=0077\n"
+            config += '''session     [success=1 default=ignore] \
+pam_succeed_if.so service in crond quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+            pamconf[sysauth] = config
+            pamconf[passauth] = config
+
         else:
             sysauth = "/etc/pam.d/system-auth"
             passauth = "/etc/pam.d/password-auth"
-            majorverString = self.environ.getosver().split(".")[0]
-            majorver = int(majorverString)
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
@@ -662,15 +725,8 @@ account     [default=bad success=ok user_unknown=ignore] pam_sss.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 
-'''
-            if re.search("fedora|centos", self.myos) or majorver >= 7:
-                config += "password    requisite     " + \
-                    "pam_pwquality.so minlen=8 minclass=3\n"
-            else:
-                config += "password    requisite     " + \
-                    "pam_passwdqc.so min=disabled,disabled,16,12,8\n"
-
-            config += '''password    sufficient    pam_unix.so sha512 shadow \
+password    requisite     pam_pwquality.so minlen=8 minclass=3
+password    sufficient    pam_unix.so sha512 shadow \
 nullok try_first_pass use_authtok remember=6
 password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
