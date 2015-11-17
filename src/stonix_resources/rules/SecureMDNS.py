@@ -108,7 +108,7 @@ the avahi service in order to secure it.'''
             self.ismac = True
             self.plb = "/usr/libexec/PlistBuddy"
             osxversion = str(self.environ.getosver())
-            if re.search(r"10\.10\.[0123]", osxversion):
+            if re.search(r"10\.10\.?[0123]?", osxversion):
                 self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
                 self.servicename = "com.apple.networking.discoveryd"
                 self.parameter = "--no-multicast"
@@ -297,17 +297,17 @@ the avahi service in order to secure it.'''
                 if (resultOutput[0] == ""):
                     commandsuccess = False
                     self.detailedresults += "Parameter: " + str(self.parameter) + \
-                        " for service " + self.servicename + " was not set.\n"
+                        " for service " + self.servicename + " is not set.\n"
                 else:
                     commandsuccess = True
                     debug = "Parameter: " + str(self.parameter) + \
                         " for service " + self.servicename + \
-                        " was set correctly."
+                        " is set correctly."
                     self.logger.log(LogPriority.DEBUG, debug)
             else:
                 commandsuccess = False
                 self.detailedresults += "Parameter: " + str(self.parameter) + \
-                    " for service " + self.servicename + " was not set.\n"
+                    " for service " + self.servicename + " is not set.\n"
             # see if service is running
             servicesuccess = self.sh.auditservice(self.service,
                                                   self.servicename)
@@ -407,6 +407,8 @@ the avahi service in order to secure it.'''
                                     "failed"
                                 self.logger.log(LogPriority.DEBUG, debug)
 
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
                         setPerms(avahiconf, [0, 0, 0644], self.logger,
                                  self.statechglogger, myid)
                         resetsecon(avahiconf)
