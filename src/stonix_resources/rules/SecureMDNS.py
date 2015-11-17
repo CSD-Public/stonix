@@ -105,6 +105,7 @@ the avahi service in order to secure it.'''
         self.sh = ServiceHelper(self.environ, self.logger)
 
         if self.environ.getostype() == "Mac OS X":
+            self.ismac = True
             self.plb = "/usr/libexec/PlistBuddy"
             osxversion = str(self.environ.getosver())
             if re.search(r"10\.10\.[0123]", osxversion):
@@ -123,7 +124,7 @@ the avahi service in order to secure it.'''
                 self.pbr = self.plb + " -c Print " + self.service + " | grep 'NoMulticastAdvertisements'"
                 self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
         else:
-
+            self.ismac = False
             # init CIs
             datatype = 'bool'
             mdnskey = 'SecureMDNS'
@@ -193,7 +194,7 @@ the avahi service in order to secure it.'''
             self.detailedresults = ''
 
             # if system is a mac, run reportmac
-            if self.environ.getostype() == "Mac OS X":
+            if self.ismac:
                 secure = self.reportmac()
 
             # if not mac os x, then run this portion
@@ -349,7 +350,7 @@ the avahi service in order to secure it.'''
             self.detailedresults = ""
 
             # if this system is a mac, run fixmac()
-            if self.environ.getostype() == "Mac OS X":
+            if self.ismac:
                 self.rulesuccess = self.fixmac()
 
             # if not mac os x, run this portion
@@ -459,6 +460,14 @@ the avahi service in order to secure it.'''
                 fixit = True
             # Add parameter
             if fixit:
+                # Due to weaknesses in using PlistBuddy and defaults to delete
+                # from plists, as well as shortcomings in STONIX's state change
+                # logging, we will record this change as a file deletion.
+                # If the rule's undo is run on OS X, it will restore the
+                # previous version of this file.
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.statechglogger.recordfiledelete(self.service, myid)
                 self.ch.executeCommand(self.pbf)
                 resultOutput = self.ch.getOutput()
                 errorcode = self.ch.getReturnCode()
@@ -468,6 +477,7 @@ the avahi service in order to secure it.'''
                 else:
                     self.detailedresults += self.parameter + \
                         " was not set successfully!\n"
+                    self.statechglogger.deleteentry(myid)
                     success = False
             else:
                 debug = self.parameter + " was already set!"
