@@ -40,8 +40,8 @@ configuration changes to the avahi service
 @change: 2014/04/16 ekkehard ci and self.setkvdefaultscurrenthost updates
 @change: 2015/03/17 ekkehard modernized OS X approach
 @change: 2015/04/17 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37784] : SecureMDNS(135) - NCAF - OS X El Capitan 10.11
-@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
+@change: 2015/11/16 eball Add undo events, change fix reporting
 '''
 
 from __future__ import absolute_import
@@ -53,7 +53,7 @@ import types
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
-from ..stonixutilityfunctions import iterate
+from ..stonixutilityfunctions import iterate, setPerms, resetsecon
 from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
@@ -107,12 +107,12 @@ the avahi service in order to secure it.'''
         if self.environ.getostype() == "Mac OS X":
             self.plb = "/usr/libexec/PlistBuddy"
             osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.10.0") or osxversion.startswith("10.10.1") or osxversion.startswith("10.10.2") or osxversion.startswith("10.10.3"):
+            if re.search(r"10\.10\.[0123]", osxversion):
                 self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
                 self.servicename = "com.apple.networking.discoveryd"
                 self.parameter = "--no-multicast"
-                self.pbr =  self.plb + " -c Print " +  self.service + " | grep 'no-multicast'"
-                self.pbf =  self.plb + ' -c "Add :ProgramArguments: string '  + self.parameter + '" ' +  self.service
+                self.pbr = self.plb + " -c Print " + self.service + " | grep 'no-multicast'"
+                self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
             else:
                 self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
                 if osxversion.startswith("10.10"):
@@ -120,8 +120,8 @@ the avahi service in order to secure it.'''
                 else:
                     self.servicename = "com.apple.mDNSResponder"
                 self.parameter = "-NoMulticastAdvertisements"
-                self.pbr =  self.plb + " -c Print " +  self.service + " | grep 'NoMulticastAdvertisements'"
-                self.pbf =  self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
+                self.pbr = self.plb + " -c Print " + self.service + " | grep 'NoMulticastAdvertisements'"
+                self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
         else:
 
             # init CIs
@@ -288,34 +288,36 @@ the avahi service in order to secure it.'''
         @change: dwalker - implemented kveditor defaults
         '''
         try:
-            self.resultReset()
-# See if parameter is set
+            self.detailedresults = ""
+            # See if parameter is set
             self.ch.executeCommand(self.pbr)
             resultOutput = self.ch.getOutput()
             if len(resultOutput) >= 1:
                 if (resultOutput[0] == ""):
                     commandsuccess = False
-                    messagestring = "- parameter: " + str(self.parameter) + " for service " + \
-                    self.servicename + " was not set."
+                    self.detailedresults += "Parameter: " + str(self.parameter) + \
+                        " for service " + self.servicename + " was not set.\n"
                 else:
                     commandsuccess = True
-                    messagestring = "- parameter: " + str(self.parameter) + " for service " + \
-                    self.servicename + " was set correctly."
+                    debug = "Parameter: " + str(self.parameter) + \
+                        " for service " + self.servicename + \
+                        " was set correctly."
+                    self.logger.log(LogPriority.DEBUG, debug)
             else:
                 commandsuccess = False
-                messagestring = "- parameter: " + str(self.parameter) + " for service " + \
-                self.servicename + " was not set."
-            self.resultAppend(messagestring)
-# see if service is running
-            servicesuccess = self.sh.auditservice(self.service, self.servicename)
+                self.detailedresults += "Parameter: " + str(self.parameter) + \
+                    " for service " + self.servicename + " was not set.\n"
+            # see if service is running
+            servicesuccess = self.sh.auditservice(self.service,
+                                                  self.servicename)
             if servicesuccess:
-                messagestring = "- service: " + str(self.service) + ", " + \
-                self.servicename + " audit successful."
+                debug = "Service: " + str(self.service) + ", " + \
+                    self.servicename + " audit successful."
+                self.logger.log(LogPriority.DEBUG, debug)
             else:
-                messagestring = "- service: " + str(self.service) + ", " + \
-                self.servicename + " audit failed."
-            self.resultAppend(messagestring)
-# Are thing compliant
+                self.detailedresults += "Service: " + str(self.service) + \
+                    ", " + self.servicename + " audit failed.\n"
+
             if servicesuccess and commandsuccess:
                 self.compliant = True
             else:
@@ -352,42 +354,66 @@ the avahi service in order to secure it.'''
 
             # if not mac os x, run this portion
             else:
-
                 # if DisableAvahi CI is enabled, disable the avahi service
                 # and remove the package
                 if self.DisableAvahi.getcurrvalue():
-                    self.sh.disableservice('avahi-daemon')
-                    if self.environ.getosfamily() == 'linux':
+                    avahi = 'avahi'
+                    avahid = 'avahi-daemon'
+                    if self.sh.auditservice(avahid):
+                        debug = "Disabling " + avahid + " service"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        self.sh.disableservice(avahid)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "servicehelper",
+                                 "servicename": avahid,
+                                 "startstate": "enabled",
+                                 "endstate": "disabled"}
+                        self.statechglogger.recordchgevent(myid, event)
+                    if self.environ.getosfamily() == 'linux' and \
+                       self.pkghelper.check(avahi):
                         if self.numdependencies <= 3:
-                            self.pkghelper.remove('avahi')
+                            self.pkghelper.remove(avahi)
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": avahi,
+                                     "startstate": "installed",
+                                     "endstate": "removed"}
+                            self.statechglogger.recordchgevent(myid, event)
                         else:
-                            self.detailedresults += '\navahi package has too many dependent packages. will not attempt to remove.'
-                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                            debug += '\navahi package has too many dependent ' + \
+                                'packages. Will not attempt to remove.'
+                            self.logger.log(LogPriority.DEBUG, debug)
 
                 # if SecureMDNS CI is enabled, configure avahi-daemon.conf
                 if self.SecureMDNS.getcurrvalue():
-
                     # if config file is present, proceed
-                    if os.path.exists('/etc/avahi/avahi-daemon.conf'):
-
+                    avahiconf = '/etc/avahi/avahi-daemon.conf'
+                    if os.path.exists(avahiconf):
                         if self.avahiconfeditor.fixables:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             self.avahiconfeditor.setEventID(myid)
                             if not self.avahiconfeditor.fix():
-                                return False
+                                self.rulesuccess = False
+                                debug = "KVEditor fix for " + avahiconf + \
+                                    "failed"
+                                self.logger.log(LogPriority.DEBUG, debug)
                             elif not self.avahiconfeditor.commit():
-                                return False
+                                self.rulesuccess = False
+                                debug = "KVEditor commit for " + avahiconf + \
+                                    "failed"
+                                self.logger.log(LogPriority.DEBUG, debug)
 
-                            if os.path.exists('/etc/avahi/avahi-daemon.conf'):
-                                os.chmod('/etc/avahi/avahi-daemon.conf', 0644)
-                                os.chown('/etc/avahi/avahi-daemon.conf', 0, 0)
+                        setPerms(avahiconf, [0, 0, 0644], self.logger,
+                                 self.statechglogger, myid)
+                        resetsecon(avahiconf)
 
                     # if config file is not present and avahi not installed,
                     # then we can't configure it
                     else:
-
-                        if not self.pkghelper.check('avahi'):
+                        if not self.pkghelper.check(avahi):
                             debug = 'Avahi Daemon not installed. Cannot configure it.'
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
@@ -419,8 +445,9 @@ the avahi service in order to secure it.'''
         @change: dwalker - implemented kveditor instead of direct editing
         '''
         try:
-            self.resultReset()
-# See if parameter is set
+            self.detailedresults = ""
+            success = True
+            # See if parameter is set
             self.ch.executeCommand(self.pbr)
             resultOutput = self.ch.getOutput()
             if len(resultOutput) >= 1:
@@ -430,30 +457,32 @@ the avahi service in order to secure it.'''
                     fixit = False
             else:
                 fixit = True
-# Add parameter
-            success = True
+            # Add parameter
             if fixit:
                 self.ch.executeCommand(self.pbf)
                 resultOutput = self.ch.getOutput()
                 errorcode = self.ch.getReturnCode()
                 if errorcode == 0:
-                    messagestring = "- " + self.parameter + " was set successfully!"
+                    debug = self.parameter + " was set successfully!"
+                    self.logger.log(LogPriority.DEBUG, debug)
                 else:
-                    messagestring = "- " + self.parameter + " was not set successfully!"
+                    self.detailedresults += self.parameter + \
+                        " was not set successfully!\n"
                     success = False
             else:
-                messagestring = "- " + self.parameter + " was already set!"
-            self.resultAppend(messagestring)
-# Reload Service
+                debug = self.parameter + " was already set!"
+                self.logger.log(LogPriority.DEBUG, debug)
+            # Reload Service
             if success:
                 success = self.sh.reloadservice(self.service, self.servicename)
                 if success:
-                    messagestring = "- service: " + str(self.service) + ", " + \
-                                    self.servicename + " was reloaded successfully."
+                    debug = "Service: " + str(self.service) + ", " + \
+                        self.servicename + " was reloaded successfully."
+                    self.logger.log(LogPriority.DEBUG, debug)
                 else:
-                    messagestring = "- service: " + str(self.service) + ", " + \
-                                    self.servicename + " reload failed!"
-                self.resultAppend(messagestring)
+                    debug = "Service: " + str(self.service) + ", " + \
+                        self.servicename + " reload failed!"
+                    self.logger.log(LogPriority.DEBUG, debug)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -472,8 +501,6 @@ the avahi service in order to secure it.'''
         @return: int
         @author: bemalmbe
         '''
-#!FIXME needs zypper and apt-get implementations
-        # defaults
         numdeps = 0
         flag = 0
 
@@ -510,59 +537,13 @@ the avahi service in order to secure it.'''
                     if re.search('Depends:', line):
                         numdeps += 1
             else:
-                self.detailedresults += '\nunable to detect package manager'
+                self.detailedresults += 'Unable to detect package manager\n'
                 return numdeps
 
         except (IOError, OSError):
-            self.detailedresults += '\nSpecified package: ' + str(pkgname) + ' not found.'
+            self.detailedresults += 'Specified package: ' + str(pkgname) + \
+                ' not found.\n'
             return numdeps
         except Exception:
             raise
         return numdeps
-
-###############################################################################
-
-    def resultAppend(self, pMessage=""):
-        '''
-        reset the current kveditor values to their defaults.
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
-        @note: kveditorName is essential
-        '''
-        datatype = type(pMessage)
-        if datatype == types.StringType:
-            if not (pMessage == ""):
-                messagestring = pMessage
-                if (self.detailedresults == ""):
-                    self.detailedresults = messagestring
-                else:
-                    self.detailedresults = self.detailedresults + "\n" + \
-                    messagestring
-        elif datatype == types.ListType:
-            if not (pMessage == []):
-                for item in pMessage:
-                    messagestring = item
-                    if (self.detailedresults == ""):
-                        self.detailedresults = messagestring
-                    else:
-                        self.detailedresults = self.detailedresults + "\n" + \
-                        messagestring
-        else:
-            raise TypeError("pMessage with value" + str(pMessage) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
-                            " as expected!")
-
-###############################################################################
-
-    def resultReset(self):
-        '''
-        reset the current kveditor values to their defaults.
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
-        @note: kveditorName is essential
-        '''
-        self.detailedresults = ""
