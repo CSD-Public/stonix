@@ -179,6 +179,9 @@ LANL-stonix."""
                     elif event["eventtype"] == "creation":
                         os.remove(event["filepath"])
 
+                    elif event["eventtype"] == "deletion":
+                        self.statechglogger.revertfiledelete(event["filepath"])
+
                     elif event["eventtype"] == "pkghelper":
                         ph = Pkghelper(self.logdispatch, self.environ)
                         if event["startstate"] == "installed":
