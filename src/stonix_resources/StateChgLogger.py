@@ -367,7 +367,7 @@ are an end user please report a bug.''')
         number selected by the rule author.
         @param dictionary eventdict : The event dict is a python dictionary that
         contains the following key:data element sets:
-        eventtype: conf | creation
+        eventtype: conf | creation | deletion
         filepath: string
         ==========================================
         eventtype: perms
@@ -384,7 +384,7 @@ are an end user please report a bug.''')
         servicename: string
         startstate: enabled | disabled
         endstate: enabled | disabled
-        
+
         @return  : void
         @author D. Kennel
         """
