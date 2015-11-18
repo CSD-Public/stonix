@@ -155,10 +155,6 @@ from the normal system performance curve.'''
             self.accbasedir = '/var/account'
             self.accpath = '/var/account/acct'
 
-        if not os.path.exists(self.accpath):
-            self.detailedresults += '\ncould not locate accounting file: ' + \
-                str(self.accpath)
-
     def setOpts(self, ostype='linux'):
         '''
         @author: Breen Malmberg
@@ -331,8 +327,8 @@ from the normal system performance curve.'''
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "pkghelper",
                              "pkgname": self.pkgname,
-                             "startstate": "installed",
-                             "endstate": "removed"}
+                             "startstate": "removed",
+                             "endstate": "installed"}
                     self.statechglogger.recordchgevent(myid, event)
             if self.pkghelper.determineMgr() == "apt-get":
                 sysstat = "/etc/default/sysstat"
