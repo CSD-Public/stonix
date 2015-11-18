@@ -170,7 +170,7 @@ class DisableCamera(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             self.rulesuccess = True
-            cmd = ["/usr/sbin/kextunload", "-b", "com.apple.driver.AppleCameraInterface"]
+            cmd = ["/sbin/kextunload", "-b", "com.apple.driver.AppleCameraInterface"]
             if self.cmdhelper.executeCommand(cmd):
                 retval = self.cmdhelper.getReturnCode()
                 if retval != 0:
