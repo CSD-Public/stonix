@@ -35,6 +35,7 @@ due to departures from the normal system performance curve.
 @change: 2015/09/25 eball Added Deb/Ubuntu compatibility
 @change: 2015/09/29 Breen Malmberg - Added initialization of variable self.iditerator in fix()
 @change: 2015/10/08 eball Help text cleanup
+@change: 2015/11/18 eball Added undo events to fix
 '''
 
 from __future__ import absolute_import
@@ -320,10 +321,19 @@ from the normal system performance curve.'''
         found = False
 
         try:
-            if not self.pkghelper.install(self.pkgname):
-                success = False
-                self.detailedresults += 'Unable to install package: ' + \
-                    self.pkgname + '\n'
+            if not self.pkghelper.check(self.pkgname):
+                if not self.pkghelper.install(self.pkgname):
+                    success = False
+                    self.detailedresults += 'Unable to install package: ' + \
+                        self.pkgname + '\n'
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "pkghelper",
+                             "pkgname": self.pkgname,
+                             "startstate": "installed",
+                             "endstate": "removed"}
+                    self.statechglogger.recordchgevent(myid, event)
             if self.pkghelper.determineMgr() == "apt-get":
                 sysstat = "/etc/default/sysstat"
                 tmppath = sysstat + ".tmp"
@@ -364,29 +374,34 @@ from the normal system performance curve.'''
                 if not os.path.exists(self.accbasedir):
                     os.makedirs(self.accbasedir, 0755)
                 if not os.path.exists(self.accpath):
-                    f = open(self.accpath, 'w')
-                    f.write('')
-                    f.close()
+                    createFile(self.accpath, self.logger)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation", "filepath": self.accpath}
+                    self.statechglogger.recordchgevent(myid, event)
                 if not os.path.exists(self.enableacc):
-                    f = open(self.enableacc, 'w')
-                    f.write('')
-                    f.close()
+                    createFile(self.enableacc, self.logger)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": self.enableacc}
+                    self.statechglogger.recordchgevent(myid, event)
+                    writeFile(self.enableacc, self.accopt + '\n', self.logger)
+                else:
+                    contentlines = self.getFileContents(self.enableacc)
+                    if contentlines:
+                        for line in contentlines:
+                            if re.search('^accounting_enable=', line):
+                                contentlines = [c.replace(line,
+                                                          self.accopt + '\n')
+                                                for c in contentlines]
+                                found = True
 
-                contentlines = self.getFileContents(self.enableacc)
+                    if not found:
+                        contentlines.append(self.accopt + '\n')
 
-                if contentlines:
-                    for line in contentlines:
-                        if re.search('^accounting_enable=', line):
-                            contentlines = [c.replace(line, self.accopt + '\n')
-                                            for c in contentlines]
-                            found = True
-
-                if not found:
-                    contentlines.append(self.accopt + '\n')
-
-                f = open(self.enableacc, 'w')
-                f.writelines(contentlines)
-                f.close()
+                    writeFile(self.enableacc, "".join(contentlines),
+                              self.logger)
 
                 cmd = self.accon + ' ' + self.accpath
                 self.cmdhelper.executeCommand(cmd)
@@ -395,6 +410,12 @@ from the normal system performance curve.'''
                     self.detailedresults += 'Execution of "' + cmd + '' + \
                         '" failed with error: ' + \
                         self.cmdhelper.getErrorString() + '\n'
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "comm",
+                             "command": self.accon + " off"}
+                    self.statechglogger.recordchgevent(myid, event)
 
         except Exception:
             raise
@@ -412,36 +433,48 @@ from the normal system performance curve.'''
             if not os.path.exists(self.accbasedir):
                 os.makedirs(self.accbasedir, 0755)
             if not os.path.exists(self.accpath):
-                f = open(self.accpath, 'w')
-                f.write('')
-                f.close()
+                createFile(self.accpath, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": self.accpath}
+                self.statechglogger.recordchgevent(myid, event)
             if not os.path.exists(self.enableacc):
-                f = open(self.enableacc, 'w')
-                f.write('')
-                f.close()
+                createFile(self.enableacc, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.enableacc}
+                self.statechglogger.recordchgevent(myid, event)
+                writeFile(self.enableacc, self.accopt + '\n', self.logger)
+            else:
+                contentlines = self.getFileContents(self.enableacc)
+                if contentlines:
+                    for line in contentlines:
+                        if re.search('^accounting_enable=', line):
+                            contentlines = [c.replace(line,
+                                                      self.accopt + '\n')
+                                            for c in contentlines]
+                            found = True
 
-            contentlines = self.getFileContents(self.enableacc)
+                if not found:
+                    contentlines.append(self.accopt + '\n')
 
-            if contentlines:
-                for line in contentlines:
-                    if re.search('^accounting_enable=', line):
-                        contentlines = [c.replace(line, self.accopt + '\n')
-                                        for c in contentlines]
-                        found = True
-
-            if not found:
-                contentlines.append(self.accopt + '\n')
-
-            f = open(self.enableacc, 'w')
-            f.writelines(contentlines)
-            f.close()
+                writeFile(self.enableacc, "".join(contentlines),
+                          self.logger)
 
             cmd = self.accon + ' ' + self.accpath
             self.cmdhelper.executeCommand(cmd)
             if self.cmdhelper.getErrorString():
                 success = False
-                self.detailedresults += 'Execution of "' + cmd + '" failed ' + \
-                    'with error:\n' + self.cmdhelper.getErrorString()
+                self.detailedresults += 'Execution of "' + cmd + '' + \
+                    '" failed with error: ' + \
+                    self.cmdhelper.getErrorString() + '\n'
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "comm",
+                         "command": self.accon + " off"}
+                self.statechglogger.recordchgevent(myid, event)
 
         except Exception:
             raise
@@ -455,7 +488,6 @@ from the normal system performance curve.'''
         contentlines = []
 
         try:
-
             f = open(filepath, 'r')
             contentlines = f.readlines()
             f.close()
