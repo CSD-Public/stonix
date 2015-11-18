@@ -28,6 +28,7 @@ Created on Aug 22, 2012
 @change: 2014/07/22 dkennel - Added -f flag to patch command call to eliminate
 prompt and wait issues during undo.
 @change: 2015/07/08 eball - Updated documentation for recordchgevent method
+@change: 2015/11/18 eball - Fixed recording of deletion event
 '''
 import shelve
 import shutil
@@ -274,12 +275,9 @@ are an end user please report a bug.''')
                         ['StateChgLogger',
                          "Recording deletion of %s" % filename])
         self.archivefile(filename)
-        mytype = 'del'
-        mystart = 'present'
-        myend = 'deleted'
+        mytype = 'deletion'
         mydict = {'eventtype': mytype,
-                  'startstate': mystart,
-                  'endstate': myend}
+                  'filepath': filename}
         self.recordchgevent(eventid, mydict)
         return True
 
