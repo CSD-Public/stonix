@@ -30,6 +30,7 @@ Created on Apr 9, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2015/11/16 eball Moved all file creation from report to fix
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -407,24 +408,13 @@ and/or wasn't able to be created\n"
                 if re.search(":", line):
                     compliant = False
 #-----------------------check /etc/sysctl.conf--------------------------------#
-        # check if sysctl file is present
         if not os.path.exists(sysctl):
-            # if not, create it
-            if createFile(sysctl, self.logger):
-                self.created = True
-                setPerms(sysctl, [0, 0, 420], self.logger)
-                tmpfile = sysctl + ".tmp"
-                # create an editor to check file
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                         "conf", sysctl, tmpfile, sysctls, "present", "openeq")
-                if not self.editor1.report():
-                    self.detailedresults += "/etc/sysctl file doesn't contain \
-the correct contents\n"
-                    compliant = False
-            else:
-                compliant = False
+            self.detailedresults += "File " + sysctl + " does not exist\n"
+            compliant = False
         else:
             if not checkPerms(sysctl, [0, 0, 420], self.logger):
+                self.detailedresults += "Permissions for " + sysctl + \
+                    "are incorrect\n"
                 compliant = False
             tmpfile = sysctl + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
@@ -554,10 +544,8 @@ blacklist item: " + key + "\n"
             filename = modprobedir + 'stonix-blacklist.conf'
             if not modprobecompliant:
                 if not os.path.exists(filename):
-                    if not createFile(filename, self.logger):
-                        compliant = False
-                    else:
-                        self.created2 = True
+                    self.detailedresults += filename + " does not exist\n"
+                    compliant = False
         else:
             compliant = False
 
@@ -648,6 +636,8 @@ contain the correct contents\n"
         tempstring1 = ""
         tempstring2 = ""
         sysctl = "/etc/sysctl.conf"
+        sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
+                   "net.ipv6.conf.default.disable_ipv6": "1"}
         modprobefile = "/etc/modprobe.conf"
         modprobedir = "/etc/modprobe.d/"
         interface = {"IPV6INIT": "no",
@@ -696,24 +686,29 @@ contain the correct contents\n"
                 debug = "Unable to disable ip6tables service\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #---------------------------fix Sysctl----------------------------------------#
-        if self.created:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation",
-                     "filepath": self.editor1.getPath()}
-            self.statechglogger.recordchgevent(myid, event)
-        if os.path.exists(sysctl):
-            if not checkPerms(sysctl, [0, 0, 420], self.logger):
+        if not os.path.exists(sysctl):
+            if createFile(sysctl, self.logger):
+                self.created = True
+                setPerms(sysctl, [0, 0, 420], self.logger)
+                tmpfile = sysctl + ".tmp"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(sysctl, [0, 0, 420], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-                    debug = "Unable to set permissions on /etc/sysctl.conf\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-            if self.editor1:
+                event = {"eventtype": "creation",
+                         "filepath": sysctl}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
+                success = False
+                debug = "Unable to create " + sysctl + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+        if os.path.exists(sysctl):
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          "conf", sysctl, tmpfile, sysctls,
+                                          "present", "openeq")
+            if not self.editor1.report():
                 if self.editor1.fixables:
                     self.iditerator += 1
+                    # If we did not create the file, set an event ID for the
+                    # KVEditor's undo event
                     if not self.created:
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.editor1.setEventID(myid)
@@ -727,8 +722,14 @@ contain the correct contents\n"
                         debug = "Unable to complete kveditor commit " + \
                             "method for /etc/sysctl.conf file\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                    os.chown(sysctl, 0, 0)
-                    os.chmod(sysctl, 420)
+                    if not checkPerms(sysctl, [0, 0, 420], self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        if not setPerms(sysctl, [0, 0, 420], self.logger,
+                                        self.statechglogger, myid):
+                            success = False
+                            debug = "Unable to set permissions on /etc/sysctl.conf\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                     resetsecon(sysctl)
                     cmdhelper = CommandHelper(self.logger)
                     cmd = ["/sbin/sysctl", "-q", "-e", "-p"]
@@ -869,22 +870,28 @@ optional so your system's compliance is not effected by it's absence\n"
                         tempstring1 += key + "=" + val + "\n"
                     else:
                         tempstring1 += key + " " + val + "\n"
-            if self.created2:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": filename}
-                self.statechglogger.recordchgevent(myid, event)
-                if tempstring1:
-                    if writeFile(tmpfile, tempstring1, self.logger):
-                        os.rename(tmpfile, filename)
-                        os.chown(filename, 0, 0)
-                        os.chmod(filename, 420)
-                        resetsecon(filename)
-                    else:
-                        success = False
-                        debug = "Unable to write to file " + filename + "\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
+            if not os.path.exists(filename):
+                if createFile(filename, self.logger):
+                    self.created2 = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": filename}
+                    self.statechglogger.recordchgevent(myid, event)
+                    if tempstring1:
+                        if writeFile(tmpfile, tempstring1, self.logger):
+                            os.rename(tmpfile, filename)
+                            os.chown(filename, 0, 0)
+                            os.chmod(filename, 420)
+                            resetsecon(filename)
+                        else:
+                            success = False
+                            debug = "Unable to write to file " + filename + "\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                else:
+                    success = False
+                    debug = "Could not create " + filename + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
             else:
                 contents = readFile(filename, self.logger)
 

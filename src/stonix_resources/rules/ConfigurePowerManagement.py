@@ -30,6 +30,7 @@ dictionary
 @change: 2015/02/15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
 @change: 2015/04/14 dkennel updated to use new isApplicable
 @change: 2015/09/17 ekkehard BatteryDiskSleep should have disksleep value not display sleep.
+@change: 2015/11/16 eball Re-enabled getting values from CIs rather than static dict
 '''
 from __future__ import absolute_import
 import traceback
@@ -135,7 +136,7 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
                     powerSetting = psinfo["PowerSetting"]
-                    powerSettingValue = psinfo["PowerSettingValue"]
+                    powerSettingValue = self.ci[pslabel].getcurrvalue()
                     powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
                     powerSettingActualValue = int(powerSettingActual)
                     powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
@@ -145,7 +146,7 @@ class ConfigurePowerManagement(Rule):
                     else:
                         self.resultAppend(pslabel + " is not compliant! " + powerSettingInfo)
                         self.compliant = False
-            
+
             self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -176,7 +177,7 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
                     powerSetting = psinfo["PowerSetting"]
-                    powerSettingValue = psinfo["PowerSettingValue"]
+                    powerSettingValue = self.ci[pslabel].getcurrvalue()
                     powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
                     powerSettingActualValue = int(powerSettingActual)
                     powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
