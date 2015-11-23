@@ -202,8 +202,8 @@ class InstallBanners(RuleKVEditor):
 
         self.gdmprofile = profiledir + profilefile
 
-        profiledict = {'/etc/dconf/profile/': ['user-db:user', 'system-db:gdm'],
-                       '/var/lib/gdm3/dconf/profile/': ['user', 'gdm']}
+        profiledict = {'/etc/dconf/profile/': ['user-db:user\n', 'system-db:gdm\n'],
+                       '/var/lib/gdm3/dconf/profile/': ['user\n', 'gdm\n']}
         self.profilelist = profiledict[profiledir]
 
         gdmdirs = ['/etc/dconf/db/gdm.d/', '/var/lib/gdm3/dconf/db/gdm.d/']
@@ -215,7 +215,7 @@ class InstallBanners(RuleKVEditor):
         bannermessagefile = '01-banner-message'
         self.bannerfile = self.gdmdir + bannermessagefile
 
-        self.gnome3optlist = ['[org/gnome/login-screen]', 'disable-user-list=true', 'banner-message-enable=true', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
+        self.gnome3optlist = ['[org/gnome/login-screen]\n', 'disable-user-list=true\n', 'banner-message-enable=true\n', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
         self.gnome3optdict = {'disable-user-list': 'true',
                             'banner-message-enable': 'true',
                             'banner-message-text': '\'' + OSXSHORTWARNINGBANNER + '\''}
@@ -514,13 +514,14 @@ class InstallBanners(RuleKVEditor):
             raise
         return filecontents
 
-    def setFileContents(self, filepath, contents, mode='w'):
+    def setFileContents(self, filepath, contents, mode='w', perms=[0644, 0, 0]):
         '''
         write (or append) specified contents to specified file
 
         @param filepath: string full path to file
         @param contents: list/string object to write to file (can be either list or string)
         @param mode: string indicates the IO method to use to open the file. valid values are 'w' for write, and 'a' for append
+        @param perms: integer-list of size 3. first index/position in list indicates octal permissions flag; second indicates uid; third indicates gid
 
         @return: retval
         @rtype: boolean
@@ -532,35 +533,98 @@ class InstallBanners(RuleKVEditor):
         try:
 
             if not mode in ['w', 'a']:
+                self.logger.log(LogPriority.DEBUG, "parameter 'mode' must be either 'w' or 'a'")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
                 retval = False
-                self.detailedresults += '\nmode parameter must be either w or a'
                 return retval
 
-            f = open(filepath, mode)
-            if isinstance(contents, basestring):
-                f.write(contents)
-            elif isinstance(contents, list):
-                newcontents = []
-                for line in contents:
-                    newcontents.append(line)
-                f.writelines(newcontents)
-            else:
-                self.detailedresults += '\ncontents parameter must be either a string or a list. Returning False'
+            for item in perms:
+                if not isinstance(item, int):
+                    self.logger.log(LogPriority.DEBUG, "parameter 'perms' must be a list of exactly size 3, and all elements of the list must be integers")
+                    self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                    retval = False
+                    return retval
+            if len(perms) < 3:
+                self.logger.log(LogPriority.DEBUG, "parameter 'perms' must be a list of exactly size 3, and all elements of the list must be integers")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
                 retval = False
-            f.close()
+                return retval
 
-        except IOError:
-            try:
-                pathsplit = os.path.split(filepath)
-                if not os.path.exists(pathsplit[0]):
-                    os.mkdir(pathsplit[0], 0755)
-                    self.setFileContents(filepath, contents, mode)
-                else:
-                    raise
-            except OSError as err:
-                self.detailedresults += '\n' + str(err)
+            if not filepath:
+                self.logger.log(LogPriority.DEBUG, "parameter 'filepath' was blank")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
                 retval = False
+                return retval
+
+            if not contents:
+                self.logger.log(LogPriority.DEBUG, "parameter 'contents' was blank")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                retval = False
+                return retval
+
+            if not isinstance(contents, (list, basestring)):
+                self.logger.log(LogPriority.DEBUG, "parameter 'contents' must be either a list or a string")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                retval = False
+                return retval
+
+            pathsplit = os.path.split(filepath)
+            if not os.path.exists(pathsplit[0]):
+                self.logger.log(LogPriority.DEBUG, "parameter 'filepath' base directory is missing. attempting to create it...")
+                try:
+                    os.makedirs(pathsplit[0], 0755)
+                except Exception:
+                    self.logger.log(LogPriority.DEBUG, "failed to create filepath base directory: " + str(pathsplit[0]))
+                    self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                    retval = False
+                    return retval
+                self.logger.log(LogPriority.DEBUG, "base directory: " + str(pathsplit[0]) + " created successfully.")
+                #FIXME need to add undo event here after rule.py is updated to correctly handle undo of directory creations
+
+            if not os.path.exists(filepath):
+                self.logger.log(LogPriority.DEBUG, "parameter 'filepath' does not exist. attempting to create it...")
+                try:
+                    f = open(filepath, 'w')
+                    f.write('')
+                    f.close()
+                    os.chmod(filepath, perms[0])
+                    os.chown(filepath, perms[1], perms[2])
+
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'creation',
+                             'filepath': filepath}
+                    self.statechglogger.recordchgevent(myid, event)
+
+                except Exception:
+                    self.logger.log(LogPriority.DEBUG, "failed to create filepath: " + str(filepath))
+                    self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                    retval = False
+                    return retval
+                self.logger.log(LogPriority.DEBUG, "filepath: " + str(filepath) + " created successfully.")
+
+            tmpfilepath = filepath + '.stonixtmp'
+
+            tf = open(tmpfilepath, mode)
+            if isinstance(contents, basestring):
+                tf.write(contents)
+            elif isinstance(contents, list):
+                tf.writelines(contents)
+            tf.close()
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'conf',
+                     'filepath': filepath}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(tmpfilepath, filepath, myid)
+
+            os.rename(tmpfilepath, filepath)
+            os.chmod(filepath, perms[0])
+            os.chown(filepath, perms[1], perms[2])
+
         except Exception:
+            self.rulesuccess = False
             raise
         return retval
 
@@ -606,6 +670,7 @@ class InstallBanners(RuleKVEditor):
                 self.detailedresults += '\nSpecified filepath not found. Returning False'
 
         except Exception:
+            self.rulesuccess = False
             raise
         return retval
 
@@ -797,6 +862,37 @@ class InstallBanners(RuleKVEditor):
         retval = True
 
         try:
+
+            # set up gnome2 undo commands
+            self.gnome2undocmdlist = []
+            gconfget = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get '
+            gconfset = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory '
+            gconfremove = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --unset '
+            opt1type = '--type bool --set '
+            opt2type = '--type bool --set '
+            opt3type = '--type string --set '
+            opt1 = '/apps/gdm/simple-greeter/disable_user_list'
+            opt2 = '/apps/gdm/simple-greeter/banner_message_enable'
+            opt3 = '/apps/gdm/simple-greeter/banner_message_text'
+
+            self.cmdhelper.executeCommand(gconfget + opt1)
+            undoval1 = self.cmdhelper.getOutputString()
+            if not undoval1:
+                self.gnome2undocmdlist.append(gconfremove + opt1)
+            self.gnome2undocmdlist.append(gconfset + opt1type + ' ' + undoval1)
+
+            self.cmdhelper.executeCommand(gconfget + opt2)
+            undoval2 = self.cmdhelper.getOutputString()
+            if not undoval2:
+                self.gnome2undocmdlist.append(gconfremove + opt2)
+            self.gnome2undocmdlist.append(gconfset + opt2type + ' ' + undoval2)
+
+            self.cmdhelper.executeCommand(gconfget + opt3)
+            undoval3 = self.cmdhelper.getOutputString()
+            if not undoval3:
+                self.gnome2undocmdlist.append(gconfremove + opt3)
+            self.gnome2undocmdlist.append(gconfset + opt3type + ' ' + undoval3)
+
             for cmd in self.gnome2reportdict:
                 if not self.checkCommand(cmd, self.gnome2reportdict[cmd], False):
                     retval = False
@@ -1072,6 +1168,16 @@ class InstallBanners(RuleKVEditor):
                 errout = self.cmdhelper.getErrorString()
                 if errout:
                     retval = False
+                    self.detailedresults += "Failed to run command: " + str(cmd)
+                    self.logger.log(LogPriority.DEBUG, "Error running command: " + str(cmd) + "\n" + str(errout))
+            if retval:
+                if self.gnome2undocmdlist:
+                    for undocmd in self.gnome2undocmdlist:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'commandstring',
+                                 'command': undocmd}
+                        self.statechglogger.recordchgevent(myid, event)
         except Exception:
             raise
         return retval
