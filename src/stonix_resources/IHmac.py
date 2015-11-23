@@ -28,16 +28,14 @@ intended for use to selfupdate a script.
 
 @operatingsystem: Mac OS X
 @author: Roy Nielsen
-
+@change: 2015/11/23 eball Replaced Popen with CommandHelper, removed sys.exit
 """
 import re
 import os
 import grp
 import pwd
-import sys
 import shutil
-from subprocess import Popen, PIPE, STDOUT
-
+from CommandHelper import CommandHelper
 from InstallingHelper import InstallingHelper
 from logdispatcher import LogPriority
 from stonixutilityfunctions import isServerVersionHigher
@@ -58,26 +56,26 @@ class IHmac(InstallingHelper) :
         """
         self.url = url
         self.logger = logger
+        self.ch = CommandHelper(self.logger)
         if re.match("^\s*$", self.url):
             self.logger.log(LogPriority.WARNING, "Empty URL passed to IHmac")
 
         InstallingHelper.__init__(self, environ, url, self.logger)
 
-
-    def install_package_from_server(self) :
+    def install_package_from_server(self):
         """
         This function references generic methods from the InstallingHelper
         class to download an archived .pkg or .mpkg file, check md5sum of
-        the file against the md5 on the server, unarchive the file and 
+        the file against the md5 on the server, unarchive the file and
         install the package. It will remove the temporary directory that
-        the file was downloaded and unarchived to when the install is 
+        the file was downloaded and unarchived to when the install is
         complete.
-        
+
         local vars:
         tmp_dir = the temporary directory that is created for the downloaded
                   file, and to unarchive it into.
-        self.sig_match = A variable that tells if the signature of the 
-                         downloaded file and the server string match.  Set 
+        self.sig_match = A variable that tells if the signature of the
+                         downloaded file and the server string match.  Set
                          in the download_and_prepare method of the parent
                          class
         pkg_extension = for verifying that the package extension is either
@@ -85,85 +83,57 @@ class IHmac(InstallingHelper) :
         self.package_name = the name of the package to be downloaded, without
                             the archive extension.  Set in the InstallingHelper
                             class.
-        
+
         @author: Roy Nielsen
-        
+
         """
         # Download and unarchive the package to a temporary directory, with
         # md5 checking.
+        success = False
         tmp_dir = self.download_and_prepare()
 
-        # if integrity ok, 
-        if not self.sig_match :
-            self.logger.log(LogPriority.ERROR, 
+        if not self.sig_match:
+            self.logger.log(LogPriority.ERROR,
                             "Signatures didn't match.")
-            raise
         else:
             # Check if it's a pkg or mpkg
             pkg_extension = self.find_package_extension(tmp_dir)
 
             if re.match("^\.pkg$", pkg_extension) or \
-               re.match("^\.mpkg$", pkg_extension) :
+               re.match("^\.mpkg$", pkg_extension):
 
                 # set up the install package command string
 
-                cmd = ["/usr/bin/sudo", "/usr/sbin/installer", "-verboseR", 
-                       "-pkg", tmp_dir + "/" + self.package_name + pkg_extension, 
-                       "-target", "/"]
-            
-                # execute the install package string
-                try :
-                    pipe = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-                    
-                    if pipe :
-                        while True:
-                            myout = pipe.stdout.readline()
-                            if myout == '' and pipe.poll() != None: 
-                                break
-                            tmpline = myout.strip("\n")
-                            self.logger.log(LogPriority.DEBUG, 
-                                             tmpline)
-                            #print tmpline
-            
-                    pipe.wait()
-                    pipe.stdout.close()
-            
-                except Exception, err :
-                    self.logger.log(LogPriority.ERROR, 
-                                     "ValueError: " + str(err), "normal")
-                    raise
-                else :
-                    self.logger.log(LogPriority.DEBUG, 
-                                     "".join(cmd) + "Returned with error/returncode: " + \
-                                     str(pipe.returncode))
-                    pipe.stdout.close()
-                
-                try :
-                    pipe = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-                    pipe.communicate()
-                    pipe.wait()
-                except Exception, err :
-                    self.logger.log(LogPriority.ERROR, 
-                                    "Process " + str(cmd) + " could not open/complete successfully: " + str(err))
-                    raise
-                # remove the temporary directory where the archive was downloaded
-                # and unarchived.
+                cmd = ["/usr/bin/sudo", "/usr/sbin/installer", "-verboseR",
+                       "-pkg", tmp_dir + "/" + self.package_name +
+                       pkg_extension, "-target", "/"]
+                self.ch.executeCommand(cmd)
+                self.logger.log(LogPriority.DEBUG,
+                                self.ch.getOutputString())
+                if self.ch.getReturnCode() == 0:
+                    success = True
+
+                # remove the temporary directory where the archive was
+                # downloaded and unarchived.
                 try:
                     shutil.rmtree(tmp_dir)
                 except Exception, err:
-                    self.logger.log(LogPriority.ERROR, 
-                                   "Exception: " + str(err))
-                    raise
+                    self.logger.log(LogPriority.ERROR,
+                                    "Exception: " + str(err))
+                    success = False
             else:
-                self.logger.log(LogPriority.ERROR, 
-                                "Valid package extension not found, cannot install: " + tmp_dir + "/" + self.package_name + pkg_extension)
-                raise
+                self.logger.log(LogPriority.ERROR, "Valid package extension " +
+                                "not found, cannot install: " + tmp_dir + "/" +
+                                self.package_name + pkg_extension)
 
-    def copy_install_from_server(self, src="", dest=".", isdir=True, mode=0755, owner="root", group="admin"):
+        return success
+
+    def copy_install_from_server(self, src="", dest=".", isdir=True, mode=0755,
+                                 owner="root", group="admin"):
         """
         Copies a directory tree, or contents of a directory to "dest"
         destination.
-        
+
         @param: src - the source directory to copy from (not the absolute
                       path, the path that resides inside the archive that
                       is to be unloaded)
@@ -180,12 +150,12 @@ class IHmac(InstallingHelper) :
         @param: group - the group of the destination directory (it is assumed
                        that the files/tree inside that directory have the
                        correct permissions) - only valid if isdir=True
-                       
+
         local vars:
         tmp_dir = the temporary directory that is created for the downloaded
                   file, and to unarchive it into.
-        self.sig_match = A variable that tells if the signature of the 
-                         downloaded file and the server string match.  Set 
+        self.sig_match = A variable that tells if the signature of the
+                         downloaded file and the server string match.  Set
                          in the download_and_prepare method of the parent
                          class
 
