@@ -31,8 +31,11 @@ This is the rule for installing the JAMF Casper Suite on a client machine.
 @change: 2015/09/28 ekkehard incorporate OS X El Capitan & JAMF 9.8x support
 @change: 2015/10/02 ekkehard Only support 9.8 +
 @change: 2015/10/02 ekkeahrd Move Server from puppet-prod to jds001.lanl.gov
+@change: 2015/11/23 eball Changed structure of report to remove possibility of
+    error on systems that don't have Casper installed.
 '''
 from __future__ import absolute_import
+import os
 import traceback
 import types
 
@@ -69,7 +72,7 @@ class InstallCasperSuite(Rule):
         self.mandatory = True
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.11']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.11']}}
         self.js = JAMFCASPERSUITESERVER
         self.qa = JAMFCASPERQUICKADD
 
@@ -144,16 +147,22 @@ class InstallCasperSuite(Rule):
             self.compliant = True
             self.detailedresults = ""
             success = True
-            
+
 # See if jamf command is working
-            try:
-                command = [self.jamf, "-version"]
-                success = self.ch.executeCommand(command)
-                messagestring = str(self.jamf) + " is " + \
-                str(self.ch.getOutputString())
-            except:
+            if os.path.exists(self.jamf):
+                try:
+                    command = [self.jamf, "-version"]
+                    success = self.ch.executeCommand(command)
+                    messagestring = str(self.jamf) + " is " + \
+                        str(self.ch.getOutputString())
+                except:
+                    success = False
+                    messagestring = "There was an error calling " + \
+                        self.jamf + " -version"
+                    raise
+            else:
                 success = False
-                messagestring = str(self.jamf) + " dose not exist!"
+                messagestring = str(self.jamf) + " does not exist!"
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.DEBUG, messagestring)
             if not success:
@@ -187,11 +196,11 @@ class InstallCasperSuite(Rule):
             raise
         except Exception, err:
             self.detailedresults = self.detailedresults + \
-            str(traceback.format_exc())
+                str(traceback.format_exc())
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                               "Exception - " + str(err) + " - " +
-                               self.detailedresults)
+                                 "Exception - " + str(err) + " - " +
+                                 self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -215,7 +224,7 @@ class InstallCasperSuite(Rule):
                 msg = str(self.rulename) + " is user enabled"
                 self.logdispatch.log(LogPriority.DEBUG, msg)
 
-# If there network, install, else no network, log
+# If there is a network connection, install, otherwise just log
                 hasconnection = has_connection_to_server(self.logdispatch,
                                                          self.js)
                 if hasconnection:
@@ -230,10 +239,10 @@ class InstallCasperSuite(Rule):
                     fixsuccess = installing.install_package_from_server()
                     if fixsuccess:
                         messagestring = str(self.qa) + \
-                        " installation successful!"
+                            " installation successful!"
                     else:
                         messagestring = str(self.qa) + \
-                        " installation failed!"
+                            " installation failed!"
                     self.detailedresults = messagestring
 
                     self.logdispatch.log(LogPriority.DEBUG, messagestring)
@@ -249,7 +258,7 @@ class InstallCasperSuite(Rule):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", fixsuccess,
                                    self.detailedresults)
