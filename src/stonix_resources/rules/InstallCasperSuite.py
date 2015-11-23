@@ -43,7 +43,6 @@ import types
 # made this the working scenario.
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..InstallingHelper import InstallingHelper
 from ..configurationitem import ConfigurationItem
 from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import has_connection_to_server
@@ -58,7 +57,7 @@ JAMFCASPERSUITESERVER = "jds001.lanl.gov"
 
 class InstallCasperSuite(Rule):
     """
-    This class installs puppet on the system.
+    This class installs Casper on the system.
     """
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -215,7 +214,7 @@ class InstallCasperSuite(Rule):
         @author: ekkehard
         '''
         try:
-            fixsuccess = False
+            self.rulesuccess = False
             self.detailedresults = ""
             if not self.myci.getcurrvalue():
                 msg = str(self.rulename) + " is user disabled"
@@ -236,8 +235,8 @@ class InstallCasperSuite(Rule):
                                        self.qa,
                                        self.logdispatch)
 # Install the package
-                    fixsuccess = installing.install_package_from_server()
-                    if fixsuccess:
+                    if installing.install_package_from_server():
+                        self.rulesuccess = True
                         messagestring = str(self.qa) + \
                             " installation successful!"
                     else:
@@ -245,12 +244,9 @@ class InstallCasperSuite(Rule):
                             " installation failed!"
                     self.detailedresults = messagestring
 
-                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
-
                 else:
                     messagestring = "Could not connect to " + str(self.js)
                     self.detailedresults = messagestring
-                    self.logdispatch.log(LogPriority.DEBUG, messagestring)
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -260,7 +256,7 @@ class InstallCasperSuite(Rule):
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", fixsuccess,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
