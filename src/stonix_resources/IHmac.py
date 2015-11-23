@@ -42,25 +42,24 @@ from InstallingHelper import InstallingHelper
 from logdispatcher import LogPriority
 from stonixutilityfunctions import isServerVersionHigher
 
+
 class IHmac(InstallingHelper) :
     """
     This class holds Mac specific methods for installing software.
-    
+
     The end goal is to provide the selfupdate mechanism so a program
     can update itself.
-    
+
     @author: Roy Nielsen
-    
+
     """
     def __init__(self, environ, url, logger):
         """
         """
         self.url = url
-        if re.match("^\s*$", self.url) :
-            print "Cannot use this class without a URL to the archive " + \
-            "file you wish to download and install"
-            sys.exit()
         self.logger = logger
+        if re.match("^\s*$", self.url):
+            self.logger.log(LogPriority.WARNING, "Empty URL passed to IHmac")
 
         InstallingHelper.__init__(self, environ, url, self.logger)
 
@@ -260,7 +259,7 @@ class IHmac(InstallingHelper) :
                     for myfile in dir_list :
                         try :
                             shutil.copy2(myfile, dest)
-                        except Error, err :
+                        except Exception, err :
                             self.logger.log(LogPriority.DEBUG, 
                                             "Error copying file: " + myfile + " error: " + str(err))
                             raise
