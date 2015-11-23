@@ -473,9 +473,14 @@ class InstallingHelper(object) :
         else:
             retval = False
 
-        self.logger.log(LogPriority.DEBUG, 
-                        ["InstallingHelper.check_extension",
-                         "extension = " + self.extension])
+        if retval:
+            self.logger.log(LogPriority.DEBUG,
+                            ["InstallingHelper.check_extension",
+                             "extension = " + self.extension])
+        else:
+            self.logger.log(LogPriority.DEBUG,
+                            ["InstallingHelper.check_extension",
+                             "Archive extension not found, returning False"])
 
         return retval
 
