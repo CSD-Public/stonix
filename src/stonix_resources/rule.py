@@ -177,7 +177,17 @@ LANL-stonix."""
                                                  self.detailedresults)
 
                     elif event["eventtype"] == "creation":
-                        os.remove(event["filepath"])
+                        try:
+                            os.remove(event["filepath"])
+                        except OSError as oser:
+                            if oser.errno == 21:
+                                try:
+                                    os.rmdir(event["filepath"])
+                                except OSError as oserr:
+                                    if oserr.errno == 39:
+                                        self.logdispatch.log(LogPriority.DEBUG, "Cannot remove file path: " + str(event["filepath"]) + " because it is a non-empty directory.")
+                            elif oser.errno == 2:
+                                self.logdispatch.log(LogPriority.DEBUG, "Cannot remove file path: " + str(event["filepath"]) + " because it does not exist.")
 
                     elif event["eventtype"] == "deletion":
                         self.statechglogger.revertfiledelete(event["filepath"])
