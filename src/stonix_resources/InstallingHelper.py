@@ -1,3 +1,25 @@
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
 """
 Created November 2, 2011
 
@@ -10,7 +32,6 @@ intended for use to selfupdate a script.
 @author: Roy Nielsen
 
 """
-import os
 import os.path
 import re
 import sys
@@ -36,17 +57,11 @@ class InstallingHelper(object) :
         """
         self.environ = environ
         self.url = url
-        if re.match("^\s*$", self.url):
-            print "Cannot use this class without a URL to the archive " + \
-            "file you wish to download and install"
-            sys.exit()
-
         self.logger = logger
-
-        if not self.check_extension():
-            print "URL needs to point to an archive (ie: tar, tgz, tar.gz, " + \
-                  "tbz, tar.bz, zip)"
-            sys.exit()
+        if re.match("^\s*$", self.url):
+            self.logger.log(LogPriority.ERROR, "Cannot use this class " +
+                            "without a URL to the archive " +
+                            "file you wish to download and install")
         
         self.find_file_name()
         self.find_package_name()
@@ -308,40 +323,38 @@ class InstallingHelper(object) :
                         " from download_and_prepare()"])
         return tmp_dir
 
-
-    def get_string_from_url(self, url="") :
+    def get_string_from_url(self, url=""):
         """
         Read a string from a url (file) on the server.
-    
+
         Purpose: to read a file on the server that contains the md5sum of a file
         that we are going to download for file integrity.
 
         @param: url - place storing string we are looking for
 
         @returns: string returned by the url
-    
+
         @author: Roy Nielsen
-    
+
         """
         server_string = ""
 
         set_no_proxy()
-    
-        if not re.match("^\s*$", url) :
+
+        if not re.match("^\s*$", url):
             set_no_proxy()
 
-            try :
+            try:
                 f = urllib2.urlopen(url)
-            except IOError, err :
-                self.logger.log(LogPriority.WARNING, 
+            except IOError, err:
+                self.logger.log(LogPriority.INFO,
                                 ["InstallingHelper.get_string_from_url",
                                  "IOError, " + url + " : " + str(err)])
-            else :
+            else:
                 server_string = f.read()
                 f.close()
 
         return server_string.strip()
-
 
     def get_file_md5sum(self, filename=""):
         """
@@ -473,89 +486,95 @@ class InstallingHelper(object) :
         else:
             retval = False
 
-        self.logger.log(LogPriority.DEBUG, 
-                        ["InstallingHelper.check_extension",
-                         "extension = " + self.extension])
+        if retval:
+            self.logger.log(LogPriority.DEBUG,
+                            ["InstallingHelper.check_extension",
+                             "extension = " + self.extension])
+        else:
+            self.logger.log(LogPriority.DEBUG,
+                            ["InstallingHelper.check_extension",
+                             "Archive extension not found, returning False"])
 
         return retval
-
 
     def find_package_name(self):
         """
         Get the name of the package without an archive extension
-        
+
         @author: Roy Nielsen
-        
+
         """
         self.package_name = ""
-        filename = re.compile("(\S*)\.(tar|tar.gz|tgz|tar.bz|tbz|zip|txt)\s*$")
+        filename = re.compile("(\S*)\.(tar|tar.gz|tgz|tar.bz|tbz|zip|txt|pkg)\s*$")
 
         name_list = self.url.split("/")
-        for name in name_list :
+        for name in name_list:
 
             try:
                 package_name = filename.match(name.strip())
                 if package_name:
                     self.package_name = package_name.group(1).strip()
 
-            except AttributeError, err :
+            except AttributeError, err:
                 self.package_name = ""
-                self.logger.log(LogPriority.WARNING, 
+                self.logger.log(LogPriority.WARNING,
                                 ["InstallingHelper.find_package_name",
                                  "AttributeError: " + str(err)])
 
         # the name of the archive file should be the last item in the above
         # list, if a match is not found, or is empty, exit.
-        if re.match("^\s*$", self.package_name) :
-            print "Need a valid url pointing to an archive file."
-            sys.exit()
-            
-        self.logger.log(LogPriority.DEBUG, 
-                        ["InstallingHelper.find_package_name",
-                         "package_name = " + self.package_name])
+        if re.match("^\s*$", self.package_name):
+            self.logger.log(LogPriority.INFO,
+                            ["InstallingHelper.find_package_name",
+                             "Need a valid url pointing to an archive file."])
+        else:
+            self.logger.log(LogPriority.DEBUG,
+                            ["InstallingHelper.find_package_name",
+                             "package_name = " + self.package_name])
 
     def find_file_name(self):
         """
         Get the name of the file to download, from the url string
-        
+
         @author: Roy Nielsen
         """
         self.file_name = ""
 
         name_list = self.url.split("/")
-        for name in name_list :
+        for name in name_list:
             self.file_name = name
         # the name of the archive file should be the last item in the above
         # list, if it is empty, then exit.
-        if re.match("^\s*$", self.file_name) :
-            print "Need a valid url pointing to an archive file."
-            sys.exit()
-            
-        self.logger.log(LogPriority.DEBUG, 
-                        ["InstallingHelper.find_file_name",
-                         "file_name = " + self.file_name])
+        if re.match("^\s*$", self.file_name):
+            self.logger.log(LogPriority.INFO,
+                            ["InstallingHelper.find_file_name",
+                             "Need a valid url pointing to an archive file."])
+        else:
+            self.logger.log(LogPriority.DEBUG,
+                            ["InstallingHelper.find_file_name",
+                             "file_name = " + self.file_name])
 
-    def find_base_url(self) :
+    def find_base_url(self):
         """
         Get the base url, without the file_name
-        
+
         @author: Roy Nielsen
         """
         self.base_url = ""
         i = 0
 
         name_list = self.url.split("/")
-        for name in name_list :
+        for name in name_list:
             i = i + 1
-            if i >= len(name_list) :
+            if i >= len(name_list):
                 break
             elif i == 1:
                 self.base_url = name
                 continue
-            
-            self.base_url = self.base_url + "/" + name    
-        
-        self.logger.log(LogPriority.DEBUG, 
+
+            self.base_url = self.base_url + "/" + name
+
+        self.logger.log(LogPriority.DEBUG,
                         ["InstallingHelper.find_base_url",
                          "base_url = " + self.base_url])
 
