@@ -34,6 +34,7 @@ THIS IS A LOCAL RULE, NOT TO BE DISTRIBUTED
 @change: 04/08/2014 ekkehard command updates
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/11/24 ekkehard descope OS X
 '''
 from __future__ import absolute_import
 import os
@@ -79,7 +80,7 @@ class InstallPuppet(Rule):
         self.helptext = '''This rule to installs puppet.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {}}
         self.environ = environ
         self.my_os = self.environ.getosfamily()
 
