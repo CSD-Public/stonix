@@ -215,8 +215,8 @@ class XinetdAccessControl(Rule):
 
             event = {'eventtype': 'perms',
                      'filepath': path,
-                     'startstate': ['0', '0', '0' + octperms],
-                     'endstate': [perms[1], perms[2], '0' + perms[0]]}
+                     'startstate': ['0', '0', '0' + str(octperms)],
+                     'endstate': [str(perms[1]), str(perms[2]), '0' + str(perms[0])]}
 
             os.chmod(path, perms[0])
             os.chown(path, perms[1], perms[2])
@@ -291,8 +291,8 @@ class XinetdAccessControl(Rule):
 
                 event = {'eventtype': 'perms',
                          'filepath': path,
-                         'startstate': ['0', '0', '0' + octperms],
-                         'endstate': [perms[1], perms[2], '0' + perms[0]]}
+                         'startstate': ['0', '0', '0' + str(octperms)],
+                         'endstate': [str(perms[1]), str(perms[2]), '0' + str(perms[0])]}
 
                 os.chmod(path, perms[0])
                 os.chown(path, perms[1], perms[2])
