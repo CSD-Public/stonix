@@ -190,7 +190,7 @@ class ConfigurePowerManagement(Rule):
                         powerSettingActualValue = int(powerSettingActual)
                         powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
                         ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
-                        if newPowerSettingValue == powerSettingActualValue:
+                        if powerSettingValue == powerSettingActualValue:
                             self.resultAppend(pslabel + " is now compliant! "  + powerSettingInfo)
                         else:
                             self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
