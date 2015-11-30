@@ -34,6 +34,7 @@ This is the rule for installing the JAMF Casper Suite on a client machine.
 @change: 2015/11/23 eball Changed structure of report to remove possibility of
     error on systems that don't have Casper installed.
 @change: 2015/11/24 ekkehard set back to puppet-prod temporarily
+@change: 2015/11/30 eball Changed link to new QuickAdd package
 '''
 from __future__ import absolute_import
 import os
@@ -52,8 +53,8 @@ from ..filehelper import FileHelper
 from ..IHmac import IHmac
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERQUICKADD = "http://puppet-prod.lanl.gov/support/casper/Puppet-Stonix-quickadd.zip"
-JAMFCASPERSUITESERVER = "puppet-prod.lanl.gov"
+JAMFCASPERQUICKADD = "https://jss.lanl.gov/CasperShare/QuickAdd.09.81.pkg"
+JAMFCASPERSUITESERVER = "jss.lanl.gov"
 
 
 class InstallCasperSuite(Rule):
