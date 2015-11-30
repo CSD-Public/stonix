@@ -580,9 +580,9 @@ the sestatus command to see if selinux is configured properly\n"
         try:
 
             if self.modeci.getcurrvalue() in ['complain', 'permissive']:
-                aamode = 'aa-complain'
+                aamode = '/usr/sbin/aa-complain'
             elif self.modeci.getcurrvalue() == ['enforce', 'enforcing']:
-                aamode = 'aa-enforce'
+                aamode = '/usr/sbin/aa-enforce'
             if not aamode:
                 self.detailedresults += '\nNo valid mode was specified for apparmor profiles. Valid modes include: enforce, or complain.'
                 self.detailedresults += '\nFix was not run to completion. Please enter a valid mode and try again.'
