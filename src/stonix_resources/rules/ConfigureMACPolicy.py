@@ -338,30 +338,33 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 retval = False
                 return retval
 
-            try:
-
-                self.cmdhelper.executeCommand(self.aaunconf)
-                errout = self.cmdhelper.getErrorString()
-                if re.search('error|Traceback', errout):
+            self.cmdhelper.executeCommand(self.aaunconf)
+            errout = self.cmdhelper.getErrorString()
+            output = self.cmdhelper.getOutputString()
+            if re.search('error|Traceback', output):
+                retval = False
+                if re.search('codecs\.py', output):
+                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
+                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+            if re.search('error|Traceback', errout):
+                retval = False
+                if re.search('codecs\.py', errout):
+                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
+                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+                else:
                     self.detailedresults += '\nThere was an error running command: ' + str(self.aaunconf)
                     self.detailedresults += '\nThe error was: ' + str(errout)
                     self.logger.log(LogPriority.DEBUG, "Error running command: " + str(self.aaunconf) + "\nError was: " + str(errout))
-                output = self.cmdhelper.getOutput()
-                for line in output:
-                    if re.search('not confined', line):
-                        retval = False
-                        unconfined = True
-                        sline = line.split()
-                        self.unconflist.append(str(sline[1]))
-                        self.detailedresults += '\n' + str(sline[1]) + ' is not confined by apparmor'
-                if unconfined:
-                    self.detailedresults += "\n\nIf you have services or applications which are unconfined by apparmor, this can only be corrected manually, by the administrator of your system. (See the man page for apparmor)."
-
-            except OSError as oser:
-                retval = False
-                if oser.errno == 22 and re.search('codecs\.py', oser):
-                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
-                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+            output = self.cmdhelper.getOutput()
+            for line in output:
+                if re.search('not confined', line):
+                    retval = False
+                    unconfined = True
+                    sline = line.split()
+                    self.unconflist.append(str(sline[1]))
+                    self.detailedresults += '\n' + str(sline[1]) + ' is not confined by apparmor'
+            if unconfined:
+                self.detailedresults += "\n\nIf you have services or applications which are unconfined by apparmor, this can only be corrected manually, by the administrator of your system. (See the man page for apparmor)."
 
         except Exception:
             raise
