@@ -42,6 +42,8 @@ configuration changes to the avahi service
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 @change: 2015/11/16 eball Add undo events, change fix reporting
+@change: 2015/12/01 eball Simplified version checking, removed OS X 10.11 from
+    applicable list, due to unresolved issue with writing to plist
 '''
 
 from __future__ import absolute_import
@@ -96,7 +98,7 @@ the avahi service in order to secure it.'''
                          'CCE 4341-4', 'CCE 4358-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
@@ -108,7 +110,18 @@ the avahi service in order to secure it.'''
             self.ismac = True
             self.plb = "/usr/libexec/PlistBuddy"
             osxversion = str(self.environ.getosver())
-            if re.search(r"10\.10\.?[0123]?", osxversion):
+            versplit = osxversion.split(".")
+            if len(versplit) > 2:
+                minorVersion = int(versplit[1])
+                releaseVersion = int(versplit[2])
+            elif len(versplit) == 2:
+                minorVersion = int(versplit[1])
+                releaseVersion = 0
+            else:
+                self.logger.log(LogPriority.ERROR,
+                                "Unexpected version string length")
+                raise Exception
+            if minorVersion == 10 and releaseVersion < 4:
                 self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
                 self.servicename = "com.apple.networking.discoveryd"
                 self.parameter = "--no-multicast"
@@ -116,7 +129,7 @@ the avahi service in order to secure it.'''
                 self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
             else:
                 self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                if osxversion.startswith("10.10"):
+                if minorVersion >= 10:
                     self.servicename = "com.apple.mDNSResponder.reloaded"
                 else:
                     self.servicename = "com.apple.mDNSResponder"
