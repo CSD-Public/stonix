@@ -124,9 +124,9 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.detailedresults = ""
 
         # for generating a new profile, you need the command, plus the target profile name
-        self.genprofcmd = 'aa-genprof'
+        self.genprofcmd = '/usr/sbin/aa-genprof'
         self.aaprofiledir = '/etc/apparmor.d/'
-        self.aastatuscmd = 'apparmor_status'
+        self.aastatuscmd = '/usr/sbin/apparmor_status'
         self.aaunconf = '/usr/sbin/aa-unconfined'
 
         self.initobjs()
@@ -183,7 +183,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.aaupdatecmd = 'update-rc.d apparmor start 5 S .'
         self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
         self.aadefscmd = 'update-rc.d apparmor defaults'
-        self.aastatuscmd = 'aa-status'
+        self.aastatuscmd = '/usr/sbin/aa-status'
 
     def report(self):
         '''
@@ -235,6 +235,9 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                     retval = False
                 if not self.reportAAprofs():
                     retval = False
+
+            if self.needsrestart:
+                self.detailedresults += '\nSystem needs to be restarted before apparmor module can be loaded.'
 
         except Exception:
             raise
@@ -295,7 +298,10 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             self.cmdhelper.executeCommand(self.aastatuscmd)
             output = self.cmdhelper.getOutputString()
             errout = self.cmdhelper.getErrorString()
-            if errout != '':
+            if re.search('AppArmor not enabled', output):
+                self.needsrestart = True
+                retval = False
+            if re.search('error|Traceback', errout):
                 retval = False
                 self.detailedresults += '\nThere was an error while attempting to run command: ' + str(self.aastatuscmd)
                 self.detailedresults += '\nThe error was: ' + str(errout)
@@ -334,7 +340,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
             self.cmdhelper.executeCommand(self.aaunconf)
             errout = self.cmdhelper.getErrorString()
-            if errout:
+            if re.search('error|Traceback', errout):
                 self.detailedresults += '\nThere was an error running command: ' + str(self.aaunconf)
                 self.detailedresults += '\nThe error was: ' + str(errout)
                 self.logger.log(LogPriority.DEBUG, "Error running command: " + str(self.aaunconf) + "\nError was: " + str(errout))
@@ -693,7 +699,7 @@ the sestatus command to see if selinux is configured properly\n"
                         self.logger.log(LogPriority.DEBUG, "Running update-grub command to update grub kernel boot configuration...")
                         self.cmdhelper.executeCommand(updategrub)
                         errout = self.cmdhelper.getErrorString()
-                        if errout:
+                        if re.search('error|Traceback', errout):
                             retval = False
                             self.detailedresults += '\nError updating grub configuration: ' + str(errout)
                             self.logger.log(LogPriority.DEBUG, "Error executing " + str(updategrub) + "\nError was: " + str(errout))
