@@ -124,9 +124,9 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.detailedresults = ""
 
         # for generating a new profile, you need the command, plus the target profile name
-        self.genprofcmd = 'aa-genprof'
+        self.genprofcmd = '/usr/sbin/aa-genprof'
         self.aaprofiledir = '/etc/apparmor.d/'
-        self.aastatuscmd = 'apparmor_status'
+        self.aastatuscmd = '/usr/sbin/apparmor_status'
         self.aaunconf = '/usr/sbin/aa-unconfined'
 
         self.initobjs()
@@ -180,9 +180,10 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                         'apparmor-profiles': True}
 
         self.aastartcmd = 'invoke-rc.d apparmor start'
-        self.aaupdatecmd = 'update-rc.d apparmor start 5 S'
+        self.aaupdatecmd = 'update-rc.d apparmor start 5 S .'
         self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
         self.aadefscmd = 'update-rc.d apparmor defaults'
+        self.aastatuscmd = '/usr/sbin/aa-status'
 
     def report(self):
         '''
@@ -229,10 +230,14 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
             if not self.reportAApkg():
                 retval = False
-            if not self.reportAAstatus():
-                retval = False
-            if not self.reportAAprofs():
-                retval = False
+            if retval:
+                if not self.reportAAstatus():
+                    retval = False
+                if not self.reportAAprofs():
+                    retval = False
+
+            if self.needsrestart:
+                self.detailedresults += '\nSystem needs to be restarted before apparmor module can be loaded.'
 
         except Exception:
             raise
@@ -249,6 +254,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
         # defaults
         retval = True
+        self.needsrestart = False
         for pkg in self.pkgdict:
             self.pkgdict[pkg] = True
 
@@ -264,6 +270,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 if not self.pkgdict[pkg]:
                     retval = False
                     self.detailedresults += '\nPackage: ' + str(pkg) + ' is not installed'
+                    self.needsrestart = True
 
         except Exception:
             raise
@@ -291,7 +298,10 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             self.cmdhelper.executeCommand(self.aastatuscmd)
             output = self.cmdhelper.getOutputString()
             errout = self.cmdhelper.getErrorString()
-            if errout != '':
+            if re.search('AppArmor not enabled', output):
+                self.needsrestart = True
+                retval = False
+            if re.search('error|Traceback', errout):
                 retval = False
                 self.detailedresults += '\nThere was an error while attempting to run command: ' + str(self.aastatuscmd)
                 self.detailedresults += '\nThe error was: ' + str(errout)
@@ -330,10 +340,21 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
             self.cmdhelper.executeCommand(self.aaunconf)
             errout = self.cmdhelper.getErrorString()
-            if errout:
-                self.detailedresults += '\nThere was an error running command: ' + str(self.aaunconf)
-                self.detailedresults += '\nThe error was: ' + str(errout)
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            output = self.cmdhelper.getOutputString()
+            if re.search('error|Traceback', output):
+                retval = False
+                if re.search('codecs\.py', output):
+                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
+                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+            if re.search('error|Traceback', errout):
+                retval = False
+                if re.search('codecs\.py', errout):
+                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
+                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+                else:
+                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaunconf)
+                    self.detailedresults += '\nThe error was: ' + str(errout)
+                    self.logger.log(LogPriority.DEBUG, "Error running command: " + str(self.aaunconf) + "\nError was: " + str(errout))
             output = self.cmdhelper.getOutput()
             for line in output:
                 if re.search('not confined', line):
@@ -533,6 +554,7 @@ the sestatus command to see if selinux is configured properly\n"
 
         fixresult = True
         self.detailedresults = ''
+        self.iditerator = 0
 
         try:
 
@@ -575,9 +597,9 @@ the sestatus command to see if selinux is configured properly\n"
         try:
 
             if self.modeci.getcurrvalue() in ['complain', 'permissive']:
-                aamode = 'aa-complain'
+                aamode = '/usr/sbin/aa-complain'
             elif self.modeci.getcurrvalue() == ['enforce', 'enforcing']:
-                aamode = 'aa-enforce'
+                aamode = '/usr/sbin/aa-enforce'
             if not aamode:
                 self.detailedresults += '\nNo valid mode was specified for apparmor profiles. Valid modes include: enforce, or complain.'
                 self.detailedresults += '\nFix was not run to completion. Please enter a valid mode and try again.'
@@ -589,8 +611,9 @@ the sestatus command to see if selinux is configured properly\n"
 
             if not self.fixAApkg():
                 retval = False
-            if not self.fixAAstatus():
-                retval = False
+            if retval: # should not continue unless apparmor package is installed
+                if not self.fixAAstatus():
+                    retval = False
 
         except Exception:
             raise
@@ -629,65 +652,140 @@ the sestatus command to see if selinux is configured properly\n"
         '''
 
         retval = True
+        editedgrub = False
+        apparmorfound = False
 
         try:
 
             if self.ubuntu:
 
-                self.cmdhelper.executeCommand(self.aadefscmd)
-                errout = self.cmdhelper.getErrorString()
-                if errout:
-                    retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aadefscmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                self.logger.log(LogPriority.DEBUG, "Detected that this is an apt-get based system. Looking for grub configuration file...")
 
-                self.cmdhelper.executeCommand(self.aaprofcmd)
-                errout = self.cmdhelper.getErrorString()
-                if errout:
-                    retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                if os.path.exists('/etc/default/grub'):
 
-                self.cmdhelper.executeCommand(self.aareloadprofscmd)
-                errout = self.cmdhelper.getErrorString()
-                if errout:
-                    retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                    grubpath = '/etc/default/grub'
+                    tmpgrubpath = grubpath + '.stonixtmp'
+                    self.logger.log(LogPriority.DEBUG, "Grub configuration file found at: " + str(grubpath))
 
-                self.cmdhelper.executeCommand(self.aaupdatecmd)
-                errout = self.cmdhelper.getErrorString()
-                if errout:
-                    retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaupdatecmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                    self.logger.log(LogPriority.DEBUG, "Reading grub configuration file...")
+                    fr = open(grubpath, 'r')
+                    contentlines = fr.readlines()
+                    fr.close()
 
-                    self.cmdhelper.executeCommand(self.aastartcmd)
-                    errout2 = self.cmdhelper.getErrorString()
-                    if errout2:
+                    self.logger.log(LogPriority.DEBUG, "Got grub configuration file contents. Looking for required apparmor kernel config line...")
+
+                    for line in contentlines:
+                        if re.search('GRUB_CMDLINE_LINUX="', line):
+                            if not re.search('apparmor=1 security=apparmor', line):
+                                self.logger.log(LogPriority.DEBUG, "Required apparmor kernel line not found. Adding it...")
+                                contentlines = [c.replace(line, line[:-2] + ' apparmor=1 security=apparmor"\n') for c in contentlines]
+                                editedgrub = True
+                            else:
+                                apparmorfound = True
+                    if not editedgrub and not apparmorfound:
+                        contentlines.append('\nGRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"\n')
+                        editedgrub = True
+
+                    if editedgrub:
+                        self.logger.log(LogPriority.DEBUG, "Added apparmor kernel config line to contents. Writing contents to grub config file...")
+                        tfw = open(tmpgrubpath, 'w')
+                        tfw.writelines(contentlines)
+                        tfw.close()
+
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'conf',
+                                 'filepath': grubpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(tmpgrubpath, grubpath, myid)
+
+                        os.rename(tmpgrubpath, grubpath)
+                        os.chmod(grubpath, 0644)
+                        os.chown(grubpath, 0, 0)
+                        self.logger.log(LogPriority.DEBUG, "Finished writing apparmor kernel config line to grub config file")
+                        self.needsrestart = True
+
+                        updategrub = 'update-grub'
+
+                        self.logger.log(LogPriority.DEBUG, "Running update-grub command to update grub kernel boot configuration...")
+                        self.cmdhelper.executeCommand(updategrub)
+                        errout = self.cmdhelper.getErrorString()
+                        if re.search('error|Traceback', errout):
+                            retval = False
+                            self.detailedresults += '\nError updating grub configuration: ' + str(errout)
+                            self.logger.log(LogPriority.DEBUG, "Error executing " + str(updategrub) + "\nError was: " + str(errout))
+                            return retval
+                        self.logger.log(LogPriority.DEBUG, "Finished successfully updating grub kernel boot configuration...")
+
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Unable to locate grub configuration file")
+
+                self.logger.log(LogPriority.DEBUG, "Checking if the system needs to be restarted first in order to continue...")
+
+                if not self.needsrestart:
+
+                    self.logger.log(LogPriority.DEBUG, "System does not require restart to continue configuring apparmor. Proceeding...")
+
+                    self.cmdhelper.executeCommand(self.aadefscmd)
+                    errout = self.cmdhelper.getErrorString()
+                    if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
-                        self.detailedresults += '\nThe error was: ' + str(errout2)
+                        self.detailedresults += '\nThere was an error running command: ' + str(self.aadefscmd)
+                        self.detailedresults += '\nThe error was: ' + str(errout)
+
+                    self.cmdhelper.executeCommand(self.aaprofcmd)
+                    errout = self.cmdhelper.getErrorString()
+                    if re.search('error|Traceback', errout):
+                        retval = False
+                        self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
+                        self.detailedresults += '\nThe error was: ' + str(errout)
+
+                    self.cmdhelper.executeCommand(self.aareloadprofscmd)
+                    errout = self.cmdhelper.getErrorString()
+                    if re.search('error|Traceback', errout):
+                        retval = False
+                        self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
+                        self.detailedresults += '\nThe error was: ' + str(errout)
+
+                    self.cmdhelper.executeCommand(self.aaupdatecmd)
+                    errout = self.cmdhelper.getErrorString()
+                    if re.search('error|Traceback', errout):
+                        retval = False
+                        self.detailedresults += '\nThere was an error running command: ' + str(self.aaupdatecmd)
+                        self.detailedresults += '\nThe error was: ' + str(errout)
+
+                        self.cmdhelper.executeCommand(self.aastartcmd)
+                        errout2 = self.cmdhelper.getErrorString()
+                        if re.search('error|Traceback', errout2):
+                            retval = False
+                            self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
+                            self.detailedresults += '\nThe error was: ' + str(errout2)
+
+                else:
+                    self.logger.log(LogPriority.DEBUG, "System requires a restart before continuing to configure apparmor. Will NOT restart automatically.")
+                    self.detailedresults += '\nApparmor was just installed and/or added to the kernel boot config. You will need to restart your system and run this rule in fix again before it can configure properly.'
+                    retval = False
+                    return retval
 
             elif self.opensuse:
 
                 self.cmdhelper.executeCommand(self.aaprofcmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                if re.search('error|Traceback', errout):
                     retval = False
                     self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
                     self.detailedresults += '\nThe error was: ' + str(errout)
 
                 self.cmdhelper.executeCommand(self.aareloadprofscmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                if re.search('error|Traceback', errout):
                     retval = False
                     self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
                     self.detailedresults += '\nThe error was: ' + str(errout)
 
                 self.cmdhelper.executeCommand(self.aastartcmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                if re.search('error|Traceback', errout):
                     retval = False
                     self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
                     self.detailedresults += '\nThe error was: ' + str(errout)
