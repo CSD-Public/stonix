@@ -42,6 +42,7 @@ configuration changes to the avahi service
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 @change: 2015/11/16 eball Add undo events, change fix reporting
+@change: 2015/12/01 ekkehard - fix OS X El Capitan issue
 '''
 
 from __future__ import absolute_import
@@ -116,7 +117,7 @@ the avahi service in order to secure it.'''
                 self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
             else:
                 self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
-                if osxversion.startswith("10.10"):
+                if osxversion.startswith("10.10") or osxversion.startswith("10.11"):
                     self.servicename = "com.apple.mDNSResponder.reloaded"
                 else:
                     self.servicename = "com.apple.mDNSResponder"
