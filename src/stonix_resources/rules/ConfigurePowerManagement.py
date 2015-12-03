@@ -190,7 +190,7 @@ class ConfigurePowerManagement(Rule):
                         powerSettingActualValue = int(powerSettingActual)
                         powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
                         ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
-                        if newPowerSettingValue == powerSettingActualValue:
+                        if powerSettingValue == powerSettingActualValue:
                             self.resultAppend(pslabel + " is now compliant! "  + powerSettingInfo)
                         else:
                             self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
@@ -205,10 +205,10 @@ class ConfigurePowerManagement(Rule):
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
+        self.formatDetailedResults("fix", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.compliant
+        return self.rulesuccess
 
 ###############################################################################
 

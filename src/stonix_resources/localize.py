@@ -203,36 +203,6 @@ KRB5 = '''[logging]
  .lanl.gov = lanl.gov
 '''
 
-
-KRB5 = '''[logging]
- default = FILE:/var/log/krb5libs.log
- kdc = FILE:/var/log/krb5kdc.log
- admin_server = FILE:/var/log/kadmind.log
-
-[libdefaults]
- default_realm = lanl.gov
- dns_lookup_realm = false
- dns_lookup_kdc = false
- ticket_lifetime = 24h
- renew_lifetime = 7d
- forwardable = true
- allow_weak_crypto = true
- clockslew = 300
-
-[realms]
-
- lanl.gov = {
-  kdc = kerberos.lanl.gov
-  kdc = kerberos-slaves.lanl.gov
-  admin_server = kerberos.lanl.gov
-  default_domain = lanl.gov
- }
-
-[domain_realm]
- lanl.gov = lanl.gov
- .lanl.gov = lanl.gov
-'''
-
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
 # management like yum and apt-get.
