@@ -203,12 +203,12 @@ the avahi service in order to secure it.'''
         try:
 
             # defaults
-            secure = True
+            compliant = True
             self.detailedresults = ''
 
             # if system is a mac, run reportmac
             if self.ismac:
-                secure = self.reportmac()
+                compliant = self.reportmac()
 
             # if not mac os x, then run this portion
             else:
@@ -222,14 +222,14 @@ the avahi service in order to secure it.'''
 
                     # if avahi-daemon is still running, it is not disabled
                     if self.sh.auditservice('avahi-daemon'):
-                        secure = False
+                        compliant = False
                         self.detailedresults += '\nDisableAvahi has been set to True, but avahi-daemon service is currently running.'
                     self.numdependencies = 0
                     if self.pkghelper.determineMgr() == 'yum':
                         self.numdependencies = self.parseNumDependencies('avahi')
                         if self.numdependencies <= 3:
                             if self.pkghelper.check('avahi'):
-                                secure = False
+                                compliant = False
                                 self.detailedresults += '\nDisableAvahi is set to True, but avahi is currently installed.'
 
                         else:
@@ -251,7 +251,7 @@ the avahi service in order to secure it.'''
                                 filepath, tmpfilepath, self.confoptions, intent,
                                 conftype)
                         if not self.avahiconfeditor.report():
-                            secure = False
+                            compliant = False
                             self.detailedresults += '\nOne or more configuration options is missing from ' + str(filepath) + ' or has an incorrect value.'
 
                     # if config file not found, check if avahi is installed
@@ -260,22 +260,18 @@ the avahi service in order to secure it.'''
                         # if not installed, we can't configure anything
                         if not self.pkghelper.check('avahi'):
                             self.detailedresults += '\nAvahi Daemon not installed. Cannot configure it.'
-                            secure = True
+                            compliant = True
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
 
                         # if it is installed, then the config file is missing
                         else:
-                            secure = False
+                            compliant = False
                             self.detailedresults += '\nAvahi is installed but could not find config file in expected location.'
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
 
-            # if secured (or disabled), system is compliant
-            if secure:
-                self.compliant = True
-            else:
-                self.compliant = False
+            self.compliant = compliant
 
         except (IOError):
             self.detailedresults += '\n' + traceback.format_exc()
@@ -333,9 +329,9 @@ the avahi service in order to secure it.'''
                     ", " + self.servicename + " audit failed.\n"
 
             if servicesuccess and commandsuccess:
-                self.compliant = True
+                return True
             else:
-                self.compliant = False
+                return False
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:

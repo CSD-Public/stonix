@@ -128,7 +128,7 @@ agent, set the value of SECUREMTA to False.'''
             self.detailedresults = ""
             if not self.environ.operatingsystem == "Mac OS X":
                 self.helper = Pkghelper(self.logger, self.environ)
-            secure = True
+            compliant = True
             sndpath = "/etc/mail/sendmail.cf"
             postfixlist = ['postfix', 'squeeze', 'squeeze-backports',
                            'wheezy', 'jessie', 'sid', 'CNDpostfix', 'lucid',
@@ -152,11 +152,11 @@ agent, set the value of SECUREMTA to False.'''
             # if sendmail installed, run check on sendmail
             if os.path.exists(sndpath):
                 if not checkPerms(sndpath, [0, 0, 420], self.logger):
-                    secure = False
+                    compliant = False
                 if not self.reportsendmail():
-                    secure = False
+                    compliant = False
             elif len(self.sendmailfoundlist) > 0:
-                secure = False
+                compliant = False
                 self.sndmailed = False
                 self.detailedresults += "sendmail is installed but \
 /etc/mail/sendmail.cf is missing"
@@ -164,26 +164,20 @@ agent, set the value of SECUREMTA to False.'''
 
             if os.path.exists(self.postfixpath):
                 if not checkPerms(self.postfixpath, [0, 0, 420], self.logger):
-                    secure = False
+                    compliant = False
                 if not self.reportpostfix():
-                    secure = False
+                    compliant = False
 
             # if postfix installed, run check on postfix
             elif len(self.postfixfoundlist) > 0:
-                secure = False
+                compliant = False
                 self.postfixed = False
                 self.detailedresults += "You have postfix installed but your \
 /etc/postfix/main.cf is missing"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
             elif not os.path.exists(self.postfixpath):
                 self.postfixed = False
-            if secure:
-                self.detailedresults += "SecureMTA report has been run and the \
-system is compliant"
-            else:
-                self.detailedresults += "SecureMTA report has been run and the \
-system is not compliant"
-            self.compliant = secure
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -324,6 +318,7 @@ system is not compliant"
                         success = False
                 if not self.fixsendmail():
                     success = False
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
