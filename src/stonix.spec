@@ -116,6 +116,21 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Dec 1 2015 David Kennel <dkennel@lanl.gov> - 0.9.2
+- ConfigureMacPolicy updated to work around broken behavior in Debian 8's implementation of AppArmor
+- Updated FileHelper object adding return value to fixFile and removing unused imports
+- Logic bug where SecureIPv6 created files during report mode corrected
+- SecureMDNS undo failures corrected
+- SystemAccounting undo failure corrected
+- Fixed ConfigureKerberos undo issues
+- Undo method of rule.py updated to handle removal of directories
+- Undo issues in ScheduleStonix corrected
+- XinetdAccessControl undo problems corrected
+- Fixed issues in the undo of ConsoleRootOnly
+- Corrected undo issues with InstallBanners
+- Fixed traceback in DisableWeakAuthentication
+- Improved user feedback in SecureATCRON
+
 * Tue Oct 27 2015 David Kennel <dkennel@lanl.gov> - 0.9.1
 - Corrected traceback in MuteMic rule when run in user context
 - Corrected PAM stack on RHEL 7 so that Sudo works with Kerberos
