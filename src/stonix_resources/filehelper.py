@@ -39,6 +39,7 @@ import types
 from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 from random import randint
+from stonixutilityfunctions import writeFile, resetsecon
 
 
 class FileHelper(object):
@@ -506,25 +507,19 @@ class FileHelper(object):
         fixFileSuccess = True
         self.evaluateFile()
         success = True
-# if we have statelogger and event information initialize statelogger for file
-        if success and not self.statechglogger == None and \
-        not self.file_eventid == None:
-            success = self.initializeStateChangeLoggerEvent()
-            if not success:
-                fixFileSuccess = False
-# if file does not exits but should create it
+# if file does not exist but should create it
         if success and self.file_path_needs_to_be_created:
             success = self.createFilePath(self.getFilePath(),
                                           not(self.file_remove))
             if not success:
                 fixFileSuccess = False
-# if file exits and needs to be removed remove it
+# if file exists and needs to be removed remove it
         if success and self.file_path_needs_to_be_deleted:
             success = self.removeFilePath(self.getFilePath(),
                                           self.file_remove)
             if not success:
                 fixFileSuccess = False
-# if file owner are messed up fix them
+# if file owner/group are messed up fix them
         if success and not self.file_owner_matches:
             success = self.fixFileOwnerGroup(self.getFilePath(),
                                              self.getFileOwner(),
@@ -532,27 +527,20 @@ class FileHelper(object):
                                              True)
             if not success:
                 fixFileSuccess = False
-# if file permisssion are messed up fix them
+# if file permissions are messed up fix them
         if success and not self.file_permissions_matches:
             success = self.fixFilePermissions(self.getFilePath(),
                                               self.getFilePermissions(),
                                               True)
             if not success:
                 fixFileSuccess = False
-# if file content are messed up fix it
+# if file contents are incorrect fix them
         if success and not self.file_content_matches:
             success = self.fixFileContent(self.getFilePath(),
                                           self.getFileContent(),
                                           True)
             if not success:
                 fixFileSuccess = False
-# if we have statelogger and event information record event
-        if success and not self.statechglogger == None and \
-        not self.file_eventid == None:
-            success = self.recordStateChangeLoggerEvent()
-            if not success:
-                fixFileSuccess = False
-        return fixFileSuccess
 
 ###############################################################################
 
@@ -754,7 +742,7 @@ class FileHelper(object):
         if success:
             removeEmptyDirectory = self.defaultRemoveEmptyParentDirectories
             try:
-                while removeEmptyDirectory:
+                if removeEmptyDirectory and not os.listdir(directory):
                     os.rmdir(directory)
                     message = "removed " + directory + " via os.rmdir(" + \
                     directory + ")."
@@ -1038,10 +1026,10 @@ class FileHelper(object):
                 file_content_fixed = True
                 message = "file path '" + str(file_path) + "' does not exist!"
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-        if success and file_content == None:
+        if success and file_content is None:
             file_content_fixed = True
-            message = "file content is at default values of cotent='" + \
-            str(file_content) + "'! no action taken"
+            message = "File content is at default values of content='" + \
+                str(file_content) + "'! No action taken"
             self.logdispatcher.log(LogPriority.DEBUG, message)
         if success:
             if not shouldI:
@@ -1050,26 +1038,40 @@ class FileHelper(object):
         if success and not file_content_fixed:
             try:
                 if shouldI:
-                    with open(file_path, "w") as f:
-                        f.write(file_content)
-                    message = "File content for '" + file_path + \
-                    "' were successfully updated to content='" + \
-                    str(file_content) + "'!"
-                    file_content_fixed = True
+                    tmpfile = file_path + ".stonixtmp"
+                    if writeFile(tmpfile, file_content, self.logdispatcher):
+                        event = {'eventtype': 'conf',
+                                 'filepath': file_path}
+                        self.statechglogger.recordchgevent(self.file_eventid,
+                                                           event)
+                        self.statechglogger.recordfilechange(file_path,
+                                                             tmpfile,
+                                                             self.file_eventid)
+                        os.rename(tmpfile, file_path)
+                        perms = self.getFilePermissions()
+                        if perms is not None:
+                            os.chmod(file_path, perms)
+                        resetsecon(file_path)
+                        message = "File content for '" + file_path + \
+                            "' were successfully updated to content='" + \
+                            str(file_content) + "'!"
+                        file_content_fixed = True
+                    else:
+                        message = "Could not write new contents to " + tmpfile
+                        file_content_fixed = False
                 else:
                     message = "File content for '" + file_path + \
-                    "' should updated to content='" + str(file_content) + \
-                    "'! But shouldI is set to '" + str(shouldI)
+                        "' should updated to content='" + str(file_content) + \
+                        "'! But shouldI is set to '" + str(shouldI) + "'"
                     file_content_fixed = False
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
             except Exception, err:
                 success = False
                 file_content_fixed = False
-                message = "with open('" + str(file_path) + \
-                "', 'w') as f: \n f.write('" + str(file_content) + \
-                "'). failed with Error '" + str(err) + "' - " + \
-                traceback.format_exc()
+                message = "Error writing new contents to " + str(file_path) + \
+                    ". Failed with error '" + str(err) + "' - " + \
+                    traceback.format_exc()
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
                 raise
@@ -1184,38 +1186,6 @@ class FileHelper(object):
         self.file_owner_matches = True
         self.file_group_matches = True
         self.file_messages = ""
-        return True
-
-###############################################################################
-
-    def initializeStateChangeLoggerEvent(self):
-        if os.path.exists(self.file_path):
-            self.file_path_backup = self.file_path + \
-                str(randint(0, 9999)).zfill(4)
-            shutil.copy(self.file_path, self.file_path_backup)
-        return True
-
-###############################################################################
-
-    def recordStateChangeLoggerEvent(self):
-        if os.path.exists(self.file_path) and \
-           os.path.exists(self.file_path_backup):
-            event = {'eventtype': 'conf',
-                     'startstate': 'notconfigured',
-                     'endstate': 'configured',
-                     'filepath': self.file_path}
-            self.statechglogger.recordchgevent(self.file_eventid, event)
-            self.statechglogger.recordfilechange(self.file_path_backup,
-                                                 self.file_path,
-                                                 self.file_eventid)
-            try:
-                os.remove(self.file_path_backup)
-            except Exception, err:
-                message = "Could not remove " + str(self.file_path_backup) + \
-                    ". Failed with Error '" + str(err) + "' - " + \
-                    traceback.format_exc()
-                self.appendToFileMessage(message)
-                self.logdispatcher.log(LogPriority.DEBUG, message)
         return True
 
 ###############################################################################

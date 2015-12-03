@@ -25,23 +25,25 @@
 This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 
 @author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@change: 2013/03/18 Original Implementation
+@change: 2015/10/28 Update name
 '''
 from __future__ import absolute_import
 import unittest
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.RemoveSTOM import RemoveSTOM
+from src.stonix_resources.rules.CheckDupIDs import CheckDupIDs
 
 
-class zzzTestRuleRemoveSTOM(RuleTest):
+class zzzTestRuleCheckDupIDs(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = RemoveSTOM(self.config, self.environ,
-                               self.logdispatch,
-                               self.statechglogger)
+        self.rule = CheckDupIDs(self.config,
+                                self.environ,
+                                self.logdispatch,
+                                self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)

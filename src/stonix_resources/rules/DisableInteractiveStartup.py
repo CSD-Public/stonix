@@ -29,6 +29,7 @@ startup mode for all supported flavors of Linux operating systems.
         in init method, updated with new isapplicable section 4/16/2014
 @change: dkennel 04/18/2014 Replaced old style CI with new
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 from __future__ import absolute_import
 import os
@@ -55,19 +56,17 @@ class DisableInteractiveStartup(Rule):
         self.rulename = 'DisableInteractiveStartup'
         self.mandatory = True
         self.helptext = "The DisableInteractiveStartup rule disables " + \
-        "interactive startup/boot mode.  This may also be known as " + \
-        "recovery mode"
-        self.detailedresults = "The DisableInteractiveStartup rule has " + \
-        "not yet been run."
+            "interactive startup/boot mode. This may also be known as " + \
+            "recovery mode."
         self.guidance = ['CCE 4245-7']
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = 'bool'
         key = 'DISABLEINTERACTIVESTARTUP'
         instructions = "To prevent the disabling of interactive startup, " + \
-        "set the value of disableinteractivestartup to False."
+            "set the value of DISABLEINTERACTIVESTARTUP to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -114,13 +113,14 @@ class DisableInteractiveStartup(Rule):
             if not checkPerms(self.filepath, self.perms, self.logger):
                 compliant = False
                 self.detailedresults += "Permissions are not correct on " + \
-                self.filepath + "\n"
+                    self.filepath + "\n"
             self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                 "conf", self.filepath, tmpPath, keyval, "present", "closedeq")
+                                         "conf", self.filepath, tmpPath,
+                                         keyval, "present", "closedeq")
             if os.path.exists(self.filepath):
                 if not self.editor.report():
                     self.detailedresults += "Configuration for " + \
-                    self.filepath + " is incorrect via kveditor report\n"
+                        self.filepath + " is incorrect via kveditor report\n"
                     compliant = False
             self.compliant = compliant
 
@@ -139,9 +139,9 @@ class DisableInteractiveStartup(Rule):
 
     def fix(self):
         '''
-        The fix method will apply the required settings to the system. 
+        The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-        Search for the /etc/sysconfig/init configuration file and set the 
+        Search for the /etc/sysconfig/init configuration file and set the
         PROMPT setting to PROMPT=no
 
         @author bemalmbe
@@ -152,7 +152,7 @@ class DisableInteractiveStartup(Rule):
                 return
             self.detailedresults = ""
 
-            #clear out event history so only the latest fix is recorded
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -163,7 +163,7 @@ class DisableInteractiveStartup(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(self.filepath, self.perms, self.logger,
-                                                    self.statechglogger, myid):
+                                    self.statechglogger, myid):
                         self.rulesuccess = False
             if self.editor.fixables:
                 if not self.created:
@@ -174,14 +174,14 @@ class DisableInteractiveStartup(Rule):
                     self.detailedresults += "kveditor fix ran successfully\n"
                     if self.editor.commit():
                         self.detailedresults += "kveditor commit ran " + \
-                        "successfully\n"
+                            "successfully\n"
                     else:
                         self.detailedresults += "kveditor commit did not " + \
-                        "run successfully\n"
+                            "run successfully\n"
                         self.rulesuccess = False
                 else:
                     self.detailedresults += "kveditor fix did not run " + \
-                    "successfully\n"
+                        "successfully\n"
                     self.rulesuccess = False
                 os.chown(self.filepath, self.perms[0], self.perms[1])
                 os.chmod(self.filepath, self.perms[2])
@@ -190,7 +190,7 @@ class DisableInteractiveStartup(Rule):
                 self.ch.executeCommand(self.restart)
                 if self.ch.getReturnCode() != 0:
                     self.detailedresults += "Unable to restart Grub with " + \
-                    "new changes\n"
+                        "new changes\n"
                     self.rulesuccess = False
         except (KeyboardInterrupt, SystemExit):
             raise

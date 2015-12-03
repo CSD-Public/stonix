@@ -29,7 +29,7 @@ This class handles muting the microphone input levels.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/12/15 dkennel Fix for Macs with no microphones (and ergo no input)
 @change: 2015/04/15 dkennel updated for new isApplicable
-
+@change: 2015/10/07 eball Help text cleanup
 '''
 from __future__ import absolute_import
 import traceback
@@ -40,7 +40,6 @@ import time
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
 from ..stonixutilityfunctions import resetsecon
 
 
@@ -62,10 +61,10 @@ class MuteMic(Rule):
         self.rulename = 'MuteMic'
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The MuteMic rule will mute or set the microphone input levels to
-zero. This can help prevent a compromised computer from being used as a
-listening device. On most platforms input volume changes require no privileges
-so this setting can be easily undone.'''
+        self.helptext = '''The MuteMic rule will mute or set the microphone \
+input levels to zero. This can help prevent a compromised computer from being \
+used as a listening device. On most platforms input volume changes require no \
+privileges so this setting can be easily undone.'''
         self.rootrequired = False
         self.mutemicrophone = self.__initializeMuteMicrophone()
         self.guidance = ['CIS']
@@ -83,8 +82,9 @@ so this setting can be easily undone.'''
         '''
         datatype = 'bool'
         key = 'mutemicrophone'
-        instructions = '''If set to yes or true the MUTEMICROPHONE action will mute the
-microphone. This rule should always be set to TRUE with few valid exceptions.'''
+        instructions = '''If set to yes or true the MUTEMICROPHONE action \
+will mute the microphone. This rule should always be set to TRUE with few \
+valid exceptions.'''
         default = True
         myci = self.initCi(datatype, key, instructions, default)
         return myci
@@ -366,7 +366,7 @@ microphone. This rule should always be set to TRUE with few valid exceptions.'''
             setlevels = "/usr/bin/osascript -e 'set volume input volume 0'"
         elif os.path.exists('/usr/bin/amixer'):
             setlevels = "/usr/bin/amixer sset Capture Volume 0,0 mute"
-        if os.path.exists(self.pulsedefaults):
+        if os.path.exists(self.pulsedefaults) and self.environ.geteuid() == 0:
             self.fixPulseAudio()
 
         if setlevels != None:

@@ -34,6 +34,7 @@ possible. Configure SNMP if necessary.
 @change: 04/21/2014 ekkehard Implemented self.detailedresults flow
 @change: 04/21/2014 ekkehard ci updates and ci fix method implementation
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -67,11 +68,12 @@ class SecureSNMP(Rule):
         self.rulename = 'SecureSNMP'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The Simple Network Management Protocol allows administrators to monitor the state of network 
-devices, including computers. Older versions of SNMP were well-known for weak security, 
-such as plaintext transmission of the community string (used for authentication) 
-and also usage of easily-guessable choices for community string. Disable SNMP if 
-possible. Configure SNMP if necessary.'''
+        self.helptext = '''The Simple Network Management Protocol allows \
+administrators to monitor the state of network devices, including computers. \
+Older versions of SNMP were well-known for weak security, such as plaintext \
+transmission of the community string (used for authentication) and also usage \
+of easily-guessable choices for community string. Disable SNMP if possible. \
+Configure SNMP if necessary.'''
         self.rootrequired = True
         self.guidance = ['NSA 3.20', 'CCE 4540-1']
         self.applicable = {'type': 'white',
@@ -79,7 +81,7 @@ possible. Configure SNMP if necessary.'''
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         datatype = 'bool'
         key = 'DisableSNMP'
-        instructions = "If there is a mission-critical need for hosts " + \
+        instructions = "If there is a mission-critical need for hosts at" + \
                        "this site to be remotely monitored by a SNMP " + \
                        "tool, then prevent the disabling and removal " + \
                        "of SNMP by setting the value of DisableSNMP " + \

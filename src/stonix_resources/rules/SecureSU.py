@@ -24,17 +24,20 @@
 
 Created on Apr 25, 2013
 
-The su command allows a user to gain the privileges of another user by entering the password for that user's
-account. It is desirable to restrict the root user so that only known administrators are ever allowed to access the
-root account. This restricts password-guessing against the root account by unauthorized users or by accounts
-which have been compromised.
-By convention, the group wheel contains all users who are allowed to run privileged commands. The PAM
-module pam_wheel.so is used to restrict root access to this set of users. 
+The su command allows a user to gain the privileges of another user by entering
+the password for that user's account. It is desirable to restrict the root user
+so that only known administrators are ever allowed to access the root account.
+This restricts password-guessing against the root account by unauthorized users
+or by accounts which have been compromised.
+By convention, the group wheel contains all users who are allowed to run
+privileged commands. The PAM module pam_wheel.so is used to restrict root
+access to this set of users.
 
 @author: bemalmbe
 @change: 03/12/2014 dwalker isapplicable method to fit normal convention
 @change: 04/18/2014 ekkehard ci updates
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -43,10 +46,9 @@ import re
 import traceback
 
 from ..rule import Rule
-from ..stonixutilityfunctions import cloneMeta, readFile
+from ..stonixutilityfunctions import readFile
 from ..stonixutilityfunctions import resetsecon, writeFile, iterate
 from ..stonixutilityfunctions import checkPerms, setPerms
-from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
@@ -81,8 +83,8 @@ are ever allowed to access the root account. This restricts password-guessing \
 against the root account by unauthorized users or by accounts which have been \
 compromised. By convention, the group wheel contains all users who are \
 allowed to run privileged commands. The PAM module pam_wheel.so is used to \
-restrict root access to this set of users. We will not configure Su for \
-debian distros specifically."""
+restrict root access to this set of users.
+This rule will not configure su on Debian distros"""
         self.rootrequired = True
         datatype = 'bool'
         key = 'SecureSU'
@@ -138,8 +140,9 @@ No need to do anything\n"
                 if re.search("Debian", self.environ.getostype()):
                     self.compliant = True
                     self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                                               self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO,
+                                         self.detailedresults)
                     return
                 else:
                     wheelentry = "sudo"
@@ -156,7 +159,7 @@ No need to do anything\n"
                         found = True
                 if not found:
                     self.detailedresults += "did not find the " + \
-wheelentry + " group in /etc/group file\n"
+                        wheelentry + " group in /etc/group file\n"
                     self.wheel = False
                     compliant = False
                 else:
@@ -178,14 +181,14 @@ found in the /etc/group file\n"
                             templine = line.split()
                             if self.ph.manager == "apt-get":
                                 if re.match("^auth", templine[0]) and \
-                                    re.match("^required", templine[1]) and \
-                                    re.search("group=sudo", line):
+                                   re.match("^required", templine[1]) and \
+                                   re.search("group=sudo", line):
                                     invalid = False
                                     break
                             else:
                                 if re.match("^auth", templine[0]) and \
-                                    re.match("^required", templine[1]) and \
-                                    re.search("use_uid", line):
+                                   re.match("^required", templine[1]) and \
+                                   re.search("use_uid", line):
                                     invalid = False
                                     break
                 except IndexError:
@@ -203,10 +206,12 @@ pam su\n"
                 self.detailedresults += "/etc/pam.d/su file doesn't exist!\n"
             if compliant:
                 self.compliant = True
-                self.detailedresults += 'This system is compliant with the SecureSU rule'
+                self.detailedresults += 'This system is compliant with ' + \
+                    'the SecureSU rule'
             else:
                 self.compliant = False
-                self.detailedresults += 'This system is not compliant with the SecureSU rule'
+                self.detailedresults += 'This system is not compliant ' + \
+                    'with the SecureSU rule'
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -215,17 +220,17 @@ pam su\n"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
         '''
-        The fix method will apply the required settings to the system. 
+        The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-        
+
         @author bemalmbe
         '''
 
@@ -235,13 +240,13 @@ pam su\n"
             success = True
             self.detailedresults = ""
             debug = ""
-            
-            #clear out event history so only the latest fix is recorded
+
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-                
+
             if os.path.exists(self.grp):
                 if not self.wheel:
                     ch = CommandHelper(self.logger)
@@ -260,7 +265,7 @@ unable to continue with the rest of the rule\n"
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(self.grp, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                        self.statechglogger, myid):
                             success = False
             else:
                 self.detailedresults += "/etc/group file doesn\'t exist! \
@@ -268,14 +273,14 @@ Stonix will not attempt to create this file and will skip to next stage \
 of the fix method\n"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 success = False
-                
+
             if not self.pamwheel:
                 if os.path.exists(self.pam):
                     if not checkPerms(self.pam, [0, 0, 420], self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(self.pam, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                        self.statechglogger, myid):
                             success = False
                     tempstring = ""
                     contents = readFile(self.pam, self.logger)
@@ -285,17 +290,20 @@ of the fix method\n"
                         else:
                             tempstring += line
                     if self.ph.manager == "apt-get":
-                        tempstring += "auth    required    pam_wheel.so group=sudo\n"
+                        tempstring += "auth    required    " + \
+                            "pam_wheel.so group=sudo\n"
                     else:
-                        tempstring += "auth    required    pam_wheel.so use_uid\n"
+                        tempstring += "auth    required    " + \
+                            "pam_wheel.so use_uid\n"
                     tmpfile = self.pam + ".tmp"
                     if writeFile(tmpfile, tempstring, self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype":"conf",
-                                 "filepath":self.pam}
+                        event = {"eventtype": "conf",
+                                 "filepath": self.pam}
                         self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.pam, tmpfile, myid)
+                        self.statechglogger.recordfilechange(self.pam, tmpfile,
+                                                             myid)
                         os.rename(tmpfile, self.pam)
                         os.chown(self.pam, 0, 0)
                         os.chmod(self.pam, 420)
@@ -311,6 +319,6 @@ of the fix method\n"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess

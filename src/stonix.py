@@ -377,12 +377,20 @@ class Controller(Observable):
         for rule in rules:
             try:
                 if rule.isapplicable():
-                    if not self.environ.geteuid() == 0 and rule.getisrootrequired():
-                        continue
                     self.logger.log(LogPriority.DEBUG,
+                                    'Rule is applicable by platform ' +
+                                    ' EUID: ' + str(self.environ.geteuid()) +
+                                    ' Root required: ' +
+                                    str(rule.getisrootrequired()))
+                    if self.environ.geteuid() != 0 and rule.getisrootrequired():
+                        self.logger.log(LogPriority.DEBUG,
+                                    'Skipping ' + rule.getrulename() +
+                                    ' root required.')
+                    else:
+                        self.logger.log(LogPriority.DEBUG,
                                     'Adding ' + rule.getrulename() +
                                     ' to run list.')
-                    applicablerules.append(rule)
+                        applicablerules.append(rule)
             except Exception:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,

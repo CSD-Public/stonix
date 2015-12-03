@@ -50,6 +50,7 @@ from ..localize import WARNINGBANNER
 from ..localize import ALTWARNINGBANNER
 from ..localize import OSXSHORTWARNINGBANNER
 from ..stonixutilityfunctions import fixInflation
+from ..stonixutilityfunctions import iterate
 
 
 class InstallBanners(RuleKVEditor):
@@ -201,8 +202,8 @@ class InstallBanners(RuleKVEditor):
 
         self.gdmprofile = profiledir + profilefile
 
-        profiledict = {'/etc/dconf/profile/': ['user-db:user', 'system-db:gdm'],
-                       '/var/lib/gdm3/dconf/profile/': ['user', 'gdm']}
+        profiledict = {'/etc/dconf/profile/': ['user-db:user\n', 'system-db:gdm\n'],
+                       '/var/lib/gdm3/dconf/profile/': ['user\n', 'gdm\n']}
         self.profilelist = profiledict[profiledir]
 
         gdmdirs = ['/etc/dconf/db/gdm.d/', '/var/lib/gdm3/dconf/db/gdm.d/']
@@ -214,7 +215,7 @@ class InstallBanners(RuleKVEditor):
         bannermessagefile = '01-banner-message'
         self.bannerfile = self.gdmdir + bannermessagefile
 
-        self.gnome3optlist = ['[org/gnome/login-screen]', 'disable-user-list=true', 'banner-message-enable=true', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
+        self.gnome3optlist = ['[org/gnome/login-screen]\n', 'disable-user-list=true\n', 'banner-message-enable=true\n', 'banner-message-text=\'' + OSXSHORTWARNINGBANNER + '\'']
         self.gnome3optdict = {'disable-user-list': 'true',
                             'banner-message-enable': 'true',
                             'banner-message-text': '\'' + OSXSHORTWARNINGBANNER + '\''}
@@ -292,35 +293,20 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.lightdm = True
-        key1 = '/etc/lightdm/lightdm.conf'
+        key1 = '/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf'
         val1 = ['[SeatDefaults]',
-              'greeter-show-manual-login=true',
-              'greeter-hide-users=true',
-              'session-startup-script=/usr/local/bin/banner.sh']
-        key2 = '/usr/share/xgreeters/unity-greeter.desktop'
-        val2 = ['[Desktop Entry]',
-              'Name=Unity Greeter',
-              'Comment=Unity Greeter',
-              'Exec=/usr/local/bin/banner.sh',
-              'Type=Application',
-              'X-Ubuntu-Gettext-Domain=unity-greeter']
-        key3 = '/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf'
-        val3 = 'allow-guest=false'
-        key4 = '/usr/local/bin/banner.sh'
-        val4 = '''#!/bin/bash
-false
-while [ $? -ne 0 ]; do
-  sleep 1
-  /usr/bin/gdialog --textbox /etc/issue 80 80
-done
-unity-greeter'''
-        key5 = self.motdfile
-        val5 = OSXSHORTWARNINGBANNER
+                'allow-guest=false',
+                'greeter-hide-users=true',
+                'greeter-show-manual-login=true',
+                'autologin-user=']
+        key2 = self.motdfile
+        val2 = ALTWARNINGBANNER
+        key3 = '/etc/lightdm/lightdm.conf.d/stonixlightdm.conf'
+        val3 = ['[SeatDefaults]',
+                'greeter-setup-script=/bin/sh -c "until /usr/bin/zenity --width=600 --height=400 --title=WARNING --text-info --filename=' + str(self.motdfile) + '; do :; done"']
         self.lightdmdict = {key1: val1,
                             key2: val2,
-                            key3: val3,
-                            key4: val4,
-                            key5: val5}
+                            key3: val3}
 
     def setlinuxcommon(self):
         '''
@@ -528,13 +514,14 @@ unity-greeter'''
             raise
         return filecontents
 
-    def setFileContents(self, filepath, contents, mode='w'):
+    def setFileContents(self, filepath, contents, mode='w', perms=[0644, 0, 0]):
         '''
         write (or append) specified contents to specified file
 
         @param filepath: string full path to file
         @param contents: list/string object to write to file (can be either list or string)
         @param mode: string indicates the IO method to use to open the file. valid values are 'w' for write, and 'a' for append
+        @param perms: integer-list of size 3. first index/position in list indicates octal permissions flag; second indicates uid; third indicates gid
 
         @return: retval
         @rtype: boolean
@@ -546,35 +533,98 @@ unity-greeter'''
         try:
 
             if not mode in ['w', 'a']:
+                self.logger.log(LogPriority.DEBUG, "parameter 'mode' must be either 'w' or 'a'")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
                 retval = False
-                self.detailedresults += '\nmode parameter must be either w or a'
                 return retval
 
-            f = open(filepath, mode)
-            if isinstance(contents, basestring):
-                f.write(contents)
-            elif isinstance(contents, list):
-                newcontents = []
-                for line in contents:
-                    newcontents.append(line)
-                f.writelines(newcontents)
-            else:
-                self.detailedresults += '\ncontents parameter must be either a string or a list. Returning False'
+            for item in perms:
+                if not isinstance(item, int):
+                    self.logger.log(LogPriority.DEBUG, "parameter 'perms' must be a list of exactly size 3, and all elements of the list must be integers")
+                    self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                    retval = False
+                    return retval
+            if len(perms) < 3:
+                self.logger.log(LogPriority.DEBUG, "parameter 'perms' must be a list of exactly size 3, and all elements of the list must be integers")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
                 retval = False
-            f.close()
+                return retval
 
-        except IOError:
-            try:
-                pathsplit = os.path.split(filepath)
-                if not os.path.exists(pathsplit[0]):
-                    os.mkdir(pathsplit[0], 0755)
-                    self.setFileContents(filepath, contents, mode)
-                else:
-                    raise
-            except OSError as err:
-                self.detailedresults += '\n' + str(err)
+            if not filepath:
+                self.logger.log(LogPriority.DEBUG, "parameter 'filepath' was blank")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
                 retval = False
+                return retval
+
+            if not contents:
+                self.logger.log(LogPriority.DEBUG, "parameter 'contents' was blank")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                retval = False
+                return retval
+
+            if not isinstance(contents, (list, basestring)):
+                self.logger.log(LogPriority.DEBUG, "parameter 'contents' must be either a list or a string")
+                self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                retval = False
+                return retval
+
+            pathsplit = os.path.split(filepath)
+            if not os.path.exists(pathsplit[0]):
+                self.logger.log(LogPriority.DEBUG, "parameter 'filepath' base directory is missing. attempting to create it...")
+                try:
+                    os.makedirs(pathsplit[0], 0755)
+                except Exception:
+                    self.logger.log(LogPriority.DEBUG, "failed to create filepath base directory: " + str(pathsplit[0]))
+                    self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                    retval = False
+                    return retval
+                self.logger.log(LogPriority.DEBUG, "base directory: " + str(pathsplit[0]) + " created successfully.")
+                #FIXME need to add undo event here after rule.py is updated to correctly handle undo of directory creations
+
+            if not os.path.exists(filepath):
+                self.logger.log(LogPriority.DEBUG, "parameter 'filepath' does not exist. attempting to create it...")
+                try:
+                    f = open(filepath, 'w')
+                    f.write('')
+                    f.close()
+                    os.chmod(filepath, perms[0])
+                    os.chown(filepath, perms[1], perms[2])
+
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'creation',
+                             'filepath': filepath}
+                    self.statechglogger.recordchgevent(myid, event)
+
+                except Exception:
+                    self.logger.log(LogPriority.DEBUG, "failed to create filepath: " + str(filepath))
+                    self.detailedresults += '\nfailed to write to file: ' + str(filepath)
+                    retval = False
+                    return retval
+                self.logger.log(LogPriority.DEBUG, "filepath: " + str(filepath) + " created successfully.")
+
+            tmpfilepath = filepath + '.stonixtmp'
+
+            tf = open(tmpfilepath, mode)
+            if isinstance(contents, basestring):
+                tf.write(contents)
+            elif isinstance(contents, list):
+                tf.writelines(contents)
+            tf.close()
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'conf',
+                     'filepath': filepath}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(tmpfilepath, filepath, myid)
+
+            os.rename(tmpfilepath, filepath)
+            os.chmod(filepath, perms[0])
+            os.chown(filepath, perms[1], perms[2])
+
         except Exception:
+            self.rulesuccess = False
             raise
         return retval
 
@@ -620,6 +670,7 @@ unity-greeter'''
                 self.detailedresults += '\nSpecified filepath not found. Returning False'
 
         except Exception:
+            self.rulesuccess = False
             raise
         return retval
 
@@ -811,6 +862,37 @@ unity-greeter'''
         retval = True
 
         try:
+
+            # set up gnome2 undo commands
+            self.gnome2undocmdlist = []
+            gconfget = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get '
+            gconfset = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory '
+            gconfremove = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --unset '
+            opt1type = '--type bool --set '
+            opt2type = '--type bool --set '
+            opt3type = '--type string --set '
+            opt1 = '/apps/gdm/simple-greeter/disable_user_list'
+            opt2 = '/apps/gdm/simple-greeter/banner_message_enable'
+            opt3 = '/apps/gdm/simple-greeter/banner_message_text'
+
+            self.cmdhelper.executeCommand(gconfget + opt1)
+            undoval1 = self.cmdhelper.getOutputString()
+            if not undoval1:
+                self.gnome2undocmdlist.append(gconfremove + opt1)
+            self.gnome2undocmdlist.append(gconfset + opt1type + ' ' + undoval1)
+
+            self.cmdhelper.executeCommand(gconfget + opt2)
+            undoval2 = self.cmdhelper.getOutputString()
+            if not undoval2:
+                self.gnome2undocmdlist.append(gconfremove + opt2)
+            self.gnome2undocmdlist.append(gconfset + opt2type + ' ' + undoval2)
+
+            self.cmdhelper.executeCommand(gconfget + opt3)
+            undoval3 = self.cmdhelper.getOutputString()
+            if not undoval3:
+                self.gnome2undocmdlist.append(gconfremove + opt3)
+            self.gnome2undocmdlist.append(gconfset + opt3type + ' ' + undoval3)
+
             for cmd in self.gnome2reportdict:
                 if not self.checkCommand(cmd, self.gnome2reportdict[cmd], False):
                     retval = False
@@ -831,16 +913,36 @@ unity-greeter'''
         retval = True
 
         try:
-            for opt in self.gnome3optdict:
-                if not self.checkCommand(self.gsettingsget + opt, self.gnome3optdict[opt], False):
+
+            if os.path.exists('/etc/gdm3/greeter.gsettings'):
+                foundbannerenable = False
+                foundbannermessage = False
+                f = open('/etc/gdm3/greeter.gsettings', 'r')
+                contentlines = f.readlines()
+                f.close()
+                for line in contentlines:
+                    if re.search('^banner\-message\-enable\=true', line):
+                        foundbannerenable = True
+                    if re.search('^banner\-message\-text\=\"' + OSXSHORTWARNINGBANNER, line):
+                        foundbannermessage = True
+                if not foundbannerenable:
+                    self.compliant = False
+                    self.detailedresults += '\nbanner-message-enable=true was missing from /etc/gdm3/greeter.gsettings'
+                if not foundbannermessage:
+                    self.compliant = False
+                    self.detailedresults += '\nbanner-message-text was not set to the correct value in /etc/gdm3/greeter.gsettings'
+            else:
+                for opt in self.gnome3optdict:
+                    if not self.checkCommand(self.gsettingsget + opt, self.gnome3optdict[opt], False):
+                        retval = False
+                        self.detailedresults += '\noption: ' + str(opt) + ' did not have the required value of ' + str(self.gnome3optdict[opt])
+                if not self.reportFileContents(self.gdmprofile, self.profilelist):
                     retval = False
-                    self.detailedresults += '\noption: ' + str(opt) + ' did not have the required value of ' + str(self.gnome3optdict[opt])
-            if not self.reportFileContents(self.gdmprofile, self.profilelist):
-                retval = False
-                self.detailedresults += '\ncould not locate the required configuration options in ' + str(self.gdmprofile)
-            if not self.reportFileContents(self.bannerfile, self.gnome3optlist):
-                retval = False
-                self.detailedresults += '\ncould not locate required configuration options in ' + str(self.bannerfile)
+                    self.detailedresults += '\ncould not locate the required configuration options in ' + str(self.gdmprofile)
+                if not self.reportFileContents(self.bannerfile, self.gnome3optlist):
+                    retval = False
+                    self.detailedresults += '\ncould not locate required configuration options in ' + str(self.bannerfile)
+
         except Exception:
             raise
         return retval
@@ -1066,6 +1168,16 @@ unity-greeter'''
                 errout = self.cmdhelper.getErrorString()
                 if errout:
                     retval = False
+                    self.detailedresults += "Failed to run command: " + str(cmd)
+                    self.logger.log(LogPriority.DEBUG, "Error running command: " + str(cmd) + "\n" + str(errout))
+            if retval:
+                if self.gnome2undocmdlist:
+                    for undocmd in self.gnome2undocmdlist:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'commandstring',
+                                 'command': undocmd}
+                        self.statechglogger.recordchgevent(myid, event)
         except Exception:
             raise
         return retval
@@ -1082,22 +1194,92 @@ unity-greeter'''
         retval = True
 
         try:
-            for opt in self.gnome3optdict:
-                self.cmdhelper.executeCommand(self.gsettingsset + opt + ' ' + str(self.gnome3optdict[opt]))
+
+            # this is special, for debian 7 only
+            if os.path.exists('/etc/gdm3/greeter.gsettings'):
+                f = open('/etc/gdm3/greeter.gsettings', 'r')
+                contentlines = f.readlines()
+                f.close()
+                replacementline = 'banner-message-enable=true\nbanner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+
+                for line in contentlines:
+                    if re.search('^banner-message-enable', line):
+                        contentlines = [c.replace(line, '') for c in contentlines]
+                    if re.search('^banner-message-text', line):
+                        contentlines = [c.replace(line, '') for c in contentlines]
+                foundorglogin = False
+                for line in contentlines:
+                    if re.search('^\[org\.gnome\.login\-screen\]', line):
+                        foundorglogin = True
+                        contentlines = [c.replace(line, line + replacementline) for c in contentlines]
+                if not foundorglogin:
+                    replacementline = '[org.gnome.login-screen]\n' + replacementline
+                    contentlines.append('\n' + replacementline)
+                tf = open('/etc/gdm3/greeter.gsettings.stonixtmp', 'w')
+                tf.writelines(contentlines)
+                tf.close()
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {'eventtype': 'conf',
+                         'filepath': '/etc/gdm3/greeter.gsettings'}
+                self.statechglogger.recordfilechange('/etc/gdm3/greeter.gsettings', '/etc/gdm3/greeter.gsettings.stonixtmp', myid)
+                self.statechglogger.recordchgevent(myid, event)
+                os.rename('/etc/gdm3/greeter.gsettings.stonixtmp', '/etc/gdm3/greeter.gsettings')
+                os.chmod('/etc/gdm3/greeter.gsettings', 0644)
+                os.chown('/etc/gdm3/greeter.gsettings', 0, 0)
+                self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
                 errout = self.cmdhelper.getErrorString()
                 if errout:
                     retval = False
-                    self.detailedresults += '\n' + str(errout)
-            if not self.setFileContents(self.gdmprofile, self.profilelist):
-                retval = False
-                self.detailedresults += '\nunable to create gdm profile file: ' + str(self.gdmprofile)
-            if not self.setFileContents(self.bannerfile, self.gnome3optlist):
-                retval = False
-                self.detailedresults += '\nunable to create gdm banner file: ' + str(self.bannerfile)
-            if not self.cmdhelper.executeCommand(self.dconfupdate):
-                retval = False
-                output = self.cmdhelper.getOutputString()
-                self.detailedresults += '\n'+ str(output)
+                    self.detailedresults += '\nEncountered a problem trying to run command: dpkg-reconfigure gdm3\nError was: ' + str(errout)
+            else:
+                for opt in self.gnome3optdict:
+                    self.cmdhelper.executeCommand(self.gsettingsset + opt + ' ' + str(self.gnome3optdict[opt]))
+                    errout = self.cmdhelper.getErrorString()
+                    if errout:
+                        retval = False
+                        self.detailedresults += '\n' + str(errout)
+                if not self.setFileContents(self.gdmprofile, self.profilelist):
+                    retval = False
+                    self.detailedresults += '\nunable to create gdm profile file: ' + str(self.gdmprofile)
+                if not self.setFileContents(self.bannerfile, self.gnome3optlist):
+                    retval = False
+                    self.detailedresults += '\nunable to create gdm banner file: ' + str(self.bannerfile)
+                if not self.cmdhelper.executeCommand(self.dconfupdate):
+                    retval = False
+                    output = self.cmdhelper.getOutputString()
+                    self.detailedresults += '\n'+ str(output)
+            if os.path.exists('/etc/gdm3/daemon.conf'):
+                f = open('/etc/gdm3/daemon.conf', 'r')
+                contentlines = f.readlines()
+                f.close()
+                autologinreplaced = False
+                autologindisabled = False
+                for line in contentlines:
+                    if re.search('^AutomaticLoginEnable\s*=\s*', line):
+                        contentlines = [c.replace(line, 'AutomaticLoginEnable = false\n') for c in contentlines]
+                        autologinreplaced = True
+                if not autologinreplaced:
+                    for line in contentlines:
+                        if re.search('^\[daemon\]', line):
+                            contentlines = [c.replace(line, line + '# disabling auto login; added by STONIX\nAutomaticLoginEnable = false\n') for c in contentlines]
+                            autologindisabled = True
+                if autologinreplaced or autologindisabled:
+                    tf = open('/etc/gdm3/daemon.conf.stonixtmp', 'w')
+                    tf.writelines(contentlines)
+                    tf.close()
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'conf',
+                             'filepath': '/etc/gdm3/daemon.conf'}
+                    self.statechglogger.recordfilechange('/etc/gdm3/daemon.conf', '/etc/gdm3/daemon.conf.stonixtmp', myid)
+                    self.statechglogger.recordchgevent(myid, event)
+                    os.rename('/etc/gdm3/daemon.conf.stonixtmp', '/etc/gdm3/daemon.conf')
+                    os.chmod('/etc/gdm3/daemon.conf', 0644)
+                    os.chown('/etc/gdm3/daemon.conf', 0, 0)
+                    self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
+                    errout = self.cmdhelper.getErrorString()
+                    if errout:
+                        retval = False
+                        self.detailedresults += '\nEncountered a problem trying to run command: dpkg-reconfigure gdm3\nError was: ' + str(errout)
         except Exception:
             raise
         return retval
@@ -1115,6 +1297,9 @@ unity-greeter'''
         contentlines = []
 
         try:
+
+            if not os.path.exists('/etc/lightdm/lightdm.conf.d'):
+                os.makedirs('/etc/lightdm/lightdm.conf.d/', 0755)
             for item in self.lightdmdict:
                 contentlines = []
                 if isinstance(self.lightdmdict[item], list):

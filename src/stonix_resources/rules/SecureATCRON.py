@@ -33,6 +33,8 @@ these daemons.
 @change: dkennel 04/21/2014 Updated CI invocation, fixed CI instruction text,
 fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
+@change: 2015/10/27 eball Added feedback to report()
 '''
 
 from __future__ import absolute_import
@@ -68,11 +70,11 @@ class SecureATCRON(Rule):
         self.rulename = 'SecureATCRON'
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''The AT and CRON job schedulers are used to schedule jobs for running at a later
-date/time. These daemons should be configured defensively. The SecureATCRON
-class restricts permissions on the files and directories associated with these
-daemons to authorized users only and enables and configures logging for
-these daemons'''
+        self.helptext = '''The AT and CRON job schedulers are used to \
+schedule jobs for running at a later date/time. These daemons should be \
+configured defensively. The SecureATCRON rule restricts permissions on the \
+files and directories associated with these daemons to authorized users only, \
+and enables and configures logging for these daemons.'''
         self.rootrequired = True
         self.detailedresults = 'The SecureATCRON rule has not yet been run'
         self.compliant = False
@@ -82,26 +84,26 @@ these daemons'''
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
 
-        #init CIs
+        # init CIs
         datatype = 'bool'
         key = 'SecureATCRON'
-        instructions = '''To prevent the restriction of access to the AT and CRON utilities
-set the vaule of SECUREATCRON to False.'''
+        instructions = '''To prevent the restriction of access to the AT and \
+CRON utilities, set the vaule of SECUREATCRON to False.'''
         default = True
         self.SecureATCRON = self.initCi(datatype, key, instructions, default)
 
         # setup class vars
         self.cronchownfilelist = ['/etc/cron.hourly', '/etc/cron.daily',
-                                '/etc/cron.weekly', '/etc/cron.monthly',
-                                '/etc/cron.d', '/etc/crontab',
-                                '/etc/anacrontab', '/var/cron/log',
-                                'cron.allow', 'at.allow']
+                                  '/etc/cron.weekly', '/etc/cron.monthly',
+                                  '/etc/cron.d', '/etc/crontab',
+                                  '/etc/anacrontab', '/var/cron/log',
+                                  'cron.allow', 'at.allow']
         self.cronchmodfiledict = {'/etc/crontab': 0644,
-                                 '/etc/anacrontab': 0600,
-                                 '/var/spool/cron': 0700,
-                                 '/var/cron/log': 0600,
-                                 '/etc/cron.allow': 0400,
-                                 '/etc/at.allow': 0400}
+                                  '/etc/anacrontab': 0600,
+                                  '/var/spool/cron': 0700,
+                                  '/var/cron/log': 0600,
+                                  '/etc/cron.allow': 0400,
+                                  '/etc/at.allow': 0400}
 
     def report(self):
         '''
@@ -120,18 +122,23 @@ set the vaule of SECUREATCRON to False.'''
         cronlogfound = False
         rootcronallow = False
         rootatallow = False
+        results = ""
+        self.detailedresults = ""
 
         try:
 
             # check for files that shouldn't exist
             if os.path.exists('/etc/cron.deny'):
                 retval = False
+                results += "/etc/cron.deny should not exist\n"
             if os.path.exists('/etc/at.deny'):
                 retval = False
+                results += "/etc/at.deny should not exist\n"
 
             # check for files that need to exist
             if not os.path.exists('/etc/cron.allow'):
                 retval = False
+                results += "/etc/cron.allow does not exist\n"
             else:
                 # check for correct configuration of cron.allow
                 f = open('/etc/cron.allow', 'r')
@@ -144,8 +151,10 @@ set the vaule of SECUREATCRON to False.'''
 
                 if not rootcronallow:
                     retval = False
+                    results += "'root' line in cron.allow does not exist\n"
             if not os.path.exists('/etc/at.allow'):
                 retval = False
+                results += "/etc/at.allow does not exist\n"
             else:
                 # check for correct configuration of at.allow
                 f = open('/etc/at.allow', 'r')
@@ -158,6 +167,7 @@ set the vaule of SECUREATCRON to False.'''
 
                 if not rootatallow:
                     retval = False
+                    results += "'root' line in at.allow does not exist\n"
 
             # check if cron logging is enabled
             if os.path.exists('/etc/default/cron'):
@@ -171,9 +181,11 @@ set the vaule of SECUREATCRON to False.'''
 
                 if not cronlogfound:
                     retval = False
+                    results += "'CRONLOG=YES' not found in /etc/default/cron\n"
 
             else:
                 retval = False
+                results += "/etc/default/cron does not exist\n"
 
             # check ownership/permissions on cron/at files
             for item in self.cronchmodfiledict:
@@ -181,28 +193,24 @@ set the vaule of SECUREATCRON to False.'''
                     perms = [0, 0, self.cronchmodfiledict[item]]
                     if not checkPerms(item, perms, self.logger):
                         retval = False
+                        results += "Permissions for " + item + " are not " + \
+                            "correct\n"
 
-            if retval:
-                self.compliant = True
-                self.detailedresults = 'This system is compliant with the SecureATCron rule'
-                self.currstate = 'configured'
-            else:
-                self.compliant = False
-                self.detailedresults = 'This system is not compliant with the SecureATCron rule'
-                self.currstate = 'notconfigured'
+            self.detailedresults = results
+            self.compliant = retval
 
-            return retval
-
-        except IOError:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, ['SecureATCRON.report ',
-                                               self.detailedresults])
         except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception, err:
             self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, ['SecureATCRON.report ',
-                                                self.detailedresults])
-            return False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+                " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
 
     def fix(self):
         '''

@@ -26,6 +26,8 @@ Created on Aug 24, 2012
 ###############################################################################
 
 @author: dkennel
+@change: 2015/10/26 eball Updated diffdir and archive directory locations from
+    /var/db to /var/db
 '''
 import os
 import shutil
@@ -41,8 +43,8 @@ class zzzTestFrameworkStateChgLogger(unittest.TestCase):
         self.environ = environment.Environment()
         self.environ.setdebugmode(True)
         self.logger = logdispatcher.LogDispatcher(self.environ)
-        if os.path.exists('/usr/share/stonix/eventlog'):
-            os.remove('/usr/share/stonix/eventlog')
+        if os.path.exists('/var/db/stonix/eventlog'):
+            os.remove('/var/db/stonix/eventlog')
         self.testobj = StateChgLogger.StateChgLogger(self.logger, self.environ)
         self.srcfile = '/etc/stonixtest.conf'
         self.dstfile = '/etc/stonixtest.conf.tmp'
@@ -87,37 +89,37 @@ key4 = True
                   'endstate': myend}
         self.testobj.recordchgevent(myid, mydict)
         retdict = self.testobj.getchgevent(myid)
-        self.failUnless(retdict == mydict)
+        self.assertTrue(retdict == mydict)
 
     def testRevertFileChange(self):
         self.mktestfiles()
         eventid = '9999001'
-        patchpath = '/usr/share/stonix/diffdir/etc/stonixtest.conf.patch-' + eventid
-        archivepath = '/usr/share/stonix/archive/etc/stonixtest.conf.ovf'
-        self.failUnless(self.testobj.recordfilechange(self.srcfile,
+        patchpath = '/var/db/stonix/diffdir/etc/stonixtest.conf.patch-' + eventid
+        archivepath = '/var/db/stonix/archive/etc/stonixtest.conf.ovf'
+        self.assertTrue(self.testobj.recordfilechange(self.srcfile,
                                                       self.dstfile, eventid))
-        self.failUnless(os.path.exists(patchpath), 'Patch not created')
-        self.failUnless(os.path.exists(archivepath), 'Archive not created')
+        self.assertTrue(os.path.exists(patchpath), 'Patch not created')
+        self.assertTrue(os.path.exists(archivepath), 'Archive not created')
         shutil.copyfile(self.dstfile, self.srcfile)
         self.testobj.revertfilechanges(self.srcfile, eventid)
         rhandle = open(self.srcfile)
         data = rhandle.read()
-        self.failUnless(data == self.srcconf,
+        self.assertTrue(data == self.srcconf,
                         'Conf mismatch in' + self.srcfile)
 
     def testRevertFileDelete(self):
         self.mktestfiles()
         eventid = '9999005'
-        archivepath = '/usr/share/stonix/archive/etc/stonixtest.conf.ovf'
+        archivepath = '/var/db/stonix/archive/etc/stonixtest.conf.ovf'
         if os.path.exists(archivepath):
             os.remove(archivepath)
-        self.failUnless(self.testobj.recordfiledelete(self.srcfile, eventid))
+        self.assertTrue(self.testobj.recordfiledelete(self.srcfile, eventid))
         shutil.copyfile(self.dstfile, self.srcfile)
-        self.failUnless(self.testobj.recordfiledelete(self.srcfile, eventid))
-        self.failUnless(self.testobj.recordfiledelete(self.srcfile, eventid))
-        self.failUnless(os.path.exists(archivepath), 'Archive not created')
+        self.assertTrue(self.testobj.recordfiledelete(self.srcfile, eventid))
+        self.assertTrue(self.testobj.recordfiledelete(self.srcfile, eventid))
+        self.assertTrue(os.path.exists(archivepath), 'Archive not created')
         os.remove(self.srcfile)
-        self.failUnless(self.testobj.revertfiledelete(self.srcfile))
+        self.assertTrue(self.testobj.revertfiledelete(self.srcfile))
 
     def testEventStoreDelete(self):
         mytype = 'perm'
@@ -128,7 +130,7 @@ key4 = True
                   'startstate': mystart,
                   'endstate': myend}
         self.testobj.recordchgevent(myid, mydict)
-        self.failUnless(self.testobj.deleteentry(myid))
+        self.assertTrue(self.testobj.deleteentry(myid))
 
     def testEventSearch(self):
         mytype = 'perm'
@@ -145,8 +147,8 @@ key4 = True
         myend1 = '0,0,416'
         myid1 = '9999004'
         mydict1 = {'eventtype': mytype1,
-                  'startstate': mystart1,
-                  'endstate': myend1}
+                   'startstate': mystart1,
+                   'endstate': myend1}
         self.testobj.recordchgevent(myid1, mydict1)
 
         mytype2 = 'perm'
@@ -154,8 +156,8 @@ key4 = True
         myend2 = '0,0,416'
         myid2 = '0888001'
         mydict2 = {'eventtype': mytype2,
-                  'startstate': mystart2,
-                  'endstate': myend2}
+                   'startstate': mystart2,
+                   'endstate': myend2}
         self.testobj.recordchgevent(myid2, mydict2)
 
         myexpected = ['9999003', '9999004']
@@ -164,15 +166,15 @@ key4 = True
         for event in myreturn:
             if event in myexpected:
                 found = found + 1
-        self.failIf(len(myreturn) < 2, 'expected number of results not found')
-        self.failUnless(found == 2, 'expected results not found')
+        self.assertFalse(len(myreturn) < 2, 'Expected number of results not found')
+        self.assertTrue(found == 2, 'Expected results not found')
         self.failIf(myid2 in myreturn, 'Search limit error')
 
         expected = '0888001'
         myruleid = 888
         myreturn2 = self.testobj.findrulechanges(myruleid)
         self.failUnlessEqual(expected, myreturn2[0],
-                             'expected event id not returned')
+                             'Expected event id not returned')
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']

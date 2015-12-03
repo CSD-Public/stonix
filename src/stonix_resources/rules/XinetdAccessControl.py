@@ -1,9 +1,33 @@
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
 '''
 Created on Aug 5, 2015
 
-The Xinetd access control mechanism should be securely configured, if xinetd is present.
+The Xinetd access control mechanism should be securely configured, if xinetd is
+present.
 
 @author: Breen malmberg
+@change: 2015/10/08 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -13,6 +37,7 @@ from ..logdispatcher import LogPriority
 from ..localize import XINETDALLOW
 from ..stonixutilityfunctions import getOctalPerms
 from ..stonixutilityfunctions import getOwnership
+from ..stonixutilityfunctions import iterate
 import traceback
 import os
 import re
@@ -33,7 +58,8 @@ class XinetdAccessControl(Rule):
         self.rulename = 'XinetdAccessControl'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The Xinetd access control mechanism should be securely configured, if xinetd is present."
+        self.helptext = "This rule will securely configure the xinetd " + \
+            "access control mechanism, if xinetd is present."
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['']
@@ -44,7 +70,8 @@ class XinetdAccessControl(Rule):
         # init CIs
         datatype = 'bool'
         key = 'XinetdAccessControl'
-        instructions = "To disable the configuring of the xinetd access control mechanism, set the value of XinetdAccessControl to False."
+        instructions = "To disable the configuring of the xinetd access " + \
+            "control mechanism, set the value of XinetdAccessControl to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -59,12 +86,14 @@ class XinetdAccessControl(Rule):
         '''
 
         self.confpath = '/etc/xinetd.conf'
-        self.partialopt = '^only_from\s*='
+        self.partialopt = 'only_from\s*='
         try:
-            self.fullopt = '^only_from\s*=\s*' + str(XINETDALLOW)
-            self.fixopt = 'only_from = ' + str(XINETDALLOW) + '\n'
+            self.fullopt = '^\s*only_from\s*=\s*' + str(XINETDALLOW)
+            self.fixopt = '\tonly_from\t= ' + str(XINETDALLOW) + '\n'
         except UnboundLocalError:
-            self.logger.log(LogPriority.DEBUG, "NETWORK constant has not been defined in localize.py, or the import failed")
+            self.logger.log(LogPriority.DEBUG,
+                            "XINETDALLOW constant has not been defined in " + \
+                            "localize.py, or the import failed")
         except Exception:
             raise
 
@@ -122,7 +151,7 @@ class XinetdAccessControl(Rule):
         self.logger.log(LogPriority.DEBUG, "returning found=" + str(found))
         return found
 
-    def replaceopt(self, path, partialopt, fullopt):
+    def replaceopt(self, path, partialopt, fullopt, perms=[0600, 0, 0]):
         '''
         search the specified file for the option partialopt and replace it with the option fullopt, if found.
 
@@ -142,25 +171,66 @@ class XinetdAccessControl(Rule):
         contentlines = self.readFile(path)
 
         try:
+
+            if not path:
+                self.logger.log(LogPriority.DEBUG, "parameter 'path' is blank")
+                replaced = False
+                return replaced
+
+            if not os.path.exists(path):
+                self.logger.log(LogPriority.DEBUG, "parameter 'path' does not exist")
+                replaced = False
+                return replaced
+
+            tmppath = path + '.stonixtmp'
+
             self.logger.log(LogPriority.DEBUG, "searching for " + str(partialopt) + " in contentlines")
             for line in contentlines:
                 if re.search(partialopt, line):
+
                     self.logger.log(LogPriority.DEBUG, "found match in line " + str(line) + " ; replacing it with " + str(fullopt))
                     contentlines = [c.replace(line, fullopt) for c in contentlines]
                     self.logger.log(LogPriority.DEBUG, "replaced the line in contentlines")
-                    self.logger.log(LogPriority.DEBUG, "opening file " + str(path) + " to write")
-                    f = open(path, 'w')
-                    self.logger.log(LogPriority.DEBUG, "writing contentlines to file " + str(path))
-                    f.writelines(contentlines)
-                    f.close()
-                    self.logger.log(LogPriority.DEBUG, "done writing to file")
-                    replaced = True
+
+            self.logger.log(LogPriority.DEBUG, "opening file " + str(path) + " to write")
+            tf = open(tmppath, 'w')
+
+            self.logger.log(LogPriority.DEBUG, "writing contentlines to file " + str(path))
+            tf.writelines(contentlines)
+            tf.close()
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'conf',
+                     'filepath': path}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(tmppath, path, myid)
+
+            octperms = getOctalPerms(path)
+
+            os.rename(tmppath, path)
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+
+            event = {'eventtype': 'perms',
+                     'filepath': path,
+                     'startstate': ['0', '0', '0' + str(octperms)],
+                     'endstate': [str(perms[1]), str(perms[2]), '0' + str(perms[0])]}
+
+            os.chmod(path, perms[0])
+            os.chown(path, perms[1], perms[2])
+
+            self.statechglogger.recordchgevent(myid, event)
+
+            self.logger.log(LogPriority.DEBUG, "done writing to file")
+            replaced = True
         except Exception:
             raise
         self.logger.log(LogPriority.DEBUG, "finished running replaceopt() method; returning replaced=" + str(replaced))
         return replaced
 
-    def writeFile(self, path, opt):
+    def writeFile(self, path, opt, perms=[0600, 0, 0]):
         '''
         append the option opt to the contents of the file specified by path, and write them out to the file path
 
@@ -174,23 +244,64 @@ class XinetdAccessControl(Rule):
         self.logger.log(LogPriority.DEBUG, "inside writeFile() method")
 
         written = False
+        replaced = False
 
         try:
+
+            tmppath = path + '.stonixtmp'
+
             self.logger.log(LogPriority.DEBUG, "attempting to replace any incomplete or erroneous existing config lines")
-            if not self.replaceopt(path, self.partialopt, self.fixopt):
-                self.logger.log(LogPriority.DEBUG, "did not replace anything; appending config option " + str(opt) + " to contentlines")
-                contentlines = self.readFile(path)
-                contentlines.append(opt + '\n')
-                self.logger.log(LogPriority.DEBUG, "opening file " + str(path) + " to write")
-                f = open(path, 'w')
-                self.logger.log(LogPriority.DEBUG, "writing contentlines to file " + str(path))
-                f.writelines(contentlines)
-                f.close()
-                self.logger.log(LogPriority.DEBUG, "done writing to file")
-                written = True
-            else:
+            if self.replaceopt(path, self.partialopt, self.fixopt, perms):
+                replaced = True
                 self.logger.log(LogPriority.DEBUG, "replaced an existing incomplete or incorrect config line with the correct one. done.")
                 written = True
+
+            if not replaced:
+
+                secopt = '# Define access restriction defaults'
+                secrepopt = '# Define access restriction defaults\n\tonly_from\t= ' + str(XINETDALLOW) + '\n'
+                if self.replaceopt(path, secopt, secrepopt, perms):
+                    replaced = True
+                    written = True
+
+                self.logger.log(LogPriority.DEBUG, "did not replace anything; appending config option " + str(opt) + " to contentlines")
+                contentlines = self.readFile(path)
+
+                contentlines.append(opt + '\n')
+                self.logger.log(LogPriority.DEBUG, "opening file " + str(path) + " to write")
+
+                tf = open(tmppath, 'w')
+                self.logger.log(LogPriority.DEBUG, "writing contentlines to file " + str(path))
+                tf.writelines(contentlines)
+                tf.close()
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {'eventtype': 'conf',
+                         'filepath': path}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(tmppath, path, myid)
+
+                octperms = getOctalPerms(path)
+
+                os.rename(tmppath, path)
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+
+                event = {'eventtype': 'perms',
+                         'filepath': path,
+                         'startstate': ['0', '0', '0' + str(octperms)],
+                         'endstate': [str(perms[1]), str(perms[2]), '0' + str(perms[0])]}
+
+                os.chmod(path, perms[0])
+                os.chown(path, perms[1], perms[2])
+
+                self.statechglogger.recordchgevent(myid, event)
+
+                self.logger.log(LogPriority.DEBUG, "done writing to file")
+                written = True
+
         except Exception:
             raise
         self.logger.log(LogPriority.DEBUG, "finished running writeFile() method. returning written=" + str(written))
@@ -222,7 +333,7 @@ class XinetdAccessControl(Rule):
                 perms = getOctalPerms(self.confpath)
                 self.logger.log(LogPriority.DEBUG, "checking configuration file for correct permissions")
                 self.logger.log(LogPriority.DEBUG, "required perms: 644; current perms: " + str(perms))
-                if perms != 644:
+                if perms != 600:
                     self.compliant = False
                     self.detailedresults += '\npermissions not set correctly on ' + str(self.confpath)
                 ownership = getOwnership(self.confpath)
@@ -260,19 +371,16 @@ class XinetdAccessControl(Rule):
 
         self.rulesuccess = True
         self.detailedresults = ""
+        self.iditerator = 0
 
         try:
             if self.ci.getcurrvalue():
                 self.logger.log(LogPriority.DEBUG, "CI is enabled; proceeding with fix actions")
                 if not self.compliant:
                     self.logger.log(LogPriority.DEBUG, "config option not found; writing it to " + str(self.confpath))
-                    if not self.writeFile(self.confpath, self.fixopt):
+                    if not self.writeFile(self.confpath, self.fixopt, [0600, 0, 0]):
                         self.rulesuccess = False
                         self.detailedresults += '\nfailed to write configuration to ' + str(self.confpath)
-                    self.logger.log(LogPriority.DEBUG, "setting permissions to 644 on " + str(self.confpath))
-                    os.chmod(self.confpath, 0644)
-                    self.logger.log(LogPriority.DEBUG, "setting ownership to root:root (0:0) on " + str(self.confpath))
-                    os.chown(self.confpath, 0, 0)
             else:
                 self.detailedresults += '\nCI is not currently enabled. fix will not be performed.'
         except (KeyboardInterrupt, SystemExit):

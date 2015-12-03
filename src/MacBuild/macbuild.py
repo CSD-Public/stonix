@@ -31,15 +31,21 @@ with large amounts of original code and comments left intact.
 @change: 2015/03/31 rsn - Removed mkdtemp calls when working in ramdisk
 @change: 2015/08/05 eball - Beautification, improving PEP8 compliance
 @change: 2015/08/18 rsn - removed make self update method
+@change: 2015/08/31 eball- Refactor
+@change: 2015/10/13 eball - Completed code and comments refactoring
+@change: 2015/10/14 eball - Added exit() method to gracefully detach ramdisk
+    and exit, plus try/except blocks where appropriate
+@change: 2015/10/14 eball - Added -c flag to clean artifacts
 '''
 import os
 import stat
-import time
 import optparse
-import hashlib
 import macbuildlib as mbl
+import re
+import traceback
+from glob import glob
 from tempfile import mkdtemp
-from Queue import LifoQueue
+from time import time
 from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
@@ -48,9 +54,11 @@ from log_message import log_message
 
 
 class MacBuilder():
-    DEFAULT_RAMDISK_SIZE = 2 * 1024 * 500
 
     def __init__(self):
+        '''
+        Build .pkg and .dmg for stonix4mac
+        '''
         parser = optparse.OptionParser()
         parser.add_option("-v", "--version", action="store", dest="version",
                           type="string", default="0",
@@ -60,31 +68,39 @@ class MacBuilder():
                           dest="compileGui",
                           default=False,
                           help="If set, the PyQt files will be recompiled")
+        parser.add_option("-c", "--clean", action="store_true", dest="clean",
+                          default=False, help="Clean all artifacts from " +
+                          "previous builds and exit")
         options, __ = parser.parse_args()
 
-        #####
+        # This script needs to be run from [stonixroot]/src/MacBuild; make sure
+        # that is our current operating location
+        cwd = os.getcwd()
+        if not re.search("src/MacBuild$", cwd):
+            print "This script needs to be run from src/MacBuild. Exiting..."
+            exit(1)
+
+        if options.clean:
+            self.clean()
+
         # If version was not included at command line, use hardcoded version
         # number
         if options.version == "0":
-            self.APPVERSION = "0.8.20.0"
+            self.APPVERSION = "0.9.1.0"
         else:
             self.APPVERSION = options.version
 
-        #####
-        # REQUIRED when tarring up stuff on the Mac filesystem
-        # IF this is not done, tar will pick up resource forks from HFS+
-        # filesystems, and when un-archiving, create separate files
-        # of the resource forks and make a MESS of the filesystem.
-        os.environ["COPYFILE_DISABLE"] = "true"
+        self.compileGui = options.compileGui
 
         self.RSYNC = "/usr/bin/rsync"
         self.PYUIC = mbl.getpyuicpath()
+        self.DEFAULT_RAMDISK_SIZE = 2 * 1024 * 500
 
-        # Create directory queue to replace pushd/popd
-        self.dirq = LifoQueue(0)
-
-        self.dirq.put(os.getcwd())
-        os.chdir("..")
+        # This script should be run from [stonixroot]/src/MacBuild. We must
+        # record the [stonixroot] directory in a variable.
+        os.chdir("../..")
+        self.STONIX_ROOT = os.getcwd()
+        os.chdir("src/MacBuild")
 
         print " "
         print " "
@@ -96,8 +112,6 @@ class MacBuilder():
         print " "
         print " "
 
-        os.chdir(self.dirq.get())
-
         self.STONIX = "stonix"
         self.STONIXICON = "stonix_icon"
         self.STONIXVERSION = self.APPVERSION
@@ -105,104 +119,89 @@ class MacBuilder():
         self.STONIX4MACICON = "stonix_icon"
         self.STONIX4MACVERSION = self.APPVERSION
 
-        #######################################################################
-        #######################################################################
-        #######################################################################
-        #####
-        #     Logical script start
-        #####
-        #######################################################################
-        #######################################################################
-        #######################################################################
+        self.driver()
 
-        #####
+    def driver(self):
+        '''
+        The driver orchestrates the build process.
+        '''
+
         # Check that user building stonix has uid 0
-        self.CURRENT_USER, self.RUNNING_ID = mbl.checkBuildUser()
+        current_user, _ = mbl.checkBuildUser()
 
-        #####
         # Create temp home directory for building with pyinstaller
-        DIRECTORY = os.environ["HOME"]
+        directory = os.environ["HOME"]
+        tmphome = mkdtemp(prefix=current_user + ".")
+        os.environ["HOME"] = tmphome
+        os.chmod(tmphome, 0755)
 
-        self.TMPHOME = mkdtemp(prefix=self.CURRENT_USER + ".")
-        os.environ["HOME"] = self.TMPHOME
-        os.chmod(self.TMPHOME, 0755)
+        # Create a ramdisk and mount it to the tmphome
+        ramdisk = self.setupRamdisk(self.DEFAULT_RAMDISK_SIZE, tmphome)
+        print "Device for tmp ramdisk is: " + ramdisk
 
-        # Create a ramdisk and mount it to the ${self.TMPHOME}
-        self.DEVICE = self.setupRamdisk(1300, self.TMPHOME)
-        print "Device for tmp ramdisk is: " + self.DEVICE
+        # After creation of the ramdisk, all further calls need to be wrapped
+        # in a try/except block so that the ramdisk will be detached before
+        # exit
+        try:
+            # Copy src dir to /tmp/<username> so shutil doesn't freak about
+            # long filenames.
+            # ONLY seems to be a problem on Mavericks
+            call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
+                  "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                  self.STONIX_ROOT + "/src", tmphome])
 
-        #####
-        # Copy src dir to /tmp/<username> so shutil doesn't freak about long
-        # filenames.
-        # ONLY seems to be a problem on Mavericks..
-        self.dirq.put(os.getcwd())
-        os.chdir("../..")
-        call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
-              "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"", "src",
-              self.TMPHOME])
+            # Compile .ui files to .py files
+            if self.compileGui:
+                self.compileStonix4MacAppUiFiles(tmphome +
+                                                 "/src/MacBuild/stonix4mac")
 
-        #####
-        # capture current directory, so we can copy back to it..
-        START_BUILD_DIR = os.getcwd()
-        print START_BUILD_DIR
+            # Change the versions in the program_arguments.py in both stonix
+            # and stonix4mac
+            self.setProgramArgumentsVersion(tmphome +
+                                            "/src/stonix_resources/" +
+                                            "localize.py")
 
-        #####
-        # Keep track of the directory we're starting from...
-        self.dirq.put(os.getcwd())
-        os.chdir(self.TMPHOME + "/src/MacBuild")
-        print os.getcwd()
+            # Copy stonix source to scratch build directory
+            self.prepStonixBuild(tmphome + "/src/MacBuild")
 
-        #####
-        # Compile .ui files to .py files
-        if options.compileGui:
-            self.compileStonix4MacAppUiFiles()
+            # Compile the two apps...
+            self.compileApp(self.STONIX, self.STONIXVERSION, self.STONIXICON,
+                            tmphome + "/src/MacBuild/" + self.STONIX)
+            self.compileApp(self.STONIX4MAC, self.STONIX4MACVERSION,
+                            self.STONIX4MACICON, tmphome + "/src/MacBuild/" +
+                            self.STONIX4MAC)
 
-        # Change the versions in the program_arguments.py in both stonix and
-        # stonix4mac
-        self.setProgramArgumentsVersion()
+            # Restore the HOME environment variable
+            os.environ["HOME"] = directory
 
-        # Copy stonix source to scratch build directory
-        self.prepStonixBuild()
+            # Copy and create all necessary resources to app resources dir.
+            # This only gets called for stonix4mac
+            self.buildStonix4MacAppResources(self.STONIX4MAC, tmphome +
+                                             "/src/MacBuild", tmphome + "/src")
 
-        #####
-        # Compile the two apps...
-        self.compileApp(self.STONIX, self.STONIXVERSION, self.STONIXICON)
-        self.compileApp(self.STONIX4MAC, self.STONIX4MACVERSION,
-                        self.STONIX4MACICON)
+            # Create dmg and pkg with luggage
+            self.buildStonix4MacAppPkg(self.STONIX4MAC, self.STONIX4MACVERSION,
+                                       tmphome + "/src/MacBuild")
 
-        #####
-        # Restore the HOME environment variable
-        os.environ["HOME"] = DIRECTORY
+            # Copy back to pseudo-build directory
+            call([self.RSYNC, "-aqp", tmphome + "/src", self.STONIX_ROOT])
 
-        #####
-        # Copy and create all neccessary resources to app Resources dir
-        self.buildStonix4MacAppResources(self.STONIX4MAC)
+            os.chdir(self.STONIX_ROOT)
+            mbl.chownR(current_user, "src")
 
-        #####
-        # tar up build & create dmg with luggage
-        self.tarAndBuildStonix4MacAppPkg(self.STONIX4MAC,
-                                         self.STONIX4MACVERSION)
+            # chmod so it's readable by everyone, writable by the group
+            mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
+                       stat.S_IWGRP, "src", "append")
 
-        os.chdir(self.TMPHOME)
+            # Return to the start dir
+            os.chdir(self.STONIX_ROOT + "/src/MacBuild")
+        except (KeyboardInterrupt, SystemExit):
+            self.exit(ramdisk, 130)
+        except Exception:
+            self.exit(ramdisk, 1)
 
-        #####
-        # Copy back to pseudo-build directory
-        call([self.RSYNC, "-aqp", self.TMPHOME + "/src", START_BUILD_DIR])
-
-        os.chdir(self.dirq.get())
-        mbl.chownR(self.CURRENT_USER, "src")
-        #####
-        # chmod so it's readable by everyone, writable by the group
-        mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWGRP,
-                   "src", "append")
-
-        #####
-        # Return to the start dir...
-        os.chdir(self.dirq.get())
-
-        #####
-        # Eject the ramdisk.. Not yet ready for prime time
-        self.detachRamdisk(self.DEVICE)
+        # Eject the ramdisk
+        self.detachRamdisk(ramdisk)
 
         print " "
         print " "
@@ -210,8 +209,7 @@ class MacBuilder():
         print " "
         print " "
 
-    def setupRamdisk(self, size=DEFAULT_RAMDISK_SIZE, mntpnt="",
-                     message_level="normal"):
+    def setupRamdisk(self, size, mntpnt="", message_level="normal"):
         ramdisk = RamDisk(str(size), mntpnt, message_level)
 
         if not ramdisk.success:
@@ -221,290 +219,258 @@ class MacBuilder():
 
     def detachRamdisk(self, device, message_level="normal"):
         if detach(device, message_level):
-            log_message(r"Successfully detached disk: " + str(device).strip(),
+            log_message("Successfully detached disk: " + str(device).strip(),
                         "verbose", message_level)
         else:
-            log_message(r"Couldn't detach disk: " + str(device).strip())
-            raise Exception(r"Cannot eject disk: " + str(device).strip())
+            log_message("Couldn't detach disk: " + str(device).strip())
+            raise Exception("Cannot eject disk: " + str(device).strip())
 
-    def compileStonix4MacAppUiFiles(self):
-        #######################################################################
-        #######################################################################
-        #####
-        #     Compile the .ui files to .py files for stonix4mac.app
-        #####
-        #######################################################################
-        #######################################################################
+    def exit(self, ramdisk, exitcode=0):
+        os.chdir(self.STONIX_ROOT)
+        self.detachRamdisk(ramdisk)
+        print traceback.format_exc()
+        exit(exitcode)
 
-        self.dirq.put(os.getcwd())
-        os.chdir(self.STONIX4MAC)
+    def clean(self):
+        folders = (["dmgs", "stonix", "stonix4mac/dist", "stonix4mac/private"]
+                   + glob("stonix.*") + glob("dmgs.*"))
+        files = (glob("*.pyc") + glob("stonix4mac/*.pyc") +
+                 glob("stonix4mac/*_ui.py") + glob("stonix4mac/*.spec"))
+        for folder in folders:
+            try:
+                rmtree(folder)
+            except OSError as e:
+                if not e.errno == 2:
+                    raise
+        for rmfile in files:
+            os.remove(rmfile)
+        exit(0)
 
-        print "Starting compileStonix4MacAppUiFiles..."
-        print os.getcwd()
+    def compileStonix4MacAppUiFiles(self, stonix4macDir):
+        '''
+        Compile the .ui files to .py files for stonix4mac.app. Works within the
+        MacBuild/stonix4mac directory
 
-        ###################################################
-        # to compile the .ui files to .py files:
-        print "Compiling Qt ui files to python files, for stonix4mac.app..."
-        call([self.PYUIC, "admin_credentials.ui"],
-             stdout=open("admin_credentials_ui.py", "w"))
-        call([self.PYUIC, "stonix_wrapper.ui"],
-             stdout=open("stonix_wrapper_ui.py", "w"))
-        call([self.PYUIC, "general_warning.ui"],
-             stdout=open("general_warning_ui.py", "w"))
+        @author: Roy Nielsen, Eric Ball
+        @param stonix4macDir: Path to the [stonixroot]/src/MacBuild/stonix4mac
+            directory where this method should work
+        '''
+        try:
+            returnDir = os.getcwd()
+            os.chdir(stonix4macDir)
 
-        os.chdir(self.dirq.get())
+            print "Starting compileStonix4MacAppUiFiles in " + os.getcwd()
+
+            # to compile the .ui files to .py files:
+            print "Compiling Qt ui files to python files for stonix4mac.app..."
+            call([self.PYUIC, "admin_credentials.ui"],
+                 stdout=open("admin_credentials_ui.py", "w"))
+            call([self.PYUIC, "stonix_wrapper.ui"],
+                 stdout=open("stonix_wrapper_ui.py", "w"))
+            call([self.PYUIC, "general_warning.ui"],
+                 stdout=open("general_warning_ui.py", "w"))
+
+            os.chdir(returnDir)
+        except Exception:
+            raise
 
         print "compileStonix4MacAppUiFiles Finished..."
 
-    def setProgramArgumentsVersion(self):
+    def setProgramArgumentsVersion(self, localizePath):
+        '''
+        Change the STONIX version to the version specified within the build
+        script
+        @author: Roy Nielsen, Eric Ball
+        @param localizePath: Path to the [stonixroot]/src/stonix_resources/
+            localize.py file that this method should modify
+        '''
         print "Changing versions in localize.py..."
-
-        mbl.regexReplace("../stonix_resources/localize.py",
-                         r"^STONIXVERSION =.*$",
-                         r"STONIXVERSION = '" + self.APPVERSION + "'",
-                         backupname="../stonix_resources/localize.py.bak")
+        try:
+            mbl.regexReplace(localizePath,
+                             r"^STONIXVERSION =.*$",
+                             r"STONIXVERSION = '" + self.APPVERSION + "'",
+                             backupname="../stonix_resources/localize.py.bak")
+        except Exception:
+            raise
 
         print "Finished changing versions in localize.py..."
 
-    def prepStonixBuild(self):
-        #######################################################################
-        #######################################################################
-        #####
-        #     Copy stonix source to app build directory
-        #####
-        #######################################################################
-        #######################################################################
-
+    def prepStonixBuild(self, MacBuildDir):
+        '''
+        Copy stonix source to app build directory
+        @author: Roy Nielsen, Eric Ball
+        @param MacBuildDir: Path to the [stonixroot]/src/MacBuild directory
+            where this method should work
+        '''
         print "Starting prepStonixBuild..."
+        try:
+            returnDir = os.getcwd()
+            os.chdir(MacBuildDir)
 
-        #####
-        # Make sure the "stonix" directory exists, so we can put
-        # together and create the stonix.app
-        if not os.path.isdir("stonix"):
-            os.mkdir("stonix")
-        elif os.path.islink("stonix"):
-            os.unlink("stonix")
-        else:
-            #####
-            # Cannot use mkdtmp here because it will make the directory on the
-            # root filesystem instead of the ramdisk, then it will try to link
-            # across filesystems which won't work
-            TMPFILE = "stonix" + str(self.timeStamp())
-            os.rename("stonix", TMPFILE)
-            os.mkdir("stonix")
+            # Make sure the "stonix" directory exists, so we can put
+            # together and create the stonix.app
+            if os.path.islink("stonix"):
+                os.unlink("stonix")
+            if not os.path.isdir("stonix"):
+                os.mkdir("stonix")
+            else:
+                # Cannot use mkdtmp here because it will make the directory on
+                # the root filesystem instead of the ramdisk, then it will try
+                # to link across filesystems which won't work
+                tmpdir = "stonix." + str(time())
+                os.rename("stonix", tmpdir)
+                os.mkdir("stonix")
 
-        copy2("../stonix.py", "stonix")
-        call([self.RSYNC, "-ap", "--exclude=\".svn\"",
-              "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-              "../stonix_resources", "./stonix"])
+            copy2("../stonix.py", "stonix")
+            call([self.RSYNC, "-ap", "--exclude=\".svn\"",
+                  "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                  "--exclude=\".git*\"", "../stonix_resources", "./stonix"])
 
+            os.chdir(returnDir)
+        except Exception:
+            raise
         print "prepStonixBuild Finished..."
 
-    def timeStamp(self):
-        #######################################################################
-        #######################################################################
-        #####
-        #     Get a time stamp
-        #####
-        #######################################################################
-        #######################################################################
-        #####
-        # Get time in seconds
-        ts = time.time()
-        return ts
+    def compileApp(self, appName, appVersion, appIcon, appPath):
+        '''
+        Compiles stonix4mac.app
+        @author: Roy Nielsen, Eric Ball
+        @param appName: Name of application as it should appear on OS X systems
+        @param appVersion: Version of app being built
+        @param appIcon: File name of icon for OS X app
+        @param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+        '''
+        print "Started compileApp with " + appName + ", " + appVersion + \
+            ", " + appIcon
+        try:
+            returnDir = os.getcwd()
+            os.chdir(appPath)
 
-    def compileApp(self, appName, appVersion, appIcon):
-        #######################################################################
-        #######################################################################
-        #####
-        #     Compiling stonix4mac.app
-        #####
-        #######################################################################
-        #######################################################################
+            if os.path.isdir("build"):
+                rmtree("build")
+            if os.path.isdir("dist"):
+                rmtree("dist")
 
-        APPNAME = appName
-        APPVERSION = appVersion
-        APPICON = appIcon
+            # to compile a pyinstaller spec file for app creation:
+            print "Creating a pyinstaller spec file for the project..."
+            print mbl.pyinstMakespec([appName + ".py"], True, True, False,
+                                     "../" + appIcon + ".icns",
+                                     pathex=["stonix_resources/rules:" +
+                                             "stonix_resources"],
+                                     specpath=os.getcwd())
 
-        print "Started compileApp with " + APPNAME + ", " + APPVERSION + \
-            ", " + APPICON
+            # to build:
+            print "Building the app..."
+            mbl.pyinstBuild(appName + ".spec", "private/tmp",
+                            appPath + "/dist", True, True)
 
-        self.dirq.put(os.getcwd())
-        os.chdir(APPNAME)
+            plist = appPath + "/dist/" + appName + ".app/Contents/Info.plist"
 
-        if os.path.isdir("build"):
-            rmtree("build")
-        if os.path.isdir("dist"):
-            rmtree("dist")
+            # Change version string of the app
+            print "Changing .app version string..."
+            mbl.modplist(plist, "CFBundleShortVersionString", appVersion)
 
-        ###################################################
-        # to compile a pyinstaller spec file for app creation:
-        print "Creating a pyinstaller spec file for the project..."
-        print mbl.pyinstMakespec([APPNAME + ".py"], True, True, False,
-                                 "../" + APPICON + ".icns",
-                                 pathex=["stonix_resources/rules:stonix_resources"],
-                                 specpath=os.getcwd())
+            # Change icon name in the app
+            print "Changing .app icon..."
+            mbl.modplist(plist, "CFBundleIconFile", appIcon + ".icns")
 
-        ###################################################
-        # to build:
-        print "Building the app..."
-        mbl.pyinstBuild(APPNAME + ".spec", "private/tmp",
-                        os.getcwd() + "/dist", True, True)
+            # Copy icons to the resources directory
+            copy2("../" + appIcon + ".icns",
+                  "./dist/" + appName + ".app/Contents/Resources")
 
-        plist = "./dist/" + APPNAME + ".app/Contents/Info.plist"
+            # Change mode of Info.plist to 0755
+            os.chmod(plist, 0755)
 
-        #####
-        # Change version string of the app
-        print "Changing .app version string..."
-        mbl.modplist(os.getcwd() + "/dist/" + APPNAME +
-                     ".app/Contents/Info.plist",
-                     "CFBundleShortVersionString", APPVERSION)
+            os.chdir(returnDir)
+        except Exception:
+            raise
 
-        #####
-        # Change icon name in the app
-        print "Changing .app icon..."
-        mbl.modplist(os.getcwd() + "/dist/" + APPNAME +
-                     ".app/Contents/Info.plist",
-                     "CFBundleIconFile", APPICON + ".icns")
+        print "compileApp with " + appName + ", " + appVersion + " Finished..."
 
-        #####
-        # Copy icons to the resources directory
-        copy2("../" + APPICON + ".icns",
-              "./dist/" + APPNAME + ".app/Contents/Resources")
+    def buildStonix4MacAppResources(self, appName, appPath, appPathParent):
+        '''
+        Copy and/or create all necessary files to the Resources directory
+        of stonix4mac.app
+        @author: Roy Nielsen, Eric Ball
+        @param appName: Name of application as it should appear on OS X systems
+        @param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+        '''
+        print "Started buildStonix4MacAppResources with \"" + appName + \
+            "\" in " + appPath + "..."
+        try:
+            returnDir = os.getcwd()
+            os.chdir(appPath)
+            # Copy source to app dir
+            call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
+                  "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                  "--exclude=\".git*\"", appPathParent + "/stonix_resources",
+                  appPath + "/stonix/dist/stonix.app/Contents/MacOS"])
 
-        #####
-        # Change mode of Info.plist to 0755
-        os.chmod(plist, 0755)
+            # Copy stonix.app to the stonix4mac Resources directory
+            call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
+                  "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                  "--exclude=\".git*\"", appPath + "/stonix/dist/stonix.app",
+                  "./" + appName + "/dist/" + appName +
+                  ".app/Contents/Resources"])
 
-        os.chdir(self.dirq.get())
+            # Create an empty stonix.conf file
+            open(appPath + "/" + appName + "/dist/" + appName +
+                 ".app/Contents/Resources/stonix.conf", "w")
 
-        print "compileApp with " + APPNAME + ", " + APPVERSION + " Finished..."
+            copy2(appPath + "/stonix/dist/stonix.app/Contents/MacOS/" +
+                  "stonix_resources/localize.py", appPath + "/" + appName +
+                  "/dist/" + appName + ".app/Contents/MacOS")
 
-    def buildStonix4MacAppResources(self, appName):
-        #######################################################################
-        #######################################################################
-        #####
-        #     Copy and/or create all necessary files to the Resources directory
-        #     of stonix4mac.app
-        #####
-        #######################################################################
-        #######################################################################
-
-        APPNAME = appName
-        mypwd = os.getcwd()
-
-        print "Started buildStonix4MacAppResources with \"" + APPNAME + \
-            "\" in " + mypwd + "..."
-
-        ###################################################
-        # Copy source to app dir
-        call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
-              "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-              "../stonix_resources",
-              "./stonix/dist/stonix.app/Contents/MacOS"])
-        mypwd = os.getcwd()
-        print "pwd: " + mypwd
-
-        #####
-        # Copy stonix.app to the stonix4mac Resources directory
-        call([self.RSYNC, "-aqp", "--exclude=\".svn\"",
-              "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-              "./stonix/dist/stonix.app",
-              "./" + APPNAME + "/dist/" + APPNAME + ".app/Contents/Resources"])
-
-        # Create an empty stonix.conf file
-        open("./" + APPNAME + "/dist/" + APPNAME +
-             ".app/Contents/Resources/stonix.conf", "w")
-
-        copy2("./stonix/dist/stonix.app/Contents/MacOS/stonix_resources/localize.py",
-              "./" + APPNAME + "/dist/" + APPNAME + ".app/Contents/MacOS")
-        mypwd = os.getcwd()
-        print "pwd: " + mypwd
+            os.chdir(returnDir)
+        except Exception:
+            raise
         print "buildStonix4MacAppResources Finished..."
 
-    def tarAndBuildStonix4MacAppPkg(self, appName, appVersion):
-        #######################################################################
-        #######################################################################
-        #####
-        #     Archive, build installer package and wrap into a dmg:
-        #     stonix4mac.app
-        #####
-        #######################################################################
-        #######################################################################
+    def buildStonix4MacAppPkg(self, appName, appVersion, appPath):
+        '''
+        Build installer package and wrap into a dmg
+        @author: Roy Nielsen, Eric Ball
+        @param appName: Name of application as it should appear on OS X systems
+        @param appVersion: Version of app being built
+        @param appPath: Path to [stonixroot]/src/MacBuild
+        '''
 
-        APPNAME = appName
-        APPVERSION = appVersion
+        print "Started buildStonix4MacAppPkg..."
+        try:
+            returnDir = os.getcwd()
+            os.chdir(appPath + "/" + appName)
 
-        print "Started tarAndBuildStonix4MacApp..."
-        mypwd = os.getcwd()
-        print "pwd: " + mypwd
+            print "Putting new version into Makefile..."
+            mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
+                             "PACKAGE_VERSION=" + appVersion)
 
-        #####
-        # Make sure the "tarfiles" directory exists, so we can archive
-        # tarfiles of the name $APPNAME-$APPVERSION.app.tar.gz there
-        if not os.path.isdir("tarfiles"):
-            os.mkdir("tarfiles")
-        else:
-            #####
-            # Cannot use mkdtmp here because it will make the directory on the
-            # root filesystem instead of the ramdisk, then it will try to link
-            # across filesystems which won't work
-            TMPFILE = "tarfiles" + str(self.timeStamp())
-            os.rename("tarfiles", TMPFILE)
-            os.mkdir("tarfiles")
+            if not os.path.isdir(appPath + "/dmgs"):
+                os.mkdir(appPath + "/dmgs")
+            else:
+                # Cannot use mkdtmp here because it will make the directory on
+                # the root filesystem instead of the ramdisk, then it will try
+                # to link across filesystems which won't work
+                tmpdir = appPath + "/dmgs." + str(time())
+                os.rename(appPath + "/dmgs", tmpdir)
+                os.mkdir(appPath + "/dmgs")
 
-        #####
-        # tar up the app and put it in the tarfiles directory
-        print "Tarring up the app & putting the tarfile in the " + \
-            "../tarfiles directory"
-        self.dirq.put(os.getcwd())
-        os.chdir("./" + APPNAME + "/dist")
-        mypwd = os.getcwd()
-        print "pwd: " + mypwd
-        mbl.makeTarball(APPNAME + ".app", "../../tarfiles/" + APPNAME + "-" +
-                        APPVERSION + ".app.tar.gz")
-        os.chdir(self.dirq.get())
-        mypwd = os.getcwd()
-        print "pwd: " + mypwd
+            print "Creating a .dmg file with a .pkg file inside for " + \
+                "installation purposes..."
+            call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
+                  "USE_PKGBUILD=1"])
+            call(["make", "pkg", "PACKAGE_VERSION=" + appVersion,
+                  "USE_PKGBUILD=1"])
 
-        ###################################################
-        # to create the package
-        self.dirq.put(os.getcwd())
-        os.chdir(APPNAME)
-        print "Putting new version into Makefile..."
-        mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
-                         "PACKAGE_VERSION=" + APPVERSION)
-        ###
-        # Currently Makefile does not actually have a LUGGAGE_TMP variable
-        mbl.regexReplace("Makefile", r"LUGGAGE_TMP\S+",
-                         "LUGGAGE_TMP=" + self.TMPHOME)
+            print "Moving dmg and pkg to the dmgs directory."
+            dmgname = appName + "-" + appVersion + ".dmg"
+            pkgname = appName + "-" + appVersion + ".pkg"
+            os.rename(dmgname, appPath + "/dmgs/" + dmgname)
+            os.rename(pkgname, appPath + "/dmgs/" + pkgname)
 
-        if not os.path.isdir("../dmgs"):
-            os.mkdir("../dmgs")
-        else:
-            #####
-            # Cannot use mkdtmp here because it will make the directory on the
-            # root filesystem instead of the ramdisk, then it will try to link
-            # across filesystems which won't work
-            TMPFILE = "dmgs" + str(self.timeStamp())
-            os.rename("../dmgs", TMPFILE)
-            os.mkdir("../dmgs")
-
-        print "Creating a .dmg file with a .pkg file inside for " + \
-            "installation purposes..."
-        call(["make", "dmg", "PACKAGE_VERSION=" + APPVERSION,
-              "USE_PKGBUILD=1"])
-        call(["make", "pkg", "PACKAGE_VERSION=" + APPVERSION,
-              "USE_PKGBUILD=1"])
-        print "Moving dmg and pkg to the dmgs directory."
-        dmgname = APPNAME + "-" + APPVERSION + ".dmg"
-        pkgname = APPNAME + "-" + APPVERSION + ".pkg"
-        os.rename(dmgname, "../dmgs/" + dmgname)
-        os.rename(pkgname, "../dmgs/" + pkgname)
-
-        os.chdir(self.dirq.get())
-
-        print "tarAndBuildStonix4MacApp... Finished"
+            os.chdir(returnDir)
+        except Exception:
+            raise
+        print "buildStonix4MacAppPkg... Finished"
 
 if __name__ == '__main__':
     stonix4mac = MacBuilder()

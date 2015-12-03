@@ -34,6 +34,7 @@ per day
 @change: 2014/04/30 dkennel Corrected overly greedy regexes
 @change: 2014/09/02 ekkehard self.rootrequired = True & OS X 10.10 compliant
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -71,8 +72,8 @@ class ScheduleStonix(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "Schedule Stonix to run randomly throughout the week \
-and once in a user context per day"
+        self.helptext = "Schedule a random time for STONIX to run in admin/" + \
+            "root context once per week, and in user context once per day. NOTE: THIS RULE CANNOT BE REVERTED/UNDONE."
         self.guidance = ['']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -403,12 +404,12 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                         if not re.search('<integer>', contents[i]):
                             if contents[i].strip() != scrptcontents[i].strip():
                                 configured = False
-                                self.detailedresults += "line not correct: " + str(contents[i]) + "\n"
+                                self.detailedresults += "line not correct: " + str(contents[i]) + " in file: " + str(path) + "\n"
 
                         else:
-                            if not re.search('<integer>[0-9][1-9]{0,1}</integer>', contents[i]):
+                            if not re.search('<integer>[0-9][0-9]{0,1}<\/integer>', contents[i]):
                                 configured = False
-                                self.detailedresults += "integer line wrong: " + str(contents[i]) + "\n"
+                                self.detailedresults += "integer line wrong: " + str(contents[i]) + " in file: " + str(path) + "\n"
 
             for item in plistdict:
                 itemlong = item
@@ -451,13 +452,17 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @author: bemalmbe
         '''
-# FIXME self.rulesuccess never gets set unless fixmac is called. This results in
-# rule.py printing DRFIXNOTAVAILABLE on line 697 in rule.py
+
+        self.detailedresults = ""
+        fixresult = True
+
         try:
-            self.detailedresults = ""
+
             # If mac os, run fixmac
             if self.environ.getostype() == "Mac OS X":
-                self.rulesuccess = self.fixmac()
+                if not self.fixmac():
+                    fixresult = False
+                    self.rulesuccess = False
 
             # else make fixes for *nix os types
             else:
@@ -503,26 +508,31 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                         if not os.path.exists(crondir):
                             os.makedirs(crondir, 0644)
 
-                    f = open(self.cronfilelocation, 'w')
-                    f.writelines(contentlines)
-                    f.close()
+                    try:
 
-                    # set the correct permissions and ownership for the root
-                    # cron file
-                    os.chmod(self.cronfilelocation, 0644)
-                    os.chown(self.cronfilelocation, 0, 0)
-                    self.rulesuccess = True
+                        f = open(self.cronfilelocation, 'w')
+                        f.writelines(contentlines)
+                        f.close()
+
+                        # set the correct permissions and ownership for the root
+                        # cron file
+                        os.chmod(self.cronfilelocation, 0644)
+                        os.chown(self.cronfilelocation, 0, 0)
+                    except Exception:
+                        fixresult = False
 
                 # check for existence and correct text in user context stonix
                 # script
                 if not os.path.exists('/etc/profile.d/user-stonix.py'):
-                    f = open('/etc/profile.d/user-stonix.py', 'w')
-                    f.write(self.userstonixscript)
-                    f.close()
+                    try:
+                        f = open('/etc/profile.d/user-stonix.py', 'w')
+                        f.write(self.userstonixscript)
+                        f.close()
 
-                    os.chown('/etc/profile.d/user-stonix.py', 0, 0)
-                    os.chmod('/etc/profile.d/user-stonix.py', 0550)
-                    self.rulesuccess = True
+                        os.chown('/etc/profile.d/user-stonix.py', 0, 0)
+                        os.chmod('/etc/profile.d/user-stonix.py', 0550)
+                    except Exception:
+                        fixresult = False
 
                 # fix the user stonix script
                 else:
@@ -533,24 +543,29 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                     userstonixscriptlist = \
                     self.userstonixscript.splitlines(True)
 
-                    if cmp(contentlines, userstonixscriptlist) != 0:
-                        f = open('/etc/profile.d/user-stonix.py', 'w')
-                        f.writelines(userstonixscriptlist)
-                        f.close()
+                    try:
 
-                        os.chown('/etc/profile.d/user-stonix.py', 0, 0)
-                        os.chmod('/etc/profile.d/user-stonix.py', 0700)
-                        self.rulesuccess = True
+                        if cmp(contentlines, userstonixscriptlist) != 0:
+                            f = open('/etc/profile.d/user-stonix.py', 'w')
+                            f.writelines(userstonixscriptlist)
+                            f.close()
+
+                            os.chown('/etc/profile.d/user-stonix.py', 0, 0)
+                            os.chmod('/etc/profile.d/user-stonix.py', 0700)
+
+                    except Exception:
+                        fixresult = False
 
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+            fixresult = False
+            self.rulesuccess = False
+        self.formatDetailedResults("fix", fixresult, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
+        return fixresult
 ###############################################################################
 
     def fixmac(self):

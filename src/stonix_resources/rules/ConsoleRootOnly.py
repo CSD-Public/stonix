@@ -31,6 +31,7 @@ This class will restrict access to the root log on to console only
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/12/15 dkennel Replaced print statements with logger debug calls
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -63,8 +64,8 @@ class ConsoleRootOnly(Rule):
         self.rulenumber = 35
         self.rulename = 'ConsoleRootOnly'
         self.mandatory = True
-        self.helptext = "This class will restrict access to the root log " + \
-        "on to console only"
+        self.helptext = "This rule will restrict access to the root logon " + \
+            "to console only"
         self.formatDetailedResults("initialize")
         self.guidance = ['CIS, NSA(2.3.1.1), cce3820-8, 3485-0, 4111-1']
         self.applicable = {'type': 'white',
@@ -74,7 +75,7 @@ class ConsoleRootOnly(Rule):
         datatype = 'bool'
         key = 'CONSOLEROOTONLY'
         instructions = "To prevent the limiting of root logon to console " + \
-        "only, set the value of CONSOLEROOTONLY to False."
+            "only, set the value of CONSOLEROOTONLY to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -113,14 +114,14 @@ class ConsoleRootOnly(Rule):
                     helper = Pkghelper(self.logger, self.environ)
 
                     if helper.manager == "apt-get" or \
-                                                    helper.manager == "zypper":
+                       helper.manager == "zypper":
                         self.perms = [0, 0, 420]
                     else:
                         self.perms = [0, 0, 384]
 
                     if not checkPerms(self.securetty, self.perms, self.logger):
-                        self.detailedresults += "Incorrect permissions on \
-" + self.securetty + "\n"
+                        self.detailedresults += "Incorrect permissions on " + \
+                            + self.securetty + "\n"
                         compliant = False
 
                     contents = readFile(self.securetty, self.logger)
@@ -133,8 +134,9 @@ class ConsoleRootOnly(Rule):
                                 found = True
                                 break
                         if not found:
-                            self.detailedresults += "The following line is \
-not acceptable in /etc/securetty: " + line + "\n"
+                            self.detailedresults += "The following line is " + \
+                                "not acceptable in /etc/securetty: " + line + \
+                                "\n"
                             compliant = False
             self.compliant = compliant
 
@@ -172,7 +174,8 @@ not acceptable in /etc/securetty: " + line + "\n"
             compliant = False
 
         self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                    kvtype, kvpath, kvtmppath, directive, kvintent, kvconftype)
+                                     kvtype, kvpath, kvtmppath, directive,
+                                     kvintent, kvconftype)
 
         if not self.editor.report():
             compliant = False
@@ -219,8 +222,8 @@ not acceptable in /etc/securetty: " + line + "\n"
 
                     if not setPerms(self.securetty, self.perms, self.logger,
                                     self.statechglogger, myid):
-                        self.detailedresults += "Unable to set permissions \
-on: " + self.securetty + "\n"
+                        self.detailedresults += "Unable to set permissions " + \
+                            "on: " + self.securetty + "\n"
                         self.rulesuccess = False
 
                 contents = readFile(self.securetty, self.logger)
@@ -253,22 +256,22 @@ on: " + self.securetty + "\n"
 
                     tmpfile = self.securetty + ".tmp"
 
-                    if writeFile(tmpfile, tempstring, self.logger):
+                if writeFile(tmpfile, tempstring, self.logger):
 
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
 
-                        event = {"eventtype": "conf",
-                                 "filepath": self.securetty}
+                    event = {"eventtype": "conf",
+                             "filepath": self.securetty}
 
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.securetty,
-                                                             tmpfile, myid)
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.securetty,
+                                                         tmpfile, myid)
 
-                        os.rename(tmpfile, self.securetty)
-                        os.chown(self.securetty, self.perms[0], self.perms[1])
-                        os.chmod(self.securetty, self.perms[2])
-                        resetsecon(self.securetty)
+                    os.rename(tmpfile, self.securetty)
+                    os.chown(self.securetty, self.perms[0], self.perms[1])
+                    os.chmod(self.securetty, self.perms[2])
+                    resetsecon(self.securetty)
 
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -277,7 +280,7 @@ on: " + self.securetty + "\n"
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 

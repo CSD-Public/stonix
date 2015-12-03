@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.0
+Version: 0.9.2
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -116,6 +116,33 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Dec 1 2015 David Kennel <dkennel@lanl.gov> - 0.9.2
+- ConfigureMacPolicy updated to work around broken behavior in Debian 8's implementation of AppArmor
+- Updated FileHelper object adding return value to fixFile and removing unused imports
+- Logic bug where SecureIPv6 created files during report mode corrected
+- SecureMDNS undo failures corrected
+- SystemAccounting undo failure corrected
+- Fixed ConfigureKerberos undo issues
+- Undo method of rule.py updated to handle removal of directories
+- Undo issues in ScheduleStonix corrected
+- XinetdAccessControl undo problems corrected
+- Fixed issues in the undo of ConsoleRootOnly
+- Corrected undo issues with InstallBanners
+- Fixed traceback in DisableWeakAuthentication
+- Improved user feedback in SecureATCRON
+
+* Tue Oct 27 2015 David Kennel <dkennel@lanl.gov> - 0.9.1
+- Corrected traceback in MuteMic rule when run in user context
+- Corrected PAM stack on RHEL 7 so that Sudo works with Kerberos
+- Updated apt-get install command sytax in aptGet module of package helper
+- Multiple fixes to unit tests and test infrastructure
+- Corrected traceback in RootMailAlias
+- Corrected traceback in ConfigureSudo
+- Improved feedback in VerifyAccPerms rule
+- Corrected permissions flapping in ConfigureLogging
+- Corrected traceback in EnableKernelAuditing
+- Corrected traceback in SecureCups
+- Updated applicability filters for EnableSELinux rule
 
 * Wed Sep 30 2015 David Kennel <dkennel@lanl.gov> - 0.9.0
 - Updated isApplicable() to filter on whether rules should or should not run under the root users context

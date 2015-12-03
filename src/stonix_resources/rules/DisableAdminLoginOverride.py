@@ -26,7 +26,7 @@ locked session.
 
 @author: Eric Ball
 @change: 2015-08-03 eball Original implementation
-@change: 2015/08/26 ekkehard [artf37770] : DisableAdminLoginOverride(177) - NCAF - OS X El Capitan 10.11
+@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 '''
 from __future__ import absolute_import
 import os
@@ -49,7 +49,7 @@ class DisableAdminLoginOverride(Rule):
         self.helptext = '''This rule disables the ability of administrators \
 to log into another user's active, locked session.'''
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         # Configuration item instantiation
         datatype = "bool"

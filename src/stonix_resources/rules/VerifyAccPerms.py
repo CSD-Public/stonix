@@ -37,7 +37,6 @@ have the correct (secure) permissions.
 from __future__ import absolute_import
 import os
 import traceback
-from subprocess import Popen, PIPE
 
 from ..rule import Rule
 from ..stonixutilityfunctions import getOctalPerms
@@ -107,10 +106,14 @@ class VerifyAccPerms(Rule):
                     if os.path.exists(item):
                         if getOctalPerms(item) != 644:
                             retval = False
+                            self.detailedresults += item + " does not have " + \
+                                "the correct permissions\n"
                 for item in self.file400:
                     if os.path.exists(item):
                         if getOctalPerms(item) != 400:
                             retval = False
+                            self.detailedresults += item + " does not have " + \
+                                "the correct permissions\n"
 
                 for item in self.fileall:
                     if os.path.exists(item):
@@ -119,8 +122,12 @@ class VerifyAccPerms(Rule):
 
                         if owner != 0:
                             retval = False
+                            self.detailedresults += item + " is not owned " + \
+                                "by user \"root\"\n"
                         if group != 0:
                             retval = False
+                            self.detailedresults += item + " is not owned " + \
+                                "by group \"root\"\n"
             except(OSError):
                 self.detailedresults = traceback.format_exc()
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
@@ -134,7 +141,7 @@ class VerifyAccPerms(Rule):
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
