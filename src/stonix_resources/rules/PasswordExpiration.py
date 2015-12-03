@@ -134,12 +134,6 @@ class PasswordExpiration(Rule):
                 self.shadowfile = "/etc/master.passwd"
                 self.loginfile = "/etc/login.conf"
                 self.compliant = self.reportFreebsd(self.specs)
-            if self.compliant:
-                self.detailedresults += "PasswordExpiration report has " + \
-                    "been run and the system is compliant\n"
-            else:
-                self.detailedresults += "PasswordExpiration report has " + \
-                    "been run and the system is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

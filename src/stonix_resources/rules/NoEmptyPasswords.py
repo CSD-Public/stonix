@@ -159,14 +159,7 @@ system that need to be checked for empty passwords\n"
                 if not checkPerms(self.shadow, [0, 0, 256], self.logger) and \
                    not checkPerms(self.shadow, [0, 0, 0], self.logger):
                     compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "NoEmptyPasswords rule has been \
-run and it's compliant"
-            else:
-                self.compliant = False
-                self.detailedresults += "NoEmptyPasswords rule has been \
-run and it's not compliant"
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

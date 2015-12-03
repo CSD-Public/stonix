@@ -204,14 +204,7 @@ pam su file\n"
 pam su\n"
             else:
                 self.detailedresults += "/etc/pam.d/su file doesn't exist!\n"
-            if compliant:
-                self.compliant = True
-                self.detailedresults += 'This system is compliant with ' + \
-                    'the SecureSU rule'
-            else:
-                self.compliant = False
-                self.detailedresults += 'This system is not compliant ' + \
-                    'with the SecureSU rule'
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

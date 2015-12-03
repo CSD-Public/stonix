@@ -177,14 +177,7 @@ appropriate contents in them whether installed or not.'''
             else:
                 self.detailedresults += self.path2 + " doesn't exist\n"
                 compliant = False
-            if compliant:
-                self.detailedresults += "SecureSSH report has been run and is \
-compliant"
-                self.compliant = True
-            else:
-                self.detailedresults += "SecureSSH report has been run and is \
-not compliant"
-                self.compliant = False
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

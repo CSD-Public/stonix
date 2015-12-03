@@ -116,12 +116,6 @@ Windows, as it will close terminal windows in the X environment.'''
                 results += self.path2 + " does not exist\n"
 
             self.compliant = compliant
-            if self.compliant:
-                self.detailedresults = "ShellTimeout report has been run " + \
-                    "and is compliant"
-            else:
-                self.detailedresults = "ShellTimeout report has been run " + \
-                    "and is not compliant\n" + results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
