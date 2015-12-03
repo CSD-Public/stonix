@@ -30,6 +30,9 @@ This is the test suite for stonix
                           tests at the command line.
 @note: 2015-09-06 - roy - Added flexibility for finding tests to run, created
                           functions instead of very deep nesting.
+@note: 2015-10-03 - roy - Adding "utils" category of tests, for testing
+                          functions (stonixutils) rather than classes or 
+                          class methods.  Also cutting down logdispatcher chatter
 '''
 import os
 import re
@@ -48,12 +51,6 @@ from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.StateChgLogger import StateChgLogger
-
-#####
-# Set global variables
-debug_mode = False
-verbose_mode = False
-
 
 class ConsoleAndFileWriter():
     '''
@@ -132,13 +129,15 @@ class FrameworkDictionary():
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
         # logger & environ - a global variable that has applicable verbose and 
         # debug values 
-        self.environ = Environment()
+        global Environ
+        self.environ = ENVIRON
         self.effectiveUserID = self.environ.geteuid()
-        self.environ.setdebugmode(debug_mode)
-        self.environ.setverbosemode(verbose_mode)
-        self.config = Configuration(self.environ)
-        self.logdispatch = LogDispatcher(self.environ)
-        self.statechglogger = StateChgLogger(self.logdispatch, self.environ)
+        global SYSCONFIG
+        self.config = SYSCONFIG
+        global LOGGER 
+        self.logdispatch = LOGGER
+        global STATECHANGELOGGER
+        self.statechglogger = STATECHANGELOGGER
         self.scriptPath = self.environ.get_script_path()
         self.stonixPath = self.environ.get_resources_path()
         self.realpath = os.path.dirname(os.path.realpath(__file__))
@@ -241,6 +240,122 @@ class FrameworkDictionary():
         return success
 
 
+class UtilsDictionary():
+    
+    def __init__(self):
+        self.unittestprefix = 'zzzTestUtils'
+        self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
+        # logger & environ - a global variable that has applicable verbose and 
+        # debug values 
+        self.environ = Environment()
+        self.effectiveUserID = self.environ.geteuid()
+        self.environ.setdebugmode(debug_mode)
+        self.environ.setverbosemode(verbose_mode)
+        self.config = Configuration(self.environ)
+        self.logdispatch = LogDispatcher(self.environ)
+        self.statechglogger = StateChgLogger(self.logdispatch, self.environ)
+        self.scriptPath = self.environ.get_script_path()
+        self.stonixPath = self.environ.get_resources_path()
+        self.realpath = os.path.dirname(os.path.realpath(__file__))
+        self.rulesPath = self.environ.get_rules_path()
+        self.frameworkpath = self.stonixPath + "/"
+        self.frameworkdictionary = {}
+        self.keys = None
+        self.key = None
+        self.keyIndexNumber = 0
+        self.keysNumberOf = 0
+        self.dictinaryItem = None
+        self.initializeDictionary()
+
+    def gotoFirstItem(self):
+        self.keyIndexNumber = 0
+        self.keys = sorted(self.frameworkdictionary.keys())
+        self.keysNumberOf = len(self.keys)
+        self.key = self.keys[self.keyIndexNumber]
+        self.dictinaryItem = self.frameworkdictionary[self.key]
+
+    def gotoNextItem(self):
+        self.keyIndexNumber = self.keyIndexNumber + 1
+        self.keys = sorted(self.frameworkdictionary.keys())
+        self.keysNumberOf = len(self.keys)
+        if (self.keysNumberOf - 1) < self.keyIndexNumber:
+            self.keyIndexNumber = 0
+            self.dictinaryItem = None
+        else:
+            self.key = self.keys[self.keyIndexNumber]
+            self.dictinaryItem = self.frameworkdictionary[self.key]
+
+    def getCurrentItem(self):
+        return self.dictinaryItem
+    
+    def getTestPath(self):
+        return self.dictinaryItem["path"]
+        
+    def getTestName(self):
+        return self.dictinaryItem["name"]
+    
+    def getModuleName(self):
+        return self.dictinaryItem["modulename"]
+
+    def getTestClassName(self):
+        return self.dictinaryItem['moduleclassname']
+    
+    def getFrameworkList(self):
+        return self.frameworkList
+        
+    def initializeDictionary(self):
+        '''
+        Fill in all the rule information
+        @author: ekkehard j. koch
+        @note: None
+        '''
+        success = True
+        messagestring = "--------------------------------- start"
+        self.logdispatch.log(LogPriority.INFO, str(messagestring))
+        self.validrulefiles = []
+        self.modulenames = []
+        self.classnames = []
+        testdirs = ["src/tests/utils/unit_tests", 
+                    "src/tests/utils/network_tests",
+                    "src/tests/utils/interactive_tests"]
+        for mydir in testdirs:
+            rulefiles = os.listdir(str(mydir))
+            for rfile in rulefiles:
+                rule_class = None
+                if re.search(self.unittestprefix + ".*\.py$", rfile):
+                    modulename = rfile.replace('.py', '')
+                    if modulename.startswith(self.unittestprefix):
+                        self.initializeDictoniaryItem(modulename)
+                        #self.dictinaryItem["name"] = ".".join(mydir.split("/")) + "." + modulename
+                        self.dictinaryItem["name"] = modulename
+                        self.dictinaryItem['moduleclassname'] = ".".join(mydir.split("/")) + "." + modulename
+                        #self.dictinaryItem['moduleclassname'] = ".".join(mydir.split("/")[1:]) + "." + modulename
+                        self.dictinaryItem["modulename"] = modulename
+                        self.dictinaryItem["path"] = self.realpath + "/" + mydir + "/" + rfile
+                        self.dictinaryItem["found"] = True
+                        """
+                        print "\n###==-     -==###"
+                        print "\tmodule:          " + str(modulename)
+                        print "\tname:            " + str(self.dictinaryItem["name"])
+                        print "\tmoduleclassname: " + str(self.dictinaryItem["moduleclassname"])
+                        print "\tpath:            " + str(self.dictinaryItem["path"])
+                        print "###==-     -==###\n"
+                        """
+                else:
+                    continue
+        return success
+        
+    def initializeDictoniaryItem(self, name):
+        success = True
+        item = {"name": "",
+                "path": self.frameworkpath,
+                "found": False,
+                "errormessage": []}
+        self.frameworkdictionary[name] = item
+        self.dictinaryItem = self.frameworkdictionary[name]
+        return success
+
+
 class RuleDictionary ():
     '''
     This class is designed encapsulate the dictionary object for
@@ -250,7 +365,7 @@ class RuleDictionary ():
     @change: 2015-02-25 - ekkehard - Original Implementation
     '''
     
-    def __init__(self, environ, logdispatcher, rule=True, unit=True, network=True, interactive=True):
+    def __init__(self, rule=True, unit=True, network=True, interactive=True):
         self.framework = framework
         self.rule = rule
         self.unit = unit
@@ -261,13 +376,15 @@ class RuleDictionary ():
         
         self.unittestprefix = 'zzzTestRule'
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
-        self.environ = Environment()
-        self.environ.setdebugmode(debug_mode)
-        self.environ.setverbosemode(verbose_mode)
+        global ENVIRON
+        self.environ = ENVIRON
         self.effectiveUserID = self.environ.geteuid()
-        self.config = Configuration(self.environ)
-        self.logdispatch = LogDispatcher(self.environ)
-        self.statechglogger = StateChgLogger(self.logdispatch, self.environ)
+        global SYSCONFIG
+        self.config = SYSCONFIG
+        global LOGGER
+        self.logdispatch = LOGGER
+        global STATECHANGELOGGER
+        self.statechglogger = STATECHANGELOGGER
         self.scriptPath = self.environ.get_script_path()
         self.stonixPath = self.environ.get_resources_path()
         self.rulesPath = self.environ.get_rules_path()
@@ -796,12 +913,14 @@ def isRuleInBounds(fname=""):
         
         exec(tmpex)
         
-        environ = Environment()
-        environ.setdebugmode(debug_mode)
-        environ.setverbosemode(verbose_mode)
-        config = Configuration(environ)
-        logdispatcher = LogDispatcher(environ)
-        stchgr = StateChgLogger(logdispatcher, environ)
+        global ENVIRON
+        global SYSCONFIG
+        global LOGGER
+        global STATECHANGELOGGER
+        environ = ENVIRON
+        config = SYSCONFIG
+        logdispatcher = LOGGER
+        stchgr = STATECHANGELOGGER
         
         get_attrs = toTestClass(config, environ, logdispatcher, stchgr)
         
@@ -894,7 +1013,7 @@ def processRuleTest(filename=""):
                         
     return returnMod
 
-def processFrameworkTest(filename=""):
+def processFrameworkNUtilsTest(filename=""):
     """
     Attempting to import the test, will return the loaded module, or None
     if the module couldn't be loaded.
@@ -933,7 +1052,6 @@ def processFrameworkTest(filename=""):
             
     return modToReturn
     
-         
 class TestNotFound(Exception):
     def __init__(self, arg):
         # set exception information
@@ -969,71 +1087,39 @@ def assemble_list_suite(modules = []):
                 prefix = "framework"
             elif re.search("ule", module):
                 prefix = "rules"
+            elif re.search("tils", module):
+                prefix = "utils"
             else:
                 prefix = ""
                 
-            if re.match("^rules$", prefix):
-                found = False
-                #Find the path to the test
-                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
-                    myfile = ""
-                    for myfile in filenames:
-                        regex = "^" + str(module) + ".*"
-                        if re.match(regex, myfile):
-                            found = True
+            #Find the path to the test
+            for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                myfile = ""
+                for myfile in filenames:
+                    regex = "^" + str(module) + ".*"
+                    if re.match(regex, myfile):
+                        found = True
+                        if re.match("^rules$", prefix):
                             testToRunMod = processRuleTest(root + "/" + myfile)
-                            #print "******************************************"
-                            #print "Checking out " + str(module)
-                            # Make Sure this rule sould be running
-                            if testToRunMod:
-                                #####
-                                # Add the import to a list, to later "map" to a test suite
-                                testList.append(testToRunMod)
-                                #print "Adding test to suite..."   
-                if not found: 
-                    try:   
-                        raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
-                    except TestNotFound, err:
-                        print "\n\tException: " + str(err.msg)
-                        sys.exit(253)
-
-                #print " *****************************************"
-            elif re.match("^framework$", prefix):
-                found = False
-                #Find the path to the test
-                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
-                    myfile = ""
-                    for myfile in filenames:
-                        #print "\n\n\tmodname: " + str(module)
-                        #print "\tFile   : " + str(myfile)
-                        #print "\tRelPath: " + str(root + "/" + myfile)
-                        regex = "^" + str(module) + ".*"
-                        if re.match(regex, myfile):
-                            found = True
-                            #print "******************************************"
-                            #print "Checking out " + str(myfile)
-                            testToRunMod = processFrameworkTest(root + "/" + myfile)
+                        else:
+                            testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
                             
-                            if testToRunMod:
-                                #####
-                                # Add the import to a list, to later "map" to a test suite
-                                testList.append(testToRunMod)     
-                                #print "Adding test to suite..."   
-                if not found:
-                    try:   
-                        raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
-                    except TestNotFound, err:
-                        print "\n\tException: " + str(err.msg)
-                        sys.exit(254)
-
-                #print " *****************************************"
-            
-            else:
-                try:
-                    raise TestNotFound("Error attempting insert test (" + str(module) + ") into test list...\n")
+                        #print "******************************************"
+                        #print "Checking out " + str(module)
+                        # Make Sure this rule sould be running
+                        if testToRunMod:
+                            #####
+                            # Add the import to a list, to later "map" to a test suite
+                            testList.append(testToRunMod)
+                            #print "Adding test to suite..."   
+            if not found: 
+                try:   
+                    raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
                 except TestNotFound, err:
                     print "\n\tException: " + str(err.msg)
-                    sys.exit(255)
+                    sys.exit(253)
+
+            #print " *****************************************"
             
     #####
     # Set up the test loader function
@@ -1046,7 +1132,7 @@ def assemble_list_suite(modules = []):
     return suite
     
     
-def assemble_suite(framework=True, rule=True, unit=True, network=True, interactive=False):
+def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=True, interactive=False):
     '''
     This sets up the test suite
     @author: ekkehard j. koch
@@ -1142,6 +1228,51 @@ def assemble_suite(framework=True, rule=True, unit=True, network=True, interacti
     else:
         print "\n Not running framework tests.\n"
     
+    if utils:
+
+        # Build the framework dictionary
+        utilsDictionary = UtilsDictionary()
+        
+        # Iterate through framework Unit Tests
+        utilsDictionary.gotoFirstItem()
+        utilsList = []
+        modules = []
+        while not (utilsDictionary.getCurrentItem() == None):
+            utilsTestName = utilsDictionary.getTestName()
+            utilsTestPath = utilsDictionary.getTestPath()
+            utilsTestClassName = utilsDictionary.getTestClassName()
+            utilsTestModuleName = utilsDictionary.getModuleName()
+            #frameworkCompleteTestPath = frameworkTestPath + frameworkTestName
+            utilsCompleteTestPath = utilsTestPath
+            utilsCompleteTestName = utilsTestName + "." + utilsTestModuleName
+            """
+            print "----------------------------"
+            print "\tFTN:  " + str(utilsTestName)
+            print "\tFTCN: " + str(utilsTestClassName)
+            print "\tFTP:  " + str(utilsTestPath)
+            print "\tFCTP: " + str(utilsCompleteTestPath) 
+            print "\tFTCN: " + str(utilsCompleteTestName)
+            print "----------------------------"
+            """
+            
+            try:
+                #####
+                # A = "dot" path to the library we want to import from
+                # B = Module inside library we want to import
+                # basically perform a "from A import B
+                utilsTestToRun = __import__(utilsTestClassName, fromlist=[utilsTestName])
+                
+                #####
+                # Add the import to a list, to later "map" to a test suite
+                testList.append(utilsTestToRun)
+                
+            except Exception, err: 
+                    print "stonixtest error: " + str(utilsTestClassName) + " Exception: " + str(err) + "\n"
+                    #raise(err)
+            utilsDictionary.gotoNextItem()
+    else:
+        print "\n Not running utils tests.\n"
+    
     #####
     # Set up the test loader function
     load = unittest.defaultTestLoader.loadTestsFromModule
@@ -1150,8 +1281,9 @@ def assemble_suite(framework=True, rule=True, unit=True, network=True, interacti
     # Define a test suite based on the testList.
     suite = unittest.TestSuite(map(load, testList))
 
-    # Add all the tests for rules
-    suite.addTests(unittest.makeSuite(test_rules_and_unit_test))
+    if  rule:
+        # Add the test for every rule and rule for every test... test.
+        suite.addTests(unittest.makeSuite(test_rules_and_unit_test))
 
     if rule:
         ruleDictionary.ruleReport()
@@ -1175,112 +1307,156 @@ class ModulesOption(Option):
                 self, action, dest, opt, value, values, parser)
             
             
+VERSION="0.8.20"
+description = "Test framework for Stonix."
+parser = optparse.OptionParser(option_class=ModulesOption,
+                      usage='usage: %prog [OPTIONS]',
+                      version='%s' % (VERSION),
+                      description=description)
+
+parser.add_option("-l", "--log", action="store_true", dest="logauto",
+                  default=False, help="Log failures using default log"
+                  + " file name")
+
+parser.add_option("-n", "--namelog", action="store", dest="ttrlog",
+                  help="Log failures using the specified file name",
+                  metavar="LOGNAME")
+
+parser.add_option("-r", "--rule", action="store_true", dest="rule",
+                  default=False, help="Run the Rule tests.  Will not" + \
+                                      " work when combined with -f and -u.")
+
+parser.add_option("-u", "--utils", action="store_true", dest="utils",
+                  default=False, help="Run the function tests.  Will not" + \
+                                      " work when combined with -f and -r.")
+
+parser.add_option("--network", action="store_true", dest="network",
+                  default=False, help="Run the network category of tests")
+
+parser.add_option("--unit", action="store_true", dest="unit",
+                  default=False, help="Run the unit test category of tests")
+
+parser.add_option("-i", "--interactive", action="store_true", dest="interactive",
+                  default=False, help="Log failures using default log")
+
+parser.add_option("-f", "--framework", action="store_true", dest="framework",
+                  default=False, help="Run the Framework tests.  Will not" + \
+                                      " work when combined with -r and -u.")
+
+parser.add_option("-a", "--all-automatable", action="store_true", dest="all",
+                  default=False, help="Run all unit and network tests - " + \
+                  "interactive tests not included")
+
+parser.add_option("--rule-test-consistency", action="store_true", dest="consistency",
+                  default=False, help="Check to make sure there is a " + \
+                  "test for every rule and a rule for every rule test")
+
+parser.add_option("-v", "--verbose", action="store_true",
+                  dest="verbose", default=False, \
+                  help="Print status messages")
+
+parser.add_option("-d", "--debug", action="store_true", dest="debug",
+                  default=False, help="Print debug messages")
+
+parser.add_option('-m', '--modules', action="extend", type="string", 
+                  dest='modules', help="Use to run a single or " + \
+                  "multiple unit tests at once.  Use the test name.")
+
+if len(sys.argv) == 1:
+    parser.parse_args(['--help'])
+
+options, __ = parser.parse_args()
+
+if options.logauto:
+    ttrlog = time.strftime('%Y%m%d-%H%M%S') + ".log"
+elif options.ttrlog:
+    ttrlog = options.ttrlog
+
+network=options.network
+            
+unit = options.unit
+
+interactive = options.interactive
+
+if options.rule and not options.framework and not options.utils:
+    rule=options.rule
+    framework = False
+    utils = False
+    options.all = False
+
+elif options.framework and not options.rule and not options.utils:
+    framework = options.framework
+    rule = False
+    utils = False
+    options.all = False
+
+elif not options.framework and not options.rule and options.utils:
+    utils = options.utils
+    rule = False
+    framework = False
+    options.all = False
+
+if not options.framework and not options.rule and not options.utils:
+    rule = True
+    framework = True
+    utils=True
+
+if options.framework and options.rule and not options.utils or \
+   options.framework and not options.rule and options.utils or \
+   not options.framework and options.rule and options.utils or \
+   options.framework and options.rule and options.utils:
+    print "Sorry, -f and -r and -u are mutually exclusive."
+    sys.exit(255)
+
+if options.all:
+    unit      = True
+    network   = True
+    framework = True
+    utils     = True
+    rule      = True
+    consistency = True
+
+debug_mode = options.debug
+verbose_mode = options.verbose
+ 
+ENVIRON = Environment()
+#ENVIRON.setdebugmode(debug_mode)
+#ENVIRON.setverbosemode(verbose_mode)
+ENVIRON.setdebugmode(True)
+ENVIRON.setverbosemode(True)
+LOGGER = LogDispatcher(ENVIRON)
+SYSCONFIG = Configuration(ENVIRON)
+STATECHANGELOGGER = StateChgLogger(LOGGER, ENVIRON)
+
+def setUpModule():
+    """
+    Function made available to the whole module - holds globals 
+    instanciated once for all unittests contained within the module.
+    
+    @author: Roy Nielsen
+    """
+    global ENVIRON
+    global LOGGER
+    global SYSCONFIG
+    global STATECHANGELOGGER
+    testenvironment = ENVIRON
+    logdispatch = LOGGER
+    config = SYSCONFIG
+    statechglogger = STATECHANGELOGGER
+
+
 # Make sure this works from the command line as well as in debbug mode
 if __name__ == '__main__' or __name__ == 'stonixtest':
     """
     Main program
     
     """
-    VERSION="0.8.20"
-    description = "Test framework for Stonix."
-    parser = optparse.OptionParser(option_class=ModulesOption,
-                          usage='usage: %prog [OPTIONS]',
-                          version='%s' % (VERSION),
-                          description=description)
-    
-    parser.add_option("-l", "--log", action="store_true", dest="logauto",
-                      default=False, help="Log failures using default log"
-                      + " file name")
+    logger = LOGGER
+    logger.markSeparator()
+    logger.markStartLog()
+    logger.initializeLogs()
+    logger.logEnv()
 
-    parser.add_option("-n", "--namelog", action="store", dest="ttrlog",
-                      help="Log failures using the specified file name",
-                      metavar="LOGNAME")
-
-    parser.add_option("-r", "--rule", action="store_true", dest="rule",
-                      default=False, help="Run the Rule tests.  Will not" + \
-                                          " work when combined with -f.")
-
-    parser.add_option("--network", action="store_true", dest="network",
-                      default=False, help="Run the network category of tests")
-
-    parser.add_option("--unit", action="store_true", dest="unit",
-                      default=False, help="Run the unit test category of tests")
-
-    parser.add_option("-i", "--interactive", action="store_true", dest="interactive",
-                      default=False, help="Log failures using default log")
-
-    parser.add_option("-f", "--framework", action="store_true", dest="framework",
-                      default=False, help="Run the Framework tests.  Will not" + \
-                                          " work when combined with -r.")
-
-    parser.add_option("-a", "--all-automatable", action="store_true", dest="all",
-                      default=True, help="Run all unit and network tests - " + \
-                      "interactive tests not included")
-
-    parser.add_option("--rule-test-consistency", action="store_true", dest="consistency",
-                      default=False, help="Check to make sure there is a " + \
-                      "test for every rule and a rule for every rule test")
-
-    parser.add_option("-v", "--verbose", action="store_true",
-                      dest="verbose", default=False, \
-                      help="Print status messages")
-
-    parser.add_option("-d", "--debug", action="store_true", dest="debug",
-                      default=False, help="Print debug messages")
-
-    parser.add_option('-m', '--modules', action="extend", type="string", 
-                      dest='modules', help="Use to run a single or " + \
-                      "multiple unit tests at once.  Use the test name.")
-   
-    if len(sys.argv) == 1:
-        parser.parse_args(['--help'])
-    
-    options, __ = parser.parse_args()
-    
-    if options.logauto:
-        ttrlog = time.strftime('%Y%m%d-%H%M%S') + ".log"
-    elif options.ttrlog:
-        ttrlog = options.ttrlog
-
-    network=options.network
-                
-    unit = options.unit
-    
-    interactive = options.interactive
-
-    if options.rule:
-        rule=options.rule
-        framework = False
-    else:
-        rule=None
-    
-    if options.framework:
-        framework = options.framework
-        rule = False
-    else:
-        framework = None
-
-    if not options.framework and not options.rule:
-        rule = True
-        framework = True
-
-    if options.framework and options.rule:
-        print "Sorry, -f and -r are mutually exclusive."
-        sys.exit(255)
-
-    if not rule and not framework and not all:
-        print "Need to choose rule or framework or all. . ."
-
-    if options.all:
-        unit=True
-        network=True
-        framework=True
-        rule=True
-        consistency = True
-
-    debug_mode = options.debug
-    verbose_mode = options.verbose
-     
     modules = options.modules
 
     consistency = options.consistency
@@ -1306,10 +1482,14 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
 
     else:
 
-        testsuite = assemble_suite(framework, rule, unit, network, interactive)
+        testsuite = assemble_suite(framework, rule, utils, unit, network, interactive)
     
     # Run the test suite
     result = runner.run(testsuite)
+
+    logger.markEndLog()
+    logger.markSeparator()
+    logger.rotateLog()
 
     # Exit code is equal to number of test failures
     exit(len(result.failures))

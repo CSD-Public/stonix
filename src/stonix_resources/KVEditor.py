@@ -42,7 +42,7 @@ class KVEditor(object):
     have a mixture of desired key-values and undesired key-values you must set
     intent for each time you change intents then setData with the new data.  Do
     not run commit until all'''
-###############################################################################
+
     def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
                  configType=""):
         '''
@@ -76,28 +76,25 @@ class KVEditor(object):
         self.idcontainer = []
         if self.kvtype == "tagconf":
             if not self.getPath:
-                return False
+                return None
             self.editor = KVATaggedConf.KVATaggedConf(self.path, self.tmpPath,
                                                       self.intent,
                                                       self.configType,
                                                       self.logger)
-            return True
         elif self.kvtype == "conf":
             if not self.getPath:
-                return False
+                return None
             self.editor = KVAConf.KVAConf(self.path, self.tmpPath, self.intent,
                                           self.configType, self.logger)
-            return True
         elif self.kvtype == "defaults":
             self.editor = KVADefault.KVADefault(self.path, self.logger,
                                                 self.data)
-            return True
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
                             ["KVEditor.__init__", self.detailedresults])
-            return False
-###############################################################################
+            return None
+
     def setData(self, data):
         if data is None:
             return False
@@ -106,37 +103,35 @@ class KVEditor(object):
         else:
             self.data = data
             return True
-###############################################################################
+
     def getData(self):
         return self.data
-###############################################################################
+
     def updateData(self, data):
         self.data = data
-###############################################################################
+
     def setIntent(self, intent):
-        if intent == "present":
-            self.intent = intent
-            self.editor.setIntent(intent)
-            return True
-        elif intent == "notpresent":
+        if intent == "present" or intent == "notpresent":
             self.intent = intent
             self.editor.setIntent(intent)
             return True
         else:
             return False
-###############################################################################
+
     def getIntent(self):
         return self.intent
-###############################################################################
+
     def setPath(self, path):
         if not os.path.exists(path):
             self.detailedresults = "File path does not exist"
-            self.logger.log(LogPriority.INFO,["KVEditor",self.detailedresults])
+            self.logger.log(LogPriority.INFO,
+                            ["KVEditor", self.detailedresults])
             return False
         else:
             self.path = path
+            self.editor.setPath(path)
             return True
-###############################################################################
+
     def getPath(self):
         if not os.path.exists(self.path):
             self.detailedresults = "File path does not exist"
@@ -145,28 +140,26 @@ class KVEditor(object):
             return False
         else:
             return self.path
-###############################################################################
+
     def setTmpPath(self, tmpPath):
         self.tmpPath = tmpPath
+        self.editor.setTmpPath(tmpPath)
         return True
-###############################################################################
+
     def getTmpPath(self):
         return self.tmpPath
-###############################################################################
-    def setType(self, kvtype):
-        '''implementer must use one of the following four strings to
-        instantiate the corresponding class: tagconf,conf,plist,defaults'''
-        self.kvtype = kvtype
-        return True
-###############################################################################
+
+    def getType(self):
+        return self.kvtype
+
     def setConfigType(self, configType):
         self.configType = configType
         self.editor.setConfigType(configType)
         return True
-###############################################################################
+
     def getConfigType(self):
         return self.configType
-###############################################################################
+
     def validate(self):
         try:
             if self.kvtype == "defaults":
@@ -184,7 +177,7 @@ class KVEditor(object):
             raise
         except Exception:
             raise
-###############################################################################
+
     def update(self):
         try:
             if self.kvtype == "defaults":
@@ -202,7 +195,7 @@ class KVEditor(object):
             raise
         except Exception:
             raise
-###############################################################################
+
     def validateDefaults(self):
         if isinstance(self.data, dict):
             if not self.checkDefaults(self.data):
@@ -235,7 +228,7 @@ class KVEditor(object):
 
     def setCurrentHostbool(self, val):
         self.editor.currentHost = val
-###############################################################################
+
     def validateConf(self):
         validate = True
         if not self.checkConf():
@@ -259,18 +252,18 @@ class KVEditor(object):
                     validate = False
                     self.removeables[k] = v
         return validate
-###############################################################################
+
     def updateConf(self):
         if self.fixables or self.removeables:
             if self.editor.update(self.fixables, self.removeables):
                 return True
-###############################################################################
+
     def checkConf(self):
         if isinstance(self.data, dict):
             return True
         else:
             return False
-###############################################################################
+
     def validateTag(self):
         validate = True
         self.fixables = {}
@@ -307,7 +300,7 @@ class KVEditor(object):
             return True
         else:
             return False
-###############################################################################
+
     def commit(self):
         if self.kvtype == "defaults":
             retval = self.editor.commit()
@@ -317,7 +310,7 @@ class KVEditor(object):
             self.fixables = {}
             self.removeables = {}
             return retval
-###############################################################################
+
     def removekey(self, d, key):
         r = dict(d)
         del r[key]

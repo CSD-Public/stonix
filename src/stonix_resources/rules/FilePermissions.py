@@ -34,6 +34,7 @@ systems. Added code to remove world write from files in the root users path.
 @change: 2015/04/13 dkennel changed to use new isApplicable method in template
 rule class
 @change: 2015/08/28 eball - Updated suidlist
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 
 '''
 from __future__ import absolute_import
@@ -48,9 +49,9 @@ import pwd
 import grp
 
 from ..rule import Rule
-from ..stonixutilityfunctions import *
 from ..logdispatcher import LogPriority
 from ..localize import SITELOCALWWWDIRS
+from ..stonixutilityfunctions import getlocalfs
 
 
 class FilePermissions(Rule):
@@ -78,13 +79,13 @@ class FilePermissions(Rule):
         self.rulename = 'FilePermissions'
         self.mandatory = True
         self.formatDetailedResults("initialize")
-        self.helptext = '''The File Permissions rule audits and folders on \
-the system to check for world writable files, world writable folders, \
+        self.helptext = '''The File Permissions rule audits files and folders \
+on the system to check for world writable files, world writable folders, \
 SUID/SGID programs and files without known owners. It ensures that the \
 sticky-bit is set on world writable directories and will remove world write \
-permissions from files in the root users execution PATH environment variable. \
-Note that file permission changes cannot be undone.
-When possible files and folders will be checked with the package \
+permissions from files in the root user's execution PATH environment \
+variable. Note that file permission changes cannot be undone.
+When possible, files and folders will be checked with the package \
 manager records to see if their presence is authorized by belonging to an \
 installed package. Administrators should review the lists of world writable, \
 SUID and unowned files and folders carefully since these types of files and \
@@ -216,23 +217,25 @@ users path are very dangerous.'''
                        'orig': self.noorigin,
                        'results': []}
                       }
-            for set in dbsets:
-                if os.path.exists(dbsets[set]['last']):
-                    os.remove(dbsets[set]['last'])
+            for dbset in dbsets:
+                if os.path.exists(dbsets[dbset]['last']):
+                    os.remove(dbsets[dbset]['last'])
                 else:
                     self.firstrun = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['FilePermissions.multifind',
-                                     'No last run files detected, setting first run to true'])
-                if os.path.exists(dbsets[set]['db']):
-                    os.rename(dbsets[set]['db'], dbsets[set]['last'])
+                                     'No last run files detected, setting ' +
+                                     'first run to true'])
+                if os.path.exists(dbsets[dbset]['db']):
+                    os.rename(dbsets[dbset]['db'], dbsets[dbset]['last'])
 
             fslist = self.getfilesystems()
             for filesystem in fslist:
                 if filesystem in self.bypassfs.getcurrvalue():
                     self.logger.log(LogPriority.DEBUG,
                                     ['FilePermissions.multifind',
-                                     'Skipping Filesystem: ' + str(filesystem)])
+                                     'Skipping Filesystem: ' +
+                                     str(filesystem)])
                     continue
                 self.logger.log(LogPriority.DEBUG,
                                 ['FilePermissions.multifind',
@@ -246,7 +249,7 @@ users path are very dangerous.'''
                         if len(dbsets['ww']['results']) > 25000:
                             self.logger.log(LogPriority.DEBUG,
                                             ['FilePermissions.multifind',
-                                            'WW overflow!'])
+                                             'WW overflow!'])
                             self.findoverrun = True
                     except TypeError:
                         pass
@@ -254,7 +257,7 @@ users path are very dangerous.'''
                         if len(dbsets['suid']['results']) > 25000:
                             self.logger.log(LogPriority.DEBUG,
                                             ['FilePermissions.multifind',
-                                            'SUID overflow!'])
+                                             'SUID overflow!'])
                             self.findoverrun = True
                     except TypeError:
                         pass
@@ -262,7 +265,7 @@ users path are very dangerous.'''
                         if len(dbsets['unowned']['results']) > 25000:
                             self.logger.log(LogPriority.DEBUG,
                                             ['FilePermissions.multifind',
-                                            'Unowned overflow!'])
+                                             'Unowned overflow!'])
                             self.findoverrun = True
                     except TypeError:
                         pass
@@ -292,7 +295,7 @@ users path are very dangerous.'''
                             if len(dbsets['ww']['results']) > 25000:
                                 self.logger.log(LogPriority.DEBUG,
                                                 ['FilePermissions.multifind',
-                                                'WW overflow!'])
+                                                 'WW overflow!'])
                                 self.findoverrun = True
                         except TypeError:
                             pass
@@ -300,7 +303,7 @@ users path are very dangerous.'''
                             if len(dbsets['suid']['results']) > 25000:
                                 self.logger.log(LogPriority.DEBUG,
                                                 ['FilePermissions.multifind',
-                                                'SUID overflow!'])
+                                                 'SUID overflow!'])
                                 self.findoverrun = True
                         except TypeError:
                             pass
@@ -308,7 +311,7 @@ users path are very dangerous.'''
                             if len(dbsets['unowned']['results']) > 25000:
                                 self.logger.log(LogPriority.DEBUG,
                                                 ['FilePermissions.multifind',
-                                                'Unowned overflow!'])
+                                                 'Unowned overflow!'])
                                 self.findoverrun = True
                         except TypeError:
                             pass
@@ -337,19 +340,21 @@ users path are very dangerous.'''
                                             ['FilePermissions.multifind',
                                              'Found SUID File: ' + str(fpath)])
                         try:
-                            uname = pwd.getpwuid(fmode.st_uid)[0]
+                            pwd.getpwuid(fmode.st_uid)[0]
                         except KeyError:
                             dbsets['unowned']['results'].append(fpath)
                             self.logger.log(LogPriority.DEBUG,
                                             ['FilePermissions.multifind',
-                                             'Found unowned File: ' + str(fpath)])
+                                             'Found unowned File: ' +
+                                             str(fpath)])
                         try:
-                            gname = grp.getgrgid(fmode.st_gid)[0]
+                            grp.getgrgid(fmode.st_gid)[0]
                         except KeyError:
                             dbsets['unowned']['results'].append(fpath)
                             self.logger.log(LogPriority.DEBUG,
                                             ['FilePermissions.multifind',
-                                             'Found unowned File, bad group: ' + str(fpath)])
+                                             'Found unowned File, bad group: '
+                                             + str(fpath)])
             for myset in dbsets:
                 data = '\n'.join(dbsets[myset]['results'])
                 whandle = open(dbsets[myset]['db'], 'w')
@@ -432,7 +437,9 @@ users path are very dangerous.'''
         if len(newfilessincelast) > 15:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
-                             'New since last: Too many files details suppressed, review file at /var/local/info. New: ' + str(len(newfilessincelast))])
+                             'New since last: Too many files details ' +
+                             'suppressed, review file at /var/local/info. ' +
+                             'New: ' + str(len(newfilessincelast))])
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
@@ -440,7 +447,9 @@ users path are very dangerous.'''
         if len(newfilessinceorigin) > 15:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
-                             'New since first: Too many files details suppressed, review file at /var/local/info. New: ' + str(len(newfilessinceorigin))])
+                             'New since first: Too many files details ' +
+                             'suppressed, review file at /var/local/info. ' +
+                             'New: ' + str(len(newfilessinceorigin))])
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
@@ -449,7 +458,9 @@ users path are very dangerous.'''
         if len(notsticky) > 15:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
-                             'Not Sticky: Too many files details suppressed, review file at /var/local/info. New: ' + str(len(notsticky))])
+                             'Not Sticky: Too many files details suppressed, '
+                             + 'review file at /var/local/info. New: ' +
+                             str(len(notsticky))])
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
@@ -457,7 +468,9 @@ users path are very dangerous.'''
         if len(notknown) > 15:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
-                             'Not Known: Too many files details suppressed, review file at /var/local/info. New: ' + str(len(notknown))])
+                             'Not Known: Too many files details suppressed, ' +
+                             'review file at /var/local/info. New: ' +
+                             str(len(notknown))])
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
@@ -472,7 +485,7 @@ users path are very dangerous.'''
         self.logger.log(LogPriority.INFO,
                         ['WorldWritables.report',
                          'New World Writable Files since install: '
-                        + strnewsincefirst])
+                         + strnewsincefirst])
         strnotsticky = ''
         if len(notsticky) > 15:
             strnotsticky = str(len(notsticky))
@@ -508,13 +521,17 @@ users path are very dangerous.'''
                          + strnewsincelast])
         if len(newfilessincelast) > 0:
             compliant = False
-            self.wwresults = 'New World Writable Files since last run: ' + strnewsincelast
+            self.wwresults = 'New World Writable Files since last run: ' + \
+                strnewsincelast
             self.wwresults = self.wwresults + ' '
-            self.wwresults = self.wwresults + '\nWorld Writable directories without sticky bit: ' + strnotsticky
+            self.wwresults = self.wwresults + '\nWorld Writable directories ' + \
+                'without sticky bit: ' + strnotsticky
             self.wwresults = self.wwresults + ' '
-            self.wwresults = self.wwresults + '\nWorld Writable files not known to STONIX: ' + strnotknown
+            self.wwresults = self.wwresults + '\nWorld Writable files not ' + \
+                'known to STONIX: ' + strnotknown
             self.wwresults = self.wwresults + ' '
-            self.wwresults = self.wwresults + '\nNew World Writable Files since install: ' + strnewsincefirst
+            self.wwresults = self.wwresults + '\nNew World Writable Files ' + \
+                'since install: ' + strnewsincefirst
             if self.findoverrun:
                 self.wwresults = self.wwresults + '''
 WARNING! Large numbers of files with incorrect permissions detected. Please
@@ -804,7 +821,10 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
         if len(newfilessincelast) > 15:
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'New SUID files since last run: Too many files! Details suppressed, review file at /var/local/info. New: ' + str(len(newfilessincelast))])
+                             'New SUID files since last run: Too many ' +
+                             'files! Details suppressed, review file at ' +
+                             '/var/local/info. New: ' +
+                             str(len(newfilessincelast))])
         else:
             for entry in newfilessincelast:
                 strnewfilessincelast = strnewfilessincelast + entry + ' '
@@ -816,45 +836,59 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
         if len(newfilessinceorigin) > 15:
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'New since first run: Too many files! Details suppressed, review file at /var/local/info. New: ' + str(len(newfilessinceorigin))])
+                             'New since first run: Too many files! Details ' +
+                             'suppressed, review file at /var/local/info. ' +
+                             'New: ' + str(len(newfilessinceorigin))])
         else:
             for entry in newfilessinceorigin:
                 strnewfilessinceorigin = strnewfilessinceorigin + entry + ' '
             strnewfilessinceorigin = strnewfilessinceorigin.strip()
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'New since first run: ' + str(newfilessinceorigin)])
+                             'New since first run: ' +
+                             str(newfilessinceorigin)])
         strnotknown = ''
         if len(notknown) > 15:
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'SUID files not known by STONIX: Too many files! Details suppressed, review file at /var/local/info. New: ' + str(len(notknown))])
+                             'SUID files not known by STONIX: Too many ' +
+                             'files! Details suppressed, review file at ' +
+                             '/var/local/info. New: ' + str(len(notknown))])
         else:
             for entry in notknown:
                 strnotknown = strnotknown + entry + ' '
             strnotknown = strnotknown.strip()
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'SUID files not known by STONIX: ' + str(notknown)])
+                             'SUID files not known by STONIX: ' +
+                             str(notknown)])
         strwrongmode = ''
         if len(wrongmode) > 15:
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'SUID files where current mode does not match the package dbase: Too many files! Details suppressed, review file at /var/local/info. New: ' + str(len(wrongmode))])
+                             'SUID files where current mode does not match ' +
+                             'the package dbase: Too many files! Details ' +
+                             'suppressed, review file at /var/local/info. ' +
+                             'New: ' + str(len(wrongmode))])
         else:
             for entry in wrongmode:
                 strwrongmode = strwrongmode + entry + ' '
             strwrongmode = strwrongmode.strip()
             self.logger.log(LogPriority.INFO,
                             ['AuditSUID.report',
-                             'SUID files where current mode does not match the package dbase: ' + str(wrongmode)])
+                             'SUID files where current mode does not match ' +
+                             'the package dbase: ' + str(wrongmode)])
         if len(newfilessincelast) > 0 or len(wrongmode) > 0:
             compliant = False
-            self.suidresults = 'New SUID Files since last run: ' + strnewfilessincelast
+            self.suidresults = 'New SUID Files since last run: ' + \
+                strnewfilessincelast
             self.suidresults = self.suidresults + ' '
-            self.suidresults = self.suidresults + '\nSUID files not known by STONIX: ' + strnotknown
+            self.suidresults = self.suidresults + '\nSUID files not known ' + \
+                'by STONIX: ' + strnotknown
             self.suidresults = self.suidresults + ' '
-            self.suidresults = self.suidresults + '\nSUID files where current mode does not match the package dbase: ' + strwrongmode
+            self.suidresults = self.suidresults + '\nSUID files where ' + \
+                'current mode does not match the package dbase: ' + \
+                strwrongmode
             if self.findoverrun:
                 self.suidresults = self.suidresults + '''
 WARNING! Large numbers of files with incorrect permissions detected. Please
@@ -909,7 +943,10 @@ find / -xdev \( -perm -04000 -o -perm -02000 \) -print
             strnewfilessincelast = str(len(newfilessincelast))
             self.logger.log(LogPriority.INFO,
                             ['NoUnownedFiles.report',
-                             'New files without owners since last run: Too many files! Details suppressed, review file at /var/local/info. New: ' + strnewfilessincelast])
+                             'New files without owners since last run: Too ' +
+                             'many files! Details suppressed, review file ' +
+                             'at /var/local/info. New: ' +
+                             strnewfilessincelast])
         else:
             for entry in newfilessincelast:
                 strnewfilessincelast = strnewfilessincelast + entry + ' '
@@ -922,7 +959,10 @@ find / -xdev \( -perm -04000 -o -perm -02000 \) -print
             strnewfilessinceorigin = str(len(newfilessinceorigin))
             self.logger.log(LogPriority.INFO,
                             ['NoUnownedFiles.report',
-                             'New files without owners since first run: Too many files! Details suppressed, review file at /var/local/info. New: ' + strnewfilessinceorigin])
+                             'New files without owners since first run: Too ' +
+                             'many files! Details suppressed, review file ' +
+                             'at /var/local/info. New: ' +
+                             strnewfilessinceorigin])
         else:
             for entry in newfilessinceorigin:
                 strnewfilessinceorigin = strnewfilessinceorigin + entry + ' '
@@ -933,9 +973,11 @@ find / -xdev \( -perm -04000 -o -perm -02000 \) -print
 
         if len(newfilessincelast) > 0:
             compliant = False
-            self.unownedresults = 'New Files without owners since last run: ' + strnewfilessincelast
+            self.unownedresults = 'New Files without owners since last run: ' \
+                + strnewfilessincelast
             self.unownedresults = self.unownedresults + ' '
-            self.unownedresults = self.unownedresults + 'Files without owners since first run: ' + strnewfilessinceorigin
+            self.unownedresults = self.unownedresults + 'Files without ' + \
+                'owners since first run: ' + strnewfilessinceorigin
             if self.findoverrun:
                 self.suidresults = self.suidresults + '''
 WARNING! Large numbers of files with incorrect permissions detected. Please
@@ -956,7 +998,8 @@ find / -xdev \( -nouser -o -nogroup \) -print
 '''
         else:
             compliant = True
-            self.unownedresults = 'No new files without valid owners since last run.'
+            self.unownedresults = 'No new files without valid owners ' + \
+                'since last run.'
 
         return compliant
 
@@ -1001,8 +1044,8 @@ find / -xdev \( -nouser -o -nogroup \) -print
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR,
-                        ['AuditSUID.rpmcheck',
-                         self.detailedresults])
+                            ['AuditSUID.rpmcheck',
+                             self.detailedresults])
             return 5
 
     def report(self):
@@ -1022,27 +1065,30 @@ find / -xdev \( -nouser -o -nogroup \) -print
         try:
             if not self.hasrunalready or self.firstrun:
                 self.logger.log(LogPriority.DEBUG,
-                            ['FilePermissions.report',
-                             'Running find: has run ' + str(self.hasrunalready)
-                             + ' first run ' + str(self.firstrun)])
+                                ['FilePermissions.report',
+                                 'Running find: has run ' +
+                                 str(self.hasrunalready) +
+                                 ' first run ' + str(self.firstrun)])
                 self.multifind()
                 wwstatus = self.wwreport()
                 suidstatus = self.suidreport()
                 ownerstatus = self.noownersreport()
-                self.detailedresults = self.wwresults + '\n' + self.suidresults + '\n' + self.unownedresults
+                self.detailedresults = self.wwresults + '\n' + \
+                    self.suidresults + '\n' + self.unownedresults
                 if wwstatus and suidstatus and ownerstatus:
                     self.compliant = True
                 self.hasrunalready = True
                 if os.path.exists(self.wwlast):
                     self.firstrun = False
                 self.logger.log(LogPriority.DEBUG,
-                            ['FilePermissions.report',
-                             'Find complete: has run ' + str(self.hasrunalready)
-                             + ' first run ' + str(self.firstrun) +
-                             ' compliant: ' + str(self.compliant) +
-                             ' wwstatus: ' + str(wwstatus) +
-                             ' suidstatus: ' + str(suidstatus) +
-                             ' ownerstatus: ' + str(ownerstatus)])
+                                ['FilePermissions.report',
+                                 'Find complete: has run ' +
+                                 str(self.hasrunalready)
+                                 + ' first run ' + str(self.firstrun) +
+                                 ' compliant: ' + str(self.compliant) +
+                                 ' wwstatus: ' + str(wwstatus) +
+                                 ' suidstatus: ' + str(suidstatus) +
+                                 ' ownerstatus: ' + str(ownerstatus)])
             else:
                 self.logger.log(LogPriority.DEBUG,
                                 ['FilePermissions.report',
@@ -1052,7 +1098,7 @@ find / -xdev \( -nouser -o -nogroup \) -print
                 note = '''This rule only runs once for performance reasons. It \
 has been called a second time. The previous results are displayed. '''
                 self.detailedresults = note + "\n" + self.wwresults + '\n' \
-                + self.suidresults + '\n' + self.unownedresults
+                    + self.suidresults + '\n' + self.unownedresults
             self.formatDetailedResults("report", self.compliant,
                                        self.detailedresults)
 
@@ -1063,8 +1109,8 @@ has been called a second time. The previous results are displayed. '''
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR,
-                        [self.rulename + '.report',
-                         self.detailedresults])
+                            [self.rulename + '.report',
+                             self.detailedresults])
             self.rulesuccess = False
 
     def fix(self):
@@ -1119,7 +1165,7 @@ has been called a second time. The previous results are displayed. '''
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)

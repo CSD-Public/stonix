@@ -30,6 +30,7 @@ dictionary
 @change: 2015/02/15 ekkehard - Artifact artf35701 : COSMETIC - ConfigurePowerManagement - Poor help text 
 @change: 2015/04/14 dkennel updated to use new isApplicable
 @change: 2015/09/17 ekkehard BatteryDiskSleep should have disksleep value not display sleep.
+@change: 2015/11/16 eball Re-enabled getting values from CIs rather than static dict
 '''
 from __future__ import absolute_import
 import traceback
@@ -135,18 +136,17 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
                     powerSetting = psinfo["PowerSetting"]
-                    powerSettingDefaultValue = psinfo["PowerSettingValue"]
                     powerSettingValue = self.ci[pslabel].getcurrvalue()
                     powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
+                    powerSettingActualValue = int(powerSettingActual)
                     powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
                     ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual) +"])"
-                    powerSettingActualValue = int(powerSettingActual)
                     if powerSettingValue == powerSettingActualValue:
                         self.resultAppend(pslabel + " is compliant. " + powerSettingInfo)
                     else:
                         self.resultAppend(pslabel + " is not compliant! " + powerSettingInfo)
                         self.compliant = False
-            
+
             self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -177,16 +177,20 @@ class ConfigurePowerManagement(Rule):
                 powerType = psinfo["PowerType"]
                 if (powerType == "AC Power" and self.psACPowerAvailable) or (powerType == "Battery Power" and self.psACBatteryPowerAvailable):
                     powerSetting = psinfo["PowerSetting"]
-                    powerSettingDefaultValue = psinfo["PowerSettingValue"]
                     powerSettingValue = self.ci[pslabel].getcurrvalue()
                     powerSettingActual = self.getPowerSetting(powerType, powerSetting, False)
+                    powerSettingActualValue = int(powerSettingActual)
                     powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
                     ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
-                    if powerSettingValue == powerSettingActual:
+                    if powerSettingValue == powerSettingActualValue:
                         self.resultAppend(pslabel + " was correctly set. " + powerSettingInfo)
                     else:
                         newPowerSettingValue = self.setPowerSetting(powerType, powerSetting, powerSettingValue)
-                        if newPowerSettingValue == self.getPowerSetting(powerType, powerSetting):
+                        powerSettingActual = self.getPowerSetting(powerType, powerSetting, True)
+                        powerSettingActualValue = int(powerSettingActual)
+                        powerSettingInfo = "(" + str(powerType) + ", " + str(powerSetting) + \
+                        ", [desired, actual][" + str(powerSettingValue) + ", " + str(powerSettingActual)+"])"
+                        if powerSettingValue == powerSettingActualValue:
                             self.resultAppend(pslabel + " is now compliant! "  + powerSettingInfo)
                         else:
                             self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
@@ -201,10 +205,10 @@ class ConfigurePowerManagement(Rule):
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
+        self.formatDetailedResults("fix", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.compliant
+        return self.rulesuccess
 
 ###############################################################################
 
@@ -225,7 +229,8 @@ class ConfigurePowerManagement(Rule):
             item = {}
             command = [self.pmset, "-g", "disk"]
             self.ch.executeCommand(command)
-            for line in self.ch.getOutput():
+            output = self.ch.getOutput()
+            for line in output:
                 linestripped = line.strip()
                 values = linestripped.split()
                 if linestripped == "Battery Power:":
@@ -261,7 +266,7 @@ class ConfigurePowerManagement(Rule):
 
     def getPowerSetting(self, powerType, powerSetting, forceUpdate=False):
         '''
-        Set a power setting on a system
+        Get a power setting on a system
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param powerType:Like AC Power or Battery Power

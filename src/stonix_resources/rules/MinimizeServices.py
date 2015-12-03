@@ -29,6 +29,8 @@ Created on Aug 9, 2012
 @change: 2014/07/23 dkennel: Added additional services to systemd list based on
 RHEL 7
 @change: 2015/04/15 dkennel: updated for new isApplicable
+@change: 2015/10/07 eball Help text cleanup
+@change: 2015/10/30 dwalker: added additional services to allowed list.
 '''
 from __future__ import absolute_import
 
@@ -57,17 +59,15 @@ class MinimizeServices(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 12
         self.rulename = 'MinimizeServices'
-        self.detailedresults = "The " + str(self.rulename) + "(" + \
-        str(self.rulenumber) + ") rule has not yet been run yet."
         self.mandatory = True
-        self.helptext = '''The MinimizeServices rule will minimize the services that the
-system is running. Each running service is a potential avenue for exploitation
-by an attacker or malicious software. Running only a minimum of services reduces
-vulnerability and helps preserve system resources. Most workstations will leave
-this rule enabled but some server administrators may want to disable this rule.
+        self.helptext = '''The MinimizeServices rule will minimize the \
+services that the system is running. Each running service is a potential \
+avenue for exploitation by an attacker or malicious software. Running only a \
+minimum of services reduces vulnerability and helps preserve system \
+resources. Most workstations will leave this rule enabled but some server \
+administrators may want to disable this rule.
 '''
         self.rootrequired = True
-        self.detailedresults = '''The MinimizeServices rule has not yet been run.'''
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
         self.servicehelper = ServiceHelper(self.environ, self.logger)
@@ -235,6 +235,7 @@ this rule enabled but some server administrators may want to disable this rule.
                               'alsa-store.service',
                               'alsa-state.service',
                               'alsa-state.service',
+                              'anacron.service',
                               'arp-ethers.service', 'atd.service',
                               'auditd.service',
                               'auth-rpcgss-module.service',
@@ -243,6 +244,7 @@ this rule enabled but some server administrators may want to disable this rule.
                               'colord.service',
                               'cron',
                               'crond.service', 'cups', 'cups.service',
+                              'debian-fixup.service',
                               'dbus.service', 'dbus',
                               'dm-event.service',
                               'dmraid-activation.service',
@@ -260,16 +262,20 @@ this rule enabled but some server administrators may want to disable this rule.
                               'fedora-wait-storage.service',
                               'firewalld.service',
                               'gdm.service',
+                              'gdm3.service',
+                              'gdm3',
                               'getty@tty1.service',
                               'getty@tty2.service',
                               'getty@tty3.service',
                               'getty@tty5.service',
+                              'getty-static.service',
                               'halt.service', 'localfs.service',
                               'ip6tables.service', 'iptables.service',
                               'irqbalance.service',
                               'iprdump.service', 'iprinit.service',
                               'iprupdate.service',
                               'iscsi-shutdown.service',
+                              'kmod',
                               'kmod-static-nodes.service',
                               'ksm.service', 'ksmtuned.service',
                               'ldconfig.service',
@@ -294,7 +300,11 @@ this rule enabled but some server administrators may want to disable this rule.
                               'plymouth-start.service',
                               'polkit.service', 'postfix.service',
                               'poweroff.service', 'prefdm.service',
-                              'rc-local.service', 'reboot.service',
+                              'procps.service',
+                              'procps',
+                              'rc-local.service',
+                              'rc.local',
+                              'reboot.service',
                               'remount-rootfs.service', 'rescue.service',
                               'rhel-autorelabel',
                               'rhel-configure.service',
@@ -321,6 +331,7 @@ this rule enabled but some server administrators may want to disable this rule.
                               'systemd-hwdb-update.service',
                               'systemd-journal-catalog-update.service',
                               'systemd-machine-id-commit.service',
+                              'systemd-setup-dgram-qlen.service',
                               'systemd-sysusers.service',
                               'systemd-update-done.service',
                               'systemd-journal-flush.service',
@@ -366,13 +377,22 @@ this rule enabled but some server administrators may want to disable this rule.
                               'systemd-user-sessions.service',
                               'systemd-vconsole-setup.service',
                               'tcsd.service', 'tuned.service',
+                              'udev',
+                              'udev.service',
                               'udev-settle.service',
                               'udev-trigger.service', 'udev.service',
+                              'udev-finish.service',
+                              'udev-finish',
                               'udisks2.service', 'upower.service',
-                              'unbound-anchor.service', 'virtlockd.service',
+                              'unbound-anchor.service',
+                              'urandom.service',
+                              'urandom',
+                              'virtlockd.service',
                               'xdm', 'xdm.service',
                               'YaST2-Second-Stage.service',
-                              'ypbind.service']
+                              'ypbind.service',
+                              'sysstat-collect.service',
+                              'sysstat-summary.service']
         datatype = 'bool'
         key = 'minimizesvcs'
         instructions = '''To disable this rule set the value of MINIMIZESVCS to

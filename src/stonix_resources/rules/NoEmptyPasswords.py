@@ -27,6 +27,7 @@ Created on Oct 29, 2012
 @change: 04/18/2014 dkennel Replaced old-style CI invocation.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/16 dkennel updated for new isApplicable
+@change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -53,19 +54,20 @@ class NoEmptyPasswords(Rule):
         self.rulename = "NoEmptyPasswords"
         self.mandatory = True
         self.helptext = "This rule ensures there are no empty password " + \
-        "hashes in the /etc/shadow file. If empty passwords exist, a " + \
-        "login can occur w/o entering a password and being authenticated."
+            "hashes in the /etc/shadow file. If empty passwords exist, a " + \
+            "login can occur without entering a password and being " + \
+            "authenticated."
         self.rootrequired = True
         self.detailedresults = "NoEmptyPasswords rule has not yet been run"
         self.guidance = ["NSA 2.3.1.5"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
 
-        #configuration item instantiation
+        # configuration item instantiation
         datatype = 'bool'
         key = 'NOEMPTYPASSWORDS'
         instructions = "This rule should not be disabled under any " + \
-        "circumstances."
+            "circumstances."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.users = []
@@ -151,11 +153,11 @@ system that need to be checked for empty passwords\n"
                         compliant = False
                 else:
                     if not checkPerms(self.shadow, [0, 0, 256], self.logger) and \
-                        not checkPerms(self.shadow, [0, 0, 0], self.logger):
+                       not checkPerms(self.shadow, [0, 0, 0], self.logger):
                         compliant = False
             else:
                 if not checkPerms(self.shadow, [0, 0, 256], self.logger) and \
-                    not checkPerms(self.shadow, [0, 0, 0], self.logger):
+                   not checkPerms(self.shadow, [0, 0, 0], self.logger):
                     compliant = False
             if compliant:
                 self.compliant = True
@@ -176,7 +178,7 @@ run and it's not compliant"
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
 ###############################################################################
 
     def fix(self):
@@ -207,11 +209,11 @@ run and it's not compliant"
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-    
+
 ###############################################################################
 
     def fixMain(self, command):
-        '''Entries that are found with an empty password field (2nd field) 
+        '''Entries that are found with an empty password field (2nd field)
         should have the blank field replaced with an !
         @author: dwalker'''
         success = True
@@ -243,7 +245,7 @@ lock command\n"
                             success = False
             else:
                 if not checkPerms(self.shadow, [0, 0, 256], self.logger) and \
-                          not checkPerms(self.shadow, [0, 0, 0], self.logger):
+                   not checkPerms(self.shadow, [0, 0, 0], self.logger):
                     if not setPerms(self.shadow, [0, 0, 256], self.logger):
                         success = False
             return success
@@ -251,7 +253,7 @@ lock command\n"
             self.detailedresults += "/etc/shadow file or /etc/master.passwd \
 file not present, cannot perform fix\n"
             return False
-        
+
 ###############################################################################
 
     def fixOther(self):
@@ -268,8 +270,8 @@ cannot perform fix"
         owner = statdata.st_uid
         group = statdata.st_gid
         mode = stat.S_IMODE(statdata.st_mode)
-        if not checkPerms(self.shadow, [0, 0, 256], self.logger)or \
-                      not checkPerms(self.shadow, [0, 0, 0], self.logger):
+        if not checkPerms(self.shadow, [0, 0, 256], self.logger) or \
+           not checkPerms(self.shadow, [0, 0, 0], self.logger):
             permswrong = True
             if not setPerms(self.shadow, [0, 0, 256], self.logger):
                 success = False
@@ -313,7 +315,7 @@ not continue to complete fix"
                 os.chown(self.shadow, owner, group)
                 os.chmod(self.shadow, mode)
         return success
-    
+
 ###############################################################################
 
     def undo(self):

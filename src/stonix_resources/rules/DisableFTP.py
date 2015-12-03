@@ -25,6 +25,7 @@ Created on Mar 4, 2015
 
 @author: dwalker
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2015/10/07 eball PEP8 cleanup
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -50,10 +51,9 @@ class DisableFTP(RuleKVEditor):
         datatype = 'bool'
         key = 'DISABLEFTP'
         instructions = "To prevent DisableFTP from being disabled, set " + \
-        "the value of DISABLEFTP to False."
+            "the value of DISABLEFTP to False."
         default = True
-        self.ci = self.initCi(datatype, key, instructions,
-                                                default)
+        self.ci = self.initCi(datatype, key, instructions, default)
         self.addKVEditor("DisableFTP",
                          "defaults",
                          "/System/Library/LaunchDaemons/ftp.plist",
@@ -88,7 +88,7 @@ class DisableFTP(RuleKVEditor):
         '''
         if self.sh.auditservice("ftpd", "ftpd"):
             self.detailedresults += "FTP is set to be disabled but " + \
-            "hasn't been unloaded"
+                "hasn't been unloaded"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return False
         else:

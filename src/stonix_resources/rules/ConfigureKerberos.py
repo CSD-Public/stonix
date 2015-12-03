@@ -30,6 +30,9 @@ dictionary
 @change: 2014/07/14 ekkehard - Fixed report to self.fh.evaluateFiles()
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/08/17 eball - Updated to work with Linux
+@change: 2015/10/07 eball - Help text cleanup
+@change: 2015/11/02 eball - Added undo events to package installation
+@change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 '''
 from __future__ import absolute_import
 import os
@@ -40,6 +43,7 @@ from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
+from ..stonixutilityfunctions import iterate
 from ..localize import KERB5, KRB5
 
 
@@ -57,11 +61,12 @@ class ConfigureKerberos(RuleKVEditor):
         self.rulename = 'ConfigureKerberos'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures LANL Kerberos on your system."
+        self.helptext = "This rule configures Kerberos on your system, " + \
+            "based on the settings in the localize.py file."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -73,10 +78,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                           "eventid": str(self.rulenumber).zfill(4) + \
-#                           "kerb5"},
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": True,
@@ -84,10 +86,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                       "eventid": str(self.rulenumber).zfill(4) + \
-#                       "Kerberos"},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "Kerberos"},
                           "edu.mit.Kerberos.krb5kdc.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd",
                            "remove": True,
@@ -95,7 +95,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "krb5kdc"},
                           "kerb5.conf":
                           {"path": "/etc/kerb5.conf",
                            "remove": True,
@@ -103,10 +104,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
-# FIXME: Once StateChgLogger supports file deletion
-#                       "eventid": str(self.rulenumber).zfill(4) + \
-#                       "krb5kdc"},
+                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
                           "edu.mit.Kerberos.kadmind.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd",
                            "remove": True,
@@ -114,10 +112,8 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None}
-    # FIXME: Once StateChgLogger supports file deletion
-    #                       "eventid": str(self.rulenumber).zfill(4) + \
-    #                       "kadmind"}
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "kadmind"},
                           }
         else:
             self.files = {"krb5.conf":
@@ -127,7 +123,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": "root",
                            "group": "root",
-                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"}}
+                           "eventid": str(self.rulenumber).zfill(4) + "krb5"}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
@@ -161,7 +157,8 @@ class ConfigureKerberos(RuleKVEditor):
                 packagesRpm = ["pam_krb5", "krb5-libs", "krb5-workstation",
                                "sssd-krb5", "sssd-krb5-common"]
                 packagesDeb = ["krb5-config", "krb5-user", "libpam-krb5"]
-                packagesSuse = ["pam_krb5", "sssd-krb5", "sssd-krb5-common"]
+                packagesSuse = ["pam_krb5", "sssd-krb5", "sssd-krb5-common",
+                                "krb5-client", "krb5"]
                 if self.ph.determineMgr() == "apt-get":
                     self.packages = packagesDeb
                 elif self.ph.determineMgr() == "zypper":
@@ -169,7 +166,8 @@ class ConfigureKerberos(RuleKVEditor):
                 else:
                     self.packages = packagesRpm
                 for package in self.packages:
-                    if not self.ph.check(package):
+                    if not self.ph.check(package) and \
+                       self.ph.checkAvailable(package):
                         compliant = False
                         self.detailedresults += package + " is not installed\n"
             if not self.fh.evaluateFiles():
@@ -204,16 +202,27 @@ class ConfigureKerberos(RuleKVEditor):
                 if self.environ.getosfamily() == 'linux':
                     for package in self.packages:
                         if not self.ph.check(package):
-                            if not self.ph.install(package):
-                                fixsuccess = False
-                                self.detailedresults += "Installation of " + \
-                                    package + " did not succeed.\n"
+                            if self.ph.checkAvailable(package):
+                                if self.ph.install(package):
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator,
+                                                   self.rulenumber)
+                                    event = {"eventtype": "pkghelper",
+                                             "pkgname": package,
+                                             "startstate": "removed",
+                                             "endstate": "installed"}
+                                    self.statechglogger.recordchgevent(myid,
+                                                                       event)
+                                else:
+                                    fixsuccess = False
+                                    self.detailedresults += "Installation of " + \
+                                        package + " did not succeed.\n"
                 if not self.fh.fixFiles():
                     fixsuccess = False
                     self.detailedresults += self.fh.getFileMessage()
             else:
                 fixsuccess = False
-                self.detailedresults = str(self.ci.getcurrvalue()) + \
+                self.detailedresults = str(self.ci.getkey()) + \
                     " was disabled. No action was taken!"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit

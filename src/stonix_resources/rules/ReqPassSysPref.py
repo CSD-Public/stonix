@@ -93,33 +93,43 @@ class ReqPassSysPref(Rule):
         self.undovals = {}
 
     def report(self):
-        results = ""
+        self.detailedresults = ""
         self.compliant = True
         plists = {}
 
         try:
             for pref in self.prefslist:
+                plist = []
                 if not self.ch.executeCommand(["security", "authorizationdb",
                                                "read", pref]):
                     self.compliant = False
                     error = "Report could not execute security command"
-                    self.logger.log(LogPriority.ERROR, error)
-                plist = self.ch.getOutput()
-                # First line of output is a success/failure code from the
-                # security command, which must be deleted to get a valid plist
-                del plist[0]
-                plist = "".join(plist)
-                debug = "Checking for <key>shared</key>, <false/>"
-                self.logger.log(LogPriority.DEBUG, debug)
-                if not re.search(r"<key>shared</key>\s+<false/>", plist):
+                    self.logdispatch.log(LogPriority.ERROR, error)
+                else:
+                    plist = self.ch.getOutput()
+
+                if not plist:
                     self.compliant = False
-                    results += pref + " is not set to require a password\n"
-                    plists[pref] = plist
-                    debug = "Correct value not found in " + pref + ". " + \
-                        "Adding to plists dictionary."
+                    error = "Security command returned no output for " + pref
+                    self.logdispatch.log(LogPriority.ERROR, error)
+                else:
+                    # First line of output is a success/failure code from the
+                    # security command, which must be deleted to get a valid
+                    # plist
+                    del plist[0]
+                    plist = "".join(plist)
+                    debug = "Checking for <key>shared</key>, <false/>"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    if not re.search(r"<key>shared</key>\s+<false/>", plist):
+                        self.compliant = False
+                        self.detailedresults += pref + " is not set " + \
+                            "to require a password\n"
+                        plists[pref] = plist
+                        debug = "Correct value not found in " + pref + ". " + \
+                            "Adding to plists dictionary."
+                        self.logger.log(LogPriority.DEBUG, debug)
             self.plists = plists
-            self.detailedresults = results
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:

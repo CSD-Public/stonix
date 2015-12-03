@@ -18,8 +18,16 @@ the spec file for installation locations and permissions.
 Pre-packaging Activities
 ------------------------
 
-Before packaging STONIX it is recommended that the localize.py values be set
-appropriately. This step can be omitted if the localize.py file will be managed
-another way (e.g. puppet or cfengine). It is important that the localize.py be
-set correctly for your organization before stonix is run in fix mode for the
+Before packaging STONIX it is recommended that the localize.py values be set 
+appropriately. This step can be omitted if the localize.py file will be managed 
+another way (e.g. puppet or cfengine). It is important that the localize.py be 
+set correctly for your organization before stonix is run in fix mode for the 
 first time.
+
+Packaging for OS X
+------------------------
+
+If you have all the correct frameworks (Luggage, PyQt, QT, SIP, PyInstaller)
+installed in the correct location you can build a mac package by executing
+the .../stonix/src/MacBuild/macbuild.py script.
+

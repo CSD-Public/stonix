@@ -39,6 +39,10 @@ With this rule, you can:
 @change: 04/21/2014 dkennel Updated CI invocation, fixed bug where master CI
 not referenced before fix.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/10/08 eball Help text cleanup
+@change: 2015/10/13 eball PEP8 cleanup
+@change: 2015/10/13 eball Added feedback for report methods, and improved logic
+so that a system without CUPS is compliant
 '''
 
 from __future__ import absolute_import
@@ -86,14 +90,14 @@ class SecureCUPS(Rule):
         self.compliant = False
         self.mandatory = True
         self.helptext = '''With this rule, you can:
-        Disable the CUPS service
-        Disable firewall access to CUPS service
-        Configure CUPS service
-        Disable Printer Browsing
-        Limit Printer Browsing
-        Disable Print Server Capabilities
-        Set the Default Auth Type
-        Setup default set of policy blocks for CUPS'''
+Disable the CUPS service
+Disable firewall access to CUPS service
+Configure CUPS service
+Disable Printer Browsing
+Limit Printer Browsing
+Disable Print Server Capabilities
+Set the Default Auth Type
+Setup default set of policy blocks for CUPS'''
         self.rootrequired = True
         self.guidance = ['CCE 4420-6', 'CCE 4407-3']
         self.isApplicableWhiteList = []
@@ -109,7 +113,7 @@ class SecureCUPS(Rule):
         self.DisableGenericPort = self.__initializeDisableGenericPort()
         self.SetDefaultAuthType = self.__initializeSetDefaultAuthType()
         self.SetupDefaultPolicyBlocks = \
-        self.__initializeSetupDefaultPolicyBlocks()
+            self.__initializeSetupDefaultPolicyBlocks()
 
         # class variables
         self.defaultpolicyblocks = """# Restrict access to the server...
@@ -132,20 +136,28 @@ class SecureCUPS(Rule):
 # Set the default printer/job policies...
 <Policy default>
   # Job-related operations must be done by the owner or an administrator...
-  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job CUPS-Move-Job CUPS-Get-Document>
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs \
+Set-Job-Attributes Create-Job-Subscription Renew-Subscription \
+Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job \
+Suspend-Current-Job Resume-Job CUPS-Move-Job CUPS-Get-Document>
     Require user @OWNER @SYSTEM
     Order deny,allow
   </Limit>
 
   # All administration operations require an administrator to authenticate...
-  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class \
+CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
     AuthType Default
     Require user @SYSTEM
     Order deny,allow
   </Limit>
 
   # All printer operations require a printer operator to authenticate...
-  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs CUPS-Reject-Jobs>
+  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer \
+Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs \
+Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer \
+Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs \
+CUPS-Reject-Jobs>
     AuthType Default
     Require user @SYSTEM
     Order deny,allow
@@ -170,21 +182,29 @@ class SecureCUPS(Rule):
     Order deny,allow
   </Limit>
 
-  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job CUPS-Move-Job CUPS-Get-Document>
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs \
+Set-Job-Attributes Create-Job-Subscription Renew-Subscription \
+Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job \
+Suspend-Current-Job Resume-Job CUPS-Move-Job CUPS-Get-Document>
     AuthType Default
     Require user @OWNER @SYSTEM
     Order deny,allow
   </Limit>
 
   # All administration operations require an administrator to authenticate...
-  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default>
+  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class \
+CUPS-Delete-Class CUPS-Set-Default>
     AuthType Default
     Require user @SYSTEM
     Order deny,allow
   </Limit>
 
   # All printer operations require a printer operator to authenticate...
-  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs CUPS-Reject-Jobs>
+  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer \
+Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs \
+Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer \
+Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs \
+CUPS-Reject-Jobs>
     AuthType Default
     Require user @SYSTEM
     Order deny,allow
@@ -202,7 +222,8 @@ class SecureCUPS(Rule):
   </Limit>
 </Policy>"""
 
-        self.defaultauthtype = """# Default authentication type, when authentication is required...
+        self.defaultauthtype = """# Default authentication type, when \
+authentication is required...
 DefaultAuthType Basic"""
 
         self.cupsdconflocations = ['/etc/cups/cupsd.conf',
@@ -378,13 +399,15 @@ DisablePrintBrowsing to True.'
                     secure = False
 
             if self.PrintBrowseSubnet.getcurrvalue() and \
-            PRINTBROWSESUBNET != '':
+               PRINTBROWSESUBNET != '':
                 retval = self.reportPrintBrowseSubnet()
                 if not retval:
                     secure = False
             elif self.PrintBrowseSubnet.getcurrvalue() and \
-            PRINTBROWSESUBNET == '':
-                self.detailedresults += '\nThe constant PRINTBROWSESUBNET was blank. This needs to be set. This can be done in localize.py'
+                 PRINTBROWSESUBNET == '':
+                self.detailedresults += '\nThe constant PRINTBROWSESUBNET ' + \
+                    'was blank. This needs to be set. This can be done in ' + \
+                    'localize.py'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 secure = False
 
@@ -414,7 +437,7 @@ DisablePrintBrowsing to True.'
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -445,6 +468,7 @@ DisablePrintBrowsing to True.'
 
                     if not re.search(self.defaultauthtype, content):
                         secure = False
+                        self.detailedresults += "\nDefaultAuthType not found"
 
             return secure
 
@@ -482,6 +506,8 @@ DisablePrintBrowsing to True.'
 
                     if not re.search('<Policy default>', content):
                         secure = False
+                        self.detailedresults += "\n<Policy default> block " + \
+                            "not found"
 
             return secure
 
@@ -512,8 +538,8 @@ DisablePrintBrowsing to True.'
 
             if self.environ.getosfamily() == 'darwin':
                 svcstatus = \
-                self.svchelper.auditservice('/System/Library/LaunchDaemons/org.cups.cupsd.plist',
-                                            'org.cups.cupsd')
+                    self.svchelper.auditservice('/System/Library/LaunchDaemons/org.cups.cupsd.plist',
+                                                'org.cups.cupsd')
                 if not svcstatus:
                     retval = True
             else:
@@ -523,6 +549,10 @@ DisablePrintBrowsing to True.'
                                   '/etc/sysconfig/ip6tables']
 
                 # search the config file(s) for the firewall exception entries
+                line1 = '^-A RH-Firewall-1-INPUT -p udp -m udp --dport ' + \
+                    '631 -j ACCEPT'
+                line2 = '^-A RH-Firewall-1-INPUT -p tcp -m tcp --dport ' + \
+                    '631 -j ACCEPT'
                 for item in configfilelist:
                     if os.path.exists(item):
                         f = open(item, 'r')
@@ -530,10 +560,14 @@ DisablePrintBrowsing to True.'
                         f.close()
 
                         for line in contentlines:
-                            if re.search('^-A RH-Firewall-1-INPUT -p udp -m udp --dport 631 -j ACCEPT', line):
+                            if re.search(line1, line):
                                 secure = False
-                            elif re.search('^-A RH-Firewall-1-INPUT -p tcp -m tcp --dport 631 -j ACCEPT', line):
+                                self.detailedresults += "\n" + item + \
+                                    " contains unwanted entry: " + line1
+                            elif re.search(line2, line):
                                 secure = False
+                                self.detailedresults += "\n" + item + \
+                                    " contains unwanted entry: " + line2
 
                 if secure and not svcstatus:
                     retval = True
@@ -561,12 +595,12 @@ DisablePrintBrowsing to True.'
 
         # defaults
         directives = ['Browsing Off', 'BrowseAllow none']
-        dfound = 0
-        secure = False
+        secure = True
 
         try:
 
             for location in self.cupsdconflocations:
+                dfound = 0
                 if os.path.exists(location):
                     f = open(location, 'r')
                     contentlines = f.readlines()
@@ -577,10 +611,11 @@ DisablePrintBrowsing to True.'
                             if re.search('^' + directive, line):
                                 dfound += 1
 
-            if dfound == 2:
-                secure = True
-            else:
-                secure = False
+                    if dfound < 2:
+                        secure = False
+                        self.detailedresults += "\nPrinter browsing not " + \
+                            "disabled, " + location + " does not contain " + \
+                            "both the necessary directives: " + str(directives)
 
             return secure
 
@@ -606,14 +641,15 @@ DisablePrintBrowsing to True.'
 
         # defaults
         printbrowsesubnetstring = self.PrintBrowseSubnet.getcurrvalue()
-        dfound = 0
-        directives = ['BrowseDeny all', 'BrowseAllow ' + \
+        directives = ['BrowseDeny all', 'BrowseAllow ' +
                       printbrowsesubnetstring]
+        secure = True
 
         try:
 
             if printbrowsesubnetstring != '':
                 for location in self.cupsdconflocations:
+                    dfound = 0
                     if os.path.exists(location):
                         f = open(location, 'r')
                         contentlines = f.readlines()
@@ -623,8 +659,14 @@ DisablePrintBrowsing to True.'
                             for directive in directives:
                                 if re.search('^' + directive, line):
                                     dfound += 1
+                        if dfound < 2:
+                            secure = False
+                            self.detailedresults += "\nPrinter browsing " + \
+                                "subnet settings incorrect, " + location + \
+                                " does not contain both the necessary " + \
+                                "directives: " + str(directives)
             else:
-                self.detailedresults += ' No value entered for print browse \
+                self.detailedresults += '\nNo value entered for print browse \
                 subnet'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
@@ -661,13 +703,13 @@ DisablePrintBrowsing to True.'
         # defaults
         port = 'Port 631'
         newport = 'Listen localhost:631'
-        found = 0
         secure = True
 
         try:
 
             for location in self.cupsdconflocations:
                 if os.path.exists(location):
+                    found = 0
                     f = open(location, 'r')
                     contentlines = f.readlines()
                     f.close()
@@ -675,15 +717,19 @@ DisablePrintBrowsing to True.'
                     for line in contentlines:
                         if re.search('^' + port, line):
                             secure = False
+                            self.detailedresults += "\nInsecure setting '" + \
+                                port + "' found in " + location
 
                     for line in contentlines:
                         if re.search('^' + newport, line):
                             found += 1
 
-            if found == 1 and secure:
-                return True
-            else:
-                return False
+                    if found < 1:
+                        secure = False
+                        self.detailedresults += "\nSecure port setting '" + \
+                            newport + "' not found in " + location
+
+            return secure
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -716,7 +762,7 @@ DisablePrintBrowsing to True.'
                         self.fixDisablePrintBrowsing()
 
                 if self.PrintBrowseSubnet.getcurrvalue() and \
-                PRINTBROWSESUBNET != '':
+                   PRINTBROWSESUBNET != '':
                     retval = self.reportPrintBrowseSubnet()
                     if not retval:
                         self.fixPrintBrowseSubnet()
@@ -748,7 +794,7 @@ DisablePrintBrowsing to True.'
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + \
-            str(err) + " - " + str(traceback.format_exc())
+                str(err) + " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
@@ -775,7 +821,7 @@ DisablePrintBrowsing to True.'
                     contentlines = f.readlines()
                     f.close()
 
-                    contentlines.append('\n' + str(self.defaultauthtype) + \
+                    contentlines.append('\n' + str(self.defaultauthtype) +
                                         '\n')
 
                     tf = open(location + '.stonixtmp', 'w')
@@ -883,10 +929,14 @@ DisablePrintBrowsing to True.'
                     f.close()
 
                     for line in contentlines:
-                        if re.search('^-A RH-Firewall-1-INPUT -p udp -m udp --dport 631 -j ACCEPT', line):
-                            contentlines = [c.replace(line, '') for c in contentlines]
-                        elif re.search('^-A RH-Firewall-1-INPUT -p tcp -m tcp --dport 631 -j ACCEPT', line):
-                            contentlines = [c.replace(line, '') for c in contentlines]
+                        if re.search('^-A RH-Firewall-1-INPUT -p udp -m udp ' +
+                                     '--dport 631 -j ACCEPT', line):
+                            contentlines = [c.replace(line, '')
+                                            for c in contentlines]
+                        elif re.search('^-A RH-Firewall-1-INPUT -p tcp -m ' +
+                                       'tcp --dport 631 -j ACCEPT', line):
+                            contentlines = [c.replace(line, '')
+                                            for c in contentlines]
 
                     tf = open(location + '.stonixtmp', 'w')
                     tf.writelines(contentlines)

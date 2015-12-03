@@ -28,6 +28,7 @@ This class will secure samba file sharing
 
 @author: bemalmbe
 @change: 04/21/2014 dkennel Updated CI invocation
+@change: 2015/10/08 eball Help text cleanup
 '''
 
 from __future__ import absolute_import
@@ -63,9 +64,8 @@ class SecureWinFileSharing(Rule):
         self.rulename = 'SecureWinFileSharing'
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''This class will secure samba file sharing'''
+        self.helptext = '''This rule will secure SAMBA file sharing settings'''
         self.rootrequired = True
-        self.detailedresults = '''The SecureWinFileSharing rule has not yet been run.'''
         self.guidance = ['']
 
         # init CIs
@@ -101,15 +101,15 @@ value of SecureWinFileSharing to False.'''
 
         # init the kveditor object
         smbDirectives = {'global': {'restrict anonymous': '2',
-                                  'guest ok': 'no',
-                                  'client ntlmv2 auth': 'yes',
-                                  'client lanman auth': 'no',
-                                  'client plaintext auth': 'no',
-                                  'ntlm auth': 'no',
-                                  'lanman auth': 'no',
-                                  'invalid users': 'root @wheel',
-                                  'server signing': 'mandatory',
-                                  'client signing': 'mandatory'}}
+                                    'guest ok': 'no',
+                                    'client ntlmv2 auth': 'yes',
+                                    'client lanman auth': 'no',
+                                    'client plaintext auth': 'no',
+                                    'ntlm auth': 'no',
+                                    'lanman auth': 'no',
+                                    'invalid users': 'root @wheel',
+                                    'server signing': 'mandatory',
+                                    'client signing': 'mandatory'}}
         kvpath = self.smbconflocation
         kvtype = 'tagconf'
         kvtmppath = kvpath + '.stonixtmp'

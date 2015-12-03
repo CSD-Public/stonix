@@ -29,8 +29,6 @@ Created on 11/27/2012
 '''
 from __future__ import absolute_import
 import unittest
-import os
-import time
 from src.tests.lib.logdispatcher_lite import LogPriority
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
@@ -49,47 +47,40 @@ class zzzTestFrameworkCommandHelper(unittest.TestCase):
         pass
 
     def testBlankCommand(self):
-        self.failUnlessEqual(self.commandhelper.setCommand(""), True,
-                              "Setting Blank Command List Failed")
+        self.assertRaises(ValueError, self.commandhelper.setCommand, "")
 
-        self.failUnlessEqual(self.commandhelper.executeCommand(), False,
-                              "Setting Blank Command List Failed")
+        self.assertRaises(TypeError, self.commandhelper.executeCommand, None)
 
-        self.failUnlessEqual(self.commandhelper.executeCommand(""), False,
-                              "Setting Blank Command List Failed")
+        self.assertRaises(ValueError, self.commandhelper.executeCommand, "")
 
-        self.failUnlessEqual(self.commandhelper.setCommand([]), True,
-                              "Setting Blank Command List Failed")
+        self.assertRaises(ValueError, self.commandhelper.setCommand, [])
 
-        self.failUnlessEqual(self.commandhelper.executeCommand(), False,
-                              "Setting Blank Command List Failed")
+        self.assertRaises(TypeError, self.commandhelper.executeCommand, None)
 
-        self.failUnlessEqual(self.commandhelper.executeCommand([]), False,
-                              "Setting Blank Command List Failed")
+        self.assertRaises(ValueError, self.commandhelper.executeCommand, [])
 
     def testExecuteValidCommand(self):
-        self.failUnlessEqual(self.commandhelper.executeCommand("ls -l /"), True,
-                             "Execute Valid Command string Failed!")
+        self.assertTrue(self.commandhelper.executeCommand("ls -l /"),
+                        "Execute Valid Command string Failed!")
 
-        self.failUnlessEqual(self.commandhelper.executeCommand(["ls","-l","/"]), True,
-                             "Execute Valid Command List Failed!")
+        self.assertTrue(self.commandhelper.executeCommand(["ls", "-l", "/"]),
+                        "Execute Valid Command List Failed!")
 
     def testExecuteInvalidCommand(self):
-        self.failUnlessEqual(self.commandhelper.executeCommand(0), False,
-                             "Execute test commandhelper.executeCommand(0) Failed!")
+        self.assertRaises(TypeError, self.commandhelper.executeCommand, 0)
 
-        self.failUnlessEqual(self.commandhelper.executeCommand(['ls',0,'/']), False,
-                             "Execute test commandhelper.executeCommand(['ls',0,'/']) Failed!")
+        self.assertRaises(TypeError, self.commandhelper.executeCommand,
+                          ['ls', 0, '/'])
 
     def testSetLogPriority(self):
-        self.failUnlessEqual(self.commandhelper.setLogPriority(0), False,
-                             "Execute setLogPriority(0) Command string Failed!")
+        self.assertRaises(TypeError, self.commandhelper.setLogPriority, 0)
 
-        self.failUnlessEqual(self.commandhelper.setLogPriority(LogPriority.INFO), True,
-                             "Execute setLogPriority(0) Command string Failed!")
+        self.assertTrue(self.commandhelper.setLogPriority(LogPriority.INFO),
+                        "Execute setLogPriority(0) Command string Failed!")
 
-        self.failUnlessEqual(self.commandhelper.executeCommand(["ls","-l","/"]), True,
-                             "Execute commandhelper.executeCommand(['ls','-l','/']) Command List Failed!")
+        self.assertTrue(self.commandhelper.executeCommand(["ls", "-l", "/"]),
+                        "Execute commandhelper.executeCommand(['ls','-l','/'])"
+                        + " Command List Failed!")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

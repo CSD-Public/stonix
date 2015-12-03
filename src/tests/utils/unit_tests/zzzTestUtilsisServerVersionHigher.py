@@ -36,7 +36,8 @@ import sys
 import unittest
 
 from src.tests.lib.logdispatcher_lite import LogPriority
-from src.stonix_resources.stonixutilityfunctions import isServerVersionHigher
+from src.stonix_resources.stonixutilityfunctions import isServerVersionHigher \
+                                                     as isServerVersionHigher
 ###############################
 # Import Mocks for testing
 ######
@@ -87,13 +88,13 @@ def version_test_template(*args):
     return foo
 
 
-class test_SelfUpdateVersionChecks(unittest.TestCase) :
+class zzzTestUtilsisServerVersionHigher(unittest.TestCase) :
     """
     Attempt to do a pytest friendly test
     """
-    def setUp(self):
-        self.environment = Environment()
-        self.logger = LogDispatcher(self.environment)
+    #def setUp(self):
+    #    self.environment = Environment()
+    #    self.logger = LogDispatcher(self.environment)
         
     def assert_version_check(self, expected_result, version, server_version, comment):
         """
@@ -107,5 +108,5 @@ for behavior, test_cases in version_test_case_data.iteritems():
         (expected_result, version, server_version, comment) = case
         test_name = "test_{0}_{1}_{2}_{3}".format(behavior, version, server_version, comment)
         version_test_case = version_test_template(expected_result, version, server_version, comment)
-        setattr(test_SelfUpdateVersionChecks, test_name, version_test_case)
+        setattr(zzzTestUtilsisServerVersionHigher, test_name, version_test_case)
 
