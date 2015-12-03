@@ -74,12 +74,8 @@ REMOVETOORUSER to False.'''
                         found = True
                         break
                 if found:
-                    self.detailedresults = "RemoveToorUser report has been \
-run and is not compliant"
                     self.compliant = False
                 else:
-                    self.detailedresults = "RemoveToorUser report has been \
-run and is compliant"
                     self.compliant = True
             else:
                 self.compliant = False

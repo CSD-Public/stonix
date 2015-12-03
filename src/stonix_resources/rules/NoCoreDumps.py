@@ -94,12 +94,6 @@ class NoCoreDumps(Rule):
                 self.compliant = self.reportFreebsdMac()
             elif osfam == "solaris":
                 self.compliant = self.reportSolaris()
-            if self.compliant:
-                self.detailedresults += "NoCoreDumps report has been run " + \
-                "and the system is compliant\n"
-            else:
-                self.detailedresults += "NoCoreDumps report has been run " + \
-                "and is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
