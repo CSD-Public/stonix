@@ -11,6 +11,9 @@ This is most likely called from a job scheduled by the stonix program.
 import subprocess
 import os
 import networksetup
+from CommandHelper import CommandHelper
+from logdispatcher import LogDispatcher
+from environment import Environment
 
 
 class logmock:
@@ -27,6 +30,8 @@ class logmock:
 
 
 def main():
+    enviro = Environment()
+    logger = LogDispatcher(enviro)
     if os.path.exists('/usr/bin/osascript'):
         setlevels = "/usr/bin/osascript -e 'set volume input volume 0'"
 
@@ -46,20 +51,19 @@ def main():
     # kexts are reloaded. We're still working a good way to toggle the camera
     # on and off for the Mac. We want to be able to toggle it as video
     # conferencing is a common use case.
-#     isight = 'Apple_iSight.kext'
-#     camerainterface = 'AppleCameraInterface.kext'
-#     unload = '/sbin/kextunload '
-# 
-#     if os.path.exists(unload):
-#         try:
-#             proc = subprocess.Popen(unload + isight, stdout=subprocess.PIPE,
-#                                     stderr=subprocess.PIPE, shell=True)
-# 
-#             proc2 = subprocess.Popen(unload + camerainterface,
-#                                      stdout=subprocess.PIPE,
-#                                      stderr=subprocess.PIPE, shell=True)
-#         except Exception:
-#             pass
+    isight = 'Apple_iSight.kext'
+    camerainterface = 'AppleCameraInterface.kext'
+    unload = '/sbin/kextunload'
+
+    if os.path.exists(unload):
+        try:
+            ch = CommandHelper(logger)
+            cmd = [unload, isight]
+            ch.executeCommand(cmd)
+            cmd = [unload, camerainterface]
+            ch.executeCommand(cmd)
+        except Exception:
+            pass
 
 if __name__ == '__main__':
     main()

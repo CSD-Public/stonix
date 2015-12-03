@@ -35,6 +35,7 @@ from __future__ import absolute_import
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import readFile, createFile, writeFile, iterate, checkPerms, setPerms
 
 import re
 import os
@@ -56,45 +57,30 @@ class DisableCamera(Rule):
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        self.plistpath = "/Library/LaunchDaemons/stonixDisableCamera.plist"
+        self.logger = logger
+        self.created = False
         # configuration item instantiation
         datatype = 'bool'
         key = 'DISABLECAMERA'
         instructions = "To disable this rule set the value of " + \
             "DISABLECAMERA to False."
         default = False
-        self.ci = self.initCi(datatype, key, instructions, default)
-
-    def isreadable(self, path):
-        '''
-        detect and return whether a specified file is readable (by anyone)
-
-        @return: retval
-        @rtype: boolean
-        @author: Breen Malmberg
-        '''
-
-        retval = False
-
-        try:
-
-            statlist = [stat.S_IROTH,
-                        stat.S_IRUSR,
-                        stat.S_IRGRP]
-            readabledict = {}
-
-            if os.path.exists(path):
-                perms = os.stat(path)
-                for s in statlist:
-                    readabledict[path + str(s)] = bool(perms.st_mode & s)
-
-            if readabledict:
-                for item in readabledict:
-                    if readabledict[item] == True:
-                        retval = True
-
-        except Exception:
-            raise
-        return retval
+        self.ci = self.initCi(datatype, key, instructions,  default)
+        self.plist = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>gov.lanl.stonix.disablecamera</string>
+    <key>Program</key>
+    <string>
+        <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
+    </string>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>'''
 
     def report(self):
         '''
@@ -106,10 +92,17 @@ class DisableCamera(Rule):
         '''
         try:
             self.detailedresults = ""
-            self.compliant = True
+            compliant = True
             self.cmdhelper = CommandHelper(self.logdispatch)
             cmd = ["/usr/sbin/kextstat"]
             cameradriver = "com.apple.driver.AppleCameraInterface"
+            if not os.path.exists(self.plistpath):
+                self.detailedresults += "Required plist file doesn't exist\n"
+                compliant = False
+            elif not checkPerms(self.plistpath, [0, 0, 436], self.logger):
+                self.detailedresults += "Plist file doesn't have the " + \
+                    "correct permissions\n"
+                compliant = False
             if self.cmdhelper.executeCommand(cmd):
                 found = False
                 output = self.cmdhelper.getOutput()
@@ -121,26 +114,13 @@ class DisableCamera(Rule):
                             break
                     if found:
                         self.detailedresults += "The camera is not disabled\n"
-                        self.compliant = False
+                        compliant = False
                 elif error:
                     self.detailedresults += "There was an error running " + \
                         "kextstat command.  Unable to determine whether " + \
                         "the camera is disabled or enabled\n"
-                    self.compliant = False
-#         self.pathlist = ['/System/Library/QuickTime/QuickTimeUSBVDCDigitizer.component/Contents/MacOS/QuickTimeUSBVDCDigitizer',
-#                          '/System/Library/PrivateFrameworks/CoreMediaIOServicesPrivate.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-#                          '/System/Library/PrivateFrameworks/CoreMediaIOServices.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-#                          '/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-#                          '/Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/MacOS/AppleCamera']
-#         self.cmdhelper = CommandHelper(self.logdispatch)
-# 
-#         try:
-# 
-#             for path in self.pathlist:
-#                 if self.isreadable(path):
-#                     self.compliant = False
-#                     self.detailedresults += '\nfile: ' + str(path) + ' is still readable'
-
+                    compliant = False
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
@@ -169,29 +149,64 @@ class DisableCamera(Rule):
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            self.rulesuccess = True
+            success = True
+            tmpfile = self.plistpath + ".tmp"
+            if os.path.exists(self.plistpath):
+                if not checkPerms(self.plistpath, [0, 0, 436], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.plistpath, [0, 0, 436], self.logger,
+                                    self.statechglogger, myid):
+                        debug = "Unable to set the permissions on " + \
+                            self.plistpath + " file\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                contents = readFile(self.plistpath, self.logger)
+                contentstring = ""
+                for line in contents:
+                    contentstring += line
+                if not re.search(self.plist, contentstring):
+                    if writeFile(tmpfile, self.plist, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.plistpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.logpath, tmpfile, myid)
+                    else:
+                        debug = "Unable to write the plist file\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+            else:
+                if createFile(self.plistpath):
+                    if writeFile(tmpfile, self.plist, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation",
+                                 "filepath": self.plistpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                    else:
+                        debug = "Unable to write the plist file\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                else:
+                    debug = "Unable to create the plist file\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
             cmd = ["/sbin/kextunload", "-b", "com.apple.driver.AppleCameraInterface"]
             if self.cmdhelper.executeCommand(cmd):
                 retval = self.cmdhelper.getReturnCode()
                 if retval != 0:
-                    self.detailedresults += "kextunload command unable to " + \
+                    debug = "kextunload command unable to " + \
                         "run successfully.  Unable to disable camera\n"
-                    self.rulesuccess = False
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
             else:
-                self.detailedresults += "kextunload command unable to " + \
+                debug = "kextunload command unable to " + \
                     "run successfully.  Unable to disable camera\n"
-                self.rulesuccess = False
-#         cmd = "chmod a-r "
-# 
-#         try:
-# 
-#             for path in self.pathlist:
-#                 if os.path.exists(path):
-#                     self.cmdhelper.executeCommand(cmd + path)
-#                     error = self.cmdhelper.getErrorString()
-#                     if error:
-#                         success = False
-#                         self.detailedresults += '\nthere was an error running command: ' + cmd + path
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
