@@ -58,19 +58,19 @@ class MacPkgr(object):
         '''
         success = False
         try:
-
+            server = url.split("/")[2]
+            protocol = url.split(":")[0]
+            
             # If there network, install, else no network, log
-            hasconnection = has_connection_to_server(self.logdispatch,
-                                                     self.puppetpkgserver)
+            hasconnection = has_connection_to_server(self.logger,
+                                                     str(protocol) + "://" + str(server))
             if hasconnection:
                 # Set up the installation
-                installing = IHmac(self.environ,
-                                   self.puppetdownloadzipdarwin,
-                                   self.logdispatch)
+                installing = IHmac(self.environ, url, self.logger)
                 # Install the package
                 success = installing.install_package_from_server()
 
-                self.logdispatch.log(LogPriority.DEBUG,
+                self.logger.log(LogPriority.DEBUG,
                                      "Connection with server exists, " + \
                                      "can install puppet.")
 
@@ -108,22 +108,74 @@ class MacPkgr(object):
         @author: rsn
         '''
         try:
+            domain = find_domains(package)[0]
+
+            success = False
+            if domain:
+                cmd_one = ["/usr/sbin/pkgutil", "--only-files", "--files", domain]
+                cmd_two = ["/usr/sbin/pkgutil", "--only-dirs", "--files", domain]
+        
+                #####
+                # Use the pkgutil command to get a list of files in the package 
+                # receipt
+                count = 0
+                self.ch.executeCommand(cmd_one)
+                files2remove = self.ch.getOutputString()
+                self.logger.log(LogPriority.DEBUG, files2remove)
+                if self.ch.getReturnCode() == 0:
+                    for file in files2remove:
+                        try:
+                            #####
+                            # Make sure "/" is prepended to the file as pkgutil
+                            # does not report the first "/" in the file path
+                            os.remove("/" + file)
+                            count = count + 1
+                        except OSError, err:
+                            self.logger.log(LogPriority.DEBUG, "Error trying to remove: " + str(file))
+                            self.logger.log(LogPriority.DEBUG, "With Exception: " + str(err))
+        
+                    #####
+                    # Directory list will include directories such as /usr
+                    # and /usr/local... Sucess is obtained only if all of the files
+                    # (not directories) are deleted.
+                    if count == len(list):
+                        success = True
+        
+                #####
+                # Use the pkgutil command to get a list of directories in the 
+                # package receipt
+                self.ch.executeCommand(cmd_two)
+                dirs2remove = self.ch.getOutputString()
+                #####
+                # Reverse list as list is generated with parents first rather than
+                # children first.
+                dirs2remove.reverse()
+                self.logger.log(LogPriority.DEBUG, files2remove)
+                if self.ch.getReturnCode() == 0:
+                    for dir in dirs2remove:
+                        try:
+                            #####
+                            # Make sure "/" is prepended to the directory tree as 
+                            # pkgutil does not report the first "/" in the file path
+                            os.rmdir("/" + dir)
+                            #####
+                            # We don't care if any of the child directories still have 
+                            # files, as directories such as /usr/bin, /usr/local/bin are
+                            # reported by pkgutil in the directory listing, which is why
+                            # we use os.rmdir rather than shutil.rmtree and we don't report
+                            # on the success or failure of removing directories.
+                        except OSError, err:
+                            self.logger.log(LogPriority.DEBUG, "Error trying to remove: " + str(dir))
+                            self.logger.log(LogPriority.DEBUG, "With Exception: " + str(err))
             
-            
-            #####
-            # Remove files
-            
-            #####
-            # Remove directories
-            
-            
-            self.logger.log(LogPriority.INFO, "Not yet implemented...")
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
+
+        return success
 
 ###############################################################################
 
@@ -142,13 +194,21 @@ class MacPkgr(object):
         @author: rsn
         '''
         try:
-            self.logger.log(LogPriority.INFO, "Not yet implemented...")
+            success = False
+            domain = find_domains(package)[0]
+            
+            if domain:
+                success = True
+                self.logger.log(LogPriority.INFO, "Domain: " + str(domain) + " found")
+
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)   
+        
+        return success
 
 ###############################################################################
 

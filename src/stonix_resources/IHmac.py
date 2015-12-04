@@ -62,7 +62,7 @@ class IHmac(InstallingHelper) :
 
         InstallingHelper.__init__(self, environ, url, self.logger)
 
-    def install_package_from_server(self):
+    def install_package_from_server(self, macpkgr=True):
         """
         This function references generic methods from the InstallingHelper
         class to download an archived .pkg or .mpkg file, check md5sum of
@@ -89,6 +89,7 @@ class IHmac(InstallingHelper) :
         """
         # Download and unarchive the package to a temporary directory, with
         # md5 checking.
+        self.macpkgr = macpkgr
         success = False
         tmp_dir = self.download_and_prepare()
 

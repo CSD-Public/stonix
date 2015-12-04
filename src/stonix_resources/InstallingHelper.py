@@ -101,6 +101,7 @@ class InstallingHelper(object) :
         self.find_file_name()
         self.find_package_name()
         self.find_base_url()
+        self.dotmd5 = False
 
     def un_archive(self, filename="", destination=".") :
         """
@@ -320,40 +321,54 @@ class InstallingHelper(object) :
                             "md5 file: " + self.base_url + "/" + \
                             self.package_name + ".md5.txt"])
 
-            tmp_sig = self.get_string_from_url(self.base_url + "/" + \
-                                               self.package_name + \
-                                               ".md5.txt")
-            if re.match("^\s*$", tmp_sig) :
+            if self.dotmd5:
+                #####
+                # Check for a Jamf style MD5 Link
+                # .<filename>.<UPPER-md5sum> on the server
+                if not correctMD5():
+                    sig_match = False
+            else:
+                #####
+                # Check for old <package>.md5.txt on the server with the hash 
+                # inside the file
                 tmp_sig = self.get_string_from_url(self.base_url + "/" + \
-                                                   self.package_name.lower() + \
+                                                   self.package_name + \
                                                    ".md5.txt")
-
-            if not self.check_md5(tmp_sig, tmp_name) :
-                self.logger.log(LogPriority.WARNING, 
-                                ["InstallingHelper.download_and_prepare",
-                                "md5: " + str(tmp_sig) + " and file: " + \
-                                tmp_name + " don't match"])
-                self.sig_match = False
-            else :
-                self.logger.log(LogPriority.DEBUG,
-                                ["InstallingHelper.download_and_prepare",
-                                "md5: " + str(tmp_sig) + " and file: " + \
-                                tmp_name + " match"])
-                self.sig_match = True
-                un_arch_complete = self.un_archive(tmp_name, tmp_dir)
-                if  un_arch_complete == 0 :
+                if re.match("^\s*$", tmp_sig) :
+                    tmp_sig = self.get_string_from_url(self.base_url + "/" + \
+                                                       self.package_name.lower() + \
+                                                       ".md5.txt")
+    
+                if not self.check_md5(tmp_sig, tmp_name) :
+                    self.logger.log(LogPriority.WARNING, 
+                                    ["InstallingHelper.download_and_prepare",
+                                    "md5: " + str(tmp_sig) + " and file: " + \
+                                    tmp_name + " don't match"])
+                    self.sig_match = False
+                else :
                     self.logger.log(LogPriority.DEBUG,
                                     ["InstallingHelper.download_and_prepare",
-                                     "un_archive returned 0"])
-                elif un_arch_complete == -1 :
-                    self.logger.log(LogPriority.DEBUG, 
-                                    ["InstallingHelper.download_and_prepare",
-                                    "un_archive returned -1"])
-                else:
-                    self.logger.log(LogPriority.DEBUG, 
-                                    ["InstallingHelper.download_and_prepare",
-                                    "un_archive returned code: " + \
-                                    str(un_arch_complete)])
+                                    "md5: " + str(tmp_sig) + " and file: " + \
+                                    tmp_name + " match"])
+                    self.sig_match = True
+
+                #####
+                # Found a good md5 match
+                if self.sig_match:
+                    un_arch_complete = self.un_archive(tmp_name, tmp_dir)
+                    if  un_arch_complete == 0 :
+                        self.logger.log(LogPriority.DEBUG,
+                                        ["InstallingHelper.download_and_prepare",
+                                         "un_archive returned 0"])
+                    elif un_arch_complete == -1 :
+                        self.logger.log(LogPriority.DEBUG, 
+                                        ["InstallingHelper.download_and_prepare",
+                                        "un_archive returned -1"])
+                    else:
+                        self.logger.log(LogPriority.DEBUG, 
+                                        ["InstallingHelper.download_and_prepare",
+                                        "un_archive returned code: " + \
+                                        str(un_arch_complete)])
         self.logger.log(LogPriority.DEBUG, 
                         ["InstallingHelper.download_and_prepare",
                         "Returning: " + tmp_dir + \
@@ -640,3 +655,38 @@ class InstallingHelper(object) :
              # if archive, unarchive
             self.un_archive(tmp_name, tmp_dir)
 
+    def correctMd5(self):
+        """
+        Validate that the MD5 of the file is the same as the one on the server,
+        for consistency's sake, ie we got a good download.
+        
+        Takes an MD5 of the local file, then appends it to the filename with a 
+        ".", then does a request and getreqpose and checks for a "200 in the 
+        response.status field.
+        
+        .<filename>.<UPPER-md5sum>
+        
+        Specific to the Casper server for Macs.  If you want to override this 
+        method for another OS, subclass this class, or rewrite the function.
+        
+        @author: Roy Nielsen
+        """
+
+        myhash = self.get_file_md5sum()
+        
+        hashname = "." + self.url.split("/")[-1] + "." + str(myhash).upper().strip()
+        
+        self.logger.log(LogPriority.DEBUG, "Hashname:          " + str(hashname).strip())
+        
+        page = "/".join(self.url.split("/")[:-1]) + "/" + str(hashname).strip()
+        
+        self.logger.log(LogPriority.DEBUG, "Page: " + page)
+        
+        self.request('GET', page)
+        response = self.getresponse()
+        
+        self.logger.log(LogPriority.DEBUG, "Status: " + str(response.status))
+        
+        if re.match("^200$", str(response.status)):
+            return True 
+        return False       
