@@ -173,7 +173,8 @@ MACKRB5 = '''[libdefaults]
 [domain_realm]
     foo.bar.com = FOO.BAR.COM
     .example.com = EXAMPLE.COM
-    example.com = EXAMPLE.COM'''
+    example.com = EXAMPLE.COM
+'''
 
 LINUXKRB5 = '''[logging]
  default = FILE:/var/log/krb5libs.log
