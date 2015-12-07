@@ -152,6 +152,8 @@ agent, set the value of SECUREMTA to False.'''
             # if sendmail installed, run check on sendmail
             if os.path.exists(sndpath):
                 if not checkPerms(sndpath, [0, 0, 420], self.logger):
+                    self.detailedresults += "permissions incorrect " + \
+                        "on " + sndpath + " file\n"
                     compliant = False
                 if not self.reportsendmail():
                     compliant = False
@@ -164,6 +166,8 @@ agent, set the value of SECUREMTA to False.'''
 
             if os.path.exists(self.postfixpath):
                 if not checkPerms(self.postfixpath, [0, 0, 420], self.logger):
+                    self.detailedresults += "permissions incorrect " + \
+                        "on " + self.postfixpath + " file\n"
                     compliant = False
                 if not self.reportpostfix():
                     compliant = False
@@ -213,6 +217,8 @@ agent, set the value of SECUREMTA to False.'''
         # use kveditor to search the conf file for all the options in
         # postfixdata
         if not self.sndmailed.report():
+            self.detailedresults += "Not all directives were found inside " + \
+                path + " file\n"
             secure = False
         # check runtogether keyvalues; may replace with kveditor later if
         # kveditor gets updated to handle runtogether keyvalues
@@ -223,9 +229,13 @@ agent, set the value of SECUREMTA to False.'''
                 if re.search('^DS', line):
                     found = True
                     if not re.search('^DS' + MAILRELAYSERVER, line):
+                        self.detailedresults += "DS line doesn't have " + \
+                            "correct contents inside " + path + " file\n"
                         self.ds = True
                         secure = False
             if not found:
+                self.detailedresults += "DS line not found in " + path + \
+                    " file \n"
                 self.ds = True
                 secure = False
         return secure
@@ -263,6 +273,8 @@ agent, set the value of SECUREMTA to False.'''
         # use kveditor to search the conf file for all the options in
         # postfixdata
         if not self.postfixed.report():
+            self.detailedresults += "Not all directives were found in " + \
+                self.postfixpath + " file\n"
             return False
         else:
             return True
