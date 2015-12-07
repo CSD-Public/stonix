@@ -40,6 +40,7 @@ that access the version variable to use this copy.
 @change: 2015/03/01 - ekkehard - incremented STONIXVERSION = '0.8.15'
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
 @change: 2015/08/20 - eball - Added KRB5 for Linux Kerberos setup
+@change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -156,7 +157,7 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
-KERB5 = '''[libdefaults]
+MACKRB5 = '''[libdefaults]
     default_realm = lanl.gov
     allow_weak_crypto = true
     forwardable = true
@@ -174,7 +175,7 @@ KERB5 = '''[libdefaults]
     .lanl.gov = lanl.gov
     .lanl.org = lanl.gov'''
 
-KRB5 = '''[logging]
+LINUXKRB5 = '''[logging]
  default = FILE:/var/log/krb5libs.log
  kdc = FILE:/var/log/krb5kdc.log
  admin_server = FILE:/var/log/kadmind.log
