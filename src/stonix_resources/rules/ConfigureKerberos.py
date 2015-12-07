@@ -44,7 +44,7 @@ from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
-from ..localize import KERB5, KRB5
+from ..localize import MACKRB5, LINUXKRB5
 
 
 class ConfigureKerberos(RuleKVEditor):
@@ -74,7 +74,7 @@ class ConfigureKerberos(RuleKVEditor):
             self.files = {"krb5.conf":
                           {"path": "/etc/krb5.conf",
                            "remove": False,
-                           "content": KERB5,
+                           "content": MACKRB5,
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
@@ -119,7 +119,7 @@ class ConfigureKerberos(RuleKVEditor):
             self.files = {"krb5.conf":
                           {"path": "/etc/krb5.conf",
                            "remove": False,
-                           "content": KRB5,
+                           "content": LINUXKRB5,
                            "permissions": 0644,
                            "owner": "root",
                            "group": "root",
