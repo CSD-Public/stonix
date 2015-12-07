@@ -201,14 +201,7 @@ correct for: " + fp + "\n"
                                 self.detailedresults += "file contents \
 for: " + fp + " are not correct\n"
                                 compliant = False
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "ReqAuthSingleUserMode report has \
-been run and is compliant\n"
-            else:
-                self.compliant = False
-                self.detailedresults += "ReqAuthSingleUserMode report has \
-been run and is not compliant\n"
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

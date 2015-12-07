@@ -140,26 +140,9 @@ value of SecureWinFileSharing to False.'''
         @return: bool
         @author: bemalmbe
         '''
-
-        # defaults
-        secure = True
-
         try:
 
-            if not self.kvosmb.report():
-                secure = False
-
-            if secure:
-                self.compliant = True
-                self.currstate = 'configured'
-                self.detailedresults = 'This system is compliant with the SecureWinFileSharing rule.'
-            else:
-                self.compliant = False
-                self.currstate = 'notconfigured'
-                self.detailedresults = 'This system is not compliant with the SecureWinFileSharing rule.'
-
-            return secure
-
+            self.compliant = self.kvosmb.report()
         except (KeyError, TypeError):
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)

@@ -330,6 +330,7 @@ agent, set the value of SECUREMTA to False.'''
                         success = False
                 if not self.fixsendmail():
                     success = False
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

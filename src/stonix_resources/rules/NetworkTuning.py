@@ -152,12 +152,8 @@ class NetworkTuning(Rule):
                 rep1success = True
                 rep2success = self.reportMac2()
             if rep1success and rep2success:
-                self.detailedresults += "NetworkTuning report has been " + \
-                    "run and the system is compliant\n"
                 self.compliant = True
             else:
-                self.detailedresults += "NetworkTuning report has been " + \
-                    "run and the system is not compliant\n"
                 self.compliant = False
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
