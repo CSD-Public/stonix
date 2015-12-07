@@ -32,8 +32,10 @@ intended for use to selfupdate a script.
 @author: Roy Nielsen
 
 """
+import httplib
 import os.path
 import re
+import socket
 import ssl
 import sys
 import tempfile
