@@ -49,8 +49,11 @@ class ProgramArguments(object):
         self.parser = OptionParser(usage="  %prog [options]\n\n Use \"%prog -h\" to get a list of options",
                               version="%prog " + STONIXVERSION)
 
-        self.parser.add_option("-m", "--module", dest="mod", help="Module to run.",
-                          default="", action="store")
+        self.parser.add_option("-m", "--module", dest="mod",
+                               help="Module(s) to run. To run multiple " \
+                               "modules, use a comma-separated list (e.g. "
+                               "rule1,rule2,rule3)",
+                               default="", action="store")
 
         self.parser.add_option("-v", "--verbose", action="store_true",
                           dest="verbose", default=0, \
@@ -105,7 +108,7 @@ class ProgramArguments(object):
         self.parser.add_option("-S", "--selfupdatetest", action="store_true",
                                dest="selfupdatetest",
                                default=False,
-                               help="SUPPRESS_HELP")
+                               help=SUPPRESS_HELP)
 
         (self.opts, self.args) = self.parser.parse_args()
 

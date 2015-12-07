@@ -250,10 +250,10 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['OSVersion', self.environ.getosver()])
         self.list = self.prog_args.getList()
+
         if self.list:
             self.__listrules()
-
-        if self.mode == 'cli':
+        elif self.mode == 'cli':
             self.__clirun()
         elif self.mode == 'gui':
             myui = GUI(self, self.environ, self.logger)
@@ -637,7 +637,7 @@ class Controller(Observable):
                     self.set_dirty()
                     self.notify_check()
         if self.numrulescomplete == 0:
-            message = "Could not find rule! Searched for ruleid =" \
+            message = "Could not find rule! Searched for ruleid = " \
             + str(ruleid)
             self.logger.log(LogPriority.ERROR,
                             message)
@@ -1100,7 +1100,26 @@ ABORTING EXECUTION!"""
             pass
 
         if not re.match("^\s*$", self.prog_args.get_module()):
-            self.runrule = self.prog_args.get_module()
+            runrule = self.prog_args.get_module()
+            breakIndex = runrule.find(",")
+            if breakIndex > 0:
+                rulelist = []
+                done = False
+                while not done:
+                    rulelist.append(runrule[0:breakIndex])
+                    if len(runrule) > breakIndex:
+                        runrule = runrule[breakIndex+1:]
+                        breakIndex = runrule.find(",")
+                        if breakIndex > 0:
+                            continue
+                        else:
+                            rulelist.append(runrule)
+                            done = True
+                    else:
+                        done = True
+                self.runrule = rulelist
+            else:
+                self.runrule = runrule
 
         if self.prog_args.get_gui():
             self.mode = 'gui'
@@ -1200,6 +1219,34 @@ ABORTING EXECUTION!"""
                                 'No action specified. Please check command syntax')
                 self.logger.closereports()
 
+        elif isinstance(self.runrule, list):
+            self.logger.log(LogPriority.DEBUG,
+                            'Running rules: ' + ", ".join(self.runrule))
+            for rule in self.runrule:
+                self.logger.log(LogPriority.DEBUG,
+                               'Entering single rule run for ' + rule)
+                ruleid = self.getrulenumbyname(rule)
+                self.logger.log(LogPriority.DEBUG,
+                               'Rule ID number ' + str(ruleid))
+                if self.fix:
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Mode is Fix')
+                    self.runruleharden(ruleid)
+                    self.logger.closereports()
+                if self.report:
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Mode is Report')
+                    self.runruleaudit(ruleid)
+                    self.logger.closereports()
+                if self.undo:
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Mode is Undo')
+                    self.undorule(ruleid)
+                    self.logger.closereports()
+                if not self.fix and not self.report and not self.undo:
+                    self.logger.log(LogPriority.INFO,
+                                    'No action specified. Please pass the -r, -f, or -u flag')
+                self.logger.closereports()
         else:
             self.logger.log(LogPriority.DEBUG,
                            'Entering single rule run ' + self.runrule)
