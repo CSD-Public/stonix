@@ -104,6 +104,7 @@ class CommandHelper(object):
         @return: list of output
         @author: ekkehard j. koch
         '''
+
         return self.output
 
 ###############################################################################
@@ -112,9 +113,12 @@ class CommandHelper(object):
         '''
         Get standard out stream for last executed command
         @param self:essential if you override this definition
-        @return: list of standard out stream
+        @return: self.stdout
+        @rtype: list
         @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/3/2015
         '''
+
         return self.stdout
 
 ###############################################################################
@@ -127,38 +131,43 @@ class CommandHelper(object):
         @param expression string: expression to search for in searchgroup
         @param groupnumber integer: number of group to return
         @param searchgroup string: group to search in output, stdout, stderr
-        @return: bool indicating success or failure
+        @return: returnlist
+        @rtype: list
         @author: rsn
+        @change: Breen Malmberg - 12/3/2015
         '''
+
         returnlist = []
-        if searchgroup == "output":
-            searchstream = self.output
-        elif searchgroup == "stdout":
-            searchstream = self.stdout
-        elif searchgroup == "stderr":
-            searchstream = self.stderr
-        else:
-            searchstream = self.output
-        for line in searchstream:
-            reresult = re.search(expression, line)
-            groupstr = reresult.group(groupnumber)
-            msg = "Group(" + str(groupnumber) + ")='" + \
-            groupstr + "'; line='" + line + "'"
+
+        try:
+
+            if searchgroup == "output":
+                searchstream = self.output
+            elif searchgroup == "stdout":
+                searchstream = self.stdout
+            elif searchgroup == "stderr":
+                searchstream = self.stderr
+            else:
+                searchstream = self.output
+            for line in searchstream:
+                reresult = re.search(expression, line)
+                groupstr = reresult.group(groupnumber)
+                msg = "Group(" + str(groupnumber) + ")='" + \
+                groupstr + "'; line='" + line + "'"
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
+                returnlist.append(groupstr)
+            msg = "expression = " + str(expression) + ", " + \
+            "groupnumber = " + str(groupnumber) + ", " + \
+            "searchgroup = " + str(searchgroup) + " = " + \
+            "returnlist = " + str(returnlist) + ";"
             self.logdispatcher.log(LogPriority.DEBUG, msg)
-            returnlist.append(groupstr)
-        msg = "expression = " + str(expression) + ", " + \
-        "groupnumber = " + str(groupnumber) + ", " + \
-        "searchgroup = " + str(searchgroup) + " = " + \
-        "returnlist = " + str(returnlist) + ";"
-        self.logdispatcher.log(LogPriority.DEBUG, msg)
+        except Exception:
+            raise
         return returnlist
 
 ###############################################################################
 
-    def getFirstOutputGroup(self,
-                            expression,
-                            groupnumber,
-                            searchgroup="output"):
+    def getFirstOutputGroup(self, expression, groupnumber, searchgroup="output"):
         '''
         getOutputGroup (expression, groupnumber) finds an expression in the
         returns the first instance (string) of the group specified in the
@@ -167,32 +176,40 @@ class CommandHelper(object):
         @param expresssion string: expression to search for
         @param groupnumber integer: number of group to return
         @param searchgroup string: group to search in output, stdout, stderr
-        @return: bool indicating success or failure
+        @return: returnstring
+        @rtype: bool
         @author: rsn
+        @change: Breen Malmberg - 12/3/2015
         '''
+
         returnstring = ""
-        if searchgroup == "output":
-            searchstream = self.output
-        elif searchgroup == "stdout":
-            searchstream = self.stdout
-        elif searchgroup == "stderr":
-            searchstream = self.stderr
-        else:
-            searchstream = self.output
-        for line in searchstream:
-            reresult = re.search(expression, line)
-            if reresult:
-                groupstr = reresult.group(groupnumber)
-                msg = "Group(" + str(groupnumber) + ")='" + \
-                groupstr + "'; line='" + line + "'"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
-                returnstring = groupstr
-                break
-        msg = "expression = " + str(expression) + ", " + \
-        "groupnumber = " + str(groupnumber) + ", " + \
-        "searchgroup = " + str(searchgroup) + " = " + \
-        "returnstring = " + str(returnstring) + ";"
-        self.logdispatcher.log(LogPriority.DEBUG, msg)
+
+        try:
+
+            if searchgroup == "output":
+                searchstream = self.output
+            elif searchgroup == "stdout":
+                searchstream = self.stdout
+            elif searchgroup == "stderr":
+                searchstream = self.stderr
+            else:
+                searchstream = self.output
+            for line in searchstream:
+                reresult = re.search(expression, line)
+                if reresult:
+                    groupstr = reresult.group(groupnumber)
+                    msg = "Group(" + str(groupnumber) + ")='" + \
+                    groupstr + "'; line='" + line + "'"
+                    self.logdispatcher.log(LogPriority.DEBUG, msg)
+                    returnstring = groupstr
+                    break
+            msg = "expression = " + str(expression) + ", " + \
+            "groupnumber = " + str(groupnumber) + ", " + \
+            "searchgroup = " + str(searchgroup) + " = " + \
+            "returnstring = " + str(returnstring) + ";"
+            self.logdispatcher.log(LogPriority.DEBUG, msg)
+        except Exception:
+            raise
         return returnstring
 
 ###############################################################################
@@ -201,24 +218,29 @@ class CommandHelper(object):
         '''
         Get standard out in string format
         @param self:essential if you override this definition
-        @return: string of self.output
+        @return: stdstring
+        @rtype: string
         @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/3/2015
         '''
-        #should this be self.stdout instead of self.output?
-        #self.output is both stderr and stdout together, should have a 
-        #separate method for getting a string of both together
-        outputstr = ""
-        if self.output:
-            for line in self.output:
-                outputstr += line
-        else:
-            msg = "self.output contents is empty nothing to return"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
-            #####
-            # An empty string is a valid value, DO NOT raise error here.
-            #raise ValueError(msg)
-            outputstr = outputstr.strip()
-        return outputstr
+
+        stdstring = ""
+
+        try:
+
+            if self.stdout:
+                if not isinstance(self.stdout, list):
+                    self.logger.log(LogPriority.DEBUG, "Parameter self.stdout is not a list. Cannot compile stdout string. Returning blank stdout string...")
+                    return stdstring
+
+                for line in self.stdout:
+                    stdstring += line
+            else:
+                self.logger.log(LogPriority.DEBUG, "No stdout string to display")
+
+        except Exception:
+            raise
+        return stdstring
 
 ###############################################################################
 
@@ -226,22 +248,109 @@ class CommandHelper(object):
         '''
         Get standard error in string format
         @param self:essential if you override this definition
-        @return: string of stderr
+        @return: self.stderr
+        @rtype: string
         @author: dwalker
+        @change: Breen Malmberg - 12/3/2015
         '''
-        errorstr = ""
-        if self.stderr:
-            for line in self.stderr:
-                errorstr += line
-        else:
-            msg = "self.stderr contents is empty nothing to return"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
-            #####
-            # An empty string is a valid value, DO NOT raise error here.
-            #raise ValueError(msg)
-            errorstr = errorstr.strip()
-        return errorstr
-    
+
+        errstring = ""
+
+        try:
+
+            if self.stderr:
+                if not isinstance(self.stderr, list):
+                    self.logger.log(LogPriority.DEBUG, "Parameter self.stderr is not a list. Cannot compile error string. Returning blank error string...")
+                    return errstring
+
+                for line in self.stderr:
+                    errstring += line
+            else:
+                self.logger.log(LogPriority.DEBUG, "No error string to display")
+
+        except Exception:
+            raise
+        return errstring
+
+###############################################################################
+
+    def getAllString(self):
+        '''
+        Get both the stdout and stderr together as one string
+        @param self:essential if you override this definition
+        @return: allstring
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        allstring = ""
+
+        stdoutstring = self.getOutputString()
+        stderrstring = self.getErrorString()
+
+        try:
+
+            if not isinstance(stdoutstring, basestring):
+                self.logger.log(LogPriority.DEBUG, "Content of parameter stdoutstring is not in string format. Will not include content in output!")
+                stdoutstring = ""
+
+            if not isinstance(stderrstring, basestring):
+                self.logger.log(LogPriority.DEBUG, "Content of parameter stderrstring is not in string format. Will not include content in output!")
+                stderrstring = ""
+
+            if stderrstring:
+                allstring += stderrstring
+            if allstring:
+                allstring += '\n'
+            if stdoutstring:
+                allstring += stdoutstring
+
+            if not allstring:
+                self.logger.log(LogPriority.DEBUG, "There was no output to return")
+
+        except Exception:
+            raise
+        return allstring
+
+###############################################################################
+
+    def getAllList(self):
+        '''
+        Get both the stdout and stderr together as one list
+        @param self:essential if you override this definition
+        @return: alllist
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        alllist = []
+
+        stdoutlist = self.getOutput()
+        stderrlist = self.getError()
+
+        try:
+
+            if not isinstance(stdoutlist, list):
+                self.logger.log(LogPriority.DEBUG, "Content of parameter stdoutlist is not in list format. Will not include content in output!")
+                stdoutlist = []
+            if not isinstance(stderrlist, list):
+                self.logger.log(LogPriority.DEBUG, "Content of parameter stderrlist is not in list format. Will not include content in output!")
+                stderrlist = []
+
+            if stdoutlist:
+                for line in stdoutlist:
+                    alllist.append(line)
+            if stderrlist:
+                for line in stderrlist:
+                    alllist.append(line)
+
+            if not alllist:
+                self.logger.log(LogPriority.DEBUG, "There was no output to return")
+
+        except Exception:
+            raise
+        return alllist
+
 ###############################################################################
 
     def getReturnCode(self):
@@ -263,55 +372,61 @@ class CommandHelper(object):
         @return: bool indicating success or failure
         @author: ekkehard j. koch
         '''
+
         success = False
-        self.stdout = []
-        self.stderr = []
-        self.output = []
-        commandtype = type(command)
-        if (commandtype is types.StringType):
-            self.shell = True
-            if len(command.strip()) > 0:
-                self.commandblank = False
-            else:
-                self.commandblank = True
-                msg = "The command of type '" + str(commandtype) + \
-                    "' is blank!"
-                self.logdispatcher.log(LogPriority.ERROR, msg)
-                raise ValueError(msg)
-            self.command = command.strip()
-            success = True
-            msg = "Command Set To '" + self.command + "'"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
-        elif (commandtype is types.ListType):
-            self.shell = False
-            self.command = []
-            self.commandblank = True
-            success = True
-            if len(command) == 0:
-                msg = "The command of type '" + str(commandtype) + \
-                    "' is blank!"
-                self.logdispatcher.log(LogPriority.ERROR, msg)
-                raise ValueError(msg)
-            for commandlistitem in command:
-                commandtype = type(commandlistitem)
-                if (commandtype is types.StringType):
-                    self.command.append(commandlistitem.strip())
-                    if len(commandlistitem.strip()) > 0:
-                        self.commandblank = False
+
+        try:
+
+            self.stdout = []
+            self.stderr = []
+            self.output = []
+            commandtype = type(command)
+            if (commandtype is types.StringType):
+                self.shell = True
+                if len(command.strip()) > 0:
+                    self.commandblank = False
                 else:
-                    success = False
-                    msg = "Command List Item '" + str(commandlistitem) + \
-                        "' has in invalid type of '" + str(commandtype) + "'"
-                    self.logdispatcher.log(LogPriority.DEBUG, msg)
-                    raise TypeError(msg)
-            msg = "Command Set To '" + str(self.command) + "'"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
-        else:
-            success = False
-            msg = "Command '" + str(command) + "' has in invalid type of '" + \
-                str(commandtype) + "'"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
-            raise TypeError(msg)
+                    self.commandblank = True
+                    msg = "The command of type '" + str(commandtype) + \
+                        "' is blank!"
+                    self.logdispatcher.log(LogPriority.ERROR, msg)
+                    raise ValueError(msg)
+                self.command = command.strip()
+                success = True
+                msg = "Command Set To '" + self.command + "'"
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
+            elif (commandtype is types.ListType):
+                self.shell = False
+                self.command = []
+                self.commandblank = True
+                success = True
+                if len(command) == 0:
+                    msg = "The command of type '" + str(commandtype) + \
+                        "' is blank!"
+                    self.logdispatcher.log(LogPriority.ERROR, msg)
+                    raise ValueError(msg)
+                for commandlistitem in command:
+                    commandtype = type(commandlistitem)
+                    if (commandtype is types.StringType):
+                        self.command.append(commandlistitem.strip())
+                        if len(commandlistitem.strip()) > 0:
+                            self.commandblank = False
+                    else:
+                        success = False
+                        msg = "Command List Item '" + str(commandlistitem) + \
+                            "' has in invalid type of '" + str(commandtype) + "'"
+                        self.logdispatcher.log(LogPriority.DEBUG, msg)
+                        raise TypeError(msg)
+                msg = "Command Set To '" + str(self.command) + "'"
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
+            else:
+                success = False
+                msg = "Command '" + str(command) + "' has in invalid type of '" + \
+                    str(commandtype) + "'"
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
+                raise TypeError(msg)
+        except Exception:
+            raise
         return success
 
 ###############################################################################
@@ -324,7 +439,9 @@ class CommandHelper(object):
         @return: bool indicating success or failure
         @author: ekkehard j. koch
         '''
+
         success = True
+
         logprioritytype = type(logpriority)
         if (logpriority is None):
             self.logpriority = LogPriority.DEBUG
@@ -361,11 +478,15 @@ class CommandHelper(object):
         @return: bool indicating success or failure
         @author: ekkehard j. koch
         '''
+
         try:
             commandobj = None
             success = True
             if (type(command) is not None):
                 success = self.setCommand(command)
+            else:
+                if self.command:
+                    self.logger.log(LogPriority.DEBUG, "Unable to set command " + str(self.command))
 
             if (success):
                 if (self.commandblank == True):
@@ -435,6 +556,7 @@ class CommandHelper(object):
         @author: ekkehard j. koch
         @author: dwalker
         '''
+
         try:
             searchstring = ""
             msg = ""
