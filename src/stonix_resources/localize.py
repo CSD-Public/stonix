@@ -173,7 +173,8 @@ MACKRB5 = '''[libdefaults]
 [domain_realm]
     exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
     .lanl.gov = lanl.gov
-    .lanl.org = lanl.gov'''
+    .lanl.org = lanl.gov
+'''
 
 LINUXKRB5 = '''[logging]
  default = FILE:/var/log/krb5libs.log
