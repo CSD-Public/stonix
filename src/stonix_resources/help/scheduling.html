@@ -1,16 +1,41 @@
-<h2>Scheduling</h2>
-
-Stonix uses the native OS facility for scheduling regular Stonix runs in the
-background.  On Linux, it uses Cron, and on MacOS it uses launchd jobs.
+<html>
+<title>Scheduling</title>
+<style TYPE="text/css">
+#wrap {
+  width: 700px;
+  margin: 0 auto;
+  line-height: 150%;
+}
+h1 {
+  width: 700px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 50px;
+  font-family: sans-serif;
+  line-height: 150%;
+}
+h3 {
+  width: 700px;
+  margin: 0 auto;
+  text-align: center;
+  font-family: sans-serif;
+}
+</style>
+<div id="wrap">
+<body>
+<h1>Scheduling</h1>
 <p>
-Two jobs are scheduled to run in elevated (root) mode when the machine boots,
-and on a regularly scheduled basis.  One run is in "report" mode, and one run
-is in "fix" mode. 
+STONIX uses the native OS facility for scheduling regular STONIX runs in the
+background. On Linux it uses cron, and on OS X it uses launchd jobs.
 <p>
-The user based job is also scheduled to run on a regular basis in fix mode. 
-*nix systems can have user home directories mounted from network shares, 
-which can be mounted so root can not access them.  This is the reason for the
-stonix run scheduled to be run as a user on the system.
+Two jobs are scheduled to run in an elevated (root) context on a regularly
+scheduled basis. One job is run in Report Mode, and one run is run in Fix Mode.
 <p>
-The Stonix rule ScheduleStonix sets up the regularly scheduled
-Stonix runs.
+A job that runs in user context is also scheduled to run on a regular basis
+(Fix Mode only). *NIX systems can have user home directories mounted from network shares, 
+which can be mounted in such a way that root cannot access them. This necessitates
+the user context job.
+<p>
+The STONIX rule ScheduleStonix sets up the regularly scheduled STONIX runs.
+</div>
+</html>
