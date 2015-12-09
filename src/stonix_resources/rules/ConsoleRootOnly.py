@@ -121,7 +121,7 @@ class ConsoleRootOnly(Rule):
 
                     if not checkPerms(self.securetty, self.perms, self.logger):
                         self.detailedresults += "Incorrect permissions on " + \
-                            + self.securetty + "\n"
+                            self.securetty + "\n"
                         compliant = False
 
                     contents = readFile(self.securetty, self.logger)
