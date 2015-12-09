@@ -230,13 +230,13 @@ class CommandHelper(object):
 
             if self.stdout:
                 if not isinstance(self.stdout, list):
-                    self.logger.log(LogPriority.DEBUG, "Parameter self.stdout is not a list. Cannot compile stdout string. Returning blank stdout string...")
+                    self.logdispatcher.log(LogPriority.DEBUG, "Parameter self.stdout is not a list. Cannot compile stdout string. Returning blank stdout string...")
                     return stdstring
 
                 for line in self.stdout:
                     stdstring += line
             else:
-                self.logger.log(LogPriority.DEBUG, "No stdout string to display")
+                self.logdispatcher.log(LogPriority.DEBUG, "No stdout string to display")
 
         except Exception:
             raise
@@ -260,13 +260,13 @@ class CommandHelper(object):
 
             if self.stderr:
                 if not isinstance(self.stderr, list):
-                    self.logger.log(LogPriority.DEBUG, "Parameter self.stderr is not a list. Cannot compile error string. Returning blank error string...")
+                    self.logdispatcher.log(LogPriority.DEBUG, "Parameter self.stderr is not a list. Cannot compile error string. Returning blank error string...")
                     return errstring
 
                 for line in self.stderr:
                     errstring += line
             else:
-                self.logger.log(LogPriority.DEBUG, "No error string to display")
+                self.logdispatcher.log(LogPriority.DEBUG, "No error string to display")
 
         except Exception:
             raise
@@ -291,11 +291,11 @@ class CommandHelper(object):
         try:
 
             if not isinstance(stdoutstring, basestring):
-                self.logger.log(LogPriority.DEBUG, "Content of parameter stdoutstring is not in string format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stdoutstring is not in string format. Will not include content in output!")
                 stdoutstring = ""
 
             if not isinstance(stderrstring, basestring):
-                self.logger.log(LogPriority.DEBUG, "Content of parameter stderrstring is not in string format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stderrstring is not in string format. Will not include content in output!")
                 stderrstring = ""
 
             if stderrstring:
@@ -306,7 +306,7 @@ class CommandHelper(object):
                 allstring += stdoutstring
 
             if not allstring:
-                self.logger.log(LogPriority.DEBUG, "There was no output to return")
+                self.logdispatcher.log(LogPriority.DEBUG, "There was no output to return")
 
         except Exception:
             raise
@@ -331,10 +331,10 @@ class CommandHelper(object):
         try:
 
             if not isinstance(stdoutlist, list):
-                self.logger.log(LogPriority.DEBUG, "Content of parameter stdoutlist is not in list format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stdoutlist is not in list format. Will not include content in output!")
                 stdoutlist = []
             if not isinstance(stderrlist, list):
-                self.logger.log(LogPriority.DEBUG, "Content of parameter stderrlist is not in list format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stderrlist is not in list format. Will not include content in output!")
                 stderrlist = []
 
             if stdoutlist:
@@ -345,7 +345,7 @@ class CommandHelper(object):
                     alllist.append(line)
 
             if not alllist:
-                self.logger.log(LogPriority.DEBUG, "There was no output to return")
+                self.logdispatcher.log(LogPriority.DEBUG, "There was no output to return")
 
         except Exception:
             raise
@@ -486,13 +486,15 @@ class CommandHelper(object):
                 success = self.setCommand(command)
             else:
                 if self.command:
-                    self.logger.log(LogPriority.DEBUG, "Unable to set command " + str(self.command))
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Unable to set command " +
+                                           str(self.command))
 
             if (success):
                 if (self.commandblank == True):
                     success = False
-                    raise ValueError("Cannot Execute a blank command (" + \
-                                           "".join(self.command) + ")")
+                    raise ValueError("Cannot Execute a blank command (" +
+                                     "".join(self.command) + ")")
 
             if (success):
                 commandobj = subprocess.Popen(self.command,
