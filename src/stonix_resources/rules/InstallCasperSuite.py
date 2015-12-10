@@ -241,6 +241,7 @@ class InstallCasperSuite(Rule):
                         self.rulesuccess = True
                         messagestring = str(self.qa) + \
                             " installation successful!"
+                        self.touch_imaged()
                     else:
                         messagestring = str(self.qa) + \
                             " installation failed!"
@@ -297,3 +298,35 @@ class InstallCasperSuite(Rule):
                             "type " + str(types.StringType) + \
                             " or type " + str(types.ListType) + \
                             " as expected!")
+
+###############################################################################
+
+    def touch_imaged(self):
+        """
+        Touch the finish script files so the JSS knows the system 
+        is not shown the lanl configuration in Lanl Self Service.
+
+        @author: rsn
+        """
+        myfiles = ["/etc/dds.txt", "/var/log/dds.log"]
+
+        for myfile in myfiles:
+
+            if not os.path.exists(myfile):
+
+                try:
+                    sig_file = open(myfile, "w")
+                except Exception, err:
+                    self.logdispatch.log(LogPriority.DEBUG, "Exception attempting to open file " + str(myfile) + "...")
+                    self.logdispatch.log(LogPriority.DEBUG, "Associated exception: " + str(err))
+                    raise err
+                else:
+                    try:
+                        sig_file.write("Imaged via puppet or stonix4mac...")
+                    except Exception, err:
+                         self.logdispatch.log(LogPriority.DEBUG, "Exception attempting to write to file " + str(myfile) + "...")
+                         self.logdispatch.log(LogPriority.DEBUG, "Associated exception: " + str(err))
+                         raise err
+                finally:
+                    sig_file.close()
+
