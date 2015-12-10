@@ -1098,6 +1098,8 @@ def assemble_list_suite(modules = []):
                 for myfile in filenames:
                     regex = "^" + str(module) + ".*"
                     if re.match(regex, myfile):
+                        if re.search(".*\.pyc$", myfile):
+                            continue
                         found = True
                         if re.match("^rules$", prefix):
                             testToRunMod = processRuleTest(root + "/" + myfile)
