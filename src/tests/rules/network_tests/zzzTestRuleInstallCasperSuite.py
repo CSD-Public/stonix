@@ -63,7 +63,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         success = True
         return success
 
-    def test_checkReportForRule(self, pCompliance, pRuleSuccess):
+    def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
         check on whether report was correct
         @param self: essential if you override this definition
@@ -79,7 +79,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         success = True
         return success
 
-    def test_checkFixForRule(self, pRuleSuccess):
+    def checkFixForRule(self, pRuleSuccess):
         '''
         check on whether fix was correct
         @param self: essential if you override this definition
