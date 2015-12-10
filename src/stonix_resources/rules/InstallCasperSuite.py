@@ -241,6 +241,7 @@ class InstallCasperSuite(Rule):
                         self.rulesuccess = True
                         messagestring = str(self.qa) + \
                             " installation successful!"
+                        self.touch_imaged()
                     else:
                         messagestring = str(self.qa) + \
                             " installation failed!"
@@ -318,12 +319,14 @@ class InstallCasperSuite(Rule):
                 except Exception, err:
                     self.logdispatch.log(LogPriority.DEBUG, "Exception attempting to open file " + str(myfile) + "...")
                     self.logdispatch.log(LogPriority.DEBUG, "Associated exception: " + str(err))
+                    raise err
                 else:
                     try:
                         sig_file.write("Imaged via puppet or stonix4mac...")
                     except Exception, err:
-                         self.logdispatch.log(LogPriority.DEBUG, "Exception attempting to open file " + str(myfile) + "...")
+                         self.logdispatch.log(LogPriority.DEBUG, "Exception attempting to write to file " + str(myfile) + "...")
                          self.logdispatch.log(LogPriority.DEBUG, "Associated exception: " + str(err))
+                         raise err
                 finally:
                     sig_file.close()
 
