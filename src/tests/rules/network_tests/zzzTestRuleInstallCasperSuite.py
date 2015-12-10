@@ -34,6 +34,7 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.InstallCasperSuite import InstallCasperSuite
 
+import os
 
 class zzzTestRuleInstallCasperSuite(RuleTest):
 
@@ -62,7 +63,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         success = True
         return success
 
-    def checkReportForRule(self, pCompliance, pRuleSuccess):
+    def test_checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
         check on whether report was correct
         @param self: essential if you override this definition
@@ -78,7 +79,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         success = True
         return success
 
-    def checkFixForRule(self, pRuleSuccess):
+    def test_checkFixForRule(self, pRuleSuccess):
         '''
         check on whether fix was correct
         @param self: essential if you override this definition
@@ -104,7 +105,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         success = True
         return success
 
-    def checkIfJamfBinaryExists(self):
+    def test_checkIfJamfBinaryExists(self):
         '''
         Check to see if the Jamf binary is installed
         @param self: essential if you override this definition
@@ -114,9 +115,9 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         '''
         success = os.path.isfile("/usr/local/bin/jamf")
         self.logdispatch.log(LogPriority.DEBUG, "")
-        assertTrue(success)
+        self.assertTrue(success)
 
-    def checkIfSelfServiceAppExists(self):
+    def test_checkIfSelfServiceAppExists(self):
         '''
         Check to see if the Lanl Self Service.app is installed
         @param self: essential if you override this definition
@@ -126,9 +127,33 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         '''
         success = os.path.isdir("/Applications/LANL Self Service.app")
         self.logdispatch.log(LogPriority.DEBUG, "Found Lanl Self Service.app")
-        assertTrue(success)
+        self.assertTrue(success)
 
-    def checkJamfReconRun(self):
+    def test_checkIfSigOneExists(self):
+        '''
+        Check to see if the first signature (/etc/dds.txt) is installed
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: Roy Nielsen
+        '''
+        success = os.path.isfile("/etc/dds.txt")
+        self.logdispatch.log(LogPriority.DEBUG, "Found Lanl Self Service.app")
+        self.assertTrue(success)
+
+    def test_checkIfSelfSigTwoExists(self):
+        '''
+        Check to see if the second signature (/var/log/dds.log) is installed
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: Roy Nielsen
+        '''
+        success = os.path.isfile("/var/log/dds.log")
+        self.logdispatch.log(LogPriority.DEBUG, "Found Lanl Self Service.app")
+        self.assertTrue(success)
+
+    def test_checkJamfReconRun(self):
         '''
         Check to see if the jamf recon command works
         @param self: essential if you override this definition
@@ -140,7 +165,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         self.ch.executeCommand(cmd)
         return_code = self.ch.getReturnCode()
         self.logdispatch.log(LogPriority.DEBUG, "Return code from jamf recon command: " + str(return_code))
-        assertTrue(return_code)
+        self.assertEquals(str(0), str(return_code))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
