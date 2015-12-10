@@ -227,8 +227,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         @author: Roy Nielsen
         @change: 2015/12/09 eball Changed to webbrowser
         """
+        debug = "Opening help in browser"
+        self.logger.log(LogPriority.DEBUG, ["GUI", debug])
         selfdir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0])))
-        webbrowser.open(selfdir + "/stonix_resources/help/index.html")
+        tocpath = "file://" + selfdir + "/stonix_resources/help/toc.html"
+        webbrowser.open(tocpath)
+        debug = "webbrowser.open called for " + tocpath
+        self.logger.log(LogPriority.DEBUG, ["GUI", debug])
 
     def update_progress(self, curr, total):
         """
