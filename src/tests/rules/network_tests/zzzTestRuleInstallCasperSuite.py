@@ -44,6 +44,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
                                        self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
@@ -102,6 +103,44 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
                              str(pRuleSuccess) + ".")
         success = True
         return success
+
+    def checkIfJamfBinaryExists(self):
+        '''
+        Check to see if the Jamf binary is installed
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: Roy Nielsen
+        '''
+        success = os.path.isfile("/usr/local/bin/jamf")
+        self.logdispatch.log(LogPriority.DEBUG, "")
+        assertTrue(success)
+
+    def checkIfSelfServiceAppExists(self):
+        '''
+        Check to see if the Lanl Self Service.app is installed
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: Roy Nielsen
+        '''
+        success = os.path.isdir("/Applications/LANL Self Service.app")
+        self.logdispatch.log(LogPriority.DEBUG, "Found Lanl Self Service.app")
+        assertTrue(success)
+
+    def checkJamfReconRun(self):
+        '''
+        Check to see if the jamf recon command works
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: Roy Nielsen
+        '''
+        cmd = ["/usr/local/bin/jamf", "recon"]
+        self.ch.executeCommand(cmd)
+        return_code = self.ch.getReturnCode()
+        self.logdispatch.log(LogPriority.DEBUG, "Return code from jamf recon command: " + str(return_code))
+        assertTrue(return_code)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
