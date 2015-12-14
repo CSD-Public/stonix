@@ -41,6 +41,7 @@ that access the version variable to use this copy.
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
 @change: 2015/08/20 - eball - Added KRB5 for Linux Kerberos setup
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
+@change: 2015/12/14 - ekkehard update os x kerberos option & stonixversion
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -49,7 +50,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.9.2'
+STONIXVERSION = '0.9.3'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -171,7 +172,7 @@ MACKRB5 = '''[libdefaults]
     debug = false
     krb4_convert = false
 [domain_realm]
-    exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
+    .lanl.gov = WIN.LANL.GOV
     .lanl.gov = lanl.gov
     .lanl.org = lanl.gov
 '''
