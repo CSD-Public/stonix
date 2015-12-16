@@ -190,6 +190,7 @@ version = 100
                 uckey = 'UC' + key
                 kvline = key + ' = ' + str(value) + newline
                 instruct = instruct + newline
+                usrcomment = usrcomment.replace("\n", r"\n")
                 ucline = uckey + ' = ' + usrcomment + newline
                 if not simpleconf:
                     conf = conf + instruct
@@ -202,6 +203,8 @@ version = 100
                 elif value != defvalue:
                     conf = conf + instruct
                     conf = conf + kvline
+                    conf = conf + ucline
+                elif usrcomment != '':
                     conf = conf + ucline
             conf = conf + newline
         try:
@@ -243,8 +246,9 @@ version = 100
         @return string :
         @author D. Kennel
         """
-        uckey = confkey + 'uc'
+        uckey = "uc" + confkey.lower()
         usercomment = self.programconfig[rulename][uckey]
+        usercomment = usercomment.replace(r"\n", "\n")
         return usercomment
 
     def __loadconfig(self):
