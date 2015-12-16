@@ -23,7 +23,7 @@
 ###############################################################################
 Created on Nov 24, 2015
 
-@author: rsn
+@author: rsn, dwalker
 '''
 import traceback
 from re import search
@@ -34,16 +34,29 @@ from IHmac import IHmac
 from stonixutilityfunctions import set_no_proxy, \
                                    has_connection_to_server
 
+def NoRepoException(Exception):
+    """
+    Custom Exception    
+    """
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
 class MacPkgr(object):
     
-    def __init__(self,logger):
+    def __init__(self, environ, logger, reporoot=""):
         '''
         Uses the IHmac InstallingHelper.  Can install .zip, .tar, .tar.gz, 
         .pkg and .mpkg files via an http or https URL
         
         '''
+        self.environ = environ
         self.logger = logger
         self.detailedresults = ""
+        if not reporoot:
+            raise NoRepoException
+        else:
+            self.repo = reporoot
+        self.dotmd5 = True
 
 ###############################################################################
 
@@ -58,15 +71,19 @@ class MacPkgr(object):
         '''
         success = False
         try:
-            server = url.split("/")[2]
-            protocol = url.split(":")[0]
+            server = self.reporoot.split("/")[2]
+            protocol = self.reporoot.split(":")[0]
+            
+            pkgurl = self.reporoot + "/" + package
             
             # If there network, install, else no network, log
             hasconnection = has_connection_to_server(self.logger,
-                                                     str(protocol) + "://" + str(server))
+                                                     self.reporoot + \
+                                                     "/" + package)
             if hasconnection:
                 # Set up the installation
-                installing = IHmac(self.environ, url, self.logger)
+                installing = IHmac(self.environ, pkgurl, self.logger)
+
                 # Install the package
                 success = installing.install_package_from_server()
 
@@ -94,7 +111,7 @@ class MacPkgr(object):
             
 ###############################################################################
 
-    def removepackage(self,domain):
+    def removepackage(self, package):
         '''
         Remove a package domain. Return a bool indicating success or failure.
         Not yet implemented...
@@ -112,8 +129,14 @@ class MacPkgr(object):
 
             success = False
             if domain:
-                cmd_one = ["/usr/sbin/pkgutil", "--only-files", "--files", domain]
-                cmd_two = ["/usr/sbin/pkgutil", "--only-dirs", "--files", domain]
+                cmd_one = ["/usr/sbin/pkgutil", 
+                           "--only-files", 
+                           "--files", 
+                           domain]
+                cmd_two = ["/usr/sbin/pkgutil", 
+                           "--only-dirs", 
+                           "--files", 
+                           domain]
         
                 #####
                 # Use the pkgutil command to get a list of files in the package 
@@ -131,43 +154,64 @@ class MacPkgr(object):
                             os.remove("/" + file)
                             count = count + 1
                         except OSError, err:
-                            self.logger.log(LogPriority.DEBUG, "Error trying to remove: " + str(file))
-                            self.logger.log(LogPriority.DEBUG, "With Exception: " + str(err))
+                            self.logger.log(LogPriority.DEBUG, 
+                                            "Error trying to remove: " + \
+                                            str(file))
+                            self.logger.log(LogPriority.DEBUG, 
+                                            "With Exception: " + \
+                                            str(err))
         
                     #####
                     # Directory list will include directories such as /usr
-                    # and /usr/local... Sucess is obtained only if all of the files
-                    # (not directories) are deleted.
+                    # and /usr/local... Sucess is obtained only if all of 
+                    # the files (not directories) are deleted.
                     if count == len(list):
                         success = True
         
-                #####
-                # Use the pkgutil command to get a list of directories in the 
-                # package receipt
-                self.ch.executeCommand(cmd_two)
-                dirs2remove = self.ch.getOutputString()
-                #####
-                # Reverse list as list is generated with parents first rather than
-                # children first.
-                dirs2remove.reverse()
-                self.logger.log(LogPriority.DEBUG, files2remove)
-                if self.ch.getReturnCode() == 0:
-                    for dir in dirs2remove:
-                        try:
-                            #####
-                            # Make sure "/" is prepended to the directory tree as 
-                            # pkgutil does not report the first "/" in the file path
-                            os.rmdir("/" + dir)
-                            #####
-                            # We don't care if any of the child directories still have 
-                            # files, as directories such as /usr/bin, /usr/local/bin are
-                            # reported by pkgutil in the directory listing, which is why
-                            # we use os.rmdir rather than shutil.rmtree and we don't report
-                            # on the success or failure of removing directories.
-                        except OSError, err:
-                            self.logger.log(LogPriority.DEBUG, "Error trying to remove: " + str(dir))
-                            self.logger.log(LogPriority.DEBUG, "With Exception: " + str(err))
-            
+                    #####
+                    # Use the pkgutil command to get a list of directories 
+                    # in the package receipt
+                    self.ch.executeCommand(cmd_two)
+                    dirs2remove = self.ch.getOutputString()
+                    #####
+                    # Reverse list as list is generated with parents first 
+                    # rather than children first.
+                    dirs2remove.reverse()
+                    self.logger.log(LogPriority.DEBUG, files2remove)
+                    if self.ch.getReturnCode() == 0:
+                        for dir in dirs2remove:
+                            try:
+                                #####
+                                # Make sure "/" is prepended to the directory 
+                                # tree as pkgutil does not report the first "/"
+                                # in the file path
+                                os.rmdir("/" + dir)
+                                #####
+                                # We don't care if any of the child directories
+                                # still have files, as directories such as 
+                                # /usr/bin, /usr/local/bin are reported by 
+                                # pkgutil in the directory listing, which is 
+                                # why we use os.rmdir rather than shutil.rmtree
+                                # and we don't report on the success or failure
+                                # of removing directories.
+                            except OSError, err:
+                                self.logger.log(LogPriority.DEBUG, 
+                                                "Error trying to remove: " + \
+                                                str(dir))
+                                self.logger.log(LogPriority.DEBUG, 
+                                                "With Exception: " + str(err))
+                
+                        #####
+                        # Make the system package database "forget" the package
+                        # was installed.
+                        cmd_three = ["/usr/sbin/pkgutil", "--forget", domain]
+                        self.ch.executeCommand(cmd_three)
+                        if not self.ch.getReturnCode() == 0:
+                            success = False
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Page: \"" + \
+                                    str(package) + "\" Not found")
+                    
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
@@ -199,7 +243,8 @@ class MacPkgr(object):
             
             if domain:
                 success = True
-                self.logger.log(LogPriority.INFO, "Domain: " + str(domain) + " found")
+                self.logger.log(LogPriority.INFO, 
+                                "Domain: " + str(domain) + " found")
 
         except(KeyboardInterrupt,SystemExit):
             raise
@@ -224,3 +269,42 @@ class MacPkgr(object):
 
     def getRemove(self):
         return self.remove
+
+###############################################################################
+
+    def find_domains(pkg=""):
+        """
+        Install package receipts can be found in /var/db/receipts.
+        
+        A domain is the filename in the receipt database without the ".plist".
+        
+        An example is gov.lanl.ds.encase
+        
+        @parameters: pkg - the name of the install package that we need the
+                     domain for.
+        @returns: domains - the first domain in a possible list of domains.
+        
+        @author: Roy Nielsen 
+        """
+        print "Searching for: " + str(pkg)
+        path = "/var/db/receipts"
+        files = []
+        domains = []
+        for name in os.listdir(path):
+            if os.path.isfile(os.path.join(path, name)) and \
+               os.path.isfile(os.path.join(path, name)) and \
+               name.endswith(".plist"):
+                files.append(name)
+    
+        for afile in files:
+            domain_name = os.path.join(path, ".".join(afile.split(".")[:-1]))
+            cmd = ["/usr/bin/defaults", "read", domain_name, "PackageFileName"]
+    
+            cmd_stdout = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()[0]
+        
+            domain_name
+            if re.match("^%s$"%pkg, cmd_stdout): 
+                print "Found domain: " + str(domain_name)
+                domains.append(domain_name)
+        return domains
+    

@@ -36,6 +36,8 @@ import os.path
 import re
 import ssl
 import sys
+import socket
+import httplib
 import tempfile
 import urllib2
 from subprocess import Popen, PIPE
@@ -77,6 +79,9 @@ class SSLSecHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(SSLSecConnection, req)
 
+if sys.hexversion >= 0x02070900:
+    urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
+
 class InstallingHelper(object) :
     """
     Generic class using python native calls to download, check md5sums
@@ -97,7 +102,7 @@ class InstallingHelper(object) :
             self.logger.log(LogPriority.ERROR, "Cannot use this class " +
                             "without a URL to the archive " +
                             "file you wish to download and install")
-        
+        self.logger.log(LogPriority.ERROR, "URL: " + str(self.url))
         self.find_file_name()
         self.find_package_name()
         self.find_base_url()
@@ -234,32 +239,42 @@ class InstallingHelper(object) :
         @author: Roy Nielsen
     
         """
-        if not re.match("^$", self.url) or not re.match("^$", fpath) :
-
+        self.logger.log(LogPriority.ERROR, "URL: \"" + str(self.url) + "\"")
+        self.logger.log(LogPriority.ERROR, "FPATH: \"" + str(fpath) + "\"")
+        if re.match("^\s*$", self.url) or re.match("^\s*$", fpath) :
+            self.logger.log(LogPriority.INFO, "Cannot work with empty " + \
+                                              "parameters...")
+            self.logger.log(LogPriority.DEBUG, "Need both a URL and full " +\
+                            "path filename... try again.")
+        else:
+            self.logger.log(LogPriority.DEBUG, "Attempting to download: " +\
+                            str(self.url))
             set_no_proxy()
 
             # first try to open the URL
             try :
-                if sys.hexversion >= 0x02070900:
-                    urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
-                urlfile = urllib2.urlopen(self.url)
+                urlfile = urllib2.urlopen(str(self.url).strip())
             except Exception , err:
                 self.logger.log(LogPriority.DEBUG, 
                                 ["InstallingHelper.download_and_save_file",
                                  "Error: " + str(err)])
+                raise err
             else :
                 try :
                     # Next try to open the file for writing
-                    f = open(fpath, "w")
+                    f = open(str(fpath).strip(), "w")
                 except IOError, err :
-                    self.logger.log(LogPriority.INFO, 
+                    self.logger.log(LogPriority.ERROR, 
                                     ["InstallingHelper.download_and_save_file",
                                     "Error opening file - err: " + str(err)])
+                    raise err
                 except Exception, err :
                     self.logger.log(LogPriority.INFO, 
                                     ["InstallingHelper.download_and_save_file",
                                     "Generic exception opening file - err: " + str(err)])
+                    raise err
                 else :
+                    self.logger.log(LogPriority.ERROR, ".....................")
                     # take data out of the url stream and put it in the file
                     # a chunk at a time
                     chunk = 16 * 1024 * 1024
@@ -276,8 +291,6 @@ class InstallingHelper(object) :
                                         "Read " + str(len(data)) + " bytes"])
                     f.close()
                 urlfile.close()
-        else :
-            print "Need both a URL and full path filename... try again."    
     
     
     def download_and_prepare(self):
@@ -290,7 +303,6 @@ class InstallingHelper(object) :
     
         @author: Roy Nielsen
         """
-    
         if re.match("^\s*$", self.url) or re.match("^\s*$", self.package_name) :
             self.logger.log(LogPriority.DEBUG, 
                             ["InstallingHelper.download_and_prepare",
@@ -313,6 +325,8 @@ class InstallingHelper(object) :
                                  "tmp_dir: " + tmp_dir])
 
             tmp_name = tmp_dir + "/" + self.file_name
+            self.logger.log(LogPriority.DEBUG, "Attempting to save to: " +\
+                            str(tmp_name))
 
             self.download_and_save_file(tmp_name)    
 
