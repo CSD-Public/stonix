@@ -59,6 +59,25 @@ import logging.handlers
 from shutil import move
 from logging.handlers import RotatingFileHandler
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        #else:
+        #    cls._instances[cls].__init__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+def singleton_decorator(class_):
+  instances = {}
+  def getinstance(*args, **kwargs):
+    if class_ not in instances:
+        instances[class_] = class_(*args, **kwargs)
+    return instances[class_]
+  return getinstance
+
+@singleton_decorator
 class LogDispatcher ():
     """
     Responsible for taking any log data and formating both a human readable 
@@ -87,10 +106,6 @@ class LogDispatcher ():
             self.debug = debug_mode
             self.verbose = verbose_mode
 
-        # Temporary
-        self.debug = True
-        self.verbose = True
-            
    ##########################################################################
 
     def logEnv(self):
@@ -409,20 +424,25 @@ class LogDispatcher ():
             # the class
             self.rotHandler = None
             
+            #####
+            # Acquire the root logger for initialization
+            mylogger = logging.getLogger('')
+
+            #####
+            # Setting the log priority
+            if self.debug:
+                mylogger.setLevel(logging.DEBUG)
+            elif self.verbose:
+                mylogger.setLevel(logging.INFO)
+            else:
+                mylogger.setLevel(logging.WARNING)
+            
             if myconsole:
                 #####
                 #set up console logging
                 console = logging.StreamHandler()
-    
-                #####
-                # Setting the log priority
-                if self.debug:
-                    console.setLevel(logging.DEBUG)
-                elif self.verbose:
-                    console.setLevel(logging.INFO)
-                else:
-                    console.setLevel(logging.WARNING)
-                logging.getLogger('').addHandler(console)
+                
+                mylogger.addHandler(console)
                     
             if not rotate:
                 # Configure the python logging utility. Set the minimum reported log
@@ -441,16 +461,8 @@ class LogDispatcher ():
                 self.rotHandler = RotatingFileHandler(self.reportlog, 
                                                       maxBytes=size,
                                                       backupCount=log_count)
-                #####
-                # Setting the log priority
-                if self.debug:
-                    self.rotHandler.setLevel(logging.DEBUG)
-                elif self.verbose:
-                    self.rotHandler.setLevel(logging.INFO)
-                else:
-                    self.rotHandler.setLevel(logging.WARNING)
 
-                logging.getLogger('').addHandler(self.rotHandler)
+                mylogger.addHandler(self.rotHandler)
     
             if syslog:
                 #####
