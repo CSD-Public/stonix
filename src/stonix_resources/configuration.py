@@ -204,6 +204,8 @@ version = 100
                     conf = conf + instruct
                     conf = conf + kvline
                     conf = conf + ucline
+                elif usrcomment != '':
+                    conf = conf + ucline
             conf = conf + newline
         try:
             fhandle = open(self.configpath, 'w')
