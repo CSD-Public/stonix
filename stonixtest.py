@@ -1064,6 +1064,9 @@ def assemble_list_suite(modules = []):
     
     Will only run <Rulename>, not the test name zzzTestRule<Rulename>.
     
+    NOTE: The framework/utilities and rules have different processing mechanisms
+         which is why they are processed separately in this function
+    
     @param: modules - a list of modules to test.
     
     @author: Roy Nielsen
@@ -1087,39 +1090,82 @@ def assemble_list_suite(modules = []):
                 prefix = "framework"
             elif re.search("ule", module):
                 prefix = "rules"
-            elif re.search("tils", module):
-                prefix = "utils"
             else:
                 prefix = ""
                 
-            #Find the path to the test
-            for root, dirnames, filenames in os.walk("src/tests/" + prefix):
-                myfile = ""
-                for myfile in filenames:
-                    regex = "^" + str(module) + ".*"
-                    if re.match(regex, myfile):
-                        found = True
-                        if re.match("^rules$", prefix):
-                            testToRunMod = processRuleTest(root + "/" + myfile)
-                        else:
-                            testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
-                            
-                        #print "******************************************"
-                        #print "Checking out " + str(module)
-                        # Make Sure this rule sould be running
-                        if testToRunMod:
+            if re.match("^rules$", prefix):
+                #####
+                # Process a RULE test - different library loading
+                # mechanism
+                found = False
+                #Find the path to the test
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        regex = "^" + str(module) + ".*"
+                        if re.match(regex, myfile):
+                            found = True
+                            #print str(root)
                             #####
-                            # Add the import to a list, to later "map" to a test suite
-                            testList.append(testToRunMod)
-                            #print "Adding test to suite..."   
-            if not found: 
-                try:   
-                    raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
+                            # NOTE: Processing a RULE test here
+                            testToRunMod = processRuleTest(root + "/" + myfile)
+                            #print "******************************************"
+                            #print "Checking out " + str(module)
+                            # Make Sure this rule sould be running
+                            if testToRunMod:
+                                #####
+                                # Add the import to a list, to later "map" to a test suite
+                                testList.append(testToRunMod)
+                                #print "Adding test to suite..."   
+                if not found: 
+                    try:   
+                        raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
+                    except TestNotFound, err:
+                        print "\n\tException: " + str(err.msg)
+                        sys.exit(253)
+
+                #print " *****************************************"
+            elif re.match("^framework$", prefix):
+                #####
+                # Process a FRAMEWORK test - different library loading
+                # mechanism.
+                found = False
+                #Find the path to the test
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        #print "\n\n\tmodname: " + str(module)
+                        #print "\tFile   : " + str(myfile)
+                        #print "\tRelPath: " + str(root + "/" + myfile)
+                        regex = "^" + str(module) + ".*"
+                        if re.match(regex, myfile):
+                            found = True
+                            #print "******************************************"
+                            #print "Checking out " + str(myfile)
+                            #####
+                            # NOTE: Processing a FRAMEWORK test here
+                            testToRunMod = processFrameworkTest(root + "/" + myfile)
+                            
+                            if testToRunMod:
+                                #####
+                                # Add the import to a list, to later "map" to a test suite
+                                testList.append(testToRunMod)     
+                                #print "Adding test to suite..."   
+                if not found:
+                    try:   
+                        raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
+                    except TestNotFound, err:
+                        print "\n\tException: " + str(err.msg)
+                        sys.exit(254)
+
+                #print " *****************************************"
+            
+            else:
+                try:
+                    raise TestNotFound("Error attempting insert test (" + str(module) + ") into test list...\n")
                 except TestNotFound, err:
                     print "\n\tException: " + str(err.msg)
-                    sys.exit(253)
-
-            #print " *****************************************"
+                    sys.exit(255)
             
     #####
     # Set up the test loader function
@@ -1420,10 +1466,8 @@ debug_mode = options.debug
 verbose_mode = options.verbose
  
 ENVIRON = Environment()
-#ENVIRON.setdebugmode(debug_mode)
-#ENVIRON.setverbosemode(verbose_mode)
-ENVIRON.setdebugmode(True)
-ENVIRON.setverbosemode(True)
+ENVIRON.setdebugmode(debug_mode)
+ENVIRON.setverbosemode(verbose_mode)
 LOGGER = LogDispatcher(ENVIRON)
 SYSCONFIG = Configuration(ENVIRON)
 STATECHANGELOGGER = StateChgLogger(LOGGER, ENVIRON)
@@ -1452,9 +1496,9 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     
     """
     logger = LOGGER
+    logger.initializeLogs()
     logger.markSeparator()
     logger.markStartLog()
-    logger.initializeLogs()
     logger.logEnv()
 
     modules = options.modules
