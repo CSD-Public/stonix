@@ -44,7 +44,7 @@ class zzzTestFrameworkfilehelper(unittest.TestCase):
         self.state = StateChgLogger.StateChgLogger(self.logdispatch,
                                                    self.environ)
         self.homedirectory = os.path.expanduser('~')
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.state)
 
     def tearDown(self):
         rmtree(self.homedirectory + "/temp")
