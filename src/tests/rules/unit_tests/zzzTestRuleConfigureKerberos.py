@@ -28,6 +28,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 04/02/2013 Original Implementation
 @change: 07/14/2014 - ekkehard - made testing more rigorous
 @change: 07/28/2014 - ekkehard - bug fixes
+@change: 2015/12/18 - eball - Added eventids
 '''
 from __future__ import absolute_import
 import unittest
@@ -58,7 +59,8 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "kerb5ut"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": False,
@@ -66,7 +68,8 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "Kerberosut"},
                           "edu.mit.Kerberos.krb5kdc.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd",
                            "remove": False,
@@ -74,7 +77,8 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None},
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "krb5kdcut"},
                           "edu.mit.Kerberos.kadmind.launchd":
                           {"path": "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd",
                            "remove": False,
@@ -82,7 +86,8 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None}
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "kadmindut"},
                         }
         else:
             self.files = {"kerb5.conf":
@@ -92,7 +97,8 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                            "permissions": None,
                            "owner": None,
                            "group": None,
-                           "eventid": None}}
+                           "eventid": str(self.rulenumber).zfill(4) +
+                           "kerb5ut"}}
 
     def tearDown(self):
         pass
@@ -107,17 +113,15 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        success = True
         for filelabel, fileinfo in sorted(self.files.items()):
-            addfilereturn = self.fh.addFile(filelabel,
-                                            fileinfo["path"],
-                                            fileinfo["remove"],
-                                            fileinfo["content"],
-                                            fileinfo["permissions"],
-                                            fileinfo["owner"],
-                                            fileinfo["group"],
-                                            fileinfo["eventid"]
-                                            )
+            self.fh.addFile(filelabel,
+                            fileinfo["path"],
+                            fileinfo["remove"],
+                            fileinfo["content"],
+                            fileinfo["permissions"],
+                            fileinfo["owner"],
+                            fileinfo["group"],
+                            fileinfo["eventid"])
 
         success = self.fh.fixFiles()
         return success
@@ -131,9 +135,9 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -146,7 +150,7 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -159,7 +163,7 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
