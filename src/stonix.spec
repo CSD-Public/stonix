@@ -29,7 +29,7 @@ License: GPL v. 2.0
 Group: System administration tools
 Source0: %{name}-%{version}.tgz
 BuildRoot: %{_builddir}/%{name}-%{version}-%{release}-root
-Requires: python, LANL-csdreg, curl
+Requires: python, curl
 BuildArch: noarch
 
 %description
@@ -91,9 +91,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(0755,root,root) /usr/share/man/man8
 
 %post
-# Register the installation of this product
-
-/usr/local/sbin/csdreg -p STONIX-%{version}-install
 
 %postun
 
