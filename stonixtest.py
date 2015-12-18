@@ -46,8 +46,7 @@ import traceback
 
 from optparse import Option, OptionValueError
 
-from src.tests.lib.logdispatcher_lite import LogPriority
-from src.tests.lib.logdispatcher_lite import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.StateChgLogger import StateChgLogger
@@ -1064,6 +1063,9 @@ def assemble_list_suite(modules = []):
     
     Will only run <Rulename>, not the test name zzzTestRule<Rulename>.
     
+    NOTE: The framework/utilities and rules have different processing mechanisms
+         which is why they are processed separately in this function
+    
     @param: modules - a list of modules to test.
     
     @author: Roy Nielsen
@@ -1092,34 +1094,79 @@ def assemble_list_suite(modules = []):
             else:
                 prefix = ""
                 
-            #Find the path to the test
-            for root, dirnames, filenames in os.walk("src/tests/" + prefix):
-                myfile = ""
-                for myfile in filenames:
-                    regex = "^" + str(module) + ".*"
-                    if re.match(regex, myfile):
-                        found = True
-                        if re.match("^rules$", prefix):
+            if re.match("^rules$", prefix):
+                #####
+                # Process a RULE test - different library loading
+                # mechanism
+                found = False
+                #Find the path to the test
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        regex = "^" + str(module) + ".*"
+                        if re.match(regex, myfile):
+                            found = True
+                            #print str(root)
+                            #####
+                            # NOTE: Processing a RULE test here
                             testToRunMod = processRuleTest(root + "/" + myfile)
-                        else:
+                            #print "******************************************"
+                            #print "Checking out " + str(module)
+                            # Make Sure this rule sould be running
+                            if testToRunMod:
+                                #####
+                                # Add the import to a list, to later "map" to a test suite
+                                testList.append(testToRunMod)
+                                #print "Adding test to suite..."   
+                if not found: 
+                    try:   
+                        raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
+                    except TestNotFound, err:
+                        print "\n\tException: " + str(err.msg)
+                        sys.exit(253)
+
+                #print " *****************************************"
+            elif re.match("^framework$", prefix):
+                #####
+                # Process a FRAMEWORK test - different library loading
+                # mechanism.
+                found = False
+                #Find the path to the test
+                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                    myfile = ""
+                    for myfile in filenames:
+                        #print "\n\n\tmodname: " + str(module)
+                        #print "\tFile   : " + str(myfile)
+                        #print "\tRelPath: " + str(root + "/" + myfile)
+                        regex = "^" + str(module) + ".*"
+                        if re.match(regex, myfile):
+                            found = True
+                            #print "******************************************"
+                            #print "Checking out " + str(myfile)
+                            #####
+                            # NOTE: Processing a FRAMEWORK test here
                             testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
                             
-                        #print "******************************************"
-                        #print "Checking out " + str(module)
-                        # Make Sure this rule sould be running
-                        if testToRunMod:
-                            #####
-                            # Add the import to a list, to later "map" to a test suite
-                            testList.append(testToRunMod)
-                            #print "Adding test to suite..."   
-            if not found: 
-                try:   
-                    raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
+                            if testToRunMod:
+                                #####
+                                # Add the import to a list, to later "map" to a test suite
+                                testList.append(testToRunMod)     
+                                #print "Adding test to suite..."   
+                if not found:
+                    try:   
+                        raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
+                    except TestNotFound, err:
+                        print "\n\tException: " + str(err.msg)
+                        sys.exit(254)
+
+                #print " *****************************************"
+            
+            else:
+                try:
+                    raise TestNotFound("Error attempting insert test (" + str(module) + ") into test list...\n")
                 except TestNotFound, err:
                     print "\n\tException: " + str(err.msg)
-                    sys.exit(253)
-
-            #print " *****************************************"
+                    sys.exit(255)
             
     #####
     # Set up the test loader function
@@ -1330,14 +1377,22 @@ parser.add_option("-u", "--utils", action="store_true", dest="utils",
                   default=False, help="Run the function tests.  Will not" + \
                                       " work when combined with -f and -r.")
 
+parser.add_option("-s", "--skip", action="store_true", 
+                  dest="skip_syslog", default=False, 
+                  help="Skip syslog logging so we don't fill up the logs." + \
+                       "This will leave an incremental log by default in " + \
+                       "/tmp/<uid>.stonixtest.<log number>, where log number" +\
+                       " is the order of the last ten stonixtest runs.")
+
 parser.add_option("--network", action="store_true", dest="network",
                   default=False, help="Run the network category of tests")
 
 parser.add_option("--unit", action="store_true", dest="unit",
                   default=False, help="Run the unit test category of tests")
 
-parser.add_option("-i", "--interactive", action="store_true", dest="interactive",
-                  default=False, help="Log failures using default log")
+parser.add_option("-i", "--interactive", action="store_true", 
+                  dest="interactive", default=False, 
+                  help="Log failures using default log")
 
 parser.add_option("-f", "--framework", action="store_true", dest="framework",
                   default=False, help="Run the Framework tests.  Will not" + \
@@ -1347,8 +1402,9 @@ parser.add_option("-a", "--all-automatable", action="store_true", dest="all",
                   default=False, help="Run all unit and network tests - " + \
                   "interactive tests not included")
 
-parser.add_option("--rule-test-consistency", action="store_true", dest="consistency",
-                  default=False, help="Check to make sure there is a " + \
+parser.add_option("--rule-test-consistency", action="store_true", 
+                  dest="consistency", default=False, 
+                  help="Check to make sure there is a " + \
                   "test for every rule and a rule for every rule test")
 
 parser.add_option("-v", "--verbose", action="store_true",
@@ -1420,10 +1476,8 @@ debug_mode = options.debug
 verbose_mode = options.verbose
  
 ENVIRON = Environment()
-#ENVIRON.setdebugmode(debug_mode)
-#ENVIRON.setverbosemode(verbose_mode)
-ENVIRON.setdebugmode(True)
-ENVIRON.setverbosemode(True)
+ENVIRON.setdebugmode(debug_mode)
+ENVIRON.setverbosemode(verbose_mode)
 LOGGER = LogDispatcher(ENVIRON)
 SYSCONFIG = Configuration(ENVIRON)
 STATECHANGELOGGER = StateChgLogger(LOGGER, ENVIRON)
@@ -1452,11 +1506,13 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     
     """
     logger = LOGGER
+    logger.initializeLogs(syslog=options.skip_syslog)
     logger.markSeparator()
     logger.markStartLog()
-    logger.initializeLogs()
     logger.logEnv()
 
+    logger.log(LogPriority.DEBUG, "---==# Done initializing logger...#==---")
+    
     modules = options.modules
 
     consistency = options.consistency
@@ -1465,7 +1521,7 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     if "ttrlog" in locals():
         runner = unittest.TextTestRunner(ConsoleAndFileWriter(ttrlog))
     else:
-        runner = unittest.TextTestRunner()
+        runner = unittest.TextTestRunner(stream=sys.stdout)
 
     # Set Up test suite
     if modules:
