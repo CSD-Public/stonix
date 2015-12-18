@@ -46,8 +46,7 @@ import traceback
 
 from optparse import Option, OptionValueError
 
-from src.tests.lib.logdispatcher_lite import LogPriority
-from src.tests.lib.logdispatcher_lite import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.StateChgLogger import StateChgLogger
@@ -1090,6 +1089,8 @@ def assemble_list_suite(modules = []):
                 prefix = "framework"
             elif re.search("ule", module):
                 prefix = "rules"
+            elif re.search("tils", module):
+                prefix = "utils"
             else:
                 prefix = ""
                 
@@ -1144,7 +1145,7 @@ def assemble_list_suite(modules = []):
                             #print "Checking out " + str(myfile)
                             #####
                             # NOTE: Processing a FRAMEWORK test here
-                            testToRunMod = processFrameworkTest(root + "/" + myfile)
+                            testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
                             
                             if testToRunMod:
                                 #####
@@ -1376,14 +1377,22 @@ parser.add_option("-u", "--utils", action="store_true", dest="utils",
                   default=False, help="Run the function tests.  Will not" + \
                                       " work when combined with -f and -r.")
 
+parser.add_option("-s", "--skip", action="store_true", 
+                  dest="skip_syslog", default=False, 
+                  help="Skip syslog logging so we don't fill up the logs." + \
+                       "This will leave an incremental log by default in " + \
+                       "/tmp/<uid>.stonixtest.<log number>, where log number" +\
+                       " is the order of the last ten stonixtest runs.")
+
 parser.add_option("--network", action="store_true", dest="network",
                   default=False, help="Run the network category of tests")
 
 parser.add_option("--unit", action="store_true", dest="unit",
                   default=False, help="Run the unit test category of tests")
 
-parser.add_option("-i", "--interactive", action="store_true", dest="interactive",
-                  default=False, help="Log failures using default log")
+parser.add_option("-i", "--interactive", action="store_true", 
+                  dest="interactive", default=False, 
+                  help="Log failures using default log")
 
 parser.add_option("-f", "--framework", action="store_true", dest="framework",
                   default=False, help="Run the Framework tests.  Will not" + \
@@ -1393,8 +1402,9 @@ parser.add_option("-a", "--all-automatable", action="store_true", dest="all",
                   default=False, help="Run all unit and network tests - " + \
                   "interactive tests not included")
 
-parser.add_option("--rule-test-consistency", action="store_true", dest="consistency",
-                  default=False, help="Check to make sure there is a " + \
+parser.add_option("--rule-test-consistency", action="store_true", 
+                  dest="consistency", default=False, 
+                  help="Check to make sure there is a " + \
                   "test for every rule and a rule for every rule test")
 
 parser.add_option("-v", "--verbose", action="store_true",
@@ -1496,11 +1506,13 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     
     """
     logger = LOGGER
-    logger.initializeLogs()
+    logger.initializeLogs(syslog=options.skip_syslog)
     logger.markSeparator()
     logger.markStartLog()
     logger.logEnv()
 
+    logger.log(LogPriority.DEBUG, "---==# Done initializing logger...#==---")
+    
     modules = options.modules
 
     consistency = options.consistency
@@ -1509,7 +1521,7 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     if "ttrlog" in locals():
         runner = unittest.TextTestRunner(ConsoleAndFileWriter(ttrlog))
     else:
-        runner = unittest.TextTestRunner()
+        runner = unittest.TextTestRunner(stream=sys.stdout)
 
     # Set Up test suite
     if modules:
