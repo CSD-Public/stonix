@@ -20,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+from __builtin__ import True
 """
 Created November 2, 2011
 
@@ -38,6 +39,8 @@ import re
 import socket
 import ssl
 import sys
+import socket
+import httplib
 import tempfile
 import urllib2
 from subprocess import Popen, PIPE
@@ -79,6 +82,9 @@ class SSLSecHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(SSLSecConnection, req)
 
+if sys.hexversion >= 0x02070900:
+    urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
+
 class InstallingHelper(object) :
     """
     Generic class using python native calls to download, check md5sums
@@ -88,21 +94,36 @@ class InstallingHelper(object) :
     
     """
     
-    def __init__(self, environ, url, logger) :
+    def __init__(self, environ, url, logger, ca=None) :
         """
         Initialization method
         """
         self.environ = environ
-        self.url = url
+        self.url = str(url).strip()
         self.logger = logger
         if re.match("^\s*$", self.url):
             self.logger.log(LogPriority.ERROR, "Cannot use this class " +
                             "without a URL to the archive " +
                             "file you wish to download and install")
-        
+        self.logger.log(LogPriority.ERROR, "URL: " + str(self.url))
         self.find_file_name()
         self.find_package_name()
         self.find_base_url()
+        self.dotmd5 = False
+        
+        llist = self.url.strip().split("/")
+        
+        proto = llist[0].split(":")[0]
+        serverproto = llist[2]
+        page = "/" + "/".join(llist[3:])
+        try:
+            port = serverproto.split(":")[1]
+        except IndexError, err:
+            if re.match("^http$", proto):
+                port = 80
+            elif re.match("^https$", proto):
+                port = 443
+
 
     def un_archive(self, filename="", destination=".") :
         """
@@ -235,32 +256,42 @@ class InstallingHelper(object) :
         @author: Roy Nielsen
     
         """
-        if not re.match("^$", self.url) or not re.match("^$", fpath) :
-
+        self.logger.log(LogPriority.ERROR, "URL: \"" + str(self.url) + "\"")
+        self.logger.log(LogPriority.ERROR, "FPATH: \"" + str(fpath) + "\"")
+        if re.match("^\s*$", self.url) or re.match("^\s*$", fpath) :
+            self.logger.log(LogPriority.INFO, "Cannot work with empty " + \
+                                              "parameters...")
+            self.logger.log(LogPriority.DEBUG, "Need both a URL and full " +\
+                            "path filename... try again.")
+        else:
+            self.logger.log(LogPriority.DEBUG, "Attempting to download: " +\
+                            str(self.url))
             set_no_proxy()
 
             # first try to open the URL
             try :
-                if sys.hexversion >= 0x02070900:
-                    urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
-                urlfile = urllib2.urlopen(self.url)
+                urlfile = urllib2.urlopen(str(self.url).strip())
             except Exception , err:
                 self.logger.log(LogPriority.DEBUG, 
                                 ["InstallingHelper.download_and_save_file",
                                  "Error: " + str(err)])
+                raise err
             else :
                 try :
                     # Next try to open the file for writing
-                    f = open(fpath, "w")
+                    f = open(str(fpath).strip(), "w")
                 except IOError, err :
-                    self.logger.log(LogPriority.INFO, 
+                    self.logger.log(LogPriority.ERROR, 
                                     ["InstallingHelper.download_and_save_file",
                                     "Error opening file - err: " + str(err)])
+                    raise err
                 except Exception, err :
                     self.logger.log(LogPriority.INFO, 
                                     ["InstallingHelper.download_and_save_file",
                                     "Generic exception opening file - err: " + str(err)])
+                    raise err
                 else :
+                    self.logger.log(LogPriority.ERROR, ".....................")
                     # take data out of the url stream and put it in the file
                     # a chunk at a time
                     chunk = 16 * 1024 * 1024
@@ -277,13 +308,21 @@ class InstallingHelper(object) :
                                         "Read " + str(len(data)) + " bytes"])
                     f.close()
                 urlfile.close()
-        else :
-            print "Need both a URL and full path filename... try again."    
     
     
     def download_and_prepare(self):
         """
         Download and unarchive a file into a temporary directory.
+        
+        @note: Assumes repository similar to the Jamf Casper Suite JDS server,
+               where the md5sum of the file can be found in a filename on
+               the JDS server in the following format.
+               
+               .<filename>.<UPPER-md5sum>
+        
+               Specific to the Casper server for Macs.  If you want to override
+               this method for another OS, subclass this class, or rewrite the
+               function.
 
         @returns: tmp_dir - the path where the archive was downloaded to
                   tmp_name - name of the downloaded archive, including the
@@ -291,7 +330,6 @@ class InstallingHelper(object) :
     
         @author: Roy Nielsen
         """
-    
         if re.match("^\s*$", self.url) or re.match("^\s*$", self.package_name) :
             self.logger.log(LogPriority.DEBUG, 
                             ["InstallingHelper.download_and_prepare",
@@ -314,6 +352,8 @@ class InstallingHelper(object) :
                                  "tmp_dir: " + tmp_dir])
 
             tmp_name = tmp_dir + "/" + self.file_name
+            self.logger.log(LogPriority.DEBUG, "Attempting to save to: " +\
+                            str(tmp_name))
 
             self.download_and_save_file(tmp_name)    
 
@@ -322,40 +362,53 @@ class InstallingHelper(object) :
                             "md5 file: " + self.base_url + "/" + \
                             self.package_name + ".md5.txt"])
 
-            tmp_sig = self.get_string_from_url(self.base_url + "/" + \
-                                               self.package_name + \
-                                               ".md5.txt")
-            if re.match("^\s*$", tmp_sig) :
+            if self.correctMd5():
+                # Check for a Jamf style MD5 Link
+                # .<filename>.<UPPER-md5sum> on the server
+                sig_match = True
+            
+            else:
+                #####
+                # Check for old <package>.md5.txt on the server with the hash 
+                # inside the file
                 tmp_sig = self.get_string_from_url(self.base_url + "/" + \
-                                                   self.package_name.lower() + \
+                                                   self.package_name + \
                                                    ".md5.txt")
-
-            if not self.check_md5(tmp_sig, tmp_name) :
-                self.logger.log(LogPriority.WARNING, 
-                                ["InstallingHelper.download_and_prepare",
-                                "md5: " + str(tmp_sig) + " and file: " + \
-                                tmp_name + " don't match"])
-                self.sig_match = False
-            else :
-                self.logger.log(LogPriority.DEBUG,
-                                ["InstallingHelper.download_and_prepare",
-                                "md5: " + str(tmp_sig) + " and file: " + \
-                                tmp_name + " match"])
-                self.sig_match = True
-                un_arch_complete = self.un_archive(tmp_name, tmp_dir)
-                if  un_arch_complete == 0 :
+                if re.match("^\s*$", tmp_sig) :
+                    tmp_sig = self.get_string_from_url(self.base_url + "/" + \
+                                                       self.package_name.lower() + \
+                                                       ".md5.txt")
+    
+                if not self.check_md5(tmp_sig, tmp_name) :
+                    self.logger.log(LogPriority.WARNING, 
+                                    ["InstallingHelper.download_and_prepare",
+                                    "md5: " + str(tmp_sig) + " and file: " + \
+                                    tmp_name + " don't match"])
+                    self.sig_match = False
+                else :
                     self.logger.log(LogPriority.DEBUG,
                                     ["InstallingHelper.download_and_prepare",
-                                     "un_archive returned 0"])
-                elif un_arch_complete == -1 :
-                    self.logger.log(LogPriority.DEBUG, 
-                                    ["InstallingHelper.download_and_prepare",
-                                    "un_archive returned -1"])
-                else:
-                    self.logger.log(LogPriority.DEBUG, 
-                                    ["InstallingHelper.download_and_prepare",
-                                    "un_archive returned code: " + \
-                                    str(un_arch_complete)])
+                                    "md5: " + str(tmp_sig) + " and file: " + \
+                                    tmp_name + " match"])
+                    self.sig_match = True
+
+                #####
+                # Found a good md5 match
+                if self.sig_match:
+                    un_arch_complete = self.un_archive(tmp_name, tmp_dir)
+                    if  un_arch_complete == 0 :
+                        self.logger.log(LogPriority.DEBUG,
+                                        ["InstallingHelper.download_and_prepare",
+                                         "un_archive returned 0"])
+                    elif un_arch_complete == -1 :
+                        self.logger.log(LogPriority.DEBUG, 
+                                        ["InstallingHelper.download_and_prepare",
+                                        "un_archive returned -1"])
+                    else:
+                        self.logger.log(LogPriority.DEBUG, 
+                                        ["InstallingHelper.download_and_prepare",
+                                        "un_archive returned code: " + \
+                                        str(un_arch_complete)])
         self.logger.log(LogPriority.DEBUG, 
                         ["InstallingHelper.download_and_prepare",
                         "Returning: " + tmp_dir + \
@@ -642,3 +695,64 @@ class InstallingHelper(object) :
              # if archive, unarchive
             self.un_archive(tmp_name, tmp_dir)
 
+    def isAvailable(self, url):
+        """
+        Checks the link to see if the file is available for download, uses
+        urllib2.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        if not re.match("^\s*$", url):
+            req = urllib2.Request(url)
+            try:
+                resp = urllib2.urlopen(req)
+            except urllib2.HTTPError as err:
+                if err.code == 404:
+                    # do something...
+                    self.logger.log(LogPriority.INFO,"HTTPError: " + str(err))
+                else:
+                    # ...
+                    self.logger.log(LogPriority.INFO,"HTTPError: " + str(err))
+            except urllib2.URLError as err:
+                # Not an HTTP-specific error (e.g. connection refused)
+                # ...
+                self.logger.log(LogPriority.INFO,"URLError: " + str(err))
+            else:
+                # 200
+                success = True
+                body = resp.read()
+        
+        return success
+    
+    def correctMd5(self):
+        """
+        Validate that the MD5 of the file is the same as the one on the server,
+        for consistency's sake, ie we got a good download.
+        
+        Takes an MD5 of the local file, then appends it to the filename with a 
+        ".", then does a request and getreqpose and checks for a "200 in the 
+        response.status field.
+        
+        .<filename>.<UPPER-md5sum>
+        
+        Specific to the Casper server for Macs.  If you want to override this 
+        method for another OS, subclass this class, or rewrite the function.
+        
+        @author: Roy Nielsen
+        """
+
+        myhash = self.get_file_md5sum()
+        
+        hashname = "." + self.url.split("/")[-1] + "." + str(myhash).upper().strip()
+        
+        self.logger.log(LogPriority.DEBUG, "Hashname:          " + str(hashname).strip())
+        
+        page = "/".join(self.url.split("/")[:-1]) + "/" + str(hashname).strip()
+        
+        self.logger.log(LogPriority.DEBUG, "Page: " + page)
+        
+        if self.isAvailable(page):
+            return True
+        return False
+    

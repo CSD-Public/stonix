@@ -50,11 +50,12 @@ from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import has_connection_to_server
 from ..CommandHelper import CommandHelper
 from ..filehelper import FileHelper
-from ..IHmac import IHmac
+from ..macpkgr import MacPkgr
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERQUICKADD = "https://jss.lanl.gov/CasperShare/QuickAdd.09.81.pkg"
 JAMFCASPERSUITESERVER = "jss.lanl.gov"
+REPOROOT="https://jss.lanl.gov/CasperShare/"
+PACKAGENAME="QuickAdd.09.81.pkg"
 
 
 class InstallCasperSuite(Rule):
@@ -75,7 +76,6 @@ class InstallCasperSuite(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.11']}}
         self.js = JAMFCASPERSUITESERVER
-        self.qa = JAMFCASPERQUICKADD
 
         key = self.rulename
         instructions = '''To disable the installation of the JAMF Casper Recon client set the InstallCasperSuite option to no or False.'''
@@ -132,6 +132,7 @@ class InstallCasperSuite(Rule):
         self.services = {"com.jamfsoftware.jamf.agent":
                          "/Library/LaunchAgents/com.jamfsoftware.jamf.agent.plist"
                          }
+        self.pkgr = MacPkgr(environ, logdispatch, REPOROOT)
 
     def report(self):
         '''
@@ -232,12 +233,8 @@ class InstallCasperSuite(Rule):
                     msg = "Connected to " + str(self.js)
                     self.logdispatch.log(LogPriority.DEBUG, msg)
 
-# Set up the installation
-                    installing = IHmac(self.environ,
-                                       self.qa,
-                                       self.logdispatch)
 # Install the package
-                    if installing.install_package_from_server():
+                    if pkgr.installpackage(PACKAGENAME):
                         self.rulesuccess = True
                         messagestring = str(self.qa) + \
                             " installation successful!"

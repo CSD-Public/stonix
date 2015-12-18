@@ -1,0 +1,15 @@
+#!/bin/bash
+
+T="/usr/bin/touch"
+M="/bin/mkdir"
+
+STAMP=testStonixMacPkgr-0.0.3
+
+${T} /tmp/${STAMP}/one/postfile2
+${T} /tmp/${STAMP}/one/two/three/3.5/postfile3
+
+${M} -p /tmp/${STAMP}/one/six/6.5
+
+exit 0
+
+

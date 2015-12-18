@@ -29,6 +29,8 @@ intended for use to selfupdate a script.
 @operatingsystem: Mac OS X
 @author: Roy Nielsen
 @change: 2015/11/23 eball Replaced Popen with CommandHelper, removed sys.exit
+@change: 2015/12/18 rsn Added messages to raising exceptions, changed logic 
+                        for removing install directory
 """
 import re
 import os
@@ -62,7 +64,7 @@ class IHmac(InstallingHelper) :
 
         InstallingHelper.__init__(self, environ, url, self.logger)
 
-    def install_package_from_server(self):
+    def install_package_from_server(self, macpkgr=True):
         """
         This function references generic methods from the InstallingHelper
         class to download an archived .pkg or .mpkg file, check md5sum of
@@ -89,6 +91,7 @@ class IHmac(InstallingHelper) :
         """
         # Download and unarchive the package to a temporary directory, with
         # md5 checking.
+        self.macpkgr = macpkgr
         success = False
         tmp_dir = self.download_and_prepare()
 
@@ -113,14 +116,15 @@ class IHmac(InstallingHelper) :
                 if self.ch.getReturnCode() == 0:
                     success = True
 
-                # remove the temporary directory where the archive was
-                # downloaded and unarchived.
-                try:
-                    shutil.rmtree(tmp_dir)
-                except Exception, err:
-                    self.logger.log(LogPriority.ERROR,
-                                    "Exception: " + str(err))
-                    success = False
+                    # remove the temporary directory where the archive was
+                    # downloaded and unarchived.
+                    try:
+                        shutil.rmtree(tmp_dir)
+                    except Exception, err:
+                        self.logger.log(LogPriority.ERROR,
+                                        "Exception: " + str(err))
+                        success = False
+                        raise err
             else:
                 self.logger.log(LogPriority.ERROR, "Valid package extension " +
                                 "not found, cannot install: " + tmp_dir + "/" +
@@ -176,25 +180,26 @@ class IHmac(InstallingHelper) :
 
         # if integrity ok, 
         if not self.sig_match :
-            self.logger.log(LogPriority.ERROR, 
-                            "Signatures didn't match, not copying...")
-            raise
+            message = "Signatures didn't match, not copying..."
+            self.logger.log(LogPriority.ERROR, message)
+            raise Exception(message)
         else:
             if isdir:
                 try:
                     shutil.copytree(src_path, dest)
                 except Exception, err:
-                    self.logger.log(LogPriority.ERROR, 
-                                    "Unable to recursively copy dir: " + src_path + " error: " + str(err))
-                    raise
+                    message = "Unable to recursively copy dir: " + src_path + \
+                              " error: " + str(err)
+                    self.logger.log(LogPriority.ERROR, message)
+                    raise Exception(message)
                 else :
                     # try to chmod the directory (not recursively)
                     try :
                         os.chmod(dest, mode)
                     except OSError, err :
-                        self.logger.log(LogPriority.ERROR, 
-                                        "Unable to change mode: " + str(err))
-                        raise
+                        message = "Unable to change mode: " + str(err)
+                        self.logger.log(LogPriority.ERROR, message)
+                        raise Exception(message)
                     
                     # UID & GID needed to chown the directory
                     uid = 0
@@ -202,36 +207,40 @@ class IHmac(InstallingHelper) :
                     try :
                         uid = pwd.getpwnam(owner)[2]
                     except KeyError, err :
-                        self.logger.log(LogPriority.DEBUG, 
-                                        "Error: " + str(err))
-                        raise
+                        message = "Error: " + str(err)
+                        self.logger.log(LogPriority.DEBUG, message)
+                        raise Exception(message)
                     try :
                         gid = grp.getgrnam(group)[2]
                     except KeyError, err :
-                        self.logger.log(LogPriority.DEBUG, 
-                                        "Error: " + str(err))
-                        raise
+                        message = "Error: " + str(err)
+                        self.logger.log(LogPriority.DEBUG, message)
+                        raise Exception(message)
                     # Can only chown if uid & gid are int's
-                    if ((type(uid) == type(int())) and (type(gid) == type(int()))) :
+                    if ((type(uid) == type(int())) and \
+                        (type(gid) == type(int()))) :
                         try :
                             os.chown(dest, uid, gid)
                         except OSError, err :
-                            self.logger.log(LogPriority.DEBUG, 
-                                            "Error: " + str(err))
+                            message = "Error: " + str(err)
+                            self.logger.log(LogPriority.DEBUG, message)
+                            raise Exception(message)
             else :
                 try :
                     dir_list = os.listdir(src_path)
                 except OSError, err :
-                    self.logger.log(LogPriority.ERROR, 
-                                    "Error listing files from: " + src_path + " error: " + str(err))
-                    raise
+                    message = "Error listing files from: " + src_path + \
+                              " error: " + str(err)
+                    self.logger.log(LogPriority.ERROR, message)
+                    raise Exception(message)
                 else :
                     for myfile in dir_list :
                         try :
                             shutil.copy2(myfile, dest)
                         except Exception, err :
-                            self.logger.log(LogPriority.DEBUG, 
-                                            "Error copying file: " + myfile + " error: " + str(err))
+                            message = "Error copying file: " + myfile + \
+                                      " error: " + str(err)
+                            self.logger.log(LogPriority.DEBUG, message)
                             raise
 
 
@@ -262,8 +271,9 @@ class IHmac(InstallingHelper) :
         The crowning jewel of the installing class -- a method to check
         the passed in (local program) version string and compare it to a 
         version string on the server & if the passed in version is less
-        than the server version, it will call either the install_package_from_server
-        or copy_install_from_server method to install the updated version.
+        than the server version, it will call either the 
+        install_package_from_server or copy_install_from_server method to 
+        install the updated version.
         
         @params: version - a string that contains: "X.Y.Z" where X is the 
                            major version and Y is the mid version and Z is 
@@ -288,13 +298,16 @@ class IHmac(InstallingHelper) :
         """
         update = False
 
-        server_version = self.get_string_from_url(self.base_url + "/" + self.package_name + ".version.txt")
+        server_version = self.get_string_from_url(self.base_url + \
+                                                  "/" + self.package_name + \
+                                                  ".version.txt")
 
         update = isServerVersionHigher(version, server_version)
         
         if update :
             self.logger.log(LogPriority.DEBUG, 
-                             "Current version is less than the version on the server, attempting to update")
+                             "Current version is less than the version on " + \
+                             "the server, attempting to update")
             # set url, or use set url
             self.install_package_from_server()
 
