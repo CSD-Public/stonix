@@ -1145,7 +1145,7 @@ def assemble_list_suite(modules = []):
                             #print "Checking out " + str(myfile)
                             #####
                             # NOTE: Processing a FRAMEWORK test here
-                            testToRunMod = processFrameworkTest(root + "/" + myfile)
+                            testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
                             
                             if testToRunMod:
                                 #####
@@ -1506,9 +1506,8 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     
     """
     logger = LOGGER
-    logger.initializeLogs()
-    logger.markSeparator()
     logger.initializeLogs(syslog=options.skip_syslog)
+    logger.markSeparator()
     logger.markStartLog()
     logger.logEnv()
 
