@@ -145,10 +145,12 @@ class MacPkgr(object):
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
+        self.fssync()
+        return success
             
 ###############################################################################
 
-    def removePackage(self, package):
+    def removePackage(self, package="", install_root="/"):
         '''
         Remove a package domain. Return a bool indicating success or failure.
         Not yet implemented...
@@ -161,11 +163,13 @@ class MacPkgr(object):
         @return bool :
         @author: rsn
         '''
+        success = False
         try:
+            print "Package: " + str(package)
+            domain = None
             domain = self.findDomain(package)
-
-            success = False
-            if domain:
+            self.logger.log(LogPriority.DEBUG, "removePackage - Domain: " + domain)
+            if domain is not None:
                 cmd_one = ["/usr/sbin/pkgutil", 
                            "--only-files", 
                            "--files", 
@@ -180,36 +184,46 @@ class MacPkgr(object):
                 # receipt
                 count = 0
                 self.ch.executeCommand(cmd_one)
-                files2remove = self.ch.getOutputString()
+                files2remove = self.ch.getOutputString().split("\n")
+                print "Files to remove: " + str(files2remove)
                 self.logger.log(LogPriority.DEBUG, files2remove)
                 if self.ch.getReturnCode() == 0:
                     for file in files2remove:
-                        try:
+                        if file:
+                            try:
+                                #####
+                                # Make sure "/" is prepended to the file as pkgutil
+                                # does not report the first "/" in the file path
+                                os.remove(install_root + file)
+                                count = count + 1
+                            except OSError, err:
+                                self.logger.log(LogPriority.DEBUG, 
+                                                "Error trying to remove: " + \
+                                                str(file))
+                                self.logger.log(LogPriority.DEBUG, 
+                                                "With Exception: " + \
+                                                str(err))
+                        else:
                             #####
-                            # Make sure "/" is prepended to the file as pkgutil
-                            # does not report the first "/" in the file path
-                            os.remove("/" + file)
+                            # Potentially empty filename in the list, need to
+                            # bump the count to match.
                             count = count + 1
-                        except OSError, err:
-                            self.logger.log(LogPriority.DEBUG, 
-                                            "Error trying to remove: " + \
-                                            str(file))
-                            self.logger.log(LogPriority.DEBUG, 
-                                            "With Exception: " + \
-                                            str(err))
         
                     #####
                     # Directory list will include directories such as /usr
                     # and /usr/local... Sucess is obtained only if all of 
                     # the files (not directories) are deleted.
-                    if count == len(list):
+                    if count == len(files2remove):
                         success = True
+                    else:
+                        self.logger.log(LogPriority.WARNING, "Count: " + str(count))
+                        self.logger.log(LogPriority.WARNING, "Files removed: " + str(len(files2remove)))
         
                     #####
                     # Use the pkgutil command to get a list of directories 
                     # in the package receipt
                     self.ch.executeCommand(cmd_two)
-                    dirs2remove = self.ch.getOutputString()
+                    dirs2remove = self.ch.getOutputString().split("\n")
                     #####
                     # Reverse list as list is generated with parents first 
                     # rather than children first.
@@ -217,33 +231,35 @@ class MacPkgr(object):
                     self.logger.log(LogPriority.DEBUG, files2remove)
                     if self.ch.getReturnCode() == 0:
                         for dir in dirs2remove:
-                            try:
-                                #####
-                                # Make sure "/" is prepended to the directory 
-                                # tree as pkgutil does not report the first "/"
-                                # in the file path
-                                os.rmdir("/" + dir)
-                                #####
-                                # We don't care if any of the child directories
-                                # still have files, as directories such as 
-                                # /usr/bin, /usr/local/bin are reported by 
-                                # pkgutil in the directory listing, which is 
-                                # why we use os.rmdir rather than shutil.rmtree
-                                # and we don't report on the success or failure
-                                # of removing directories.
-                            except OSError, err:
-                                self.logger.log(LogPriority.DEBUG, 
-                                                "Error trying to remove: " + \
-                                                str(dir))
-                                self.logger.log(LogPriority.DEBUG, 
-                                                "With Exception: " + str(err))
-                
+                            if dir:
+                                try:
+                                    #####
+                                    # Make sure "/" is prepended to the directory 
+                                    # tree as pkgutil does not report the first "/"
+                                    # in the file path
+                                    os.rmdir(install_root + dir)
+                                    #####
+                                    # We don't care if any of the child directories
+                                    # still have files, as directories such as 
+                                    # /usr/bin, /usr/local/bin are reported by 
+                                    # pkgutil in the directory listing, which is 
+                                    # why we use os.rmdir rather than shutil.rmtree
+                                    # and we don't report on the success or failure
+                                    # of removing directories.
+                                except OSError, err:
+                                    self.logger.log(LogPriority.DEBUG, 
+                                                    "Error trying to remove: " + \
+                                                    str(dir))
+                                    self.logger.log(LogPriority.DEBUG, 
+                                                    "With Exception: " + str(err))
+                                    pass
+                    
                         #####
                         # Make the system package database "forget" the package
                         # was installed.
                         cmd_three = ["/usr/sbin/pkgutil", "--forget", domain]
                         self.ch.executeCommand(cmd_three)
-                        if not self.ch.getReturnCode() == 0:
+                        if not re.match("^%s$"%str(self.ch.getReturnCode()).strip(), str(0)):
                             success = False
                 else:
                     self.logger.log(LogPriority.DEBUG, "Page: \"" + \
@@ -256,6 +272,8 @@ class MacPkgr(object):
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
 
+        self.fssync()
+        print "Remove Package success: " + str(success)
         return success
 
 ###############################################################################
@@ -380,7 +398,6 @@ class MacPkgr(object):
             domain = None
         else:
             self.fssync()
-            print str(files)
             #####
             # Unwrap command worked, process the receipt plists
             for afile in files:
@@ -402,7 +419,8 @@ class MacPkgr(object):
                         if re.match("^%s$"%plist['PackageFileName'], pkg):
                             #####
                             # Find the first instance of the PackageFileName
-                            domain = afile_path
+                            # ... without the .plist..
+                            domain = ".".join(afile.split(".")[:-1])
                             break
             #####
             # Make the plists binary again...
@@ -411,7 +429,7 @@ class MacPkgr(object):
             #####
             # Log the domain...
             self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
-
+        print "findDomain: " + str(domain)
         return domain
     
     def fssync(self):
