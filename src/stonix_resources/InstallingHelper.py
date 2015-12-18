@@ -20,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+from __builtin__ import True
 """
 Created November 2, 2011
 
@@ -91,12 +92,12 @@ class InstallingHelper(object) :
     
     """
     
-    def __init__(self, environ, url, logger) :
+    def __init__(self, environ, url, logger, ca=None) :
         """
         Initialization method
         """
         self.environ = environ
-        self.url = url
+        self.url = str(url).strip()
         self.logger = logger
         if re.match("^\s*$", self.url):
             self.logger.log(LogPriority.ERROR, "Cannot use this class " +
@@ -107,6 +108,20 @@ class InstallingHelper(object) :
         self.find_package_name()
         self.find_base_url()
         self.dotmd5 = False
+        
+        llist = self.url.strip().split("/")
+        
+        proto = llist[0].split(":")[0]
+        serverproto = llist[2]
+        page = "/" + "/".join(llist[3:])
+        try:
+            port = serverproto.split(":")[1]
+        except IndexError, err:
+            if re.match("^http$", proto):
+                port = 80
+            elif re.match("^https$", proto):
+                port = 443
+
 
     def un_archive(self, filename="", destination=".") :
         """
@@ -296,6 +311,16 @@ class InstallingHelper(object) :
     def download_and_prepare(self):
         """
         Download and unarchive a file into a temporary directory.
+        
+        @note: Assumes repository similar to the Jamf Casper Suite JDS server,
+               where the md5sum of the file can be found in a filename on
+               the JDS server in the following format.
+               
+               .<filename>.<UPPER-md5sum>
+        
+               Specific to the Casper server for Macs.  If you want to override
+               this method for another OS, subclass this class, or rewrite the
+               function.
 
         @returns: tmp_dir - the path where the archive was downloaded to
                   tmp_name - name of the downloaded archive, including the
@@ -335,12 +360,11 @@ class InstallingHelper(object) :
                             "md5 file: " + self.base_url + "/" + \
                             self.package_name + ".md5.txt"])
 
-            if self.dotmd5:
-                #####
+            if self.correctMd5():
                 # Check for a Jamf style MD5 Link
                 # .<filename>.<UPPER-md5sum> on the server
-                if not correctMD5():
-                    sig_match = False
+                sig_match = True
+            
             else:
                 #####
                 # Check for old <package>.md5.txt on the server with the hash 
@@ -669,6 +693,36 @@ class InstallingHelper(object) :
              # if archive, unarchive
             self.un_archive(tmp_name, tmp_dir)
 
+    def isAvailable(self, url):
+        """
+        Checks the link to see if the file is available for download, uses
+        urllib2.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        if not re.match("^\s*$", url):
+            req = urllib2.Request(url)
+            try:
+                resp = urllib2.urlopen(req)
+            except urllib2.HTTPError as err:
+                if err.code == 404:
+                    # do something...
+                    self.logger.log(LogPriority.INFO,"HTTPError: " + str(err))
+                else:
+                    # ...
+                    self.logger.log(LogPriority.INFO,"HTTPError: " + str(err))
+            except urllib2.URLError as err:
+                # Not an HTTP-specific error (e.g. connection refused)
+                # ...
+                self.logger.log(LogPriority.INFO,"URLError: " + str(err))
+            else:
+                # 200
+                success = True
+                body = resp.read()
+        
+        return success
+    
     def correctMd5(self):
         """
         Validate that the MD5 of the file is the same as the one on the server,
@@ -696,11 +750,7 @@ class InstallingHelper(object) :
         
         self.logger.log(LogPriority.DEBUG, "Page: " + page)
         
-        self.request('GET', page)
-        response = self.getresponse()
-        
-        self.logger.log(LogPriority.DEBUG, "Status: " + str(response.status))
-        
-        if re.match("^200$", str(response.status)):
-            return True 
-        return False       
+        if self.isAvailable(page):
+            return True
+        return False
+    

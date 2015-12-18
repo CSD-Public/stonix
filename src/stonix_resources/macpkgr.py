@@ -25,14 +25,17 @@ Created on Nov 24, 2015
 
 @author: rsn, dwalker
 '''
+import os
+import re
+import time
+import plistlib
 import traceback
 from re import search
 from logdispatcher import LogPriority
-from subprocess import Popen,call,PIPE
+from subprocess import Popen, call, PIPE, STDOUT
 from CommandHelper import CommandHelper
 from IHmac import IHmac
-from stonixutilityfunctions import set_no_proxy, \
-                                   has_connection_to_server
+from stonixutilityfunctions import set_no_proxy, has_connection_to_server
 
 def NoRepoException(Exception):
     """
@@ -45,9 +48,37 @@ class MacPkgr(object):
     
     def __init__(self, environ, logger, reporoot=""):
         '''
-        Uses the IHmac InstallingHelper.  Can install .zip, .tar, .tar.gz, 
-        .pkg and .mpkg files via an http or https URL
+        Mac package manager based on other stonix package managers.
         
+        Uses the stonix IHmac and InstallingHelper Libraries.  They can
+        install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
+        https URL
+        
+        @parameter: Instanciated stonix Environment object
+        @parameter: Instanciated stonix LogDispatcher object
+        @parameter: Takes an https link as a repository.
+
+        @method: installpackage(package) - install a package
+        @method: removepackage(package) - remove a package
+        @method: checkInstall(package) - is the package installed?
+        @method: checkAvailable(package) - is it available on the repository?
+        @method: getInstall(package) - 
+        @method: getRemove(package) - 
+        
+        # Methods specific to Mac.
+        @method: findDomain(package) - see docstring
+        
+        @note: Uses the stonix IHmac and InstallingHelper Libraries.  They can
+               install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
+               https URL
+        
+        @note: WARNING: To use checkInstall or removepackage, this package 
+               manager converts all of the plists in the /var/db/receipts 
+               directory to text, then converts they all back to binary when it
+               is done performing a reverse lookup to find if a specific package
+               is installed. I would love to use Greg Neagle's 
+               FoundationPlist.py, but licenses are not compatible.
+
         '''
         self.environ = environ
         self.logger = logger
@@ -55,12 +86,14 @@ class MacPkgr(object):
         if not reporoot:
             raise NoRepoException
         else:
-            self.repo = reporoot
+            self.reporoot = reporoot
         self.dotmd5 = True
+        self.logger.log(LogPriority.DEBUG, "Done initializing MacPkgr class...")
+        self.ch = CommandHelper(self.logger)
 
 ###############################################################################
 
-    def installpackage(self, package):
+    def installPackage(self, package):
         '''
         Install a package. Return a bool indicating success or failure.
 
@@ -71,6 +104,10 @@ class MacPkgr(object):
         '''
         success = False
         try:
+            self.logger.log(LogPriority.INFO, "Attempting to install: " +\
+                            str(package))
+            self.logger.log(LogPriority.INFO, "From repo: " + \
+                            str(self.reporoot))
             server = self.reporoot.split("/")[2]
             protocol = self.reporoot.split(":")[0]
             
@@ -78,9 +115,10 @@ class MacPkgr(object):
             
             # If there network, install, else no network, log
             hasconnection = has_connection_to_server(self.logger,
-                                                     self.reporoot + \
-                                                     "/" + package)
+                                                     server, 443)
             if hasconnection:
+                self.logger.log(LogPriority.INFO, "There is a connection to" + \
+                                                  " the server...")
                 # Set up the installation
                 installing = IHmac(self.environ, pkgurl, self.logger)
 
@@ -88,8 +126,7 @@ class MacPkgr(object):
                 success = installing.install_package_from_server()
 
                 self.logger.log(LogPriority.DEBUG,
-                                     "Connection with server exists, " + \
-                                     "can install puppet.")
+                                     "Connection with server exists")
 
             if success:
                 self.detailedresults = package + " pkg installed successfully"
@@ -111,7 +148,7 @@ class MacPkgr(object):
             
 ###############################################################################
 
-    def removepackage(self, package):
+    def removePackage(self, package):
         '''
         Remove a package domain. Return a bool indicating success or failure.
         Not yet implemented...
@@ -125,7 +162,7 @@ class MacPkgr(object):
         @author: rsn
         '''
         try:
-            domain = find_domains(package)[0]
+            domain = self.findDomain(package)
 
             success = False
             if domain:
@@ -237,10 +274,12 @@ class MacPkgr(object):
         @return bool :
         @author: rsn
         '''
+        success = False
         try:
-            success = False
-            domain = find_domains(package)[0]
-            
+            #####
+            # Perform a reverse lookup to get the domain...
+            domain = self.findDomain(package)
+            self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
             if domain:
                 success = True
                 self.logger.log(LogPriority.INFO, 
@@ -258,7 +297,33 @@ class MacPkgr(object):
 ###############################################################################
 
     def checkAvailable(self,package):
-        pass
+        """
+        Check if a package is available at the "reporoot"
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        self.logger.log(LogPriority.INFO, "Checking if: " +\
+                        str(package)) + " is available on the server..."
+        self.logger.log(LogPriority.INFO, "From repo: " + \
+                        str(self.reporoot))
+        server = self.reporoot.split("/")[2]
+        protocol = self.reporoot.split(":")[0]
+        
+        pkgurl = self.reporoot + "/" + package
+        
+        # If there network, install, else no network, log
+        hasconnection = has_connection_to_server(self.logger,
+                                                 server, 443)
+        if hasconnection:
+            self.logger.log(LogPriority.INFO, "There is a connection to" + \
+                                              " the server...")
+            # Set up the installation
+            installing = IHmac(self.environ, pkgurl, self.logger)
+
+            # Install the package
+            success = installing.isAvailable(package)
+        return success
 
 ###############################################################################
 
@@ -272,13 +337,21 @@ class MacPkgr(object):
 
 ###############################################################################
 
-    def find_domains(pkg=""):
+    def findDomain(self, pkg=""):
         """
+        Go through the package receipts database to find a package, and return
+        a domain.  Apple stores package information in "domain" format, rather
+        than a package name format. Accessing the package name means we need to
+        look through all the ".plist" files in /var/db/receipts to find the
+        package name, then we can return the domain so that can be used for 
+        package management.
+        
         Install package receipts can be found in /var/db/receipts.
         
-        A domain is the filename in the receipt database without the ".plist".
+        A domain is the filename in the receipts database without the ".plist"
+        or ".bom".
         
-        An example is gov.lanl.ds.encase
+        An example is org.macports.MacPorts
         
         @parameters: pkg - the name of the install package that we need the
                      domain for.
@@ -286,25 +359,90 @@ class MacPkgr(object):
         
         @author: Roy Nielsen 
         """
-        print "Searching for: " + str(pkg)
-        path = "/var/db/receipts"
+        self.logger.log(LogPriority.DEBUG, "Looking for: " + str(pkg))
+        path = "/var/db/receipts/"
         files = []
-        domains = []
+        domain = ""
         for name in os.listdir(path):
             if os.path.isfile(os.path.join(path, name)) and \
                os.path.isfile(os.path.join(path, name)) and \
                name.endswith(".plist"):
                 files.append(name)
-    
-        for afile in files:
-            domain_name = os.path.join(path, ".".join(afile.split(".")[:-1]))
-            cmd = ["/usr/bin/defaults", "read", domain_name, "PackageFileName"]
-    
-            cmd_stdout = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()[0]
+
+        unwrap = "/usr/bin/plutil -convert xml1 /var/db/receipts/*.plist"
+        wrap = "/usr/bin/plutil -convert binary1 /var/db/receipts/*.plist"
+
+        self.ch.executeCommand(unwrap)
         
-            domain_name
-            if re.match("^%s$"%pkg, cmd_stdout): 
-                print "Found domain: " + str(domain_name)
-                domains.append(domain_name)
-        return domains
+        if not re.match("^%s$"%self.ch.getReturnCode(), str(0)):
+            #####
+            # Unwrap command didn't work... return None
+            domain = None
+        else:
+            self.fssync()
+            print str(files)
+            #####
+            # Unwrap command worked, process the receipt plists
+            for afile in files:
+                #####
+                # Get the path without the plist file extension.
+                afile_path = os.path.join(path, afile)
+                #####
+                # Make sure we have a valid file on the filesystem 
+                if os.path.isfile(afile_path):
+                    try:
+                        plist = plistlib.readPlist(afile_path)
+                    except Exception, err:
+                        self.logger.log(LogPriority.DEBUG, "Exception " + \
+                                                           "trying to use" + \
+                                                           " plistlib: " + \
+                                                           str(err))
+                        raise err
+                    else:
+                        if re.match("^%s$"%plist['PackageFileName'], pkg):
+                            #####
+                            # Find the first instance of the PackageFileName
+                            domain = afile_path
+                            break
+            #####
+            # Make the plists binary again...
+            self.ch.executeCommand(wrap)
+
+            #####
+            # Log the domain...
+            self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
+
+        return domain
     
+    def fssync(self):
+        """
+        The changes to the plists in findDomain are not being sync'd to the
+        filesystem before they are changed back.  PERFORMING A FILESYSTEM
+        SYNC before trying to read the plists after converting them to xml1
+        IS REQUIRED. (Operating system filesystem write buffers need to be
+        flushed to disk before the changed files have the new meaning)
+        
+        @author: Roy Nielsen
+        """
+        synccmd = []
+        
+        self.ch.executeCommand("/bin/sync")
+        if self.ch.getReturnCode() != 0:
+            self.logger.log(LogPriority.DEBUG, "Problem trying to perform " + \
+                                               "filesystem sync...")
+            print "Problem Jim............."
+        else:
+            time.sleep(1)
+            self.ch.executeCommand("/bin/sync")
+            if self.ch.getReturnCode() != 0:
+                self.logger.log(LogPriority.DEBUG, "Problem trying to " + \
+                                                   "perform filesystem sync...")
+            else:
+                time.sleep(1)
+                self.ch.executeCommand("/bin/sync")
+                if self.ch.getReturnCode() != 0:
+                    self.logger.log(LogPriority.DEBUG, "Problem trying to " + \
+                                                       "perform filesystem" + \
+                                                       " sync...")
+                else:
+                    time.sleep(1)
