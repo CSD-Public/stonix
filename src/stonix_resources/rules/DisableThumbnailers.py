@@ -117,7 +117,7 @@ the GNOME environment.'''
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if self.ph.check("gnome") or self.ph.check("gmd"):
+            if self.ph.check("gnome") or self.ph.check("gdm"):
                 cmd = self.gconf + \
                     " --get /desktop/gnome/thumbnailers/disable_all"
                 if self.ch.executeCommand(cmd):
