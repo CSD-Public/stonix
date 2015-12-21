@@ -106,7 +106,8 @@ agent, set the value of SECUREMTA to False.'''
         self.ds = True
         self.sndmailed = ""
         self.postfixpathlist = ['/etc/postfix/main.cf',
-                                '/private/etc/postfix/main.cf']
+                                '/private/etc/postfix/main.cf',
+                                '/usr/lib/postfix/main.cf']
         self.postfixpath = ''
         for path in self.postfixpathlist:
             if os.path.exists(path):
@@ -163,6 +164,10 @@ agent, set the value of SECUREMTA to False.'''
                 self.detailedresults += "sendmail is installed but \
 /etc/mail/sendmail.cf is missing"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
+
+            for path in self.postfixpathlist:
+                if os.path.exists(path):
+                    self.postfixpath = path
 
             if os.path.exists(self.postfixpath):
                 if not checkPerms(self.postfixpath, [0, 0, 420], self.logger):
@@ -351,6 +356,10 @@ agent, set the value of SECUREMTA to False.'''
 
         @author Breen Malmberg
         '''
+
+        for path in self.postfixpathlist:
+            if os.path.exists(path):
+                self.postfixpath = path
 
         if not self.postfixed:
             debug = "not able to performfixpostfix because postfix is \
