@@ -304,12 +304,11 @@ all required logging files"
                     compliant = False
                     break
         if not os.path.exists(self.bootlog):
-            self.detailedresults += "All required logging files \
-aren\'t present\n"
+            self.detailedresults += "bootlog file is not present\n"
             compliant = False
         elif not checkPerms(self.bootlog, [0, 0, 420], self.logger):
             self.detailedresults += "Permissions are not correct on \
-all required logging files"
+bootlog file\n"
             compliant = False
         if self.logs["rsyslog"]:
             self.logpath = "/etc/rsyslog.conf"
@@ -647,7 +646,7 @@ daemon config file: " + self.logpath
             self.detailedresults += "Successfully created file: " + \
                 self.bootlog + "\n"
             os.chown(self.bootlog, 0, 0)
-            os.chmod(self.bootlog, 384)
+            os.chmod(self.bootlog, 420)
             resetsecon(self.bootlog)
 #-----------------------------------------------------------------------------#
         # correct rsyslog/syslog file
