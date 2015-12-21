@@ -75,9 +75,10 @@ the GNOME environment.'''
                     output = self.ch.getOutputString()
                     error = self.ch.getErrorString()
                     if output or error:
-                        if search("No value set for", output):
-                            compliant = False
-                        elif search("False", output):
+                        if search("No value set for", output) or \
+                                search("False", output) or \
+                                search("No value set for", error) or \
+                                search("False", error):
                             compliant = False
                 else:
                     self.detailedresults += "There was an error running " + \
@@ -124,7 +125,9 @@ the GNOME environment.'''
                     error = self.ch.getErrorString()
                     if output or error:
                         if search("No value set for", output) or \
-                                search("False", output):
+                                search("False", output) or \
+                                search("No value set for", error) or \
+                                search("False", error):
                             cmd = self.gconf + " --direct --config-source " + \
                                 "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
                                 "--type bool --set " + \
