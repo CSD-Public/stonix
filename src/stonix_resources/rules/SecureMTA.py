@@ -104,7 +104,7 @@ agent, set the value of SECUREMTA to False.'''
 
         self.iditerator = 0
         self.ds = True
-        self.sndmailed = ""
+        self.sndmailed = None
         self.postfixpathlist = ['/etc/postfix/main.cf',
                                 '/private/etc/postfix/main.cf',
                                 '/usr/lib/postfix/main.cf']
@@ -160,9 +160,7 @@ agent, set the value of SECUREMTA to False.'''
                     compliant = False
             elif len(self.sendmailfoundlist) > 0:
                 compliant = False
-                self.sndmailed = False
-                self.detailedresults += "sendmail is installed but \
-/etc/mail/sendmail.cf is missing"
+                self.detailedresults += "\nSendmail is installed, but the sendmail configuration file: " + str(sndpath) + " could not be found."
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
             for path in self.postfixpathlist:
@@ -181,8 +179,7 @@ agent, set the value of SECUREMTA to False.'''
             elif len(self.postfixfoundlist) > 0:
                 compliant = False
                 self.postfixed = False
-                self.detailedresults += "You have postfix installed but your \
-/etc/postfix/main.cf is missing"
+                self.detailedresults += "Postfix is installed, but the postfix configuration file: " + str(self.postfixpath) + " could not be found."
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
             elif not os.path.exists(self.postfixpath):
                 self.postfixed = False
@@ -389,16 +386,26 @@ create this file"
         '''
         Configure the sendmail client securely if installed.
 
+        @return: success
+        @rtype: bool
         @author Breen Malmberg
+        @change: dwalker - ??? - ???
+        @change: Breen Malmberg - 12/21/2015 - corrected the check to see if sendmail is installed but missing a config file
+                                                added user messaging to let the user know what is wrong
         '''
+
+        success = True
         path = "/etc/mail/sendmail.cf"
-        if not self.sndmailed:
+
+        if self.helper.check('sendmail') and not os.path.exists(path):
             debug = "not able to perform fixsendmail because sendmail is \
 installed but the config file is not present.  Stonix will not attempt to \
 create this file"
+            self.detailedresults += '\n' + debug
             self.logger.log(LogPriority.DEBUG, debug)
-            return False
-        success = True
+            success = False
+            return success
+
         if self.sndmailed.fixables:
             if self.ds:
                 tpath = path + ".tmp"
