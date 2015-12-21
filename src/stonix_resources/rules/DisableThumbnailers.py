@@ -71,15 +71,15 @@ the GNOME environment.'''
             if self.ph.check("gnome") or self.ph.check("gdm"):
                 cmd = self.gconf + \
                     " --get /desktop/gnome/thumbnailers/disable_all"
-                self.ch.executeCommand(cmd)
-                output = self.ch.getOutputString()
-                error = self.ch.getErrorString()
-                if output:
-                    if search("No value set for", output):
-                        compliant = False
-                    elif search("False", output):
-                        compliant = False
-                elif error:
+                if self.ch.executeCommand(cmd):
+                    output = self.ch.getOutputString()
+                    error = self.ch.getErrorString()
+                    if output or error:
+                        if search("No value set for", output):
+                            compliant = False
+                        elif search("False", output):
+                            compliant = False
+                else:
                     self.detailedresults += "There was an error running " + \
                         "the gconf command\n"
                     compliant = False
@@ -119,28 +119,28 @@ the GNOME environment.'''
             if self.ph.check("gnome") or self.ph.check("gmd"):
                 cmd = self.gconf + \
                     " --get /desktop/gnome/thumbnailers/disable_all"
-                self.ch.executeCommand(cmd)
-                output = self.ch.getOutputString()
-                error = self.ch.getErrorString()
-                if output:
-                    if search("No value set for", output) or \
-                            search("False", output):
-                        cmd = self.gconf + " --direct --config-source " + \
-                            "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
-                            "--type bool --set " + \
-                            "/desktop/gnome/thumbnailers/disable_all true"
-                        if not self.ch.executeCommand(cmd):
-                            success = False
-                        else:
+                if self.ch.executeCommand(cmd):
+                    output = self.ch.getOutputString()
+                    error = self.ch.getErrorString()
+                    if output or error:
+                        if search("No value set for", output) or \
+                                search("False", output):
                             cmd = self.gconf + " --direct --config-source " + \
                                 "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
                                 "--type bool --set " + \
-                                "/desktop/gnome/thumbnailers/disable_all false"
-                            event = {"eventtype": "commandstring",
-                                     "command": cmd}
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            self.statechglogger.recordchgevent(myid, event)
-                elif error:
+                                "/desktop/gnome/thumbnailers/disable_all true"
+                            if not self.ch.executeCommand(cmd):
+                                success = False
+                            else:
+                                cmd = self.gconf + " --direct --config-source " + \
+                                    "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
+                                    "--type bool --set " + \
+                                    "/desktop/gnome/thumbnailers/disable_all false"
+                                event = {"eventtype": "commandstring",
+                                         "command": cmd}
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                self.statechglogger.recordchgevent(myid, event)
+                else:
                     self.detailedresults += "There was an error running " + \
                         "the gconf command\n"
                     success = False
