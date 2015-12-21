@@ -32,6 +32,7 @@ from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
+from ..pkghelper import Pkghelper
 from re import search
 import os
 import traceback
@@ -66,7 +67,8 @@ the GNOME environment.'''
         try:
             compliant = True
             self.ch = CommandHelper(self.logger)
-            if os.path.exists(self.gconf):
+            self.ph = Pkghelper(self.logger, self.environ)
+            if self.ph.check("gnome") or self.ph.check("gdm"):
                 cmd = self.gconf + \
                     " --get /desktop/gnome/thumbnailers/disable_all"
                 self.ch.executeCommand(cmd)
@@ -114,7 +116,7 @@ the GNOME environment.'''
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if os.path.exists(self.gconf):
+            if self.ph.check("gnome") or self.ph.check("gmd"):
                 cmd = self.gconf + \
                     " --get /desktop/gnome/thumbnailers/disable_all"
                 self.ch.executeCommand(cmd)
