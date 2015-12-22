@@ -148,9 +148,8 @@ agent, set the value of SECUREMTA to False.'''
             if not self.environ.operatingsystem == "Mac OS X":
                 self.helper = Pkghelper(self.logger, self.environ)
 
-            # check for installed versions of postfix on this system
-            # check for installed sendmail on this system
-            if not self.environ.operatingsystem == "Mac OS X":
+                # check for installed versions of postfix on this system
+                # check for installed sendmail on this system
                 for item in self.postfixlist:
                     if self.helper.check(item):
                         self.postfixinstalled = True
@@ -158,15 +157,15 @@ agent, set the value of SECUREMTA to False.'''
                 if self.helper.check('sendmail'):
                     self.sendmailinstalled = True
 
-            # if sendmail installed, run check on sendmail configuration
-            if self.sendmailinstalled:
-                if not self.reportsendmail():
-                    self.compliant = False
+                # if sendmail installed, run check on sendmail configuration
+                if self.sendmailinstalled:
+                    if not self.reportsendmail():
+                        self.compliant = False
 
-            # if postfix installed, run check on postfix configuration
-            if self.postfixinstalled:
-                if not self.reportpostfix():
-                    self.compliant = False
+                # if postfix installed, run check on postfix configuration
+                if self.postfixinstalled:
+                    if not self.reportpostfix():
+                        self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -277,6 +276,11 @@ agent, set the value of SECUREMTA to False.'''
 
         try:
 
+            if not self.postfixpath:
+                self.detailedresults += '\nCould not locate postfix configuration file.'
+                retval = False
+                return retval
+
             # create the kveditor object
             self.postfixed = KVEditorStonix(self.statechglogger, self.logger,
                                             kvtype, self.postfixpath, tpath, data,
@@ -310,19 +314,25 @@ agent, set the value of SECUREMTA to False.'''
         @change: Breen Malmberg - 12/22/2015 - refactored method
         '''
 
+        self.logger.log(LogPriority.DEBUG, "Inside main fix() method")
+        self.logger.log(LogPriority.DEBUG, "Setting method variable defaults...")
         self.detailedresults = ""
         fixsuccess = True
         self.iditerator = 0
 
         try:
 
+            self.logger.log(LogPriority.DEBUG, "Checking value of CI...")
+
             # if nothing is selected, just exit and inform user
             if not self.mta.getcurrvalue():
                 self.detailedresults += '\nThe CI for this rule is currently disabled. Nothing will be done...'
+                fixsuccess = True
                 self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return fixsuccess
 
+            self.logger.log(LogPriority.DEBUG, "Finding and deleting old event entries...")
             # clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -330,21 +340,28 @@ agent, set the value of SECUREMTA to False.'''
 
             # if the kveditor object for postfix exists, then run the fix postfix method
             if self.postfixed:
+                self.logger.log(LogPriority.DEBUG, "Running fixpostfix() method...")
                 if not self.fixpostfix():
                     fixsuccess = False
+                    self.detailedresults += '\nThe fix for postfix failed.'
 
             # if the kveditor object for sendmail exists, then run the fix sendmail method
             if self.sndmailed:
+                self.logger.log(LogPriority.DEBUG, "Running fixsendmail() method...")
                 if not self.fixsendmail():
                     fixsuccess = False
+                    self.detailedresults += '\nThe fix for sendmail failed.'
 
             elif self.ds:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms("/etc/mail/sendmail.cf", [0, 0, 420], self.logger, self.statechglogger, myid):
-                    fixsuccess = False
+                if os.path.exists('/etc/mail/sendmail.cf'):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms("/etc/mail/sendmail.cf", [0, 0, 420], self.logger, self.statechglogger, myid):
+                        fixsuccess = False
+                        self.detailedresults += '\nCould not correctly set permissions on file: /etc/mail/sendmail.cf'
                 if not self.fixsendmail():
                     fixsuccess = False
+                    self.detailedresults += '\nThe fix for sendmail failed.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -386,6 +403,7 @@ agent, set the value of SECUREMTA to False.'''
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.postfixpath, [0, 0, 420], self.logger, self.statechglogger, myid):
                     retval = False
+                    self.detailedresults += '\nCould not correctly set permissions on file: ' + str(self.postfixpath)
             else:
                 self.detailedresults += '\nPostfix is installed, but could not locate postfix configuration file.'
                 retval = False
@@ -426,14 +444,19 @@ agent, set the value of SECUREMTA to False.'''
                                                 partial refactor of method
         '''
 
+        self.logger.log(LogPriority.DEBUG, "Inside fixsendmail() method")
+        self.logger.log(LogPriority.DEBUG, "Setting method variables to defaults...")
         success = True
         path = "/etc/mail/sendmail.cf"
 
         try:
 
+            self.logger.log(LogPriority.DEBUG, "Checking if sendmail package is installed...")
             if not self.helper.check('sendmail'):
                 self.detailedresults += '\nSendmail is not installed.. no need to configure it.'
+                success = True
                 return success
+
             elif not os.path.exists('/etc/mail'):
                 os.makedirs('/etc/mail', 0755)
 
@@ -462,24 +485,32 @@ agent, set the value of SECUREMTA to False.'''
                             os.chmod(path, 420)
                             resetsecon(path)
                         else:
-                            self.rulesuccess = False
-                            return False
+                            success = False
+                            self.detailedresults += '\nUnable to write changes to file: ' + str(tpath)
+
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     self.sndmailed.setEventID(myid)
                     self.sndmailed.setPath(path)
+
                     if not self.sndmailed.fix():
                         debug = "kveditor fix did not run successfully, returning"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        return False
+                        self.detailedresults += '\n' + debug
+                        success = False
                     if not self.sndmailed.commit():
                         debug = "kveditor fix did not run successfully, returning"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        return False
-                    os.chown(path, 0, 0)
-                    os.chmod(path, 420)
-                    resetsecon(path)
-                    success = True
+                        self.detailedresults += '\n' + debug
+                        success = False
+                    else:
+                        os.chown(path, 0, 0)
+                        os.chmod(path, 420)
+                        resetsecon(path)
+
+                else:
+                    self.detailedresults += '\nNo sendmail fixables. Nothing to fix.'
+
             elif self.ds and os.path.exists(path):
                 tpath = path + ".tmp"
                 contents = readFile(path, self.logger)
@@ -492,6 +523,7 @@ agent, set the value of SECUREMTA to False.'''
                 tempstring += "DS" + MAILRELAYSERVER
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
+
                 if writeFile(tpath, tempstring, self.logger):
                     event = {"eventtype": "conf",
                              "filepath": path,
@@ -509,7 +541,6 @@ agent, set the value of SECUREMTA to False.'''
                 self.detailedresults += '\nSendmail configuration file not in expected location, or does not exist. Will not attempt to create this file. Removing sendmail package...'
                 self.helper.remove('sendmail')
                 success = True
-                return success
 
         except Exception:
             raise
