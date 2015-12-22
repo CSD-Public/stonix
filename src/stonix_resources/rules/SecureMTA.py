@@ -362,6 +362,7 @@ agent, set the value of SECUREMTA to False.'''
             debug = "not able to performfixpostfix because postfix is \
 installed but the config file is not present.  Stonix will not attempt to \
 create this file"
+            self.detailedresults += '\n' + debug
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return False
 
@@ -373,10 +374,12 @@ create this file"
         if not self.postfixed.fix():
             debug = "kveditor fix did not run successfully, returning"
             self.logger.log(LogPriority.DEBUG, debug)
+            self.detailedresults += '\nkveditor failed to run fix method'
             return False
         elif not self.postfixed.commit():
             debug = "kveditor commit did not run successfully, returning"
             self.logger.log(LogPriority.DEBUG, debug)
+            self.detailedresults += '\nkveditor failed to commit changes'
             return False
 
         return True
@@ -397,16 +400,13 @@ create this file"
         success = True
         path = "/etc/mail/sendmail.cf"
 
-        if self.helper.check('sendmail') and not os.path.exists(path):
-            debug = "not able to perform fixsendmail because sendmail is \
-installed but the config file is not present.  Stonix will not attempt to \
-create this file"
-            self.detailedresults += '\n' + debug
-            self.logger.log(LogPriority.DEBUG, debug)
-            success = False
+        if not self.helper.check('sendmail'):
+            self.detailedresults += '\nsendmail is not installed.. no need to configure it.'
             return success
+        elif not os.path.exists('/etc/mail'):
+            os.makedirs('/etc/mail', 0755)
 
-        if self.sndmailed:
+        if self.sndmailed and os.path.exists(path):
             if self.sndmailed.fixables:
                 if self.ds:
                     tpath = path + ".tmp"
@@ -442,7 +442,7 @@ create this file"
                 os.chmod(path, 420)
                 resetsecon(path)
                 success = True
-        elif self.ds:
+        elif self.ds and os.path.exists(path):
             tpath = path + ".tmp"
             contents = readFile(path, self.logger)
             tempstring = ""
@@ -466,4 +466,11 @@ create this file"
                 resetsecon(path)
             else:
                 success = False
+                self.detailedresults += '\nUnable to write changes to file: ' + str(tpath)
+        else:
+            self.detailedresults += '\nSendmail configuration file not in expected location, or does not exist. Will not attempt to create this file. Removing sendmail package...'
+            self.helper.remove('sendmail')
+            success = True
+            return success
+
         return success
