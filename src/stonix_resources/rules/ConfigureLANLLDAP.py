@@ -262,6 +262,7 @@ effect."""
                 # option to the login screen for network users
                 if re.search("ubuntu", self.myos):
                     lightdmconf = "/etc/lightdm/lightdm.conf"
+                    self.lightdmconf = lightdmconf
                     tmppath = lightdmconf + ".tmp"
                     manLogin = {"greeter-show-manual-login": "true"}
                     self.editor2 = KVEditorStonix(self.statechglogger,
@@ -454,7 +455,7 @@ effect."""
                             ldapfile
 
                 if re.search("ubuntu", self.myos):
-                    lightdmconf = self.editor2.getPath()
+                    lightdmconf = self.lightdmconf
                     if self.editor2.fixables:
                         if self.editor2.fix():
                             if self.editor2.commit():
