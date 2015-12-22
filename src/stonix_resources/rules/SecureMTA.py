@@ -406,41 +406,42 @@ create this file"
             success = False
             return success
 
-        if self.sndmailed.fixables:
-            if self.ds:
-                tpath = path + ".tmp"
-                contents = readFile(path, self.logger)
-                tempstring = ""
-                for line in contents:
-                    if re.search("^DS(.)*", line):
-                        continue
+        if self.sndmailed:
+            if self.sndmailed.fixables:
+                if self.ds:
+                    tpath = path + ".tmp"
+                    contents = readFile(path, self.logger)
+                    tempstring = ""
+                    for line in contents:
+                        if re.search("^DS(.)*", line):
+                            continue
+                        else:
+                            tempstring += line
+                    tempstring += "DS" + MAILRELAYSERVER + "\n"
+                    if writeFile(tpath, tempstring, self.logger):
+                        os.rename(tpath, path)
+                        os.chown(path, 0, 0)
+                        os.chmod(path, 420)
+                        resetsecon(path)
                     else:
-                        tempstring += line
-                tempstring += "DS" + MAILRELAYSERVER + "\n"
-                if writeFile(tpath, tempstring, self.logger):
-                    os.rename(tpath, path)
-                    os.chown(path, 0, 0)
-                    os.chmod(path, 420)
-                    resetsecon(path)
-                else:
-                    self.rulesuccess = False
+                        self.rulesuccess = False
+                        return False
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.sndmailed.setEventID(myid)
+                self.sndmailed.setPath(path)
+                if not self.sndmailed.fix():
+                    debug = "kveditor fix did not run successfully, returning"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     return False
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.sndmailed.setEventID(myid)
-            self.sndmailed.setPath(path)
-            if not self.sndmailed.fix():
-                debug = "kveditor fix did not run successfully, returning"
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-            if not self.sndmailed.commit():
-                debug = "kveditor fix did not run successfully, returning"
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-            os.chown(path, 0, 0)
-            os.chmod(path, 420)
-            resetsecon(path)
-            success = True
+                if not self.sndmailed.commit():
+                    debug = "kveditor fix did not run successfully, returning"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    return False
+                os.chown(path, 0, 0)
+                os.chmod(path, 420)
+                resetsecon(path)
+                success = True
         elif self.ds:
             tpath = path + ".tmp"
             contents = readFile(path, self.logger)
