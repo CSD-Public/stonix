@@ -292,7 +292,7 @@ class DisableRemoveableStorage(Rule):
         debug = ""
         self.detailedresults = ""
         compliant = True
-        self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disabelstorage.plist"
+        self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -306,7 +306,15 @@ class DisableRemoveableStorage(Rule):
      <key>StartInterval</key>
          <integer>300</integer>
 </dict>
-</plist>'''
+</plist>
+'''
+        self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
+        "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
+"<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
+"<key>Program</key>" + \
+         "<string>/Applications/stonix4mac\.app/Contents/Resources/stonix\.app/Contents/MacOS/stonix_resources/disablestorage\.py</string>" + \
+     "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
+         "<integer>300</integer></dict></plist>"
         self.daemonpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/disablestorage.py"
         if os.path.exists(self.plistpath):
             statdata = os.stat(self.plistpath)
@@ -337,17 +345,18 @@ class DisableRemoveableStorage(Rule):
             contents = readFile(self.plistpath, self.logger)
             contentstring = ""
             for line in contents:
-                contentstring += line
-            if not re.search("^" + self.plistcontents + "?", contentstring):
+                contentstring += line.strip()
+            if not re.search(self.plistregex, contentstring):
                 compliant = False
                 self.detailedresults += "plist file doesn't contain the " + \
                     "correct contents\n"
         else:
             compliant = False
             self.detailedresults += "daemon plist file doesn't exist\n"
-        if not os.path.exists(self.daemonpath):
-            compliant = False
-            self.detailedresults += "daemon python file doesn't exist\n"
+            #uncomment when we create the python file
+#         if not os.path.exists(self.daemonpath):
+#             compliant = False
+#             self.detailedresults += "daemon python file doesn't exist\n"
         check = "/usr/sbin/kextstat "
         self.ch = CommandHelper(self.logger)
         usb = "IOUSBMassStorageClass"
@@ -618,19 +627,22 @@ class DisableRemoveableStorage(Rule):
                              "filepath": self.plistpath}
                     self.statechglogger.recordchgevent(myid, event)
             if os.path.exists(self.plistpath):
+                uid, gid = "", ""
+                statdata = os.stat(self.plistpath)
+                mode = stat.S_IMODE(statdata.st_mode)
+                ownergrp = getUserGroupName(self.plistpath)
+                owner = ownergrp[0]
+                group = ownergrp[1]
+                if grp.getgrnam("wheel")[2] != "":
+                    gid = grp.getgrnam("wheel")[2]
+                if pwd.getpwnam("root")[2] != "":
+                    uid = pwd.getpwnam("root")[2]
                 if not created1:
-                    statdata = os.stat(self.plistpath)
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(self.plistpath)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
                     if mode != 420 or owner != "root" or group != "wheel":
                         origuid = statdata.st_uid
                         origgid = statdata.st_gid
-                        if grp.getgrnam("wheel")[2] != "":
-                            if pwd.getpwnam("root")[2] != "":
-                                gid = grp.getgrnam("wheel")[2]
-                                uid = pwd.getpwnam("root")[2]
+                        if gid:
+                            if uid:
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator,
                                                self.rulenumber)
@@ -642,10 +654,10 @@ class DisableRemoveableStorage(Rule):
                 contents = readFile(self.plistpath, self.logger)
                 contentstring = ""
                 for line in contents:
-                    contentstring += line
-                if not re.search("^" + self.plistcontents + "?", contentstring):
+                    contentstring += line.strip()
+                if not re.search(self.plistregex, contentstring):
                     tmpfile = self.plistpath + ".tmp"
-                    if not writeFile(tmpfile, contentstring, self.logger):
+                    if not writeFile(tmpfile, self.plistcontents, self.logger):
                         success = False
                     elif not created1:
                         self.iditerator += 1
@@ -655,6 +667,15 @@ class DisableRemoveableStorage(Rule):
                         self.statechglogger.recordchgevent(myid, event)
                         self.statechglogger.recordfilechange(self.plistpath,
                                                              tmpfile, myid)
+                        os.rename(tmpfile, self.plistpath)
+                        if uid and gid:
+                            os.chown(self.plistpath, uid, gid)
+                        os.chmod(self.plistpath, 420)
+                    else:
+                        os.rename(tmpfile, self.plistpath)
+                        if uid and gid:
+                            os.chown(self.plistpath, uid, gid)
+                        os.chmod(self.plistpath, 420)
         if self.fwci.getcurrvalue():
             fw = "IOFireWireSerialBusProtocolTransport"
             cmd = check + "| grep " + fw
