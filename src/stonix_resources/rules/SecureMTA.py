@@ -394,17 +394,6 @@ agent, set the value of SECUREMTA to False.'''
                 retval = True
                 return retval
 
-            if os.path.exists(self.postfixpath):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.postfixpath, [0, 0, 420], self.logger, self.statechglogger, myid):
-                    retval = False
-                    self.detailedresults += '\nCould not correctly set permissions on file: ' + str(self.postfixpath)
-            else:
-                self.detailedresults += '\nPostfix is installed, but could not locate postfix configuration file.'
-                retval = False
-                return retval
-
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             self.postfixed.setEventID(myid)
@@ -419,6 +408,17 @@ agent, set the value of SECUREMTA to False.'''
                 debug = "kveditor commit did not run successfully, returning"
                 self.logger.log(LogPriority.DEBUG, debug)
                 self.detailedresults += '\nkveditor failed to commit changes'
+                retval = False
+                return retval
+
+            if os.path.exists(self.postfixpath):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.postfixpath, [0, 0, 420], self.logger, self.statechglogger, myid):
+                    retval = False
+                    self.detailedresults += '\nCould not correctly set permissions on file: ' + str(self.postfixpath)
+            else:
+                self.detailedresults += '\nPostfix is installed, but could not locate postfix configuration file.'
                 retval = False
                 return retval
 
@@ -457,12 +457,6 @@ agent, set the value of SECUREMTA to False.'''
                 os.makedirs('/etc/mail', 0755)
 
             if self.sndmailed and os.path.exists(path):
-
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, [0, 0, 420], self.logger, self.statechglogger, myid):
-                    success = False
-                    self.detailedresults += '\nUnable to set permissions correctly on file: ' + str(path)
 
                 if self.sndmailed.fixables:
                     if self.ds:
@@ -505,7 +499,12 @@ agent, set the value of SECUREMTA to False.'''
                         resetsecon(path)
 
                 else:
-                    self.detailedresults += '\nNo sendmail fixables. Nothing to fix.'
+
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(path, [0, 0, 420], self.logger, self.statechglogger, myid):
+                        success = False
+                        self.detailedresults += '\nUnable to set permissions correctly on file: ' + str(path)
 
             elif self.ds and os.path.exists(path):
                 tpath = path + ".tmp"
