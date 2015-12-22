@@ -389,10 +389,6 @@ agent, set the value of SECUREMTA to False.'''
 
         try:
 
-            for path in self.postfixpathlist:
-                if os.path.exists(path):
-                    self.postfixpath = path
-
             if not self.postfixinstalled:
                 self.detailedresults += '\nNo mail transfer agent detected. Nothing to do...'
                 retval = True
