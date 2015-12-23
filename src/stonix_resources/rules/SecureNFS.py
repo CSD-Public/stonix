@@ -284,7 +284,7 @@ class SecureNFS(Rule):
                             else:
                                 changed1 = True
                     if not checkPerms(nfsfile, [0, 0, 420], self.logger):
-                        if not setPerms(nfsfile, [0, 0, 420], self.logger):
+                        if not setPerms(nfsfile, [0, 0, 420], self.logger, self.statechglogger):
                             success = False
                             debug = "Unable to set permissions on " + nfsfile
                             self.logger.log(LogPriority.DEBUG, debug)
@@ -316,7 +316,7 @@ class SecureNFS(Rule):
                 if not checkPerms(nfsfile, [0, 0, 420], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(nfsfile, [0, 0, 420],
+                    if not setPerms(nfsfile, [0, 0, 420], self.logger,
                                     self.statechglogger, myid):
                         debug = "Unable to set permissions on " + nfsfile
                         self.logger.log(LogPriority.DEBUG, debug)
@@ -344,7 +344,7 @@ class SecureNFS(Rule):
                             else:
                                 changed2 = True
                     if not checkPerms(export, [0, 0, 420], self.logger):
-                        if not setPerms(export, [0, 0, 420], self.logger):
+                        if not setPerms(export, [0, 0, 420], self.logger, self.statechglogger):
                             success = False
                             debug = "Unable to set permissions on " + export
                             self.logger.log(LogPriority.DEBUG, debug)
