@@ -794,7 +794,7 @@ class Environment:
         @return: bool - true if little snitch is running
         """
         issnitchactive = False
-        if self.osfamily == 'mac':
+        if self.osfamily == 'darwin':
             cmd = 'ps axc -o comm | grep lsd'
             littlesnitch = 'lsd'
             proc = subprocess.Popen(cmd, shell=True,

@@ -109,14 +109,7 @@ class NoLegacyPlusAccts(Rule):
                             compliant = False
             self.detailedresults += "Found " + str(counter) + \
 " plus accounts\n"
-            if compliant:
-                self.compliant = True
-                self.detailedresults += "NoLegacyPlusAccts report has been \
-run and the system is compliant\n"
-            else:
-                self.compliant = False
-                self.detailedresults += "NoLegacyPlusAccts reports has been \
-run and the system is not compliant\n"
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

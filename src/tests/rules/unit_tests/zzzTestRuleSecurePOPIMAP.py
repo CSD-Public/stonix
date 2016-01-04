@@ -22,83 +22,30 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SecurePOPIMAP
 
-@author: ekkehard j. koch
-@change: 04/02/2013 Original Implementation
-@change: 07/14/2014 - ekkehard - made testing more rigorous
-@change: 07/28/2014 - ekkehard - bug fixes
-@change: 2015/12/18 - eball - Added eventids
+@author: Breen Malmberg
+@change: 12/21/2015
 '''
 from __future__ import absolute_import
 import unittest
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.filehelper import FileHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureKerberos import ConfigureKerberos
+from src.stonix_resources.rules.SecurePOPIMAP import SecurePOPIMAP
 
 
-class zzzTestRuleConfigureKerberos(RuleTest):
+class zzzTestRuleSecurePOPIMAP(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureKerberos(self.config,
-                                      self.environ,
-                                      self.logdispatch,
-                                      self.statechglogger)
+        self.rule = SecurePOPIMAP(self.config,
+                                 self.environ,
+                                 self.logdispatch,
+                                 self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.fh = FileHelper(self.logdispatch, self.statechglogger)
-        if self.environ.getosfamily() == 'darwin':
-            self.files = {"kerb5.conf":
-                          {"path": "/etc/krb5.conf",
-                           "remove": True,
-                           "content": None,
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "kerb5ut"},
-                          "edu.mit.Kerberos":
-                          {"path": "/Library/Preferences/edu.mit.Kerberos",
-                           "remove": False,
-                           "content": "test",
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "Kerberosut"},
-                          "edu.mit.Kerberos.krb5kdc.launchd":
-                          {"path": "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd",
-                           "remove": False,
-                           "content": "test",
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "krb5kdcut"},
-                          "edu.mit.Kerberos.kadmind.launchd":
-                          {"path": "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd",
-                           "remove": False,
-                           "content": "test",
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "kadmindut"},
-                        }
-        else:
-            self.files = {"kerb5.conf":
-                          {"path": "/etc/krb5.conf",
-                           "remove": True,
-                           "content": None,
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "kerb5ut"}}
 
     def tearDown(self):
         pass
@@ -113,17 +60,8 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        for filelabel, fileinfo in sorted(self.files.items()):
-            self.fh.addFile(filelabel,
-                            fileinfo["path"],
-                            fileinfo["remove"],
-                            fileinfo["content"],
-                            fileinfo["permissions"],
-                            fileinfo["owner"],
-                            fileinfo["group"],
-                            fileinfo["eventid"])
 
-        success = self.fh.fixFiles()
+        success = True
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -135,9 +73,9 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -150,7 +88,7 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -163,7 +101,7 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success

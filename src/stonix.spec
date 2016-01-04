@@ -23,13 +23,13 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.2
+Version: 0.9.3
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
 Source0: %{name}-%{version}.tgz
 BuildRoot: %{_builddir}/%{name}-%{version}-%{release}-root
-Requires: python, LANL-csdreg, curl
+Requires: python, curl
 BuildArch: noarch
 
 %description
@@ -91,9 +91,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(0755,root,root) /usr/share/man/man8
 
 %post
-# Register the installation of this product
-
-/usr/local/sbin/csdreg -p STONIX-%{version}-install
 
 %postun
 
@@ -116,6 +113,16 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Mon Dec 21 2015 David Kennel <dkennel@lanl.gov> - 0.9.3
+- Clarified Kerberos entries in localize.py
+- Corrected cosmetic issues in results feedback in some rules
+- Fixed issue where saved user comments were not showing in the GUI
+- Fixed issue where user comments were not saved unless the CI had been changed from the default
+- Corrected an issue in the ConsoleRootOnly rule that affected OpenSuSE
+- Fixed issue where user comments with embedded newlines cause the program to crash
+- Implemented GUI help framework and a start to GUI help text
+- Corrected issues with output returns from CommandHelper
+
 * Tue Dec 1 2015 David Kennel <dkennel@lanl.gov> - 0.9.2
 - ConfigureMacPolicy updated to work around broken behavior in Debian 8's implementation of AppArmor
 - Updated FileHelper object adding return value to fixFile and removing unused imports

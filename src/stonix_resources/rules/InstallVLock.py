@@ -91,12 +91,8 @@ class InstallVLock(Rule):
             present = self.ph.check(vlock)
             if present:
                 self.compliant = True
-                self.detailedresults += "InstallVLock has been run and is " + \
-                "compliant"
             else:
                 self.compliant = False
-                self.detailedresults += "IntallVLock has been run and is " + \
-                "not compliant"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

@@ -126,8 +126,6 @@ Configure SNMP if necessary.'''
         '''
 
         # defaults
-        secure = True
-        self.svchelper = ServiceHelper(self.environ, self.logger)
         self.detailedresults = ""
 
         try:
@@ -135,30 +133,22 @@ Configure SNMP if necessary.'''
             if self.environ.getostype() == 'Mac OS X':
                 self.compliant = self.reportmac()
                 self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+                                           self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
-
+            compliant = True
+            self.svchelper = ServiceHelper(self.environ, self.logger)
             self.pkghelper = Pkghelper(self.logger, self.environ)
 
-            if self.disablesnmp.getcurrvalue() == True:
-                retval = self.reportDisableSNMP()
-                if not retval:
-                    secure = False
+            if self.disablesnmp.getcurrvalue():
+                if not self.reportDisableSNMP():
+                    compliant = False
 
-            if self.configuresnmp.getcurrvalue() == True:
-                retval = self.reportConfigureSNMP()
-                if not retval:
-                    secure = False
+            if self.configuresnmp.getcurrvalue():
+                if not self.reportConfigureSNMP():
+                    compliant = False
 
-            if secure:
-                self.compliant = True
-                self.detailedresults = 'This system is compliant with the SecureSNMP rule'
-                self.currstate = 'configured'
-            else:
-                self.compliant = False
-                self.detailedresults = 'This system is not compliant with the SecureSNMP rule'
-                self.currstate = 'notconfigured'
+            self.compliant = compliant
 
         except AttributeError:
             self.detailedresults = traceback.format_exc()
@@ -168,7 +158,7 @@ Configure SNMP if necessary.'''
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -344,10 +334,10 @@ Configure SNMP if necessary.'''
                     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return self.rulesuccess
 
-            if self.disablesnmp.getcurrvalue() == True:
+            if self.disablesnmp.getcurrvalue():
                 self.fixDisableSNMP()
 
-            if self.configuresnmp.getcurrvalue() == True:
+            if self.configuresnmp.getcurrvalue():
                 self.fixConfigureSNMP()
 
         except AttributeError:
@@ -357,7 +347,7 @@ Configure SNMP if necessary.'''
             raise
         except Exception as err:
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
