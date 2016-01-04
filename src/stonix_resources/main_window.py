@@ -279,15 +279,12 @@ class Ui_MainWindow(object):
         self.menuRule.setObjectName("menuRule")
         self.menuHelp = QtGui.QMenu(self.menubar)
         self.menuHelp.setObjectName("menuHelp")
-        # Section below contains some hand edits
-        self.menuGuiHelp = QtGui.QMenu(self.menubar)
-        self.menuGuiHelp.setObjectName("menuHelp")
 
         MainWindow.setMenuBar(self.menubar)
 
         self.actionOpen = QtGui.QAction(MainWindow)
         self.actionOpen.setObjectName("actionOpen")
-        
+
         self.actionLog = QtGui.QAction(MainWindow)
         self.actionLog.setObjectName("actionLog")
         self.actionLog.setShortcut('Ctrl+L')
@@ -329,7 +326,7 @@ class Ui_MainWindow(object):
         self.actionGuiHelp = QtGui.QAction(MainWindow)
         self.actionGuiHelp.setObjectName("actionGuiHelp")
         self.actionGuiHelp.setShortcut('Ctrl+H')
-        self.menuGuiHelp.addAction(self.actionGuiHelp)
+        self.menuHelp.addAction(self.actionGuiHelp)
 
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionQuit)
@@ -343,7 +340,6 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuEdit.menuAction())
         self.menubar.addAction(self.menuRule.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
-        self.menubar.addAction(self.menuGuiHelp.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -374,7 +370,6 @@ class Ui_MainWindow(object):
         self.menuEdit.setTitle(QtGui.QApplication.translate("MainWindow", "Edit", None, QtGui.QApplication.UnicodeUTF8))
         self.menuRule.setTitle(QtGui.QApplication.translate("MainWindow", "Rule", None, QtGui.QApplication.UnicodeUTF8))
         self.menuHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
-        self.menuGuiHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
         self.actionOpen.setText(QtGui.QApplication.translate("MainWindow", "Open", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLog.setText(QtGui.QApplication.translate("MainWindow", "Log", None, QtGui.QApplication.UnicodeUTF8))
         self.actionQuit.setText(QtGui.QApplication.translate("MainWindow", "Quit", None, QtGui.QApplication.UnicodeUTF8))

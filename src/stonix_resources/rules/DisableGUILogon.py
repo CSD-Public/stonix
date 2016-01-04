@@ -24,6 +24,7 @@
 Created on 2015/07/01
 
 @author: Eric Ball
+@change: 2015/12/07 eball Added information about REMOVEX CI to help text
 '''
 from __future__ import absolute_import
 
@@ -50,7 +51,13 @@ class DisableGUILogon(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.helptext = '''This rule will disable, secure, or entirely remove \
-the X11/X Windows GUI.'''
+the X11/X Windows GUI.
+
+Please note that enabling the REMOVEX configuration item below will COMPLETELY \
+remove X Windows from the system. On most platforms, this will also disable \
+any currently running display manager. It is therefore recommended that this \
+rule be run from a console session rather than from the GUI if REMOVEX is \
+enabled.'''
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 

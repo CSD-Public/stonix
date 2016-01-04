@@ -44,6 +44,7 @@ configuration changes to the avahi service
 @change: 2015/11/16 eball Add undo events, change fix reporting
 @change: 2015/12/01 eball Simplified version checking, removed OS X 10.11 from
     applicable list, due to unresolved issue with writing to plist
+@change: 2015/12/02 eball Added OS X 10.11 compatibility
 '''
 
 from __future__ import absolute_import
@@ -98,7 +99,7 @@ the avahi service in order to secure it.'''
                          'CCE 4341-4', 'CCE 4358-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
@@ -108,6 +109,7 @@ the avahi service in order to secure it.'''
 
         if self.environ.getostype() == "Mac OS X":
             self.ismac = True
+            self.hasSIP = False
             self.plb = "/usr/libexec/PlistBuddy"
             osxversion = str(self.environ.getosver())
             versplit = osxversion.split(".")
@@ -127,6 +129,16 @@ the avahi service in order to secure it.'''
                 self.parameter = "--no-multicast"
                 self.pbr = self.plb + " -c Print " + self.service + " | grep 'no-multicast'"
                 self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
+            elif minorVersion > 10:
+                self.hasSIP = True
+                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
+                self.servicename = "com.apple.mDNSResponder.reloaded"
+                self.parameter = "NoMulticastAdvertisements"
+                self.preferences = "/Library/Preferences/com.apple.mDNSResponder.plist"
+                self.pbr = self.plb + " -c Print " + self.preferences + \
+                    " | grep 'NoMulticastAdvertisements'"
+                self.pbf = "defaults write " + self.preferences + " " + \
+                    self.parameter + " -bool YES"
             else:
                 self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
                 if minorVersion >= 10:
@@ -203,12 +215,12 @@ the avahi service in order to secure it.'''
         try:
 
             # defaults
-            secure = True
+            compliant = True
             self.detailedresults = ''
 
             # if system is a mac, run reportmac
             if self.ismac:
-                secure = self.reportmac()
+                compliant = self.reportmac()
 
             # if not mac os x, then run this portion
             else:
@@ -222,14 +234,14 @@ the avahi service in order to secure it.'''
 
                     # if avahi-daemon is still running, it is not disabled
                     if self.sh.auditservice('avahi-daemon'):
-                        secure = False
+                        compliant = False
                         self.detailedresults += '\nDisableAvahi has been set to True, but avahi-daemon service is currently running.'
                     self.numdependencies = 0
                     if self.pkghelper.determineMgr() == 'yum':
                         self.numdependencies = self.parseNumDependencies('avahi')
                         if self.numdependencies <= 3:
                             if self.pkghelper.check('avahi'):
-                                secure = False
+                                compliant = False
                                 self.detailedresults += '\nDisableAvahi is set to True, but avahi is currently installed.'
 
                         else:
@@ -251,7 +263,7 @@ the avahi service in order to secure it.'''
                                 filepath, tmpfilepath, self.confoptions, intent,
                                 conftype)
                         if not self.avahiconfeditor.report():
-                            secure = False
+                            compliant = False
                             self.detailedresults += '\nOne or more configuration options is missing from ' + str(filepath) + ' or has an incorrect value.'
 
                     # if config file not found, check if avahi is installed
@@ -260,22 +272,18 @@ the avahi service in order to secure it.'''
                         # if not installed, we can't configure anything
                         if not self.pkghelper.check('avahi'):
                             self.detailedresults += '\nAvahi Daemon not installed. Cannot configure it.'
-                            secure = True
+                            compliant = True
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
 
                         # if it is installed, then the config file is missing
                         else:
-                            secure = False
+                            compliant = False
                             self.detailedresults += '\nAvahi is installed but could not find config file in expected location.'
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
 
-            # if secured (or disabled), system is compliant
-            if secure:
-                self.compliant = True
-            else:
-                self.compliant = False
+            self.compliant = compliant
 
         except (IOError):
             self.detailedresults += '\n' + traceback.format_exc()
@@ -333,9 +341,9 @@ the avahi service in order to secure it.'''
                     ", " + self.servicename + " audit failed.\n"
 
             if servicesuccess and commandsuccess:
-                self.compliant = True
+                return True
             else:
-                self.compliant = False
+                return False
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -482,7 +490,11 @@ the avahi service in order to secure it.'''
                 # previous version of this file.
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                self.statechglogger.recordfiledelete(self.service, myid)
+                if self.hasSIP:
+                    self.statechglogger.recordfiledelete(self.preferences,
+                                                         myid)
+                else:
+                    self.statechglogger.recordfiledelete(self.service, myid)
                 self.ch.executeCommand(self.pbf)
                 resultOutput = self.ch.getOutput()
                 errorcode = self.ch.getReturnCode()

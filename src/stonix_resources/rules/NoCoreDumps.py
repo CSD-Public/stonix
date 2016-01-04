@@ -94,12 +94,6 @@ class NoCoreDumps(Rule):
                 self.compliant = self.reportFreebsdMac()
             elif osfam == "solaris":
                 self.compliant = self.reportSolaris()
-            if self.compliant:
-                self.detailedresults += "NoCoreDumps report has been run " + \
-                "and the system is compliant\n"
-            else:
-                self.detailedresults += "NoCoreDumps report has been run " + \
-                "and is not compliant\n"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -134,13 +128,16 @@ class NoCoreDumps(Rule):
             setPerms(path, perms, self.logger)
             self.created1 = True
         elif not checkPerms(path, perms, self.logger):
+            self.detailedresults += "Permissions incorrect on " + path + "\n"
             compliant = False
         self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-        path, tmpPath, lookfor, intent, "closedeq")
-        if not self.editor.report() or not compliant:
-            return False
-        else:
-            return True
+                                     path, tmpPath, lookfor, intent,
+                                     "closedeq")
+        if not self.editor.report():
+            self.detailedresults += "correct contents were not found in " + \
+                path + " file\n"
+            compliant = False
+        return compliant
 
 ###############################################################################
 

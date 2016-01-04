@@ -95,13 +95,7 @@ class DisableRoot(Rule):
                         if search("No such key", line):
                             compliant = True
                             break
-            if compliant:
-                self.detailedresults += "DisableRoot report has been run " + \
-                    "and is compliant\n"
-                self.compliant = compliant
-            else:
-                self.detailedresults += "DisableRoot report has been run " + \
-                    "and is not compliant\n"
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

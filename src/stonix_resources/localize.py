@@ -39,6 +39,7 @@ KERB5
 that access the version variable to use this copy.
 @change: 2015/03/01 - ekkehard - incremented STONIXVERSION = '0.8.15'
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
+@change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -47,7 +48,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.9.2'
+STONIXVERSION = '0.9.3'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -156,7 +157,7 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 CORPORATENETWORKSERVERS = ["foo.bar.com"]
 
 # Content of the kerb5.conf file
-KERB5 = '''[libdefaults]
+MACKRB5 = '''[libdefaults]
     default_realm = bar.com
     allow_weak_crypto = true
     forwardable = true
@@ -172,9 +173,10 @@ KERB5 = '''[libdefaults]
 [domain_realm]
     foo.bar.com = FOO.BAR.COM
     .example.com = EXAMPLE.COM
-    example.com = EXAMPLE.COM'''
+    example.com = EXAMPLE.COM
+'''
 
-KRB5 = '''[logging]
+LINUXKRB5 = '''[logging]
  default = FILE:/var/log/krb5libs.log
  kdc = FILE:/var/log/krb5kdc.log
  admin_server = FILE:/var/log/kadmind.log

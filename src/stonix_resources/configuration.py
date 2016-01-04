@@ -88,57 +88,6 @@ class Configuration:
             value = self.programconfig[rulename][confkey]
         return value
 
-    def setconfvalue(self, rulename, confkey, confvalue):
-        """
-
-        Warning! FIX ME : This may be appendix code on account of the refactor
-        that created the configurationitem class. Analyze this method to see
-        if it can be removed.
-
-        Set the conf value for a given rule and key.
-        @param string rulename : name of the rule
-        @param string confkey :
-        @param string confvalue :
-        @return  :
-        @author D. Kennel
-        """
-        if rulename not in self.programconfig:
-            self.programconfig[rulename] = {}
-        self.programconfig[rulename][confkey] = confvalue
-
-    def setcommenttxt(self, rulename, commentstr):
-        """
-
-        Warning! FIX ME : This may be appendix code on account of the refactor
-        that created the configurationitem class. Analyze this method to see
-        if it can be removed.
-
-        Set the comment text associated with a given rule.
-        @param string rulename : name of the rule
-        @param string commentstr :
-        @author: D. Kennel
-        """
-        if rulename not in self.programconfig:
-            self.programconfig[rulename] = {}
-        self.programconfig[rulename]['comment_text'] = commentstr
-
-    def setsimple(self, rulename, simple):
-        """
-        This method sets a bool for the named rule as to whether or not that
-        rule belongs in the simple config.
-
-        Warning! FIX ME : This may be appendix code on account of the refactor
-        that created the configurationitem class. Analyze this method to see
-        if it can be removed.
-
-        @param string rulename: name of the rule
-        @param bool simple: True to indicate that it belongs in the simple conf
-        @author: D. Kennel
-        """
-        if rulename not in self.programconfig:
-            self.programconfig[rulename] = {}
-        self.programconfig[rulename]['simpleconf'] = simple
-
     def writeconfig(self, simpleconf, ruledata):
         """
         Writes current configuration data to the config file. If simpleconf is
@@ -190,6 +139,7 @@ version = 100
                 uckey = 'UC' + key
                 kvline = key + ' = ' + str(value) + newline
                 instruct = instruct + newline
+                usrcomment = usrcomment.replace("\n", r"\n")
                 ucline = uckey + ' = ' + usrcomment + newline
                 if not simpleconf:
                     conf = conf + instruct
@@ -203,6 +153,8 @@ version = 100
                     conf = conf + instruct
                     conf = conf + kvline
                     conf = conf + ucline
+                elif usrcomment != '':
+                    conf = conf + ucline
             conf = conf + newline
         try:
             fhandle = open(self.configpath, 'w')
@@ -214,25 +166,6 @@ version = 100
             print "Check path to " + self.configpath
             sys.exit(1)
 
-    def setusercomment(self, rulename, confkey, keycomment):
-        """
-
-        Warning! FIX ME : This may be appendix code on account of the refactor
-        that created the configurationitem class. Analyze this method to see
-        if it can be removed.
-
-        @param string rulename : name of the rule
-        @param string confkey :
-        @param string keycomment : Configuration value comment text associated
-        with the given confKey
-        @return  :
-        @author : D. Kennel
-        """
-        uckey = confkey + 'uc'
-        if rulename not in self.programconfig:
-            self.programconfig[rulename] = {}
-        self.programconfig[rulename][uckey] = keycomment
-
     def getusercomment(self, rulename, confkey):
         """
         Returns the user comment text associated with a given rule and
@@ -243,8 +176,9 @@ version = 100
         @return string :
         @author D. Kennel
         """
-        uckey = confkey + 'uc'
+        uckey = "uc" + confkey.lower()
         usercomment = self.programconfig[rulename][uckey]
+        usercomment = usercomment.replace(r"\n", "\n")
         return usercomment
 
     def __loadconfig(self):

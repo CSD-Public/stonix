@@ -456,8 +456,8 @@ def main():
 
     make_files_executable()
 
-    stonix = "/usr/bin/stonix"
-    stonix4mac = "/usr/bin/stonix4mac"
+    stonix = "/usr/local/bin/stonix"
+    stonix4mac = "/usr/local/bin/stonix4mac"
 
     # make_valid_link(my_link, my_link_source, message_level="normal"):
     make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" +
