@@ -97,10 +97,23 @@ class MacPkgr(object):
         '''
         Install a package. Return a bool indicating success or failure.
 
-        @param string package : Must be the full URL (http or https) to the 
-                                package.
+        @param string package : Path to the package past the REPOROOT
+        
+        IE. package would be: QuickAdd.09.81.pkg rather than:
+            https://jss.lanl.gov/CasperShare/QuickAdd.09.81.pkg 
+            \_____________________________/ \________________/
+                            |                        |
+                        REPOROOT                  package
+                        
+        Where REPOROOT is initialized in the class __init__, and package is 
+        passed in to this method
+        
+        This assumes that all packages installed via an instance of this class
+        will be retrieved from the same REPOROOT.  If you need to use another
+        REPOROOT, please use another instance of this class.
+        
         @return bool :
-        @author
+        @author: dwalker, rsn
         '''
         success = False
         try:

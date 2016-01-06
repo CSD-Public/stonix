@@ -53,8 +53,8 @@ from ..filehelper import FileHelper
 from ..macpkgr import MacPkgr
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERSUITESERVER = "jss.lanl.gov"
-REPOROOT="https://jss.lanl.gov/CasperShare/"
+JAMFCASPERSUITESERVER = "jds001.lanl.gov"
+REPOROOT="https://jds001.lanl.gov/CasperShare/"
 PACKAGENAME="QuickAdd.09.81.pkg"
 
 
@@ -73,6 +73,8 @@ class InstallCasperSuite(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
+        self.reporoot = REPOROOT
+        self.package = PACKAGENAME
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.11']}}
         self.js = JAMFCASPERSUITESERVER
@@ -132,7 +134,7 @@ class InstallCasperSuite(Rule):
         self.services = {"com.jamfsoftware.jamf.agent":
                          "/Library/LaunchAgents/com.jamfsoftware.jamf.agent.plist"
                          }
-        self.pkgr = MacPkgr(environ, logdispatch, REPOROOT)
+        self.pkgr = MacPkgr(environ, logdispatch, self.reporoot)
 
     def report(self):
         '''
@@ -234,7 +236,7 @@ class InstallCasperSuite(Rule):
                     self.logdispatch.log(LogPriority.DEBUG, msg)
 
 # Install the package
-                    if pkgr.installpackage(PACKAGENAME):
+                    if pkgr.installpackage(self.package):
                         self.rulesuccess = True
                         messagestring = str(self.qa) + \
                             " installation successful!"
