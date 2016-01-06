@@ -41,7 +41,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         """
         """
         self.macPackageName = "testStonixMacPkgr-0.0.3.pkg"
-        self.reporoot = "https://jss.lanl.gov/CasperShare/"        
+        self.reporoot = "https://jds001.lanl.gov/CasperShare/"        
         self.environ = Environment()
         self.logger = LogDispatcher(self.environ)
         self.pkgr = MacPkgr(self.environ, self.logger, self.reporoot)

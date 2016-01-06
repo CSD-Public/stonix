@@ -874,6 +874,7 @@ def isRuleInBounds(fname=""):
     
     @author: Roy Nielsen
     """
+    LOGGER.log(LogPriority.DEBUG, "fname: " + str(fname))
     ruleIsInBounds = False
     
     #print "\n\n\tFile: " + str(root + "/" + fname)
@@ -894,6 +895,9 @@ def isRuleInBounds(fname=""):
         # B = Module inside library we want to import
         # basically perform a "from A import B
         toTestToRunMod = __import__(toTestClassName, fromlist=[toTestName])
+        LOGGER.log(LogPriority.DEBUG, "toTestClassName: " + \
+                                      str(toTestClassName) + " " + \
+                                      "toTestName: " + str(toTestName))
         
     except Exception, err: 
         print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
@@ -911,7 +915,7 @@ def isRuleInBounds(fname=""):
         tmpex = "toTestClass = tmp_test_mod." + str(toTestName)
         
         exec(tmpex)
-        
+        """
         global ENVIRON
         global SYSCONFIG
         global LOGGER
@@ -920,12 +924,13 @@ def isRuleInBounds(fname=""):
         config = SYSCONFIG
         logdispatcher = LOGGER
         stchgr = STATECHANGELOGGER
-        
-        get_attrs = toTestClass(config, environ, logdispatcher, stchgr)
+        """
+        get_attrs = toTestClass(SYSCONFIG, ENVIRON, LOGGER, STATECHANGELOGGER)
         
         # Acquire result of method            
         is_root_required = get_attrs.getisrootrequired()
-        
+        LOGGER.log(LogPriority.DEBUG, "is_root_required: " + \
+                                      str(is_root_required))
         # Does the running user match if root is required?
         toTestCorrectEffectiveUserid = isCorrectEffectiveUserId(is_root_required)
 
@@ -952,10 +957,11 @@ def processRuleTest(filename=""):
     
     @author: Roy Nielsen
     """
-    #print "\n\n\tFile: " + str(filename)
+    LOGGER.log(LogPriority.DEBUG, "\n\n\tFile passed in: " + str(filename))
     found = True
     returnMod = None
     classToTest = None
+    err = None
     
     # Get the filename of the test, without the path
     testFileName = filename.split("/")[-1]
@@ -992,24 +998,34 @@ def processRuleTest(filename=""):
                 classToTest = classToTestRegex.group(1) + ".py"
             except:
                 classToTest = None
+    if err:
+        LOGGER.log(LogPriority.DEBUG, "Exception: " + str(err))
+    else:
+        LOGGER.log(LogPriority.DEBUG, "Processed rule test: " + \
+                                       str(testFileName) + \
+                                       " ClassToTest: " + \
+                                       str(classToTest))
     
-    #print "ClassToTest: " + str(classToTest)
+    LOGGER.log(LogPriority.DEBUG, "ClassToTest: " + str(classToTest))
     #print "----------=====##        ##=====----------"
-    
+    returnMod = None
     if classToTest:
         # load the rule to make sure it is running in the right
         # context and it is applicable to the platform
-        for root, dirnames, filenames in os.walk("src/stonix_resources"):
+        for root, dirnames, filenames in os.walk("src/stonix_resources/rules"):
+            LOGGER.log(LogPriority.DEBUG, "root: " + str(root))
             myfile = ""
             for myfile in filenames:
-                #print "\n\n\tFile: " + str(myfile)
-                if re.match("^%s$"%classToTest, myfile):
+                if re.match("^%s$"%classToTest, str(myfile).strip()):
+                    LOGGER.log(LogPriority.DEBUG,  "classToTest: " + \
+                                                   str(classToTest) + \
+                                                   "File: " + str(myfile))
                     
                     if isRuleInBounds(root + "/" + classToTest):
                         returnMod = testToRunMod
                     else:
                         returnMod = None
-                        
+    LOGGER.log(LogPriority.DEBUG, "Return Mod: " + str(returnMod) )    
     return returnMod
 
 def processFrameworkNUtilsTest(filename=""):
@@ -1093,7 +1109,7 @@ def assemble_list_suite(modules = []):
                 prefix = "utils"
             else:
                 prefix = ""
-                
+            LOGGER.log(LogPriority.DEBUG, "Prefix: " + str(prefix))
             if re.match("^rules$", prefix):
                 #####
                 # Process a RULE test - different library loading
@@ -1107,6 +1123,8 @@ def assemble_list_suite(modules = []):
                         if re.match(regex, myfile):
                             found = True
                             #print str(root)
+                            LOGGER.log(LogPriority.DEBUG, "Found: " +\
+                                            str(myfile))
                             #####
                             # NOTE: Processing a RULE test here
                             testToRunMod = processRuleTest(root + "/" + myfile)
