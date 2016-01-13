@@ -35,30 +35,38 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.macpkgr import MacPkgr
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.InstallCasperSuite import InstallCasperSuite
+from src.stonix_resources.Connectivity import Connectivity
 
 import os
 import re
 
 class zzzTestRuleInstallCasperSuite(RuleTest):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         """
         Perform this task before running any of the tests in this class
         
         @author: Roy Nielsen
         """
-        RuleTest.setUp(self)
+        RuleTest.setUpClass()
         self.rule = InstallCasperSuite(self.config, self.environ,
                                        self.logdispatch,
                                        self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.pkgr = MacPkgr(self.environ, self.logdispatch, self.rule.reporoot)
+        self.pkgr = MacPkgr(self.environ, self.logdispatch)
+        self.pkgUrl = self.rule.reporoot + self.rule.package
+        message = "Reporoot: " + str(self.rule.reporoot)
+        self.logdispatch.log(LogPriority.DEBUG, message)
+        self.connection = Connectivity(self.logdispatch)
+        
 
     ###########################################################################
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         """
         If Jamf does not exist at the end of this test, ensure it gets 
         installed.
@@ -67,10 +75,9 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         """
         #####
         # If there is a network connection, install, otherwise just log
-        hasconnection = has_connection_to_server(self.logdispatch,
-                                                 self.rule.js)
+        hasconnection = self.connection.isPageAvailable(self.pkgUrl)
         if hasconnection:
-            msg = "Connected to " + str(self.rule.js)
+            msg = "Connected to " + str(self.rule.package)
             self.logdispatch.log(LogPriority.DEBUG, msg)
             #####
             # Install the package
@@ -134,10 +141,9 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
 
         #####
         # If there is a network connection, install, otherwise just log
-        hasconnection = has_connection_to_server(self.logdispatch,
-                                                 self.rule.js)
+        hasconnection = self.connection.isPageAvailable(self.pkgUrl)
         if hasconnection:
-            msg = "Connected to " + str(self.rule.js)
+            msg = "Connected to " + str(self.rule.package)
             self.logdispatch.log(LogPriority.DEBUG, msg)
             #####
             # Install the package
