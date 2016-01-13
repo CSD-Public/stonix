@@ -36,6 +36,7 @@ import shutil
 import plistlib
 import tempfile
 import traceback
+from localize import MACREPOROOT
 from re import search
 from logdispatcher import LogPriority
 from subprocess import Popen, call, PIPE, STDOUT
@@ -60,7 +61,7 @@ def InvalidURL(Exception):
 
 class MacPkgr(object):
     
-    def __init__(self, environ, logger, reporoot=""):
+    def __init__(self, environ, logger):
         '''
         Mac package manager based on other stonix package managers.
         
@@ -98,10 +99,10 @@ class MacPkgr(object):
         self.logger = logger
         self.detailedresults = ""
         self.pkgUrl = ""
-        if not reporoot:
+        if not MACREPOROOT:
             raise NoRepoException
         else:
-            self.reporoot = reporoot
+            self.reporoot = MACREPOROOT
         self.dotmd5 = True
         self.logger.log(LogPriority.DEBUG, "Done initializing MacPkgr class...")
         self.ch = CommandHelper(self.logger)

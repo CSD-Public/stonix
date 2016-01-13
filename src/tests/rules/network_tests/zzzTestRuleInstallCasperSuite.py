@@ -56,7 +56,7 @@ class zzzTestRuleInstallCasperSuite(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.pkgr = MacPkgr(self.environ, self.logdispatch, self.rule.reporoot)
+        self.pkgr = MacPkgr(self.environ, self.logdispatch)
         self.pkgUrl = self.rule.reporoot + self.rule.package
         message = "Reporoot: " + str(self.rule.reporoot)
         self.logdispatch.log(LogPriority.DEBUG, message)

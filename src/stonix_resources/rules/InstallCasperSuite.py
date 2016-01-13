@@ -43,6 +43,7 @@ import types
 
 # The period was making python complain. Adding the correct paths to PyDev
 # made this the working scenario.
+from ..localize import MACREPOROOT
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..configurationitem import ConfigurationItem
@@ -55,7 +56,6 @@ from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
 JAMFCASPERSUITESERVER = "jds001.lanl.gov"
-REPOROOT="https://jds001.lanl.gov/CasperShare/"
 PACKAGENAME="QuickAdd.09.81.pkg"
 
 
@@ -74,7 +74,7 @@ class InstallCasperSuite(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.reporoot = REPOROOT
+        self.reporoot = MACREPOROOT
         self.logdispatch.log(LogPriority.DEBUG, "Reporoot: " + \
                                                 str(self.reporoot))
         self.package = PACKAGENAME
@@ -139,7 +139,7 @@ class InstallCasperSuite(Rule):
         self.services = {"com.jamfsoftware.jamf.agent":
                          "/Library/LaunchAgents/com.jamfsoftware.jamf.agent.plist"
                          }
-        self.pkgr = MacPkgr(environ, logdispatch, self.reporoot)
+        self.pkgr = MacPkgr(environ, logdispatch)
 
     def report(self):
         '''

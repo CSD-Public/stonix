@@ -42,6 +42,7 @@ that access the version variable to use this copy.
 @change: 2015/08/20 - eball - Added KRB5 for Linux Kerberos setup
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
 @change: 2015/12/14 - ekkehard update os x kerberos option & stonixversion
+@change: 2016/01/13 - rsn Added MACREPOROOT
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -76,6 +77,10 @@ UPDATESERVERS = ['rhnsd.lanl.gov',
 # if you have an ASUS server on your network enter its FQDN here. A zero
 # length entry will be ignored.
 APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
+
+# Repository used by the package helper to retrieve software for installation.
+# Currently only uses "https" as a valid protocol
+MACREPOROOT = 'https://jds001.lanl.gov/CasperShare/'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.

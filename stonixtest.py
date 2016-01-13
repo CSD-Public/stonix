@@ -1131,8 +1131,8 @@ def assemble_list_suite(modules = []):
                     myfile = ""
                     LOGGER.log(LogPriority.DEBUG, "Fnames: " + str(filenames))
                     for myfile in filenames:
-                        if myfile.endswith(".pyc"):
-                            break
+                        if re.match(".*\.pyc$", myfile):
+                            continue
                         regex = str(module) + ".*"
                         LOGGER.log(LogPriority.DEBUG, root + "/" + myfile)
                         if re.search("%s"%regex, myfile):
@@ -1169,8 +1169,8 @@ def assemble_list_suite(modules = []):
                 for root, dirnames, filenames in os.walk("src/tests/" + prefix):
                     myfile = ""
                     for myfile in filenames:
-                        if myfile.endswith(".pyc"):
-                            break
+                        if re.match(".*\.pyc$", myfile):
+                            continue
                         #print "\n\n\tmodname: " + str(module)
                         #print "\tFile   : " + str(myfile)
                         #print "\tRelPath: " + str(root + "/" + myfile)
