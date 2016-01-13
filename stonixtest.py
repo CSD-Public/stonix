@@ -888,6 +888,10 @@ def isRuleInBounds(fname=""):
     #print "  \tTestName      : " + str(toTestName)
     #print "  \tTestClassName : " + str(toTestClassName) + "\n"
 
+    LOGGER.log(LogPriority.DEBUG, "\n\ttoTestFileName  : " + str(toTestFileName))
+    LOGGER.log(LogPriority.DEBUG, "  \ttoTestName      : " + str(toTestName))
+    LOGGER.log(LogPriority.DEBUG, "  \ttoTestClassName : " + str(toTestClassName) + "\n")
+
     # Make Sure this rule sould be testing
     try:
         #####
@@ -937,13 +941,13 @@ def isRuleInBounds(fname=""):
         # check if is applicable to this system
         toTestIsApplicable = get_attrs.isapplicable()
 
-        #print "IsApplicable: " + str(toTestIsApplicable)
-        #print "UID works   : " + str(toTestCorrectEffectiveUserid)
+        LOGGER.log(LogPriority.DEBUG, "IsApplicable: " + str(toTestIsApplicable))
+        LOGGER.log(LogPriority.DEBUG, "UID works   : " + str(toTestCorrectEffectiveUserid))
 
         # Make Sure this rule sould be testing
         if toTestCorrectEffectiveUserid and toTestIsApplicable:
             ruleIsInBounds = True
-        
+    LOGGER.log(LogPriority.DEBUG, "ruleIsInBounds: " + str(ruleIsInBounds))
     return ruleIsInBounds
 
 
@@ -968,11 +972,16 @@ def processRuleTest(filename=""):
     # get the name of the test without the ".py"
     testName = ".".join(testFileName.split(".")[:-1])
     # Create a class path with the testName
-    testClassName = ".".join(filename.split("/")[:-1]) + "." + testName
+    testCaseNameList = filename.split("/")
+    del testCaseNameList[-1]
+    if filename.startswith("./"):
+        filename.strip("./")
+        del testCaseNameList[0]
+    testClassName = ".".join(testCaseNameList) + "." + testName
     
-    #print "\n\tTestFileName  : " + str(testFileName)
-    #print "  \tTestName      : " + str(testName)
-    #print "  \tTestClassName : " + str(testClassName) + "\n"
+    LOGGER.log(LogPriority.DEBUG, "\n\tTestFileName  : " + str(testFileName))
+    LOGGER.log(LogPriority.DEBUG, "  \tTestName      : " + str(testName))
+    LOGGER.log(LogPriority.DEBUG, "  \tTestClassName : " + str(testClassName) + "\n")
 
     # Make Sure this rule sould be testing
     try:
@@ -1019,7 +1028,7 @@ def processRuleTest(filename=""):
                 if re.match("^%s$"%classToTest, str(myfile).strip()):
                     LOGGER.log(LogPriority.DEBUG,  "classToTest: " + \
                                                    str(classToTest) + \
-                                                   "File: " + str(myfile))
+                                                   ", File: " + str(myfile))
                     
                     if isRuleInBounds(root + "/" + classToTest):
                         returnMod = testToRunMod
@@ -1116,11 +1125,18 @@ def assemble_list_suite(modules = []):
                 # mechanism
                 found = False
                 #Find the path to the test
-                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                LOGGER.log(LogPriority.DEBUG, "Current path: " + \
+                                                   os.path.abspath(os.curdir))
+                for root, dirnames, filenames in os.walk("./src/tests/" + prefix):
                     myfile = ""
+                    LOGGER.log(LogPriority.DEBUG, "Fnames: " + str(filenames))
                     for myfile in filenames:
-                        regex = "^" + str(module) + ".*"
-                        if re.match(regex, myfile):
+                        if myfile.endswith(".pyc"):
+                            break
+                        regex = str(module) + ".*"
+                        LOGGER.log(LogPriority.DEBUG, root + "/" + myfile)
+                        if re.search("%s"%regex, myfile):
+                            LOGGER.log(LogPriority.DEBUG, "myfile: " + str(myfile))
                             found = True
                             #print str(root)
                             LOGGER.log(LogPriority.DEBUG, "Found: " +\
@@ -1138,7 +1154,7 @@ def assemble_list_suite(modules = []):
                                 #print "Adding test to suite..."   
                 if not found: 
                     try:   
-                        raise TestNotFound("\n\tRule test \"" + str(myfile) + "\" not found")
+                        raise TestNotFound("\n\tRule test \"" + str(module) + "\" not found")
                     except TestNotFound, err:
                         print "\n\tException: " + str(err.msg)
                         sys.exit(253)
@@ -1153,6 +1169,8 @@ def assemble_list_suite(modules = []):
                 for root, dirnames, filenames in os.walk("src/tests/" + prefix):
                     myfile = ""
                     for myfile in filenames:
+                        if myfile.endswith(".pyc"):
+                            break
                         #print "\n\n\tmodname: " + str(module)
                         #print "\tFile   : " + str(myfile)
                         #print "\tRelPath: " + str(root + "/" + myfile)
@@ -1171,7 +1189,7 @@ def assemble_list_suite(modules = []):
                                 testList.append(testToRunMod)     
                                 #print "Adding test to suite..."   
                 if not found:
-                    try:   
+                    try:
                         raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
                     except TestNotFound, err:
                         print "\n\tException: " + str(err.msg)

@@ -10,7 +10,8 @@ class RuleTest(unittest.TestCase):
 
 ###############################################################################
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         '''
         Setup what we need for the test.
         @author: ekkehard j. koch
@@ -28,7 +29,8 @@ class RuleTest(unittest.TestCase):
 
 ###############################################################################
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         '''
         Release anything we no longer need what we need for the test.
         @author: ekkehard j. koch
@@ -64,8 +66,7 @@ class RuleTest(unittest.TestCase):
                           messagestring)
             messagestring = "rule.isapplicable() = " + str(isapplicable) + \
             " and should be True."
-            self.assertTrue(isapplicable, prefixRuleInfo + \
-                          messagestring)
+            self.logdispatch.log(LogPriority, prefixRuleInfo + messagestring)
             nextstep = isapplicable
 # Check to see if we are running in the right context
         if nextstep:

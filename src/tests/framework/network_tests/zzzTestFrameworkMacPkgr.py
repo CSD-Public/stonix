@@ -21,59 +21,62 @@
 #                                                                             #
 ###############################################################################
 import os
-import re
 import sys
 import shutil
 import unittest
 
 from src.stonix_resources.macpkgr import MacPkgr
 from src.stonix_resources.environment import Environment
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.Connectivity import Connectivity
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
-from pip.req.req_set import Installed
-from Finder.Files import package
 
 class zzzTestFrameworkMacPkgr(unittest.TestCase):
     """
     Class for testing the macpkgr.
     """
-    
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         """
         """
         self.macPackageName = "testStonixMacPkgr-0.0.3.pkg"
-        self.reporoot = "https://jds001.lanl.gov/CasperShare/"        
+        self.reporoot = "https://jds001.lanl.gov/CasperShare/"
         self.environ = Environment()
         self.logger = LogDispatcher(self.environ)
         self.pkgr = MacPkgr(self.environ, self.logger, self.reporoot)
-        if not self.environ.osfamily=="darwin":
+        if not self.environ.osfamily == "darwin":
             sys.exit(255)
-        self.pkg_dirs = ["/tmp/testStonixMacPkgr-0.0.3/one/two/three/3.5",
-                         "/tmp/testStonixMacPkgr-0.0.3/one/two/three",
-                         "/tmp/testStonixMacPkgr-0.0.3/one/two",
-                         "/tmp/testStonixMacPkgr-0.0.3/one",
-                         "/tmp/testStonixMacPkgr-0.0.3/one/two/four/five",
-                         "/tmp/testStonixMacPkgr-0.0.3/one/two/four",
-                         "/tmp/testStonixMacPkgr-0.0.3/one/two",
+        self.pkg_dirs = ["/tmp/testStonixMacPkgr-0.0.3/one/two/three/3.5", \
+                         "/tmp/testStonixMacPkgr-0.0.3/one/two/three", \
+                         "/tmp/testStonixMacPkgr-0.0.3/one/two", \
+                         "/tmp/testStonixMacPkgr-0.0.3/one", \
+                         "/tmp/testStonixMacPkgr-0.0.3/one/two/four/five", \
+                         "/tmp/testStonixMacPkgr-0.0.3/one/two/four", \
+                         "/tmp/testStonixMacPkgr-0.0.3/one/two", \
                          "/tmp/testStonixMacPkgr-0.0.3/one/six/seven"]
-        
-        self.pkg_files = ["/tmp/testStonixMacPkgr-0.0.3/one/two/testfile1",
-                     "/tmp/testStonixMacPkgr-0.0.3/one/two/four/five/testfile2",
-                     "/tmp/testStonixMacPkgr-0.0.3/one/testfile3",
-                     "/tmp/testStonixMacPkgr-0.0.3/one/testfile4",
+
+        self.pkg_files = ["/tmp/testStonixMacPkgr-0.0.3/one/two/testfile1", \
+                     "/tmp/testStonixMacPkgr-0.0.3/one/two/four/five/testfile2", \
+                     "/tmp/testStonixMacPkgr-0.0.3/one/testfile3", \
+                     "/tmp/testStonixMacPkgr-0.0.3/one/testfile4", \
                      "/tmp/testStonixMacPkgr-0.0.3/one/six/seven/testfile"]
 
-        self.post_files = ["/tmp/testStonixMacPkgr-0.0.3/one/postfile2", 
+        self.post_files = ["/tmp/testStonixMacPkgr-0.0.3/one/postfile2", \
                      "/tmp/testStonixMacPkgr-0.0.3/one/two/three/3.5/postfile3"]
-        
+
         self.post_dirs = ["/tmp/testStonixMacPkgr-0.0.3/one/six/6.5"]
-        
+
         self.all_files = [self.pkg_files, self.post_files]
         self.all_dirs = [self.pkg_dirs, self.post_dirs]
-        self.allowed_files_and_dirs = [self.pkg_dirs, 
-                                       self.pkg_dirs, 
+        self.allowed_files_and_dirs = [self.pkg_dirs,
+                                       self.pkg_dirs,
                                        self.post_dirs]
-        
-    def tearDown(self):
+        self.ch = CommandHelper(self.logger)
+        self.connection = Connectivity(self.logger)
+        self.testDomain = "gov.lanl.testStonixMacPkgr.0.0.3.testStonixMacPkgr"
+
+    @classmethod
+    def tearDownClass(self):
         """
         Make sure the appropriate files are removed..
         """
@@ -127,24 +130,157 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.removeCompletePackage()
 
         
+    def testCheckInstall(self):
+        """
+        Test the checkInstall method.
+        
+        1 - make sure the test .pkg is NOT installed
+        2 - download the package and check the md5
+        3 - use custom installer command to install the package
+        4 - call the checkInstall method
+        
+        @author: Roy Nielsen
+        """
+        #####
+        # make sure the test .pkg is NOT installed
+        self.pkgr.removePackage(self.macPackageName)
+        
+        #####
+        # Test the checkInstall with the package removed
+        self.assertFalse(self.pkgr.checkInstall(self.macPackageName))
+        self.assertFalse(self.isInstalled())
+        
+        #####
+        # Install the package
+        self.pkgr.installPackage(self.macPackageName)
+        
+        #####
+        # run checkInstall again
+        self.assertTrue(self.pkgr.checkInstall(self.macPackageName))
+        self.assertTrue(self.isInstalled())
+        
+    def testCheckAvailable(self):
+        """
+        Check if a package is available on the reporoot.
+        
+        Must have both the file AND the md5 checksum file on the server of the
+        format:
+        
+        .<filename>.<UPPER-md5sum>
+        
+        Steps for this test:
+        
+        1 - set up self.pkgr.pkgUrl
+        2 - run self.pkgr.downloadPackage
+        3 - Make sure the checksum matches, otherwise there is a bad md5
+            for the download, and the package should not be trusted, let alone
+            installed.
+        
+        This covers two test cases -
+        checkAvailable
+        downloadPackage
+        
+        @author: Roy Nielsen
+        """
+        self.assertTrue(self.reporoot + self.macPackageName)
+        self.pkgr.setPkgUrl(self.reporoot + self.macPackageName)
+        self.pkgr.package = self.macPackageName
+        self.assertTrue(self.pkgr.downloadPackage(), "Package: " + \
+                        str(self.pkgr.getPkgUrl()) + " FAILED download...")
+        
+        self.assertTrue(self.pkgr.checkMd5(), "MD5 checksum didn't match - " + \
+                   "package: " + str(self.pkgr.hashUrl) + " is NOT " + \
+                   "available...")
+                
+    def testFindDomain(self):
+        """
+        Test the findDomain function.  The domain is required to do a reverse 
+        lookup in the local client package receipt database.  It should find
+        all the files that have been installed by the PACKAGE, not the 
+        postflight.
+        
+        Will remove the test package if it exists, install the package then
+        use the test package to make sure the package file list is accurate.
+        
+        @author: Roy Nielsen
+        """
+        #####
+        # Make sure the package is installed
+        self.pkgr.installPackage("testStonixMacPkgr-0.0.3.pkg")
+        
+        #####
+        # Assert findDomain works properly when the package is installed
+        self.assertEqual(self.testDomain, 
+                         self.pkgr.findDomain("testStonixMacPkgr-0.0.3.pkg"))
+        
+    def testUnArchive(self):
+        """
+        Download a tar package with the test pkg in it.
+        
+        Will test doing a download and checksum of the following by downloading
+        the file and doing a checksum, then unzipping the file, and check
+        the internal filename:
+        
+        testStonixMacPkgr.zip
+        
+        @Note: *** Functionality needs approval ***
+        
+        @author: Roy Nielsen
+        """
+        pass
+        
+    def testCopyInstall(self):
+        """
+        Tests the copyInstall method.
+        
+        Will test by:
+        
+        Downloading the test .tar file with a .app in it, doing a checksum of
+        the .tar file then performing a copyInstall.
+        
+        Will test by checking the existence of the .app being in the right 
+        place.
+        
+        @author: Roy Nielsen
+        """ 
+        pass
+        
+    def testInstallPkg(self):
+        """
+        Tests the installPkg method.
+        
+        Will:
+        Make sure the test pkg is not installed
+        Download and checksum the file.
+        install the .pkg with the installPkg method.
+        
+        @author: Roy Nielsen
+        """
+        pass
+    
+    
     def testIsMacPlatform(self):
         """
         Make sure we are on the Mac platform.
         
         @author: Roy Nielsen
         """
-        self.assertTrue(self.environ.osfamily=="darwin", "Wrong OS...")
+        self.assertTrue(self.environ.osfamily == "darwin", "Wrong OS...")
         
     def isFullInstall(self):
         """
         Make sure that all files and directories including those installed from
         the package and the postinstall script exist.
         
+        @Note: In future, this should also do a receipt test as well.  This 
+               would include getting the files from the receipt and checking
+               for their existence and perhaps their permissions.
+        
         @author: Roy Nielsen
         """
 
         files = self.doFilesExistTest(self.all_files)
-        dirs = self.doDirsExistTest(self.all_dirs)
+        dirs = self.doDirsExist(self.all_dirs)
         
         if files and dirs:
             return True
@@ -159,7 +295,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         @author: Roy Nielsen
         """
         files = self.doFilesExistTest([self.pkg_files])
-        dirs = self.doDirsExistTest([self.pkg_dirs])
+        dirs = self.doDirsExist([self.pkg_dirs])
         
         if files and dirs:
             return True
@@ -172,6 +308,12 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         that exist, as well as files and directories installed by the 
         postinstall script.
         
+        @Note: In future, this test should check for a package receipt, and 
+               make sure the files in the package receipt do not exist.  This
+               is only valid for this package, as in the case of some software,
+               like Adobe products, some of the files are shared libraries 
+               between different products.
+        
         @author: Roy Nielsen
         """
         removed = []
@@ -180,22 +322,22 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         #####
         # Cycle through each subset of files in the 
         for myfile in self.pkg_files:
-           if os.path.isfile(myfile):
-               self.logger.log(LogPriority.WARNING, "File: " + \
-                               str(myfile) + " exists...")
-               removed.append(False)
-               exists.append(myfile)
+            if os.path.isfile(myfile):
+                self.logger.log(LogPriority.WARNING, "File: " + \
+                                str(myfile) + " exists...")
+                removed.append(False)
+                exists.append(myfile)
         self.assertFalse(False in removed, "Some files exist: " + str(exists))
         
         #####
         # cycle through each set of directories in all_dirs
-        for set in self.allowed_files_and_dirs:
+        for myset in self.allowed_files_and_dirs:
             #####
             # Cycle through each subset of files in the 
-            for myfile in set:
-               if os.path.isdir(myfile):
-                   self.logger.log(LogPriority.INFO, "Item: " + \
-                                   str(myfile) + " exists...")
+            for myfile in myset:
+                if os.path.isdir(myfile):
+                    self.logger.log(LogPriority.INFO, "Item: " + \
+                                    str(myfile) + " exists...")
         if False in removed:
             return False
         return True
@@ -206,14 +348,37 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author:  Roy Nielsen
         """
+        success = False
         try:
-            shutil.rmtree("/tmp/testStonixMacPkgr-0.0.3")
-        except:
-            self.logger.log(LogPriority.INFO, "Test set already missing...")
+            testPath = "/tmp/testStonixMacPkgr-0.0.3"
+            if os.path.exists(testPath):
+                shutil.rmtree(testPath)
+        except Exception, err:
+            self.logger.log(LogPriority.INFO, "Test set already missing?")
+            raise err
         else:
             self.logger.log(LogPriority.INFO, "Removed test package " + \
                                               "install set...")
+            success = True
+
+        #####
+        # If the rmtree directive above did not throw an exception, make the
+        # system "forget" the package
+        if success:
+            #####
+            # get the domain, so we can "forget" the package
+            domain = self.pkgr.findDomain(self.macPackageName)
             
+            #####
+            # Also need to remove the package receipt...
+            # use pkgutil --forget
+            cmd = ["/usr/sbin/pkgutil", "--forget", domain]
+            
+            self.ch.executeCommand(cmd)
+            if not self.ch.getReturnCode() == 0:
+                success = False
+        return success
+        
     def doFilesExistTest(self, files=[False]):
         """
         Test the directories in the passed in list to see if they all exist.
@@ -224,24 +389,24 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         exists = []
         #####
         # cycle through each set of files in all_files
-        for set in files:
+        for myset in files:
             #####
             # Cycle through each subset of files in the 
-            for myfile in set:
-               if not os.path.isfile(myfile):
-                   self.logger.log(LogPriority.WARNING, "File: " + \
-                                   str(myfile) + " does not exist...")
-                   exists.append(False)
-                   not_installed.append(str(myfile))
-            self.assertFalse(False in exists, "Not all files exist: " + \
-                                               str(not_installed))
+            for myfile in myset:
+                if not os.path.isfile(myfile):
+                    self.logger.log(LogPriority.WARNING, "File: " + \
+                                    str(myfile) + " does not exist...")
+                    exists.append(False)
+                    not_installed.append(str(myfile))
         if False in exists:
+            message = "Not all files exist: " + str(not_installed)
+            self.logger.log(LogPriority.DEBUG, message)
             return False
         return True
     
-    def doDirsExistTest(self, dirs=[False]):
+    def doDirsExist(self, dirs=[False]):
         """
-        Test the directories in the passed in list to see if they all exist.
+        Check the directories in the passed in list to see if they all exist.
         
         @author: Roy Nielsen
         """
@@ -249,17 +414,17 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         exists = []
         #####
         # cycle through each set of directories in all_dirs
-        for set in dirs:
+        for myset in dirs:
             #####
             # Cycle through each subset of files in the 
-            for mydir in set:
-               if not os.path.isdir(mydir):
-                   self.logger.log(LogPriority.WARNING, "Directory: " + \
-                                   str(mydir) + " does not exist...")
-                   exists.append(False)
-                   not_installed.append(str(mydir))
-            self.assertFalse(False in exists, "Not all files exist: " + \
-                                                str(not_installed))
+            for mydir in myset:
+                if not os.path.isdir(mydir):
+                    self.logger.log(LogPriority.WARNING, "Directory: " + \
+                                    str(mydir) + " does not exist...")
+                    exists.append(False)
+                    not_installed.append(str(mydir))
         if False in exists:
+            message = "Not all files exist: " + str(not_installed)
+            self.logger.log(LogPriority.DEBUG, message)
             return False
         return True

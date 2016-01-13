@@ -51,6 +51,7 @@ from ..stonixutilityfunctions import has_connection_to_server
 from ..CommandHelper import CommandHelper
 from ..filehelper import FileHelper
 from ..macpkgr import MacPkgr
+from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
 JAMFCASPERSUITESERVER = "jds001.lanl.gov"
@@ -74,9 +75,13 @@ class InstallCasperSuite(Rule):
         self.mandatory = True
         self.rootrequired = True
         self.reporoot = REPOROOT
+        self.logdispatch.log(LogPriority.DEBUG, "Reporoot: " + \
+                                                str(self.reporoot))
         self.package = PACKAGENAME
+        self.logdispatch.log(LogPriority.DEBUG, "Package Name: " + \
+                                            str(self.package))
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.11']}}
+                           'os': {'Mac OS X': ['10.9', '+']}}
         self.js = JAMFCASPERSUITESERVER
 
         key = self.rulename
@@ -229,14 +234,13 @@ class InstallCasperSuite(Rule):
                 self.logdispatch.log(LogPriority.DEBUG, msg)
 
 # If there is a network connection, install, otherwise just log
-                hasconnection = has_connection_to_server(self.logdispatch,
-                                                         self.js)
-                if hasconnection:
+                connection = Connectivity(self.logdispatch)
+                if connection.isPageAvailable(self.reporoot + self.package):
                     msg = "Connected to " + str(self.js)
                     self.logdispatch.log(LogPriority.DEBUG, msg)
 
 # Install the package
-                    if pkgr.installpackage(self.package):
+                    if self.pkgr.installPackage(self.package):
                         self.rulesuccess = True
                         messagestring = str(self.qa) + \
                             " installation successful!"
