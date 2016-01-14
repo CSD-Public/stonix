@@ -41,9 +41,9 @@ from re import search
 from logdispatcher import LogPriority
 from subprocess import Popen, call, PIPE, STDOUT
 from CommandHelper import CommandHelper
-from IHmac import IHmac
 from stonixutilityfunctions import set_no_proxy, has_connection_to_server
 from Connectivity import Connectivity
+from urllib2 import URLError
 
 def NoRepoException(Exception):
     """
@@ -148,10 +148,46 @@ class MacPkgr(object):
                         
 
                 if self.connection.isPageAvailable(self.pkgUrl):
+                    #####
+                    # Download into a temporary directory
+                    success = self.downloadPackage()
+                    if success:
                         #####
-                        # Download into a temporary directory
-                        self.downloadPackage()
+                        # Apple operating systems have a lazy attitude towards
+                        # writing to disk - the package doesn't get fully
+                        # written to disk until the following method is called.
+                        # Otherwise when the downloaded package is further 
+                        # manipulated, (uncompressed or installed) the 
+                        # downloaded file is not there.  There may be other 
+                        # ways to get python to do the filesystem sync...
                         self.fssync()
+                        #####
+                        # Make sure the md5 of the file matches that of the 
+                        # server
+                        if self.checkMd5():
+                            #####
+                            # unarchive if necessary
+                            compressed = [".tar", ".tar.gz", ".tgz", 
+                                          ".tar.bz", ".tbz", ".zip"]
+                            for extension in compressed:
+                                if self.tmpLocalPkg.endswith(extension):
+                                    self.unArchive()
+                                    self.fssync()
+                            #####
+                            # The unArchive renames self.tmpLocalPkg to the 
+                            # actual software to install that is inside the
+                            # package.
+                            #
+                            # install - if extension is .app, copy to the 
+                            #           /Applications folder, otherwise if it
+                            #           is a .pkg or .mpkg use the installer 
+                            #           command
+                            if self.tmpLocalPkg.endswith(".app"):
+                                success = self.copyInstall()
+                                
+                            elif self.tmpLocalPkg.endswith (".pkg") or \
+                                 self.tmpLocalPkg.endswith (".mpkg"):
+                                success = self.installPkg()
             else:
                 #####
                 # Otherwise the repository is on a mounted filesystem
@@ -159,29 +195,6 @@ class MacPkgr(object):
                                                    "filesystem repo...")
                 self.tmpLocalPkg = self.reporoot + "/" + self.package
                 
-            #####
-            # unarchive if necessary
-            compressed = [".tar", ".tar.gz", ".tgz", 
-                          ".tar.bz", ".tbz", ".zip"]
-            if self.checkMd5():
-                for extension in compressed:
-                    if self.tmpLocalPkg.endswith(extension):
-                        self.unArchive()
-                        self.fssync()
-                #####
-                # The unArchive renames self.tmpLocalPkg to the actual
-                # software to install that is inside the package.
-                #
-                # install - if extension is .app, copy to the /Applications
-                #           folder
-                # otherwise if it is a .pkg or .mpkg use the installer 
-                # command
-                if self.tmpLocalPkg.endswith(".app"):
-                    success = self.copyInstall()
-                    
-                elif self.tmpLocalPkg.endswith (".pkg") or \
-                     self.tmpLocalPkg.endswith (".mpkg"):
-                    success = self.installPkg()
 
         except(KeyboardInterrupt,SystemExit):
             raise
@@ -190,7 +203,8 @@ class MacPkgr(object):
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             raise err
-        self.fssync()
+        if success:
+            self.fssync()
         return success
             
     ###########################################################################
@@ -325,8 +339,8 @@ class MacPkgr(object):
                         # was installed.
                         cmd_three = ["/usr/sbin/pkgutil", "--forget", domain]
                         self.ch.executeCommand(cmd_three)
-                        if not re.match("^%s$"%str(self.ch.getReturnCode()).strip(), str(0)):
-                            success = False
+                        if re.match("^%s$"%str(self.ch.getReturnCode()).strip(), str(0)):
+                            success = True
                 else:
                     self.logger.log(LogPriority.DEBUG, "Page: \"" + \
                                     str(package) + "\" Not found")
@@ -337,8 +351,8 @@ class MacPkgr(object):
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
-
-        self.fssync()
+        if success:
+            self.fssync()
         print "Remove Package success: " + str(success)
         return success
 
@@ -571,13 +585,14 @@ class MacPkgr(object):
         @author: Roy Nielsen
         """
         success = False
+        urlfile = None
         try:
             self.tmpDir = ""
             if self.pkgUrl:
                 #####
                 # Make a temporary directory to download the package
                 try :
-                    self.tmpDir = tempfile.mkdtemp(prefix="MacPkgr")
+                    self.tmpDir = tempfile.mkdtemp()
                     self.logger.log(LogPriority.DEBUG, "tmpDir: " + \
                                                        str(self.tmpDir))
                 except Exception, err :
@@ -588,13 +603,8 @@ class MacPkgr(object):
                 else:                 
                     #####
                     # First try to open the URL
-                    try :
+                    if self.connection.isPageAvailable(self.pkgUrl):
                         urlfile = urllib2.urlopen(self.pkgUrl)
-                    except Exception , err:
-                        message = "Error opening the URL " + str(err)
-                        self.logger.log(LogPriority.DEBUG, message)
-                        raise err
-                    else :
                         #####
                         # Get just the package name out of the "package" url
                         urlList = self.pkgUrl.split("/")
@@ -622,16 +632,19 @@ class MacPkgr(object):
                             chunk = 16 * 1024 * 1024
                             try:
                                 while 1 :
-                                    data = urlfile.read(chunk)
-                                    if not data :
-                                        message = "Done reading file: " + \
-                                                  self.pkgUrl
+                                    if urlfile:
+                                        data = urlfile.read(chunk)
+                                        if not data :
+                                            message = "Done reading file: " + \
+                                                      self.pkgUrl
+                                            self.logger.log(LogPriority.DEBUG, message)
+                                            break
+                                        f.write(data)
+                                        message = "Read " + str(len(data)) + " bytes"
                                         self.logger.log(LogPriority.DEBUG, message)
-                                        break
-                                    f.write(data)
-                                    message = "Read " + str(len(data)) + " bytes"
-                                    self.logger.log(LogPriority.DEBUG, message)
-                            except (OSError | IOError), err:
+                                    else:
+                                        raise IOError("What file???")
+                            except (OSError or IOError), err:
                                 #####
                                 # Catch in case we run out of space on the 
                                 # local system during the download process
@@ -642,6 +655,9 @@ class MacPkgr(object):
                                 success = True
                             f.close()
                         urlfile.close()
+                    else:
+                        message = "Error opening the URL: " + str(self.pkgUrl)
+                        self.logger.log(LogPriority.DEBUG, message)                        
             else:
                 message = "Need a valid package url. Can't download nothing..."
                 self.logger.log(LogPriority.DEBUG, message)
@@ -725,11 +741,16 @@ class MacPkgr(object):
         try:
             retval = None
             try :
-                fh = open(self.tmpLocalPkg, 'r')
+                if os.path.exists(self.tmpLocalPkg):
+                    fh = open(self.tmpLocalPkg, 'r')
+                else:
+                    raise Exception("Cannot open a non-existing file...")
             except Exception, err :
-                message = "Cannot open file: " + filename + " for reading."
+                message = "Cannot open file: " + self.tmpLocalPkg + " for reading."
                 self.logger.log(LogPriority.WARNING, message)
                 self.logger.log(LogPriority.WARNING, "Exception : " + str(err))
+                success = False
+                retval = '0'
             else :
                 chunk = 16 * 1024 * 1024
                 m = hashlib.md5()

@@ -73,7 +73,11 @@ UPDATESERVERS = ['foo.bar.com',
 # Stonix can set OS X systems to use a local Apple Software Update Server
 # if you have an ASUS server on your network enter its FQDN here. A zero
 # length entry will be ignored.
-APPLESOFTUPDATESERVER = 'http://foo.bar.com:8088/'
+APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
+
+# Repository used by the package helper to retrieve software for installation.
+# Currently only uses "https" as a valid protocol
+MACREPOROOT = 'https://example.com/reporoot/'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
