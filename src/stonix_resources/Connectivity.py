@@ -137,7 +137,7 @@ class Connectivity(object):
         @parameter: timeout - how fast to timeout the connection.
         """
         url = url.strip()
-        self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
+        self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")
         self.logger.log(LogPriority.DEBUG, "timeout: " + str(timeout))
         
         success = False
@@ -189,10 +189,10 @@ class Connectivity(object):
         3 - the URL is a string
         """
         success = False
-        self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
         
-        if isinstance(url, str):
-            self.logger.log(LogPriority.DEBUG, "URL is a string...")
+        if isinstance(url, str) and url:
+            self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")
+            self.logger.log(LogPriority.DEBUG, "URL is a string and not empty...")
             if re.match("^http://.+", url) or re.match("^https://.+", url):
                 self.logger.log(LogPriority.DEBUG, "Found valid protocol...")
                 urlsplit = url.split("/")
@@ -226,10 +226,11 @@ class Connectivity(object):
                 elif not re.search(":", hostAndPort):
                     success = True
             else:
-                self.logger.log(LogPriority.DEBUG, "Could NOT find valid protocol...")                
+                self.logger.log(LogPriority.DEBUG, "Could NOT find valid " + \
+                                                   "protocol...")                
         else:
-            self.logger.log(LogPriority.DEBUG, "URL is not a string...")
-
+            self.logger.log(LogPriority.DEBUG, "URL is not a string, or it " + \
+                                               "is an empty string...")
         return success
     
     def decomposeURL(self, url=""):
