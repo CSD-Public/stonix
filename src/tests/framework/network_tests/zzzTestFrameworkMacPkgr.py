@@ -25,6 +25,7 @@ import sys
 import shutil
 import unittest
 
+from src.stonix_resources.localize import MACREPOROOT
 from src.stonix_resources.macpkgr import MacPkgr
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.CommandHelper import CommandHelper
@@ -40,10 +41,10 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         """
         """
         self.macPackageName = "testStonixMacPkgr-0.0.3.pkg"
-        self.reporoot = "https://jds001.lanl.gov/CasperShare/"
+        self.reporoot = MACREPOROOT
         self.environ = Environment()
         self.logger = LogDispatcher(self.environ)
-        self.pkgr = MacPkgr(self.environ, self.logger, self.reporoot)
+        self.pkgr = MacPkgr(self.environ, self.logger)
         if not self.environ.osfamily == "darwin":
             sys.exit(255)
         self.pkg_dirs = ["/tmp/testStonixMacPkgr-0.0.3/one/two/three/3.5", \
