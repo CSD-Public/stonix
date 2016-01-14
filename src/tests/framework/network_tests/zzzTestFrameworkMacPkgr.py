@@ -90,45 +90,51 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
-        #####
-        # Remove the package in case it is installed, so we have a sane, 
-        # consistent starting point for the test.
-        self.removeCompletePackage()
-
-        #####
-        # Install the package
-        self.assertTrue(self.pkgr.installPackage(self.macPackageName),
-                        "Problem with pkgr.installpackage...")        
-        #####
-        # Use the macpkgr method to check if the package is installed
-        self.assertTrue(self.pkgr.checkInstall(self.macPackageName),
-                        "Problem with pkgr.checkInstall...")
-        
-        #####
-        # Manual check to see if the package is installed
-        self.assertTrue(self.isInstalled(), "Problem with installation...")
-        
-        #####
-        # Make sure it isn't a partial install...
-        self.assertTrue(self.isFullInstall(), "Partial install...")
-
-        #####
-        # Remove the package, assert that it worked.                
-        self.assertTrue(self.pkgr.removePackage(self.macPackageName),
-                        "Problem removing package...")
-        
-        #####
-        # Check that checkInstall returns the correct value
-        self.assertFalse(self.pkgr.checkInstall(self.macPackageName),
-                         "Problem with pkgr.checkinstall...")
-
-        #####
-        # Hand verify that self.pkgr.checkInstall worked.
-        self.assertTrue(self.isMissing(), "Problem with package removal...")
-        
-        #####
-        # Remove any presence of the package installed.
-        self.removeCompletePackage()
+        if not self.connection.isPageAvailable():
+            self.logger.log(LogPriority.INFO, "This test fails without a " + \
+                                              "properly configured Mac " + \
+                                              "repository, so we are not " + \
+                                              "running actual tests...")
+        else:
+            #####
+            # Remove the package in case it is installed, so we have a sane, 
+            # consistent starting point for the test.
+            self.removeCompletePackage()
+    
+            #####
+            # Install the package
+            self.assertTrue(self.pkgr.installPackage(self.macPackageName),
+                            "Problem with pkgr.installpackage...")        
+            #####
+            # Use the macpkgr method to check if the package is installed
+            self.assertTrue(self.pkgr.checkInstall(self.macPackageName),
+                            "Problem with pkgr.checkInstall...")
+            
+            #####
+            # Manual check to see if the package is installed
+            self.assertTrue(self.isInstalled(), "Problem with installation...")
+            
+            #####
+            # Make sure it isn't a partial install...
+            self.assertTrue(self.isFullInstall(), "Partial install...")
+    
+            #####
+            # Remove the package, assert that it worked.                
+            self.assertTrue(self.pkgr.removePackage(self.macPackageName),
+                            "Problem removing package...")
+            
+            #####
+            # Check that checkInstall returns the correct value
+            self.assertFalse(self.pkgr.checkInstall(self.macPackageName),
+                             "Problem with pkgr.checkinstall...")
+    
+            #####
+            # Hand verify that self.pkgr.checkInstall worked.
+            self.assertTrue(self.isMissing(), "Problem with package removal...")
+            
+            #####
+            # Remove any presence of the package installed.
+            self.removeCompletePackage()
 
         
     def testCheckInstall(self):
@@ -142,23 +148,29 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
-        #####
-        # make sure the test .pkg is NOT installed
-        self.pkgr.removePackage(self.macPackageName)
-        
-        #####
-        # Test the checkInstall with the package removed
-        self.assertFalse(self.pkgr.checkInstall(self.macPackageName))
-        self.assertFalse(self.isInstalled())
-        
-        #####
-        # Install the package
-        self.pkgr.installPackage(self.macPackageName)
-        
-        #####
-        # run checkInstall again
-        self.assertTrue(self.pkgr.checkInstall(self.macPackageName))
-        self.assertTrue(self.isInstalled())
+        if not self.connection.isPageAvailable():
+            self.logger.log(LogPriority.INFO, "This test fails without a " + \
+                                              "properly configured Mac " + \
+                                              "repository, so we are not " + \
+                                              "running actual tests...")
+        else:
+            #####
+            # make sure the test .pkg is NOT installed
+            self.pkgr.removePackage(self.macPackageName)
+            
+            #####
+            # Test the checkInstall with the package removed
+            self.assertFalse(self.pkgr.checkInstall(self.macPackageName))
+            self.assertFalse(self.isInstalled())
+            
+            #####
+            # Install the package
+            self.pkgr.installPackage(self.macPackageName)
+            
+            #####
+            # run checkInstall again
+            self.assertTrue(self.pkgr.checkInstall(self.macPackageName))
+            self.assertTrue(self.isInstalled())
         
     def testCheckAvailable(self):
         """
@@ -183,15 +195,21 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
-        self.assertTrue(self.reporoot + self.macPackageName)
-        self.pkgr.setPkgUrl(self.reporoot + self.macPackageName)
-        self.pkgr.package = self.macPackageName
-        self.assertTrue(self.pkgr.downloadPackage(), "Package: " + \
-                        str(self.pkgr.getPkgUrl()) + " FAILED download...")
-        
-        self.assertTrue(self.pkgr.checkMd5(), "MD5 checksum didn't match - " + \
-                   "package: " + str(self.pkgr.hashUrl) + " is NOT " + \
-                   "available...")
+        if not self.connection.isPageAvailable():
+            self.logger.log(LogPriority.INFO, "This test fails without a " + \
+                                              "properly configured Mac " + \
+                                              "repository, so we are not " + \
+                                              "running actual tests...")
+        else:
+            self.assertTrue(self.reporoot + self.macPackageName)
+            self.pkgr.setPkgUrl(self.reporoot + self.macPackageName)
+            self.pkgr.package = self.macPackageName
+            self.assertTrue(self.pkgr.downloadPackage(), "Package: " + \
+                            str(self.pkgr.getPkgUrl()) + " FAILED download...")
+            
+            self.assertTrue(self.pkgr.checkMd5(), "MD5 checksum didn't match - " + \
+                       "package: " + str(self.pkgr.hashUrl) + " is NOT " + \
+                       "available...")
                 
     def testFindDomain(self):
         """
@@ -205,14 +223,20 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
-        #####
-        # Make sure the package is installed
-        self.pkgr.installPackage("testStonixMacPkgr-0.0.3.pkg")
-        
-        #####
-        # Assert findDomain works properly when the package is installed
-        self.assertEqual(self.testDomain, 
-                         self.pkgr.findDomain("testStonixMacPkgr-0.0.3.pkg"))
+        if not self.connection.isPageAvailable():
+            self.logger.log(LogPriority.INFO, "This test fails without a " + \
+                                              "properly configured Mac " + \
+                                              "repository, so we are not " + \
+                                              "running actual tests...")
+        else:
+            #####
+            # Make sure the package is installed
+            self.pkgr.installPackage("testStonixMacPkgr-0.0.3.pkg")
+            
+            #####
+            # Assert findDomain works properly when the package is installed
+            self.assertEqual(self.testDomain, 
+                             self.pkgr.findDomain("testStonixMacPkgr-0.0.3.pkg"))
         
     def testUnArchive(self):
         """
@@ -258,15 +282,20 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         @author: Roy Nielsen
         """
         pass
-    
-    
+        
     def testIsMacPlatform(self):
         """
         Make sure we are on the Mac platform.
         
         @author: Roy Nielsen
         """
-        self.assertTrue(self.environ.osfamily == "darwin", "Wrong OS...")
+        if not self.connection.isPageAvailable():
+            self.logger.log(LogPriority.INFO, "This test fails without a " + \
+                                              "properly configured Mac " + \
+                                              "repository, so we are not " + \
+                                              "running actual tests...")
+        else:
+            self.assertTrue(self.environ.osfamily == "darwin", "Wrong OS...")
         
     def isFullInstall(self):
         """
