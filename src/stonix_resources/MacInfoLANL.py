@@ -3,7 +3,7 @@
 '''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -32,6 +32,7 @@
 @change: 2015/10/05 ekkehard change to new jamf location
 @change: 2015/11/05 ekkehard added imaged File system tag & getIPAddress
 @change: 2015/12/14 ekkehard implemented lazy initialization
+@change: 2016/01/19 ekkehard bug fixes
 '''
 import os
 import re
@@ -88,11 +89,18 @@ class MacInfoLANL():
         self.ipAddress = ""
         self.ipAddressActive = []
         self.ldapnotworking = False
+# reset messages and initialize everyting
+        self.initializeLANLAssetTagNVRAMBoolean = False
+        self.initializeLANLAssetTagFilesystemBoolean = False
+        self.initializeLANLImagedFilesystemBoolean = False
+        self.initializeDiskUtilityInfoBoolean = False
+        self.initializePopulateFromMacBoolean = False
+        self.initializeAccuracyDeterminationBoolean = False
+# Make sure we have the full path for all commands
         jamflocation = "/usr/local/bin/jamf"
         if not os.path.exists(jamflocation):
             jamflocation = "/usr/sbin/jamf"
         self.jamf = jamflocation
-# Make sure we have the full path for all commands
         self.ns = "/usr/sbin/networksetup"
         self.scutil = "/usr/sbin/scutil"
         self.jamf = jamflocation
@@ -106,13 +114,6 @@ class MacInfoLANL():
         self.updateComputerNameAccuracy(True, 0, "", True)
 # Reset messages
         self.messageReset()
-# reset messages and initialize everyting
-        self.initializeLANLAssetTagNVRAMBoolean = False
-        self.initializeLANLAssetTagFilesystemBoolean = False
-        self.initializeLANLImagedFilesystemBoolean = False
-        self.initializeDiskUtilityInfoBoolean = False
-        self.initializePopulateFromMacBoolean = False
-        self.initializeAccuracyDeterminationBoolean = False
     
     def gotoFirstItemLDAP(self):
         '''
