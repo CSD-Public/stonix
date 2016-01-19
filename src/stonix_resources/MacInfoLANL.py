@@ -89,7 +89,7 @@ class MacInfoLANL():
         self.ipAddress = ""
         self.ipAddressActive = []
         self.ldapnotworking = False
-# reset messages and initialize everyting
+# Set all initialization boolean
         self.initializeLANLAssetTagNVRAMBoolean = False
         self.initializeLANLAssetTagFilesystemBoolean = False
         self.initializeLANLImagedFilesystemBoolean = False
