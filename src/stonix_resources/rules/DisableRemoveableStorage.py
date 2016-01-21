@@ -70,8 +70,11 @@ class DisableRemoveableStorage(Rule):
         self.rulename = 'DisableRemoveableStorage'
         self.mandatory = False
         self.formatDetailedResults("initialize")
-        self.helptext = "This optional rule disables USB storage devices " + \
-            "from accessing, or being accessed from, the system."
+        self.helptext = "This optional rule disables USB, Firewire, " + \
+            "thunderbolt, and SD cards (if applicable) " + \
+            "from accessing or being accessed from the system.  " + \
+            "This rule will be mandatory for those who work on the red " + \
+            "network\n"
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -79,33 +82,33 @@ class DisableRemoveableStorage(Rule):
 
         # configuration item instantiation
         datatype = "bool"
-        key = "DISABLEUSB"
-        instructions = "To disable usb storage devices on this system, " + \
-            "set the value of DISABLEUSB to True"
-        default = False
-        self.usbci = self.initCi(datatype, key, instructions, default)
+        key = "DISABLESTORAGE"
+        instructions = "To disable removeable storage devices on this " + \
+            "system, set the value of DISABLESTORAGE to True"
+        default = True
+        self.storageci = self.initCi(datatype, key, instructions, default)
 
-        datatype = "bool"
-        key = "DISABLEFIREWIRE"
-        instructions = "To disable Firewire storage devices on this " + \
-            "system set the value of DISABLEFIREWIRE to True."
-        default = False
-        self.fwci = self.initCi(datatype, key, instructions, default)
-
-        if self.environ.getostype() == "Mac OS X":
-            datatype = "bool"
-            key = "DISABLETHUNDER"
-            instructions = "To disable thunderbolt storage devices on " + \
-                "this system set the value of DISABLETHUNDER to True."
-            default = False
-            self.tbci = self.initCi(datatype, key, instructions, default)
-
-            datatype = "bool"
-            key = "DISABLESDCARD"
-            instructions = "To disable SD card functionality on this " + \
-                "system set the value of DISABLESDCARD to True"
-            default = False
-            self.sdci = self.initCi(datatype, key, instructions, default)
+#         datatype = "bool"
+#         key = "DISABLEFIREWIRE"
+#         instructions = "To disable Firewire storage devices on this " + \
+#             "system set the value of DISABLEFIREWIRE to True."
+#         default = False
+#         self.fwci = self.initCi(datatype, key, instructions, default)
+# 
+#         if self.environ.getostype() == "Mac OS X":
+#             datatype = "bool"
+#             key = "DISABLETHUNDER"
+#             instructions = "To disable thunderbolt storage devices on " + \
+#                 "this system set the value of DISABLETHUNDER to True."
+#             default = False
+#             self.tbci = self.initCi(datatype, key, instructions, default)
+# 
+#             datatype = "bool"
+#             key = "DISABLESDCARD"
+#             instructions = "To disable SD card functionality on this " + \
+#                 "system set the value of DISABLESDCARD to True"
+#             default = False
+#             self.sdci = self.initCi(datatype, key, instructions, default)
 
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
@@ -181,18 +184,16 @@ class DisableRemoveableStorage(Rule):
                 found = True
                 self.blacklist = {}
                 # directives are different for different distros
-                if self.usbci.getcurrvalue():
-                    if self.ph.manager == "apt-get" or \
-                       self.ph.manager == "zypper":
-                        self.blacklist["blacklist usb_storage"] = False
-                        self.blacklist["install usbcore /bin/true"] = False
-                    elif self.ph.manager == "yum":
-                        self.blacklist["blacklist usb-storage"] = False
-                        self.blacklist["install usb-storage /bin/true"] = False
+                if self.ph.manager == "apt-get" or \
+                   self.ph.manager == "zypper":
+                    self.blacklist["blacklist usb_storage"] = False
+                    self.blacklist["install usbcore /bin/true"] = False
+                elif self.ph.manager == "yum":
+                    self.blacklist["blacklist usb-storage"] = False
+                    self.blacklist["install usb-storage /bin/true"] = False
                 # first check for files in modprobe.d, first choice
-                if self.fwci.getcurrvalue():
-                    self.blacklist["blacklist firewire-ohci"] = False
-                    self.blacklist["blacklist firewire-sbp2"] = False
+                self.blacklist["blacklist firewire-ohci"] = False
+                self.blacklist["blacklist firewire-sbp2"] = False
                 if os.path.exists("/etc/modprobe.d"):
                     # for zypper the file name is important, directives must be
                     # placed in /etc/modprobe.d/50-blacklist.conf
@@ -304,9 +305,68 @@ class DisableRemoveableStorage(Rule):
      <key>RunAtLoad</key>
          <true/>
      <key>StartInterval</key>
-         <integer>300</integer>
+         <integer>30</integer>
 </dict>
 </plist>
+'''
+        self.daemoncontents = '''\'\'\'
+Created on Jan 5, 2016
+@author: dwalker
+\'\'\'
+from CommandHelper import CommandHelper
+from environment import Environment
+from logdispatcher import LogDispatcher, LogPriority
+import re
+
+
+def main():
+    success = True
+    debug = ""
+    check = "/usr/sbin/kextstat "
+    environ = Environment()
+    logger = LogDispatcher(environ)
+    unload = "/sbin/kextunload "
+    filepath = "/System/Library/Extensions/"
+    if re.search("^10.11", environ.getosver()):
+        usb = "IOUSBMassStorageDriver"
+    else:
+        usb = "IOUSBMassStorageClass"
+    cmd = check + "| grep " + usb
+    ch = CommandHelper(logger)
+    ch.executeCommand(cmd)
+    if ch.getReturnCode() == 0:
+        cmd = unload + filepath + usb + ".kext/"
+        if not ch.executeCommand(cmd):
+            success = False
+            debug += "Unable to disable USB\\\\n"
+    fw = "IOFireWireSerialBusProtocolTransport"
+    cmd = check + "| grep " + fw
+    ch.executeCommand(cmd)
+    if ch.getReturnCode() == 0:
+        cmd = unload + filepath + fw + ".kext/"
+        if not ch.executeCommand(cmd):
+            debug += "Unable to disable Firewire\\\\n"
+            success = False
+    tb = "AppleThunderboltUTDM"
+    cmd = check + "| grep " + tb
+    ch.executeCommand(cmd)
+    if ch.getReturnCode() == 0:
+        cmd = unload + "/System/Library/Extensions/" + tb + ".kext/"
+        if not ch.executeCommand(cmd):
+            debug += "Unable to disable Thunderbolt\\\\n"
+            success = False
+    sd = "AppleSDXC"
+    cmd = check + "| grep " + sd
+    ch.executeCommand(cmd)
+    if ch.getReturnCode() == 0:
+        cmd = unload + "/System/Library/Extensions/" + sd + ".kext/"
+        if not ch.executeCommand(cmd):
+            debug += "Unable to disable SD Card functionality\\\\n"
+            success = False
+    if debug:
+        logger.log(LogPriority.DEBUG, debug)
+if __name__ == '__main__':
+    main()
 '''
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
         "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
@@ -314,7 +374,18 @@ class DisableRemoveableStorage(Rule):
 "<key>Program</key>" + \
          "<string>/Applications/stonix4mac\.app/Contents/Resources/stonix\.app/Contents/MacOS/stonix_resources/disablestorage\.py</string>" + \
      "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
-         "<integer>300</integer></dict></plist>"
+         "<integer>30</integer></dict></plist>"
+
+        self.daemonregex = "\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\nfrom CommandHelper import CommandHelper\nfrom environment import Environment\nfrom logdispatcher import LogDispatcher\, LogPriority\nimport re\n\n\n" + \
+            "def main\(\):\n    success \= True\n    debug \= \"\"\n    check \= \"/usr/sbin/kextstat \"\n    environ \= Environment\(\)\n    logger \= LogDispatcher\(environ\)\n    unload \= \"/sbin/kextunload \"\n    filepath \= \"/System/Library/Extensions/\"\n" + \
+            "    if re\.search\(\"\^10\.11\"\, environ\.getosver\(\)\):\n        usb \= \"IOUSBMassStorageDriver\"\n" + \
+            "    else:        usb \= \"IOUSBMassStorageClass\"\n    cmd \= check + \"\| grep \" + usb\n    ch \= CommandHelper\(logger\)\n    ch\.executeCommand\(cmd\)\n    if ch\.getReturnCode\(\) \=\= 0:\n        cmd \= unload \+ filepath \+ usb \+ \"\.kext/\"\n" + \
+            "        if not ch\.executeCommand\(cmd\):\n            success \= False\n            debug \+\= \"Unable to disable USB\\\n\"\n    fw \= \"IOFireWireSerialBusProtocolTransport\"\n    cmd \= check \+ \"\| grep \" \+ fw\n    ch\.executeCommand\(cmd\)" + \
+            "    if ch\.getReturnCode\(\) \=\= 0:\n        cmd \= unload \+ filepath \+ fw \+ \"\.kext/\"\n        if not ch\.executeCommand\(cmd\):\n            debug \+\= \"Unable to disable Firewire\\\n\"\n            success \= False\n    tb \= \"AppleThunderboltUTDM\"\n" + \
+            "    cmd \= check \+ \"\| grep \" \+ tb\n    ch\.executeCommand\(cmd\)\n    if ch\.getReturnCode\(\) \=\= 0:\n        cmd \= unload \+ \"/System/Library/Extensions/\" \+ tb \+ \"\.kext/\"\n        if not ch\.executeCommand\(cmd\):\n" + \
+            "            debug \+\= \"Unable to disable Thunderbolt\\\n\"\n            success \= False\n    sd \= \"AppleSDXC\"\n    cmd \= check \+ \"\| grep \" \+ sd\n    ch\.executeCommand\(cmd\)\n    if ch\.getReturnCode\(\) \=\= 0:\n" + \
+            "        cmd \= unload \+ \"/System/Library/Extensions/\" \+ sd \+ \"\.kext/\"\n        if not ch\.executeCommand\(cmd\):\n            debug \+\= \"Unable to disable SD Card functionality\\\n\"\n            success \= False\n" + \
+            "    if debug:\n        logger\.log\(LogPriority\.DEBUG\, debug\)\nif __name__ \=\= \'__main__\':\n    main()\n"
         self.daemonpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/disablestorage.py"
         if os.path.exists(self.plistpath):
             statdata = os.stat(self.plistpath)
@@ -353,13 +424,51 @@ class DisableRemoveableStorage(Rule):
         else:
             compliant = False
             self.detailedresults += "daemon plist file doesn't exist\n"
-            #uncomment when we create the python file
-#         if not os.path.exists(self.daemonpath):
-#             compliant = False
-#             self.detailedresults += "daemon python file doesn't exist\n"
+
+        if os.path.exists(self.daemonpath):
+            statdata = os.stat(self.daemonpath)
+            mode = stat.S_IMODE(statdata.st_mode)
+#             ownergrp = getUserGroupName(self.plistpath)
+#             owner = ownergrp[0]
+#             group = ownergrp[1]
+            if mode != 436:
+                compliant = False
+                self.detailedresults += "permissions on " + self.daemonpath + \
+                    "aren't 664\n"
+                debug = "permissions on " + self.daemonpath + " aren't 664\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+#             if owner != "root":
+#                 compliant = False
+#                 self.detailedresults += "Owner of " + self.daemonpath + \
+#                     " isn't root\n"
+#                 debug = "Owner of " + self.daemonpath + \
+#                     " isn't root\n"
+#                 self.logger.log(LogPriority.DEBUG, debug)
+#             if group != "admin":
+#                 compliant = False
+#                 self.detailedresults += "Group of " + self.daemonpath + \
+#                     " isn't admin\n"
+#                 debug = "Group of " + self.daemonpath + \
+#                     " isn't admin\n"
+#                 self.logger.log(LogPriority.DEBUG, debug)
+            contents = readFile(self.daemonpath, self.logger)
+            contentstring = ""
+            for line in contents:
+                contentstring += line
+#             if not re.search(self.daemonregex, contentstring):
+            if contentstring != self.daemoncontents:
+                compliant = False
+                self.detailedresults += "disablestorage.py file doesn't " + \
+                    "contain the correct contents\n"
+        else:
+            compliant = False
+            self.detailedresults += "disablestorage.py file doesn't exist\n"
         check = "/usr/sbin/kextstat "
         self.ch = CommandHelper(self.logger)
-        usb = "IOUSBMassStorageClass"
+        if re.search("^10.11", self.environ.getosver()):
+            usb = "IOUSBMassStorageDriver"
+        else:
+            usb = "IOUSBMassStorageClass"
         cmd = check + "| grep " + usb
         self.ch.executeCommand(cmd)
 
@@ -423,148 +532,148 @@ class DisableRemoveableStorage(Rule):
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if self.environ.getostype() == "Mac OS X":
-                self.rulesuccess = self.fixMac()
-            else:
-                output = ""
-                changed = False
-                tempstring = ""
-                grub = "/etc/grub.conf"
-                blacklistf = "/etc/modprobe.d/stonix-blacklist.conf"
-                if os.path.exists(grub):
-                    if not checkPerms(grub, [0, 0, 384], self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(grub, [0, 0, 384], self.logger, "",
-                                        self.statechglogger, myid):
-                            success = False
-                    contents = readFile(grub, self.logger)
-                    if contents:
-                        for line in contents:
-                            if re.search("^kernel", line):
-                                if not re.search("\s+nousb\s+", line):
-                                    tempstring += line.strip() + " nousb\n"
-                                    changed = True
-                            else:
-                                tempstring += line
-                    if changed:
-                        tmpfile = grub + ".tmp"
-                        if writeFile(tmpfile, tempstring, self.logger):
+            if self.storageci.getcurrvalue():
+                if self.environ.getostype() == "Mac OS X":
+                    success = self.fixMac()
+                else:
+                    output = ""
+                    changed = False
+                    tempstring = ""
+                    grub = "/etc/grub.conf"
+                    blacklistf = "/etc/modprobe.d/stonix-blacklist.conf"
+                    if os.path.exists(grub):
+                        if not checkPerms(grub, [0, 0, 384], self.logger):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "conf",
-                                     "filepath": grub}
-                            self.statechglogger.recordchgevent(myid, event)
-                            self.statechglogger.recordfilechange(grub, tmpfile,
-                                                                 myid)
-                            os.rename(tmpfile, grub)
-                            os.chown(grub, 0, 0)
-                            os.chmod(grub, 384)
-                        else:
-                            success = False
-                tempstring = ""
-                # this portion only for zypper based systems (opensuse)
-                if self.ph.manager == "zypper":
-                    if self.blacklist:
-                        modfile = "/etc/modprobe.d/50-blacklist.conf"
-                        contents = readFile(modfile, self.logger)
-                        if self.created:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "creation",
-                                     "filepath": modfile}
-                            self.statechglogger.recordchgevent(myid, event)
-                        else:
-                            if not checkPerms(modfile, [0, 0, 420],
-                                              self.logger):
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator,
-                                               self.rulenumber)
-                                if not setPerms(modfile, [0, 0, 420],
-                                   self.logger, self.statechglogger, myid):
-                                    success = False
+                            if not setPerms(grub, [0, 0, 384], self.logger, "",
+                                            self.statechglogger, myid):
+                                success = False
+                        contents = readFile(grub, self.logger)
+                        if contents:
                             for line in contents:
-                                tempstring += line
-                        for item in self.blacklist:
-                            tempstring += item + "\n"
-                        tmpfile = modfile + ".tmp"
-                        if writeFile(tmpfile, tempstring, self.logger):
-                            if not self.created:
+                                if re.search("^kernel", line):
+                                    if not re.search("\s+nousb\s+", line):
+                                        tempstring += line.strip() + " nousb\n"
+                                        changed = True
+                                else:
+                                    tempstring += line
+                        if changed:
+                            tmpfile = grub + ".tmp"
+                            if writeFile(tmpfile, tempstring, self.logger):
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                event = {"eventtype": "conf",
+                                         "filepath": grub}
+                                self.statechglogger.recordchgevent(myid, event)
+                                self.statechglogger.recordfilechange(grub, tmpfile,
+                                                                     myid)
+                                os.rename(tmpfile, grub)
+                                os.chown(grub, 0, 0)
+                                os.chmod(grub, 384)
+                            else:
+                                success = False
+                    tempstring = ""
+                    # this portion only for zypper based systems (opensuse)
+                    if self.ph.manager == "zypper":
+                        if self.blacklist:
+                            modfile = "/etc/modprobe.d/50-blacklist.conf"
+                            contents = readFile(modfile, self.logger)
+                            if self.created:
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                event = {"eventtype": "creation",
+                                         "filepath": modfile}
+                                self.statechglogger.recordchgevent(myid, event)
+                            else:
+                                if not checkPerms(modfile, [0, 0, 420],
+                                                  self.logger):
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator,
+                                                   self.rulenumber)
+                                    if not setPerms(modfile, [0, 0, 420],
+                                       self.logger, self.statechglogger, myid):
+                                        success = False
+                                for line in contents:
+                                    tempstring += line
+                            for item in self.blacklist:
+                                tempstring += item + "\n"
+                            tmpfile = modfile + ".tmp"
+                            if writeFile(tmpfile, tempstring, self.logger):
+                                if not self.created:
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator,
+                                                   self.rulenumber)
+                                    event = {"eventtype": "conf",
+                                             "filepath": modfile}
+                                    self.statechglogger.recordchgevent(myid,
+                                                                       event)
+                                    self.statechglogger.recordfilechange(modfile,
+                                                                         tmpfile,
+                                                                         myid)
+                                os.rename(tmpfile, modfile)
+                                os.chown(modfile, 0, 0)
+                                os.chmod(modfile, 420)
+                                resetsecon(modfile)
+                    else:
+                        # Check if self.blacklist still contains values, if it
+                        # does, then we didn't find all the blacklist values
+                        # in report
+                        if self.blacklist:
+                            # didn't find one or both directives in the files
+                            # inside modprobe.d so we now check an alternate
+                            # so create stonixblacklist file if it doesn't
+                            # exist and put remaining unfound blacklist
+                            # items there
+                            if not os.path.exists(blacklistf):
+                                createFile(blacklistf, self.logger)
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                event = {"eventtype": "creation",
+                                         "filepath": blacklistf}
+                                self.statechglogger.recordchgevent(myid, event)
+                            else:
+                                if not checkPerms(blacklistf, [0, 0, 420],
+                                                  self.logger):
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator,
+                                                   self.rulenumber)
+                                    if not setPerms(blacklistf, [0, 0, 420],
+                                                    self.logger,
+                                                    self.statechglogger, myid):
+                                        success = False
+                            for item in self.blacklist:
+                                tempstring += item + "\n"
+                            tmpfile = blacklistf + ".tmp"
+                            if writeFile(tmpfile, tempstring,
+                                         self.logger):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator,
                                                self.rulenumber)
                                 event = {"eventtype": "conf",
-                                         "filepath": modfile}
-                                self.statechglogger.recordchgevent(myid,
-                                                                   event)
-                                self.statechglogger.recordfilechange(modfile,
-                                                                     tmpfile,
-                                                                     myid)
-                            os.rename(tmpfile, modfile)
-                            os.chown(modfile, 0, 0)
-                            os.chmod(modfile, 420)
-                            resetsecon(modfile)
-                else:
-                    # Check if self.blacklist still contains values, if it
-                    # does, then we didn't find all the blacklist values
-                    # in report
-                    if self.blacklist:
-                        # didn't find one or both directives in the files
-                        # inside modprobe.d so we now check an alternate
-                        # so create stonixblacklist file if it doesn't
-                        # exist and put remaining unfound blacklist
-                        # items there
-                        if not os.path.exists(blacklistf):
-                            createFile(blacklistf, self.logger)
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "creation",
-                                     "filepath": blacklistf}
-                            self.statechglogger.recordchgevent(myid, event)
-                        else:
-                            if not checkPerms(blacklistf, [0, 0, 420],
-                                              self.logger):
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator,
-                                               self.rulenumber)
-                                if not setPerms(blacklistf, [0, 0, 420],
-                                                self.logger,
-                                                self.statechglogger, myid):
-                                    success = False
-                        for item in self.blacklist:
-                            tempstring += item + "\n"
-                        tmpfile = blacklistf + ".tmp"
-                        if writeFile(tmpfile, tempstring,
-                                     self.logger):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator,
-                                           self.rulenumber)
-                            event = {"eventtype": "conf",
-                                     "filepath": blacklistf}
-                            self.statechglogger.recordchgevent(myid, event)
-                            self.statechglogger.recordfilechange(blacklistf,
-                                                                 tmpfile, myid)
-                            os.rename(tmpfile, blacklistf)
-                            os.chown(blacklistf, 0, 0)
-                            os.chmod(blacklistf, 420)
-                            resetsecon(blacklistf)
-                # get the current version of the kernel
-                self.wait = False
-                self.ch.executeCommand("uname -r")
-                self.wait = True
-                output = self.ch.getOutput()
-                if output:
-                    output = output[0].strip()
-                    if os.path.exists("/lib/modules/" + output +
-                                      "/kernel/drivers/usb/storage/usb-storage.ko"):
-                        os.rename("/lib/modules/" + output +
-                                  "/kernel/drivers/usb/storage/usb-storage.ko",
-                                  "/usb-storage.ko")
-
-                for item in self.pcmcialist:
-                    if self.ph.check(item):
-                        self.ph.remove(item)
-                        self.pkgremovedlist.append(item)
+                                         "filepath": blacklistf}
+                                self.statechglogger.recordchgevent(myid, event)
+                                self.statechglogger.recordfilechange(blacklistf,
+                                                                     tmpfile, myid)
+                                os.rename(tmpfile, blacklistf)
+                                os.chown(blacklistf, 0, 0)
+                                os.chmod(blacklistf, 420)
+                                resetsecon(blacklistf)
+                    # get the current version of the kernel
+                    self.wait = False
+                    self.ch.executeCommand("uname -r")
+                    self.wait = True
+                    output = self.ch.getOutput()
+                    if output:
+                        output = output[0].strip()
+                        if os.path.exists("/lib/modules/" + output +
+                                          "/kernel/drivers/usb/storage/usb-storage.ko"):
+                            os.rename("/lib/modules/" + output +
+                                      "/kernel/drivers/usb/storage/usb-storage.ko",
+                                      "/usb-storage.ko")
+                    for item in self.pcmcialist:
+                        if self.ph.check(item):
+                            self.ph.remove(item)
+                            self.pkgremovedlist.append(item)
                 self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -598,141 +707,199 @@ class DisableRemoveableStorage(Rule):
         load = "/sbin/kextload "
         filepath = "/System/Library/Extensions/"
         success = True
-        if self.usbci.getcurrvalue():
-            created1, created2 = False, False
-            usb = "IOUSBMassStorageClass"
-            cmd = check + "| grep " + usb
-            self.ch.executeCommand(cmd)
-
-            # if return code is 0, the kernel module is loaded, thus we need
-            # to disable it
-            if self.ch.getReturnCode() == 0:
-                cmd = unload + filepath + usb + ".kext/"
-                if not self.ch.executeCommand(cmd):
-                    debug += "Unable to disable USB\n"
+        created1, created2 = False, False
+        if not os.path.exists(self.plistpath):
+            if createFile(self.plistpath, self.logger):
+                created1 = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.plistpath}
+                self.statechglogger.recordchgevent(myid, event)
+        if os.path.exists(self.plistpath):
+            uid, gid = "", ""
+            statdata = os.stat(self.plistpath)
+            mode = stat.S_IMODE(statdata.st_mode)
+            ownergrp = getUserGroupName(self.plistpath)
+            owner = ownergrp[0]
+            group = ownergrp[1]
+            if grp.getgrnam("wheel")[2] != "":
+                gid = grp.getgrnam("wheel")[2]
+            if pwd.getpwnam("root")[2] != "":
+                uid = pwd.getpwnam("root")[2]
+            if not created1:
+                if mode != 420 or owner != "root" or group != "wheel":
+                    origuid = statdata.st_uid
+                    origgid = statdata.st_gid
+                    if gid:
+                        if uid:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator,
+                                           self.rulenumber)
+                            event = {"eventtype": "perm",
+                                     "startstate": [origuid,
+                                                    origgid, mode],
+                                     "endstate": [uid, gid, 420],
+                                     "filepath": self.plistpath}
+            contents = readFile(self.plistpath, self.logger)
+            contentstring = ""
+            for line in contents:
+                contentstring += line.strip()
+            if not re.search(self.plistregex, contentstring):
+                tmpfile = self.plistpath + ".tmp"
+                if not writeFile(tmpfile, self.plistcontents, self.logger):
                     success = False
-                else:
+                elif not created1:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    undo = load + filepath + usb + ".kext/"
-                    event = {"eventtype": "comm",
-                             "command": undo}
-                    self.statechglogger.recordchgevent(myid, event)
-            if not os.path.exists(self.plistpath):
-                if createFile(self.plistpath, self.logger):
-                    created1 = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
+                    event = {"eventtype": "conf",
                              "filepath": self.plistpath}
                     self.statechglogger.recordchgevent(myid, event)
-            if os.path.exists(self.plistpath):
-                uid, gid = "", ""
-                statdata = os.stat(self.plistpath)
-                mode = stat.S_IMODE(statdata.st_mode)
-                ownergrp = getUserGroupName(self.plistpath)
-                owner = ownergrp[0]
-                group = ownergrp[1]
-                if grp.getgrnam("wheel")[2] != "":
-                    gid = grp.getgrnam("wheel")[2]
-                if pwd.getpwnam("root")[2] != "":
-                    uid = pwd.getpwnam("root")[2]
-                if not created1:
-                    if mode != 420 or owner != "root" or group != "wheel":
-                        origuid = statdata.st_uid
-                        origgid = statdata.st_gid
-                        if gid:
-                            if uid:
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator,
-                                               self.rulenumber)
-                                event = {"eventtype": "perm",
-                                         "startstate": [origuid,
-                                                        origgid, mode],
-                                         "endstate": [uid, gid, 420],
-                                         "filepath": self.plistpath}
-                contents = readFile(self.plistpath, self.logger)
-                contentstring = ""
-                for line in contents:
-                    contentstring += line.strip()
-                if not re.search(self.plistregex, contentstring):
-                    tmpfile = self.plistpath + ".tmp"
-                    if not writeFile(tmpfile, self.plistcontents, self.logger):
-                        success = False
-                    elif not created1:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "conf",
-                                 "filepath": self.plistpath}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.plistpath,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, self.plistpath)
-                        if uid and gid:
-                            os.chown(self.plistpath, uid, gid)
-                        os.chmod(self.plistpath, 420)
-                    else:
-                        os.rename(tmpfile, self.plistpath)
-                        if uid and gid:
-                            os.chown(self.plistpath, uid, gid)
-                        os.chmod(self.plistpath, 420)
-        if self.fwci.getcurrvalue():
-            fw = "IOFireWireSerialBusProtocolTransport"
-            cmd = check + "| grep " + fw
-            self.ch.executeCommand(cmd)
-
-            # if return code is 0, the kernel module is loaded, thus we need
-            # to disable it
-            if self.ch.getReturnCode() == 0:
-                cmd = unload + filepath + fw + ".kext/"
-                if not self.ch.executeCommand(cmd):
-                    debug += "Unable to disable Firewire\n"
-                    success = False
+                    self.statechglogger.recordfilechange(self.plistpath,
+                                                         tmpfile, myid)
+                    os.rename(tmpfile, self.plistpath)
+                    if uid and gid:
+                        os.chown(self.plistpath, uid, gid)
+                    os.chmod(self.plistpath, 420)
                 else:
+                    os.rename(tmpfile, self.plistpath)
+                    if uid and gid:
+                        os.chown(self.plistpath, uid, gid)
+                    os.chmod(self.plistpath, 420)
+        if not os.path.exists(self.daemonpath):
+            if createFile(self.daemonpath, self.logger):
+                created2 = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.daemonpath}
+                self.statechglogger.recordchgevent(myid, event)
+        if os.path.exists(self.daemonpath):
+            uid, gid = "", ""
+            statdata = os.stat(self.daemonpath)
+            mode = stat.S_IMODE(statdata.st_mode)
+            ownergrp = getUserGroupName(self.daemonpath)
+            owner = ownergrp[0]
+            group = ownergrp[1]
+            if grp.getgrnam("admin")[2] != "":
+                gid = grp.getgrnam("admin")[2]
+            if pwd.getpwnam("root")[2] != "":
+                uid = pwd.getpwnam("root")[2]
+            if not created2:
+                if mode != 436 or owner != "root" or group != "admin":
+                    origuid = statdata.st_uid
+                    origgid = statdata.st_gid
+                    if gid:
+                        if uid:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator,
+                                           self.rulenumber)
+                            event = {"eventtype": "perm",
+                                     "startstate": [origuid,
+                                                    origgid, mode],
+                                     "endstate": [uid, gid, 436],
+                                     "filepath": self.daemonpath}
+            contents = readFile(self.daemonpath, self.logger)
+            contentstring = ""
+            for line in contents:
+                contentstring += line
+            if contentstring != self.daemoncontents:
+#             if not re.search(self.daemonregex, contentstring):
+                tmpfile = self.daemonpath + ".tmp"
+                if not writeFile(tmpfile, self.daemoncontents, self.logger):
+                    success = False
+                elif not created2:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    undo = load + filepath + fw + ".kext/"
-                    event = {"eventtype": "comm",
-                             "command": undo}
+                    event = {"eventtype": "conf",
+                             "filepath": self.daemonpath}
                     self.statechglogger.recordchgevent(myid, event)
-        if self.tbci.getcurrvalue():
-            tb = "AppleThunderboltUTDM"
-            cmd = check + "| grep " + tb
-            self.ch.executeCommand(cmd)
-
-            # if return code is 0, the kernel module is loaded, thus we need
-            # to disable it
-            if self.ch.getReturnCode() == 0:
-                cmd = unload + "/System/Library/Extensions/" + tb + ".kext/"
-                if not self.ch.executeCommand(cmd):
-                    debug += "Unable to disable Thunderbolt\n"
-                    success = False
+                    self.statechglogger.recordfilechange(self.daemonpath,
+                                                         tmpfile, myid)
+                    os.rename(tmpfile, self.daemonpath)
+                    if uid and gid:
+                        os.chown(self.daemonpath, uid, gid)
+                    os.chmod(self.daemonpath, 436)
                 else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    undo = load + filepath + tb + ".kext/"
-                    event = {"eventtype": "comm",
-                             "command": undo}
-                    self.statechglogger.recordchgevent(myid, event)
-        if self.sdci.getcurrvalue():
-            sd = "AppleSDXC"
-            cmd = check + "| grep " + sd
-            self.ch.executeCommand(cmd)
+                    os.rename(tmpfile, self.daemonpath)
+                    if uid and gid:
+                        os.chown(self.daemonpath, uid, gid)
+                    os.chmod(self.daemonpath, 436)
+        if re.search("^10.11", self.environ.getosver()):
+            usb = "IOUSBMassStorageDriver"
+        else:
+            usb = "IOUSBMassStorageClass"
+        cmd = check + "| grep " + usb
+        self.ch.executeCommand(cmd)
 
-            # if return code is 0, the kernel module is loaded, thus we need
-            # to disable it
-            if self.ch.getReturnCode() == 0:
-                cmd = unload + "/System/Library/Extensions/" + sd + ".kext/"
-                if not self.ch.executeCommand(cmd):
-                    debug += "Unable to disable SD Card functionality\n"
-                    success = False
-                else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    undo = load + filepath + sd + ".kext/"
-                    event = {"eventtype": "comm",
-                             "command": undo}
-                    self.statechglogger.recordchgevent(myid, event)
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
+        if self.ch.getReturnCode() == 0:
+            cmd = unload + filepath + usb + ".kext/"
+            if not self.ch.executeCommand(cmd):
+                debug += "Unable to disable USB\n"
+                success = False
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                undo = load + filepath + usb + ".kext/"
+                event = {"eventtype": "comm",
+                         "command": undo}
+                self.statechglogger.recordchgevent(myid, event)
+        fw = "IOFireWireSerialBusProtocolTransport"
+        cmd = check + "| grep " + fw
+        self.ch.executeCommand(cmd)
+
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
+        if self.ch.getReturnCode() == 0:
+            cmd = unload + filepath + fw + ".kext/"
+            if not self.ch.executeCommand(cmd):
+                debug += "Unable to disable Firewire\n"
+                success = False
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                undo = load + filepath + fw + ".kext/"
+                event = {"eventtype": "comm",
+                         "command": undo}
+                self.statechglogger.recordchgevent(myid, event)
+        tb = "AppleThunderboltUTDM"
+        cmd = check + "| grep " + tb
+        self.ch.executeCommand(cmd)
+
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
+        if self.ch.getReturnCode() == 0:
+            cmd = unload + "/System/Library/Extensions/" + tb + ".kext/"
+            if not self.ch.executeCommand(cmd):
+                debug += "Unable to disable Thunderbolt\n"
+                success = False
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                undo = load + filepath + tb + ".kext/"
+                event = {"eventtype": "comm",
+                         "command": undo}
+                self.statechglogger.recordchgevent(myid, event)
+        sd = "AppleSDXC"
+        cmd = check + "| grep " + sd
+        self.ch.executeCommand(cmd)
+
+        # if return code is 0, the kernel module is loaded, thus we need
+        # to disable it
+        if self.ch.getReturnCode() == 0:
+            cmd = unload + "/System/Library/Extensions/" + sd + ".kext/"
+            if not self.ch.executeCommand(cmd):
+                debug += "Unable to disable SD Card functionality\n"
+                success = False
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                undo = load + filepath + sd + ".kext/"
+                event = {"eventtype": "comm",
+                         "command": undo}
+                self.statechglogger.recordchgevent(myid, event)
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return success
