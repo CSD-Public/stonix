@@ -1173,7 +1173,7 @@ class MacInfoLANL():
             self.logdispatch.log(LogPriority.ERROR, msg)
         return success
     
-    def initializePopulateFromMacBoolean(self, forceInitializtion = False):
+    def initializePopulateFromMac(self, forceInitializtion = False):
         '''
         get network data from the local machine
         @author: ekkehard j. koch
