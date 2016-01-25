@@ -32,6 +32,7 @@ Created on May 20, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/01/22 eball Changed daemon log level from daemon.info to daemon.*
 
 '''
 from __future__ import absolute_import
@@ -120,7 +121,7 @@ invalid."""
                                 "/var/log/ftp"]
             self.bootlog = "/var/log/boot.log"
             self.logfiles = {"*.*,mark.info": "/var/log/messages",
-                             "daemon.info": "/var/log/daemon",
+                             "daemon.*": "/var/log/daemon",
                              "auth.info,mark.info": "/var/log/auth",
                              "user.info": "/var/log/user",
                              "kern.info": "/var/log/kern",
