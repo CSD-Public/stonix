@@ -610,7 +610,7 @@ account     required      pam_permit.so
 pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3
 password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=6
+use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
@@ -646,7 +646,7 @@ account required        pam_sss.so      use_first_pass
 pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3
 password        sufficient      pam_unix.so sha512 shadow nullok \
-try_first_pass use_authtok remember=6
+try_first_pass use_authtok remember=10
 password        optional        pam_gnome_keyring.so    use_authtok
 password        required        pam_sss.so      use_authtok
 '''
@@ -689,7 +689,7 @@ account     required      pam_permit.so
 password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
 password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=6
+nullok try_first_pass use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 
@@ -735,7 +735,7 @@ account     required      pam_permit.so
 password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
 password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=6
+nullok try_first_pass use_authtok remember=10
 password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
