@@ -61,7 +61,8 @@ class ConfigureDiagnosticReporting(RuleKVEditor):
                          False,
                          {"AutoSubmit": ["1", "-bool yes"]})
         version = self.environ.getosver()
-        minorversion = int(version.split(".")[1])
+        if len(version) >= 2:
+            minorversion = int(version.split(".")[1])
         if minorversion >= 10:
             self.addKVEditor("ThirdPartyDataSubmit",
                              "defaults",
