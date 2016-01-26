@@ -61,7 +61,7 @@ class VerifySysFilePerms(Rule):
         self.rootrequired = True
         self.helptext = 'This rule will check the default owners and ' + \
         'access permissions for all system packages and their associated ' + \
-        'files as well as the file contents.'
+        'files as well as the file contents. NOTE: There is no undo function for this rule!'
         self.guidance = ['']
 
         datatype = 'bool'
@@ -100,60 +100,99 @@ class VerifySysFilePerms(Rule):
 
         try:
 
-            self.cmdhelper.executeCommand(self.findsysvol)
-            errout = self.cmdhelper.getErrorString()
-            if not errout:
-                self.sysvol = self.cmdhelper.getOutputString()
-            wrongperms = []
+            if re.search("10.11", self.environ.getosver()):
+                self.compliant = self.reportCapitan()
+            else:
 
-            if errout:
-                if re.search('Can\'t access "efi-boot-device" NVRAM variable', errout):
-                    self.detailedresults += '\nIt appears this system was not properly blessed. This requires a manual fix.'
+                if not os.path.exists('/usr/sbin/bless'):
+                    self.detailedresults += '\nA required utility, bless, could not be found. Aborting...'
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
-                self.compliant = False
-                self.detailedresults += '\nThere was an error retrieving the boot partition'
+                    return self.compliant
 
-            # check for the presence of required utilities on the system
-            # if either is not found, log and return false
-            if not os.path.exists('/usr/sbin/bless'):
-                self.detailedresults += '\nA required utility, bless, could not be found. Aborting...'
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                self.compliant = False
-                return self.compliant
-            elif not os.path.exists('/usr/sbin/diskutil'):
-                self.detailedresults += '\nA required utility, diskutil, could not be found. Aborting...'
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                self.compliant = False
-                return self.compliant
+                self.cmdhelper.executeCommand(self.findsysvol)
+                errout = self.cmdhelper.getErrorString()
+                if not errout:
+                    self.sysvol = self.cmdhelper.getOutputString()
+                wrongperms = []
 
-            # run verify perms command and get output
-            self.cmdhelper.executeCommand('/usr/sbin/diskutil verifyPermissions ' + str(self.sysvol))
-            outputlist = self.cmdhelper.getOutput()
-            errout = self.cmdhelper.getErrorString()
-            if errout:
-                self.compliant = False
-                self.detailedresults += '\nThere was an error verifying the system file permissions'
-            for line in outputlist:
-                if re.search('differs on', line) or re.search('differ on', line):
-                    wrongperms.append(line)
+                if errout:
+                    if re.search('Can\'t access "efi-boot-device" NVRAM variable', errout):
+                        self.detailedresults += '\nIt appears this system was not properly blessed. This requires a manual fix.'
+                        self.compliant = False
+                    self.compliant = False
+                    self.detailedresults += '\nThere was an error retrieving the boot partition'
 
-            # if any incorrect permissions or ownership found, return false
-            if wrongperms:
-                self.compliant = False
-                if self.hasrun:
-                    self.detailedresults += '\nThe disk utility for Mac OS X has been run, but there are files which were unable to be reverted to their intended permissions state(s). This is due to an issue with a mismatch in the package receipts database originally configured for this system, as compared to the current versions of the files on this system. This sometimes occurs when a system has been upgraded from a long-deprecated version of Mac OS to a more current one. This is an issue which Apple needs to fix before this rule can succeed on such systems.'
-                else:
-                    self.detailedresults += '\nFiles with incorrect permissions and/or ownership have been found.'
+                # check for the presence of required utilities on the system
+                # if either is not found, log and return false
+
+                if not os.path.exists('/usr/sbin/diskutil'):
+                    self.detailedresults += '\nA required utility, diskutil, could not be found. Aborting...'
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    self.compliant = False
+                    return self.compliant
+
+                # run verify perms command and get output
+                self.cmdhelper.executeCommand('/usr/sbin/diskutil verifyPermissions ' + str(self.sysvol))
+                outputlist = self.cmdhelper.getOutput()
+                errout = self.cmdhelper.getErrorString()
+                if errout:
+                    self.compliant = False
+                    self.detailedresults += '\nThere was an error verifying the system file permissions'
+                for line in outputlist:
+                    if re.search('differs on', line) or re.search('differ on', line):
+                        wrongperms.append(line)
+
+                # if any incorrect permissions or ownership found, return false
+                if wrongperms:
+                    self.compliant = False
+                    if self.hasrun:
+                        self.detailedresults += '\nThe disk utility for Mac OS X has been run, but there are files which were unable to be reverted to their intended permissions state(s). This is due to an issue with a mismatch in the package receipts database originally configured for this system, as compared to the current versions of the files on this system. This sometimes occurs when a system has been upgraded from a long-deprecated version of Mac OS to a more current one. This is an issue which Apple needs to fix before this rule can succeed on such systems.'
+                    else:
+                        self.detailedresults += '\nFiles with incorrect permissions and/or ownership have been found.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def reportCapitan(self):
+        '''
+        run report actions specific to mac os x el capitan
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        reportcommand = '/usr/libexec/repair_packages --verify --standard-pkgs --volume /'
+
+        try:
+
+            if not os.path.exists('/usr/libexec/repair_packages'):
+                retval = False
+                self.detailedresults += '\nA required utility /usr/libexec/repair_packages was not found. System File verification was not performed.'
+                return retval
+            self.cmdhelper.executeCommand(reportcommand)
+            errout = self.cmdhelper.getErrorString()
+            output = self.cmdhelper.getOutputString()
+            if errout:
+                retval = False
+                self.detailedresults += '\nThere was an error running command repair_packages --verify'
+                self.logger.log(LogPriority.DEBUG, errout)
+            if output:
+                retval = False
+                self.detailedresults += '\nOne or more of the standard system packages has incorrect permissions.'
+                self.logger.log(LogPriority.DEBUG, output)
+
+        except Exception:
+            raise
+        return retval
 
     def fix(self):
         '''
@@ -165,30 +204,64 @@ class VerifySysFilePerms(Rule):
         # defaults
         self.detailedresults = ""
         success = True
-        self.iditerator = 0
 
         try:
 
-            if not self.sysvol:
-                self.detailedresults += '\nNo boot disk could be found! Aborting...'
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                success = False
+            if not self.ci.getcurrvalue():
+                self.detailedresults += '\nThe option for this rule was not enabled. Nothing was done.'
                 return success
 
-            self.cmdhelper.executeCommand('/usr/sbin/diskutil repairPermissions ' + str(self.sysvol))
-            errout = self.cmdhelper.getErrorString()
-            if errout and not re.search('SUID file', errout):
-                success = False
+            if re.search("10.11", self.environ.getosver()):
+                success = self.fixCapitan()
+            else:
+
+                if not self.sysvol:
+                    self.detailedresults += '\nNo boot disk could be found! Aborting...'
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    success = False
+                    return success
+
+                self.cmdhelper.executeCommand('/usr/sbin/diskutil repairPermissions ' + str(self.sysvol))
+                errout = self.cmdhelper.getErrorString()
+                if errout and not re.search('SUID file', errout):
+                    success = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", success, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         self.hasrun = True
+        return success
+
+    def fixCapitan(self):
+        '''
+        run fix actions specific to mac os x el capitan
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        success = True
+        fixcommand = '/usr/libexec/repair_packages --repair --standard-pkgs --volume /'
+
+        try:
+
+            if not os.path.exists('/usr/libexec/repair_packages'):
+                success = False
+                self.detailedresults += '\nA required utility repair_packages was not found. No fix actions were performed.'
+                return success
+            self.cmdhelper.executeCommand(fixcommand)
+            errout = self.cmdhelper.getErrorString()
+            if errout:
+                success = False
+                self.detailedresults += '\nThere was an error running command repair_packages --repair'
+                self.logger.log(LogPriority.DEBUG, errout)
+        except Exception:
+            raise
         return success
 
     def undo(self):
