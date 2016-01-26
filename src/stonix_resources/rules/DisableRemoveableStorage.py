@@ -305,7 +305,7 @@ class DisableRemoveableStorage(Rule):
      <key>RunAtLoad</key>
          <true/>
      <key>StartInterval</key>
-         <integer>30</integer>
+         <integer>60</integer>
 </dict>
 </plist>
 '''
@@ -364,7 +364,7 @@ if __name__ == '__main__':
 "<key>Program</key>" + \
          "<string>/Applications/stonix4mac\.app/Contents/Resources/stonix\.app/Contents/MacOS/stonix_resources/disablestorage</string>" + \
      "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
-         "<integer>30</integer></dict></plist>"
+         "<integer>60</integer></dict></plist>"
 
         self.daemonregex = "\#\!/usr/bin/python\n\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\n" + \
             "import re\n" + \
