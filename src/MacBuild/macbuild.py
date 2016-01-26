@@ -36,6 +36,7 @@ with large amounts of original code and comments left intact.
 @change: 2015/10/14 eball - Added exit() method to gracefully detach ramdisk
     and exit, plus try/except blocks where appropriate
 @change: 2015/10/14 eball - Added -c flag to clean artifacts
+@change: 2016/01/26 ekkehard - version 0.9.4
 '''
 import os
 import stat
@@ -86,7 +87,7 @@ class MacBuilder():
         # If version was not included at command line, use hardcoded version
         # number
         if options.version == "0":
-            self.APPVERSION = "0.9.1.0"
+            self.APPVERSION = "0.9.4.0"
         else:
             self.APPVERSION = options.version
 
