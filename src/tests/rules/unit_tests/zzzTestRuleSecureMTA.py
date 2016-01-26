@@ -71,31 +71,32 @@ class zzzTestRuleSecureMTA(RuleTest):
             self.pfTmp = "/tmp/" + os.path.split(self.pfPath)[1] + ".utmp"
 
     def tearDown(self):
-        if self.origState[0] is True and not self.ph.check("sendmail"):
-            self.ph.install("sendmail")
-        elif self.origState[0] is False and self.ph.check("sendmail"):
-            self.ph.remove("sendmail")
+        if not self.isMac:
+            if self.origState[0] is True and not self.ph.check("sendmail"):
+                self.ph.install("sendmail")
+            elif self.origState[0] is False and self.ph.check("sendmail"):
+                self.ph.remove("sendmail")
 
-        if self.origState[1] is True and not self.ph.check("postfix"):
-            self.ph.install("postfix")
-        elif self.origState[1] is False and self.ph.check("postfix"):
-            self.ph.remove("postfix")
+            if self.origState[1] is True and not self.ph.check("postfix"):
+                self.ph.install("postfix")
+            elif self.origState[1] is False and self.ph.check("postfix"):
+                self.ph.remove("postfix")
 
-        if self.origState[2] is True and os.path.exists(self.smTmp):
-            smDir = os.path.split(self.smPath)[0]
-            if not os.path.exists(smDir):
-                os.makedirs(smDir)
-            os.rename(self.smTmp, self.smPath)
-        elif self.origState[2] is False and os.path.exists(self.smPath):
-            os.remove(self.smPath)
+            if self.origState[2] is True and os.path.exists(self.smTmp):
+                smDir = os.path.split(self.smPath)[0]
+                if not os.path.exists(smDir):
+                    os.makedirs(smDir)
+                os.rename(self.smTmp, self.smPath)
+            elif self.origState[2] is False and os.path.exists(self.smPath):
+                os.remove(self.smPath)
 
-        if self.origState[3] is True and os.path.exists(self.pfTmp):
-            pfDir = os.path.split(self.pfPath)[0]
-            if not os.path.exists(pfDir):
-                os.makedirs(pfDir)
-            os.rename(self.pfTmp, self.pfPath)
-        elif self.origState[3] is False and os.path.exists(self.pfPath):
-            os.remove(self.pfPath)
+            if self.origState[3] is True and os.path.exists(self.pfTmp):
+                pfDir = os.path.split(self.pfPath)[0]
+                if not os.path.exists(pfDir):
+                    os.makedirs(pfDir)
+                os.rename(self.pfTmp, self.pfPath)
+            elif self.origState[3] is False and os.path.exists(self.pfPath):
+                os.remove(self.pfPath)
 
     def runTest(self):
         self.simpleRuleTest()
