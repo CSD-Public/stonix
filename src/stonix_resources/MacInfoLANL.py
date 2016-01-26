@@ -33,6 +33,7 @@
 @change: 2015/11/05 ekkehard added imaged File system tag & getIPAddress
 @change: 2015/12/14 ekkehard implemented lazy initialization
 @change: 2016/01/19 ekkehard bug fixes
+@change: 2016/01/26 ekkehard real bug fixes
 '''
 import os
 import re
@@ -108,10 +109,6 @@ class MacInfoLANL():
         self.ldap = "/usr/bin/ldapsearch"
         self.lanl_property_file = "/Library/Preferences/lanl_property_number.txt"
         self.lanl_imaged_files = ["/etc/dds.txt", "/var/log/dds.log"]
-# Initialize accuracy modules
-        self.updateAssetTagAccuracy(True, 0, "", True)
-        self.updateEndUserNameAccuracy(True, 0, "", True)
-        self.updateComputerNameAccuracy(True, 0, "", True)
 # Reset messages
         self.messageReset()
     
@@ -729,6 +726,7 @@ class MacInfoLANL():
         if forceInitializtion:
             self.initializeAccuracyDeterminationBoolean = False
         if not self.initializeAccuracyDeterminationBoolean:
+            self.initializeAccuracyDeterminationBoolean = True
             self.updateAssetTagAccuracy(True, 0, "", True)
             self.updateEndUserNameAccuracy(True, 0, "", True)
             self.updateComputerNameAccuracy(True, 0, "", True)
@@ -869,7 +867,6 @@ class MacInfoLANL():
                     self.ipAddress = self.accuracyDictionary[key]["ipAddress"][0]
                 else:
                     self.ipAddress = ""
-            self.initializeAccuracyDeterminationBoolean = True
         return self.assetTagAccuracyLevel
         
     def initializeDictionaryItemLDAP(self, key):
@@ -902,6 +899,7 @@ class MacInfoLANL():
         if forceInitializtion:
             self.initializeLANLAssetTagFilesystemBoolean = False
         if not self.initializeLANLAssetTagFilesystemBoolean:
+            self.initializeLANLAssetTagFilesystemBoolean = True
             self.LANLAssetTagFilesystem = ""
             if os.path.exists(self.lanl_property_file):
                 try:
@@ -928,7 +926,6 @@ class MacInfoLANL():
                         self.LANLAssetTagFilesystem = ""
                     else:
                         fileToOpen.close()
-            self.initializeLANLAssetTagFilesystemBoolean = True
         return self.LANLAssetTagFilesystem
 
     def initializeLANLImagedFilesystem(self, forceInitializtion = False):
@@ -940,6 +937,7 @@ class MacInfoLANL():
         if forceInitializtion:
             self.initializeLANLImagedFilesystemBoolean = False
         if not self.initializeLANLImagedFilesystemBoolean:
+            self.initializeLANLImagedFilesystemBoolean = True
             self.LANLImaged = "Not LANL Configured"   
             for myfile in self.lanl_imaged_files:
             
@@ -973,6 +971,7 @@ class MacInfoLANL():
         if forceInitializtion:
             self.initializeDiskUtilityInfoBoolean = False
         if not self.initializeDiskUtilityInfoBoolean:
+            self.initializeDiskUtilityInfoBoolean = True
             self.computerNameDiskUtility = ""
             self.hostNameDiskUtility = ""
             self.localHostnameDiskUtility = ""
@@ -1046,6 +1045,7 @@ class MacInfoLANL():
             if forceInitializtion:
                 self.initializeLANLAssetTagNVRAMBoolean = False
             if not self.initializeLANLAssetTagNVRAMBoolean:
+                self.initializeLANLAssetTagNVRAMBoolean = True
                 self.LANLAssetTagNVRAM = ""
                 command = [self.nvram, "asset_id"]
                 self.ch.executeCommand(command)
@@ -1054,7 +1054,6 @@ class MacInfoLANL():
                     self.LANLAssetTagNVRAM = str(output[-1].strip().split("\t")[1])
                 else:
                     self.LANLAssetTagNVRAM = ""
-                self.initializeLANLAssetTagNVRAMBoolean = True
             else:
                 success = True
         except (KeyboardInterrupt, SystemExit):
