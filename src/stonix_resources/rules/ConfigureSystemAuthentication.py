@@ -153,85 +153,54 @@ for the login.defs file"""
         if self.ph.manager == "apt-get":
             self.pam = "/etc/pam.d/common-password"
             self.pam2 = "/etc/pam.d/common-auth"
-            self.passwdqc = "libpam-passwdqc"
             self.cracklib = "libpam-cracklib"
-            self.quality = "libpwquality-common"
+            self.quality = "libpam-pwquality"
             self.libuserfile = "/etc/libuser.conf"
         elif self.ph.manager == "zypper":
             self.pam = "/etc/pam.d/common-password-pc"
             self.pam2 = "/etc/pam.d/common-auth-pc"
-            self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
             self.quality = "pam_pwquality"
             self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
         else:
             self.pam = "/etc/pam.d/password-auth-ac"
             self.pam2 = "/etc/pam.d/system-auth-ac"
-            self.passwdqc = "pam_passwdqc"
             self.cracklib = "cracklib"
             self.quality = "libpwquality"
             self.libuserfile = "/etc/libuser.conf"
         quality = "quality"
-        passwdqc = "passwdqc"
         cracklib = "cracklib"
 
         ######This section to configure password regulations###################
 
-        # is pwquality installed?
         if self.ph.check(self.quality):
-            # is it configured correctly?
             if self.ph.manager == "apt-get":
                 # for apt-get systems, pwquality doesn't work
-                # we will use passwdqc until pwquality is fixed
-                quality = passwdqc
+                # we will use cracklib until pwquality is fixed
+                quality = cracklib
             if not self.chkpassword(quality):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
-        # is it not available?
         elif not self.ph.checkAvailable(self.quality):
-            # No? then is passwdqc installed?
-            if self.ph.check(self.passwdqc):
-                # is it configured correctly?
-                if not self.chkpassword(passwdqc):
-                    # No? system is not compliant
+            if self.ph.check(self.cracklib):
+                if not self.chkpassword(cracklib):
                     debug = "chkpassword() is not compliant\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
-            # passwdqc is not installed, but is it also not available?
-            # if not, check if cracklib is.
-            elif not self.ph.checkAvailable(self.passwdqc):
-                #as a last resort is cracklib installed?
-                if self.ph.check(self.cracklib):
-                    #yes?  Is it configured correctly?
-                    if not self.chkpassword(cracklib):
-                        #No? system is not compliant
-                        debug = "chkpassword() is not compliant\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                #No?  Is it available?
-                elif not self.ph.checkAvailable(self.cracklib):
-                    #cracklib is not available for install
-                    #this was the last password checking program 
-                    #nothing we can do
-                    debug = "there is no password checking program " + \
+            elif not self.ph.checkAvailable(self.cracklib):
+                debug = "There is no password checking program " + \
                     "installed nor available for your system\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    results += debug
-                    compliant = False
-                #cracklib is not installed but available for install
-                else:
-                    debug = "cracklib not installed but is available\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    results += debug
-                    compliant = False
-            #passwdqc is not installed but available for install
-            else:
-                debug = "passwdqc not installed but is available\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 results += debug
                 compliant = False
-        #pwquality is not installed but available for install
+            # cracklib is not installed but available for install
+            else:
+                debug = "cracklib not installed but is available\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                results += debug
+                compliant = False
+        # pwquality is not installed but available for install
         else:
             debug = "pamquality not installed but is available\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -355,7 +324,7 @@ for the login.defs file"""
         success = True
         debug = ""
         self.detailedresults = ""
-        usingcracklib, usingpasswdqc, usingquality = False, False, False
+        usingcracklib, usingquality = False, False
         createFile(self.pam + ".backup", self.logger)
         createFile(self.pam2 + ".backup", self.logger)
         if self.ci2.getcurrvalue():
@@ -372,20 +341,6 @@ for the login.defs file"""
                     return False
                 else:
                     usingquality = True
-            # want passwdqc if possible
-            elif self.ph.check(self.passwdqc):
-                usingpasswdqc = True
-            elif self.ph.checkAvailable(self.passwdqc):
-                if not self.ph.install(self.passwdqc):
-                    self.detailedresults += "wasn't able to install " + \
-                        "passwdqc, unable to continue with the rest of " + \
-                        "the rule\n"
-                    debug = "wasn't able to install passwdqc, unable to " + \
-                        "continue with the rest of the rule\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    return False
-                else:
-                    usingpasswdqc = True
             # otherwise check if cracklib is installed or and available alt
             elif self.ph.check(self.cracklib):
                 usingcracklib = True
@@ -410,15 +365,12 @@ for the login.defs file"""
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
 
-            # configure pam to use passwdqc if passwdqc is avail and inst.
             if usingquality:
                 package = "quality"
-            elif usingpasswdqc:
-                package = "passwdqc"
             elif usingcracklib:
                 package = "cracklib"
             else:
-                error = "Could not find pwquality/passwdqc/cracklib pam " + \
+                error = "Could not find pwquality/cracklib pam " + \
                     "module. Fix failed."
                 self.logger.log(LogPriority.ERROR, error)
                 self.detailedresults += error + "\n"
@@ -596,24 +548,23 @@ for the login.defs file"""
 ###############################################################################
 
     def chkpassword(self, package):
-        '''ConfigureSystemAuthentication.chkpasswdqc() Private method to check
-        for the presence of the correct passwdqc directives.  Upon entering
-        this method, self.config has the contents of whatever pam file that
-        self.pam represents.  However for apt-get systems we will make
-        self.config contain the contents of self.pam2. In this method we want
-        the pam_passwdqc.so line to be the first line to appear of the
+        '''Private method to check for the presence of the correct
+        pwquality/cracklib directives. In this method we want
+        the pwquality/cracklib line to be the first line to appear of the
         password type and the pam_unix.so line to be right after.
         @author: dwalker
         @return: bool
         '''
         regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "nullok try_first_pass use_authtok remember=6"
+            "nullok try_first_pass use_authtok remember=10"
         if package == "quality":
-            regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so minlen=8 minclass=3"
-        elif package == "passwdqc":
-            regex1 = r"^password[ \t]+requisite[ \t]+pam_passwdqc.so min=disabled,disabled,16,12,8"
+            regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
+                "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
+                "lcredit=0 ocredit=0 retry=3"
         elif package == "cracklib":
-            regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so minlen=8 minclass=3"
+            regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
+                "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
+                "lcredit=0 ocredit=0 retry=3"
         compliant = self.chkPwCheck(regex1, regex2, package)
         return compliant
 
