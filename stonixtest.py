@@ -917,36 +917,30 @@ def isRuleInBounds(fname=""):
         
         # set a variable to the module class
         tmpex = "toTestClass = tmp_test_mod." + str(toTestName)
-        
-        exec(tmpex)
-        """
-        global ENVIRON
-        global SYSCONFIG
-        global LOGGER
-        global STATECHANGELOGGER
-        environ = ENVIRON
-        config = SYSCONFIG
-        logdispatcher = LOGGER
-        stchgr = STATECHANGELOGGER
-        """
-        get_attrs = toTestClass(SYSCONFIG, ENVIRON, LOGGER, STATECHANGELOGGER)
-        
-        # Acquire result of method            
-        is_root_required = get_attrs.getisrootrequired()
-        LOGGER.log(LogPriority.DEBUG, "is_root_required: " + \
-                                      str(is_root_required))
-        # Does the running user match if root is required?
-        toTestCorrectEffectiveUserid = isCorrectEffectiveUserId(is_root_required)
+        try:
+            exec(tmpex)
 
-        # check if is applicable to this system
-        toTestIsApplicable = get_attrs.isapplicable()
-
-        LOGGER.log(LogPriority.DEBUG, "IsApplicable: " + str(toTestIsApplicable))
-        LOGGER.log(LogPriority.DEBUG, "UID works   : " + str(toTestCorrectEffectiveUserid))
-
-        # Make Sure this rule sould be testing
-        if toTestCorrectEffectiveUserid and toTestIsApplicable:
-            ruleIsInBounds = True
+            get_attrs = toTestClass(SYSCONFIG, ENVIRON, LOGGER, STATECHANGELOGGER)
+            
+            # Acquire result of method            
+            is_root_required = get_attrs.getisrootrequired()
+            LOGGER.log(LogPriority.DEBUG, "is_root_required: " + \
+                                          str(is_root_required))
+        except Exception, err:
+            print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
+        else:
+            # Does the running user match if root is required?
+            toTestCorrectEffectiveUserid = isCorrectEffectiveUserId(is_root_required)
+    
+            # check if is applicable to this system
+            toTestIsApplicable = get_attrs.isapplicable()
+    
+            LOGGER.log(LogPriority.DEBUG, "IsApplicable: " + str(toTestIsApplicable))
+            LOGGER.log(LogPriority.DEBUG, "UID works   : " + str(toTestCorrectEffectiveUserid))
+    
+            # Make Sure this rule sould be testing
+            if toTestCorrectEffectiveUserid and toTestIsApplicable:
+                ruleIsInBounds = True
     LOGGER.log(LogPriority.DEBUG, "ruleIsInBounds: " + str(ruleIsInBounds))
     return ruleIsInBounds
 
@@ -999,9 +993,8 @@ def processRuleTest(filename=""):
         try:
             classToTestRegex = re.match("^zzzTestRule(.+)$", testName)
         except Exception, err:
-           print "Exception trying to match regex . . ."
-           print str(err)
-           raise err                        
+           print "Exception trying to match regex . . . \"" + str(err) + "\""
+           classToTest = None
         else:
             try:
                 classToTest = classToTestRegex.group(1) + ".py"
@@ -1141,17 +1134,21 @@ def assemble_list_suite(modules = []):
                             #print str(root)
                             LOGGER.log(LogPriority.DEBUG, "Found: " +\
                                             str(myfile))
-                            #####
-                            # NOTE: Processing a RULE test here
-                            testToRunMod = processRuleTest(root + "/" + myfile)
-                            #print "******************************************"
-                            #print "Checking out " + str(module)
-                            # Make Sure this rule sould be running
-                            if testToRunMod:
+                            try:
                                 #####
-                                # Add the import to a list, to later "map" to a test suite
-                                testList.append(testToRunMod)
-                                #print "Adding test to suite..."   
+                                # NOTE: Processing a RULE test here
+                                testToRunMod = processRuleTest(root + "/" + myfile)
+                                #print "******************************************"
+                                #print "Checking out " + str(module)
+                                # Make Sure this rule sould be running
+                            except Exception, err:
+                                print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
+                            else:
+                                if testToRunMod:
+                                    #####
+                                    # Add the import to a list, to later "map" to a test suite
+                                    testList.append(testToRunMod)
+                                    #print "Adding test to suite..."   
                 if not found: 
                     try:   
                         raise TestNotFound("\n\tRule test \"" + str(module) + "\" not found")
@@ -1179,15 +1176,19 @@ def assemble_list_suite(modules = []):
                             found = True
                             #print "******************************************"
                             #print "Checking out " + str(myfile)
-                            #####
-                            # NOTE: Processing a FRAMEWORK test here
-                            testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
-                            
-                            if testToRunMod:
+                            try:
                                 #####
-                                # Add the import to a list, to later "map" to a test suite
-                                testList.append(testToRunMod)     
-                                #print "Adding test to suite..."   
+                                # NOTE: Processing a FRAMEWORK test here
+                                testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
+                                
+                            except Exception, err:
+                                print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
+                            else:
+                                if testToRunMod:
+                                    #####
+                                    # Add the import to a list, to later "map" to a test suite
+                                    testList.append(testToRunMod)     
+                                    #print "Adding test to suite..."   
                 if not found:
                     try:
                         raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
@@ -1305,8 +1306,8 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
                 testList.append(fameworkTestToRun)
                 
             except Exception, err: 
-                    print "stonixtest error: " + str(frameworkTestClassName) + " Exception: " + str(err) + "\n"
-                    #raise(err)
+                print "stonixtest error: " + str(frameworkTestClassName) + " Exception: " + str(err) + "\n"
+                #raise(err)
             frameworkDictionary.gotoNextItem()
     else:
         print "\n Not running framework tests.\n"
@@ -1350,8 +1351,8 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
                 testList.append(utilsTestToRun)
                 
             except Exception, err: 
-                    print "stonixtest error: " + str(utilsTestClassName) + " Exception: " + str(err) + "\n"
-                    #raise(err)
+                print "stonixtest error: " + str(utilsTestClassName) + " Exception: " + str(err) + "\n"
+                #raise(err)
             utilsDictionary.gotoNextItem()
     else:
         print "\n Not running utils tests.\n"
