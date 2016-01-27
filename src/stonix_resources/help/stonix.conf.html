@@ -18,7 +18,7 @@ h1 {
 }
 code {
   background-color: #e6e6e6;
-  line-height: 120%;
+  line-height: 125%;
 }
 </style>
 <div id="wrap">
@@ -61,6 +61,17 @@ The format for setting a rule's CI(s) is as follows:<br>
 <pre><code>[RuleName]
 CINAME = civalue
 UCCINAME = User comment text goes here.\nIf edited directly, use "\n" for new lines.</code></pre>
+The rule name is in square brackets. The CI name is on a single line with its
+value, separated by "open equals" (an equal sign with a space on both sides).
+The next line is the user comment for that CI, which is named with the capital
+letters "UC" followed by the CI name.<br>
+For a specific example, we can take a look at the ConfigureAIDE rule, which has a
+boolean CI, as well as a text string:<br>
+<pre><code>[ConfigureAIDE]
+configureaide = True
+UCconfigureaide =
+AIDEJobTime = 05 04 * * *
+UCAIDEJobTime =</code></pre>
 CIs can take several different data types, but the most common is boolean (True/False).
 These CIs appear as checkboxes in the GUI. To set the value of a boolean CI,
 simply set <code>CINAME = True</code> or <code>CINAME = False</code>. For most
