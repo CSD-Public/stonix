@@ -449,34 +449,16 @@ if __name__ == '__main__':
         if os.path.exists(self.daemonpath):
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
-#             ownergrp = getUserGroupName(self.plistpath)
-#             owner = ownergrp[0]
-#             group = ownergrp[1]
             if mode != 509:
                 compliant = False
                 self.detailedresults += "permissions on " + self.daemonpath + \
-                    "aren't 664\n"
-                debug = "permissions on " + self.daemonpath + " aren't 664\n"
+                    " aren't 775\n"
+                debug = "permissions on " + self.daemonpath + " aren't 775\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-#             if owner != "root":
-#                 compliant = False
-#                 self.detailedresults += "Owner of " + self.daemonpath + \
-#                     " isn't root\n"
-#                 debug = "Owner of " + self.daemonpath + \
-#                     " isn't root\n"
-#                 self.logger.log(LogPriority.DEBUG, debug)
-#             if group != "admin":
-#                 compliant = False
-#                 self.detailedresults += "Group of " + self.daemonpath + \
-#                     " isn't admin\n"
-#                 debug = "Group of " + self.daemonpath + \
-#                     " isn't admin\n"
-#                 self.logger.log(LogPriority.DEBUG, debug)
             contents = readFile(self.daemonpath, self.logger)
             contentstring = ""
             for line in contents:
                 contentstring += line
-#             if not re.search(self.daemonregex, contentstring):
             if contentstring != self.daemoncontents:
                 compliant = False
                 self.detailedresults += "disablestorage.py file doesn't " + \
@@ -788,9 +770,7 @@ if __name__ == '__main__':
                         os.chown(self.plistpath, uid, gid)
                     os.chmod(self.plistpath, 420)
         if not os.path.exists(self.daemonpath):
-            print "disablestorage file not present, creating it\n"
             if createFile(self.daemonpath, self.logger):
-                print "disablestorage file has been created\n"
                 created2 = True
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
@@ -808,6 +788,8 @@ if __name__ == '__main__':
                 gid = grp.getgrnam("admin")[2]
             if pwd.getpwnam("root")[2] != "":
                 uid = pwd.getpwnam("root")[2]
+            #if we didn't have to create the file then we want to record
+            #incorrect permissions as state event
             if not created2:
                 if mode != 509 or owner != "root" or group != "admin":
                     origuid = statdata.st_uid
@@ -827,27 +809,30 @@ if __name__ == '__main__':
             for line in contents:
                 contentstring += line
             if contentstring != self.daemoncontents:
-#             if not re.search(self.daemonregex, contentstring):
                 tmpfile = self.daemonpath + ".tmp"
-                if not writeFile(tmpfile, self.daemoncontents, self.logger):
-                    success = False
-                elif not created2:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.daemonpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.daemonpath,
-                                                         tmpfile, myid)
-                    os.rename(tmpfile, self.daemonpath)
-                    if uid and gid:
-                        os.chown(self.daemonpath, uid, gid)
-                    os.chmod(self.daemonpath, 509)
+                if writeFile(tmpfile, self.daemoncontents, self.logger):
+                    if not created2:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.daemonpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.daemonpath,
+                                                             tmpfile, myid)
+                        os.rename(tmpfile, self.daemonpath)
+                        if uid and gid:
+                            os.chown(self.daemonpath, uid, gid)
+                        os.chmod(self.daemonpath, 509)
+                    else:
+                        os.rename(tmpfile, self.daemonpath)
+                        if uid and gid:
+                            os.chown(self.daemonpath, uid, gid)
+                        os.chmod(self.daemonpath, 509)
                 else:
-                    os.rename(tmpfile, self.daemonpath)
-                    if uid and gid:
-                        os.chown(self.daemonpath, uid, gid)
-                    os.chmod(self.daemonpath, 509)
+                    success = False
+            elif not checkPerms(self.daemonpath, [0, 0, 509], self.logger):
+                if not setPerms(self.daemonpath, [0, 0, 509], self.logger):
+                    success = False
         if re.search("^10.11", self.environ.getosver()):
             usb = "IOUSBMassStorageDriver"
         else:
