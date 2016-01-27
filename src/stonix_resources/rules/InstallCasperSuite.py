@@ -56,7 +56,7 @@ from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
 JAMFCASPERSUITESERVER = "jds001.lanl.gov"
-PACKAGENAME="QuickAdd.09.81.pkg"
+PACKAGENAME="QuickAdd.stonix.pkg"
 
 
 class InstallCasperSuite(Rule):
