@@ -56,6 +56,7 @@ import cmd
 import stat
 import pwd
 import grp
+import sys
 
 
 class DisableRemoveableStorage(Rule):
@@ -294,6 +295,7 @@ class DisableRemoveableStorage(Rule):
         self.detailedresults = ""
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -301,7 +303,7 @@ class DisableRemoveableStorage(Rule):
      <key>Label</key>
      <string>gov.lanl.stonix.disablestorage</string>
      <key>Program</key>
-         <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/disablestorage</string>
+         <string>''' + self.daemonpath + '''</string>
      <key>RunAtLoad</key>
          <true/>
      <key>StartInterval</key>
@@ -359,12 +361,12 @@ if __name__ == '__main__':
     main()
 '''
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
-        "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
-"<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
-"<key>Program</key>" + \
-         "<string>/Applications/stonix4mac\.app/Contents/Resources/stonix\.app/Contents/MacOS/stonix_resources/disablestorage</string>" + \
-     "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
-         "<integer>60</integer></dict></plist>"
+            "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
+            "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
+            "<key>Program</key>" + \
+            "<string>" + re.escape(self.daemonpath) + "</string>" + \
+            "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
+            "<integer>60</integer></dict></plist>"
 
         self.daemonregex = "\#\!/usr/bin/python\n\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\n" + \
             "import re\n" + \
@@ -405,7 +407,7 @@ if __name__ == '__main__':
             "        cmd \= unload \+ filepath \+ sd \+ \"\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n\n\n" + \
             "if __name__ \=\= \'__main__\':\n    main()\n"
-        self.daemonpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/disablestorage"
+
         if os.path.exists(self.plistpath):
             statdata = os.stat(self.plistpath)
             mode = stat.S_IMODE(statdata.st_mode)
