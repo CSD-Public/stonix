@@ -46,8 +46,8 @@ pack-stonix4mac-install :
 
 MYPWD=$(shell pwd)
 TITLE := stonix4mac
-REVERSE_DOMAIN=gov.lanl.ds
-PACKAGE_VERSION=
+PACKAGE_VERSION=0.9.4
+REVERSE_DOMAIN=gov.lanl.${TITLE}.${PACKAGE_VERSION}
 PI=postinstall
 PRE=preinstall
 MANPG=../../usr/share/man/man8/stonix.8
