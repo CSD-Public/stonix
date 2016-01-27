@@ -481,7 +481,7 @@ if __name__ == '__main__':
                     "contain the correct contents\n"
         else:
             compliant = False
-            self.detailedresults += "disablestorage.py file doesn't exist\n"
+            self.detailedresults += "disablestorage file doesn't exist\n"
         check = "/usr/sbin/kextstat "
         self.ch = CommandHelper(self.logger)
         if re.search("^10.11", self.environ.getosver()):
@@ -786,7 +786,9 @@ if __name__ == '__main__':
                         os.chown(self.plistpath, uid, gid)
                     os.chmod(self.plistpath, 420)
         if not os.path.exists(self.daemonpath):
+            print "disablestorage file not present, creating it\n"
             if createFile(self.daemonpath, self.logger):
+                print "disablestorage file has been created\n"
                 created2 = True
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
