@@ -87,6 +87,7 @@ class ConfigurePasswordProfile(Rule):
             pprofilename = "com\.apple\.mobiledevice\.passwordpolicy:"
             pwprofilelinefound = False
             self.ch = CommandHelper(self.logger)
+            output2 = ""
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
                 print "output: " + str(output) + "\n"
