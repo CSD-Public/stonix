@@ -90,7 +90,6 @@ class ConfigurePasswordProfile(Rule):
             output2 = ""
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
-                print "output: " + str(output) + "\n"
                 if output:
                     for line in output:
                         if re.search("\{$", line.strip()):
