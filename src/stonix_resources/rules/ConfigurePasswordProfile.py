@@ -29,6 +29,7 @@ Created on Feb 10, 2015
 from __future__ import absolute_import
 import traceback
 import re
+import sys
 import os
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
@@ -164,7 +165,8 @@ class ConfigurePasswordProfile(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             success = True
-            profpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/passwordprofile-10.11"
+            profpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/passwordprofile-10.11"
+            #profpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/passwordprofile-10.11"
             cmd = ["/usr/bin/profiles", "-I", "-F", profpath]
             if self.ch.executeCommand(cmd):
                 self.iditerator += 1
