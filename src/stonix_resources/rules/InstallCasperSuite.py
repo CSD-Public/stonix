@@ -55,7 +55,7 @@ from ..macpkgr import MacPkgr
 from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERSUITESERVER = "jds001.lanl.gov"
+JAMFCASPERSUITESERVER = "jss.lanl.gov"
 PACKAGENAME="QuickAdd.stonix.pkg"
 
 
