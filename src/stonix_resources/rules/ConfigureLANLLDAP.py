@@ -29,6 +29,7 @@ from LANL-stor.
 @change: 2015/10/01 eball - Refactoring Red Hat code for sssd
 @change: 2015/10/23 eball - Adding undo methods to new code in fix()
 @change: 2015/11/16 eball - Moving RHEL6 back to nslcd
+@change: 2016/01/28 eball - Improved handling for LDAPServer CI
 '''
 from __future__ import absolute_import
 import os
@@ -74,7 +75,9 @@ effect."""
         datatype = "string"
         key = "LDAPServer"
         instructions = "The default LDAP server should be set in " + \
-            "localize.py. Alternatively, you may specify a server here."
+            "localize.py. Alternatively, you may specify a server here. " + \
+            "Please do not include \"ldap://\" at the beginning of the " + \
+            "address."
         default = "ldap.lanl.gov"
         self.ldapci = self.initCi(datatype, key, instructions, default)
 
@@ -96,9 +99,11 @@ effect."""
             compliant = True
             results = ""
             server = self.ldapci.getcurrvalue()
+            self.ldapsettings = ""
             self.myos = self.environ.getostype().lower()
             self.majorVer = self.environ.getosver().split(".")[0]
             self.majorVer = int(self.majorVer)
+            self.fixOkay = True
 
             # All systems except RHEL 6 and Ubuntu use sssd
             if (re.search("red hat", self.myos) and self.majorVer < 7) or \
@@ -207,9 +212,8 @@ effect."""
                     gid = "gid nslcd"
                 else:
                     gid = "gid ldap"
-                if re.match('ldap.lanl.gov', server):
-                    self.ldapsettings = ['uri ldap://' +
-                                         self.ldapci.getcurrvalue(),
+                if re.match('ldap.lanl.gov$', server):
+                    self.ldapsettings = ['uri ldap://' + server,
                                          'base dc=lanl,dc=gov',
                                          'base passwd ou=unixsrv,dc=lanl,' +
                                          'dc=gov',
@@ -217,6 +221,25 @@ effect."""
                                          gid,
                                          'ssl no',
                                          'nss_initgroups_ignoreusers root']
+                else:
+                    serversplit = server.split(".")
+                    if len(serversplit) != 3:
+                        compliant = False
+                        self.fixOkay = False
+                        error = "Custom LDAPServer does not follow " + \
+                            "convention of \"[server].[domain].[tld]\". " + \
+                            "ConfigureLANLLDAP cannot automate your LDAP " + \
+                            "setup."
+                        self.logger.log(LogPriority.ERROR, error)
+                        results += "ERROR: " + error + "\n"
+                    else:
+                        self.ldapsettings = ['uri ldap://' + server,
+                                             'base dc=' + serversplit[1] +
+                                             ",dc=" + serversplit[2],
+                                             'uid nslcd',
+                                             gid,
+                                             'ssl no',
+                                             'nss_initgroups_ignoreusers root']
                 ldapsettings = self.ldapsettings
                 if os.path.exists(ldapfile):
                     ldapconf = readFile(ldapfile, self.logger)
@@ -323,7 +346,7 @@ effect."""
 
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
+            if not self.ci.getcurrvalue() or not self.fixOkay:
                 return
             success = True
             results = ""
