@@ -28,7 +28,7 @@ import httplib
 import urllib
 import urllib2
 
-#import SSLSecConnection
+import SSLSecConnection
 from stonixutilityfunctions import set_no_proxy
 from logdispatcher import LogPriority
 
