@@ -80,7 +80,7 @@ APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
 
 # Repository used by the package helper to retrieve software for installation.
 # Currently only uses "https" as a valid protocol
-MACREPOROOT = 'https://jds001.lanl.gov/CasperShare/'
+MACREPOROOT = 'https://jss.lanl.gov/CasperShare/'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
