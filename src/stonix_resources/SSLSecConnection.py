@@ -20,7 +20,21 @@ class SSLSecConnection(httplib.HTTPSConnection):
 
         if sys.hexversion >= 0x02070900:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-            context.verify_mode = ssl.CERT_REQUIRED
+            #####
+            #  verify_mode must be one of:
+            #  CERT_NONE (In this mode (the default), no certificates will be 
+            #             required from the other side of the socket connection.
+            #             If a certificate is received from the other end, no
+            #             attempt to validate it is made.)
+            #  CERT_OPTIONAL (in this mode no certificates will be required from
+            #                 the other side of the socket connection; but if 
+            #                 they are provided, validation will be attempted 
+            #                 and an SSLError will be raised on failure.)
+            #  CERT_REQUIRED (In this mode, certificates are required from the 
+            #                 other side of the socket connection; an SSLError 
+            #                 will be raised if no certificate is provided, or
+            #                 if its validation fails.)
+            context.verify_mode = ssl.CERT_NONE
             context.check_hostname = True
             context.load_default_certs()
             # Set some relevant options:
