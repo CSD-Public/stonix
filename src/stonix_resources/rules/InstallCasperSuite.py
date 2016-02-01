@@ -81,7 +81,7 @@ class InstallCasperSuite(Rule):
                                             str(self.package))
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', '+']}}
-        self.js = "https://" + self.reporoot + "/" + self.package
+        self.js = self.reporoot + "/" + self.package
 
         key = self.rulename
         instructions = '''To disable the installation of the JAMF Casper Recon client set the InstallCasperSuite option to no or False.'''
@@ -241,11 +241,11 @@ class InstallCasperSuite(Rule):
 # Install the package
                     if self.pkgr.installPackage(self.package):
                         self.rulesuccess = True
-                        messagestring = str(self.qa) + \
+                        messagestring = str(self.package) + \
                             " installation successful!"
                         self.touch_imaged()
                     else:
-                        messagestring = str(self.qa) + \
+                        messagestring = str(self.package) + \
                             " installation failed!"
                     self.detailedresults = messagestring
 
