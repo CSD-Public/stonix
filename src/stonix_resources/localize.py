@@ -51,7 +51,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.9.4.13'
+STONIXVERSION = '0.9.4.26'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -80,7 +80,7 @@ APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
 
 # Repository used by the package helper to retrieve software for installation.
 # Currently only uses "https" as a valid protocol
-MACREPOROOT = 'https://jss.lanl.gov/CasperShare/'
+MACREPOROOT = 'https://jss.lanl.gov/CasperShare'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
