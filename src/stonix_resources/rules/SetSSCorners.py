@@ -66,7 +66,7 @@ the fix is run, but you may have to wait a few minutes for Mac OS X to reload \
 the process."""
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5']},
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']},
                            'noroot': True}
 
         # set up configuration items for this rule
