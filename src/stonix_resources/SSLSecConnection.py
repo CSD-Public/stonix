@@ -15,12 +15,14 @@ class SSLSecConnection(httplib.HTTPSConnection):
             ssl._create_default_https_context = ssl._create_unverified_context
 
         sock = socket.create_connection((self.host, self.port), self.timeout)
+
+        """
         if self._tunnel_host:
             self.sock = sock
             # peercert = sock.getpeercert()
             # ssl.match_hostname(peercert, self.host)
             self._tunnel()
-        """
+
         if sys.hexversion >= 0x02070900:
             context = ssl.SSLContext()
             ""
