@@ -193,7 +193,7 @@ class MacPkgr(object):
                 # Otherwise the repository is on a mounted filesystem
                 self.logger.log(LogPriority.DEBUG, "Looking for a local " + \
                                                    "filesystem repo...")
-                self.tmpLocalPkg = self.reporoot + "/" + self.package
+                self.tmpLocalPkg = self.reporoot + self.package
                 
 
         except(KeyboardInterrupt,SystemExit):

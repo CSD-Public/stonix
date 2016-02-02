@@ -49,7 +49,7 @@
 # of the resource forks and make a MESS of the filesystem.
 export COPYFILE_DISABLE=true
 
-APPVERSION="0.9.4.13"
+APPVERSION="0.9.4.26"
 
 SVN="/usr/bin/svn"
 ECHO="/bin/echo"

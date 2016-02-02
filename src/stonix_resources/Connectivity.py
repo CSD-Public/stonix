@@ -23,6 +23,7 @@
 ###############################################################################
 """
 import re
+import ssl
 import socket
 import httplib
 import urllib
@@ -154,6 +155,10 @@ class Connectivity(object):
                 self.logger.log(LogPriority.DEBUG, "page: " + str(page))
                               
                 if host and port:
+                    #####
+                    # Revert to unverified context
+                    if hasattr(ssl, '_create_unverified_context'):
+                        ssl._create_default_https_context = ssl._create_unverified_context
                     #####
                     # Create a different type of connection based on 
                     # http or https...

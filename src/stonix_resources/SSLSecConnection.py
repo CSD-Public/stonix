@@ -14,12 +14,15 @@ class SSLSecConnection(httplib.HTTPSConnection):
         sock = socket.create_connection((self.host, self.port), self.timeout)
         if self._tunnel_host:
             self.sock = sock
-            peercert = sock.getpeercert()
-            ssl.match_hostname(peercert, self.host)
+            # peercert = sock.getpeercert()
+            # ssl.match_hostname(peercert, self.host)
             self._tunnel()
-
+        
         if sys.hexversion >= 0x02070900:
+            context = ssl.SSLContext()
+            """
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            """
             #####
             #  verify_mode must be one of:
             #  CERT_NONE (In this mode (the default), no certificates will be 
@@ -35,20 +38,22 @@ class SSLSecConnection(httplib.HTTPSConnection):
             #                 will be raised if no certificate is provided, or
             #                 if its validation fails.)
             context.verify_mode = ssl.CERT_NONE
-            context.check_hostname = True
-            context.load_default_certs()
+            context.check_hostname = False
+            """
+            #context.load_default_certs()
             # Set some relevant options:
             # - No server should use SSLv2 any more, it's outdated and full of security holes.
             # - Disable compression in order to counter the CRIME attack. (https://en.wikipedia.org/wiki/CRIME_%28security_exploit%29)
             for opt in [ 'NO_SSLv2', 'NO_COMPRESSION']:
                 if hasattr(ssl, 'OP_' + opt):
                     context.options |= getattr(ssl, 'OP_' + opt)
+            """
 
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
+        # self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
 class SSLSecHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
-        return self.do_open(SSLSecConnection, req)
+        return self.do_open(SSLSecConnection(), req)
 
 if sys.hexversion >= 0x02070900:
     urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
