@@ -11,18 +11,21 @@ class SSLSecConnection(httplib.HTTPSConnection):
         Interesting reference: http://nullege.com/codes/show/src%40p%40y%40pydle-HEAD%40pydle%40connection.py/144/ssl.VERIFY_CRL_CHECK_CHAIN/python
         This class is not currently checking certificate revocation...
         """
+        if hasattr(ssl, '_create_unverified_context'):
+            ssl._create_default_https_context = ssl._create_unverified_context
+
         sock = socket.create_connection((self.host, self.port), self.timeout)
         if self._tunnel_host:
             self.sock = sock
             # peercert = sock.getpeercert()
             # ssl.match_hostname(peercert, self.host)
             self._tunnel()
-        
+        """
         if sys.hexversion >= 0x02070900:
             context = ssl.SSLContext()
-            """
+            ""
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-            """
+            ""
             #####
             #  verify_mode must be one of:
             #  CERT_NONE (In this mode (the default), no certificates will be 
@@ -39,7 +42,7 @@ class SSLSecConnection(httplib.HTTPSConnection):
             #                 if its validation fails.)
             context.verify_mode = ssl.CERT_NONE
             context.check_hostname = False
-            """
+            ""
             #context.load_default_certs()
             # Set some relevant options:
             # - No server should use SSLv2 any more, it's outdated and full of security holes.
