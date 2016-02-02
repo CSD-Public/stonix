@@ -53,7 +53,7 @@ class SSLSecConnection(httplib.HTTPSConnection):
 
 class SSLSecHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
-        return self.do_open(SSLSecConnection(), req)
+        return self.do_open(SSLSecConnection, req)
 
 if sys.hexversion >= 0x02070900:
     urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
