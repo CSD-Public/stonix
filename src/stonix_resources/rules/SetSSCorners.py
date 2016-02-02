@@ -28,6 +28,7 @@ the screen lock. This rule removes the functionality of using a 'hot corner'
 to disable the screen saver.
 @author: Breen Malmberg
 @change: 2015/10/08 eball Help text/PEP8 cleanup
+@change: 2016/02/02 ekkehard Enable for OS X El Capitan 10.11
 '''
 
 from __future__ import absolute_import
