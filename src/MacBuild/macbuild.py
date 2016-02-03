@@ -37,6 +37,7 @@ with large amounts of original code and comments left intact.
     and exit, plus try/except blocks where appropriate
 @change: 2015/10/14 eball - Added -c flag to clean artifacts
 @change: 2016/01/26 ekkehard - version 0.9.4
+@change: 2016/02/03 ekkehard - version 0.9.5 & logmessage fix
 '''
 import os
 import stat
@@ -51,7 +52,6 @@ from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
 from macRamdisk import RamDisk, detach
-from log_message import log_message
 
 
 class MacBuilder():
@@ -87,7 +87,7 @@ class MacBuilder():
         # If version was not included at command line, use hardcoded version
         # number
         if options.version == "0":
-            self.APPVERSION = "0.9.4.0"
+            self.APPVERSION = "0.9.5.0"
         else:
             self.APPVERSION = options.version
 
@@ -220,10 +220,10 @@ class MacBuilder():
 
     def detachRamdisk(self, device, message_level="normal"):
         if detach(device, message_level):
-            log_message("Successfully detached disk: " + str(device).strip(),
+            print("Successfully detached disk: " + str(device).strip(),
                         "verbose", message_level)
         else:
-            log_message("Couldn't detach disk: " + str(device).strip())
+            print("Couldn't detach disk: " + str(device).strip())
             raise Exception("Cannot eject disk: " + str(device).strip())
 
     def exit(self, ramdisk, exitcode=0):
