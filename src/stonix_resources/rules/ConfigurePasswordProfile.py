@@ -29,10 +29,12 @@ Created on Feb 10, 2015
 from __future__ import absolute_import
 import traceback
 import re
+import sys
 import os
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
+from ..stonixutilityfunctions import iterate
 
 
 class ConfigurePasswordProfile(Rule):
@@ -54,7 +56,7 @@ class ConfigurePasswordProfile(Rule):
         self.helptext = "ConfigurePasswordProfile rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
-        self.rootrequired = False
+        self.rootrequired = True
         datatype = "bool"
         key = "PASSCODECONFIG"
         instructions = "To disable this rule set the value of " + \
@@ -65,6 +67,7 @@ class ConfigurePasswordProfile(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
         self.profPath = os.path.join(os.path.dirname(__file__), "..", "files",
                                      "LANL Passcode Profile for OS X Yosemite 10.10.mobileconfig")
+        self.iditerator = 0
 
     def report(self):
         try:
@@ -85,6 +88,7 @@ class ConfigurePasswordProfile(Rule):
             pprofilename = "com\.apple\.mobiledevice\.passwordpolicy:"
             pwprofilelinefound = False
             self.ch = CommandHelper(self.logger)
+            output2 = ""
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
                 if output:
@@ -128,6 +132,9 @@ class ConfigurePasswordProfile(Rule):
                             compliant = False
                     elif not pwprofilelinefound:
                         compliant = False
+                else:
+                    self.detailedresults += "profile not installed\n"
+                    compliant = False
             else:
                 self.detailedresults += "Unable to run the " + \
                     "system_profiler\n"
@@ -158,37 +165,18 @@ class ConfigurePasswordProfile(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             success = True
-            self.detailedresults = ""
-            cmd = ["/usr/bin/profiles", "-L"]
-            notinst = "There are no configuration profiles installed"
-            inst = "C873806E-E634-4E58-B960-62817F398E11"
-            found = False
+            profpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/passwordprofile-10.11"
+            #profpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/passwordprofile-10.11"
+            cmd = ["/usr/bin/profiles", "-I", "-F", profpath]
             if self.ch.executeCommand(cmd):
-                output = self.ch.getOutput()
-                if output:
-                    for line in output:
-                        if re.search(notinst, line):
-                            self.detailedresults += "There is no password " + \
-                            "configuration profile installed\n"
-                            cmd = ["/usr/bin/profiles", "-I", "-F", 
-                                   self.profPath]
-                            if self.ch.executeCommand(cmd):
-                                found = True
-                                break
-                        elif re.search(inst, line):
-                            self.detailedresults += "Password profile " + \
-                            "installed\n"
-                            found = True
-                            break
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                undocmd = ["/usr/bin/profiles", "-R", "-F", profpath]
+                event = {"eventtype": "comm",
+                         "command": undocmd}
+                self.statechglogger.recordchgevent(myid, event)
             else:
-                self.detailedresults += "Unable to run the profiles " + \
-                "list command\n"
                 success = False
-            if not found:
-                cmd = ["/usr/bin/profiles", "-I", "-F", self.profPath]
-                if not self.ch.executeCommand(cmd) or \
-                self.ch.getReturnCode() != 0:
-                    success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -198,9 +186,6 @@ class ConfigurePasswordProfile(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-    
-    def undo(self):
-        pass

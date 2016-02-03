@@ -56,6 +56,7 @@ import cmd
 import stat
 import pwd
 import grp
+import sys
 
 
 class DisableRemoveableStorage(Rule):
@@ -294,6 +295,7 @@ class DisableRemoveableStorage(Rule):
         self.detailedresults = ""
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -301,11 +303,11 @@ class DisableRemoveableStorage(Rule):
      <key>Label</key>
      <string>gov.lanl.stonix.disablestorage</string>
      <key>Program</key>
-         <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/disablestorage</string>
+         <string>''' + self.daemonpath + '''</string>
      <key>RunAtLoad</key>
          <true/>
      <key>StartInterval</key>
-         <integer>30</integer>
+         <integer>60</integer>
 </dict>
 </plist>
 '''
@@ -359,12 +361,12 @@ if __name__ == '__main__':
     main()
 '''
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
-        "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
-"<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
-"<key>Program</key>" + \
-         "<string>/Applications/stonix4mac\.app/Contents/Resources/stonix\.app/Contents/MacOS/stonix_resources/disablestorage</string>" + \
-     "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
-         "<integer>30</integer></dict></plist>"
+            "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
+            "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
+            "<key>Program</key>" + \
+            "<string>" + re.escape(self.daemonpath) + "</string>" + \
+            "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
+            "<integer>60</integer></dict></plist>"
 
         self.daemonregex = "\#\!/usr/bin/python\n\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\n" + \
             "import re\n" + \
@@ -405,7 +407,7 @@ if __name__ == '__main__':
             "        cmd \= unload \+ filepath \+ sd \+ \"\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n\n\n" + \
             "if __name__ \=\= \'__main__\':\n    main()\n"
-        self.daemonpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/disablestorage"
+
         if os.path.exists(self.plistpath):
             statdata = os.stat(self.plistpath)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -447,41 +449,23 @@ if __name__ == '__main__':
         if os.path.exists(self.daemonpath):
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
-#             ownergrp = getUserGroupName(self.plistpath)
-#             owner = ownergrp[0]
-#             group = ownergrp[1]
             if mode != 509:
                 compliant = False
                 self.detailedresults += "permissions on " + self.daemonpath + \
-                    "aren't 664\n"
-                debug = "permissions on " + self.daemonpath + " aren't 664\n"
+                    " aren't 775\n"
+                debug = "permissions on " + self.daemonpath + " aren't 775\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-#             if owner != "root":
-#                 compliant = False
-#                 self.detailedresults += "Owner of " + self.daemonpath + \
-#                     " isn't root\n"
-#                 debug = "Owner of " + self.daemonpath + \
-#                     " isn't root\n"
-#                 self.logger.log(LogPriority.DEBUG, debug)
-#             if group != "admin":
-#                 compliant = False
-#                 self.detailedresults += "Group of " + self.daemonpath + \
-#                     " isn't admin\n"
-#                 debug = "Group of " + self.daemonpath + \
-#                     " isn't admin\n"
-#                 self.logger.log(LogPriority.DEBUG, debug)
             contents = readFile(self.daemonpath, self.logger)
             contentstring = ""
             for line in contents:
                 contentstring += line
-#             if not re.search(self.daemonregex, contentstring):
             if contentstring != self.daemoncontents:
                 compliant = False
                 self.detailedresults += "disablestorage.py file doesn't " + \
                     "contain the correct contents\n"
         else:
             compliant = False
-            self.detailedresults += "disablestorage.py file doesn't exist\n"
+            self.detailedresults += "disablestorage file doesn't exist\n"
         check = "/usr/sbin/kextstat "
         self.ch = CommandHelper(self.logger)
         if re.search("^10.11", self.environ.getosver()):
@@ -804,6 +788,8 @@ if __name__ == '__main__':
                 gid = grp.getgrnam("admin")[2]
             if pwd.getpwnam("root")[2] != "":
                 uid = pwd.getpwnam("root")[2]
+            #if we didn't have to create the file then we want to record
+            #incorrect permissions as state event
             if not created2:
                 if mode != 509 or owner != "root" or group != "admin":
                     origuid = statdata.st_uid
@@ -823,27 +809,30 @@ if __name__ == '__main__':
             for line in contents:
                 contentstring += line
             if contentstring != self.daemoncontents:
-#             if not re.search(self.daemonregex, contentstring):
                 tmpfile = self.daemonpath + ".tmp"
-                if not writeFile(tmpfile, self.daemoncontents, self.logger):
-                    success = False
-                elif not created2:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.daemonpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.daemonpath,
-                                                         tmpfile, myid)
-                    os.rename(tmpfile, self.daemonpath)
-                    if uid and gid:
-                        os.chown(self.daemonpath, uid, gid)
-                    os.chmod(self.daemonpath, 509)
+                if writeFile(tmpfile, self.daemoncontents, self.logger):
+                    if not created2:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.daemonpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.daemonpath,
+                                                             tmpfile, myid)
+                        os.rename(tmpfile, self.daemonpath)
+                        if uid and gid:
+                            os.chown(self.daemonpath, uid, gid)
+                        os.chmod(self.daemonpath, 509)
+                    else:
+                        os.rename(tmpfile, self.daemonpath)
+                        if uid and gid:
+                            os.chown(self.daemonpath, uid, gid)
+                        os.chmod(self.daemonpath, 509)
                 else:
-                    os.rename(tmpfile, self.daemonpath)
-                    if uid and gid:
-                        os.chown(self.daemonpath, uid, gid)
-                    os.chmod(self.daemonpath, 509)
+                    success = False
+            elif not checkPerms(self.daemonpath, [0, 0, 509], self.logger):
+                if not setPerms(self.daemonpath, [0, 0, 509], self.logger):
+                    success = False
         if re.search("^10.11", self.environ.getosver()):
             usb = "IOUSBMassStorageDriver"
         else:
