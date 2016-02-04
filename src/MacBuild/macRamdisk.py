@@ -22,16 +22,14 @@
 ###############################################################################
 """
 @author: Roy Nielsen
+@change: 2016/02/03 ekkehard converted from log_message to print
 
 """
 
-import os
+
 import re
-import sys
 from tempfile import mkdtemp
 from subprocess import Popen, PIPE, STDOUT
-
-from log_message import log_message
 
 ###############################################################################
 class RamDisk(object) :
@@ -44,12 +42,11 @@ class RamDisk(object) :
     
     @author: Roy Nielsen
     """
-    def __init__(self, size=0, mountpoint="", message_level="normal") :
+    def __init__(self, size=0, mountpoint="") :
         """
         Constructor
         """
-        self.version = "0.7.5"
-        self.message_level = message_level
+        self.version = "0.9.4"
         #####
         # Calculating the size of ramdisk in 1Mb chunks     
         self.diskSize = str(int(size) * 1024 * 1024 / 512)
@@ -59,7 +56,7 @@ class RamDisk(object) :
         self.diskutil = "/usr/sbin/diskutil"
 
         if mountpoint:
-            log_message("\n\n\n\tMOUNTPOINT: " + str(mountpoint) + "\n\n\n", "debug", self.message_level)
+            print("\n\n\n\tMOUNTPOINT: " + str(mountpoint) + "\n\n\n")
             self.mntPoint = mountpoint
         else:
             self.mntPoint = ""
@@ -72,37 +69,37 @@ class RamDisk(object) :
             success  = False
         if not self.__isMemoryAvailable() :
             success = False
-            log_message("Physical memory not available to create ramdisk.")
+            print("Physical memory not available to create ramdisk.")
 
         if success :
 
             if self.volumename :
                 #####
                 # eventually have checking to make sure that directory doesn't already exist.
-                log_message("Attempting to use mount point of: " + str(mountpoint), "verbose", self.message_level)
+                print("Attempting to use mount point of: " + str(mountpoint), "verbose")
                 self.mntPoint = mountpoint
             else :
-                log_message("Attempting to acquire a radomized mount point. . .", "verbose", self.message_level)
+                print("Attempting to acquire a radomized mount point. . .", "verbose")
                 if not self.__getRandomizedMountpoint() :
                     success = False
 
             if success:
                 if not self.__create():
                     success = False
-                    log_message("Create appears to have failed..", "verbose", self.message_level)
+                    print("Create appears to have failed..", "verbose")
                 else:
                     if not self.__mount():
                         success = False
-                        log_message("Mount appears to have failed..", "verbose", self.message_level)
+                        print("Mount appears to have failed..", "verbose")
                     else:
                         if not self.__remove_journal():
                             success = False
-                            log_message("Remove journal appears to have failed..", "verbose", self.message_level)
+                            print("Remove journal appears to have failed..", "verbose")
 
         self.success = success
-        log_message("Success: " + str(self.success), "verbose", self.message_level)
-        log_message("Mount point: " + str(self.mntPoint), "verbose", self.message_level)
-        log_message("Device: " + str(self.myRamdiskDev), "verbose", self.message_level)
+        print("Success: " + str(self.success), "verbose")
+        print("Mount point: " + str(self.mntPoint), "verbose")
+        print("Device: " + str(self.myRamdiskDev), "verbose")
 
     ###########################################################################
 
@@ -110,9 +107,9 @@ class RamDisk(object) :
         """
         Getter for mount data, and if the mounting of a ramdisk was successful
         """
-        log_message("Success: " + str(self.success), "debug", self.message_level)
-        log_message("Mount point: " + str(self.mntPoint), "debug", self.message_level)
-        log_message("Device: " + str(self.myRamdiskDev), "debug", self.message_level)
+        print("Success: " + str(self.success))
+        print("Mount point: " + str(self.mntPoint))
+        print("Device: " + str(self.myRamdiskDev))
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################
@@ -128,10 +125,10 @@ class RamDisk(object) :
         try :
             self.mntPoint = mkdtemp()
         except Exception, err :
-            log_message("Exception trying to create temporary directory")
+            print("Exception trying to create temporary directory")
         else :
             success = True
-        log_message("Success: " + str(success) + " in __get_randomizedMountpoint: " + str(self.mntPoint), "debug", self.message_level)            
+        print("Success: " + str(success) + " in __get_randomizedMountpoint: " + str(self.mntPoint))            
         return success
     
     ###########################################################################
@@ -150,9 +147,9 @@ class RamDisk(object) :
             raise Exception("Error trying to create ramdisk(" + str(reterr).strip() + ")")
         else:
             self.myRamdiskDev = retval.strip()
-            log_message("Device: \"" + str(self.myRamdiskDev) + "\"", "debug", self.message_level)
+            print("Device: \"" + str(self.myRamdiskDev) + "\"")
             success = True
-        log_message("Success: " + str(success) + " in __create", "debug", self.message_level)            
+        print("Success: " + str(success) + " in __create")            
         return success
     
     ###########################################################################
@@ -195,13 +192,13 @@ class RamDisk(object) :
                     retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
                     if not reterr:
                         success = True
-            log_message("*******************************************", "debug", self.message_level)
-            log_message(r"retval:   " + str(retval).strip(), "debug", self.message_level)
-            log_message(r"reterr:   " + str(reterr).strip(), "debug", self.message_level)
-            log_message(r"mntPoint: " + str(self.mntPoint).strip(), "debug", self.message_level)
-            log_message(r"device:   " + str(self.myRamdiskDev).strip(), "debug", self.message_level)
-            log_message("*******************************************", "debug", self.message_level)
-            log_message("Success: " + str(success) + " in __mount", "debug", self.message_level)
+            print("*******************************************")
+            print(r"retval:   " + str(retval).strip())
+            print(r"reterr:   " + str(reterr).strip())
+            print(r"mntPoint: " + str(self.mntPoint).strip())
+            print(r"device:   " + str(self.myRamdiskDev).strip())
+            print("*******************************************")
+            print("Success: " + str(success) + " in __mount")
         return success
 
     ###########################################################################
@@ -223,7 +220,7 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        log_message("Success: " + str(success) + " in __remove_journal", "debug", self.message_level)
+        print("Success: " + str(success) + " in __remove_journal")
         return success
     
     ###########################################################################
@@ -237,7 +234,7 @@ class RamDisk(object) :
         success = False
         if self.__eject() :
             success = True
-        log_message("Success: " + str(success) + " in unmount", "debug", self.message_level)
+        print("Success: " + str(success) + " in unmount")
         return success
 
     ###########################################################################
@@ -254,11 +251,11 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        log_message("*******************************************", "debug", self.message_level)
-        log_message("retval: \"" + str(retval).strip() + "\"", "debug", self.message_level)
-        log_message("reterr: \"" + str(reterr).strip() + "\"", "debug", self.message_level)
-        log_message("*******************************************", "debug", self.message_level)
-        log_message("Success: " + str(success) + " in eject", "debug", self.message_level)
+        print("*******************************************")
+        print("retval: \"" + str(retval).strip() + "\"")
+        print("reterr: \"" + str(reterr).strip() + "\"")
+        print("*******************************************")
+        print("Success: " + str(success) + " in eject")
         return success
         
     ###########################################################################
@@ -274,11 +271,11 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        log_message("*******************************************", "debug", self.message_level)
-        log_message("retval: \"" + str(retval).strip() + "\"", "debug", self.message_level)
-        log_message("reterr: \"" + str(reterr).strip() + "\"", "debug", self.message_level)
-        log_message("*******************************************", "debug", self.message_level)
-        log_message("Success: " + str(success) + " in __format", "debug", self.message_level)
+        print("*******************************************")
+        print("retval: \"" + str(retval).strip() + "\"")
+        print("reterr: \"" + str(reterr).strip() + "\"")
+        print("*******************************************")
+        print("Success: " + str(success) + " in __format")
         return success
         
     ###########################################################################
@@ -294,11 +291,11 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        log_message("*******************************************", "debug", self.message_level)
-        log_message("retval: \"\"\"" + str(retval).strip() + "\"\"\"", "debug", self.message_level)
-        log_message("reterr: \"" + str(reterr).strip() + "\"", "debug", self.message_level)
-        log_message("*******************************************", "debug", self.message_level)
-        log_message("Success: " + str(success) + " in __format", "debug", self.message_level)
+        print("*******************************************")
+        print("retval: \"\"\"" + str(retval).strip() + "\"\"\"")
+        print("reterr: \"" + str(reterr).strip() + "\"")
+        print("*******************************************")
+        print("Success: " + str(success) + " in __format")
         return success
 
     ###########################################################################
@@ -337,8 +334,8 @@ class RamDisk(object) :
                 almost_size = line[:-1]
                 size = almost_size[-1]
                 
-                log_message("size: " + str(size), "debug", self.message_level)
-                log_message("found: " + str(found), "debug", self.message_level)
+                print("size: " + str(size))
+                print("found: " + str(found))
                 
                 if re.search("unused", found) or re.search("free", found):
                     break
@@ -349,8 +346,8 @@ class RamDisk(object) :
                 freeNumber = split_size.group(1)
                 freeMagnitude = split_size.group(2)
 
-                log_message("freeNumber: " + str(freeNumber), "debug", self.message_level)
-                log_message("freeMagnitude: " + str(freeMagnitude), "debug", self.message_level)
+                print("freeNumber: " + str(freeNumber))
+                print("freeMagnitude: " + str(freeMagnitude))
 
                 if re.match("^\d+$", freeNumber.strip()):
                     if re.match("^\w$", freeMagnitude.strip()):
@@ -376,10 +373,10 @@ class RamDisk(object) :
         try :
             retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         except Exception, err :
-            log_message(err_message + str(err))
+            print(err_message + str(err))
         else :
             success = True
-        log_message("Success: " + str(success) + " in _runcmd", "debug", self.message_level)
+        print("Success: " + str(success) + " in _runcmd")
         return success
 
     ###########################################################################
@@ -434,11 +431,11 @@ def detach(device=" ", message_level="normal"):
         if not reterr:
             success = True
 
-        log_message("*******************************************", "debug", message_level)
-        log_message("retval: " + re.escape(str(retval).strip("\"")), "debug", message_level)
-        log_message("reterr: " + re.escape(str(reterr).strip("\"")), "debug", message_level)
-        log_message("*******************************************", "debug", message_level)
-        log_message("Success: " + str(success) + " in eject", "debug", message_level)
+        print("*******************************************")
+        print("retval: " + re.escape(str(retval).strip("\"")))
+        print("reterr: " + re.escape(str(reterr).strip("\"")))
+        print("*******************************************")
+        print("Success: " + str(success) + " in eject")
     else:
         raise Exception("Cannot eject a device with an empty name..")
     return success
