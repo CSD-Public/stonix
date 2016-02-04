@@ -36,8 +36,9 @@ with large amounts of original code and comments left intact.
 @change: 2015/10/14 eball - Added exit() method to gracefully detach ramdisk
     and exit, plus try/except blocks where appropriate
 @change: 2015/10/14 eball - Added -c flag to clean artifacts
-@change: 2016/01/26 ekkehard - version 0.9.4
-@change: 2016/02/03 ekkehard - version 0.9.5 & logmessage fix
+@change: 2016/01/26 ekkehard version 0.9.4
+@change: 2016/02/03 ekkehard version 0.9.5
+@change: 2016/02/03 ekkehard converted from log_message to print
 '''
 import os
 import stat
@@ -214,14 +215,14 @@ class MacBuilder():
         ramdisk = RamDisk(str(size), mntpnt, message_level)
 
         if not ramdisk.success:
+            print("Ramdisk setup failed...")
             raise Exception("Ramdisk setup failed...")
 
         return ramdisk.getDevice()
 
     def detachRamdisk(self, device, message_level="normal"):
         if detach(device, message_level):
-            print("Successfully detached disk: " + str(device).strip(),
-                        "verbose", message_level)
+            print("Successfully detached disk: " + str(device).strip())
         else:
             print("Couldn't detach disk: " + str(device).strip())
             raise Exception("Cannot eject disk: " + str(device).strip())
