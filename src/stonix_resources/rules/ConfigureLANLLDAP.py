@@ -367,8 +367,10 @@ effect."""
                     results += "Failed to write good configuration to " + \
                         self.sssdconfpath + "\n"
                 if not self.sh.disableservice("nscd"):
-                    success = False
-                    results += "Failed to disable nscd\n"
+                    warning = "Failed to disable nscd. This may require " + \
+                        "an administrator to disable this service after a " + \
+                        "reboot."
+                    self.logger.log(LogPriority.WARNING, warning)
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -379,8 +381,10 @@ effect."""
                     self.statechglogger.recordchgevent(myid, event)
                 if self.sh.isrunning("sssd"):
                     if not self.sh.reloadservice("sssd"):
-                        success = False
-                        results += "Failed to reload sssd service\n"
+                        warning = "Failed to reload sssd service; the " + \
+                            "system should be rebooted to finalize the " + \
+                            "configuration."
+                        self.logger.log(LogPriority.WARNING, warning)
                 if not self.sh.auditservice("sssd"):
                     if not self.sh.enableservice("sssd"):
                         success = False
