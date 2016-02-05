@@ -76,33 +76,33 @@ for the login.defs file"""
                            'family': ['linux', 'solaris', 'freebsd']}
         datatype = "bool"
         key = "CONFIGSYSAUTH"
-        instructions = "To disable this rule set the value of " + \
+        instructions = "To disable this rule, set the value of " + \
             "CONFIGSYSAUTH to False."
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "PASSWORDREQ"
-        instructions = "To not configure password requirements set " + \
-            "PASSWORDREQ to False.  This configuration item will configure " + \
-            "pam's password requirements when changing to a new password"
+        instructions = "To not configure password requirements, set " + \
+            "PASSWORDREQ to False. This configuration item will configure " + \
+            "PAM's password requirements when changing to a new password."
         default = True
         self.ci2 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "PASSWORDFAIL"
-        instructions = "To not configure password fail locking set " + \
-            "PASSWORDFAIL to False.  This configuration item will " + \
-            "configure pam's failed login attempts mechanism using either " + \
+        instructions = "To not configure password fail locking, set " + \
+            "PASSWORDFAIL to False. This configuration item will " + \
+            "configure PAM's failed login attempts mechanism using either " + \
             "faillock or tally2."
         default = True
         self.ci3 = self.initCi(datatype, key, instructions, default)
 
         datatype = "bool"
         key = "PWHASHING"
-        instructions = "To not set the hashing algorithm set " + \
-            "PWHASHING to False.  This configuration item will configure " + \
-            "libuser and/or logindefs which specifies the hashing " + \
+        instructions = "To not set the hashing algorithm, set " + \
+            "PWHASHING to False. This configuration item will configure " + \
+            "libuser and/or login.defs, which specifies the hashing " + \
             "algorithm to use."
         default = True
         self.ci4 = self.initCi(datatype, key, instructions, default)
@@ -174,12 +174,14 @@ for the login.defs file"""
         cracklib = "cracklib"
 
         # This section to configure password regulations ######################
-
-        if self.ph.check(self.quality):
-            if self.ph.manager == "apt-get":
-                # for apt-get systems, pwquality doesn't work
-                # we will use cracklib until pwquality is fixed
-                quality = cracklib
+        if self.ph.manager == "apt-get":
+            # for apt-get systems, pwquality doesn't work
+            # we will use cracklib until pwquality is fixed
+            if not self.chkpassword(cracklib):
+                debug = "chkpassword() is not compliant\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                compliant = False
+        elif self.ph.check(self.quality):
             if not self.chkpassword(quality):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
@@ -327,43 +329,40 @@ for the login.defs file"""
         debug = ""
         self.detailedresults = ""
         usingcracklib, usingquality = False, False
+        if self.ph.manager == "apt-get":
+            isDebian = True
+        else:
+            isDebian = False
         createFile(self.pam + ".backup", self.logger)
         createFile(self.pam2 + ".backup", self.logger)
         if self.ci2.getcurrvalue():
-            if self.ph.check(self.quality):
+            if self.ph.check(self.quality) and not isDebian:
                 usingquality = True
-            elif self.ph.checkAvailable(self.quality):
+            elif self.ph.checkAvailable(self.quality) and not isDebian:
                 if not self.ph.install(self.quality):
-                    self.detailedresults += "wasn't able to install " + \
-                        "pwquality, unable to continue with the rest " + \
-                        "of the rule\n"
-                    debug = "wasn't able to install pwquality, unable to " + \
+                    debug = "Wasn't able to install pwquality, unable to " + \
                         "continue with the rest of the rule\n"
+                    self.detailedresults += debug
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
                     usingquality = True
-            # otherwise check if cracklib is installed or and available alt
             elif self.ph.check(self.cracklib):
                 usingcracklib = True
             elif self.ph.checkAvailable(self.cracklib):
                 if not self.ph.install(self.cracklib):
-                    self.detailedresults += "wasn't able to install " + \
-                        "cracklib, unable to continue with the rest of " + \
-                        "the rule\n"
-                    debug = "wasn't able to install cracklib, unable " + \
+                    debug = "Wasn't able to install cracklib, unable " + \
                         "to continue with the rest of the rule\n"
+                    self.detailedresults += debug
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
                     usingcracklib = True
             else:
-                self.detailedresults += "There are no preferred password " + \
-                    "enforcement pam modules available to install on this " + \
-                    "system.  Unable to proceed with configuration\n"
                 debug = "There are no preferred password enforcement " + \
                     "pam modules available to install on this system.  " + \
                     "Unable to proceed with configuration\n"
+                self.detailedresults += debug
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
 
