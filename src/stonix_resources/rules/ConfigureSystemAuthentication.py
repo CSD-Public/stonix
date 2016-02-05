@@ -30,6 +30,8 @@ Created on Sep 11, 2013
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/22 eball Rebased code in several spots for readability, and to
     correct logic errors (e.g. unreachable code, unused vars)
+@change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG and
+    CNSSI standards
 '''
 from __future__ import absolute_import
 
@@ -851,7 +853,7 @@ for the login.defs file"""
 ###############################################################################
 
     def chkdefspasshash(self):
-        '''Systemauth.__chkdefspasshash() Private method to check the password
+        '''Method to check the password
         hash algorithm settings in login.defs.'''
         compliant = True
         debug = ""
@@ -900,12 +902,15 @@ for the login.defs file"""
                                 found = False
                                 break
                 if not found:
-                    debug += "didn't find the sha512 line in /etc/login.defs\n"
+                    debug += "Did not find the SHA512 line in " + \
+                        "/etc/login.defs\n"
                     compliant = False
             return compliant
         else:
             data = {"MD5_CRYPT_ENAB": "no",
-                    "ENCRYPT_METHOD": "SHA512"}
+                    "ENCRYPT_METHOD": "SHA512",
+                    "PASS_MAX_DAYS": "180",
+                    "PASS_MIN_DAYS": "1"}
             datatype = "conf"
             intent = "present"
             tmppath = self.logindefs + ".tmp"
@@ -913,9 +918,9 @@ for the login.defs file"""
                                           datatype, self.logindefs, tmppath,
                                           data, intent, "space")
             if not self.editor2.report():
-                debug = "/etc/login.defs doesn't contain the correct " + \
+                debug = self.logindefs + " doesn't contain the correct " + \
                     "contents\n"
-                self.detailedresults += "/etc/login.defs doesn't contain " + \
+                self.detailedresults += self.logindefs + " doesn't contain " + \
                     "the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
