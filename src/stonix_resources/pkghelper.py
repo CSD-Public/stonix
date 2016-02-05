@@ -45,13 +45,17 @@ class Pkghelper(object):
         self.osDictionary = {'opensuse': 'zypper', 'gentoo': 'portage',
                              'red hat': 'yum', 'ubuntu': 'apt-get',
                              'debian': 'apt-get', 'centos': 'yum',
-                             'fedora': 'yum', 'mint': 'apt-get',
+                             'fedora': 'dnf', 'mint': 'apt-get',
                              'freebsd': 'freebsd', 'solaris': 'solaris'}
         self.manager = self.determineMgr()
         self.detailedresults = ''
-        '''FOR YUM (RHEL,CENTOS,FEDORA)'''
+        '''FOR YUM (RHEL,CENTOS)'''
         if self.manager is "yum":
             self.pckgr = yum.Yum(self.logger)
+
+            '''FOR DNF (FEDORA)'''
+        elif self.manager is "dnf":
+            self.pckgr = dnf.Dnf(self.logger)
 
             '''FOR APT-GET (DEBIAN,UBUNTU,MINT)'''
         elif self.manager is "apt-get":
