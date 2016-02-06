@@ -26,13 +26,20 @@
 
 """
 
-
+import os
 import re
+import sys
 from tempfile import mkdtemp
 from subprocess import Popen, PIPE, STDOUT
 
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+from src.stonix_resources.environment import Environment
+
+LOGGER = LogDispatcher(Environment())
+
 ###############################################################################
-class RamDisk(object) :
+
+class Ramdisk(object) :
     """
     Class to manage a ramdisk
     
@@ -46,6 +53,7 @@ class RamDisk(object) :
         """
         Constructor
         """
+        self.logger = LOGGER
         self.version = "0.9.4"
         #####
         # Calculating the size of ramdisk in 1Mb chunks     
@@ -56,7 +64,7 @@ class RamDisk(object) :
         self.diskutil = "/usr/sbin/diskutil"
 
         if mountpoint:
-            print("\n\n\n\tMOUNTPOINT: " + str(mountpoint) + "\n\n\n")
+            self.logger.log(LogPriority.INFO, "\n\n\n\tMOUNTPOINT: " + str(mountpoint) + "\n\n\n")
             self.mntPoint = mountpoint
         else:
             self.mntPoint = ""
@@ -69,37 +77,37 @@ class RamDisk(object) :
             success  = False
         if not self.__isMemoryAvailable() :
             success = False
-            print("Physical memory not available to create ramdisk.")
+            self.logger.log(LogPriority.INFO, "Physical memory not available to create ramdisk.")
 
         if success :
 
             if self.volumename :
                 #####
                 # eventually have checking to make sure that directory doesn't already exist.
-                print("Attempting to use mount point of: " + str(mountpoint), "verbose")
+                self.logger.log(LogPriority.INFO, "Attempting to use mount point of: " + str(mountpoint))
                 self.mntPoint = mountpoint
             else :
-                print("Attempting to acquire a radomized mount point. . .", "verbose")
+                self.logger.log(LogPriority.INFO, "Attempting to acquire a radomized mount point. . .")
                 if not self.__getRandomizedMountpoint() :
                     success = False
 
             if success:
                 if not self.__create():
                     success = False
-                    print("Create appears to have failed..", "verbose")
+                    self.logger.log(LogPriority.INFO, "Create appears to have failed..")
                 else:
                     if not self.__mount():
                         success = False
-                        print("Mount appears to have failed..", "verbose")
+                        self.logger.log(LogPriority.INFO, "Mount appears to have failed..")
                     else:
                         if not self.__remove_journal():
                             success = False
-                            print("Remove journal appears to have failed..", "verbose")
+                            self.logger.log(LogPriority.INFO, "Remove journal appears to have failed..")
 
         self.success = success
-        print("Success: " + str(self.success), "verbose")
-        print("Mount point: " + str(self.mntPoint), "verbose")
-        print("Device: " + str(self.myRamdiskDev), "verbose")
+        self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
+        self.logger.log(LogPriority.INFO, "Mount point: " + str(self.mntPoint))
+        self.logger.log(LogPriority.INFO, "Device: " + str(self.myRamdiskDev))
 
     ###########################################################################
 
@@ -107,9 +115,9 @@ class RamDisk(object) :
         """
         Getter for mount data, and if the mounting of a ramdisk was successful
         """
-        print("Success: " + str(self.success))
-        print("Mount point: " + str(self.mntPoint))
-        print("Device: " + str(self.myRamdiskDev))
+        self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
+        self.logger.log(LogPriority.INFO, "Mount point: " + str(self.mntPoint))
+        self.logger.log(LogPriority.INFO, "Device: " + str(self.myRamdiskDev))
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################
@@ -125,10 +133,10 @@ class RamDisk(object) :
         try :
             self.mntPoint = mkdtemp()
         except Exception, err :
-            print("Exception trying to create temporary directory")
+            self.logger.log(LogPriority.INFO, "Exception trying to create temporary directory")
         else :
             success = True
-        print("Success: " + str(success) + " in __get_randomizedMountpoint: " + str(self.mntPoint))            
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __get_randomizedMountpoint: " + str(self.mntPoint))            
         return success
     
     ###########################################################################
@@ -139,17 +147,21 @@ class RamDisk(object) :
         
         @author: Roy Nielsen
         """
+        retval = None
+        reterr = None
         success = False
         cmd = [self.hdiutil, "attach", "-nomount", "ram://" + self.diskSize]
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.logger.log(LogPriority.INFO, "retval: " + str(retval))
+        self.logger.log(LogPriority.INFO,"reterr: " + str(reterr))
         if reterr:
             success = False
             raise Exception("Error trying to create ramdisk(" + str(reterr).strip() + ")")
         else:
             self.myRamdiskDev = retval.strip()
-            print("Device: \"" + str(self.myRamdiskDev) + "\"")
+            self.logger.log(LogPriority.INFO,"Device: \"" + str(self.myRamdiskDev) + "\"")
             success = True
-        print("Success: " + str(success) + " in __create")            
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __create")            
         return success
     
     ###########################################################################
@@ -174,6 +186,7 @@ class RamDisk(object) :
         """
         success = False
         if self.__partition():
+            success = True
         
         
         # eraseVolume format name device
@@ -192,13 +205,13 @@ class RamDisk(object) :
                     retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
                     if not reterr:
                         success = True
-            print("*******************************************")
-            print(r"retval:   " + str(retval).strip())
-            print(r"reterr:   " + str(reterr).strip())
-            print(r"mntPoint: " + str(self.mntPoint).strip())
-            print(r"device:   " + str(self.myRamdiskDev).strip())
-            print("*******************************************")
-            print("Success: " + str(success) + " in __mount")
+            self.logger.log(LogPriority.INFO, "*******************************************")
+            self.logger.log(LogPriority.INFO, r"retval:   " + str(retval).strip())
+            self.logger.log(LogPriority.INFO, r"reterr:   " + str(reterr).strip())
+            self.logger.log(LogPriority.INFO, r"mntPoint: " + str(self.mntPoint).strip())
+            self.logger.log(LogPriority.INFO, r"device:   " + str(self.myRamdiskDev).strip())
+            self.logger.log(LogPriority.INFO, "*******************************************")
+            self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __mount")
         return success
 
     ###########################################################################
@@ -220,7 +233,7 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        print("Success: " + str(success) + " in __remove_journal")
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __remove_journal")
         return success
     
     ###########################################################################
@@ -234,7 +247,7 @@ class RamDisk(object) :
         success = False
         if self.__eject() :
             success = True
-        print("Success: " + str(success) + " in unmount")
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in unmount")
         return success
 
     ###########################################################################
@@ -251,11 +264,11 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        print("*******************************************")
-        print("retval: \"" + str(retval).strip() + "\"")
-        print("reterr: \"" + str(reterr).strip() + "\"")
-        print("*******************************************")
-        print("Success: " + str(success) + " in eject")
+        self.logger.log(LogPriority.INFO, "*******************************************")
+        self.logger.log(LogPriority.INFO, "retval: \"" + str(retval).strip() + "\"")
+        self.logger.log(LogPriority.INFO, "reterr: \"" + str(reterr).strip() + "\"")
+        self.logger.log(LogPriority.INFO, "*******************************************")
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in eject")
         return success
         
     ###########################################################################
@@ -271,11 +284,11 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        print("*******************************************")
-        print("retval: \"" + str(retval).strip() + "\"")
-        print("reterr: \"" + str(reterr).strip() + "\"")
-        print("*******************************************")
-        print("Success: " + str(success) + " in __format")
+        self.logger.log(LogPriority.INFO, "*******************************************")
+        self.logger.log(LogPriority.INFO, "retval: \"" + str(retval).strip() + "\"")
+        self.logger.log(LogPriority.INFO, "reterr: \"" + str(reterr).strip() + "\"")
+        self.logger.log(LogPriority.INFO, "*******************************************")
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __format")
         return success
         
     ###########################################################################
@@ -291,11 +304,11 @@ class RamDisk(object) :
         retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         if not reterr:
             success = True
-        print("*******************************************")
-        print("retval: \"\"\"" + str(retval).strip() + "\"\"\"")
-        print("reterr: \"" + str(reterr).strip() + "\"")
-        print("*******************************************")
-        print("Success: " + str(success) + " in __format")
+        self.logger.log(LogPriority.INFO, "*******************************************")
+        self.logger.log(LogPriority.INFO, "retval: \"\"\"" + str(retval).strip() + "\"\"\"")
+        self.logger.log(LogPriority.INFO, "reterr: \"" + str(reterr).strip() + "\"")
+        self.logger.log(LogPriority.INFO, "*******************************************")
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __format")
         return success
 
     ###########################################################################
@@ -334,8 +347,8 @@ class RamDisk(object) :
                 almost_size = line[:-1]
                 size = almost_size[-1]
                 
-                print("size: " + str(size))
-                print("found: " + str(found))
+                self.logger.log(LogPriority.INFO, "size: " + str(size))
+                self.logger.log(LogPriority.INFO, "found: " + str(found))
                 
                 if re.search("unused", found) or re.search("free", found):
                     break
@@ -346,8 +359,8 @@ class RamDisk(object) :
                 freeNumber = split_size.group(1)
                 freeMagnitude = split_size.group(2)
 
-                print("freeNumber: " + str(freeNumber))
-                print("freeMagnitude: " + str(freeMagnitude))
+                self.logger.log(LogPriority.INFO, "freeNumber: " + str(freeNumber))
+                self.logger.log(LogPriority.INFO, "freeMagnitude: " + str(freeMagnitude))
 
                 if re.match("^\d+$", freeNumber.strip()):
                     if re.match("^\w$", freeMagnitude.strip()):
@@ -373,10 +386,10 @@ class RamDisk(object) :
         try :
             retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         except Exception, err :
-            print(err_message + str(err))
+            self.logger.log(LogPriority.INFO, err_message + str(err))
         else :
             success = True
-        print("Success: " + str(success) + " in _runcmd")
+        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in _runcmd")
         return success
 
     ###########################################################################
@@ -431,11 +444,11 @@ def detach(device=" ", message_level="normal"):
         if not reterr:
             success = True
 
-        print("*******************************************")
-        print("retval: " + re.escape(str(retval).strip("\"")))
-        print("reterr: " + re.escape(str(reterr).strip("\"")))
-        print("*******************************************")
-        print("Success: " + str(success) + " in eject")
+        LOGGER.log(LogPriority.INFO, "*******************************************")
+        LOGGER.log(LogPriority.INFO, "retval: " + re.escape(str(retval).strip("\"")))
+        LOGGER.log(LogPriority.INFO, "reterr: " + re.escape(str(reterr).strip("\"")))
+        LOGGER.log(LogPriority.INFO, "*******************************************")
+        LOGGER.log(LogPriority.INFO, "Success: " + str(success) + " in eject")
     else:
         raise Exception("Cannot eject a device with an empty name..")
     return success
