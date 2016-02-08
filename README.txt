@@ -19,7 +19,7 @@ STONIX
   robust GUI built in. The GUI is implemented in PyQt. Many platform packages
   will not express a dependecy on PyQt due to the GUI's optional nature.
   
-  At the present time (revision 0.9.3) the following platforms are used for
+  At the present time (revision 0.9.4) the following platforms are used for
   development and test: Red Hat Enterprise Linux 6 and 7, Fedora Linux
   22, OpenSuSE 13.2, Debian 7 and 8 (stable), Ubuntu 14.04 LTS, CentOS 7,
   Apple's OS X Mavericks 10.9, OS X Yosemite 10.10, and OS X El Capitan 10.11.
