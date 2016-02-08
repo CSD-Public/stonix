@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.3
+Version: 0.9.4
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -113,6 +113,15 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Thu Feb 4 2016 David Kennel <dkennel@lanl.gov> - 0.9.4
+- Fixed issue where filehelper object did not configure statechglogger correctly when the file to be removed does not exist
+- New rule for OS X - ConfigureDiagnosticReporting
+- SetSScorners enabled for OS X 10.11
+- Corrected index errors in ConfigureDotFiles rule
+- Refactor of the SecureMTA rule
+- Multiple fixes to unit tests
+- Correction of NCAF condition in DisableCamera on OS X 10.11
+
 * Mon Dec 21 2015 David Kennel <dkennel@lanl.gov> - 0.9.3
 - Clarified Kerberos entries in localize.py
 - Corrected cosmetic issues in results feedback in some rules
