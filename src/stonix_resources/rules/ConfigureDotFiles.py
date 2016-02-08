@@ -54,11 +54,11 @@ from ..CommandHelper import CommandHelper
 
 class ConfigureDotFiles(Rule):
     '''
-    A user who can modify another user's configuration files can likely execute 
-    commands with the other user's privileges, including stealing data, destroying 
-    files, or launching further attacks on the system. This rule ensures that no 
-    dot files within users' home directories possess the world/other - writable 
-    permission.
+    A user who can modify another user's configuration files can likely execute
+    commands with the other user's privileges, including stealing data,
+    destroying files, or launching further attacks on the system. This rule
+    ensures that no dot files within users' home directories possess the
+    world/other - writable permission.
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -123,17 +123,18 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
                 # is item world writable?
                 if isWritable(self.logger, item, 'other'):
                     self.compliant = False
-                    self.detailedresults += '\nfound world writable dot file: ' + str(item)
+                    self.detailedresults += '\nFound world writable dot file: ' \
+                                            + str(item)
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -157,7 +158,8 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
 
                 line = line.split(':')
 
-                if line[5] and self.environ.geteuidhome() == str(line[5]):
+                if len(line) >= 6 and line[5] and \
+                   self.environ.geteuidhome() == str(line[5]):
 
                     line[2] = int(line[2])
                     if line[2] >= 500 and not re.search('nfsnobody', line[0]):
@@ -166,7 +168,8 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
                             filelist = os.listdir(line[5])
                             for i in range(len(filelist)):
                                 if re.search('^\.', filelist[i]):
-                                    dotfilelist.append(line[5] + '/' + filelist[i])
+                                    dotfilelist.append(line[5] + '/' +
+                                                       filelist[i])
 
         except Exception:
             raise
@@ -196,13 +199,17 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
             output = self.cmdhelper.getOutput()
             error = self.cmdhelper.getError()
             if error:
-                self.detailedresults += '\ncould not get a list of user home directories. returning empty list...'
+                self.detailedresults += '\nCould not get a list of user ' + \
+                    'home directories. Returning empty list...'
                 return dotfilelist
 
             if output:
                 for user in output:
-                    if not re.search('^_', user) and not re.search('^root', user) and not re.search('^\/$', user):
+                    if not re.search('^_|^root|^\/$', user):
                         users.append(user.strip())
+                        debug = "Adding user " + user.strip() + " to users " \
+                                + "list"
+                        self.logger.log(LogPriority.DEBUG, debug)
 
             if users:
                 for user in users:
@@ -254,16 +261,17 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
                                 os.system('chmod o-w ' + item)
                             except (OSError, IOError):
                                 self.rulesuccess = False
-                                self.detailedresults += '\ncould not chmod: ' + str(item)
+                                self.detailedresults += '\nCould not chmod: ' \
+                                                        + str(item)
 
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as err:
                 self.rulesuccess = False
                 self.detailedresults = self.detailedresults + "\n" + \
-                str(err) + " - " + str(traceback.format_exc())
+                    str(err) + " - " + str(traceback.format_exc())
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
