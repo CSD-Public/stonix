@@ -39,6 +39,8 @@ with large amounts of original code and comments left intact.
 @change: 2016/01/26 ekkehard version 0.9.4
 @change: 2016/02/03 ekkehard version 0.9.5
 @change: 2016/02/03 ekkehard converted from log_message to print
+@change: 2016/02/03 rsn - removing stale luggage build before building new
+                          package with luggage.
 '''
 import os
 import stat
@@ -439,8 +441,8 @@ class MacBuilder():
 
         print "Started buildStonix4MacAppPkg..."
         try:
-            #####
-            # Remove the luggage temporary directory
+            # 2/3/2015 - rsn adding this to make sure the luggage build does 
+            # not go stale
             l_tmp_dir = "/tmp/the_luggage"
             if os.path.exists(l_tmp_dir):
                 rmtree(l_tmp_dir)

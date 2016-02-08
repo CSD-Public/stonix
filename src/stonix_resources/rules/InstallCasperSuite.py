@@ -55,8 +55,7 @@ from ..macpkgr import MacPkgr
 from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
-JAMFCASPERSUITESERVER = "jds001.lanl.gov"
-PACKAGENAME="QuickAdd.09.81.pkg"
+PACKAGENAME="QuickAdd.stonix.pkg"
 
 
 class InstallCasperSuite(Rule):
@@ -82,7 +81,7 @@ class InstallCasperSuite(Rule):
                                             str(self.package))
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', '+']}}
-        self.js = JAMFCASPERSUITESERVER
+        self.js = self.reporoot + "/" + self.package
 
         key = self.rulename
         instructions = '''To disable the installation of the JAMF Casper Recon client set the InstallCasperSuite option to no or False.'''
@@ -235,18 +234,18 @@ class InstallCasperSuite(Rule):
 
 # If there is a network connection, install, otherwise just log
                 connection = Connectivity(self.logdispatch)
-                if connection.isPageAvailable(self.reporoot + self.package):
+                if connection.isPageAvailable(self.js):
                     msg = "Connected to " + str(self.js)
                     self.logdispatch.log(LogPriority.DEBUG, msg)
 
 # Install the package
                     if self.pkgr.installPackage(self.package):
                         self.rulesuccess = True
-                        messagestring = str(self.qa) + \
+                        messagestring = str(self.package) + \
                             " installation successful!"
                         self.touch_imaged()
                     else:
-                        messagestring = str(self.qa) + \
+                        messagestring = str(self.package) + \
                             " installation failed!"
                     self.detailedresults = messagestring
 
