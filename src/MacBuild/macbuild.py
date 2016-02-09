@@ -42,6 +42,8 @@ with large amounts of original code and comments left intact.
 @change: 2016/02/03 rsn - removing stale luggage build before building new
                           package with luggage.
 @change: 2016/02/08 rsn - managing relative paths for libraries better.
+@change: 2016/02/09 eball Added removal of /tmp/the_luggage, removed logging
+    arguments from ramdisk calls.
 '''
 from __future__ import absolute_import
 import sys
@@ -59,9 +61,10 @@ from time import time
 from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
-from macRamdisk import RamDisk
+from macRamdisk import RamDisk, detach
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+
 
 class MacBuilder():
 
@@ -90,6 +93,11 @@ class MacBuilder():
             print "This script needs to be run from src/MacBuild. Exiting..."
             exit(1)
 
+        try:
+            rmtree("/tmp/the_luggage")
+        except OSError as e:
+            if not e.errno == 2:
+                raise
         if options.clean:
             self.clean()
 
@@ -219,8 +227,8 @@ class MacBuilder():
         print " "
         print " "
 
-    def setupRamdisk(self, size, mntpnt="", message_level="normal"):
-        ramdisk = RamDisk(str(size), mntpnt, message_level)
+    def setupRamdisk(self, size, mntpnt=""):
+        ramdisk = RamDisk(str(size), mntpnt)
 
         if not ramdisk.success:
             print("Ramdisk setup failed...")
@@ -228,8 +236,8 @@ class MacBuilder():
 
         return ramdisk.getDevice()
 
-    def detachRamdisk(self, device, message_level="normal"):
-        if detach(device, message_level):
+    def detachRamdisk(self, device):
+        if detach(device):
             print("Successfully detached disk: " + str(device).strip())
         else:
             print("Couldn't detach disk: " + str(device).strip())
@@ -242,6 +250,11 @@ class MacBuilder():
         exit(exitcode)
 
     def clean(self):
+        '''
+        Clean all artifacts from previous builds.
+        @author: Eric Ball
+        '''
+
         folders = (["dmgs", "stonix", "stonix4mac/dist", "stonix4mac/private"]
                    + glob("stonix.*") + glob("dmgs.*"))
         files = (glob("*.pyc") + glob("stonix4mac/*.pyc") +
@@ -447,12 +460,6 @@ class MacBuilder():
 
         print "Started buildStonix4MacAppPkg..."
         try:
-            # 2/3/2015 - rsn adding this to make sure the luggage build does 
-            # not go stale
-            l_tmp_dir = "/tmp/the_luggage"
-            if os.path.exists(l_tmp_dir):
-                rmtree(l_tmp_dir)
-
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
 
@@ -488,5 +495,5 @@ class MacBuilder():
             raise
         print "buildStonix4MacAppPkg... Finished"
 
-
-stonix4mac = MacBuilder()
+if __name__ == '__main__':
+    stonix4mac = MacBuilder()
