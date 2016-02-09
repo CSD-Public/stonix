@@ -83,7 +83,7 @@ SECUREDHCPSERVER to False.'''
                           "time-offset"]
             if self.ph.manager == "zypper":
                 self.path = "/etc/dhcpd.conf"
-            elif self.ph.manager == "yum":
+            elif self.ph.manager == "yum" or self.ph.manager == "dnf":
                 self.path = "/etc/dhcp/dhcpd.conf"
             elif self.ph.manager == "apt-get":
                 self.path = "/etc/dhcp/dhcpd.conf"
