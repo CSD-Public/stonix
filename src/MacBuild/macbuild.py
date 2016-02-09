@@ -41,10 +41,11 @@ with large amounts of original code and comments left intact.
 @change: 2016/02/03 ekkehard converted from log_message to print
 @change: 2016/02/03 rsn - removing stale luggage build before building new
                           package with luggage.
+@change: 2016/02/08 rsn - managing relative paths for libraries better.
 '''
 from __future__ import absolute_import
 import sys
-sys.path.append("..")
+sys.path.append("../..")
 
 import os
 import stat
@@ -59,8 +60,8 @@ from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
 from macRamdisk import RamDisk
-from stonix_resources.environment import Environment
-from tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+from src.stonix_resources.environment import Environment
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
 class MacBuilder():
 
