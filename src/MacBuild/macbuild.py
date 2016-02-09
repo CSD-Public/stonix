@@ -39,7 +39,14 @@ with large amounts of original code and comments left intact.
 @change: 2016/01/26 ekkehard version 0.9.4
 @change: 2016/02/03 ekkehard version 0.9.5
 @change: 2016/02/03 ekkehard converted from log_message to print
+@change: 2016/02/03 rsn - removing stale luggage build before building new
+                          package with luggage.
+@change: 2016/02/08 rsn - managing relative paths for libraries better.
 '''
+from __future__ import absolute_import
+import sys
+sys.path.append("..")
+
 import os
 import stat
 import optparse
@@ -52,8 +59,9 @@ from time import time
 from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
-from macRamdisk import RamDisk, detach
-
+from macRamdisk import RamDisk
+from stonix_resources.environment import Environment
+from tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
 class MacBuilder():
 
@@ -439,8 +447,8 @@ class MacBuilder():
 
         print "Started buildStonix4MacAppPkg..."
         try:
-            #####
-            # Remove luggage temporary directory
+            # 2/3/2015 - rsn adding this to make sure the luggage build does 
+            # not go stale
             l_tmp_dir = "/tmp/the_luggage"
             if os.path.exists(l_tmp_dir):
                 rmtree(l_tmp_dir)
@@ -480,5 +488,5 @@ class MacBuilder():
             raise
         print "buildStonix4MacAppPkg... Finished"
 
-if __name__ == '__main__':
-    stonix4mac = MacBuilder()
+
+stonix4mac = MacBuilder()
