@@ -460,8 +460,8 @@ class MacBuilder():
 
         print "Started buildStonix4MacAppPkg..."
         try:
-            #####
-            # Remove the luggage temporary directory
+            # 2/3/2015 - rsn adding this to make sure the luggage build does 
+            # not go stale
             l_tmp_dir = "/tmp/the_luggage"
             if os.path.exists(l_tmp_dir):
                 rmtree(l_tmp_dir)
