@@ -32,10 +32,10 @@ import sys
 from tempfile import mkdtemp
 from subprocess import Popen, PIPE, STDOUT
 
-sys.path.append("..")
+sys.path.append("../..")
 
-from tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
-from stonix_resources.environment import Environment
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+from src.stonix_resources.environment import Environment
 
 LOGGER = LogDispatcher(Environment())
 
