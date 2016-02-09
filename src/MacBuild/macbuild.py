@@ -45,7 +45,7 @@ with large amounts of original code and comments left intact.
 '''
 from __future__ import absolute_import
 import sys
-sys.path.append("..")
+sys.path.append("../..")
 
 import os
 import stat
@@ -60,8 +60,8 @@ from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
 from macRamdisk import RamDisk
-from stonix_resources.environment import Environment
-from tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+from src.stonix_resources.environment import Environment
+from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
 class MacBuilder():
 
