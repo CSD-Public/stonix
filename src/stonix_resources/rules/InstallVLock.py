@@ -52,17 +52,17 @@ class InstallVLock(Rule):
         self.rulename = "InstallVLock"
         self.mandatory = True
         self.helptext = "The Install VLock rule installs the vlock " + \
-        "package to allow users to lock their consoles"
+            "package to allow users to lock their consoles"
         self.rootrequired = True
         self.detailedresults = "InstallVLock has not yet been run."
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
-        #configuration item instantiation
+        # Configuration item instantiation
         datatype = 'bool'
         key = 'INSTALLVLOCK'
         instructions = "To disable installation of the command line " + \
-        "screen lock program vlock set the value of INSTALLVLOCK to False."
+            "screen lock program vlock set the value of INSTALLVLOCK to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -79,6 +79,9 @@ class InstallVLock(Rule):
             vlock = ""
             if self.ph.manager == "yum":
                 cmd = ["/usr/bin/yum", "whatprovides", "vlock"]
+            elif self.ph.manager == "dnf":
+                cmd = ["/usr/bin/dnf", "whatprovides", "vlock"]
+            if self.ph.manager == "yum" or self.ph.manager == "dnf":
                 self.ch.executeCommand(cmd)
                 output = self.ch.getOutput()
                 for line in output:
@@ -120,7 +123,7 @@ class InstallVLock(Rule):
             if not self.ci.getcurrvalue():
                 return
 
-            #clear out event history so only the latest fix is recorded
+            # Clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
@@ -134,10 +137,10 @@ class InstallVLock(Rule):
                          "command": cmd}
                 self.statechglogger.recordchgevent(myid, event)
                 self.detailedresults += "InstallVLock fix was run and was " + \
-                "successful"
+                    "successful"
             else:
                 self.detailedresults += "InstallVLock fix was run and was " + \
-                "not successful"
+                    "not successful"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
