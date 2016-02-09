@@ -103,7 +103,7 @@ class DisableInteractiveStartup(Rule):
                 self.filepath = "/etc/default/grub"
                 keyval = {"GRUB_DISABLE_RECOVERY": '"true"'}
                 self.restart = "/usr/sbin/update-grub"
-            elif self.helper.manager == "yum":
+            elif self.helper.manager == "yum" or self.helper.manager == "dnf":
                 self.filepath = "/etc/sysconfig/init"
                 keyval = {"PROMPT": "no"}
             tmpPath = self.filepath + ".tmp"
