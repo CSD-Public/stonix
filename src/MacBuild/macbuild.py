@@ -42,6 +42,10 @@ with large amounts of original code and comments left intact.
 @change: 2016/02/03 rsn - removing stale luggage build before building new
                           package with luggage.
 '''
+from __future__ import absolute_import
+import sys
+sys.path.append("..")
+
 import os
 import stat
 import optparse
@@ -54,8 +58,9 @@ from time import time
 from subprocess import call
 from shutil import rmtree, copy2
 # For setupRamdisk() and detachRamdisk()
-from macRamdisk import RamDisk, detach
-
+from macRamdisk import RamDisk
+from stonix_resources.environment import Environment
+from tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
 class MacBuilder():
 
@@ -482,5 +487,5 @@ class MacBuilder():
             raise
         print "buildStonix4MacAppPkg... Finished"
 
-if __name__ == '__main__':
-    stonix4mac = MacBuilder()
+
+stonix4mac = MacBuilder()
