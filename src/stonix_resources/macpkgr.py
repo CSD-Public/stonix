@@ -36,14 +36,16 @@ import shutil
 import plistlib
 import tempfile
 import traceback
-from localize import MACREPOROOT
+import ctypes as C
 from re import search
+from urllib2 import URLError
+
+from localize import MACREPOROOT
 from logdispatcher import LogPriority
 from subprocess import Popen, call, PIPE, STDOUT
 from CommandHelper import CommandHelper
 from stonixutilityfunctions import set_no_proxy, has_connection_to_server
 from Connectivity import Connectivity
-from urllib2 import URLError
 
 def NoRepoException(Exception):
     """
@@ -109,6 +111,13 @@ class MacPkgr(object):
             raise NotApplicableToThisOS("MacPkgr does not support this OS" + \
                                         " family: " + str(myos))
         
+        #####
+        # setting up to call ctypes to do a filesystem sync 
+        if self.environ.getosfamily() == "macosx" :
+            self.libc = C.CDLL("/usr/lib/libc.dylib")
+        else:
+            self.libc = None
+
         self.logger = logger
         self.detailedresults = ""
         self.pkgUrl = ""
@@ -173,7 +182,10 @@ class MacPkgr(object):
                         # manipulated, (uncompressed or installed) the 
                         # downloaded file is not there.  There may be other 
                         # ways to get python to do the filesystem sync...
-                        self.fssync()
+                        try:
+                            self.libc.sync()
+                        except:
+                            pass
                         #####
                         # Make sure the md5 of the file matches that of the 
                         # server
@@ -185,7 +197,10 @@ class MacPkgr(object):
                             for extension in compressed:
                                 if self.tmpLocalPkg.endswith(extension):
                                     self.unArchive()
-                                    self.fssync()
+                                try:
+                                    self.libc.sync()
+                                except:
+                                    pass
                             #####
                             # The unArchive renames self.tmpLocalPkg to the 
                             # actual software to install that is inside the
@@ -217,7 +232,10 @@ class MacPkgr(object):
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             raise err
         if success:
-            self.fssync()
+            try:
+                self.libc.sync()
+            except:
+                pass
         return success
             
     ###########################################################################
@@ -365,7 +383,10 @@ class MacPkgr(object):
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         if success:
-            self.fssync()
+            try:
+                self.libc.sync()
+            except:
+                pass
         print "Remove Package success: " + str(success)
         return success
 
@@ -501,7 +522,10 @@ class MacPkgr(object):
                 # Unwrap command didn't work... return None
                 domain = None
             else:
-                self.fssync()
+                try:
+                    self.libc.sync()
+                except:
+                    pass
                 #####
                 # Unwrap command worked, process the receipt plists
                 for afile in files:
@@ -543,48 +567,6 @@ class MacPkgr(object):
         
         return domain
     
-###############################################################################
-
-    def fssync(self):
-        """
-        The changes to the plists in findDomain are not being sync'd to the
-        filesystem before they are changed back.  PERFORMING A FILESYSTEM
-        SYNC before trying to read the plists after converting them to xml1
-        IS REQUIRED. (Operating system filesystem write buffers need to be
-        flushed to disk before the changed files have the new meaning)
-        
-        @author: Roy Nielsen
-        """
-        try:
-            synccmd = []
-            
-            self.ch.executeCommand("/bin/sync")
-            if self.ch.getReturnCode() != 0:
-                self.logger.log(LogPriority.DEBUG, "Problem trying to perform " + \
-                                                   "filesystem sync...")
-                print "Problem Jim............."
-            else:
-                time.sleep(1)
-                self.ch.executeCommand("/bin/sync")
-                if self.ch.getReturnCode() != 0:
-                    self.logger.log(LogPriority.DEBUG, "Problem trying to " + \
-                                                       "perform filesystem sync...")
-                else:
-                    time.sleep(1)
-                    self.ch.executeCommand("/bin/sync")
-                    if self.ch.getReturnCode() != 0:
-                        self.logger.log(LogPriority.DEBUG, "Problem trying to " + \
-                                                           "perform filesystem" + \
-                                                           " sync...")
-                    else:
-                        time.sleep(1)
-        except(KeyboardInterrupt,SystemExit):
-            raise
-        except Exception, err:
-            print err
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.INFO, self.detailedresults)   
-        
     ###########################################################################
 
     def downloadPackage(self):
