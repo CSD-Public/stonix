@@ -30,11 +30,16 @@ This is a Unit Test for Rule DisableGUILogon
 @change: 2015/10/26 eball - Added feedback to inform user about expected
     failure, and changed how ci3 is handled. Removed disabling of ci3, so that
     a custom stonix.conf can make this True.
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
 import os
 import re
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
