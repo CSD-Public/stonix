@@ -42,6 +42,14 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.Connectivity import Connectivity
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
+def NotApplicableToThisOS(Exception):
+    """
+    Custom Exception    
+    """
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
+
 class zzzTestFrameworkMacPkgr(unittest.TestCase):
     """
     Class for testing the macpkgr.
@@ -51,11 +59,17 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         """
         """
         self.environ = Environment()
+        self.logger = LogDispatcher(self.environ)
+
         self.osfamily = self.environ.getosfamily()
-        if re.match("^macosx$", self.osfamily.strip()):
-            myos = self.environ.getosfamiliy()
-            raise self.SkipTest("RamDisk does not support this OS" + \
-                                " family: " + str(myos))
+
+        self.logger.log(LogPriority.DEBUG, "##################################")
+        self.logger.log(LogPriority.DEBUG, "### OS Family: " + str(self.osfamily))
+        self.logger.log(LogPriority.DEBUG, "##################################")
+        
+        if not re.match("^macosx$", self.osfamily.strip()):
+            raise unittest.SkipTest("RamDisk does not support this OS" + \
+                                    " family: " + str(myos))
 
         self.logger = LogDispatcher(self.environ)
 
@@ -104,15 +118,16 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
 
     ############################################################################
     
-    def setUp(self):
         """
-        """
+        def setUp(self):
+
         self.osfamily = self.environ.getosfamily()
         if re.match("^macosx$", self.osfamily.strip()):
             myos = self.environ.getosfamiliy()
-            raise self.SkipTest("RamDisk does not support this OS" + \
+            raise unittest.SkipTest("RamDisk does not support this OS" + \
                                 " family: " + str(myos))
-    
+        """
+        
     ############################################################################
     
     @classmethod
