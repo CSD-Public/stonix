@@ -28,9 +28,13 @@ Created on Jul 31, 2012
 @author: dwalker
 @change: 2015/10/26 eball Refactored test to make it functional on all systems
     and to be less error-prone.
+@change: 2016-02-10 roy - adding sys.path.append for both test framework and 
+                          individual test runs.
 '''
-
+import sys
 import unittest
+
+sys.path.append("../../../..")
 import src.stonix_resources.pkghelper as pkghelper
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 import src.stonix_resources.environment as environment
