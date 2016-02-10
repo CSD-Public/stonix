@@ -20,11 +20,18 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+"""
+@note: This test is not set up to use proxies.
+@change 2016/02/10 roy Added sys.path.append for being able to unit test this
+                       file as well as with the test harness.
+@author: Roy Nielsen
+"""
 import os
 import sys
 import shutil
 import unittest
 
+sys.path.append("../../../..")
 from src.stonix_resources.localize import MACREPOROOT
 from src.stonix_resources.macpkgr import MacPkgr
 from src.stonix_resources.environment import Environment

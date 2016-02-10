@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 
 '''
 Created on Sep 21, 2011
@@ -28,8 +28,13 @@ Created on Sep 21, 2011
 
 @author: scmcleni
 @change: 2015/11/04 eball Refactored test to be functional
+@change: 2016-02-10 roy - adding sys.path.append for both test framework and 
+                          individual test runs.
 '''
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.stonix_resources.logdispatcher import LogDispatcher, LogPriority
 import src.stonix_resources.environment as environment
 
