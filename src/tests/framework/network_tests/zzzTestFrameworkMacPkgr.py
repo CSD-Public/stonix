@@ -24,9 +24,12 @@
 @note: This test is not set up to use proxies.
 @change 2016/02/10 roy Added sys.path.append for being able to unit test this
                        file as well as with the test harness.
+@change 2016/02/10 roy Added functionality to testInstallPkg test
+
 @author: Roy Nielsen
 """
 import os
+import re
 import sys
 import shutil
 import unittest
@@ -47,13 +50,29 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     def setUpClass(self):
         """
         """
+        self.environ = Environment()
+        self.osfamily = self.environ.getosfamily()
+        if re.match("^macosx$", self.osfamily.strip()):
+            myos = self.environ.getosfamiliy()
+            raise self.SkipTest("RamDisk does not support this OS" + \
+                                " family: " + str(myos))
+
+        self.logger = LogDispatcher(self.environ)
+
         self.macPackageName = "testStonixMacPkgr-0.0.3.pkg"
         self.reporoot = MACREPOROOT
-        self.environ = Environment()
-        self.logger = LogDispatcher(self.environ)
+
+        #####
+        # Create a class variable that houses the whole URL
+        if self.reporoot.endswith("/"):
+            self.pkgUrl = self.reporoot + self.macPackageName
+        else:
+            self.pkgUrl = self.reporoot + "/" + self.macPackageName
+
+        message = "self.pkgUrl: " + str(self.pkgUrl)
+
         self.pkgr = MacPkgr(self.environ, self.logger)
-        if not self.environ.osfamily == "darwin":
-            sys.exit(255)
+
         self.pkg_dirs = ["/tmp/testStonixMacPkgr-0.0.3/one/two/three/3.5", \
                          "/tmp/testStonixMacPkgr-0.0.3/one/two/three", \
                          "/tmp/testStonixMacPkgr-0.0.3/one/two", \
@@ -83,12 +102,27 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.connection = Connectivity(self.logger)
         self.testDomain = "gov.lanl.testStonixMacPkgr.0.0.3.testStonixMacPkgr"
 
+    ############################################################################
+    
+    def setUp(self):
+        """
+        """
+        self.osfamily = self.environ.getosfamily()
+        if re.match("^macosx$", self.osfamily.strip()):
+            myos = self.environ.getosfamiliy()
+            raise self.SkipTest("RamDisk does not support this OS" + \
+                                " family: " + str(myos))
+    
+    ############################################################################
+    
     @classmethod
     def tearDownClass(self):
         """
         Make sure the appropriate files are removed..
         """
         pass
+        
+    ############################################################################
     
     def test_inLinearFlow(self):
         """
@@ -137,6 +171,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         # Remove any presence of the package installed.
         self.removeCompletePackage()
 
+    ############################################################################
         
     def testCheckInstall(self):
         """
@@ -167,6 +202,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.assertTrue(self.pkgr.checkInstall(self.macPackageName))
         self.assertTrue(self.isInstalled())
         
+    ############################################################################
+
     def testCheckAvailable(self):
         """
         Check if a package is available on the reporoot.
@@ -200,6 +237,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
                    "package: " + str(self.pkgr.hashUrl) + " is NOT " + \
                    "available...")
                 
+    ############################################################################
+
     def testFindDomain(self):
         """
         Test the findDomain function.  The domain is required to do a reverse 
@@ -221,6 +260,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.assertEqual(self.testDomain, 
                          self.pkgr.findDomain("testStonixMacPkgr-0.0.3.pkg"))
         
+    ############################################################################
+    
     def testUnArchive(self):
         """
         Download a tar package with the test pkg in it.
@@ -237,6 +278,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         """
         pass
         
+    ############################################################################
+    
     def testCopyInstall(self):
         """
         Tests the copyInstall method.
@@ -253,6 +296,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         """ 
         pass
         
+    ############################################################################
+    
     def testInstallPkg(self):
         """
         Tests the installPkg method.
@@ -264,8 +309,84 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
-        pass
-    
+        try:
+            #####
+            # make sure the test .pkg is NOT installed
+            self.pkgr.removePackage(self.macPackageName)
+        except:
+            pass
+
+        #####
+        # Check the URL for validity, or make sure we can get there..
+        if self.connection.isPageAvailable(self.pkgUrl):
+            
+            #####
+            # Set the pkgurl in the package manager
+            self.pkgr.setPkgUrl(self.pkgUrl)
+            
+            #####
+            # Download into a temporary directory
+            success = self.pkgr.downloadPackage()
+            if success:
+                #####
+                # Apple operating systems have a lazy attitude towards
+                # writing to disk - the package doesn't get fully
+                # written to disk until the following method is called.
+                # Otherwise when the downloaded package is further 
+                # manipulated, (uncompressed or installed) the 
+                # downloaded file is not there.  There may be other 
+                # ways to get python to do the filesystem sync...
+                try:
+                    self.libc.sync()
+                except:
+                    pass
+                #####
+                # Make sure the md5 of the file matches that of the
+                # server
+                if self.pkgr.checkMd5():
+                    #####
+                    # unarchive if necessary
+                    compressed = [".tar", ".tar.gz", ".tgz", 
+                                  ".tar.bz", ".tbz", ".zip"]
+                    for extension in compressed:
+                        if self.pkgUrl.endswith(extension):
+                            self.unArchive()
+                        try:
+                            self.libc.sync()
+                        except:
+                            pass
+                    #####
+                    # install - if extension is a .pkg or .mpkg use the 
+                    # installer command
+                    if self.pkgUrl.endswith (".pkg") or \
+                         self.pkgUrl.endswith (".mpkg"):
+                        success = self.pkgr.installPkg()
+                        self.assertTrue(success)
+                    else:
+                        self.assertTrue(False)
+                else:
+                    self.assertTrue(False)    
+            else:
+                self.assertTrue(False)
+        else:
+            self.assertTrue(False)
+
+        if success:
+            #####
+            # run checkInstall again
+            self.assertTrue(self.pkgr.checkInstall(self.macPackageName))
+            self.assertTrue(self.isInstalled())
+        else:
+            self.assertTrue(False)
+
+        try:
+            #####
+            # make sure the test .pkg is NOT installed
+            self.pkgr.removePackage(self.macPackageName)
+        except:
+            pass
+
+    ############################################################################
     
     def testIsMacPlatform(self):
         """
@@ -275,6 +396,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         """
         self.assertTrue(self.environ.osfamily == "darwin", "Wrong OS...")
         
+    ############################################################################
+    
     def isFullInstall(self):
         """
         Make sure that all files and directories including those installed from
@@ -294,6 +417,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             return True
         return False
     
+    ############################################################################
+    
     def isInstalled(self):
         """
         Test to make sure just the files and directories installed by the
@@ -309,6 +434,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             return True
         return False
 
+    ############################################################################
+    
     def isMissing(self):
         """
         Test to make sure all the files have been removed that were Installed
@@ -350,6 +477,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             return False
         return True
 
+    ############################################################################
+    
     def removeCompletePackage(self):
         """
         Remove all files, used to set the stage for install tests.
@@ -387,6 +516,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
                 success = False
         return success
         
+    ############################################################################
+    
     def doFilesExistTest(self, files=[False]):
         """
         Test the directories in the passed in list to see if they all exist.
@@ -411,6 +542,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             self.logger.log(LogPriority.DEBUG, message)
             return False
         return True
+    
+    ############################################################################
     
     def doDirsExist(self, dirs=[False]):
         """
