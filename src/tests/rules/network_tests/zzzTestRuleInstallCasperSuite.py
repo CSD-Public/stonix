@@ -29,6 +29,10 @@ This is a Unit Test for Rule InstallCasper
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+import os
+import re
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.stonixutilityfunctions import has_connection_to_server
 from src.stonix_resources.CommandHelper import CommandHelper
@@ -37,8 +41,6 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.InstallCasperSuite import InstallCasperSuite
 from src.stonix_resources.Connectivity import Connectivity
 
-import os
-import re
 
 class zzzTestRuleInstallCasperSuite(RuleTest):
 
