@@ -25,12 +25,14 @@
 @change: 2016/02/03 ekkehard converted from log_message to print
 
 """
-
+from __future__ import absolute_import
 import os
 import re
 import sys
 from tempfile import mkdtemp
 from subprocess import Popen, PIPE, STDOUT
+
+sys.path.append("../..")
 
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 from src.stonix_resources.environment import Environment
@@ -38,6 +40,7 @@ from src.stonix_resources.environment import Environment
 LOGGER = LogDispatcher(Environment())
 
 ###############################################################################
+
 class RamDisk(object) :
     """
     Class to manage a ramdisk
