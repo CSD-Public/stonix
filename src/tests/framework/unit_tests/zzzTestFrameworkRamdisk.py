@@ -20,6 +20,11 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         Initializer
         """
         self.environ = Environment()
+        if self.environ.getosfamiliy() != "macosx":
+            myos = self.environ.getosfamiliy()
+            raise self.SkipTest("RamDisk does not support this OS" + \
+                                " family: " + str(myos))
+        
         self.logger = LogDispatcher(self.environ)
 
         #####
