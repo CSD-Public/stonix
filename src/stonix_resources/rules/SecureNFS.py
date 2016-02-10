@@ -27,6 +27,7 @@ Created on Mar 11, 2015
 @author: dwalker
 @change: 2015/04/14 dkennel - Now using new isApplicable method
 @change: 2015/07/27 eball - Added logger to setPerms call in fix()
+@change: 2016/02/09 eball - Added dnf pkghelper, did PEP8 cleanup
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -80,14 +81,16 @@ class SecureNFS(Rule):
                 data1 = {"nfs.lockd.port": "",
                          "nfs.lockd.tcp": "1",
                          "nfs.lockd.udp": "1"}
-                if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                if not self.sh.auditservice('/System/Library/LaunchDaemons/' +
+                                            'com.apple.nfsd.plist',
+                                            'com.apple.nfsd'):
                     self.compliant = True
                     self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+                                               self.detailedresults)
                     self.logdispatch.log(LogPriority.INFO,
                                          self.detailedresults)
                     return self.compliant
-            elif self.ph.manager in ("yum", "zypper"):
+            elif self.ph.manager in ("yum", "zypper", "dnf"):
                 nfsfile = "/etc/sysconfig/nfs"
                 data1 = {"LOCKD_TCPPORT": "32803",
                          "LOCKD_UDPPORT": "32769",
@@ -97,7 +100,7 @@ class SecureNFS(Rule):
                          "STATD_OUTGOING_PORT": "2020"}
                 if self.ph.manager == "zypper":
                     nfspackage = "nfs-kernel-server"
-                elif self.ph.manager == "yum":
+                elif self.ph.manager == "yum" or self.ph.manager == "dnf":
                     nfspackage = "nfs-utils"
             elif self.ph.manager == "apt-get":
                 nfsfile = "/etc/services"
@@ -113,11 +116,11 @@ class SecureNFS(Rule):
                                           "2020/udp"]}
                 nfspackage = "nfs-kernel-server"
             if self.environ.getostype() != "Mac OS X":
-                if self.ph.manager in ("apt-get", "zypper", "yum"):
+                if self.ph.manager in ("apt-get", "zypper", "yum", "dnf"):
                     if not self.ph.check(nfspackage):
                         self.compliant = True
                         self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+                                                   self.detailedresults)
                         self.logdispatch.log(LogPriority.INFO,
                                              self.detailedresults)
                         return self.compliant
@@ -128,7 +131,7 @@ class SecureNFS(Rule):
                                                   self.logger, "conf", nfsfile,
                                                   nfstemp, data1, "present",
                                                   "openeq")
-                elif self.ph.manager in ("yum", "zypper"):
+                elif self.ph.manager in ("yum", "zypper", "dnf"):
                     self.editor1 = KVEditorStonix(self.statechglogger,
                                                   self.logger, "conf", nfsfile,
                                                   nfstemp, data1, "present",
@@ -139,15 +142,17 @@ class SecureNFS(Rule):
                                                   nfstemp, data1, "present",
                                                   "space")
                 if not self.editor1.report():
-                    self.detailedresults += "\nreport for editor1 is not compliant"
+                    self.detailedresults += "\nReport for editor1 is " + \
+                        "not compliant"
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
                 if not checkPerms(nfsfile, [0, 0, 420], self.logger):
-                    self.detailedresults += "\npermissions aren't correct on " + nfsfile
+                    self.detailedresults += "\nPermissions aren't correct on " \
+                        + nfsfile
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
             else:
-                self.detailedresults += "\n" + nfsfile + " doesn't exist"
+                self.detailedresults += "\n" + nfsfile + " does not exist"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 self.compliant = False
 
@@ -165,8 +170,8 @@ class SecureNFS(Rule):
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
                 if not checkPerms(export, [0, 0, 420], self.logger):
-                    self.detailedresults += "\n" + export + " file doesn't have the correct " + \
-                        " permissions"
+                    self.detailedresults += "\n" + export + " file doesn't " + \
+                        "have the correct permissions"
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
             else:
@@ -210,7 +215,7 @@ class SecureNFS(Rule):
                 data1 = {"nfs.lockd.port": "",
                          "nfs.lockd.tcp": "1",
                          "nfs.lockd.udp": "1"}
-            elif self.ph.manager in ("yum", "zypper"):
+            elif self.ph.manager in ("yum", "zypper", "dnf"):
                 nfsfile = "/etc/sysconfig/nfs"
                 data1 = {"LOCKD_TCPPORT": "32803",
                          "LOCKD_UDPPORT": "32769",
@@ -221,7 +226,7 @@ class SecureNFS(Rule):
                 nfsservice = "nfs"
                 if self.ph.manager == "zypper":
                     nfspackage = "nfs-kernel-server"
-                elif self.ph.manager == "yum":
+                elif self.ph.manager == "yum" or self.ph.manager == "dnf":
                     nfspackage = "nfs-utils"
             elif self.ph.manager == "apt-get":
                 nfsservice = "nfs-kernel-server"
@@ -242,7 +247,7 @@ class SecureNFS(Rule):
                     if not self.ph.check(nfspackage):
                         self.rulesuccess = True
                         self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+                                                   self.detailedresults)
                         self.logdispatch.log(LogPriority.INFO,
                                              self.detailedresults)
                         return self.rulesuccess
@@ -250,10 +255,13 @@ class SecureNFS(Rule):
                 if createFile(nfsfile, self.logger):
                     nfstemp = nfsfile + ".tmp"
                     if self.environ.getostype() == "Mac OS X":
-                        if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                        if not self.sh.auditservice('/System/Library/' +
+                                                    'LaunchDaemons/' +
+                                                    'com.apple.nfsd.plist',
+                                                    'com.apple.nfsd'):
                             self.rulesuccess = True
                             self.formatDetailedResults("fix", self.rulesuccess,
-                                           self.detailedresults)
+                                                       self.detailedresults)
                             self.logdispatch.log(LogPriority.INFO,
                                                  self.detailedresults)
                             return self.rulesuccess
@@ -261,7 +269,7 @@ class SecureNFS(Rule):
                                                       self.logger, "conf",
                                                       nfsfile, nfstemp, data1,
                                                       "present", "openeq")
-                    elif self.ph.manager in ("yum", "zypper"):
+                    elif self.ph.manager in ("yum", "zypper", "dnf"):
                         self.editor1 = KVEditorStonix(self.statechglogger,
                                                       self.logger, "conf",
                                                       nfsfile, nfstemp, data1,
@@ -284,7 +292,8 @@ class SecureNFS(Rule):
                             else:
                                 changed1 = True
                     if not checkPerms(nfsfile, [0, 0, 420], self.logger):
-                        if not setPerms(nfsfile, [0, 0, 420], self.logger, self.statechglogger):
+                        if not setPerms(nfsfile, [0, 0, 420], self.logger,
+                                        self.statechglogger):
                             success = False
                             debug = "Unable to set permissions on " + nfsfile
                             self.logger.log(LogPriority.DEBUG, debug)
@@ -344,7 +353,8 @@ class SecureNFS(Rule):
                             else:
                                 changed2 = True
                     if not checkPerms(export, [0, 0, 420], self.logger):
-                        if not setPerms(export, [0, 0, 420], self.logger, self.statechglogger):
+                        if not setPerms(export, [0, 0, 420], self.logger,
+                                        self.statechglogger):
                             success = False
                             debug = "Unable to set permissions on " + export
                             self.logger.log(LogPriority.DEBUG, debug)
