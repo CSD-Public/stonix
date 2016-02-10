@@ -9,7 +9,7 @@ import tempfile
 import ctypes as C
 from datetime import datetime
 
-from src.MacBuild.macRamdisk import Ramdisk, detach 
+from src.MacBuild.macRamdisk import RamDisk, detach 
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
@@ -51,7 +51,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
             #from src.MacBuild.macRamdisk import Ramdisk, detach 
 
             # get a ramdisk of appropriate size, with a secure random mountpoint
-            my_ramdisk = Ramdisk(str(ramdisk_size), self.mnt_pnt_requested)
+            my_ramdisk = RamDisk(str(ramdisk_size), self.mnt_pnt_requested)
             
             (self.success, self.mountPoint, self.ramdiskDev) = \
             my_ramdisk.get_data()
