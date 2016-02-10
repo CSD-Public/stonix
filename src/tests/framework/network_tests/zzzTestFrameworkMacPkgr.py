@@ -67,9 +67,9 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.logger.log(LogPriority.DEBUG, "### OS Family: " + str(self.osfamily))
         self.logger.log(LogPriority.DEBUG, "##################################")
         
-        if not re.match("^macosx$", self.osfamily.strip()):
+        if not re.match("^darwin$", self.osfamily.strip()):
             raise unittest.SkipTest("RamDisk does not support this OS" + \
-                                    " family: " + str(myos))
+                                    " family: " + str(self.osfamily))
 
         self.logger = LogDispatcher(self.environ)
 
