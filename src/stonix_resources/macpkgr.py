@@ -107,7 +107,7 @@ class MacPkgr(object):
         self.environ = environ
         
         self.osfamily = self.environ.getosfamily()
-        if re.match("^macosx$", self.osfamily.strip()):
+        if not re.match("^darwin$", self.osfamily.strip()):
             myos = self.environ.getosfamiliy()
             raise NotApplicableToThisOS("MacPkgr does not support this OS" + \
                                         " family: " + str(myos))
