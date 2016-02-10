@@ -59,6 +59,13 @@ def InvalidURL(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
+def NotApplicableToThisOS(Exception):
+    """
+    Custom Exception    
+    """
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
 class MacPkgr(object):
     
     def __init__(self, environ, logger):
@@ -96,6 +103,12 @@ class MacPkgr(object):
 
         '''
         self.environ = environ
+        
+        if self.environ.getosfamiliy() != "macosx":
+            myos = self.environ.getosfamiliy()
+            raise NotApplicableToThisOS("MacPkgr does not support this OS" + \
+                                        " family: " + str(myos))
+        
         self.logger = logger
         self.detailedresults = ""
         self.pkgUrl = ""
