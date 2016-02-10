@@ -26,8 +26,13 @@ Created on Jun 13, 2013
 ###############################################################################
 
 @author: dwalker
+@change: roy - adding sys.path.append for both test framework and individual
+               test runs.
 '''
 import unittest
+import sys
+
+sys.path.append("../../../..")
 import src.stonix_resources.KVEditorStonix as KVEditorStonix
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.logdispatcher import LogDispatcher

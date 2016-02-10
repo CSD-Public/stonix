@@ -29,9 +29,14 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 07/14/2014 - ekkehard - made testing more rigorous
 @change: 07/28/2014 - ekkehard - bug fixes
 @change: 2015/12/18 - eball - Added eventids
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.filehelper import FileHelper

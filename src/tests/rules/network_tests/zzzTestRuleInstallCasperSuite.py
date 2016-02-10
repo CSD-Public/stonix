@@ -26,6 +26,8 @@ This is a Unit Test for Rule InstallCasper
 
 @author: ekkehard j. koch
 @change: 2014-11-24 Original Implementation
+@change: 2016-02-08 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
