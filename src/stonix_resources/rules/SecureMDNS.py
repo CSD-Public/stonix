@@ -45,6 +45,7 @@ configuration changes to the avahi service
 @change: 2015/12/01 eball Simplified version checking, removed OS X 10.11 from
     applicable list, due to unresolved issue with writing to plist
 @change: 2015/12/02 eball Added OS X 10.11 compatibility
+@change: 2016/02/11 eball PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -52,7 +53,6 @@ import os
 import re
 import traceback
 import ConfigParser
-import types
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
@@ -90,7 +90,7 @@ discovery on a network. It allows a system to automatically identify \
 resources on the network, such as printers or web servers. This capability is \
 also known as mDNSresponder and is a major part of Zeroconf networking. By \
 default, it is enabled. This rule makes a number of configuration changes to \
-the avahi service in order to secure it.'''
+the Avahi service in order to secure it.'''
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',
@@ -124,38 +124,50 @@ the avahi service in order to secure it.'''
                                 "Unexpected version string length")
                 raise Exception
             if minorVersion == 10 and releaseVersion < 4:
-                self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
+                self.service = "/System/Library/LaunchDaemons/com.apple." + \
+                    "discoveryd.plist"
                 self.servicename = "com.apple.networking.discoveryd"
                 self.parameter = "--no-multicast"
-                self.pbr = self.plb + " -c Print " + self.service + " | grep 'no-multicast'"
-                self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
+                self.pbr = self.plb + " -c Print " + self.service + \
+                    " | grep 'no-multicast'"
+                self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + \
+                    self.parameter + '" ' + self.service
             elif minorVersion > 10:
                 self.hasSIP = True
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
+                self.service = "/System/Library/LaunchDaemons/" + \
+                    "com.apple.mDNSResponder.plist"
                 self.servicename = "com.apple.mDNSResponder.reloaded"
                 self.parameter = "NoMulticastAdvertisements"
-                self.preferences = "/Library/Preferences/com.apple.mDNSResponder.plist"
+                self.preferences = "/Library/Preferences/" + \
+                    "com.apple.mDNSResponder.plist"
                 self.pbr = self.plb + " -c Print " + self.preferences + \
                     " | grep 'NoMulticastAdvertisements'"
                 self.pbf = "defaults write " + self.preferences + " " + \
                     self.parameter + " -bool YES"
             else:
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
+                self.service = "/System/Library/LaunchDaemons/" + \
+                    "com.apple.mDNSResponder.plist"
                 if minorVersion >= 10:
                     self.servicename = "com.apple.mDNSResponder.reloaded"
                 else:
                     self.servicename = "com.apple.mDNSResponder"
                 self.parameter = "-NoMulticastAdvertisements"
-                self.pbr = self.plb + " -c Print " + self.service + " | grep 'NoMulticastAdvertisements'"
-                self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + self.parameter + '" ' +  self.service
+                self.pbr = self.plb + " -c Print " + self.service + \
+                    " | grep 'NoMulticastAdvertisements'"
+                self.pbf = self.plb + ' -c "Add :ProgramArguments: string ' + \
+                    self.parameter + '" ' + self.service
         else:
             self.ismac = False
             # init CIs
             datatype = 'bool'
             mdnskey = 'SecureMDNS'
             avahikey = 'DisableAvahi'
-            mdnsinstructions = 'To configure the avahi server daemon securely set the value of SECUREMDNS to True and the value of DISABLEAVAHI to False.'
-            avahiinstructions = 'To completely disable the avahi server daemon rather than configure it, set the value of DISABLEAVAHI to True and the value of SECUREMDNS to False.'
+            mdnsinstructions = 'To configure the Avahi server daemon ' + \
+                'securely set the value of SECUREMDNS to True and the ' + \
+                'value of DISABLEAVAHI to False.'
+            avahiinstructions = 'To completely disable the Avahi server ' + \
+                'daemon rather than configure it, set the value of ' + \
+                'DISABLEAVAHI to True and the value of SECUREMDNS to False.'
             mdnsdefault = False
             avahidefault = True
             self.SecureMDNS = self.initCi(datatype, mdnskey, mdnsinstructions,
@@ -187,7 +199,8 @@ the avahi service in order to secure it.'''
                                            'check-response-ttl': 'yes',
                                            'disallow-other-stacks': 'yes'},
                                 'publish': {'disable-publishing': 'yes',
-                                            'disable-user-service-publishing': 'yes',
+                                            'disable-user-service-publishing':
+                                            'yes',
                                             'publish-addresses': 'no',
                                             'publish-hinfo': 'no',
                                             'publish-workstation': 'no',
@@ -235,17 +248,23 @@ the avahi service in order to secure it.'''
                     # if avahi-daemon is still running, it is not disabled
                     if self.sh.auditservice('avahi-daemon'):
                         compliant = False
-                        self.detailedresults += '\nDisableAvahi has been set to True, but avahi-daemon service is currently running.'
+                        self.detailedresults += '\nDisableAvahi has been ' + \
+                            'set to True, but avahi-daemon service is ' + \
+                            'currently running.'
                     self.numdependencies = 0
                     if self.pkghelper.determineMgr() == 'yum':
                         self.numdependencies = self.parseNumDependencies('avahi')
                         if self.numdependencies <= 3:
                             if self.pkghelper.check('avahi'):
                                 compliant = False
-                                self.detailedresults += '\nDisableAvahi is set to True, but avahi is currently installed.'
+                                self.detailedresults += '\nDisableAvahi is ' + \
+                                    'set to True, but Avahi is currently ' + \
+                                    'installed.'
 
                         else:
-                            self.detailedresults += '\navahi has too many dependent packages. will not attempt to remove it.'
+                            self.detailedresults += '\nAvahi has too many ' + \
+                                'dependent packages. will not attempt to ' + \
+                                'remove it.'
 
                 # otherwise if the securemdns CI is set, we want to make sure
                 # it is securely configured
@@ -259,19 +278,23 @@ the avahi service in order to secure it.'''
                         filepath = '/etc/avahi/avahi-daemon.conf'
                         tmpfilepath = '/etc/avahi/avahi-daemon.conf.stonixtmp'
                         conftype = "closedeq"
-                        self.avahiconfeditor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-                                filepath, tmpfilepath, self.confoptions, intent,
-                                conftype)
+                        self.avahiconfeditor = KVEditorStonix(
+                            self.statechglogger, self.logger, kvtype,
+                            filepath, tmpfilepath, self.confoptions,
+                            intent, conftype)
                         if not self.avahiconfeditor.report():
                             compliant = False
-                            self.detailedresults += '\nOne or more configuration options is missing from ' + str(filepath) + ' or has an incorrect value.'
+                            self.detailedresults += '\nOne or more ' + \
+                                'configuration options is missing from ' + \
+                                str(filepath) + ' or has an incorrect value.'
 
                     # if config file not found, check if avahi is installed
                     else:
 
                         # if not installed, we can't configure anything
                         if not self.pkghelper.check('avahi'):
-                            self.detailedresults += '\nAvahi Daemon not installed. Cannot configure it.'
+                            self.detailedresults += '\nAvahi Daemon not ' + \
+                                'installed. Cannot configure it.'
                             compliant = True
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
@@ -279,7 +302,9 @@ the avahi service in order to secure it.'''
                         # if it is installed, then the config file is missing
                         else:
                             compliant = False
-                            self.detailedresults += '\nAvahi is installed but could not find config file in expected location.'
+                            self.detailedresults += '\nAvahi is installed ' + \
+                                'but could not find config file in ' + \
+                                'expected location.'
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
 
@@ -404,7 +429,7 @@ the avahi service in order to secure it.'''
                                      "endstate": "removed"}
                             self.statechglogger.recordchgevent(myid, event)
                         else:
-                            debug += '\navahi package has too many dependent ' + \
+                            debug += '\nAvahi package has too many dependent ' + \
                                 'packages. Will not attempt to remove.'
                             self.logger.log(LogPriority.DEBUG, debug)
 
@@ -438,10 +463,13 @@ the avahi service in order to secure it.'''
                     # then we can't configure it
                     else:
                         if not self.pkghelper.check(avahi):
-                            debug = 'Avahi Daemon not installed. Cannot configure it.'
+                            debug = 'Avahi Daemon not installed. ' + \
+                                'Cannot configure it.'
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
-                            self.detailedresults += '\nAvahi daemon installed, but could not locate the configuration file for it.'
+                            self.detailedresults += '\nAvahi daemon ' + \
+                                'installed, but could not locate the ' + \
+                                'configuration file for it.'
                             self.rulesuccess = False
 
         except IOError:
@@ -534,7 +562,7 @@ the avahi service in order to secure it.'''
         parse output of yum command to determine number of dependent packages
         to the given pkgname
 
-        @param: pkgname - string. name of package for which to parse dependencies
+        @param: pkgname - string. Name of package to parse dependencies of
         @return: int
         @author: bemalmbe
         '''
@@ -563,7 +591,8 @@ the avahi service in order to secure it.'''
                         sline = line.split('(+')
                         if len(sline) < 2:
                             return numdeps
-                        cline = [int(s) for s in sline[1].split() if s.isdigit()]
+                        cline = [int(s) for s in sline[1].split()
+                                 if s.isdigit()]
                         numdeps = int(cline[0])
 
             elif self.pkghelper.determineMgr() == 'apt-get':
