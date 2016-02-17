@@ -31,7 +31,7 @@ import os
 import re
 import traceback
 from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import writeFile
+from ..stonixutilityfunctions import createFile, iterate, resetsecon, writeFile
 from ..KVEditorStonix import KVEditorStonix
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -128,6 +128,7 @@ their startup time.'''
                 return
             success = True
             path = self.path
+            tmppath = path + ".tmp"
             prelinkCache = "/etc/prelink.cache"
             self.detailedresults = ""
             self.iditerator = 0
@@ -136,7 +137,23 @@ their startup time.'''
                 self.statechglogger.deleteentry(event)
 
             if not os.path.exists(path):
-                writeFile(path, "PRELINKING=no", self.logger)
+                if createFile(path, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation", "filepath": path}
+                    self.statechglogger.recordchgevent(myid, event)
+                else:
+                    success = False
+                    self.detailedresults += "Failed to create file: " + \
+                        path + "\n"
+
+                if writeFile(tmppath, "PRELINKING=no", self.logger):
+                    os.rename(tmppath, path)
+                    resetsecon(path)
+                else:
+                    success = False
+                    self.detailedresults += "Failed to write settings " + \
+                        "to file: " + path + "\n"
             elif not self.editor.report():
                 if self.editor.fix():
                     if self.editor.commit():
@@ -154,6 +171,9 @@ their startup time.'''
             # -ua" command, testing has shown this command to be completely
             # unreliable. Instead, the prelink cache will be removed entirely.
             if os.path.exists(prelinkCache):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.statechglogger.recordfiledelete(prelinkCache, myid)
                 os.remove(prelinkCache)
 
             self.rulesuccess = success
