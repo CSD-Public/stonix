@@ -88,29 +88,6 @@ class DisableRemoveableStorage(Rule):
             "system, set the value of DISABLESTORAGE to True"
         default = True
         self.storageci = self.initCi(datatype, key, instructions, default)
-
-#         datatype = "bool"
-#         key = "DISABLEFIREWIRE"
-#         instructions = "To disable Firewire storage devices on this " + \
-#             "system set the value of DISABLEFIREWIRE to True."
-#         default = False
-#         self.fwci = self.initCi(datatype, key, instructions, default)
-# 
-#         if self.environ.getostype() == "Mac OS X":
-#             datatype = "bool"
-#             key = "DISABLETHUNDER"
-#             instructions = "To disable thunderbolt storage devices on " + \
-#                 "this system set the value of DISABLETHUNDER to True."
-#             default = False
-#             self.tbci = self.initCi(datatype, key, instructions, default)
-# 
-#             datatype = "bool"
-#             key = "DISABLESDCARD"
-#             instructions = "To disable SD card functionality on this " + \
-#                 "system set the value of DISABLESDCARD to True"
-#             default = False
-#             self.sdci = self.initCi(datatype, key, instructions, default)
-
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
         self.iditerator = 0
@@ -447,6 +424,7 @@ if __name__ == '__main__':
             self.detailedresults += "daemon plist file doesn't exist\n"
 
         if os.path.exists(self.daemonpath):
+            print "self.daemonpath: " + self.daemonpath + "\n\n"
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
             if mode != 509:
@@ -914,6 +892,11 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
+        cmd = ["/bin/launchctl", "load", self.plistpath]
+        if not self.ch.executeCommand(cmd):
+            debug += "Unable to load the launchctl job to regularly " + \
+                "disable removeable storage.  May need to be done manually\n"
+            success = False
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return success
