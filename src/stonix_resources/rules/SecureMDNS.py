@@ -46,6 +46,8 @@ configuration changes to the avahi service
     applicable list, due to unresolved issue with writing to plist
 @change: 2015/12/02 eball Added OS X 10.11 compatibility
 @change: 2016/02/11 eball PEP8 cleanup
+@change: 2016/02/11 eball Added NOZEROCONF=yes KVEditor for Red Hat systems
+    to comply with CCE-RHEL7-CCE-TBD 2.5.2
 '''
 
 from __future__ import absolute_import
@@ -56,7 +58,7 @@ import ConfigParser
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
-from ..stonixutilityfunctions import iterate, setPerms, resetsecon
+from ..stonixutilityfunctions import iterate, setPerms, resetsecon, createFile
 from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
@@ -96,7 +98,7 @@ the Avahi service in order to secure it.'''
         self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',
                          'CCE 4426-3', 'CCE 4193-9', 'CCE 4444-6',
                          'CCE 4352-1', 'CCE 4433-9', 'CCE 4451-1',
-                         'CCE 4341-4', 'CCE 4358-8']
+                         'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
@@ -205,11 +207,6 @@ the Avahi service in order to secure it.'''
                                             'publish-hinfo': 'no',
                                             'publish-workstation': 'no',
                                             'publish-domain': 'no'}}
-        self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',
-                         'CCE 4426-3', 'CCE 4193-9', 'CCE 4444-6',
-                         'CCE 4352-1', 'CCE 4433-9', 'CCE 4451-1',
-                         'CCE 4341-4', 'CCE 4358-8']
-        self.i = 1
         self.iditerator = 0
 
     def report(self):
@@ -237,34 +234,64 @@ the Avahi service in order to secure it.'''
 
             # if not mac os x, then run this portion
             else:
-
+                self.editor = None
                 # set up package helper object only if not mac os x
                 self.pkghelper = Pkghelper(self.logger, self.environ)
 
                 # if the disableavahi CI is set, we want to make sure it is
                 # completely disabled
                 if self.DisableAvahi.getcurrvalue():
-
+                    self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
                     if self.sh.auditservice('avahi-daemon'):
                         compliant = False
-                        self.detailedresults += '\nDisableAvahi has been ' + \
+                        self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
-                            'currently running.'
+                            'currently running.\n'
                     self.numdependencies = 0
-                    if self.pkghelper.determineMgr() == 'yum':
-                        self.numdependencies = self.parseNumDependencies('avahi')
-                        if self.numdependencies <= 3:
-                            if self.pkghelper.check('avahi'):
-                                compliant = False
-                                self.detailedresults += '\nDisableAvahi is ' + \
-                                    'set to True, but Avahi is currently ' + \
-                                    'installed.'
-
+                    if self.pkghelper.determineMgr() == 'yum' or \
+                       self.pkghelper.determineMgr() == 'dnf':
+                        self.package = "avahi"
+                        # The following KVEditor for /etc/sysconfig/network is
+                        # used to meet the zeroconf requirement in
+                        # CCE-RHEL7-CCE-TBD 2.5.2
+                        path = "/etc/sysconfig/network"
+                        self.path = path
+                        if os.path.exists(path):
+                            tmppath = path + ".tmp"
+                            data = {"NOZEROCONF": "yes"}
+                            self.editor = KVEditorStonix(self.statechglogger,
+                                                         self.logger, "conf",
+                                                         path, tmppath, data,
+                                                         "present", "closedeq")
+                            if not self.editor.report():
+                                self.compliant = False
+                                self.detailedresults += path + " does not " + \
+                                    "have the correct settings.\n"
                         else:
-                            self.detailedresults += '\nAvahi has too many ' + \
-                                'dependent packages. will not attempt to ' + \
-                                'remove it.'
+                            self.compliant = False
+                            self.detailedresults += path + " does not exist.\n"
+
+                        self.numdependencies = \
+                            self.parseNumDependencies(self.package)
+                        if self.numdependencies <= 3:
+                            if self.pkghelper.check(self.package):
+                                compliant = False
+                                self.detailedresults += 'DisableAvahi is ' + \
+                                    'set to True, but Avahi is currently ' + \
+                                    'installed.\n'
+                        else:
+                            self.detailedresults += 'Avahi has too many ' + \
+                                'dependent packages. Will not attempt to ' + \
+                                'remove it.\n'
+
+                    elif self.pkghelper.determineMgr() == "zypper":
+                        self.package = "avahi"
+                    elif self.pkghelper.check(self.package):
+                        compliant = False
+                        self.detailedresults += 'DisableAvahi is ' + \
+                            'set to True, but Avahi is currently ' + \
+                            'installed.\n'
 
                 # otherwise if the securemdns CI is set, we want to make sure
                 # it is securely configured
@@ -284,17 +311,17 @@ the Avahi service in order to secure it.'''
                             intent, conftype)
                         if not self.avahiconfeditor.report():
                             compliant = False
-                            self.detailedresults += '\nOne or more ' + \
+                            self.detailedresults += 'One or more ' + \
                                 'configuration options is missing from ' + \
-                                str(filepath) + ' or has an incorrect value.'
+                                str(filepath) + ' or has an incorrect value.\n'
 
                     # if config file not found, check if avahi is installed
                     else:
 
                         # if not installed, we can't configure anything
                         if not self.pkghelper.check('avahi'):
-                            self.detailedresults += '\nAvahi Daemon not ' + \
-                                'installed. Cannot configure it.'
+                            self.detailedresults += 'Avahi Daemon not ' + \
+                                'installed. Cannot configure it.\n'
                             compliant = True
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
@@ -302,9 +329,9 @@ the Avahi service in order to secure it.'''
                         # if it is installed, then the config file is missing
                         else:
                             compliant = False
-                            self.detailedresults += '\nAvahi is installed ' + \
+                            self.detailedresults += 'Avahi is installed ' + \
                                 'but could not find config file in ' + \
-                                'expected location.'
+                                'expected location.\n'
                             self.logger.log(LogPriority.DEBUG,
                                             self.detailedresults)
 
@@ -323,8 +350,6 @@ the Avahi service in order to secure it.'''
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-###############################################################################
 
     def reportmac(self):
         '''
@@ -376,7 +401,6 @@ the Avahi service in order to secure it.'''
             raise
         return self.compliant
 
-###############################################################################
     def fix(self):
         '''
         The fix method will apply the required settings to the system.
@@ -404,7 +428,7 @@ the Avahi service in order to secure it.'''
                 # if DisableAvahi CI is enabled, disable the avahi service
                 # and remove the package
                 if self.DisableAvahi.getcurrvalue():
-                    avahi = 'avahi'
+                    avahi = self.package
                     avahid = 'avahi-daemon'
                     if self.sh.auditservice(avahid):
                         debug = "Disabling " + avahid + " service"
@@ -429,9 +453,42 @@ the Avahi service in order to secure it.'''
                                      "endstate": "removed"}
                             self.statechglogger.recordchgevent(myid, event)
                         else:
-                            debug += '\nAvahi package has too many dependent ' + \
-                                'packages. Will not attempt to remove.'
+                            debug += 'Avahi package has too many dependent ' \
+                                + 'packages. Will not attempt to remove.\n'
                             self.logger.log(LogPriority.DEBUG, debug)
+
+                    if self.pkghelper.determineMgr() == 'yum' or \
+                       self.pkghelper.determineMgr() == 'dnf':
+                        path = self.path
+                        if not os.path.exists(path):
+                            if createFile(path, self.logger):
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator,
+                                               self.rulenumber)
+                                event = {"eventtype": "creation",
+                                         "filepath": path}
+                                self.statechglogger.recordchgevent(myid, event)
+                            else:
+                                self.rulesuccess = False
+                                self.detailedresults += "Failed to create " + \
+                                    "file: " + path + ".\n"
+                        if self.editor is None:
+                            tmppath = path + ".tmp"
+                            data = {"NOZEROCONF": "yes"}
+                            self.editor = KVEditorStonix(self.statechglogger,
+                                                         self.logger, "conf",
+                                                         path, tmppath, data,
+                                                         "present", "closedeq")
+                        if not self.editor.report():
+                            if self.editor.fix():
+                                if not self.editor.commit():
+                                    self.rulesuccess = False
+                                    self.detailedresults += "Could not " + \
+                                        "commit changes to " + path + ".\n"
+                            else:
+                                self.rulesuccess = False
+                                self.detailedresults += "Could not fix " + \
+                                    "file " + path + ".\n"
 
                 # if SecureMDNS CI is enabled, configure avahi-daemon.conf
                 if self.SecureMDNS.getcurrvalue():
@@ -467,9 +524,9 @@ the Avahi service in order to secure it.'''
                                 'Cannot configure it.'
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
-                            self.detailedresults += '\nAvahi daemon ' + \
+                            self.detailedresults += 'Avahi daemon ' + \
                                 'installed, but could not locate the ' + \
-                                'configuration file for it.'
+                                'configuration file for it.\n'
                             self.rulesuccess = False
 
         except IOError:
@@ -486,8 +543,6 @@ the Avahi service in order to secure it.'''
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-
-###############################################################################
 
     def fixmac(self):
         '''
@@ -555,8 +610,6 @@ the Avahi service in order to secure it.'''
             raise
         return success
 
-###############################################################################
-
     def parseNumDependencies(self, pkgname):
         '''
         parse output of yum command to determine number of dependent packages
@@ -583,6 +636,20 @@ the Avahi service in order to secure it.'''
 
             elif self.pkghelper.determineMgr() == 'yum':
                 command = ['yum', '--assumeno', 'remove', pkgname]
+                self.ch.wait = False
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                for line in output:
+                    if re.search('Dependent packages\)', line):
+                        sline = line.split('(+')
+                        if len(sline) < 2:
+                            return numdeps
+                        cline = [int(s) for s in sline[1].split()
+                                 if s.isdigit()]
+                        numdeps = int(cline[0])
+
+            elif self.pkghelper.determineMgr() == 'dnf':
+                command = ['dnf', '--assumeno', 'remove', pkgname]
                 self.ch.wait = False
                 self.ch.executeCommand(command)
                 output = self.ch.getOutput()
