@@ -52,7 +52,6 @@ import weakref
 import smtplib
 import subprocess
 import xml.etree.ElementTree as ET
-import localize
 from shutil import move
 
 

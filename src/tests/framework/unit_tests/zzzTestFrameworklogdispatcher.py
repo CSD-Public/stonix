@@ -27,6 +27,7 @@ Created on Sep 21, 2011
 ###############################################################################
 
 @author: scmcleni
+@change: 2015/11/04 eball Refactored test to be functional
 '''
 import unittest
 from src.stonix_resources.logdispatcher import LogDispatcher, LogPriority
@@ -38,18 +39,55 @@ class zzzTestFrameworklogdispatcher(unittest.TestCase):
     def setUp(self):
         self.environ = environment.Environment()
         self.environ.setdebugmode(True)
-        self.test_message = "my test message"
         self.logger = LogDispatcher(self.environ)
         self.priority = LogPriority()
 
     def tearDown(self):
-        pass
+        self.logger.closereports()
+
+    def testLogCritical(self):
+        try:
+            self.logger.log(self.priority.CRITICAL, "Critical level message")
+        except:
+            self.fail("Failed to write CRITICAL to log file")
 
     def testLogError(self):
         try:
-            self.logger.log(self.priority.ERROR, "error level message")
+            self.logger.log(self.priority.ERROR, "Error level message")
         except:
             self.fail("Failed to write ERROR to log file")
+
+    def testLogWarning(self):
+        try:
+            self.logger.log(self.priority.WARNING, "Warning level message")
+        except:
+            self.fail("Failed to write WARNING to log file")
+
+    def testLogInfo(self):
+        try:
+            self.logger.log(self.priority.INFO, "Info level message")
+        except:
+            self.fail("Failed to write INFO to log file")
+
+    def testLogDebug(self):
+        try:
+            self.logger.log(self.priority.DEBUG, "Debug level message")
+        except:
+            self.fail("Failed to write DEBUG to log file")
+
+    def testFormatNoError(self):
+        try:
+            self.logger.log(self.priority.WARNING, ["WarningMessageTag",
+                                                    "Warning message text"])
+        except:
+            self.fail("Failed to write formatted WARNING message")
+
+    def testFormatWithError(self):
+        try:
+            self.logger.log(self.priority.ERROR, ["ErrorMessageTag",
+                                                  "Error message text"])
+        except:
+            self.fail("Failed to write formatted ERROR message")
 
 if __name__ == "__main__":
     unittest.main()
