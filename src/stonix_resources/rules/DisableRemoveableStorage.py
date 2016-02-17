@@ -424,7 +424,6 @@ if __name__ == '__main__':
             self.detailedresults += "daemon plist file doesn't exist\n"
 
         if os.path.exists(self.daemonpath):
-            print "self.daemonpath: " + self.daemonpath + "\n\n"
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
             if mode != 509:
@@ -688,7 +687,8 @@ if __name__ == '__main__':
         load = "/sbin/kextload "
         filepath = "/System/Library/Extensions/"
         success = True
-        created1, created2 = False, False
+        #created1 = False
+        created2 = False
         if not os.path.exists(self.plistpath):
             createFile(self.plistpath, self.logger)
         self.iditerator += 1
@@ -697,7 +697,7 @@ if __name__ == '__main__':
         event = {"eventtype": "commandstring",
                  "command": cmd}
         self.statechglogger.recordchgevent(myid, event)
-        created1 = True
+        #created1 = True
         self.iditerator += 1
         myid = iterate(self.iditerator, self.rulenumber)
         event = {"eventtype": "creation",
