@@ -712,13 +712,19 @@ if __name__ == '__main__':
         success = True
         created1, created2 = False, False
         if not os.path.exists(self.plistpath):
-            if createFile(self.plistpath, self.logger):
-                created1 = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.plistpath}
-                self.statechglogger.recordchgevent(myid, event)
+            createFile(self.plistpath, self.logger)
+        self.iditerator += 1
+        myid = iterate(self.iditerator, self.rulenumber)
+        cmd = "/bin/launchctl unload " + self.plistpath
+        event = {"eventtype": "commandstring",
+                 "command": cmd}
+        self.statechglogger.recordchgevent(myid, event)
+        created1 = True
+        self.iditerator += 1
+        myid = iterate(self.iditerator, self.rulenumber)
+        event = {"eventtype": "creation",
+                 "filepath": self.plistpath}
+        self.statechglogger.recordchgevent(myid, event)
         if os.path.exists(self.plistpath):
             uid, gid = "", ""
             statdata = os.stat(self.plistpath)
@@ -730,20 +736,20 @@ if __name__ == '__main__':
                 gid = grp.getgrnam("wheel")[2]
             if pwd.getpwnam("root")[2] != "":
                 uid = pwd.getpwnam("root")[2]
-            if not created1:
-                if mode != 420 or owner != "root" or group != "wheel":
-                    origuid = statdata.st_uid
-                    origgid = statdata.st_gid
-                    if gid:
-                        if uid:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator,
-                                           self.rulenumber)
-                            event = {"eventtype": "perm",
-                                     "startstate": [origuid,
-                                                    origgid, mode],
-                                     "endstate": [uid, gid, 420],
-                                     "filepath": self.plistpath}
+#             if not created1:
+#                 if mode != 420 or owner != "root" or group != "wheel":
+#                     origuid = statdata.st_uid
+#                     origgid = statdata.st_gid
+#                     if gid:
+#                         if uid:
+#                             self.iditerator += 1
+#                             myid = iterate(self.iditerator,
+#                                            self.rulenumber)
+#                             event = {"eventtype": "perm",
+#                                      "startstate": [origuid,
+#                                                     origgid, mode],
+#                                      "endstate": [uid, gid, 420],
+#                                      "filepath": self.plistpath}
             contents = readFile(self.plistpath, self.logger)
             contentstring = ""
             for line in contents:
@@ -752,18 +758,18 @@ if __name__ == '__main__':
                 tmpfile = self.plistpath + ".tmp"
                 if not writeFile(tmpfile, self.plistcontents, self.logger):
                     success = False
-                elif not created1:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.plistpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.plistpath,
-                                                         tmpfile, myid)
-                    os.rename(tmpfile, self.plistpath)
-                    if uid and gid:
-                        os.chown(self.plistpath, uid, gid)
-                    os.chmod(self.plistpath, 420)
+#                 elif not created1:
+#                     self.iditerator += 1
+#                     myid = iterate(self.iditerator, self.rulenumber)
+#                     event = {"eventtype": "conf",
+#                              "filepath": self.plistpath}
+#                     self.statechglogger.recordchgevent(myid, event)
+#                     self.statechglogger.recordfilechange(self.plistpath,
+#                                                          tmpfile, myid)
+#                     os.rename(tmpfile, self.plistpath)
+#                     if uid and gid:
+#                         os.chown(self.plistpath, uid, gid)
+#                     os.chmod(self.plistpath, 420)
                 else:
                     os.rename(tmpfile, self.plistpath)
                     if uid and gid:
