@@ -29,7 +29,10 @@ This is a Unit Test for Rule DisableInactiveAccounts
 '''
 
 from __future__ import absolute_import
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
