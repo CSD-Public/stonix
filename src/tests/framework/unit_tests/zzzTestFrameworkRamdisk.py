@@ -20,11 +20,21 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         Initializer
         """
         self.environ = Environment()
+        if self.environ.getosfamiliy() != "macosx":
+            myos = self.environ.getosfamiliy()
+            raise self.SkipTest("RamDisk does not support this OS" + \
+                                " family: " + str(myos))
+        
         self.logger = LogDispatcher(self.environ)
 
         #####
         # setting up to call ctypes to do a filesystem sync 
-        self.libc = C.CDLL("/usr/lib/libc.dylib")
+        if self.environ.getosfamily() == "redhat" :
+            self.libc = C.CDLL("/lib/libc.so.6")
+        elif self.environ.getosfamily() == "macosx" :
+            self.libc = C.CDLL("/usr/lib/libc.dylib")
+        else:
+            self.libc = None
 
         self.subdirs = ["two", "three" "one/four"]
 
@@ -126,7 +136,10 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         """
         total_time = 0
         if file_path and file_size:
-            self.libc.sync()
+            try:
+                self.libc.sync()
+            except:
+                pass
             tmpfile_path = os.path.join(file_path, "testfile")
             self.logger.log(LogPriority.DEBUG,"Writing to: " + tmpfile_path)
             try:
@@ -155,7 +168,10 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
             else:
                 total_time = end_time - start_time
                 os.unlink(tmpfile_path)
-                self.libc.sync()
+                try:
+                    self.libc.sync()
+                except:
+                    pass
         return total_time
  
 ###############################################################################
