@@ -88,29 +88,6 @@ class DisableRemoveableStorage(Rule):
             "system, set the value of DISABLESTORAGE to True"
         default = True
         self.storageci = self.initCi(datatype, key, instructions, default)
-
-#         datatype = "bool"
-#         key = "DISABLEFIREWIRE"
-#         instructions = "To disable Firewire storage devices on this " + \
-#             "system set the value of DISABLEFIREWIRE to True."
-#         default = False
-#         self.fwci = self.initCi(datatype, key, instructions, default)
-# 
-#         if self.environ.getostype() == "Mac OS X":
-#             datatype = "bool"
-#             key = "DISABLETHUNDER"
-#             instructions = "To disable thunderbolt storage devices on " + \
-#                 "this system set the value of DISABLETHUNDER to True."
-#             default = False
-#             self.tbci = self.initCi(datatype, key, instructions, default)
-# 
-#             datatype = "bool"
-#             key = "DISABLESDCARD"
-#             instructions = "To disable SD card functionality on this " + \
-#                 "system set the value of DISABLESDCARD to True"
-#             default = False
-#             self.sdci = self.initCi(datatype, key, instructions, default)
-
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
         self.iditerator = 0
@@ -710,15 +687,22 @@ if __name__ == '__main__':
         load = "/sbin/kextload "
         filepath = "/System/Library/Extensions/"
         success = True
-        created1, created2 = False, False
+        #created1 = False
+        created2 = False
         if not os.path.exists(self.plistpath):
-            if createFile(self.plistpath, self.logger):
-                created1 = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.plistpath}
-                self.statechglogger.recordchgevent(myid, event)
+            createFile(self.plistpath, self.logger)
+        self.iditerator += 1
+        myid = iterate(self.iditerator, self.rulenumber)
+        cmd = "/bin/launchctl unload " + self.plistpath
+        event = {"eventtype": "commandstring",
+                 "command": cmd}
+        self.statechglogger.recordchgevent(myid, event)
+        #created1 = True
+        self.iditerator += 1
+        myid = iterate(self.iditerator, self.rulenumber)
+        event = {"eventtype": "creation",
+                 "filepath": self.plistpath}
+        self.statechglogger.recordchgevent(myid, event)
         if os.path.exists(self.plistpath):
             uid, gid = "", ""
             statdata = os.stat(self.plistpath)
@@ -730,20 +714,20 @@ if __name__ == '__main__':
                 gid = grp.getgrnam("wheel")[2]
             if pwd.getpwnam("root")[2] != "":
                 uid = pwd.getpwnam("root")[2]
-            if not created1:
-                if mode != 420 or owner != "root" or group != "wheel":
-                    origuid = statdata.st_uid
-                    origgid = statdata.st_gid
-                    if gid:
-                        if uid:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator,
-                                           self.rulenumber)
-                            event = {"eventtype": "perm",
-                                     "startstate": [origuid,
-                                                    origgid, mode],
-                                     "endstate": [uid, gid, 420],
-                                     "filepath": self.plistpath}
+#             if not created1:
+#                 if mode != 420 or owner != "root" or group != "wheel":
+#                     origuid = statdata.st_uid
+#                     origgid = statdata.st_gid
+#                     if gid:
+#                         if uid:
+#                             self.iditerator += 1
+#                             myid = iterate(self.iditerator,
+#                                            self.rulenumber)
+#                             event = {"eventtype": "perm",
+#                                      "startstate": [origuid,
+#                                                     origgid, mode],
+#                                      "endstate": [uid, gid, 420],
+#                                      "filepath": self.plistpath}
             contents = readFile(self.plistpath, self.logger)
             contentstring = ""
             for line in contents:
@@ -752,18 +736,18 @@ if __name__ == '__main__':
                 tmpfile = self.plistpath + ".tmp"
                 if not writeFile(tmpfile, self.plistcontents, self.logger):
                     success = False
-                elif not created1:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.plistpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.plistpath,
-                                                         tmpfile, myid)
-                    os.rename(tmpfile, self.plistpath)
-                    if uid and gid:
-                        os.chown(self.plistpath, uid, gid)
-                    os.chmod(self.plistpath, 420)
+#                 elif not created1:
+#                     self.iditerator += 1
+#                     myid = iterate(self.iditerator, self.rulenumber)
+#                     event = {"eventtype": "conf",
+#                              "filepath": self.plistpath}
+#                     self.statechglogger.recordchgevent(myid, event)
+#                     self.statechglogger.recordfilechange(self.plistpath,
+#                                                          tmpfile, myid)
+#                     os.rename(tmpfile, self.plistpath)
+#                     if uid and gid:
+#                         os.chown(self.plistpath, uid, gid)
+#                     os.chmod(self.plistpath, 420)
                 else:
                     os.rename(tmpfile, self.plistpath)
                     if uid and gid:
@@ -908,6 +892,11 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
+        cmd = ["/bin/launchctl", "load", self.plistpath]
+        if not self.ch.executeCommand(cmd):
+            debug += "Unable to load the launchctl job to regularly " + \
+                "disable removeable storage.  May need to be done manually\n"
+            success = False
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return success

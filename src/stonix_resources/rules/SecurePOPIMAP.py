@@ -99,16 +99,15 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         self.setcommon()
 
-        if self.pkgh.manager not in ['apt-get', 'yum', 'zypper']:
+        if self.pkgh.manager not in ['apt-get', 'yum', 'zypper', 'dnf']:
             self.logger.log(LogPriority.DEBUG, "Could not identify OS type or OS not supported!")
 
         if self.pkgh.manager == 'apt-get':
             self.setdebian()
         if self.pkgh.manager == 'yum':
             self.setredhat()
-#        uncomment this if fedora needs a separate set up section
-#        if self.pkgh.manager == 'dnf':
-#            self.setfedora()
+        if self.pkgh.manager == 'dnf':
+            self.setredhat()
         if self.pkgh.manager == 'zypper':
             self.setsuse()
 
