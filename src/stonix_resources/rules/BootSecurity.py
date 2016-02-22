@@ -28,6 +28,9 @@ bluetooth, microphones, and cameras.
 
 @author: dkennel
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/02/22 ekkehard Updated Plist Name from
+/Library/LaunchDaemons/stonixBootSecurity.plist to
+/Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist
 '''
 
 from __future__ import absolute_import
@@ -80,7 +83,8 @@ a secure state at initial startup.'''
             self.type = 'systemd'
         elif os.path.exists('/sbin/launchd'):
             self.type = 'mac'
-        self.plistpath = '/Library/LaunchDaemons/stonixBootSecurity.plist'
+        self.launchdservice = '/Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist'
+        self.launchdservicename = 'gov.lanl.stonix.bootsecurity'
 
         self.plist = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -145,7 +149,7 @@ to False.'''
 
     def auditmac(self):
         try:
-            if os.path.exists(self.plistpath):
+            if os.path.exists(self.launchdservice):
                 return True
             else:
                 return False
@@ -278,12 +282,12 @@ WantedBy=multi-user.target
 
     def setmac(self):
         try:
-            jobpath = '/Library/LaunchDaemons/stonixBootSecurity.plist'
-            whandle = open(jobpath, 'w')
+            self.removemacservices(True)
+            whandle = open(self.launchdservice, 'w')
             whandle.write(self.plist)
             whandle.close()
-            os.chown(jobpath, 0, 0)
-            os.chmod(jobpath, 420)  # Integer of 0644
+            os.chown(self.launchdservice, 0, 0)
+            os.chmod(self.launchdservice, 420)  # Integer of 0644
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -316,9 +320,48 @@ WantedBy=multi-user.target
         self.rulesuccess = True
         self.currstate = 'configured'
 
+    def removemacservices(self, oldServiceOnly = False):
+        try:
+            self.detailedresults = 'BootSecurity.removemacservices: '
+            oldservice = '/Library/LaunchDaemons/stonixBootSecurity.plist'
+            oldservicename = 'stonixBootSecurity'
+            if os.path.exists(oldservice):
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     str(oldservice) + " exists!")
+                self.servicehelper.disableservice(oldservice, oldservicename)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     str(oldservice) + " disabled!")
+                os.remove(oldservice)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     str(oldservice) + " removed!")
+                self.detailedresults = self.detailedresults + \
+                "\r- removed " + str(oldservice)
+            if not oldServiceOnly:
+                if os.path.exists(self.launchdservice):
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         str(self.launchdservice) + " exists!")
+                    self.servicehelper.disableservice(self.launchdservice, self.launchdservicename)
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         str(self.launchdservice) + " disabled!")
+                    os.remove(self.launchdservice)
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         str(self.launchdservice) + " removed!")
+                    self.detailedresults = self.detailedresults + \
+                    "\r- removed " + str(self.launchdservice)
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.detailedresults = 'BootSecurity.removemacservices: '
+            self.detailedresults = self.detailedresults + \
+            traceback.format_exc()
+            self.rulesuccess = False
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        
+
     def undo(self):
         if self.type == 'mac':
-            os.remove('/Library/LaunchDaemons/stonixBootSecurity.plist')
+            self.removemacservices()
         elif self.type == 'systemd':
             os.remove('/etc/systemd/system/stonixBootSecurity.service')
         elif self.type == 'rclocal':
