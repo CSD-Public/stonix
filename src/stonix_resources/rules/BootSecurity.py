@@ -299,26 +299,25 @@ WantedBy=multi-user.target
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def fix(self):
-        if not self.bootci.getcurrvalue():
-            return True
-        if self.type == 'mac':
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 'Creating Mac plist')
-            self.setmac()
-        elif self.type == 'systemd':
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 'Creating systemd service')
-            self.setsystemd()
-        elif self.type == 'rclocal':
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 'Creating rc.local entry')
-            self.setrclocal()
-        else:
-            self.detailedresults = 'ERROR: Fix could not determine where boot job should be scheduled!'
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-            self.rulesuccess = False
-        self.rulesuccess = True
-        self.currstate = 'configured'
+        if self.bootci.getcurrvalue():
+            if self.type == 'mac':
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Creating Mac plist')
+                self.setmac()
+            elif self.type == 'systemd':
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Creating systemd service')
+                self.setsystemd()
+            elif self.type == 'rclocal':
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Creating rc.local entry')
+                self.setrclocal()
+            else:
+                self.detailedresults = 'ERROR: Fix could not determine where boot job should be scheduled!'
+                self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+                self.rulesuccess = False
+            self.rulesuccess = True
+            self.currstate = 'configured'
 
     def removemacservices(self, oldServiceOnly = False):
         try:
