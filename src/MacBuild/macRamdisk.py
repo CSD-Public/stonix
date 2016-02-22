@@ -23,7 +23,7 @@
 """
 @author: Roy Nielsen
 @change: 2016/02/03 ekkehard converted from log_message to print
-
+@change: 2016/02/22 ekkehard converted to 0.9.5
 """
 from __future__ import absolute_import
 import os
@@ -56,7 +56,7 @@ class RamDisk(object) :
         Constructor
         """
         self.logger = LOGGER
-        self.version = "0.9.4"
+        self.version = "0.9.5"
         #####
         # Calculating the size of ramdisk in 1Mb chunks     
         self.diskSize = str(int(size) * 1024 * 1024 / 512)
