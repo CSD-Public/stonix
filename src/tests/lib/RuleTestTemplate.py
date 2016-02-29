@@ -154,13 +154,27 @@ class RuleTest(unittest.TestCase):
                 nextstep = False
             messagestring = ": Rule checkReportForRule() = " + \
             str(checkReportConditions) + "."
-            self.assertTrue(checkReportConditions, prefixRuleInfo + \
-                            messagestring)
-            self.assertTrue(checkReportConditions,
-                            self.rulename + "(" + str(self.rulenumber) + ")" +
-                            ": Rule " + \
-                            "checkReportForRule() = " + \
-                            str(checkReportConditions) + ".")
+            
+            if checkReportConditions:
+                self.assertTrue(checkReportConditions, prefixRuleInfo + \
+                                messagestring)
+                
+                self.assertTrue(checkReportConditions,
+                                self.rulename + "(" + str(self.rulenumber) + ")" +
+                                ": Rule " + \
+                                "checkReportForRule() = " + \
+                                str(checkReportConditions) + ".")
+            else:
+                self.assertFalse(checkReportConditions, prefixRuleInfo + \
+                                messagestring)
+                
+                self.assertFalse(checkReportConditions,
+                                self.rulename + "(" + str(self.rulenumber) + ")" +
+                                ": Rule " + \
+                                "checkReportForRule() = " + \
+                                str(checkReportConditions) + ".")
+                
+            
 # Run rule.fix()
         if nextstep:
             messagestring = "Run rule.fix()"
