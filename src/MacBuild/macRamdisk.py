@@ -39,6 +39,13 @@ from src.stonix_resources.environment import Environment
 
 LOGGER = LogDispatcher(Environment())
 
+def ResourcesNotAvailable(Exception):
+    """
+    Custom Exception    
+    """
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
 ###############################################################################
 
 class RamDisk(object) :
@@ -138,9 +145,13 @@ class RamDisk(object) :
                             self.logger.log(LogPriority.INFO, "Remove journal appears to have failed..")
 
         self.success = success
-        self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
-        self.logger.log(LogPriority.INFO, "Mount point: " + str(self.mntPoint))
-        self.logger.log(LogPriority.INFO, "Device: " + str(self.myRamdiskDev))
+        if success:
+            self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
+            self.logger.log(LogPriority.INFO, "Mount point: " + str(self.mntPoint))
+            self.logger.log(LogPriority.INFO, "Device: " + str(self.myRamdiskDev))
+        else:
+            self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
+            raise(ResourcesNotAvailable("Can't create a ramdisk..."))
 
     ###########################################################################
 
