@@ -104,7 +104,7 @@ class MacBuilder():
 
         self.RSYNC = "/usr/bin/rsync"
         self.PYUIC = mbl.getpyuicpath()
-        self.DEFAULT_RAMDISK_SIZE = 2 * 1024 * 500
+        self.DEFAULT_RAMDISK_SIZE = 1024  # 1GB
 
         # This script should be run from [stonixroot]/src/MacBuild. We must
         # record the [stonixroot] directory in a variable.
@@ -147,6 +147,9 @@ class MacBuilder():
 
         # Create a ramdisk and mount it to the tmphome
         ramdisk = self.setupRamdisk(self.DEFAULT_RAMDISK_SIZE, tmphome)
+        os.mkdir("/tmp/the_luggage")
+        luggage = self.setupRamdisk(self.DEFAULT_RAMDISK_SIZE,
+                                    "/tmp/the_luggage")
         print "Device for tmp ramdisk is: " + ramdisk
 
         # After creation of the ramdisk, all further calls need to be wrapped
@@ -206,12 +209,13 @@ class MacBuilder():
             # Return to the start dir
             os.chdir(self.STONIX_ROOT + "/src/MacBuild")
         except (KeyboardInterrupt, SystemExit):
-            self.exit(ramdisk, 130)
+            self.exit(ramdisk, luggage, 130)
         except Exception:
-            self.exit(ramdisk, 1)
+            self.exit(ramdisk, luggage, 1)
 
         # Eject the ramdisk
         self.detachRamdisk(ramdisk)
+        self.detachRamdisk(luggage)
 
         print " "
         print " "
@@ -235,9 +239,10 @@ class MacBuilder():
             print("Couldn't detach disk: " + str(device).strip())
             raise Exception("Cannot eject disk: " + str(device).strip())
 
-    def exit(self, ramdisk, exitcode=0):
+    def exit(self, ramdisk, luggage, exitcode=0):
         os.chdir(self.STONIX_ROOT)
         self.detachRamdisk(ramdisk)
+        self.detachRamdisk(luggage)
         print traceback.format_exc()
         exit(exitcode)
 
@@ -449,9 +454,6 @@ class MacBuilder():
         try:
             # 2/3/2015 - rsn adding this to make sure the luggage build does 
             # not go stale
-            l_tmp_dir = "/tmp/the_luggage"
-            if os.path.exists(l_tmp_dir):
-                rmtree(l_tmp_dir)
 
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
