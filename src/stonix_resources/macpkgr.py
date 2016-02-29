@@ -105,16 +105,14 @@ class MacPkgr(object):
 
         '''
         self.environ = environ
-        
+
         self.osfamily = self.environ.getosfamily()
         if not re.match("^darwin$", self.osfamily.strip()):
-            myos = self.environ.getosfamiliy()
-            raise NotApplicableToThisOS("MacPkgr does not support this OS" + \
-                                        " family: " + str(myos))
-        
+            return
+
         #####
-        # setting up to call ctypes to do a filesystem sync 
-        if self.environ.getosfamily() == "macosx" :
+        # setting up to call ctypes to do a filesystem sync
+        if self.environ.getosfamily() == "macosx":
             self.libc = C.CDLL("/usr/lib/libc.dylib")
         else:
             self.libc = None
@@ -222,7 +220,7 @@ class MacPkgr(object):
                 # Otherwise the repository is on a mounted filesystem
                 self.logger.log(LogPriority.DEBUG, "Looking for a local " + \
                                                    "filesystem repo...")
-                self.tmpLocalPkg = self.reporoot + "/" + self.package
+                self.tmpLocalPkg = self.reporoot + self.package
                 
 
         except(KeyboardInterrupt,SystemExit):
