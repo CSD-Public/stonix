@@ -30,13 +30,16 @@ This is a Unit Test for Rule SecureMDNS
                         file as well as with the test harness.
 '''
 from __future__ import absolute_import
+import os
 import unittest
 import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.pkghelper import Pkghelper
 from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.rules.SecureMDNS import SecureMDNS
 
@@ -74,28 +77,63 @@ class zzzTestRuleSecureMDNS(RuleTest):
         if self.environ.getosfamily() == "darwin":
             success = False
             osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.10.0") or osxversion.startswith("10.10.1") or osxversion.startswith("10.10.2") or osxversion.startswith("10.10.3"):
-                self.service = "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
-                self.servicename = "com.apple.networking.discoveryd"
-                self.parameter = "--no-multicast"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string '  + self.parameter + '" ' +  self.service
+            if osxversion.startswith("10.10.0") or \
+               osxversion.startswith("10.10.1") or \
+               osxversion.startswith("10.10.2") or \
+               osxversion.startswith("10.10.3"):
+                debug = "Using discoveryd LaunchDaemon"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
+                service = \
+                    "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
+                servicename = "com.apple.networking.discoveryd"
+                parameter = "--no-multicast"
+                pbd = self.plb + ' -c "Delete :ProgramArguments: string ' \
+                    + parameter + '" ' + service
                 success = True
             else:
-                self.service = "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist"
+                debug = "Using mDNSResponder LaunchDaemon"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
+                service = "/System/Library/LaunchDaemons/" + \
+                    "com.apple.mDNSResponder.plist"
                 if osxversion.startswith("10.10"):
-                    self.servicename = "com.apple.mDNSResponder.reloaded"
-                    self.parameter = "-NoMulticastAdvertisements"
+                    servicename = "com.apple.mDNSResponder.reloaded"
+                    parameter = "-NoMulticastAdvertisements"
                 else:
-                    self.servicename = "com.apple.mDNSResponder"
-                    self.parameter = "-NoMulticastAdvertisements"
-                self.pbd =  self.plb + ' -c "Delete :ProgramArguments: string ' + self.parameter + '" ' +  self.service
+                    servicename = "com.apple.mDNSResponder"
+                    parameter = "-NoMulticastAdvertisements"
+                pbd = self.plb + ' -c "Delete :ProgramArguments: string ' \
+                    + parameter + '" ' + service
                 success = True
-# This needs to be fixed
-#            if success:
-#                command = self.pbd
-#                success = self.ch.executeCommand(command)
-            if success:
-                success = self.sh.reloadservice(self.service, self.servicename)
+            if success and self.sh.auditservice(service, servicename):
+                success = self.ch.executeCommand(pbd)
+            if success and self.sh.auditservice(service, servicename):
+                success = self.sh.reloadservice(service, servicename)
+        else:
+            ph = Pkghelper(self.logdispatch, self.environ)
+            package = "avahi-daemon"
+            service = "avahi-daemon"
+            if (ph.determineMgr() == "yum" or ph.determineMgr() == "dnf"):
+                package = "avahi"
+                path = "/etc/sysconfig/network"
+                if os.path.exists(path):
+                    tmppath = path + ".tmp"
+                    data = {"NOZEROCONF": "yes"}
+                    editor = KVEditorStonix(self.statechglogger,
+                                            self.logdispatch, "conf",
+                                            path, tmppath, data,
+                                            "notpresent", "closedeq")
+                    if not editor.report():
+                        if editor.fix():
+                            if not editor.commit():
+                                success = False
+                        else:
+                            success = False
+            elif ph.determineMgr() == "zypper":
+                package = "avahi"
+            if not ph.check(package) and ph.checkAvailable(package):
+                success = ph.install(package)
+            if success and not self.sh.auditservice(service):
+                self.sh.enableservice(service)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -107,9 +145,9 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -122,7 +160,7 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -135,7 +173,7 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -143,4 +181,3 @@ class zzzTestRuleSecureMDNS(RuleTest):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
-
