@@ -20,11 +20,24 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         Initializer
         """
         self.environ = Environment()
+        if self.environ.getosfamily() != "darwin":
+            myos = self.environ.getosfamily()
+            raise unittest.SkipTest("RamDisk does not support this OS" + \
+                                " family: " + str(myos))
+        
+        # Start timer in miliseconds
+        self.test_start_time = datetime.now()
+
         self.logger = LogDispatcher(self.environ)
 
         #####
         # setting up to call ctypes to do a filesystem sync 
-        self.libc = C.CDLL("/usr/lib/libc.dylib")
+        if self.environ.getosfamily() == "redhat" :
+            self.libc = C.CDLL("/lib/libc.so.6")
+        elif self.environ.getosfamily() == "darwin" :
+            self.libc = C.CDLL("/usr/lib/libc.dylib")
+        else:
+            self.libc = None
 
         self.subdirs = ["two", "three" "one/four"]
 
@@ -51,32 +64,74 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
             #from src.MacBuild.macRamdisk import Ramdisk, detach 
 
             # get a ramdisk of appropriate size, with a secure random mountpoint
-            my_ramdisk = RamDisk(str(ramdisk_size), self.mnt_pnt_requested)
+            self.my_ramdisk = RamDisk(str(ramdisk_size), self.mnt_pnt_requested)
             
             (self.success, self.mountPoint, self.ramdiskDev) = \
-            my_ramdisk.get_data()
+            self.my_ramdisk.get_data()
             
         else:
             self.logger.log(LogPriority.INFO, "Not applicable to this OS")
             self.success = False
 
         if not self.success:
-            raise "Cannot get a ramdisk for some reason. . ."
-        
+            raise IOError("Cannot get a ramdisk for some reason. . .")
+
         #####
         # Create a temp location on disk to run benchmark tests against
         self.fs_dir = tempfile.mkdtemp()
+
+    def setUp(self):
+        """
+        This method runs before each test run.
+
+        @author: Roy Nielsen
+        """
+        self.libcPath = None # initial initialization
+        #####
+        # setting up to call ctypes to do a filesystem sync
+        if sys.platform.startswith("darwin"):
+            #####
+            # For Mac
+            self.libc = C.CDLL("/usr/lib/libc.dylib")
+        elif sys.platform.startswith("linux"):
+            #####
+            # For Linux
+            self.findLinuxLibC()
+            self.libc = C.CDLL(self.libcPath)
+        else:
+            self.libc = self._pass()
+
         
 
 ###############################################################################
 ##### Helper Classes
 
-    def touch(self, fname=""):
+    def findLinuxLibC(self):
+        """
+        Find Linux Libc library...
+
+        @author: Roy Nielsen
+        """
+        possible_paths = ["/lib/x86_64-linux-gnu/libc.so.6",
+                          "/lib/i386-linux-gnu/libc.so.6"]
+        for path in possible_paths:
+
+            if os.path.exists(path):
+                self.libcPath = path
+                break
+
+    def _pass(self):
+        """
+        Filler if a library didn't load properly
+        """
+        pass
+
+    def touch(self, fname="", message_level="normal") :
         """
         Python implementation of the touch command..
-        
+
         inspiration: http://stackoverflow.com/questions/1158076/implement-touch-using-python
-        
+
         @author: Roy Nielsen
         """
         if re.match("^\s*$", str(fname)):
@@ -127,7 +182,11 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         total_time = 0
         if file_path and file_size:
             self.libc.sync()
-            tmpfile_path = os.path.join(file_path, "testfile")
+            file_size = file_size * 1024 * 1024
+            if os.path.isdir(file_path):
+                tmpfile_path = os.path.join(file_path, "testfile")
+            else:
+                tmpfile_path = file_path
             self.logger.log(LogPriority.DEBUG,"Writing to: " + tmpfile_path)
             try:
                 # Get the number of blocks to create
@@ -144,7 +203,11 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
                     tmp_buffer = os.urandom(block_size)
                     os.write(tmpfile, str(tmp_buffer))
                     os.fsync(tmpfile)
+                self.libc.sync()
                 os.close(tmpfile)
+                self.libc.sync()
+                os.unlink(tmpfile_path)
+                self.libc.sync()
 
                 # capture end time
                 end_time = datetime.now()
@@ -154,10 +217,14 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
                 total_time = 0
             else:
                 total_time = end_time - start_time
-                os.unlink(tmpfile_path)
-                self.libc.sync()
         return total_time
- 
+
+    def format_ramdisk(self):
+        """
+        Format Ramdisk
+        """
+        self.my_ramdisk._format()
+
 ###############################################################################
 ##### Tests
         
@@ -183,10 +250,13 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 
     ##################################
 
-    def test_fs_compare(self):
+    def test_four_file_sizes(self):
         """
-        Test filesystem access vs ramdisk access, of various sizes
+        Test file creation of various sizes, ramdisk vs. filesystem
         """
+        #####
+        # Clean up the ramdisk
+        self.my_ramdisk._format()
         #####
         # 100Mb file size
         oneHundred = 100
@@ -205,21 +275,47 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         for file_size in my_fs_array:
             #####
             # Create filesystem file and capture the time it takes...
-            fs_time = self.mkfile(self.fs_dir, file_size)
+            fs_time = self.mkfile(os.path.join(self.fs_dir, "testfile"), file_size)
             self.logger.log(LogPriority.DEBUG,"fs_time: " + str(fs_time))
             time.sleep(1)
 
             #####
             # get the time it takes to create the file in ramdisk...
-            ram_time = self.mkfile(self.mountPoint, file_size)
+            ram_time = self.mkfile(os.path.join(self.mountPoint, "testfile"), file_size)
             self.logger.log(LogPriority.DEBUG,"ram_time: " + str(ram_time))
             time.sleep(1)
 
             speed = fs_time - ram_time
             self.logger.log(LogPriority.DEBUG,"ramdisk: " + str(speed) + " faster...")
 
-            self.assertTrue(((fs_time - ram_time).days>-1))
+            self.assertTrue((fs_time - ram_time).days>-1)
 
+
+    def test_many_small_files_creation(self):
+        """
+        """
+        #####
+        # Clean up the ramdisk
+        self.my_ramdisk._format()
+        #####
+        #
+        ramdisk_starttime = datetime.now()
+        for i in range(1000):
+            self.mkfile(os.path.join(self.mountPoint, "testfile" + str(i)), 1)
+        ramdisk_endtime = datetime.now()
+
+        rtime = ramdisk_endtime - ramdisk_starttime
+
+        fs_starttime = datetime.now()
+        for i in range(1000):
+            self.mkfile(os.path.join(self.fs_dir, "testfile" + str(i)), 1)
+        fsdisk_endtime = datetime.now()
+
+        fstime = fsdisk_endtime - fs_starttime
+
+        self.assertTrue((fstime - rtime).days > -11)
+        
+      
 
 ###############################################################################
 ##### unittest Tear down
@@ -228,10 +324,25 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         """
         disconnect ramdisk
         """
-        if detach(self.ramdiskDev):
-            self.logger.log(LogPriority.DEBUG, "Successfully detached disk: " + str(self.ramdiskDev).strip())
+        if self.my_ramdisk.unmount():
+            self.logger.log(LogPriority.DEBUG, r"Successfully detached disk: " + \
+                       str(self.my_ramdisk.mntPoint).strip())
         else:
-            self.logger.log(LogPriority.INFO, "Couldn't detach disk: " + str(self.ramdiskDev).strip() + " : mntpnt: " + str(self.mntPoint))
-            raise Exception("Cannot eject disk: " + str(self.ramdiskDev).strip() + " : mntpnt: " + str(self.mntPoint))
-        
+            self.logger.log(LogPriority.DEBUG,r"Couldn't detach disk: " + \
+                       str(self.my_ramdisk.myRamdiskDev).strip() + \
+                       " : mntpnt: " + str(self.my_ramdisk.mntPoint))
+            raise Exception(r"Cannot eject disk: " + \
+                            str(self.my_ramdisk.myRamdiskDev).strip() + \
+                            " : mntpnt: " + str(self.my_ramdisk.mntPoint))
+        #####
+        # capture end time
+        test_end_time = datetime.now()
+
+        #####
+        # Calculate and log how long it took...
+        test_time = (test_end_time - self.test_start_time)
+
+        self.logger.log(LogPriority.DEBUG,self.__module__ + " took " + str(test_time) + \
+                  " time to complete...")
+
 ###############################################################################

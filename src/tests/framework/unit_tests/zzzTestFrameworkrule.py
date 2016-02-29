@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 ###############################################################################
 #                                                                             #
@@ -26,11 +27,16 @@ Test suite for the rule.py base class.
 @change: 09/24/2010 dkennel Original Implementation
 @change: 03/19/2014 pep8 compliance
 @change: 2015/01/13 dkennel refactor of isApplicable() and associated test
+@change: 2016-02-10 roy adding sys.path.append for both test framework and 
+                        individual test runs.
 @author: dkennel
 
 '''
 import re
+import sys
 import unittest
+
+sys.path.append("../../../..")
 import src.stonix_resources.rule as rule
 import src.stonix_resources.environment as environment
 import src.tests.lib.logdispatcher_lite as logdispatcher
