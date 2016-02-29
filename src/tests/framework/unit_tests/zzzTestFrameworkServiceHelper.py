@@ -28,10 +28,14 @@ Created on Oct 4, 2012
 @author: dkennel
 @change: 2015/10/15 eball Updated deprecated unittest methods, added
     cron.service for openSUSE and Debian 8 compatibility
-'''
+@change: roy - adding sys.path.append for both test framework and individual
+               test runs.'''
 import os
+import sys
 import time
 import unittest
+
+sys.path.append("../../../..")
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.ServiceHelper import ServiceHelper

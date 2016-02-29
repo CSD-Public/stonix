@@ -28,10 +28,15 @@ Created on Aug 24, 2012
 @author: dkennel
 @change: 2015/10/26 eball Updated diffdir and archive directory locations from
     /var/db to /var/db
+@change: 2016/02/10 roy - adding sys.path.append for both test framework and individual
+                          test runs.
 '''
 import os
 import shutil
+import sys
 import unittest
+
+sys.path.append("../../../..")
 import src.stonix_resources.environment as environment
 import src.tests.lib.logdispatcher_lite as logdispatcher
 import src.stonix_resources.StateChgLogger as StateChgLogger
