@@ -39,6 +39,7 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/03/01 ekkehard cgi default value set to False
 '''
 
 from __future__ import absolute_import
@@ -52,7 +53,6 @@ from ..stonixutilityfunctions import readFile, setPerms, createFile, getUserGrou
 from ..stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-import cmd
 import stat
 import pwd
 import grp
