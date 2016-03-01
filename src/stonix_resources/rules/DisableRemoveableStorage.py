@@ -86,7 +86,7 @@ class DisableRemoveableStorage(Rule):
         key = "DISABLESTORAGE"
         instructions = "To disable removeable storage devices on this " + \
             "system, set the value of DISABLESTORAGE to True"
-        default = True
+        default = False
         self.storageci = self.initCi(datatype, key, instructions, default)
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
