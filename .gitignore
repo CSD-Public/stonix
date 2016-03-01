@@ -1,0 +1,12 @@
+*.pyc
+.DS_Store
+.project
+.pydevproject
+.settings
+.settings.bak
+*.bak
+*~
+.~*
+.metadata
+.directory
+

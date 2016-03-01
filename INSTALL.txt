@@ -1,0 +1,70 @@
+STONIX INSTALL
+==============
+
+Overview
+--------
+
+This document includes instructions for installing STONIX.
+
+End System Installation
+-----------------------
+
+As STONIX is an uncompiled Python program installation is very straightforward.
+To install STONIX manually simply follow these steps:
+ 1. Copy stonix.py to the appropriate 'bin' folder (/bin, /usr/bin,
+  /usr/local/bin).
+ 2. Copy stonix_resources to the same folder that you copied stonix.py to.
+ 3. Recommended not required: symlink stonix to stonix.py.
+ 4. Touch the /etc/stonix.conf file (touch /etc/stonix.conf).
+ 5. Install the stonix man page to the appropriate directory.
+ 6. Edit the <path>/stonix_resources/localize.py file to contain appropriate
+  values.
+
+End System Prerequisites
+------------------------
+
+STONIX requires a 2.x version of Python >= 2.5.
+
+For use of the GUI STONIX requires PyQt 4.0 and the appropriate QT libraries.
+
+
+Usage
+------
+
+You should now be able to run stonix from the command line:
+# stonix --help
+
+STONIX Report Server Installation
+---------------------------------
+
+STONIX has the ability to upload reports to an optional report server. These
+reports may be desired by an organizational continuous security monitoring
+effort to track the configuration health of systems over time.
+
+Report Server Requirements
+---------------------------
+
+The report server requires PHP, a running web server and MySQL or MariaDB.
+
+Installation
+------------
+
+1. mkdir -p /var/www/html/stonix/results.
+2. Place the results.php file into the the /var/www/html/stonix directory.
+3. Ensure that the webserver has write but not read access to
+  /var/www/html/stonix/results.
+4. Install the stonixImporter.py into a bin directory.
+5. Install MySQL.
+6. Log onto MySQL and run the stonixdb.sql file to create the stonix database.
+7. Create a database user to process the reports. User will require Query,
+  Insert, Update on the stonix database.
+8. Update the connection credentials in the stonixImporter.py.
+9. Ensure that the REPORTSERVER parameter in the localize.py file of the
+  clients whose reports you wish to collect is configured to point to your host.
+10. Test.
+
+Usage
+-----
+
+For production usage it is recommended that the stonixImporter.py be scheduled
+via cron.

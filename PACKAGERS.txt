@@ -1,0 +1,33 @@
+Packaging Information for STONIX
+================================
+
+We recommend creating two packages for STONIX: stonix and stonix-server.
+
+There are a small number of files that are only needed by the stonix report
+server, are not needed by the client and could lead to an organizational
+security breach if credentials are left in the stonixImporter.py
+inappropriately.
+
+Included
+--------
+
+Included in the source is an RPM spec file and a .deb build script for creating
+packages in those formats. For packagers using other formats please reference
+the spec file for installation locations and permissions.
+
+Pre-packaging Activities
+------------------------
+
+Before packaging STONIX it is recommended that the localize.py values be set 
+appropriately. This step can be omitted if the localize.py file will be managed 
+another way (e.g. puppet or cfengine). It is important that the localize.py be 
+set correctly for your organization before stonix is run in fix mode for the 
+first time.
+
+Packaging for OS X
+------------------------
+
+If you have all the correct frameworks (Luggage, PyQt, QT, SIP, PyInstaller)
+installed in the correct location you can build a mac package by executing
+the .../stonix/src/MacBuild/macbuild.py script.
+

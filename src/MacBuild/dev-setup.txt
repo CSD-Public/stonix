@@ -1,0 +1,54 @@
+Instructions for setting up the Development Environment for this project:
+
+Install Eclipse
+
+Install SetupTools
+        • Download Setup Tools at: http://pypi.python.org/pypi/setuptools
+        • Run it as if it were a shell script, e.g. sudo sh setuptools-0.6c11-py2.7.egg. Setuptools will install itself using the matching version of Python (e.g. python2.7), and will place the easy_install executable in the default location for installing Python scripts (as determined by the standard distutils configuration files, or by the Python installation).
+
+Install PyLint
+        • udo easy_install-2.7 pylint
+
+        Reference: http://www.learningtechnicalstuff.com/2011/06/installing-pylint-for-python-25-on-mac.html
+
+Install PyDev
+        • Download the source zip
+        • unzip
+        • copy features/* to eclipse/features
+        • copy plugins/* to eclipse/plugins
+        • restart eclipse
+
+Install xCode From AppStore
+        • Download and install Xcode
+        • Download and install the Command Line Tools from within Xcode
+        • Preferences -> Downloads -> Components. I believe these are also available from the Apple Developer Connection site.
+
+Install Apple Auxilary Tool
+        • Download the Xcode Auxiliary Tools from the Apple Developer Connection site.
+        • Mount the DMG, and
+        • copy PackageMaker.app into /Applications/Xcode.app/Contents/Applications
+        • Remove the old packagemaker symlink: sudo rm /usr/local/bin/packagemaker
+Note: If the image has been used, the above two steps are already done.
+
+Install QT, SIP, PyQt, PyInstaller
+        • Download QT 4.8.x http://www.qtcentre.org/content/
+        • Unzip File and mount DMG
+        • Run Installer - Your should now have a QtSDK in you home directory
+        • Download MacOS Source from http://www.riverbankcomputing.co.uk/software/sip/download
+        • Expand and move into Shared Directory inside sip directory
+        • cd /Users/Shared/sip/sip-4.13.3/
+        • Create a Make File By running: python configure.py
+        • make
+        • sudo make install
+        • Download PyQT4 - http://www.riverbankcomputing.co.uk/software/pyqt/download
+        • Expand and move into Shared Directory inside PyQt directory
+        • cd /Users/Shared/PyQt/PyQt-mac-gpl-4.9.4
+        • python configure.py
+        • make
+        • sudo make install
+        • Goto http://www.pyinstaller.org/
+        • Download Latest Development Code of PyInstaller (tar.bz2)
+        • Unarchive into /Users/Shared/Frameworks/pyinstaller - This path will be used in the build scripts for Dylan. (the directory may need to be created)
+        • Create a symbolic link: ln -s /Users/Shared/Frameworks/pyinstaller/pyinstaller-pyinstaller-x/ /Users/Shared/Frameworks/pyinstaller/pyinstaller-dev
+
+
