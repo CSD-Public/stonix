@@ -39,6 +39,7 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/03/01 ekkehard cgi default value set to False
 '''
 
 from __future__ import absolute_import
@@ -52,7 +53,6 @@ from ..stonixutilityfunctions import readFile, setPerms, createFile, getUserGrou
 from ..stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-import cmd
 import stat
 import pwd
 import grp
@@ -115,6 +115,7 @@ class DisableRemoveableStorage(Rule):
             if self.environ.getostype() == "Mac OS X":
                 compliant = self.reportMac()
             else:
+                self.mvcmd = "/bin/mv"
                 output = ""
                 removeables = []
                 self.ph = Pkghelper(self.logger, self.environ)
@@ -645,11 +646,17 @@ if __name__ == '__main__':
                     output = self.ch.getOutput()
                     if output:
                         output = output[0].strip()
-                        if os.path.exists("/lib/modules/" + output +
-                                          "/kernel/drivers/usb/storage/usb-storage.ko"):
-                            os.rename("/lib/modules/" + output +
-                                      "/kernel/drivers/usb/storage/usb-storage.ko",
-                                      "/usb-storage.ko")
+                        originalPath = "/lib/modules/" + output + \
+                            "/kernel/drivers/usb/storage/usb-storage.ko"
+                        newPath = "/usb-storage.ko"
+                        if os.path.exists(originalPath):
+                            os.rename(originalPath, newPath)
+                            cmd = self.mvcmd + " " + newPath + " " + originalPath
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "commandstring",
+                                         "command": cmd}
+                            self.statechglogger.recordchgevent(myid, event)
                     for item in self.pcmcialist:
                         if self.ph.check(item):
                             self.ph.remove(item)
@@ -754,13 +761,14 @@ if __name__ == '__main__':
                         os.chown(self.plistpath, uid, gid)
                     os.chmod(self.plistpath, 420)
         if not os.path.exists(self.daemonpath):
-            if createFile(self.daemonpath, self.logger):
-                created2 = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.daemonpath}
-                self.statechglogger.recordchgevent(myid, event)
+            if not createFile(self.daemonpath, self.logger):
+                success = False
+                self.detailedresults += "Unable to create the disablestorage python file\n"
+        self.iditerator += 1
+        myid = iterate(self.iditerator, self.rulenumber)
+        event = {"eventtype": "creation",
+                 "filepath": self.daemonpath}
+        self.statechglogger.recordchgevent(myid, event)
         if os.path.exists(self.daemonpath):
             uid, gid = "", ""
             statdata = os.stat(self.daemonpath)
