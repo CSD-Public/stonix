@@ -29,9 +29,10 @@ dictionary
 '''
 from __future__ import absolute_import
 import traceback
+import types
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..SystemIntegrityProtection import SystemIntegrityProtection
+from src.stonix_resources.SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
 
 
 class SystemIntegrityProtection(Rule):
@@ -54,7 +55,7 @@ class SystemIntegrityProtection(Rule):
         self.guidance = []
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11.0', 'r', '10.11.10']}}
-        self.sipobject = SystemIntegrityProtection(self.logdispatch)
+        self.sipobject = SystemIntegrityProtectionObject(self.logdispatch)
 
     def report(self):
         try:
@@ -64,6 +65,7 @@ class SystemIntegrityProtection(Rule):
                 compliant = self.sipobject.report()
                 self.resultAppend(self.sipobject.getDetailedresults())
             self.compliant = compliant
+            self.rulesuccess = True
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -76,3 +78,78 @@ class SystemIntegrityProtection(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+    
+###############################################################################
+
+    def fix(self):
+        '''
+        Fix
+
+        @author Ekkehard Koch
+        '''
+
+        success = True
+
+        try:
+            self.detailedresults = ''
+            self.rulesuccess = True
+            msg = "No fixes are available"
+            self.logdispatch.log(LogPriority.INFO, msg)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as err:
+            self.rulesuccess = False
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            " - " + str(traceback.format_exc())
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", success,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return success
+    
+###############################################################################
+
+    def resultAppend(self, pMessage=""):
+        '''
+        append results to detailed results.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
+        datatype = type(pMessage)
+        if datatype == types.StringType:
+            if not (pMessage == ""):
+                messagestring = pMessage
+                if (self.detailedresults == ""):
+                    self.detailedresults = messagestring
+                else:
+                    self.detailedresults = self.detailedresults + "\n" + \
+                    messagestring
+        elif datatype == types.ListType:
+            if not (pMessage == []):
+                for item in pMessage:
+                    messagestring = item
+                    if (self.detailedresults == ""):
+                        self.detailedresults = messagestring
+                    else:
+                        self.detailedresults = self.detailedresults + "\n" + \
+                        messagestring
+        else:
+            raise TypeError("pMessage with value" + str(pMessage) + \
+                            "is of type " + str(datatype) + " not of " + \
+                            "type " + str(types.StringType) + \
+                            " or type " + str(types.ListType) + \
+                            " as expected!")
+
+###############################################################################
+
+    def resultReset(self):
+        '''
+        reset detailed results.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
+        self.detailedresults = ""
