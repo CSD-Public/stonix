@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2016.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -22,27 +22,27 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SystemIntegrityProtection(6)
 
 @author: ekkehard j. koch
-@change: 03/13/2013 Original Implementation
+@change: 2016/03/04 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureNetworks import ConfigureNetworks
+from src.stonix_resources.rules.SystemIntegrityProtection import SystemIntegrityProtection
 
 
-class zzzTestRuleConfigureNetworks(RuleTest):
+class zzzTestSystemIntegrityProtection(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureNetworks(self.config,
-                                      self.environ,
-                                      self.logdispatch,
-                                      self.statechglogger)
+        self.rule = SystemIntegrityProtection(self.config,
+                                              self.environ,
+                                              self.logdispatch,
+                                              self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
