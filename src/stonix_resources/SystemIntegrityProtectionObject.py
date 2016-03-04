@@ -34,7 +34,7 @@ from .CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
-class SystemIntegrityProtection():
+class SystemIntegrityProtectionObject():
     '''
     lanlMacInfo gets information from the mac and LDAP to help set basi
     computer data for the mac this includes:

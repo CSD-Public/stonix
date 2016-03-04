@@ -27,8 +27,12 @@ This is a Unit Test for Rule SystemIntegrityProtection(6)
 @author: ekkehard j. koch
 @change: 2016/03/04 Original Implementation
 '''
+
 from __future__ import absolute_import
 import unittest
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
