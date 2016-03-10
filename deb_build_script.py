@@ -82,7 +82,7 @@ copyrighttext = '''#############################################################
 ###############################################################################
 '''
 
-sourcedir = '/Dylan/src/'
+sourcedir = '/stonix/src/'
 builddir = '/stonix-' + str(stonixversion) + '-1.noarch'
 pkgname = 'stonix-' + str(stonixversion) + '-1.noarch.deb'
 debiandir = builddir + '/DEBIAN/'
@@ -95,8 +95,8 @@ filesneeded =  {debiandir + 'control': controltext,
 
 try:
 
-    if os.path.exists('/Dylan/src/stonix_resources/rules'):
-        listofdirs = glob.glob('/Dylan/src/stonix_resources/rules/*.py')
+    if os.path.exists('/stonix/src/stonix_resources/rules'):
+        listofdirs = glob.glob('/stonix/src/stonix_resources/rules/*.py')
         listoffiles = []
         for item in listofdirs:
             listoffiles.append(os.path.basename(item))
@@ -108,7 +108,7 @@ try:
             for line in contentlines:
                 line = line.strip()
                 if line in listoffiles:
-                    os.system('rm -f ' + '/Dylan/src/stonix_resources/rules/' + line)
+                    os.system('rm -f ' + '/stonix/src/stonix_resources/rules/' + line)
         else:
             exit
     else:
@@ -126,7 +126,7 @@ try:
         os.chown(etcdir,0,0)
         
     if not os.path.exists(sourcedir):
-        print "Source directory not found (/Dylan/src/)"
+        print "Source directory not found (/stonix/src/)"
         exit
         
     for item in filesneeded:
