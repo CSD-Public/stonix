@@ -374,6 +374,19 @@ class MacBuilder():
                                              "stonix_resources"],
                                      specpath=os.getcwd())
 
+            if appName == "stonix":
+                fo = open(appName + ".spec", "r")
+                spectext = fo.read()
+                fo.close()
+                spectext = spectext.replace("hiddenimports=[]",
+                                            "hiddenimports=['ctypes', " +
+                                            "'_ctypes', 'ctypes._endian', " +
+                                            "'decimal', 'numbers']")
+                fo = open(appName + ".spec", "w")
+                fo.write(spectext)
+                fo.close()
+                raw_input("Pause to inspect spec file")
+
             # to build:
             print "Building the app..."
             mbl.pyinstBuild(appName + ".spec", "private/tmp",
