@@ -398,7 +398,6 @@ class MacBuilder():
                 fo = open(appName + ".spec", "w")
                 fo.write(spectext)
                 fo.close()
-                raw_input("Pause to inspect spec file")
 
             # to build:
             print "Building the app..."
