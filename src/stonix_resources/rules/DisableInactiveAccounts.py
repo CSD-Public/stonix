@@ -24,8 +24,8 @@
 
 Created on Jan 21, 2016
 
-This rule will set the global policy for inactive accounts so
-that any account not accessed/used within 35 days will be automatically disabled.
+This rule will set the global policy for inactive accounts so that any account
+not accessed/used within 35 days will be automatically disabled.
 
 @author: bemalmbe
 '''
@@ -36,7 +36,7 @@ import re
 import traceback
 import time
 from datetime import datetime
-from decimal import *
+from decimal import Decimal
 
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate
@@ -46,8 +46,8 @@ from ..CommandHelper import CommandHelper
 
 class DisableInactiveAccounts(Rule):
     '''
-    This rule will set the global policy for inactive accounts so 
-    that any account not accessed/used within 35 days will be automatically disabled.
+    This rule will set the global policy for inactive accounts so that any
+    account not accessed/used within 35 days will be automatically disabled.
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -62,17 +62,20 @@ class DisableInactiveAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will set the global policy for inactive accounts so \
-        that any account not accessed/used within 35 days will be automatically disabled.'
+        self.helptext = 'This rule will set the global policy for inactive \
+accounts so that any account not accessed/used within 35 days will be \
+automatically disabled.'
         self.guidance = ['CNSSI 1253', 'DISA STIG']
 
         datatype = 'bool'
         key = 'DisableInactiveAccounts'
-        instructions = 'To disable this rule, set the value of DisableInactiveAccounts to False.'
+        instructions = 'To disable this rule, set the value of ' + \
+            'DisableInactiveAccounts to False.'
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.applicable = {'type': 'white', 'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        self.applicable = {'type': 'white',
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.initobjs()
 
@@ -109,7 +112,8 @@ class DisableInactiveAccounts(Rule):
             if self.cmdhelper.getReturnCode() != 0:
                 self.rulesuccess = False
                 self.compliant = False
-                self.detailedresults += '\nThere was a problem retrieving the list of users on this system.'
+                self.detailedresults += '\nThere was a problem retrieving ' + \
+                    'the list of users on this system.'
 
             userlistnew = []
             for user in userlist:
@@ -124,14 +128,26 @@ class DisableInactiveAccounts(Rule):
                 inactivedays = self.getinactivedays(user.strip())
                 if int(inactivedays) > 35:
                     self.compliant = False
-                    self.detailedresults += '\nThe user account: ' + user.strip() + ' has been inactive for more than 35 days.'
+                    self.detailedresults += '\nThe user account "' + \
+                        user.strip() + \
+                        '" has been inactive for more than 35 days.'
                     self.inactiveaccounts.append(user.strip())
                 elif int(inactivedays) > 0 and int(inactivedays) <= 35:
                     daysleft = 35 - int(inactivedays)
-                    self.detailedresults  += '\nThe user account: ' + user.strip() + ' has been inactive for ' + str(inactivedays) + ' days. You have ' + str(daysleft) + ' days left before this account will be disabled.'
-                    self.logger.log(LogPriority.DEBUG, '\nThe user account: ' + user.strip() + ' has been inactive for ' + str(inactivedays) + ' days. You have ' + str(daysleft) + ' days left before this account will be disabled.')
+                    self.detailedresults += '\nThe user account "' + \
+                        user.strip() + '" has been inactive for ' + \
+                        str(inactivedays) + ' days. You have ' + \
+                        str(daysleft) + \
+                        ' days left before this account will be disabled.'
+                    self.logger.log(LogPriority.DEBUG,
+                                    '\nThe user account "' + user.strip() +
+                                    '" has been inactive for ' +
+                                    str(inactivedays) + ' days. You have ' +
+                                    str(daysleft) + ' days left before this ' +
+                                    'account will be disabled.')
                 else:
-                    self.detailedresults += '\nThe user account: ' + user.strip() + ' is not inactive. No problems.'
+                    self.detailedresults += '\nThe user account "' + \
+                        user.strip() + '" is not inactive. No problems.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -139,13 +155,15 @@ class DisableInactiveAccounts(Rule):
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def getinactivedays(self, user):
         '''
-        get and return the number of days a given user account has been inactive
+        Get and return the number of days a given user account has been
+        inactive
 
         @return: inactivedays
         @rtype: int
@@ -159,17 +177,23 @@ class DisableInactiveAccounts(Rule):
         try:
 
             if not user:
-                self.logger.log(LogPriority.DEBUG, "The given value for parameter user was None, or blank!")
+                self.logger.log(LogPriority.DEBUG, "The given value for " +
+                                "parameter user was None, or blank!")
                 return inactivedays
 
             if not isinstance(user, basestring):
-                self.logger.log(LogPriority.DEBUG, "The given value for parameter user was not of the correct type (int)!")
+                self.logger.log(LogPriority.DEBUG,
+                                "The given value for parameter user was not " +
+                                "of the correct type (int)!")
                 return inactivedays
 
-            self.cmdhelper.executeCommand('dscl . readpl /Users/' + user + ' accountPolicyData passwordLastSetTime')
+            self.cmdhelper.executeCommand('dscl . readpl /Users/' + user +
+                                          ' accountPolicyData ' +
+                                          'passwordLastSetTime')
             epochchangetimestr = self.cmdhelper.getOutputString()
             if self.cmdhelper.getReturnCode() != 0:
-                self.detailedresults += '\nThere was an issue reading ' + user + '\'s accountPolicyData passwordLastSetTime'
+                self.detailedresults += '\nThere was an issue reading ' + \
+                    user + '\'s accountPolicyData passwordLastSetTime'
                 self.compliant = False
                 return inactivedays
 
@@ -206,25 +230,30 @@ class DisableInactiveAccounts(Rule):
 
                 if self.inactiveaccounts:
                     for user in self.inactiveaccounts:
-                        self.cmdhelper.executeCommand('/usr/bin/pwpolicy -disableuser ' + user)
+                        self.cmdhelper.executeCommand('/usr/bin/pwpolicy ' +
+                                                      '-disableuser ' + user)
                         errout = self.cmdhelper.getErrorString()
                         rc = self.cmdhelper.getReturnCode()
                         if rc != 0:
-                            self.detailedresults += '\nThere was an issue trying to disable user account: ' + user
+                            self.detailedresults += '\nThere was an issue ' + \
+                                'trying to disable user account: ' + user
                             self.logger.log(LogPriority.DEBUG, errout)
                             fixsuccess = False
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {'eventtype': 'commandstring',
-                                     'command': '/usr/bin/pwpolicy -enableuser ' + user}
+                                     'command': '/usr/bin/pwpolicy -enableuser '
+                                                + user}
                             self.statechglogger.recordchgevent(myid, event)
 
                 else:
-                    self.detailedresults += '\nNo inactive accounts detected. Nothing to do.'
+                    self.detailedresults += '\nNo inactive accounts ' + \
+                        'detected. Nothing to do.'
 
             else:
-                self.detailedresults += '\nThe CI for this rule was not enabled. Nothing was done.'
+                self.detailedresults += '\nThe CI for this rule was not ' + \
+                    'enabled. Nothing was done.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
