@@ -28,10 +28,12 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 '''
 from __future__ import absolute_import
 import unittest
+import re
 import os
 
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
 
@@ -47,6 +49,7 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
     def tearDown(self):
         # restore backups of original files, made before testing
@@ -99,6 +102,74 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
 #                 if os.path.exists(loc):
 #                     os.rename(loc, loc + '.stonixbak')
         return success
+
+    def test_get_system_arch(self):
+        '''
+        test the command to get the system arch
+        @author: Breen Malmberg
+        '''
+
+        found = False
+
+        self.ch.executeCommand('uname -m')
+        self.assertEqual(0, self.ch.getReturnCode())
+        outputlines = self.ch.getOutput()
+        self.assertFalse(outputlines == '')
+        for line in outputlines:
+            if re.search('^x86\_64', line):
+                found = True
+        for line in outputlines:
+            if re.search('^x86', line):
+                found = True
+        self.assertEqual(found, True)
+
+    def test_get_suid_files(self):
+        '''
+        test the command to find suid files
+        @author: Breen Malmberg
+        '''
+
+        self.ch.executeCommand('find / -xdev -type f -perm -4000 -o -type f -perm -2000')
+        self.assertEqual(0, self.ch.getReturnCode())
+
+    def test_release_file_exists(self):
+        '''
+        does at least one of the release file paths that the code relies on exist?
+        '''
+
+        found = False
+
+        releasefilelocs = ['/etc/os-release', '/etc/redhat-release']
+        for loc in releasefilelocs:
+            if os.path.exists(loc):
+                found = True
+        self.assertEqual(found, True)
+
+    def test_audit_rules_file_exists(self):
+        '''
+        does at least one of the audit rules file paths that the code relies on exist?
+        '''
+
+        found = False
+
+        auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules']
+        for loc in auditruleslocs:
+            if os.path.exists(loc):
+                found = True
+        self.assertEqual(found, True)
+
+    def test_grub_cfg_file_exists(self):
+        '''
+        does at least one of the grub config file paths that the code relies on exist?
+        '''
+
+        found = False
+
+        grubcfglocs = ['/boot/grub/grub.conf', '/etc/default/grub']
+        for loc in grubcfglocs:
+            if os.path.exists(loc):
+                found = True
+        self.assertEqual(found, True)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
