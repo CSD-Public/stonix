@@ -99,9 +99,9 @@ automatically disabled.'
         # defaults
         self.compliant = True
         self.detailedresults = ''
-        getuserscmd = 'dscl . -ls /Users'
+        getuserscmd = '/usr/bin/dscl . -ls /Users'
         # do not check any accounts with these regex terms found in them
-        accexcludere = ['_', 'nobody', 'daemon', 'root', 'jss-server-account']
+        accexcludere = ['_', 'nobody', 'daemon', 'root']
         self.inactiveaccounts = []
 
         try:
@@ -187,7 +187,7 @@ automatically disabled.'
                                 "of the correct type (int)!")
                 return inactivedays
 
-            self.cmdhelper.executeCommand('dscl . readpl /Users/' + user +
+            self.cmdhelper.executeCommand('/usr/bin/dscl . readpl /Users/' + user +
                                           ' accountPolicyData ' +
                                           'passwordLastSetTime')
             epochchangetimestr = self.cmdhelper.getOutputString()
@@ -231,7 +231,7 @@ automatically disabled.'
                 if self.inactiveaccounts:
                     for user in self.inactiveaccounts:
                         self.cmdhelper.executeCommand('/usr/bin/pwpolicy ' +
-                                                      '-disableuser ' + user)
+                                                      '-disableuser -u ' + user)
                         errout = self.cmdhelper.getErrorString()
                         rc = self.cmdhelper.getReturnCode()
                         if rc != 0:
