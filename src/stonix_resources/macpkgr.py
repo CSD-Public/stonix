@@ -47,21 +47,21 @@ from CommandHelper import CommandHelper
 from stonixutilityfunctions import set_no_proxy, has_connection_to_server
 from Connectivity import Connectivity
 
-def NoRepoException(Exception):
+class NoRepoException(Exception):
     """
     Custom Exception    
     """
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
-def InvalidURL(Exception):
+class InvalidURL(Exception):
     """
     Custom Exception    
     """
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
-def NotApplicableToThisOS(Exception):
+class NotApplicableToThisOS(Exception):
     """
     Custom Exception    
     """
@@ -69,15 +69,15 @@ def NotApplicableToThisOS(Exception):
         Exception.__init__(self,*args,**kwargs)
 
 class MacPkgr(object):
-    
+
     def __init__(self, environ, logger):
         '''
         Mac package manager based on other stonix package managers.
-        
+
         Uses the stonix IHmac and InstallingHelper Libraries.  They can
         install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
         https URL
-        
+
         @parameter: Instanciated stonix Environment object
         @parameter: Instanciated stonix LogDispatcher object
         @parameter: Takes an https link as a repository.
@@ -86,21 +86,21 @@ class MacPkgr(object):
         @method: removepackage(package) - remove a package
         @method: checkInstall(package) - is the package installed?
         @method: checkAvailable(package) - is it available on the repository?
-        @method: getInstall(package) - 
-        @method: getRemove(package) - 
-        
+        @method: getInstall(package) -
+        @method: getRemove(package) -
+
         # Methods specific to Mac.
         @method: findDomain(package) - see docstring
-        
+
         @note: Uses the stonix IHmac and InstallingHelper Libraries.  They can
                install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
                https URL
-        
-        @note: WARNING: To use checkInstall or removepackage, this package 
-               manager converts all of the plists in the /var/db/receipts 
+
+        @note: WARNING: To use checkInstall or removepackage, this package
+               manager converts all of the plists in the /var/db/receipts
                directory to text, then converts they all back to binary when it
                is done performing a reverse lookup to find if a specific package
-               is installed. I would love to use Greg Neagle's 
+               is installed. I would love to use Greg Neagle's
                FoundationPlist.py, but licenses are not compatible.
 
         '''
@@ -112,7 +112,7 @@ class MacPkgr(object):
 
         #####
         # setting up to call ctypes to do a filesystem sync
-        if self.environ.getosfamily() == "macosx":
+        if self.environ.getosfamily() == "darwin":
             self.libc = C.CDLL("/usr/lib/libc.dylib")
         else:
             self.libc = None
@@ -121,7 +121,7 @@ class MacPkgr(object):
         self.detailedresults = ""
         self.pkgUrl = ""
         if not MACREPOROOT:
-            raise NoRepoException
+            raise NoRepoException("Where is the repo?")
         else:
             self.reporoot = MACREPOROOT
         self.dotmd5 = True
@@ -136,20 +136,20 @@ class MacPkgr(object):
         Install a package. Return a bool indicating success or failure.
 
         @param string package : Path to the package past the REPOROOT
-        
+
         IE. package would be: QuickAdd.Stonix.pkg rather than:
-            https://jss.lanl.gov/CasperShare/QuickAdd.Stonix.pkg 
+            https://jss.lanl.gov/CasperShare/QuickAdd.Stonix.pkg
             \_____________________________/ \________________/
                             |                        |
                         REPOROOT                  package
-                        
-        Where REPOROOT is initialized in the class __init__, and package is 
+
+        Where REPOROOT is initialized in the class __init__, and package is
         passed in to this method
-        
+
         This assumes that all packages installed via an instance of this class
         will be retrieved from the same REPOROOT.  If you need to use another
         REPOROOT, please use another instance of this class.
-        
+
         @return bool :
         @author: dwalker, rsn
         '''
@@ -242,7 +242,7 @@ class MacPkgr(object):
     def getPkgUrl(self):
         """
         Setter for the class varialbe pkgUrl
-        
+
         @author: Roy Nielsen
         """
         return self.pkgUrl
@@ -252,7 +252,7 @@ class MacPkgr(object):
     def setPkgUrl(self, pkgUrl=""):
         """
         Setter for the class varialbe pkgUrl
-        
+
         @author: Roy Nielsen
         """
         self.pkgUrl = pkgUrl
@@ -263,12 +263,12 @@ class MacPkgr(object):
         '''
         Remove a package domain. Return a bool indicating success or failure.
         Not yet implemented...
-        
+
         Will use pkgutil to determine domain, then delete files in receipt..
-        
-        @param string package : Name of the package to be removed, must be 
+
+        @param string package : Name of the package to be removed, must be
             recognizable to the underlying package manager.
-            
+
         @return bool :
         @author: rsn
         '''
@@ -280,15 +280,15 @@ class MacPkgr(object):
             domain = self.findDomain(package)
             self.logger.log(LogPriority.DEBUG, "removePackage - Domain: " + domain)
             if domain:
-                cmd_one = ["/usr/sbin/pkgutil", 
-                           "--only-files", 
-                           "--files", 
+                cmd_one = ["/usr/sbin/pkgutil",
+                           "--only-files",
+                           "--files",
                            domain]
-                cmd_two = ["/usr/sbin/pkgutil", 
-                           "--only-dirs", 
-                           "--files", 
+                cmd_two = ["/usr/sbin/pkgutil",
+                           "--only-dirs",
+                           "--files",
                            domain]
-        
+
                 #####
                 # Use the pkgutil command to get a list of files in the package 
                 # receipt
@@ -297,7 +297,7 @@ class MacPkgr(object):
                 files2remove = self.ch.getOutputString().split("\n")
                 print "Files to remove: " + str(files2remove)
                 self.logger.log(LogPriority.DEBUG, files2remove)
-                if self.ch.getReturnCode() == 0:
+                if str(self.ch.getReturnCode()) == str(0):
                     for file in files2remove:
                         if file:
                             try:
@@ -318,10 +318,10 @@ class MacPkgr(object):
                             # Potentially empty filename in the list, need to
                             # bump the count to match.
                             count = count + 1
-        
+
                     #####
                     # Directory list will include directories such as /usr
-                    # and /usr/local... Sucess is obtained only if all of 
+                    # and /usr/local... Sucess is obtained only if all of
                     # the files (not directories) are deleted.
                     if count == len(files2remove):
                         success = True
@@ -338,32 +338,32 @@ class MacPkgr(object):
                     # Reverse list as list is generated with parents first 
                     # rather than children first.
                     dirs2remove.reverse()
-                    self.logger.log(LogPriority.DEBUG, files2remove)
-                    if self.ch.getReturnCode() == 0:
+                    self.logger.log(LogPriority.DEBUG, dirs2remove)
+                    if str(self.ch.getReturnCode()) == str(0):
                         for dir in dirs2remove:
                             if dir:
                                 try:
                                     #####
-                                    # Make sure "/" is prepended to the directory 
+                                    # Make sure "/" is prepended to the directory
                                     # tree as pkgutil does not report the first "/"
                                     # in the file path
                                     os.rmdir(install_root + dir)
                                     #####
                                     # We don't care if any of the child directories
-                                    # still have files, as directories such as 
-                                    # /usr/bin, /usr/local/bin are reported by 
-                                    # pkgutil in the directory listing, which is 
+                                    # still have files, as directories such as
+                                    # /usr/bin, /usr/local/bin are reported by
+                                    # pkgutil in the directory listing, which is
                                     # why we use os.rmdir rather than shutil.rmtree
                                     # and we don't report on the success or failure
                                     # of removing directories.
                                 except OSError, err:
-                                    self.logger.log(LogPriority.DEBUG, 
+                                    self.logger.log(LogPriority.DEBUG,
                                                     "Error trying to remove: " + \
                                                     str(dir))
-                                    self.logger.log(LogPriority.DEBUG, 
+                                    self.logger.log(LogPriority.DEBUG,
                                                     "With Exception: " + str(err))
                                     pass
-                    
+
                         #####
                         # Make the system package database "forget" the package
                         # was installed.
@@ -374,7 +374,7 @@ class MacPkgr(object):
                 else:
                     self.logger.log(LogPriority.DEBUG, "Page: \"" + \
                                     str(package) + "\" Not found")
-                    
+
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
@@ -393,15 +393,15 @@ class MacPkgr(object):
 
     def checkInstall(self, package):
         '''
-        Check the installation status of a package. Return a bool; True if 
+        Check the installation status of a package. Return a bool; True if
         the package is installed.
 
         Use pkgutil to determine if package has been installed or not.
 
-        @param string package : Name of the package whose installation status 
-            is to be checked, must be recognizable to the underlying package 
+        @param string package : Name of the package whose installation status
+            is to be checked, must be recognizable to the underlying package
             manager.
-            
+
         @return bool :
         @author: rsn
         '''
@@ -414,7 +414,7 @@ class MacPkgr(object):
             self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
             if domain:
                 success = True
-                self.logger.log(LogPriority.DEBUG, 
+                self.logger.log(LogPriority.DEBUG,
                                 "Domain: " + str(domain) + " found")
 
         except(KeyboardInterrupt,SystemExit):
@@ -468,13 +468,13 @@ class MacPkgr(object):
 
     ###########################################################################
 
-    def getInstall(self):
-        return self.install
+    def getInstall(self, package):
+        return self.installPackage(package)
 
     ###########################################################################
 
-    def getRemove(self):
-        return self.remove
+    def getRemove(self, package):
+        return self.removePackage(package)
 
     ###########################################################################
 
@@ -484,21 +484,21 @@ class MacPkgr(object):
         a domain.  Apple stores package information in "domain" format, rather
         than a package name format. Accessing the package name means we need to
         look through all the ".plist" files in /var/db/receipts to find the
-        package name, then we can return the domain so that can be used for 
+        package name, then we can return the domain so that can be used for
         package management.
-        
+
         Install package receipts can be found in /var/db/receipts.
-        
+
         A domain is the filename in the receipts database without the ".plist"
         or ".bom".
-        
+
         An example is org.macports.MacPorts
-        
+
         @parameters: pkg - the name of the install package that we need the
                      domain for.
         @returns: domains - the first domain in a possible list of domains.
-        
-        @author: Roy Nielsen 
+
+        @author: Roy Nielsen
         """
         try:
             self.logger.log(LogPriority.DEBUG, "Looking for: " + str(pkg))
@@ -510,13 +510,13 @@ class MacPkgr(object):
                    os.path.isfile(os.path.join(path, name)) and \
                    name.endswith(".plist"):
                     files.append(name)
-    
+
             unwrap = "/usr/bin/plutil -convert xml1 /var/db/receipts/*.plist"
             wrap = "/usr/bin/plutil -convert binary1 /var/db/receipts/*.plist"
-    
+
             self.ch.executeCommand(unwrap)
             
-            if not re.match("^%s$"%self.ch.getReturnCode(), str(0)):
+            if not re.match("^%s$"%str(self.ch.getReturnCode()), str(0)):
                 #####
                 # Unwrap command didn't work... return None
                 domain = None
@@ -528,11 +528,14 @@ class MacPkgr(object):
                 #####
                 # Unwrap command worked, process the receipt plists
                 for afile in files:
+                    if re.match("^\..+.plist", afile):
+                        continue
+                    self.logger.log(LogPriority.DEBUG, "afile: " + str(afile))
                     #####
                     # Get the path without the plist file extension.
                     afile_path = os.path.join(path, afile)
                     #####
-                    # Make sure we have a valid file on the filesystem 
+                    # Make sure we have a valid file on the filesystem
                     if os.path.isfile(afile_path):
                         try:
                             plist = plistlib.readPlist(afile_path)
@@ -563,7 +566,7 @@ class MacPkgr(object):
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)   
-        
+
         return domain
     
     ###########################################################################
