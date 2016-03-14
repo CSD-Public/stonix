@@ -30,6 +30,7 @@ This class handles muting the microphone input levels.
 @change: 2014/12/15 dkennel Fix for Macs with no microphones (and ergo no input)
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/03/14 eball Fixed possible casting error, PEP8 cleanup
 '''
 from __future__ import absolute_import
 import traceback
@@ -121,8 +122,9 @@ valid exceptions.'''
                     raise
                 except ValueError:
                     self.logdispatch.log(LogPriority.DEBUG,
-                                     ['MuteMic.findPulseMic',
-                                      'Ooops! Tried to convert non-integer ' + element])
+                                         ['MuteMic.findPulseMic',
+                                          'Oops! Tried to convert non-integer '
+                                          + element])
             if re.search('input-microphone', line):
                 self.logdispatch.log(LogPriority.DEBUG,
                                      ['MuteMic.findPulseMic',
@@ -161,8 +163,9 @@ valid exceptions.'''
                     for pulseline in defaultsdata:
                         if re.search(eline, pulseline):
                             self.logdispatch.log(LogPriority.DEBUG,
-                                         ['MuteMic.findPulseMic',
-                                          'Found expected line ' + str(pulseline)])
+                                                 ['MuteMic.findPulseMic',
+                                                  'Found expected line ' +
+                                                  str(pulseline)])
                             linesfound = linesfound + 1
                 if linesfound == len(indexlist):
                     return True
@@ -174,7 +177,7 @@ valid exceptions.'''
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         return True
 
@@ -190,7 +193,8 @@ valid exceptions.'''
         chklevels = None
         if self.environ.getosfamily() == 'darwin':
             darwin = True
-            chklevels = "/usr/bin/osascript -e 'get the input volume of (get volume settings)'"
+            chklevels = "/usr/bin/osascript -e 'get the input volume of " + \
+                "(get volume settings)'"
         elif os.path.exists('/usr/bin/amixer'):
             chklevels = '/usr/bin/amixer sget Capture Volume'
 
@@ -207,6 +211,11 @@ valid exceptions.'''
                     level = level.strip()
                     if level == 'missing value':
                         level = 0
+                    elif not level.isdigit():
+                        warning = 'Output from command "' + chklevels + \
+                            '" expected to be "missing value" or a number; ' + \
+                            'actual output was: "' + level + '"'
+                        self.logdispatch.log(LogPriority.WARNING, warning)
                     else:
                         int(level)
                 else:
@@ -224,7 +233,7 @@ valid exceptions.'''
                                           'results = ' + str(results)])
                     for line in results:
                         if re.search('Capture [0-9]', line) and not \
-                        re.search('Limits:', line):
+                           re.search('Limits:', line):
                             match = re.search('Capture [0-9]+', line)
                             capturevol = match.group(0).split()[1]
                             try:
@@ -248,7 +257,7 @@ valid exceptions.'''
             except Exception, err:
                 self.rulesuccess = False
                 self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+                    " - " + str(traceback.format_exc())
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
             try:
@@ -261,7 +270,7 @@ valid exceptions.'''
             except Exception, err:
                 self.rulesuccess = False
                 self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+                    " - " + str(traceback.format_exc())
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['MuteMic.report',
@@ -271,10 +280,13 @@ valid exceptions.'''
                 self.detailedresults = 'Microphone input not set to zero!'
             elif level > 0 and not self.checkpulseaudio():
                 self.compliant = False
-                self.detailedresults = 'Microphone input not set to zero! and microphone not set for default mute in Pulse Audio defaults.'
+                self.detailedresults = 'Microphone input not set to zero! ' + \
+                    'and microphone not set for default mute in Pulse ' + \
+                    'Audio defaults.'
             elif level == 0 and not self.checkpulseaudio():
                 self.compliant = False
-                self.detailedresults = 'Microphone not set for default mute in Pulse Audio defaults.'
+                self.detailedresults = 'Microphone not set for default ' + \
+                    'mute in Pulse Audio defaults.'
             else:
                 self.compliant = True
                 self.detailedresults = 'Microphone input set to zero.'
@@ -314,14 +326,15 @@ valid exceptions.'''
                     for pulseline in defaultsdata:
                         if re.search(eline, pulseline):
                             self.logdispatch.log(LogPriority.DEBUG,
-                                         ['fixPulseAudio',
-                                          'Found expected line ' + str(pulseline)])
+                                                 ['fixPulseAudio',
+                                                  'Found expected line ' +
+                                                  str(pulseline)])
                             elinefound = True
                     if not elinefound:
                         defaultsdata.append(eline)
                         self.logdispatch.log(LogPriority.DEBUG,
-                                         ['fixPulseAudio',
-                                          'Appended line ' + str(eline)])
+                                             ['fixPulseAudio',
+                                              'Appended line ' + str(eline)])
                 tempfile = self.pulsedefaults + '.stonixtmp'
                 whandle = open(tempfile, 'w')
                 for line in defaultsdata:
@@ -349,7 +362,7 @@ valid exceptions.'''
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def fix(self):
@@ -376,14 +389,14 @@ valid exceptions.'''
                 # Sleep here to give amixer and pulse a chance to catch up
                 time.sleep(5)
                 self.detailedresults = self.detailedresults + \
-                'Attempted to set volume to zero.'
+                    'Attempted to set volume to zero.'
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
             except Exception, err:
                 self.rulesuccess = False
                 self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+                    " - " + str(traceback.format_exc())
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
@@ -410,5 +423,5 @@ valid exceptions.'''
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
