@@ -304,3 +304,6 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
+
+# These are accounts to exclude from DisableInactiveAccounts rule
+EXCLUDEACCOUNTS = []

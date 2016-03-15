@@ -31,6 +31,7 @@ This is a Unit Test for Rule DisableInactiveAccounts
 from __future__ import absolute_import
 import sys
 import unittest
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
@@ -66,6 +67,55 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         '''
         success = True
         return success
+
+    def test_dscl_path(self):
+        '''
+        test for valid location of dscl command path
+        @author: Breen Malmberg
+        '''
+
+        found = False
+        if os.path.exists('/usr/bin/dscl'):
+            found = True
+        self.assertTrue(found, True)
+
+    def test_get_users(self):
+        '''
+        test the command to get the list of users
+        @author: Breen Malmberg
+        '''
+
+        self.ch.executeCommand('/usr/bin/dscl . -ls /Users')
+        rc = self.ch.getReturnCode()
+        self.assertTrue(rc, 0)
+
+    def test_pwpolicy_path(self):
+        '''
+        test for valid location of pwpolicy command path
+        @author: Breen Malmberg
+        '''
+
+        found = False
+        if os.path.exists('/usr/bin/pwpolicy'):
+            found = True
+        self.assertTrue(found, True)
+
+    def test_initobjs(self):
+        '''
+        test whether the private method initobjs works
+        @author: Breen Malmberg
+        '''
+
+        self.rule.initobjs()
+        self.assertFalse(self.rule.cmdhelper, None)
+
+    def test_ci(self):
+        '''
+        test whether ci initialized correctly
+        @author: Breen Malmberg
+        '''
+
+        self.assertFalse(self.rule.ci, None)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
