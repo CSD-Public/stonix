@@ -29,6 +29,7 @@ Created on Apr 5, 2013
 import KVADefault
 import KVAConf
 import KVATaggedConf
+import KVAProfiles
 import os
 from logdispatcher import LogPriority
 
@@ -44,7 +45,7 @@ class KVEditor(object):
     not run commit until all'''
 
     def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
-                 configType=""):
+                 configType="", output=""):
         '''
         KVEditor constructor
         @param stchlgr: StateChgLogger object
@@ -65,6 +66,7 @@ class KVEditor(object):
         self.logger = logger
         self.configType = configType
         self.data = data
+        self.output = output
         self.detailedresults = ""
         self.missing = []
         self.fixables = {}
@@ -89,12 +91,15 @@ class KVEditor(object):
         elif self.kvtype == "defaults":
             self.editor = KVADefault.KVADefault(self.path, self.logger,
                                                 self.data)
+        elif self.kvtype == "profiles":
+            self.editor = KVAProfiles.KVAProfiles(self.logger)
+
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
                             ["KVEditor.__init__", self.detailedresults])
             return None
-
+        
     def setData(self, data):
         if data is None:
             return False
@@ -170,6 +175,8 @@ class KVEditor(object):
                 status = self.validateConf()
             elif self.kvtype == "tagconf":
                 status = self.validateTag()
+            elif self.kvtype == "profiles":
+                status = self.validateProfiles()
             else:
                 status = "invalid"
             return status
@@ -188,6 +195,8 @@ class KVEditor(object):
                 status = self.updateConf()
             elif self.kvtype == "tagconf":
                 status = self.updateTag()
+            elif self.kvtype == "profiles":
+                status = self.updateProfiles()
             else:
                 return False
             return status
@@ -300,7 +309,38 @@ class KVEditor(object):
             return True
         else:
             return False
-
+    
+    def validateProfiles(self):
+        '''
+        @since: 3/10/2016
+        @author: dwalker
+        @var self.data: A dictionary in the form of {k: {v: ["numberValue",
+                                                             "datatype",
+                                                             "acceptableDeviation"(optional)],
+                                                        v: ["", "", ""],
+                                                        v: ["", "", ""],
+                                                        .
+                                                        .
+                                                        .}}
+        @var: k: The profile sub-identifier e.g.
+            com.apple.mobiledevice.passwordpolicy
+        @var v: The profile data key-value pairs in a dictionary e.g.
+            allowSimple that will appear in the output of the system_profiler
+            command within the first opening brace after the profile
+            sub-identifier.  v also contains an associated list containing:
+            [a,b,c]
+            a) the value on the other side of the = sign
+            b) whether that value is an integer(int) or a boolean(bool)
+            c) (optional) whether the value present after the = sign(a),
+                if an int, can be lower(less) or higher(more) in order to
+                detect and represent stringency (see self.data description
+                above).
+        @return: Value returned from validate method in factory sub-class
+        @rtype: bool
+        '''
+        for k, v in self.data.iteritems():
+            return self.editor.validate(self.output, k, v)
+    
     def commit(self):
         if self.kvtype == "defaults":
             retval = self.editor.commit()
