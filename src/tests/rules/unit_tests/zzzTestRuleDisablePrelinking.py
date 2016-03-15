@@ -22,46 +22,41 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule SecureMDNS
+This is a Unit Test for Rule DisablePrelinking
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Eric Ball
+@change: 2016/02/10 eball Original implementation
 '''
 from __future__ import absolute_import
 import os
+import re
 import unittest
-import sys
-
-sys.path.append("../../../..")
-from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
-from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.pkghelper import Pkghelper
-from src.stonix_resources.ServiceHelper import ServiceHelper
-from src.stonix_resources.rules.SecureMDNS import SecureMDNS
+from src.stonix_resources.rules.DisablePrelinking import DisablePrelinking
+from src.stonix_resources.stonixutilityfunctions import writeFile
+from src.tests.lib.logdispatcher_mock import LogPriority
+from src.tests.lib.RuleTestTemplate import RuleTest
 
 
-class zzzTestRuleSecureMDNS(RuleTest):
+class zzzTestRuleDisablePrelinking(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = SecureMDNS(self.config,
-                               self.environ,
-                               self.logdispatch,
-                               self.statechglogger)
+        self.rule = DisablePrelinking(self.config,
+                                      self.environ,
+                                      self.logdispatch,
+                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
-        self.lc = "/bin/launchctl"
-        self.plb = "/usr/libexec/PlistBuddy"
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.prelinkInstalled = False
 
     def tearDown(self):
-        pass
+        if not self.prelinkInstalled:
+            self.ph.remove("prelink")
 
     def runTest(self):
         self.simpleRuleTest()
@@ -74,66 +69,36 @@ class zzzTestRuleSecureMDNS(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        if self.environ.getosfamily() == "darwin":
-            success = False
-            osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.10.0") or \
-               osxversion.startswith("10.10.1") or \
-               osxversion.startswith("10.10.2") or \
-               osxversion.startswith("10.10.3"):
-                debug = "Using discoveryd LaunchDaemon"
-                self.logdispatch.log(LogPriority.DEBUG, debug)
-                service = \
-                    "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
-                servicename = "com.apple.networking.discoveryd"
-                parameter = "--no-multicast"
-                pbd = self.plb + ' -c "Delete :ProgramArguments: string ' \
-                    + parameter + '" ' + service
-                success = True
-            else:
-                debug = "Using mDNSResponder LaunchDaemon"
-                self.logdispatch.log(LogPriority.DEBUG, debug)
-                service = "/System/Library/LaunchDaemons/" + \
-                    "com.apple.mDNSResponder.plist"
-                if osxversion.startswith("10.10"):
-                    servicename = "com.apple.mDNSResponder.reloaded"
-                    parameter = "-NoMulticastAdvertisements"
-                else:
-                    servicename = "com.apple.mDNSResponder"
-                    parameter = "-NoMulticastAdvertisements"
-                pbd = self.plb + ' -c "Delete :ProgramArguments: string ' \
-                    + parameter + '" ' + service
-                success = True
-            if success and self.sh.auditservice(service, servicename):
-                success = self.ch.executeCommand(pbd)
-            if success and self.sh.auditservice(service, servicename):
-                success = self.sh.reloadservice(service, servicename)
+        if self.ph.check("prelink"):
+            self.prelinkInstalled = True
+        elif self.ph.checkAvailable("prelink"):
+            self.ph.install("prelink")
+        cmd = ["/usr/sbin/prelink", "/bin/ls"]
+        self.ch.executeCommand(cmd)
+
+        if re.search("debian|ubuntu", self.environ.getostype().lower()):
+            path = "/etc/default/prelink"
         else:
-            ph = Pkghelper(self.logdispatch, self.environ)
-            package = "avahi-daemon"
-            service = "avahi-daemon"
-            if (ph.determineMgr() == "yum" or ph.determineMgr() == "dnf"):
-                package = "avahi"
-                path = "/etc/sysconfig/network"
-                if os.path.exists(path):
-                    tmppath = path + ".tmp"
-                    data = {"NOZEROCONF": "yes"}
-                    editor = KVEditorStonix(self.statechglogger,
-                                            self.logdispatch, "conf",
-                                            path, tmppath, data,
-                                            "notpresent", "closedeq")
-                    if not editor.report():
-                        if editor.fix():
-                            if not editor.commit():
-                                success = False
-                        else:
-                            success = False
-            elif ph.determineMgr() == "zypper":
-                package = "avahi"
-            if not ph.check(package) and ph.checkAvailable(package):
-                success = ph.install(package)
-            if success and not self.sh.auditservice(service):
-                self.sh.enableservice(service)
+            path = "/etc/sysconfig/prelink"
+        if os.path.exists(path):
+            tmppath = path + ".tmp"
+            data = {"PRELINKING": "yes"}
+            self.editor = KVEditorStonix(self.statechglogger, self.logdispatch,
+                                         "conf", path, tmppath,
+                                         data, "present", "closedeq")
+            if not self.editor.report():
+                if self.editor.fix():
+                    if not self.editor.commit():
+                        success = False
+                        self.logdispatch.log(LogPriority.ERROR,
+                                             "KVEditor failed to commit.")
+                else:
+                    success = False
+                    self.logdispatch.log(LogPriority.ERROR,
+                                         "KVEditor failed to fix.")
+        else:
+            writeFile(path, "PRELINKING=yes", self.logdispatch)
+
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
