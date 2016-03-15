@@ -311,3 +311,6 @@ LANLLOGROTATE = "700.lanl.logrotate"
 PROXYSERVER = "proxyout.lanl.gov"
 PROXYPORT = "8080"
 PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
+
+# The following should be system accounts which should not be disabled by DisableInactiveAccounts
+EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
