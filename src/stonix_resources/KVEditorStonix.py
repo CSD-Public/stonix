@@ -58,13 +58,13 @@ class KVEditorStonix(KVEditor):
     intent variable and data can only be set once upon instantiation'''
 
     def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
-                                                                configType=""):
+                 configType="", output=""):
         '''If kvtype is conf or tagconf, although not mandatory, intent and
         configType should be passed as parameters at object instantiation time
         '''
         self.logger = logger
         KVEditor.__init__(self, stchlgr, logger, kvtype, path, tmpPath, data,
-                                                            intent, configType)
+                          intent, configType, output)
         self.stchlgr = stchlgr
         self.kvtype = kvtype
         self.eid = ""
