@@ -57,11 +57,11 @@ class KVAProfiles():
                     for line in output2:
                         if re.search("^" + key2 + " =", line.strip()):
                             founditem = True
-                            temp = line.split("=")
+                            temp = line.strip().split("=")
                             if temp[1]:
                                 temp[1] = re.sub(";$", "", temp[1])
                                 if val2[1] == "bool":
-                                    if temp[1] != val2[1]:
+                                    if temp[1] != val2[0]:
                                         debug += "Key: " + key2 + " doesn't " + \
                                             "contain the correct boolean " + \
                                             "value\n"
@@ -93,8 +93,7 @@ class KVAProfiles():
                         self.logger.log(LogPriority.DEBUG, debug)
                     if unsecure:
                         return False
-                    else:
-                        return True
+                return True
             else:
                 debug = "Key: " + key + " doesn't contain any nested " + \
                     "key value pairs\n"
