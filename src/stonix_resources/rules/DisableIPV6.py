@@ -366,6 +366,23 @@ and/or wasn't able to be created\n"
         sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
                    "net.ipv6.conf.default.disable_ipv6": "1"}
         self.helper = Pkghelper(self.logger, self.environ)
+        #stig portion
+#         if self.helper.manager == "apt-get":
+#             nfspkg = "nfs-common"
+#         elif self.helper.manager == "yum":
+#             nfspkg = "nfs-utils.x86_64"
+#         if self.helper.check(nfspkg):
+#             if os.path.exists("/etc/netconfig"):
+#                 item1 = "udp6 tpi_clts v inet6 udp - -"
+#                 item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
+#                 contents = readFile("/etc/netconfig", self.logger)
+#                 for line in contents:
+#                     line = re.sub("\s+", " ", line.strip())
+#                     if re.search(item1, line) or re.search(item2, line):
+#                         self.detailedresults += "/etc/netconfig file contains " + \
+#                             "lines we don't want present\n"
+#                         compliant = False
+                
         if self.helper.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             if not os.path.exists(ifacefile):
