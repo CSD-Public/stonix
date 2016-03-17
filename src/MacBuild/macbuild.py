@@ -259,7 +259,6 @@ class MacBuilder():
         Clean all artifacts from previous builds.
         @author: Eric Ball
         '''
-
         folders = (["dmgs", "stonix", "stonix4mac/dist", "stonix4mac/private"]
                    + glob("stonix.*") + glob("dmgs.*"))
         files = (glob("*.pyc") + glob("stonix4mac/*.pyc") +
@@ -477,9 +476,6 @@ class MacBuilder():
 
         print "Started buildStonix4MacAppPkg..."
         try:
-            # 2/3/2015 - rsn adding this to make sure the luggage build does 
-            # not go stale
-
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
 
