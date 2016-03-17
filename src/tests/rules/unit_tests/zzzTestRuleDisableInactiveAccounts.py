@@ -22,57 +22,37 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableInactiveAccounts
 
 @author: Breen Malmberg
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@change: 02/11/2016 Original Implementation
 '''
+
 from __future__ import absolute_import
-import unittest
-import re
-import os
 import sys
+import unittest
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
+from src.stonix_resources.rules.DisableInactiveAccounts import DisableInactiveAccounts
 
 
-class zzzTestRuleConsoleRootOnly(RuleTest):
+class zzzTestRuleBootloaderPerms(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = EnableKernelAuditing(self.config,
+        self.rule = DisableInactiveAccounts(self.config,
                                     self.environ,
                                     self.logdispatch,
                                     self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
     def tearDown(self):
-        # restore backups of original files, made before testing
-#         if self.environ.getosfamily() == 'darwin':
-#             auditcontrolbak = '/etc/security/audit_control.stonixbak'
-#             audituserbak = '/etc/security/audit_user.stonixbak'
-#             if os.path.exists(auditcontrolbak):
-#                 os.rename(auditcontrolbak, '/etc/security/audit_control')
-#             if os.path.exists(audituserbak):
-#                 os.rename(audituserbak, '/etc/security/audit_user')
-#         else:
-#             auditdbaks =['/etc/audit/auditd.conf.stonixbak', '/etc/auditd.conf.stonixbak'] 
-#             auditrulesbaks = ['/etc/audit/audit.rules.stonixbak', '/etc/audit/rules.d/audit.rules.stonixbak']
-#             for bak in auditdbaks:
-#                 if os.path.exists(bak):
-#                     os.rename(bak, bak[:-10])
-#             for bak in auditrulesbaks:
-#                 if os.path.exists(bak):
-#                     os.rename(bak, bak[:-10])
         pass
 
     def runTest(self):
@@ -85,95 +65,57 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-
         success = True
-# 
-#         # make backups of any original files, before testing
-#         if self.environ.getosfamily() == 'darwin':
-#             if os.path.exists('/etc/security/audit_control'):
-#                 os.rename('/etc/security/audit_control', '/etc/security/audit_control.stonixbak')
-#             if os.path.exists('/etc/security/audit_user'):
-#                 os.rename('/etc/security/audit_user', '/etc/security/audit_user.stonixbak')
-#         else:
-#             auditdpaths = ['/etc/audit/auditd.conf', '/etc/auditd.conf']
-#             for path in auditdpaths:
-#                 if os.path.exists(path):
-#                     os.rename(path, path + '.stonixbak')
-#             if os.path.exists('/etc/audisp/audispd.conf'):
-#                 os.rename('/etc/audisp/audispd.conf', '/etc/audisp/audispd.conf.stonixbak')
-#             auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules']
-#             for loc in auditruleslocs:
-#                 if os.path.exists(loc):
-#                     os.rename(loc, loc + '.stonixbak')
         return success
 
-    def test_get_system_arch(self):
+    def test_dscl_path(self):
         '''
-        test the command to get the system arch
+        test for valid location of dscl command path
         @author: Breen Malmberg
         '''
 
         found = False
+        if os.path.exists('/usr/bin/dscl'):
+            found = True
+        self.assertTrue(found, True)
 
-        self.ch.executeCommand('uname -m')
-        self.assertEqual(0, self.ch.getReturnCode())
-        outputlines = self.ch.getOutput()
-        self.assertFalse(outputlines == '')
-        for line in outputlines:
-            if re.search('^x86\_64', line):
-                found = True
-        for line in outputlines:
-            if re.search('^x86', line):
-                found = True
-        self.assertEqual(found, True)
-
-    def test_get_suid_files(self):
+    def test_get_users(self):
         '''
-        test the command to find suid files
+        test the command to get the list of users
         @author: Breen Malmberg
         '''
 
-        self.ch.executeCommand('find / -xdev -type f -perm -4000 -o -type f -perm -2000')
-        self.assertEqual(0, self.ch.getReturnCode())
+        self.ch.executeCommand('/usr/bin/dscl . -ls /Users')
+        rc = self.ch.getReturnCode()
+        self.assertTrue(rc, 0)
 
-    def test_release_file_exists(self):
+    def test_pwpolicy_path(self):
         '''
-        does at least one of the release file paths that the code relies on exist?
-        '''
-
-        found = False
-
-        releasefilelocs = ['/etc/os-release', '/etc/redhat-release']
-        for loc in releasefilelocs:
-            if os.path.exists(loc):
-                found = True
-        self.assertEqual(found, True)
-
-    def test_audit_rules_file_exists(self):
-        '''
-        does at least one of the audit rules file paths that the code relies on exist?
+        test for valid location of pwpolicy command path
+        @author: Breen Malmberg
         '''
 
         found = False
+        if os.path.exists('/usr/bin/pwpolicy'):
+            found = True
+        self.assertTrue(found, True)
 
-        auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules']
-        for loc in auditruleslocs:
-            if os.path.exists(loc):
-                found = True
-        self.assertEqual(found, True)
-
-    def test_grub_cfg_file_exists(self):
+    def test_initobjs(self):
         '''
-        does at least one of the grub config file paths that the code relies on exist?
+        test whether the private method initobjs works
+        @author: Breen Malmberg
         '''
 
-        found = False
+        self.rule.initobjs()
+        self.assertFalse(self.rule.cmdhelper, None)
 
-        grubcfglocs = ['/boot/grub/grub.conf', '/etc/default/grub']
-        for loc in grubcfglocs:
-            if os.path.exists(loc):
-                found = True
-        self.assertEqual(found, True)
+    def test_ci(self):
+        '''
+        test whether ci initialized correctly
+        @author: Breen Malmberg
+        '''
+
+        self.assertFalse(self.rule.ci, None)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
