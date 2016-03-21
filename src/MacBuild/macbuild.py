@@ -52,7 +52,6 @@ sys.path.append("../..")
 import os
 import stat
 import optparse
-import macbuildlib as mbl
 import re
 import traceback
 from glob import glob
@@ -60,31 +59,22 @@ from tempfile import mkdtemp
 from time import time
 from subprocess import call
 from shutil import rmtree, copy2
-# For setupRamdisk() and detachRamdisk()
-from macRamdisk import RamDisk, detach
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+from src.MacBuild.macbuildlib import macbuildlib
+from src.MacBuild.macRamdisk import RamDisk, detach
 
 
 class MacBuilder():
 
-    def __init__(self):
+    def __init__(self,
+                 options=optparse.Values({"compileGui": False, "version": "0",
+                                          "clean": False, "test": False}),
+                 ramdisk_size=1024):
         '''
         Build .pkg and .dmg for stonix4mac
+        @param ramdisk_size: int that defines ramdisk size in MB
         '''
-        parser = optparse.OptionParser()
-        parser.add_option("-v", "--version", action="store", dest="version",
-                          type="string", default="0",
-                          help="Set the STONIX build version number",
-                          metavar="version")
-        parser.add_option("-g", "--gui", action="store_true",
-                          dest="compileGui",
-                          default=False,
-                          help="If set, the PyQt files will be recompiled")
-        parser.add_option("-c", "--clean", action="store_true", dest="clean",
-                          default=False, help="Clean all artifacts from " +
-                          "previous builds and exit")
-        options, __ = parser.parse_args()
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
@@ -110,9 +100,9 @@ class MacBuilder():
 
         self.compileGui = options.compileGui
 
+        self.mbl = macbuildlib()
         self.RSYNC = "/usr/bin/rsync"
-        self.PYUIC = mbl.getpyuicpath()
-        self.DEFAULT_RAMDISK_SIZE = 1024  # 1GB
+        self.PYUIC = self.mbl.getpyuicpath()
 
         # This script should be run from [stonixroot]/src/MacBuild. We must
         # record the [stonixroot] directory in a variable.
@@ -130,6 +120,7 @@ class MacBuilder():
         print " "
         print " "
 
+        self.ramdisk_size = ramdisk_size
         self.STONIX = "stonix"
         self.STONIXICON = "stonix_icon"
         self.STONIXVERSION = self.APPVERSION
@@ -137,7 +128,8 @@ class MacBuilder():
         self.STONIX4MACICON = "stonix_icon"
         self.STONIX4MACVERSION = self.APPVERSION
 
-        self.driver()
+        if not options.test:
+            self.driver()
 
     def driver(self):
         '''
@@ -145,7 +137,7 @@ class MacBuilder():
         '''
 
         # Check that user building stonix has uid 0
-        current_user, _ = mbl.checkBuildUser()
+        current_user, _ = self.mbl.checkBuildUser()
 
         # Create temp home directory for building with pyinstaller
         directory = os.environ["HOME"]
@@ -154,9 +146,9 @@ class MacBuilder():
         os.chmod(tmphome, 0755)
 
         # Create a ramdisk and mount it to the tmphome
-        ramdisk = self.setupRamdisk(self.DEFAULT_RAMDISK_SIZE, tmphome)
+        ramdisk = self.setupRamdisk(self.ramdisk_size, tmphome)
         os.mkdir("/tmp/the_luggage")
-        luggage = self.setupRamdisk(self.DEFAULT_RAMDISK_SIZE,
+        luggage = self.setupRamdisk(self.ramdisk_size,
                                     "/tmp/the_luggage")
         print "Device for tmp ramdisk is: " + ramdisk
 
@@ -208,11 +200,11 @@ class MacBuilder():
             call([self.RSYNC, "-aqp", tmphome + "/src", self.STONIX_ROOT])
 
             os.chdir(self.STONIX_ROOT)
-            mbl.chownR(current_user, "src")
+            self.mbl.chownR(current_user, "src")
 
             # chmod so it's readable by everyone, writable by the group
-            mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
-                       stat.S_IWGRP, "src", "append")
+            self.mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
+                            stat.S_IWGRP, "src", "append")
 
             # Return to the start dir
             os.chdir(self.STONIX_ROOT + "/src/MacBuild")
@@ -243,6 +235,7 @@ class MacBuilder():
     def detachRamdisk(self, device):
         if detach(device):
             print("Successfully detached disk: " + str(device).strip())
+            return True
         else:
             print("Couldn't detach disk: " + str(device).strip())
             raise Exception("Cannot eject disk: " + str(device).strip())
@@ -314,10 +307,10 @@ class MacBuilder():
         '''
         print "Changing versions in localize.py..."
         try:
-            mbl.regexReplace(localizePath,
-                             r"^STONIXVERSION =.*$",
-                             r"STONIXVERSION = '" + self.APPVERSION + "'",
-                             backupname="../stonix_resources/localize.py.bak")
+            self.mbl.regexReplace(localizePath,
+                                  r"^STONIXVERSION =.*$",
+                                  r"STONIXVERSION = '" + self.APPVERSION + "'",
+                                  backupname="../stonix_resources/localize.py.bak")
         except Exception:
             raise
 
@@ -381,11 +374,11 @@ class MacBuilder():
 
             # to compile a pyinstaller spec file for app creation:
             print "Creating a pyinstaller spec file for the project..."
-            print mbl.pyinstMakespec([appName + ".py"], True, True, False,
-                                     "../" + appIcon + ".icns",
-                                     pathex=["stonix_resources/rules:" +
-                                             "stonix_resources"],
-                                     specpath=os.getcwd())
+            print self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
+                                          "../" + appIcon + ".icns",
+                                          pathex=["stonix_resources/rules:" +
+                                                  "stonix_resources"],
+                                          specpath=os.getcwd())
 
             if appName == "stonix":
                 fo = open(appName + ".spec", "r")
@@ -401,18 +394,18 @@ class MacBuilder():
 
             # to build:
             print "Building the app..."
-            mbl.pyinstBuild(appName + ".spec", "private/tmp",
-                            appPath + "/dist", True, True)
+            self.mbl.pyinstBuild(appName + ".spec", "private/tmp",
+                                 appPath + "/dist", True, True)
 
             plist = appPath + "/dist/" + appName + ".app/Contents/Info.plist"
 
             # Change version string of the app
             print "Changing .app version string..."
-            mbl.modplist(plist, "CFBundleShortVersionString", appVersion)
+            self.mbl.modplist(plist, "CFBundleShortVersionString", appVersion)
 
             # Change icon name in the app
             print "Changing .app icon..."
-            mbl.modplist(plist, "CFBundleIconFile", appIcon + ".icns")
+            self.mbl.modplist(plist, "CFBundleIconFile", appIcon + ".icns")
 
             # Copy icons to the resources directory
             copy2("../" + appIcon + ".icns",
@@ -477,15 +470,12 @@ class MacBuilder():
 
         print "Started buildStonix4MacAppPkg..."
         try:
-            # 2/3/2015 - rsn adding this to make sure the luggage build does 
-            # not go stale
-
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
 
             print "Putting new version into Makefile..."
-            mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
-                             "PACKAGE_VERSION=" + appVersion)
+            self.mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
+                                  "PACKAGE_VERSION=" + appVersion)
 
             if not os.path.isdir(appPath + "/dmgs"):
                 os.mkdir(appPath + "/dmgs")
@@ -516,4 +506,21 @@ class MacBuilder():
         print "buildStonix4MacAppPkg... Finished"
 
 if __name__ == '__main__':
-    stonix4mac = MacBuilder()
+    parser = optparse.OptionParser()
+    parser.add_option("-v", "--version", action="store", dest="version",
+                      type="string", default="0",
+                      help="Set the STONIX build version number",
+                      metavar="version")
+    parser.add_option("-g", "--gui", action="store_true",
+                      dest="compileGui",
+                      default=False,
+                      help="If set, the PyQt files will be recompiled")
+    parser.add_option("-c", "--clean", action="store_true", dest="clean",
+                      default=False, help="Clean all artifacts from " +
+                      "previous builds and exit")
+    parser.add_option("-t", "--test", action="store_true", dest="test",
+                      default=False, help="If run in testing mode, " +
+                      "the driver method does not execute, allowing for " +
+                      "unit testing of functions")
+    options, __ = parser.parse_args()
+    stonix4mac = MacBuilder(options)
