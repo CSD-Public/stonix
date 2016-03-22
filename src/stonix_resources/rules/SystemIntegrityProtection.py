@@ -32,7 +32,7 @@ import traceback
 import types
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from src.stonix_resources.SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
+from ..SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
 
 
 class SystemIntegrityProtection(Rule):
