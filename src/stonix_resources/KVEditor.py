@@ -167,6 +167,7 @@ class KVEditor(object):
 
     def validate(self):
         try:
+            status = False
             if self.kvtype == "defaults":
                 status = self.validateDefaults()
             elif self.kvtype == "plist":
@@ -179,6 +180,9 @@ class KVEditor(object):
                 status = self.validateProfiles()
             else:
                 status = "invalid"
+            debug = "KVEditor is returning " + str(status) + " back to " + \
+                "KVEditorStonix.report()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return status
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -187,6 +191,7 @@ class KVEditor(object):
 
     def update(self):
         try:
+            status = False
             if self.kvtype == "defaults":
                 status = self.updateDefaults()
             elif self.kvtype == "plist":
@@ -198,7 +203,10 @@ class KVEditor(object):
             elif self.kvtype == "profiles":
                 status = self.updateProfiles()
             else:
-                return False
+                status = False
+            debug = "KVEditor is returning " + str(status) + " back to " + \
+                "KVEditorStonix.fix()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return status
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -218,8 +226,14 @@ class KVEditor(object):
 
     def updateDefaults(self):
         if self.editor.update():
+            debug = "KVEditor.updateDefaults() is returning True to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
         else:
+            debug = "KVEditor.updateDefaults() is returning False to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 
     def checkDefaults(self, data):
@@ -245,7 +259,9 @@ class KVEditor(object):
         if self.intent == "present":
             for k, v in self.data.iteritems():
                 retval = self.editor.validate(k, v)
-                if isinstance(retval, list):
+                if retval == "invalid":
+                    validate = "invalid"
+                elif isinstance(retval, list):
                     self.fixables[k] = retval
                     validate = False
                 elif not retval:
@@ -254,18 +270,38 @@ class KVEditor(object):
         if self.intent == "notpresent":
             for k, v in self.data.iteritems():
                 retval = self.editor.validate(k, v)
-                if isinstance(retval, list):
+                if retval == "invalid":
+                    validate = "invalid"
+                elif isinstance(retval, list):
                     self.removeables[k] = retval
                     validate = False
                 elif retval is True:
                     validate = False
                     self.removeables[k] = v
+        if validate == "invalid":
+            debug = "KVEditor.validateConf() is returning invalid to " + \
+                "KVEditor.validate()\n"
+        elif validate:
+            debug = "KVEditor.validateConf() is returning True to " + \
+                "KVEditor.validate()\n"
+        else:
+            debug = "KVEditor.validateConf() is returning False to " + \
+                "KVEditor.validate()\n"
+        self.logger.log(LogPriority.DEBUG, debug)
         return validate
 
     def updateConf(self):
         if self.fixables or self.removeables:
             if self.editor.update(self.fixables, self.removeables):
+                debug = "KVEditor.updateConf() is returning True to " + \
+                    "KVEditor.update()\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 return True
+            else:
+                debug = "KVEditor.updateConf() is returning False to " + \
+                    "KVEditor.update()\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
 
     def checkConf(self):
         if isinstance(self.data, dict):
@@ -283,7 +319,7 @@ class KVEditor(object):
             for tag in self.data:
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
-                    return "invalid"
+                    validate = "invalid"
                 elif keyvals:
                     self.fixables[tag] = keyvals
                     validate = False
@@ -291,15 +327,33 @@ class KVEditor(object):
             for tag in self.data:
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
-                    return "invalid"
+                    validate = "invalid"
                 elif keyvals:
                     self.removeables[tag] = keyvals
                     validate = False
+        if validate == "invalid":
+            debug = "KVEditor.validateTag() is returning invalid to " + \
+                "KVEditor.validate()\n"
+        elif validate:
+            debug = "KVEditor.validateTag() is returning True to " + \
+                "KVEditor.validate()\n"
+        else:
+            debug = "KVEditor.validateTag() is returning False to " + \
+                "KVEditor.validate()\n"
+        self.logger.log(LogPriority.DEBUG, debug)
         return validate
 
     def updateTag(self):
         if self.editor.setValue(self.fixables, self.removeables):
+            debug = "KVEditor.updateTag() is returning True to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
+        else:
+            debug = "KVEditor.updateTag() is returning False to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
 
     def checkTag(self):
         if isinstance(self.data, dict):
