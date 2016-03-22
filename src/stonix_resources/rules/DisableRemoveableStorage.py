@@ -280,12 +280,18 @@ class DisableRemoveableStorage(Rule):
 <dict>
      <key>Label</key>
      <string>gov.lanl.stonix.disablestorage</string>
-     <key>Program</key>
+     <key>ProgramArguments</key>
+     <array>
+         <string>sh</string>
+         <string>-c</string>
          <string>''' + self.daemonpath + '''</string>
-     <key>RunAtLoad</key>
-         <true/>
-     <key>StartInterval</key>
-         <integer>60</integer>
+     </array>
+     <key>WatchPaths</key>
+     <array>
+         <string>/Volumes/</string>
+     </array>
+     <key>KeepAlive</key>
+         <false/>
 </dict>
 </plist>
 '''
@@ -337,14 +343,18 @@ def main():
 
 if __name__ == '__main__':
     main()
-'''
+'''     
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
-            "<key>Program</key>" + \
+            "<key>ProgramArguments</key>" + \
+            "<array>" + \
+            "<string>sh</string>" + \
+            "<string>\-c</string>" + \
             "<string>" + re.escape(self.daemonpath) + "</string>" + \
-            "<key>RunAtLoad</key><true/><key>StartInterval</key>" + \
-            "<integer>60</integer></dict></plist>"
+            "</array>" + \
+            "<key>WatchPaths</key><array><string>/Volumes/</string>" + \
+            "</array><key>KeepAlive</key><false/></dict></plist>"
 
         self.daemonregex = "\#\!/usr/bin/python\n\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\n" + \
             "import re\n" + \
@@ -831,7 +841,6 @@ if __name__ == '__main__':
             usb = "IOUSBMassStorageClass"
         cmd = check + "| grep " + usb
         self.ch.executeCommand(cmd)
-
         # if return code is 0, the kernel module is loaded, thus we need
         # to disable it
         if self.ch.getReturnCode() == 0:

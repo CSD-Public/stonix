@@ -20,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+#from __builtin__ import False
 '''
 Created on Feb 10, 2015
 
@@ -35,6 +36,7 @@ from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
+from ..KVEditorStonix import KVEditorStonix
 
 
 class ConfigurePasswordProfile(Rule):
@@ -65,79 +67,72 @@ class ConfigurePasswordProfile(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.13']}}
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.profPath = os.path.join(os.path.dirname(__file__), "..", "files",
-                                     "LANL Passcode Profile for OS X Yosemite 10.10.mobileconfig")
         self.iditerator = 0
-
+        
     def report(self):
+        '''
+        @since: 3/9/2016
+        @author: dwalker
+        first item in dictionary - identifier (multiple can exist)
+            first item in second nested dictionary - key identifier within
+                opening braces in output
+            first item in nested list is the expected value after the = in
+                output (usually a number, in quotes "1"
+            second item in nested list is accepted datatype of value after
+                the = ("bool", "int")
+            third item in nested list (if int) is whether the allowable value
+                is allowed to be more or less and still be ok
+                "more", "less"
+                '''
         try:
             compliant = True
             self.detailedresults = ""
-            data = ["allowSimple = 1;",
-                    "forcePIN = 1;",
-                    "maxFailedAttempts = 5;",
-                    "maxPINAgeInDays = 180;",
-                    "minComplexChars = 1;",
-                    "minLength = 8;",
-                    "minutesUntilFailedLoginReset = 15;",
-                    "pinHistory = 5;",
-                    "requireAlphanumeric = 1;"]
             cmd = ["/usr/sbin/system_profiler",
                    "SPConfigurationProfileDataType"]
-            iterator = 0
-            pprofilename = "com\.apple\.mobiledevice\.passwordpolicy:"
-            pwprofilelinefound = False
             self.ch = CommandHelper(self.logger)
-            output2 = ""
+            self.neededprofiles = []
+            '''form key = val;'''
+            
+            self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["1", "bool"],
+                                                                            "forcePIN": ["1", "bool"],
+                                                                            "maxFailedAttempts" :["5", "int", "less"],
+                                                                            "maxPINAgeInDays": ["180", "int", "more"],
+                                                                            "minComplexChars": ["1", "int", "more"],
+                                                                            "minLength": ["8", "int", "more"],
+                                                                            "minutesUntilFailedLoginReset":["15", "int", "more"],
+                                                                            "pinHistory": ["5", "int", "more"],
+                                                                            "requireAlphanumeric": ["1", "bool"]}}
+            self.spprofiledict =  {"com.apple.screensaver": "",
+                                   "com.apple.loginwindow": "",
+                                   "com.apple.systempolicy.managed": "",
+                                   "com.apple.SubmitDiagInfo": "",
+                                   "com.apple.preference.security": "",
+                                   "com.apple.MCX": "",
+                                   "com.apple.applicationaccess": "",
+                                   "com.apple.systempolicy.control": ""}
+
+            self.profpaths = {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig": self.pwprofiledict,
+                              os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig": self.spprofiledict}
+            '''Run the system_proflier command'''
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
                 if output:
-                    for line in output:
-                        if re.search("\{$", line.strip()):
-                            if pwprofilelinefound:
-                                temp = output[iterator + 1:]
-                                iterator2 = 0
-                                length = len(temp) - 1
-                                for line2 in temp:
-                                    if re.search("\}$", line2.strip()):
-                                        output2 = temp[:iterator2]
-                                        break
-                                    elif iterator2 == length:
-                                        output2 = temp[:iterator2 + 1]
-                                        break
-                                    else:
-                                        iterator2 += 1
-                                if output2:
-                                    break
-                            else:
-                                iterator += 1
-                        elif re.search(pprofilename, line.strip()):
-                            pwprofilelinefound = True
-                            iterator += 1
-                        else:
-                            iterator += 1
-                    if output2:
-                        iterator = 0
-                        for item in output2:
-                            output2[iterator] = item.strip()
-                            iterator += 1
-                        notfound = False
-                        for item in data:
-                            if item not in output2:
-                                self.detailedresults += item + \
-                                    " not in profile\n"
-                                notfound = True
-                                break
-                        if notfound or len(output2) > len(data):
-                            compliant = False
-                    elif not pwprofilelinefound:
-                        compliant = False
+                    for profilepath, values in self.profpaths.iteritems():
+                        self.editor = KVEditorStonix(self.statechglogger,
+                                                     self.logger, "profiles",
+                                                     "", "", values, "", "",
+                                                     output)
+                        if not self.editor.report():
+                            self.neededprofiles.append(profilepath)
                 else:
-                    self.detailedresults += "profile not installed\n"
-                    compliant = False
+                    self.detailedresults += "There are no profiles installed\n"
+                    for profile in self.profpaths:
+                        self.neededprofiles.append(profile)
             else:
-                self.detailedresults += "Unable to run the " + \
-                    "system_profiler\n"
+                self.detailedresults += "Unable to run the system_profile " + \
+                    "command\n"
+                compliant = False
+            if self.neededprofiles:
                 compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -165,21 +160,30 @@ class ConfigurePasswordProfile(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             success = True
-            profpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/passwordprofile-10.11"
-            #profpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/passwordprofile-10.11"
-            cmd = ["/usr/bin/profiles", "-I", "-F", profpath]
-            if self.ch.executeCommand(cmd):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                undocmd = ["/usr/bin/profiles", "-R", "-F", profpath]
-                event = {"eventtype": "comm",
-                         "command": undocmd}
-                self.statechglogger.recordchgevent(myid, event)
-            else:
-                success = False
+            pathsexist = True
+            if self.neededprofiles:
+                for profilepath in self.profpaths:
+                    if not os.path.exists(profilepath):
+                        pathsexist = False
+                        break
+                if not pathsexist:
+                    self.detailedresults += "You need profiles installed " + \
+                        "but you don't have all the necessary profiles\n"
+                    success = False
+                else:
+                    for profile in self.neededprofiles:
+                        cmd = ["/usr/bin/profiles", "-I", "-F", profile]
+                        if self.ch.executeCommand(cmd):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            undocmd = ["/usr/bin/profiles", "-R", "-F", profile]
+                            event = {"eventtype": "comm",
+                                     "command": undocmd}
+                            self.statechglogger.recordchgevent(myid, event)
+                        else:
+                            success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
