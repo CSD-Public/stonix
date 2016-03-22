@@ -366,6 +366,23 @@ and/or wasn't able to be created\n"
         sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
                    "net.ipv6.conf.default.disable_ipv6": "1"}
         self.helper = Pkghelper(self.logger, self.environ)
+        #stig portion
+#         if self.helper.manager == "apt-get":
+#             nfspkg = "nfs-common"
+#         elif self.helper.manager == "yum":
+#             nfspkg = "nfs-utils.x86_64"
+#         if self.helper.check(nfspkg):
+#             if os.path.exists("/etc/netconfig"):
+#                 item1 = "udp6 tpi_clts v inet6 udp - -"
+#                 item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
+#                 contents = readFile("/etc/netconfig", self.logger)
+#                 for line in contents:
+#                     line = re.sub("\s+", " ", line.strip())
+#                     if re.search(item1, line) or re.search(item2, line):
+#                         self.detailedresults += "/etc/netconfig file contains " + \
+#                             "lines we don't want present\n"
+#                         compliant = False
+                
         if self.helper.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             if not os.path.exists(ifacefile):
@@ -642,6 +659,38 @@ contain the correct contents\n"
         modprobedir = "/etc/modprobe.d/"
         interface = {"IPV6INIT": "no",
                      "NETWORKING_IPV6": "no"}
+        #stig stuff
+#         if self.helper.manager == "apt-get":
+#             nfspkg = "nfs-common"
+#         elif self.helper.manager == "yum":
+#             nfspkg = "nfs-utils.x86_64"
+#         if self.helper.check(nfspkg):
+#             if os.path.exists("/etc/netconfig"):
+#                 filestring = ""
+#                 item1 = "udp6 tpi_clts v inet6 udp - -"
+#                 item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
+#                 contents = readFile("/etc/netconfig", self.logger)
+#                 for line in contents:
+#                     templine = re.sub("\s+", " ", line.strip())
+#                     if re.search(item1, templine) or re.search(item2, templine):
+#                         continue
+#                     else:
+#                         filestring += line
+#                 tmpfile = "/etc/netconfig.tmp"
+#                 if not writeFile(tmpfile, filestring, self.logger):
+#                     success = False
+#                 else:
+#                     self.iditerator += 1
+#                     myid = iterate(self.iditerator, self.rulenumber)
+#                     event = {"eventtype": "conf",
+#                              "filepath": "/etc/netconfig"}
+#                     self.statechglogger.recordchgevent(myid, event)
+#                     self.statechglogger.recordfilechange("/etc/netconfig",
+#                                                          tmpfile, myid)
+#                     os.rename(tmpfile, "/etc/netconfig")
+#                     os.chown("/etc/netconfig", 0, 0)
+#                     os.chmod("/etc/netconfig", 420)
+#                     resetsecon("/etc/netconfig")
         if self.helper.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             netwrkfile = "/etc/sysconfig/network"
