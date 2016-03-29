@@ -95,10 +95,10 @@ class ConfigurePasswordProfile(Rule):
             
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["1", "bool"],
                                                                             "forcePIN": ["1", "bool"],
-                                                                            "maxFailedAttempts" :["5", "int", "less"],
+                                                                            "maxFailedAttempts" :["4", "int", "less"],
                                                                             "maxPINAgeInDays": ["180", "int", "more"],
                                                                             "minComplexChars": ["1", "int", "more"],
-                                                                            "minLength": ["8", "int", "more"],
+                                                                            "minLength": ["14", "int", "more"],
                                                                             "minutesUntilFailedLoginReset":["15", "int", "more"],
                                                                             "pinHistory": ["5", "int", "more"],
                                                                             "requireAlphanumeric": ["1", "bool"]}}
