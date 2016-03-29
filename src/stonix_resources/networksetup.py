@@ -306,7 +306,7 @@ class networksetup():
     def initialize(self):
         '''
         initialize the object
-        
+
         @author: ekkehard j. koch
         '''
         if not self.initialized:
@@ -320,14 +320,19 @@ class networksetup():
     def updateCurrentNetworkConfigurationDictionary(self):
         '''
         update the network configuration dictianry
-        
+
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @return: boolean - true
         @note: None
+        @change: Breen Malmberg - 3/23/2016 - added code to find and disable
+            wi-fi on el capitan, via hardware ports instead of just service
         '''
+
         try:
+
             success = True
+
 # issue networksetup -listallnetworkservices to get all network services
             command = [self.nsc, "-listnetworkserviceorder"]
             self.ch.executeCommand(command)
@@ -402,10 +407,54 @@ class networksetup():
                     orderkey = str(order).zfill(4)
                     self.nso[orderkey] = servicename
                     self.updateNetworkConfigurationDictionaryEntry(servicename)
+
+## this portion specifically for wi-fi on el capitan
+            xcommand = [self.nsc, "-listallhardwareports"]
+            nameonnextline = False
+            self.nameofdevice = ""
+            foundwifi = False
+            deviceenabled = False
+
+# get a list of all hardware ports and look for wi-fi
+            self.ch.executeCommand(xcommand)
+            for line in self.ch.getOutput():
+                if nameonnextline:
+                    sline = line.split()
+                    self.nameofdevice = sline[1]
+                    nameonnextline = False
+                if re.search("Wi-Fi", line):
+                    nameonnextline = True
+            for sn in self.ns:
+                if self.ns[sn]["type"] == "wi-fi":
+                    foundwifi = True
+
+            getdevicestatuscommand = [self.nsc, "-getairportpower", self.nameofdevice]
+
+# determine if the wi-fi device is on or off
+            self.ch.executeCommand(getdevicestatuscommand)
+            for line in self.ch.getOutput():
+                if re.search("Wi-Fi\s+Power", line):
+                    sline = line.split(':')
+                    if str(sline[1]).lower().strip() == "on":
+                        deviceenabled = True
+
+# if a wi-fi device was found in the hardware ports, but not in the service list,
+# then add it to the self.ns dict and add an entry for it in the self.nso dict as well
+            self.notinservicelist = False
+            if self.nameofdevice and not foundwifi:
+                self.notinservicelist = True
+                self.ns["Wi-Fi"] = {"name": self.nameofdevice,
+                                    "enabled": deviceenabled,
+                                    "type": "wi-fi"}
+                order += 1
+                orderkey = str(order).zfill(4)
+                self.nso[orderkey] = "Wi-Fi"
+
+# set ns init and nso init status
             self.nsInitialized = True
             self.nsoInitialized = True
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+# User initiated exit
             raise
         except Exception:
             success = False
@@ -417,7 +466,7 @@ class networksetup():
     def updateNetworkConfigurationDictionaryEntry(self, pKey):
         '''
         update a single network configuration dictionary entry 
-        
+
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param pkey:key for the dictinary entry
@@ -464,7 +513,7 @@ class networksetup():
     def isValidLocationName(self, pLocationName=""):
         '''
         determine if this is a valid wifi location
-        
+
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param pLocationName:location name
@@ -497,25 +546,39 @@ class networksetup():
     def disableNetworkService(self, pNetworkName):
         '''
         disable network service
-        
+
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param pNetworkName:name of network
         @return: boolean - true
         @note: None
+        @change: Breen Malmberg - 3/23/2016 - wifi will now be disabled via
+            setairportpower if not found in the service list.
         '''
+
         try:
+
             success = True
             networkName = pNetworkName
-            if networkName == "":
-                success = False
-            if success:
-                command = [self.nsc,
-                           "-setnetworkserviceenabled",
-                           networkName, "off"]
-                self.ch.executeCommand(command)
+
+            if networkName == self.nameofdevice and self.notinservicelist:
+                disablecommand = [self.nsc, "-setairportpower", networkName, "off"]
+                self.ch.executeCommand(disablecommand)
+                if self.ch.getReturnCode() != 0:
+                    success = False
+            else:
+                if networkName == "":
+                    success = False
+                if success:
+                    command = [self.nsc,
+                               "-setnetworkserviceenabled",
+                               networkName, "off"]
+                    self.ch.executeCommand(command)
+                    if self.ch.getReturnCode() != 0:
+                        success = False
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+# User initiated exit
             raise
         except Exception:
             success = False
@@ -527,25 +590,39 @@ class networksetup():
     def enableNetwork(self, pNetworkName):
         '''
         enable network service
-        
+
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param pNetworkName:name of network
         @return: boolean - true
         @note: None
+        @change: Breen Malmberg - 3/23/2016 - wifi will now be enabled via
+            setairportpower if not found in the service list.
         '''
+
         try:
+
             success = True
             networkName = pNetworkName
-            if networkName == "":
-                success = False
-            if success:
-                command = [self.nsc,
-                           "-setnetworkserviceenabled",
-                           networkName, "on"]
-                self.ch.executeCommand(command)
+
+            if networkName == self.nameofdevice and self.notinservicelist:
+                enablecommand = [self.nsc, "-setairportpower", networkName, "on"]
+                self.ch.executeCommand(enablecommand)
+                if self.ch.getReturnCode() != 0:
+                    success = False
+            else:
+                if networkName == "":
+                    success = False
+                if success:
+                    command = [self.nsc,
+                               "-setnetworkserviceenabled",
+                               networkName, "on"]
+                    self.ch.executeCommand(command)
+                    if self.ch.getReturnCode() != 0:
+                        success = False
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+# User initiated exit
             raise
         except Exception:
             success = False
