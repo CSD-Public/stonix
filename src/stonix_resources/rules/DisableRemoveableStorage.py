@@ -274,6 +274,27 @@ class DisableRemoveableStorage(Rule):
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+#         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
+# <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+# <plist version="1.0">
+# <dict>
+#      <key>Label</key>
+#      <string>gov.lanl.stonix.disablestorage</string>
+#      <key>ProgramArguments</key>
+#      <array>
+#          <string>sh</string>
+#          <string>-c</string>
+#          <string>''' + self.daemonpath + '''</string>
+#      </array>
+#      <key>WatchPaths</key>
+#      <array>
+#          <string>/Volumes/</string>
+#      </array>
+#      <key>KeepAlive</key>
+#          <false/>
+# </dict>
+# </plist>
+# '''
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -286,12 +307,12 @@ class DisableRemoveableStorage(Rule):
          <string>-c</string>
          <string>''' + self.daemonpath + '''</string>
      </array>
-     <key>WatchPaths</key>
-     <array>
-         <string>/Volumes/</string>
-     </array>
+     <key>StartOnMount</key>
+     <true/>
+     <key>RunAtLoad</key>
+     <true/>
      <key>KeepAlive</key>
-         <false/>
+     <true/>
 </dict>
 </plist>
 '''
@@ -344,6 +365,17 @@ def main():
 if __name__ == '__main__':
     main()
 '''     
+#         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
+#             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
+#             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
+#             "<key>ProgramArguments</key>" + \
+#             "<array>" + \
+#             "<string>sh</string>" + \
+#             "<string>\-c</string>" + \
+#             "<string>" + re.escape(self.daemonpath) + "</string>" + \
+#             "</array>" + \
+#             "<key>WatchPaths</key><array><string>/Volumes/</string>" + \
+#             "</array><key>KeepAlive</key><false/></dict></plist>"
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
@@ -353,9 +385,8 @@ if __name__ == '__main__':
             "<string>\-c</string>" + \
             "<string>" + re.escape(self.daemonpath) + "</string>" + \
             "</array>" + \
-            "<key>WatchPaths</key><array><string>/Volumes/</string>" + \
-            "</array><key>KeepAlive</key><false/></dict></plist>"
-
+            "<key>StartOnMount</key><true/><key>RunAtLoad</key><true/>" + \
+            "<key>KeepAlive</key><true/></dict></plist>"
         self.daemonregex = "\#\!/usr/bin/python\n\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\n" + \
             "import re\n" + \
             "from Subprocess import PIPE\, Popen\, call\n\n" + \
