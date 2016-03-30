@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,12 +26,15 @@ This objects encapsulates the complexities of the networksetup command on OS X
 @author: ekkehard j. koch
 @change: 2015/05/07 ekkehard Original Implementation
 @change: 2015/09/18 ekkehard add startup and casper options
+@change: 2016/03/23 Breen Malmberg wifi disablement fix
+@change: 2016/03/30 ekkehard setAdvancedNetworkSetup fix
 '''
 import re
 import types
 from .localize import PROXY
 from .localize import PROXYCONFIGURATIONFILE
 from .CommandHelper import CommandHelper
+from .logdispatcher import LogPriority
 
 
 class networksetup():
@@ -211,7 +214,7 @@ class networksetup():
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @param pLocationName:location name
-        @return: string:detailedresults
+        @return: string: detailedresults
         @note: None
         '''
         return self.detailedresults
@@ -243,7 +246,7 @@ class networksetup():
             raise
         return success
     
-    def setAdvancedNetworkSetup(self, pNetworkName) :
+    def setAdvancedNetworkSetup(self, pHardwarePort = None) :
         """
         Set proxies up for normal first configuration that has a network
         connection.
@@ -255,50 +258,86 @@ class networksetup():
         @note: None
         """
         success = True
+        if pHardwarePort == None:
+            self.initialize()
+            for key in sorted(self.nso):
+                network = self.nso[key]
+                networkvalues = self.ns[network]
+                networkname = networkvalues["name"]
+                networktype = networkvalues["type"]
+                networkhardwarePort = networkvalues["hardware port"]
+                networkenabled = networkvalues["enabled"]
+                msg = "networkname " + str(networkname) + "; networktype " + str(networktype) + \
+                "; networkhardwarePort " + str(networkhardwarePort) + "; networkenabled " + \
+                str(networkenabled)
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                if networkenabled and (networktype == "wifi" or networktype == "ethernet"):
+                    msg = "Enabled Network Found; " + msg
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+                    break
+        else:
+            networkhardwarePort = pHardwarePort
+            networkenabled = True
 # Set the DNS servers
-        command = [self.nsc, "-setdnsservers", pNetworkName, self.dns]
-        self.ch.executeCommand(command)
-        if not self.ch.getError():
-            success = False
+        if not networkhardwarePort == "" and networkenabled:
+            command = self.nsc + " -setdnsservers '" + str(networkhardwarePort) + "' " + self.dns
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
 # Set the Search Domain
-        command = [self.nsc, "-setsearchdomains", pNetworkName, self.searchdomain]
-        self.ch.executeCommand(command)
-        if not self.ch.getError():
-            success = False
+            command = self.nsc + " -setsearchdomains '" + str(networkhardwarePort) + "' " + self.searchdomain
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
 # set up the auto proxy URL
-        command = [self.nsc, "-setautoproxyurl", pNetworkName, self.pf]
-        self.ch.executeCommand(command)
-        if not self.ch.getError():
-            success = False
+            command = self.nsc + " -setautoproxyurl '" + str(networkhardwarePort) + "' " + self.pf
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
 # Set up the FTP proxy
-        command = [self.nsc, "-setftpproxy", pNetworkName, self.ps, self.pp]
-        self.ch.executeCommand(command)
-        if not self.ch.getError():
-            success = False
+            command = self.nsc + " -setftpproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
 # Set up the HTTPS proxy
-        command = [self.nsc, "-setsecurewebproxy", pNetworkName, self.ps, self.pp]
-        self.ch.executeCommand(command)
-        if not self.ch.getError():
-            success = False
+            command = self.nsc + " -setsecurewebproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
 # Set up the web proxy
-        command = [self.nsc, "-setwebproxy", pNetworkName, self.ps, self.pp]
-        self.ch.executeCommand(command)
-        if not self.ch.getError():
-            success = False
+            command = self.nsc + " -setwebproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
 # Get current proxy bypass domains and add lanl.gov
-        command = [self.nsc, "-getproxybypassdomains", pNetworkName]
-        self.ch.executeCommand(command)
-        command = [self.nsc, "-setproxybypassdomains", pNetworkName]
-        if self.ch.getError():
-            for item in self.ch.getOutput() :
-                if not re.match("^\s*$", item) :
-                    command.append(item)
-        if not "lanl.gov" in command:
-            command.append("lanl.gov")
+            command = self.nsc + " -getproxybypassdomains '" + str(networkhardwarePort) + "' "
             self.ch.executeCommand(command)
             if not self.ch.getError():
+                command = self.nsc + " -setproxybypassdomains '" + str(networkhardwarePort) + "'"
+                for item in self.ch.getOutput() :
+                    if not re.match("^\s*$", item) :
+                        command = command + " " + str(item.strip())
+                if not "lanl.gov" in command:
+                    command = command + " " + str("lanl.gov")
+                    self.ch.executeCommand(command)
+                    if not self.ch.getError():
+                        success = False
+            else:
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
                 success = False
-
         return success
 
 ###############################################################################
