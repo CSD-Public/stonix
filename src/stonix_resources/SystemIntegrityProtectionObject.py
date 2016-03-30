@@ -26,6 +26,7 @@
 
 @author: ekkehard j. koch
 @change: 2016/03/03 ekkehard original implementation
+@change: 2016/03/30 ekkehard comments & bug fixes
 '''
 import os
 import traceback
@@ -67,12 +68,14 @@ class SystemIntegrityProtectionObject():
 
     def getSIPStatus(self):
         '''
-        get the current item in the LDAP dictionary
+        get the current System Integrity Protection (SIP) status
         @author: ekkehard
         @return: dictionary entry
         '''
         osx_version = self.initializeOSXVersion()
         sipstatus = self.initializeSIPStatus()
+        msg = "SIP status is "+ str(sipstatus) + ". OS X Version string is " + str(osx_version) + "."
+        self.logdispatch.log(LogPriority.DEBUG, msg)
         return self.sipstatus
 
     def initializeOSXVersion(self, forceInitializtion = False):
@@ -93,7 +96,7 @@ class SystemIntegrityProtectionObject():
                 errorcode = self.ch.getError()
                 osxmajorversion = self.ch.getOutputString().strip()
                 self.osx_major_version = int(osxmajorversion)
-                msg = "OS X Major Version is " + str(self.osx_major_version)
+                msg = "("+ str(errorcode) + ") OS X Major Version is " + str(self.osx_major_version)
                 self.logdispatch.log(LogPriority.DEBUG, msg)
 # Get the minor version of OS X
                 command = self.sw_vers + " -productVersion | awk -F. '{print $2}'"
@@ -101,7 +104,7 @@ class SystemIntegrityProtectionObject():
                 errorcode = self.ch.getError()
                 osxminorversion = self.ch.getOutputString().strip()
                 self.osx_minor_version = int(osxminorversion)
-                msg = "OS X Minor Version is " + str(self.osx_minor_version)
+                msg = "("+ str(errorcode) + ") OS X Minor Version is " + str(self.osx_minor_version)
                 self.logdispatch.log(LogPriority.DEBUG, msg)
 # Get full version string
                 command = self.sw_vers + " -productVersion"
@@ -109,7 +112,8 @@ class SystemIntegrityProtectionObject():
                 errorcode = self.ch.getError()
                 self.osx_version_string = self.ch.getOutputString().strip()
                 self.osx_minor_version = int(osxminorversion)
-                msg = "OS X Version string is " + str(self.osx_minor_version)
+                msg = "("+ str(errorcode) + ") OS X Version string is " + str(self.osx_minor_version)
+                self.logdispatch.log(LogPriority.DEBUG, msg)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception:
@@ -137,6 +141,8 @@ class SystemIntegrityProtectionObject():
                     self.ch.executeCommand(command)
                     errorcode = self.ch.getError()
                     self.sipstatus = "Not Applicable For " + self.osx_version_string
+                    msg = "("+ str(errorcode) + ") SIP status is " + str(self.sipstatus)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
                 elif os.path.exists(self.csrutil):
                     command = self.csrutil + " status | awk '/status/ {print $5}' | sed 's/\.$//'"
                     self.ch.executeCommand(command)
@@ -148,6 +154,8 @@ class SystemIntegrityProtectionObject():
                         self.sipstatus = "Enabled"
                     else:
                         self.sipstatus = "Not Applicable - " + str(sipstatus) + " not a know status value."
+                    msg = "("+ str(errorcode) + ") SIP status is " + str(self.sipstatus)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
                 else:
                     self.sipstatus = "Not Applicable - " + str(self.csrutil) + " not available!"
                 msg = "The System Ingegrity Protection status is " + str(self.sipstatus)
@@ -161,6 +169,12 @@ class SystemIntegrityProtectionObject():
         return success
 
     def report(self):
+        '''
+        report if the SIP status is anabled or disabled.
+        @param self:essential if you override this definition
+        @return: boolean
+        @note: None
+        '''
         compliant = True
         sipstatus = self.getSIPStatus()
         if sipstatus == "Disabled":
