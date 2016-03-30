@@ -30,13 +30,13 @@
 import os
 import traceback
 import types
-from .CommandHelper import CommandHelper
+from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
 class SystemIntegrityProtectionObject():
     '''
-    lanlMacInfo gets information from the mac and LDAP to help set basi
+    lanlMacInfo gets information from the mac and LDAP to help set basic
     computer data for the mac this includes:
     ComputerName
     HostName

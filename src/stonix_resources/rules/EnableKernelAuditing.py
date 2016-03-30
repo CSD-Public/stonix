@@ -732,22 +732,28 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.fixAuditRules():
                     fixsuccess = False
 
-                if not self.audispeditor.fix():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit dispatcher editor ' + \
-                        'fix failed'
-                if not self.audispeditor.commit():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit dispatcher editor ' + \
-                        'commit failed'
+                if self.audispeditor.fixables:
+                    if not self.audispeditor.fix():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit dispatcher editor ' + \
+                            'fix failed'
+                    if not self.audispeditor.commit():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit dispatcher editor ' + \
+                            'commit failed'
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing to fix for audit dispatcher")
 
-                if not self.auditdeditor.fix():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit daemon editor fix failed'
-                if not self.auditdeditor.commit():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit daemon editor ' + \
-                        'commit failed'
+                if self.auditdeditor.fixables:
+                    if not self.auditdeditor.fix():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit daemon editor fix failed'
+                    if not self.auditdeditor.commit():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit daemon editor ' + \
+                            'commit failed'
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing to fix for audit daemon")
 
                 if not self.grubstatus:
                     if self.grubver == 1:
