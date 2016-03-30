@@ -141,6 +141,11 @@ STONIXDEVS = 'stonix-dev@lanl.gov'
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
 PROXY = 'http://proxyout.lanl.gov:8080'
+PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
+PROXYDOMAIN = "lanl.gov"
+
+# Domain Name Server (DNS) defaults
+DNS = "128.165.4.4 128.165.4.33"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '128.165.0.0/16'
@@ -306,11 +311,6 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@winlog.lanl.gov"
 LANLLOGROTATE = "700.lanl.logrotate"
-
-## Proxy setting
-PROXYSERVER = "proxyout.lanl.gov"
-PROXYPORT = "8080"
-PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
 
 # The following should be system accounts which should not be disabled by DisableInactiveAccounts
 EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
