@@ -10,8 +10,7 @@ class RuleTest(unittest.TestCase):
 
 ###############################################################################
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         '''
         Setup what we need for the test.
         @author: ekkehard j. koch
@@ -29,8 +28,7 @@ class RuleTest(unittest.TestCase):
 
 ###############################################################################
 
-    @classmethod
-    def tearDownClass(self):
+    def tearDown(self):
         '''
         Release anything we no longer need what we need for the test.
         @author: ekkehard j. koch
