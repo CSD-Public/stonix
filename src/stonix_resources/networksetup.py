@@ -324,7 +324,7 @@ class networksetup():
                 msg = command + " output: " + str(self.ch.getOutput())
                 self.logdispatch.log(LogPriority.DEBUG, msg)
                 success = False
-# Get current proxy bypass domains and add lanl.gov
+# Get current proxy bypass domains and add self.searchdomain
             command = self.nsc + " -getproxybypassdomains '" + str(networkhardwarePort) + "' "
             self.ch.executeCommand(command)
             if not self.ch.getError():
@@ -333,7 +333,7 @@ class networksetup():
                     if not re.match("^\s*$", item) :
                         command = command + " " + str(item.strip())
                 if not self.searchdomain in command:
-                    command = command + " " + str("lanl.gov")
+                    command = command + " " + str(self.searchdomain)
                     self.ch.executeCommand(command)
                     if not self.ch.getError():
                         success = False
