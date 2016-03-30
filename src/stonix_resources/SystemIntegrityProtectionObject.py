@@ -31,8 +31,8 @@
 import os
 import traceback
 import types
-from CommandHelper import CommandHelper
-from logdispatcher import LogPriority
+from .CommandHelper import CommandHelper
+from .logdispatcher import LogPriority
 
 
 class SystemIntegrityProtectionObject():
