@@ -26,6 +26,7 @@
 
 @author: ekkehard j. koch
 @change: 2016/03/03 ekkehard original implementation
+@change: 2016/03/30 ekkehard comments & bug fixes
 '''
 import os
 import traceback
