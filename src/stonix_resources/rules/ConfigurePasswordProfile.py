@@ -111,7 +111,7 @@ class ConfigurePasswordProfile(Rule):
                                    "com.apple.applicationaccess": "",
                                    "com.apple.systempolicy.control": ""}
 
-            self.profpaths = {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig": self.pwprofiledict,
+            self.profpaths = {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macPasscodeProfileForOSXElCapitan10.11STIG.mobileconfig": self.pwprofiledict,
                               os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig": self.spprofiledict}
             '''Run the system_proflier command'''
             if self.ch.executeCommand(cmd):
