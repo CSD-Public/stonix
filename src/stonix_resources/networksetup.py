@@ -28,11 +28,14 @@ This objects encapsulates the complexities of the networksetup command on OS X
 @change: 2015/09/18 ekkehard add startup and casper options
 @change: 2016/03/23 Breen Malmberg wifi disablement fix
 @change: 2016/03/30 ekkehard setAdvancedNetworkSetup fix
+@change: 2016/03/30 ekkehard localize.py fix
 '''
 import re
 import types
+from .localize import DNS
 from .localize import PROXY
 from .localize import PROXYCONFIGURATIONFILE
+from .localize import PROXYDOMAIN
 from .CommandHelper import CommandHelper
 from .logdispatcher import LogPriority
 
@@ -61,8 +64,8 @@ class networksetup():
         self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
         self.pp = fullproxy.split(":")[2]
         self.pf = PROXYCONFIGURATIONFILE
-        self.dns = "128.165.4.4 128.165.4.33"
-        self.searchdomain = "lanl.gov"
+        self.dns = DNS
+        self.searchdomain = PROXYDOMAIN
         self.logdispatch = logdispatcher
         self.ch = CommandHelper(self.logdispatch)
         self.initialized = False
@@ -329,7 +332,7 @@ class networksetup():
                 for item in self.ch.getOutput() :
                     if not re.match("^\s*$", item) :
                         command = command + " " + str(item.strip())
-                if not "lanl.gov" in command:
+                if not self.searchdomain in command:
                     command = command + " " + str("lanl.gov")
                     self.ch.executeCommand(command)
                     if not self.ch.getError():
