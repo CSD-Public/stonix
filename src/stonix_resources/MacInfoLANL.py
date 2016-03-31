@@ -573,6 +573,21 @@ class MacInfoLANL():
             self.initializeDiskUtilityInfo(True)
         return success
 
+    def setInternalPropertyNumber(self, propertyNumber=False):
+        '''
+        set the internal class property number, as well as confidence at 100%
+        @param: propertyNumber - seven digit property number
+        @author: Roy Nielsen
+        '''
+        success = False
+        #####
+        # Perform input validation before setting the internal variable.
+        if re.match("^\d\d\d\d\d\d\d$", str(propertyNumber).strip()):
+            self.assetTag = str(propertyNumber).strip()
+            self.assetTagAccuracyLevel = 100
+            success = True
+        return success
+
     def setJAMFInfo(self):
         '''
         set the assetTag and endUserName via the jamf recon command
