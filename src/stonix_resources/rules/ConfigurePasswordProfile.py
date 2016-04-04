@@ -65,7 +65,7 @@ class ConfigurePasswordProfile(Rule):
             "PASSCODECONFIG to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.13']}}
+                           'os': {'Mac OS X': ['10.10', 'r', '10.11.13']}}
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         
