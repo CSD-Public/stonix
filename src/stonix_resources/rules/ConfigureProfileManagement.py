@@ -53,7 +53,7 @@ class ConfigurePasswordProfile(Rule):
 
         self.logger = logdispatch
         self.rulenumber = 106
-        self.rulename = "ConfigurePasswordProfile"
+        self.rulename = "ConfigureProfileManagement"
         self.formatDetailedResults("initialize")
         self.helptext = "ConfigurePasswordProfile rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
