@@ -41,6 +41,7 @@ import traceback
 import types
 from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
+from sre_constants import SUCCESS
 
 
 class MacInfoLANL():
@@ -67,6 +68,7 @@ class MacInfoLANL():
         self.ch = CommandHelper(self.logdispatch)
         self.LANLAssetTagNVRAM = ""
         self.LANLAssetTagFilesystem = ""
+        self.LANLAssetTagPropertyDB = ""
         self.macAddressDictionary = {}
         self.accuracyDictionary = {}
         self.dictionary = {}
@@ -89,6 +91,7 @@ class MacInfoLANL():
         self.macAddress = ""
         self.ipAddress = ""
         self.ipAddressActive = []
+        self.serialNumber = ""
         self.ldapnotworking = False
 # Set all initialization boolean
         self.initializeLANLAssetTagNVRAMBoolean = False
@@ -97,6 +100,7 @@ class MacInfoLANL():
         self.initializeDiskUtilityInfoBoolean = False
         self.initializePopulateFromMacBoolean = False
         self.initializeAccuracyDeterminationBoolean = False
+        self.initializeSerialNumberBoolean = False
 # Make sure we have the full path for all commands
         jamflocation = "/usr/local/bin/jamf"
         if not os.path.exists(jamflocation):
@@ -305,6 +309,15 @@ class MacInfoLANL():
         '''
         self.initializeLANLImagedFilesystem()
         return str(self.LANLAssetTagFilesystem)
+
+    def getSerialNumber(self):
+        '''
+        get the SerialNumber
+        @author: ekkehard
+        @return: string
+        '''
+        self.initializePopulateFromMac()
+        return self.serialNumber
 
     def getSuggestedAssetTag(self):
         '''
@@ -1094,7 +1107,12 @@ class MacInfoLANL():
                 macAddress = ""
                 hardwarePort = ""
                 device = ""
-    # networksetup -listaallhardwarereports
+                serialNumber = ""
+# Get Serial Number
+                command = [self.ns, "-listallhardwareports"]
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+# networksetup -listaallhardwarereports
                 command = [self.ns, "-listallhardwareports"]
                 self.ch.executeCommand(command)
                 output = self.ch.getOutput()
@@ -1122,7 +1140,7 @@ class MacInfoLANL():
                 success = False
                 msg = str(err) + " - " + str(traceback.format_exc())
                 self.logdispatch.log(LogPriority.ERROR, msg)
-    # go and pouplate the LDAP data
+# go and pouplate the LDAP data
             keys = sorted(self.macAddressDictionary.keys())
             for key in keys:
                 item = self.macAddressDictionary[key]
@@ -1138,7 +1156,7 @@ class MacInfoLANL():
                         temp = line.split(":")
                         ipv6status = temp[1].strip()
                         item["IPv6"] = ipv6status
-    # Make sure you are only searching for valid macAddress
+# Make sure you are only searching for valid macAddress
                 if not(item["macAddress"] == "00:00:00:00:00:00"):
                     self.populateDataFromLDAP("macAddress", 100, "macAddress", item["macAddress"],
                                               item["hardwarePort"], item["device"])
@@ -1146,7 +1164,7 @@ class MacInfoLANL():
                     msg = "Invalid macAddress item['macAddress'] = " + \
                     str(item["macAddress"])
                     self.logdispatch.log(LogPriority.DEBUG, msg)
-    # Make sure you are only searching for valid IP address
+# Make sure you are only searching for valid IP address
                 if not(item["IP address"] == "") and not(item["IP address"] == "0.0.0.0"):
                     if not(item["IP address"] in self.ipAddressActive):
                         self.ipAddressActive.append(item["IP address"])
@@ -1156,7 +1174,7 @@ class MacInfoLANL():
                     msg = "Invalid IP address item['IP address'] = " + \
                     str(item["IP address"])
                     self.logdispatch.log(LogPriority.DEBUG, msg)
-    # add entries from property number in computer name
+# add entries from property number in computer name
             if not(self.computerNameDiskUtilityAssetTag == "") and not(int(self.computerNameDiskUtilityAssetTag) == 0):
                 self.populateDataFromLDAP("ComputerName", 100, "lanlPN", self.computerNameDiskUtilityAssetTag,
                                           "", "")
@@ -1164,7 +1182,7 @@ class MacInfoLANL():
                 msg = "Invalid Asset Tag computerNameDiskUtitilyAssetTag = " + \
                 str(self.computerNameDiskUtilityAssetTag)
                 self.logdispatch.log(LogPriority.DEBUG, msg)
-    # add potenetial entries from computer name as hostname
+# add potenetial entries from computer name as hostname
             if not(self.computerNameDiskUtilityHostName == ""):
                 self.populateDataFromLDAP("ComputerName", 100, "cn", self.computerNameDiskUtilityHostName,
                                           "", "")
@@ -1189,6 +1207,15 @@ class MacInfoLANL():
                 str(self.getLANLAssetTagFilesystem())
                 self.logdispatch.log(LogPriority.DEBUG, msg)
             self.initializePopulateFromMacBoolean = True
+        return success
+
+    def initializeSerialNumber(self, forceInitializtion = False):
+        success = True
+        if forceInitializtion:
+            self.initializeSerialNumberBoolean = False
+        if not self.initializeSerialNumberBoolean:
+            self.initializeSerialNumberBoolean = True
+        
         return success
 
     def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
