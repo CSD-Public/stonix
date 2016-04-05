@@ -28,8 +28,10 @@ Library of functions used to build Mac applications
 @change: 2015/03/06 eball - Original implementation
 @change: 2015/08/05 eball - Beautification, improving PEP8 compliance
 @change: 2015/08/06 eball - Removed static paths from getpyuicpath()
+@change: 2016/04/04 rsn - added import of absolute_import to enable relative 
+                          imports
 '''
-
+from __future__ import absolute_import
 import re
 import os
 import tarfile
