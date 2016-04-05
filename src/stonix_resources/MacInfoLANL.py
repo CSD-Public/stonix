@@ -111,6 +111,7 @@ class MacInfoLANL():
         self.jamf = jamflocation
         self.nvram = "/usr/sbin/nvram"
         self.ldap = "/usr/bin/ldapsearch"
+        self.serialNumberCommand = "/usr/sbin/system_profiler SPHardwareDataType | grep 'Serial Number (system)' | awk '{print $NF}'"
         self.lanl_property_file = "/Library/Preferences/lanl_property_number.txt"
         self.lanl_imaged_files = ["/etc/dds.txt", "/var/log/dds.log"]
 # Reset messages
@@ -316,7 +317,7 @@ class MacInfoLANL():
         @author: ekkehard
         @return: string
         '''
-        self.initializePopulateFromMac()
+        self.initializeSerialNumber()
         return self.serialNumber
 
     def getSuggestedAssetTag(self):
@@ -1103,15 +1104,11 @@ class MacInfoLANL():
         if forceInitializtion:
             self.initializePopulateFromMacBoolean = False
         if not self.initializePopulateFromMacBoolean:
+            self.initializePopulateFromMacBoolean= True
             try:
                 macAddress = ""
                 hardwarePort = ""
                 device = ""
-                serialNumber = ""
-# Get Serial Number
-                command = [self.ns, "-listallhardwareports"]
-                self.ch.executeCommand(command)
-                output = self.ch.getOutput()
 # networksetup -listaallhardwarereports
                 command = [self.ns, "-listallhardwareports"]
                 self.ch.executeCommand(command)
@@ -1215,7 +1212,20 @@ class MacInfoLANL():
             self.initializeSerialNumberBoolean = False
         if not self.initializeSerialNumberBoolean:
             self.initializeSerialNumberBoolean = True
-        
+            try:
+                serialNumber = ""
+# Get Serial Number
+                command = self.serialNumberCommand
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                outputstring = self.ch.getOutputString()
+                serialNumber = outputstring
+                self.serialNumber = serialNumber
+            except Exception, err:
+                success = False
+                msg = str(err) + " - " + str(traceback.format_exc())
+                self.logdispatch.log(LogPriority.ERROR, msg)
+                self.serialNumber = ""
         return success
 
     def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
