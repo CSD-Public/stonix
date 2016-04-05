@@ -138,21 +138,6 @@ class DisableRemoveableStorage(Rule):
                                                         debug)
                                         compliant = False
 
-                # check if usb kernel module exists, non compliant if yes
-                self.ch.wait = False
-                self.ch.executeCommand("uname -r")
-                self.ch.wait = True
-                output = self.ch.getOutput()
-                if output:
-                    output = output[0].strip()
-                    if os.path.exists("/lib/modules/" + output +
-                                      "/kernel/drivers/usb/storage/usb-storage.ko"):
-                        debug = "Kernel module exists but shouldn't\n"
-                        self.detailedresults += "Kernel module exists " + \
-                            "but shouldn't\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-
                 # check for existence of certain usb packages, non-compliant
                 # if any exist
                 for item in self.pcmcialist:
@@ -680,24 +665,6 @@ if __name__ == '__main__':
                                 os.chown(blacklistf, 0, 0)
                                 os.chmod(blacklistf, 420)
                                 resetsecon(blacklistf)
-                    # get the current version of the kernel
-                    self.wait = False
-                    self.ch.executeCommand("uname -r")
-                    self.wait = True
-                    output = self.ch.getOutput()
-                    if output:
-                        output = output[0].strip()
-                        originalPath = "/lib/modules/" + output + \
-                            "/kernel/drivers/usb/storage/usb-storage.ko"
-                        newPath = "/usb-storage.ko"
-                        if os.path.exists(originalPath):
-                            os.rename(originalPath, newPath)
-                            cmd = self.mvcmd + " " + newPath + " " + originalPath
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "commandstring",
-                                         "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
                     for item in self.pcmcialist:
                         if self.ph.check(item):
                             self.ph.remove(item)
