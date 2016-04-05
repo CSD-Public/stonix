@@ -905,77 +905,6 @@ class MacInfoLANL():
         self.dictionaryItem = self.dictionary[key]
         return self.dictionaryItem
 
-    def initializeLANLAssetTagFilesystem(self, forceInitializtion = False):
-        '''
-        get assetTag from the file system
-        @author: ekkehard
-        @return: string
-        '''
-        if forceInitializtion:
-            self.initializeLANLAssetTagFilesystemBoolean = False
-        if not self.initializeLANLAssetTagFilesystemBoolean:
-            self.initializeLANLAssetTagFilesystemBoolean = True
-            self.LANLAssetTagFilesystem = ""
-            if os.path.exists(self.lanl_property_file):
-                try:
-                    fileToOpen = open(self.lanl_property_file, "r")
-                except Exception, err:
-                    msg = "Cannot open: " + self.lanl_property_file + \
-                        "\nException: " + str(err)
-                    self.logdispatch.log(LogPriority.DEBUG, msg)
-                else:
-                    try:
-                        for line in fileToOpen:
-                            if re.match("[0-9]+", line.strip()):
-                                self.LANLAssetTagFilesystem = line.strip()
-                                msg = self.lanl_property_file + \
-                                " property number = " + self.LANLAssetTagFilesystem
-                                self.logdispatch.log(LogPriority.DEBUG, msg)
-                                break
-                            else :
-                                self.LANLAssetTagFilesystem = ""
-                    except Exception, err:
-                        msg = str(err) + " - Can't find a line in the file: " + \
-                        self.LANLAssetTagFilesystem
-                        self.logdispatch.log(LogPriority.DEBUG, msg)
-                        self.LANLAssetTagFilesystem = ""
-                    else:
-                        fileToOpen.close()
-        return self.LANLAssetTagFilesystem
-
-    def initializeLANLImagedFilesystem(self, forceInitializtion = False):
-        '''
-        get imaged info from the file system
-        @author: ekkehard
-        @return: string
-        '''
-        if forceInitializtion:
-            self.initializeLANLImagedFilesystemBoolean = False
-        if not self.initializeLANLImagedFilesystemBoolean:
-            self.initializeLANLImagedFilesystemBoolean = True
-            self.LANLImaged = "Not LANL Configured"   
-            for myfile in self.lanl_imaged_files:
-            
-                try:
-                    fileToOpen = open(myfile, "r")
-                except Exception, err:
-                    msg = "Cannot open: " + myfile + \
-                        " - Exception: " + str(err)
-                    self.logdispatch.log(LogPriority.DEBUG, msg)
-                else:
-                    try :
-                        for line in fileToOpen:
-                            if re.match("^Imaged", line.strip()):
-                                self.LANLImaged = line.strip()
-                                break                            
-                    except Exception, err:
-                        msg = "Can't find a line in the file to grep in "+ myfile + \
-                            " - Exception: " + str(err)
-                        self.logdispatch.log(LogPriority.DEBUG, msg)
-                    else:
-                        fileToOpen.close()
-        return self.LANLImaged
-
     def initializeDiskUtilityInfo(self, forceInitializtion = False):
         '''
         get ComputerName, HostName, LocalHostName of the current computer
@@ -1049,6 +978,44 @@ class MacInfoLANL():
                 self.logdispatch.log(LogPriority.ERROR, msg)
         return success
 
+    def initializeLANLAssetTagFilesystem(self, forceInitializtion = False):
+        '''
+        get assetTag from the file system
+        @author: ekkehard
+        @return: string
+        '''
+        if forceInitializtion:
+            self.initializeLANLAssetTagFilesystemBoolean = False
+        if not self.initializeLANLAssetTagFilesystemBoolean:
+            self.initializeLANLAssetTagFilesystemBoolean = True
+            self.LANLAssetTagFilesystem = ""
+            if os.path.exists(self.lanl_property_file):
+                try:
+                    fileToOpen = open(self.lanl_property_file, "r")
+                except Exception, err:
+                    msg = "Cannot open: " + self.lanl_property_file + \
+                        "\nException: " + str(err)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+                else:
+                    try:
+                        for line in fileToOpen:
+                            if re.match("[0-9]+", line.strip()):
+                                self.LANLAssetTagFilesystem = line.strip()
+                                msg = self.lanl_property_file + \
+                                " property number = " + self.LANLAssetTagFilesystem
+                                self.logdispatch.log(LogPriority.DEBUG, msg)
+                                break
+                            else :
+                                self.LANLAssetTagFilesystem = ""
+                    except Exception, err:
+                        msg = str(err) + " - Can't find a line in the file: " + \
+                        self.LANLAssetTagFilesystem
+                        self.logdispatch.log(LogPriority.DEBUG, msg)
+                        self.LANLAssetTagFilesystem = ""
+                    else:
+                        fileToOpen.close()
+        return self.LANLAssetTagFilesystem
+
     def initializeLANLAssetTagNVRAM(self, forceInitializtion = False):
         '''
         get assetTag from NVRAM
@@ -1078,114 +1045,38 @@ class MacInfoLANL():
             self.logdispatch.log(LogPriority.ERROR, msg)
         return success
 
-    def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
-                             forceInitializtion = False):
+    def initializeLANLImagedFilesystem(self, forceInitializtion = False):
         '''
-        get LDAP data from
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
-        @note: None
+        get imaged info from the file system
+        @author: ekkehard
+        @return: string
         '''
-        try:
-# lookup in LDAP based on macAddress
-            success = True
-            if self.ldapnotworking:
-                output = []
-            else:
-                command = [self.ldap,
-                           "-x",
-                           "-h",
-                           "ldap.lanl.gov",
-                           "-b",
-                           "dc=lanl,dc=gov",
-                           addressType + "=" + address]
-                self.ch.executeCommand(command)
-                output = self.ch.getOutput()
-                returncode = self.ch.returncode
-                if returncode == 0:
-                    self.ldapnotworking = False
-                else:
-                    self.ldapnotworking = True
-            macAddress = ""
-            ipAddress = ""
-            computerName = ""
-            localHostname = ""
-            endUsername = ""
-            assetTag = ""
-            newRecord = False
-            for line in output:
+        if forceInitializtion:
+            self.initializeLANLImagedFilesystemBoolean = False
+        if not self.initializeLANLImagedFilesystemBoolean:
+            self.initializeLANLImagedFilesystemBoolean = True
+            self.LANLImaged = "Not LANL Configured"   
+            for myfile in self.lanl_imaged_files:
+            
                 try:
-                    if re.search("^dn:", line):
-                        newRecord = True
-                    else:
-                        newRecord = False
-                    if re.search("^ipHostNumber:", line):
-                        temp = line.split(": ")
-                        ipAddress = temp[1].strip()
-                    if re.search("^macAddress:", line):
-                        temp = line.split(": ")
-                        macAddress = temp[1].strip()
-                    if re.search("^cn:", line):
-                        temp = line.split(": ")
-                        computerName = temp[1].strip()
-                        temp = computerName.split(".")
-                        localHostname = temp[0].strip()
-                    if re.search("^owner:", line):
-                        temp = line.split(",")
-                        temp = temp[0].split("=")
-                        endUsername = temp[1].strip()
-                    if re.search("^lanlPN:", line):
-                        temp = line.split(" ")
-                        assetTag = temp[1].strip()
-                    if newRecord:
-                        if not(assetTag == ""):
-                            self.entries = self.entries + 1
-                            self.initializeDictionaryItemLDAP(self.entries)
-                            self.dictionaryItem["Tag"] = tag
-                            self.dictionaryItem["Weight"] = weightValue
-                            self.dictionaryItem["searchTerm"] = addressType + "=" + address
-                            self.dictionaryItem["hardwarePort"] = hardwarePort
-                            self.dictionaryItem["device"] = device
-                            self.dictionaryItem["macAddress"] = macAddress
-                            self.dictionaryItem["ipAddress"] = ipAddress
-                            self.dictionaryItem["ComputerName"] = computerName
-                            self.dictionaryItem["HostName"] = computerName
-                            self.dictionaryItem["LocalHostname"] = localHostname
-                            self.dictionaryItem["assetTag"] = assetTag
-                            self.dictionaryItem["endUsername"] = endUsername
-                        macAddress = ""
-                        ipAddress = ""
-                        computerName = ""
-                        localHostname = ""
-                        assetTag = ""
-                        endUsername = ""
+                    fileToOpen = open(myfile, "r")
                 except Exception, err:
-                    msg = str(err) + " - " + str(traceback.format_exc())
-                    self.logdispatch.log(LogPriority.ERROR, msg)
-                    continue
-            if not(assetTag == ""):
-                self.entries = self.entries + 1
-                self.initializeDictionaryItemLDAP(self.entries)
-                self.dictionaryItem["Tag"] = tag
-                self.dictionaryItem["Weight"] = weightValue
-                self.dictionaryItem["searchTerm"] = addressType + "=" + address
-                self.dictionaryItem["hardwarePort"] = hardwarePort
-                self.dictionaryItem["device"] = device
-                self.dictionaryItem["macAddress"] = macAddress
-                self.dictionaryItem["ipAddress"] = ipAddress
-                self.dictionaryItem["ComputerName"] = computerName
-                self.dictionaryItem["HostName"] = computerName
-                self.dictionaryItem["LocalHostname"] = localHostname
-                self.dictionaryItem["assetTag"] = assetTag
-                self.dictionaryItem["endUsername"] = endUsername
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            success = False
-            msg = traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, msg)
-        return success
+                    msg = "Cannot open: " + myfile + \
+                        " - Exception: " + str(err)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+                else:
+                    try :
+                        for line in fileToOpen:
+                            if re.match("^Imaged", line.strip()):
+                                self.LANLImaged = line.strip()
+                                break                            
+                    except Exception, err:
+                        msg = "Can't find a line in the file to grep in "+ myfile + \
+                            " - Exception: " + str(err)
+                        self.logdispatch.log(LogPriority.DEBUG, msg)
+                    else:
+                        fileToOpen.close()
+        return self.LANLImaged
     
     def initializePopulateFromMac(self, forceInitializtion = False):
         '''
@@ -1300,6 +1191,115 @@ class MacInfoLANL():
             self.initializePopulateFromMacBoolean = True
         return success
 
+    def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
+                             forceInitializtion = False):
+        '''
+        get LDAP data from
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
+        try:
+# lookup in LDAP based on macAddress
+            success = True
+            if self.ldapnotworking:
+                output = []
+            else:
+                command = [self.ldap,
+                           "-x",
+                           "-h",
+                           "ldap.lanl.gov",
+                           "-b",
+                           "dc=lanl,dc=gov",
+                           addressType + "=" + address]
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                returncode = self.ch.returncode
+                if returncode == 0:
+                    self.ldapnotworking = False
+                else:
+                    self.ldapnotworking = True
+            macAddress = ""
+            ipAddress = ""
+            computerName = ""
+            localHostname = ""
+            endUsername = ""
+            assetTag = ""
+            newRecord = False
+            for line in output:
+                try:
+                    if re.search("^dn:", line):
+                        newRecord = True
+                    else:
+                        newRecord = False
+                    if re.search("^ipHostNumber:", line):
+                        temp = line.split(": ")
+                        ipAddress = temp[1].strip()
+                    if re.search("^macAddress:", line):
+                        temp = line.split(": ")
+                        macAddress = temp[1].strip()
+                    if re.search("^cn:", line):
+                        temp = line.split(": ")
+                        computerName = temp[1].strip()
+                        temp = computerName.split(".")
+                        localHostname = temp[0].strip()
+                    if re.search("^owner:", line):
+                        temp = line.split(",")
+                        temp = temp[0].split("=")
+                        endUsername = temp[1].strip()
+                    if re.search("^lanlPN:", line):
+                        temp = line.split(" ")
+                        assetTag = temp[1].strip()
+                    if newRecord:
+                        if not(assetTag == ""):
+                            self.entries = self.entries + 1
+                            self.initializeDictionaryItemLDAP(self.entries)
+                            self.dictionaryItem["Tag"] = tag
+                            self.dictionaryItem["Weight"] = weightValue
+                            self.dictionaryItem["searchTerm"] = addressType + "=" + address
+                            self.dictionaryItem["hardwarePort"] = hardwarePort
+                            self.dictionaryItem["device"] = device
+                            self.dictionaryItem["macAddress"] = macAddress
+                            self.dictionaryItem["ipAddress"] = ipAddress
+                            self.dictionaryItem["ComputerName"] = computerName
+                            self.dictionaryItem["HostName"] = computerName
+                            self.dictionaryItem["LocalHostname"] = localHostname
+                            self.dictionaryItem["assetTag"] = assetTag
+                            self.dictionaryItem["endUsername"] = endUsername
+                        macAddress = ""
+                        ipAddress = ""
+                        computerName = ""
+                        localHostname = ""
+                        assetTag = ""
+                        endUsername = ""
+                except Exception, err:
+                    msg = str(err) + " - " + str(traceback.format_exc())
+                    self.logdispatch.log(LogPriority.ERROR, msg)
+                    continue
+            if not(assetTag == ""):
+                self.entries = self.entries + 1
+                self.initializeDictionaryItemLDAP(self.entries)
+                self.dictionaryItem["Tag"] = tag
+                self.dictionaryItem["Weight"] = weightValue
+                self.dictionaryItem["searchTerm"] = addressType + "=" + address
+                self.dictionaryItem["hardwarePort"] = hardwarePort
+                self.dictionaryItem["device"] = device
+                self.dictionaryItem["macAddress"] = macAddress
+                self.dictionaryItem["ipAddress"] = ipAddress
+                self.dictionaryItem["ComputerName"] = computerName
+                self.dictionaryItem["HostName"] = computerName
+                self.dictionaryItem["LocalHostname"] = localHostname
+                self.dictionaryItem["assetTag"] = assetTag
+                self.dictionaryItem["endUsername"] = endUsername
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            success = False
+            msg = traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, msg)
+        return success
+
     def report(self):
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
@@ -1402,6 +1402,32 @@ class MacInfoLANL():
             self.gotoNextItemLDAP()
         return self.messageGet()
 
+    def updateAssetTagAccuracy(self, condition, point, message, reset=False):
+        '''
+        set assetTag accuracy.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: real
+        @note: None
+        '''
+        if reset:
+            self.assetTagAccuracyLevelWhy = ""
+            self.assetTagAccuracyLevelTotal = 0
+            self.assetTagAccuracyLevelMax = 0
+            self.assetTagAccuracyLevel = 0
+        if condition:
+            self.assetTagAccuracyLevelTotal = self.assetTagAccuracyLevelTotal + point
+        else:
+            self.assetTagAccuracyLevelWhy = (self.assetTagAccuracyLevelWhy + " " + message).strip()
+        self.assetTagAccuracyLevelMax = self.assetTagAccuracyLevelMax + point
+        if self.assetTagAccuracyLevelMax > 0:
+            percentagefloat = float(self.assetTagAccuracyLevelTotal) / float(self.assetTagAccuracyLevelMax)
+            percentagefloat = percentagefloat * 100.0
+            self.assetTagAccuracyLevel = int(percentagefloat)
+        else:
+            self.assetTagAccuracyLevel = 0
+        return self.assetTagAccuracyLevel
+
     def updateComputerNameAccuracy(self, condition, point, message, reset=False):
         '''
         set ComputerName accuracy.
@@ -1433,32 +1459,6 @@ class MacInfoLANL():
         else:
             self.computerNameAccuracyLevel = 0
         return self.computerNameAccuracyLevel
-
-    def updateAssetTagAccuracy(self, condition, point, message, reset=False):
-        '''
-        set assetTag accuracy.
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: real
-        @note: None
-        '''
-        if reset:
-            self.assetTagAccuracyLevelWhy = ""
-            self.assetTagAccuracyLevelTotal = 0
-            self.assetTagAccuracyLevelMax = 0
-            self.assetTagAccuracyLevel = 0
-        if condition:
-            self.assetTagAccuracyLevelTotal = self.assetTagAccuracyLevelTotal + point
-        else:
-            self.assetTagAccuracyLevelWhy = (self.assetTagAccuracyLevelWhy + " " + message).strip()
-        self.assetTagAccuracyLevelMax = self.assetTagAccuracyLevelMax + point
-        if self.assetTagAccuracyLevelMax > 0:
-            percentagefloat = float(self.assetTagAccuracyLevelTotal) / float(self.assetTagAccuracyLevelMax)
-            percentagefloat = percentagefloat * 100.0
-            self.assetTagAccuracyLevel = int(percentagefloat)
-        else:
-            self.assetTagAccuracyLevel = 0
-        return self.assetTagAccuracyLevel
 
     def updateEndUserNameAccuracy(self, condition, point, message, reset=False):
         '''
@@ -1492,16 +1492,6 @@ class MacInfoLANL():
             self.endUserNameAccuracyLevel = 0
         return self.endUserNameAccuracyLevel
 
-    def messageGet(self):
-        '''
-        get the formatted message string.
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: string
-        @note: None
-        '''
-        return self.msg
-
     def messageAppend(self, pMessage=""):
         '''
         append and format message to the message string.
@@ -1534,6 +1524,16 @@ class MacInfoLANL():
                             "type " + str(types.StringType) + \
                             " or type " + str(types.ListType) + \
                             " as expected!")
+        return self.msg
+
+    def messageGet(self):
+        '''
+        get the formatted message string.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: string
+        @note: None
+        '''
         return self.msg
 
     def messageReset(self):
