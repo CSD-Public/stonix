@@ -37,22 +37,30 @@ with large amounts of original code and comments left intact.
     and exit, plus try/except blocks where appropriate
 @change: 2015/10/14 eball - Added -c flag to clean artifacts
 @change: 2016/01/26 ekkehard - version 0.9.4
+@change: 2016/04/04 rsn - changing logger to ramdisk's logger
+@change: 2016/04/04 rsn - changing ramdisk to public repo of ramdisk (without git history)
 '''
+from __future__ import absolute_import
+#--- Python specific libraries
 import os
+import re
+import sys
 import stat
 import optparse
-import macbuildlib as mbl
-import re
 import traceback
 from glob import glob
 from tempfile import mkdtemp
 from time import time
 from subprocess import call
 from shutil import rmtree, copy2
-# For setupRamdisk() and detachRamdisk()
-from macRamdisk import RamDisk, detach
-from log_message import log_message
 
+#-- Internal libraries
+import macbuildlib as mbl
+# For setupRamdisk() and detachRamdisk()
+sys.path.append("./ramdisk/")
+from ramdisk.macRamdisk import RamDisk, detach
+from ramdisk.lib.loggers import CyLogger
+from ramdisk.lib.loggers import LogPriority as lp
 
 class MacBuilder():
 
@@ -72,7 +80,16 @@ class MacBuilder():
         parser.add_option("-c", "--clean", action="store_true", dest="clean",
                           default=False, help="Clean all artifacts from " +
                           "previous builds and exit")
+        parser.add_option("-d", "--debug", action="store_true", dest="debug",
+                          default=False, help="debug mode, on or off.  Default off.")
         options, __ = parser.parse_args()
+
+        if isinstance(options.debug, bool) and options.debug:
+            debug = 20
+        else:
+            debug = 40
+        self.logger = CyLogger(level=debug)
+        self.logger.initializeLogs()
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
@@ -95,7 +112,9 @@ class MacBuilder():
 
         self.RSYNC = "/usr/bin/rsync"
         self.PYUIC = mbl.getpyuicpath()
-        self.DEFAULT_RAMDISK_SIZE = 2 * 1024 * 500
+        #####
+        # Needs to be in megabytes.
+        self.DEFAULT_RAMDISK_SIZE = 1000
 
         # This script should be run from [stonixroot]/src/MacBuild. We must
         # record the [stonixroot] directory in a variable.
@@ -210,20 +229,19 @@ class MacBuilder():
         print " "
         print " "
 
-    def setupRamdisk(self, size, mntpnt="", message_level="normal"):
-        ramdisk = RamDisk(str(size), mntpnt, message_level)
+    def setupRamdisk(self, size, mntpnt=""):
+        ramdisk = RamDisk(str(size), mntpnt, logger=self.logger)
 
         if not ramdisk.success:
             raise Exception("Ramdisk setup failed...")
 
         return ramdisk.getDevice()
 
-    def detachRamdisk(self, device, message_level="normal"):
-        if detach(device, message_level):
-            log_message("Successfully detached disk: " + str(device).strip(),
-                        "verbose", message_level)
+    def detachRamdisk(self, device):
+        if detach(device, logger=self.logger):
+            self.logger.log(lp.DEBUG, "Successfully detached disk: " + str(device).strip())
         else:
-            log_message("Couldn't detach disk: " + str(device).strip())
+            self.logger.log(lp.WARNING, "Couldn't detach disk: " + str(device).strip())
             raise Exception("Cannot eject disk: " + str(device).strip())
 
     def exit(self, ramdisk, exitcode=0):
