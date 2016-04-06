@@ -53,7 +53,7 @@ class ConfigurePasswordProfile(Rule):
 
         self.logger = logdispatch
         self.rulenumber = 106
-        self.rulename = "ConfigurePasswordProfile"
+        self.rulename = "ConfigureProfileManagement"
         self.formatDetailedResults("initialize")
         self.helptext = "ConfigurePasswordProfile rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
@@ -65,7 +65,7 @@ class ConfigurePasswordProfile(Rule):
             "PASSCODECONFIG to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.13']}}
+                           'os': {'Mac OS X': ['10.10', 'r', '10.11.13']}}
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         
@@ -95,10 +95,10 @@ class ConfigurePasswordProfile(Rule):
             
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["1", "bool"],
                                                                             "forcePIN": ["1", "bool"],
-                                                                            "maxFailedAttempts" :["5", "int", "less"],
+                                                                            "maxFailedAttempts" :["4", "int", "less"],
                                                                             "maxPINAgeInDays": ["180", "int", "more"],
                                                                             "minComplexChars": ["1", "int", "more"],
-                                                                            "minLength": ["8", "int", "more"],
+                                                                            "minLength": ["14", "int", "more"],
                                                                             "minutesUntilFailedLoginReset":["15", "int", "more"],
                                                                             "pinHistory": ["5", "int", "more"],
                                                                             "requireAlphanumeric": ["1", "bool"]}}
@@ -111,7 +111,7 @@ class ConfigurePasswordProfile(Rule):
                                    "com.apple.applicationaccess": "",
                                    "com.apple.systempolicy.control": ""}
 
-            self.profpaths = {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig": self.pwprofiledict,
+            self.profpaths = {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macPasscodeProfileForOSXElCapitan10.11STIG.mobileconfig": self.pwprofiledict,
                               os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig": self.spprofiledict}
             '''Run the system_proflier command'''
             if self.ch.executeCommand(cmd):
