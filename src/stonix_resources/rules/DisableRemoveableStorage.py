@@ -284,6 +284,8 @@ class DisableRemoveableStorage(Rule):
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+     <key>LimitLoadToSessionType</key>
+     <string>Aqua</string>
      <key>Label</key>
      <string>gov.lanl.stonix.disablestorage</string>
      <key>ProgramArguments</key>
@@ -363,7 +365,7 @@ if __name__ == '__main__':
 #             "</array><key>KeepAlive</key><false/></dict></plist>"
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
-            "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
+            "<plist version\=\"1\.0\"><dict><key>LimitLoadToSessionType</key><string>Aqua</string><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
             "<key>ProgramArguments</key>" + \
             "<array>" + \
             "<string>sh</string>" + \
