@@ -20,12 +20,12 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-#from __builtin__ import False
 '''
 Created on Feb 10, 2015
 
 @author: dwalker
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2016/04/06 eball Changed rule name to ConfigureProfileManagement
 '''
 from __future__ import absolute_import
 import traceback
@@ -39,7 +39,7 @@ from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
 
 
-class ConfigurePasswordProfile(Rule):
+class ConfigureProfileManagement(Rule):
     '''
     Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
     & OS Yosemite 10.10. Profile files are installed using the following
@@ -55,7 +55,7 @@ class ConfigurePasswordProfile(Rule):
         self.rulenumber = 106
         self.rulename = "ConfigureProfileManagement"
         self.formatDetailedResults("initialize")
-        self.helptext = "ConfigurePasswordProfile rule configures the " + \
+        self.helptext = "ConfigureProfileManagement rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
