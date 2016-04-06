@@ -139,6 +139,10 @@ STONIXDEVS = 'stonix-dev@bar.com'
 # PROXY = None
 PROXY = 'http://foo.bar.com:8080'
 PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
+PROXYDOMAIN = "bar.com"
+
+# Domain Name Server (DNS) defaults
+DNS = "192.168.0.1 192.168.0.2"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'

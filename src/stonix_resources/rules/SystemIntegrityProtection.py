@@ -63,7 +63,7 @@ class SystemIntegrityProtection(Rule):
             compliant = True
             if compliant:
                 compliant = self.sipobject.report()
-                self.resultAppend(self.sipobject.getDetailedresults())
+                self.resultAppend(self.sipobject.messageGet())
             self.compliant = compliant
             self.rulesuccess = True
         except (KeyboardInterrupt, SystemExit):

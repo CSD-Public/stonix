@@ -138,21 +138,6 @@ class DisableRemoveableStorage(Rule):
                                                         debug)
                                         compliant = False
 
-                # check if usb kernel module exists, non compliant if yes
-                self.ch.wait = False
-                self.ch.executeCommand("uname -r")
-                self.ch.wait = True
-                output = self.ch.getOutput()
-                if output:
-                    output = output[0].strip()
-                    if os.path.exists("/lib/modules/" + output +
-                                      "/kernel/drivers/usb/storage/usb-storage.ko"):
-                        debug = "Kernel module exists but shouldn't\n"
-                        self.detailedresults += "Kernel module exists " + \
-                            "but shouldn't\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-
                 # check for existence of certain usb packages, non-compliant
                 # if any exist
                 for item in self.pcmcialist:
@@ -274,6 +259,27 @@ class DisableRemoveableStorage(Rule):
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+#         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
+# <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+# <plist version="1.0">
+# <dict>
+#      <key>Label</key>
+#      <string>gov.lanl.stonix.disablestorage</string>
+#      <key>ProgramArguments</key>
+#      <array>
+#          <string>sh</string>
+#          <string>-c</string>
+#          <string>''' + self.daemonpath + '''</string>
+#      </array>
+#      <key>WatchPaths</key>
+#      <array>
+#          <string>/Volumes/</string>
+#      </array>
+#      <key>KeepAlive</key>
+#          <false/>
+# </dict>
+# </plist>
+# '''
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -286,12 +292,12 @@ class DisableRemoveableStorage(Rule):
          <string>-c</string>
          <string>''' + self.daemonpath + '''</string>
      </array>
-     <key>WatchPaths</key>
-     <array>
-         <string>/Volumes/</string>
-     </array>
+     <key>StartOnMount</key>
+     <true/>
+     <key>RunAtLoad</key>
+     <true/>
      <key>KeepAlive</key>
-         <false/>
+     <true/>
 </dict>
 </plist>
 '''
@@ -344,6 +350,17 @@ def main():
 if __name__ == '__main__':
     main()
 '''     
+#         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
+#             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
+#             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
+#             "<key>ProgramArguments</key>" + \
+#             "<array>" + \
+#             "<string>sh</string>" + \
+#             "<string>\-c</string>" + \
+#             "<string>" + re.escape(self.daemonpath) + "</string>" + \
+#             "</array>" + \
+#             "<key>WatchPaths</key><array><string>/Volumes/</string>" + \
+#             "</array><key>KeepAlive</key><false/></dict></plist>"
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
@@ -353,9 +370,8 @@ if __name__ == '__main__':
             "<string>\-c</string>" + \
             "<string>" + re.escape(self.daemonpath) + "</string>" + \
             "</array>" + \
-            "<key>WatchPaths</key><array><string>/Volumes/</string>" + \
-            "</array><key>KeepAlive</key><false/></dict></plist>"
-
+            "<key>StartOnMount</key><true/><key>RunAtLoad</key><true/>" + \
+            "<key>KeepAlive</key><true/></dict></plist>"
         self.daemonregex = "\#\!/usr/bin/python\n\'\'\'\nCreated on Jan 5\, 2016\n@author: dwalker\n\'\'\'\n" + \
             "import re\n" + \
             "from Subprocess import PIPE\, Popen\, call\n\n" + \
@@ -649,24 +665,6 @@ if __name__ == '__main__':
                                 os.chown(blacklistf, 0, 0)
                                 os.chmod(blacklistf, 420)
                                 resetsecon(blacklistf)
-                    # get the current version of the kernel
-                    self.wait = False
-                    self.ch.executeCommand("uname -r")
-                    self.wait = True
-                    output = self.ch.getOutput()
-                    if output:
-                        output = output[0].strip()
-                        originalPath = "/lib/modules/" + output + \
-                            "/kernel/drivers/usb/storage/usb-storage.ko"
-                        newPath = "/usb-storage.ko"
-                        if os.path.exists(originalPath):
-                            os.rename(originalPath, newPath)
-                            cmd = self.mvcmd + " " + newPath + " " + originalPath
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "commandstring",
-                                         "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
                     for item in self.pcmcialist:
                         if self.ph.check(item):
                             self.ph.remove(item)
