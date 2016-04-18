@@ -130,17 +130,25 @@ class ServiceHelper(object):
                                                    self.logdispatcher)
             elif islaunchd:
                 self.svchelper = SHlaunchd.SHlaunchd(self.environ,
-                                                   self.logdispatcher)
+                                                     self.logdispatcher)
             else:
-                raise RuntimeError("Could not identify service management " + \
+                raise RuntimeError("Could not identify service management " +
                                    "programs")
         elif truecount > 1:
             self.ishybrid = True
             count = 0
-            if ischkconfig:
-                self.svchelper = SHchkconfig.SHchkconfig(self.environ,
+            if issystemctl:
+                self.svchelper = SHsystemctl.SHsystemctl(self.environ,
                                                          self.logdispatcher)
                 count = 1
+            if ischkconfig:
+                if count == 0:
+                    self.svchelper = SHchkconfig.SHchkconfig(self.environ,
+                                                             self.logdispatcher)
+                    count = 1
+                elif count == 1:
+                    self.secondary = SHchkconfig.SHchkconfig(self.environ,
+                                                             self.logdispatcher)
             if isrcupdate:
                 if count == 0:
                     self.svchelper = SHrcupdate.SHrcupdate(self.environ,
@@ -157,14 +165,6 @@ class ServiceHelper(object):
                 elif count == 1:
                     self.secondary = SHupdaterc.SHupdaterc(self.environ,
                                                            self.logdispatcher)
-            if issystemctl:
-                if count == 0:
-                    self.svchelper = SHsystemctl.SHsystemctl(self.environ,
-                                                             self.logdispatcher)
-                    count = 1
-                elif count == 1:
-                    self.secondary = SHsystemctl.SHsystemctl(self.environ,
-                                                             self.logdispatcher)
             if issvcadm:
                 if count == 0:
                     self.svchelper = SHsvcadm.SHsvcadm(self.environ,
@@ -183,7 +183,7 @@ class ServiceHelper(object):
                                                        self.logdispatcher)
             if islaunchd:
                 self.svchelper = SHlaunchd.SHlaunchd(self.environ,
-                                                   self.logdispatcher)
+                                                     self.logdispatcher)
                 count = 1
 
         self.logdispatcher.log(LogPriority.DEBUG,
