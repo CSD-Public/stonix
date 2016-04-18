@@ -431,6 +431,25 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                                        self.detailedresults)
             self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         else:
+            cmd = ["ps", "-eZ", "|", "egrep", "\"initrc\"", "|", "egrep",
+                   "-vw", "\"tr", "|", "ps", "|", "egrep", "|", "bash", "|",
+                   "awk\"", "|", "tr", "\':\'", "'", "'", "|", "awk",
+                   "\'{", "print", "$NF", "}\'"]
+            if not self.ch.executeCommand(cmd):
+                self.detailedresults += "Unable to check for unconfined " + \
+                "daemons\n"
+                compliant = False
+            elif self.ch.getReturnCode() != 0:
+                self.detailedresults += "Unconfined daemons found running\n"
+                compliant = False
+            cmd = "find /dev -context *:device_t:* \( -type c -o -type b \) -printf \"%p %Z\n\""
+            if not self.ch.executeCommand(cmd):
+                self.detailedresults += "Unable to check for unlabled " + \
+                    "device files\n"
+                compliant = False
+            elif self.ch.getReturnCode() != 0:
+                self.detailedresults += "Unlabeled device files found\n"
+                compliant = False
             self.f1 = readFile(self.path1, self.logger)
             self.f2 = readFile(self.path2, self.logger)
             if self.f1:

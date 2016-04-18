@@ -20,16 +20,15 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-#from __builtin__ import False
 '''
 Created on Feb 10, 2015
 
 @author: dwalker
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2016/04/06 eball Changed rule name to ConfigureProfileManagement
 '''
 from __future__ import absolute_import
 import traceback
-import re
 import sys
 import os
 from ..rule import Rule
@@ -39,7 +38,7 @@ from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
 
 
-class ConfigurePasswordProfile(Rule):
+class ConfigureProfileManagement(Rule):
     '''
     Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
     & OS Yosemite 10.10. Profile files are installed using the following
@@ -55,7 +54,7 @@ class ConfigurePasswordProfile(Rule):
         self.rulenumber = 106
         self.rulename = "ConfigureProfileManagement"
         self.formatDetailedResults("initialize")
-        self.helptext = "ConfigurePasswordProfile rule configures the " + \
+        self.helptext = "ConfigureProfileManagement rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
@@ -68,7 +67,7 @@ class ConfigurePasswordProfile(Rule):
                            'os': {'Mac OS X': ['10.10', 'r', '10.11.13']}}
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        
+
     def report(self):
         '''
         @since: 3/9/2016
@@ -92,27 +91,34 @@ class ConfigurePasswordProfile(Rule):
             self.ch = CommandHelper(self.logger)
             self.neededprofiles = []
             '''form key = val;'''
-            
-            self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["1", "bool"],
-                                                                            "forcePIN": ["1", "bool"],
-                                                                            "maxFailedAttempts" :["4", "int", "less"],
-                                                                            "maxPINAgeInDays": ["180", "int", "more"],
-                                                                            "minComplexChars": ["1", "int", "more"],
-                                                                            "minLength": ["14", "int", "more"],
-                                                                            "minutesUntilFailedLoginReset":["15", "int", "more"],
-                                                                            "pinHistory": ["5", "int", "more"],
-                                                                            "requireAlphanumeric": ["1", "bool"]}}
-            self.spprofiledict =  {"com.apple.screensaver": "",
-                                   "com.apple.loginwindow": "",
-                                   "com.apple.systempolicy.managed": "",
-                                   "com.apple.SubmitDiagInfo": "",
-                                   "com.apple.preference.security": "",
-                                   "com.apple.MCX": "",
-                                   "com.apple.applicationaccess": "",
-                                   "com.apple.systempolicy.control": ""}
 
-            self.profpaths = {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macPasscodeProfileForOSXElCapitan10.11STIG.mobileconfig": self.pwprofiledict,
-                              os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/files/stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig": self.spprofiledict}
+            self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
+                                  {"allowSimple": ["1", "bool"],
+                                   "forcePIN": ["1", "bool"],
+                                   "maxFailedAttempts": ["4", "int", "less"],
+                                   "maxPINAgeInDays": ["180", "int", "more"],
+                                   "minComplexChars": ["1", "int", "more"],
+                                   "minLength": ["14", "int", "more"],
+                                   "minutesUntilFailedLoginReset":
+                                   ["15", "int", "more"],
+                                   "pinHistory": ["5", "int", "more"],
+                                   "requireAlphanumeric": ["1", "bool"]}}
+            self.spprofiledict = {"com.apple.screensaver": "",
+                                  "com.apple.loginwindow": "",
+                                  "com.apple.systempolicy.managed": "",
+                                  "com.apple.SubmitDiagInfo": "",
+                                  "com.apple.preference.security": "",
+                                  "com.apple.MCX": "",
+                                  "com.apple.applicationaccess": "",
+                                  "com.apple.systempolicy.control": ""}
+
+            self.profpaths = \
+                {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
+                 "/stonix_resources/files/stonix4macPasscodeProfileFor" +
+                 "OSXElCapitan10.11STIG.mobileconfig": self.pwprofiledict,
+                 os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
+                 "/stonix_resources/files/stonix4macSecurity&Privacy" +
+                 "ForOSXElCapitan10.11.mobileconfig": self.spprofiledict}
             '''Run the system_proflier command'''
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
@@ -176,7 +182,8 @@ class ConfigurePasswordProfile(Rule):
                         if self.ch.executeCommand(cmd):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = ["/usr/bin/profiles", "-R", "-F", profile]
+                            undocmd = ["/usr/bin/profiles", "-R", "-F",
+                                       profile]
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
