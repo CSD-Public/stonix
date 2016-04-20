@@ -66,7 +66,8 @@ class SecureWinFileSharing(Rule):
         self.helptext = '''This rule will secure SAMBA file sharing settings'''
         self.rootrequired = True
         self.guidance = ['']
-
+        self.applicable = {'type': 'white',
+                           'family': ['linux', 'solaris', 'freebsd']}
         # init CIs
         datatype = 'bool'
         key = 'SecureWinFileSharing'
@@ -112,12 +113,12 @@ value of SecureWinFileSharing to False.'''
                                  '/usr/local/samba/lib/smb.conf',
                                  '/etc/sfw/samba/smb.conf',
                                  '/usr/local/etc/smb.conf']
-''
             self.smbconflocation = ""
             # find and specify actual location (if different from default location)
             for location in self.smbconflocations:
                 if os.path.exists(location):
                     self.smbconflocation = location
+                    break
             if not self.smbconflocation:
                 # establish default location
                 self.smbconflocation = '/etc/samba/smb.conf'
@@ -130,22 +131,23 @@ value of SecureWinFileSharing to False.'''
                 kvtmppath = kvpath + '.stonixtmp'
                 kvconftype = 'openeq'
                 smbDirectives = {'global': {'restrict anonymous': '2',
-                            'guest ok': 'no',
-                            'client ntlmv2 auth': 'yes',
-                            'client lanman auth': 'no',
-                            'client plaintext auth': 'no',
-                            'ntlm auth': 'no',
-                            'lanman auth': 'no',
-                            'invalid users': 'root @wheel',
-                            'server signing': 'mandatory',
-                            'client signing': 'mandatory'}}
+                                            'guest ok': 'no',
+                                            'client ntlmv2 auth': 'yes',
+                                            'client lanman auth': 'no',
+                                            'client plaintext auth': 'no',
+                                            'ntlm auth': 'no',
+                                            'lanman auth': 'no',
+                                            'invalid users': 'root @wheel',
+                                            'server signing': 'mandatory',
+                                            'client signing': 'mandatory'}}
                 
                 kvintent = 'present'
-                self.kvosmb1 = KVEditorStonix(self.statechglogger, self.logger,
+                self.kvosmb = KVEditorStonix(self.statechglogger, self.logger,
                                               kvtype, kvpath, kvtmppath,
                                               smbDirectives, kvintent,
                                               kvconftype)
-                if not self.kvosmb1.report():
+                if not self.kvosmb.report():
+                    self.detailedresults += "kveditor report 1 is non compliant\n"
                     compliant = False
                 kvintent = "notpresent"
                 smbDirectives = {"global": {"load printers": "",
@@ -156,12 +158,10 @@ value of SecureWinFileSharing to False.'''
                                              "guest ok": "",
                                              "writable": "",
                                              "printable": ""}}
-                
-                self.kvosmb2 = KVEditorStonix(self.statechglogger, self.logger,
-                                              kvtype, kvpath, kvtmppath,
-                                              smbDirectives, kvintent,
-                                              kvconftype)
-                if not self.kvosmb2.report():
+                self.kvosmb.setData(smbDirectives)
+                self.kvosmb.setIntent(kvintent)
+                if not self.kvosmb.report():
+                    self.detailedresults += "kveditor report 2 is non compliant\n"
                     compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -193,42 +193,37 @@ value of SecureWinFileSharing to False.'''
                 self.statechglogger.deleteentry(event)
             success = True
             debug = ""
+            fixed = False
             if self.securewinfileShare.getcurrvalue():
-                if self.kvosmb1.fixables:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.kvosmb1.setEventID(myid)
-                    if self.kvosmb1.fix():
-                        debug += "kvosmb1 fix ran successfully\n"
-                        if self.kvosmb1.commit():
-                            debug += "kvosmb1 commit ran successfully\n"
-                            os.chown(self.kvosmb1.getPath(), 0, 0)
-                            os.chmod(self.kvosmb1.getPath(), 420)
-                            resetsecon(self.kvosmb1.getPath())
-                        else:
-                            debug += "Unable to complete kvosmb1 commit\n"
-                            success = False
+                if self.kvosmb.fixables:
+                    if self.kvosmb.fix():
+                        fixed = True
+                        debug += "kveditor fix 1 ran successfully\n"
                     else:
-                        debug += "Unable to complete kvosmb1 fix\n"
+                        debug += "Unable to complete kveditor fix 1\n"
                         success = False
             if self.disableprintshare.getcurrvalue():
-                if self.kvosmb2.removeables:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.kvosmb2.setEventID(myid)
-                    if self.kvosmb2.fix():
-                        debug += "kvosmb2 fix ran successfully\n"
-                        if self.kvosmb2.commit():
-                            debug += "kvosmb2 commit ran successfully\n"
-                            os.chown(self.kvosmb2.getPath(), 0, 0)
-                            os.chmod(self.kvosmb2.getPath(), 420)
-                            resetsecon(self.kvosmb2.getPath())
-                        else:
-                            debug += "Unable to complete kvosmb2 commit\n"
-                            success = False
+                if self.kvosmb.removeables:
+                    if self.kvosmb.fix():
+                        fixed = True
+                        debug += "kveditor fix 2 ran successfully\n"
                     else:
-                        debug += "Unable to complete kvosmb2 fix\n"
+                        debug += "Unable to complete kveditor fix 2\n"
                         success = False
+            if fixed:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.kvosmb.setEventID(myid)
+                if self.kvosmb.commit():
+                    debug += "kveditor commit ran successfully\n"
+                    os.chown(self.kvosmb.getPath(), 0, 0)
+                    os.chmod(self.kvosmb.getPath(), 420)
+                    resetsecon(self.kvosmb.getPath())
+                else:
+                    debug += "Unable to complete kveditor commit\n"
+                    success = False
+            if debug:
+                self.logger.log(LogPriority.DEBUG, debug)
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
