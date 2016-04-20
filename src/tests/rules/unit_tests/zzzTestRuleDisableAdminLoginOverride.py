@@ -35,7 +35,7 @@ import os
 import traceback
 import sys
 
-sys.path.config("../../../..")
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.stonixutilityfunctions import createFile, writeFile
