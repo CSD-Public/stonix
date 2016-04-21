@@ -29,8 +29,8 @@ directories.
 
 @author: dkennel
 @change: 2014/06/13 dkennel: Added skiplist to prevent scanning of large file
-@change: 2014/10/31 ekkehard fixed isApplicable
 systems. Added code to remove world write from files in the root users path.
+@change: 2014/10/31 ekkehard fixed isApplicable
 @change: 2015/04/13 dkennel changed to use new isApplicable method in template
 rule class
 @change: 2015/08/28 eball - Updated suidlist
@@ -158,9 +158,9 @@ users path are very dangerous.'''
         """
         This is primarily a private method but may be called if the
         configuration has changed after the rules have been instantiated. This
-        method will cause the rule to process it's entries from the
-        configuration file object and instantiate it's dependent
-        configuration item objects. Instantiated configurationitems will be
+        method will cause the rule to process its entries from the
+        configuration file object and instantiate its dependent
+        configuration item objects. Instantiated configuration items will be
         added to the self.confitems property.
 
         @return void :
@@ -1050,7 +1050,7 @@ find / -xdev \( -nouser -o -nogroup \) -print
 
     def report(self):
         '''
-        Puplic report method for the FilePermissions rule. This method will
+        Public report method for the FilePermissions rule. This method will
         invoke the multifind and then call the report routines that examine
         the status of World Writable files, SUID/SGID files and files without
         known owners. This rule because of the length of time it takes to do
