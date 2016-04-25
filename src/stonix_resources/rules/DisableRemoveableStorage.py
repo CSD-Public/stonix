@@ -601,7 +601,6 @@ if __name__ == '__main__':
                 if self.environ.getostype() == "Mac OS X":
                     success = self.fixMac()
                 else:
-                    output = ""
                     changed = False
                     tempstring = ""
                     grub = "/etc/grub.conf"
