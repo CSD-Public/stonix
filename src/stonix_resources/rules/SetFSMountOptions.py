@@ -77,13 +77,19 @@ class SetFSMountOptions(Rule):
         "storage partitions such as /tmp and /dev/shm in order to help " + \
         "protect against malicious code being run on the system."
         self.rootrequired = True
-        self.compliant = False
-        self.ci = self.initCi("bool",
-                              "SetFSMountOptions",
-                              "To prevent the configuration of " + \
-                              "mount options, set the value of " + \
-                              "SetFSMountOptions to False.",
-                              True)
+
+        # set up CI's
+        datatype = "bool"
+        key = "SetFSMountOptions"
+        instructions = "To prevent the configuration of mount options, set the value of SetFSMountOptions to False."
+        default = True
+        self.ci = self.initCi(datatype, key, instructions, default)
+        datatype2 = 'bool'
+        key2 = 'NFSRoot'
+        instructions2 = 'If this system uses an NFS mounted root, set the value of NFSRoot to True.'
+        default2 = False
+        self.NFSRootci = self.initCi(datatype2, key2, instructions2, default2)
+
         self.guidance = ['CIS NSA(2.2.1.1)', 'cce4249-9', 'cce4368-7',
                          'cce4024-6', 'cce4526-0', 'CIS NSA(2.2.1.2)',
                          'cce3522-0', 'cce4042-8', 'cce4315-8']
@@ -130,11 +136,15 @@ class SetFSMountOptions(Rule):
         """
 
         # defaults
-        retval = True
-        self.detailedresults = ''
+        self.detailedresults = ""
         foundcfgline = False
+        self.compliant = True
 
         try:
+
+            if not self.checknfs():
+                self.compliant = False
+                self.logger.log(LogPriority.DEBUG, "checknfs() returned non compliant")
 
             # search for the various config options
             f = open(self.filepath, 'r')
@@ -149,15 +159,18 @@ class SetFSMountOptions(Rule):
                     if sline[0] != '#' and sline[0] != '\n' and sline[1] != '/':
                         if sline[2] in self.localfstypes:
                             if 'nodev' not in sline[3]:
-                                retval = False
+                                self.compliant = False
+                                self.detailedresults += "\nLine:\n" + str(line) + "\nis missing the required option: nodev"
                         elif sline[2] in self.removeables:
                             for item in self.removeablelist:
                                 if item not in sline[3]:
-                                    retval = False
+                                    self.compliant = False
+                                    self.detailedresults += "\nLine:\n" + str(line) + "\nis missing one or more of the following required options: " + "".join(self.removeablelist)
                         elif sline[1] in self.temporarytypes:
                             for item in self.temporarytypeslist:
                                 if item not in sline[3]:
-                                    retval = False
+                                    self.compliant = False
+                                    self.detailedresults += "\nLine:\n" + str(line) + "\nis missing one or more of the following required options: " + "".join(self.temporarytypeslist)
 
                 except IndexError:
                     continue
@@ -165,10 +178,9 @@ class SetFSMountOptions(Rule):
                 if re.search('^' + self.bindmnttmp, line):
                         foundcfgline = True
 
-            if retval and foundcfgline:
-                self.compliant = True
-            else:
+            if not foundcfgline:
                 self.compliant = False
+                self.detailedresults += "\nA required configuration line:\n" + str(self.bindmnttmp) + "\n was not found"
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -181,6 +193,103 @@ class SetFSMountOptions(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def checknfs(self):
+        '''
+        check if all nfs mounts use packet signing
+        this is an audit-only action
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Running checknfs() method...")
+
+        retval = True
+        options = ['sec=krb5i', 'sec=ntlmv2i']
+        fstabfile = '/etc/fstab'
+        nodev = 'nodev'
+        nosuid = 'nosuid'
+        sambasharedetected = False
+        nfsmountdetected = False
+        smboptdict = {'sec=krb5i': False,
+                      'sec=ntlmv2i': False}
+        nfsmountdict = {nodev: True,
+                        nosuid: True}
+
+        try:
+
+            if not os.path.exists(fstabfile):
+                self.logger.log(LogPriority.DEBUG, "Could not locate the fstab file on this system")
+                retval = False
+                return retval
+
+            self.logger.log(LogPriority.DEBUG, "Attempting to open file: " + str(fstabfile) + " ...")
+            f = open(fstabfile, 'r')
+            contentlines = f.readlines()
+            f.close()
+            self.logger.log(LogPriority.DEBUG, "Successfully retrieved contents of file: " + str(fstabfile))
+
+            self.logger.log(LogPriority.DEBUG, "Beginning check for required samba share mount options...")
+            for line in contentlines:
+                sline = line.split()
+                if len(sline) < 3:
+                    continue
+                else:
+                    if not re.search('^cifs$', str(sline[2]).strip().lower()):
+                        continue
+                    else:
+                        self.logger.log(LogPriority.DEBUG, "Samba share detected. Checking for required options...")
+                        sambasharedetected = True
+                        for option in options:
+                            if re.search(option, str(line).lower()):
+                                smboptdict[option] = True
+                        for option in smboptdict:
+                            if not smboptdict[option]:
+                                retval = False
+                                self.detailedresults += '\nNo packet signing option specified for samba share on line:\n' + line
+            if sambasharedetected:
+                if retval:
+                    self.detailedresults += "\nAll detected samba shares have packet signing enabled."
+                if not retval:
+                    self.detaildresults += "\nOne or more detected samba shares do not have packet signing enabled!"
+            else:
+                self.logger.log(LogPriority.DEBUG, "No samba shares detected on this system.")
+
+            for line in contentlines:
+                sline = line.split()
+                if len(sline) < 4:
+                    continue
+                else:
+                    if re.search('^nfs$', str(sline[2]).strip().lower()):
+                        nfsmountdetected = True
+                        self.logger.log(LogPriority.DEBUG, "NFS mount detected. Checking for required options...")
+                        if not re.search(nodev, str(sline[3]).strip().lower()):
+                            retval = False
+                            nfsmountdict[nodev] = False
+                            self.detailedresults += '\nnfs mount line missing option: ' + nodev
+                        if not self.NFSRootci:
+                            self.logger.log(LogPriority.DEBUG, "NFSRoot ci is disabled; performing check for nosuid option...")
+                            if not re.search(nosuid, str(sline[3]).strip().lower()):
+                                retval = False
+                                nfsmountdict[nosuid] = False
+                                self.detailedresults += '\nnfs mount line missing option: ' + nosuid
+                        else:
+                            self.logger.log(LogPriority.DEBUG, "NFSRoot ci is enabled; skipping nosuid check...")
+            if not nfsmountdetected:
+                self.logger.log(LogPriority.DEBUG, "No nfs mounts detected on this system.")
+            else:
+                if retval:
+                    self.detailedresults += "\nAll nfs mount entries contain the required options."
+                else:
+                    for opt in nfsmountdict:
+                        if not nfsmountdict[opt]:
+                            self.detailedresults += "\nOne or more nfs mount entries is missing the required: " + str(opt) + " option."
+
+        except Exception:
+            raise
+        return retval
 
     def fix(self):
         """
@@ -198,7 +307,7 @@ class SetFSMountOptions(Rule):
 
         # defaults
         self.iditerator = 0
-        self.detailedresults = ''
+        self.detailedresults = ""
         tmpfile = self.filepath + '.stonixtmp'
         bindtmplinefound = False
 
