@@ -481,6 +481,9 @@ the Avahi service in order to secure it.'''
                                                          "present", "closedeq")
                         if not self.editor.report():
                             if self.editor.fix():
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                self.editor.setEventID(myid)
                                 if not self.editor.commit():
                                     self.rulesuccess = False
                                     self.detailedresults += "Could not " + \
