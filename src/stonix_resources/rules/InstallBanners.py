@@ -1329,12 +1329,20 @@ class InstallBanners(RuleKVEditor):
             if not self.kdeditor.fix():
                 retval = False
                 self.detailedresults += '\nkveditor fix did not complete successfully'
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.kdeditor.setEventID(myid)
             if not self.kdeditor.commit():
                 retval = False
                 self.detailedresults += '\nkveditor commit did not complete successfully'
             if not self.kdeditor2.fix():
                 retval = False
                 self.detailedresults += '\nkveditor fix did not complete successfully'
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.kdeditor2.setEventID(myid)
             if not self.kdeditor2.commit():
                 retval = False
                 self.detailedresults += '\nkveditor commit did not complete successfully'
