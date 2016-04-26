@@ -285,6 +285,9 @@ class SecureNFS(Rule):
                             debug = "fix for editor1 failed"
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            self.editor1.setEventID(myid)
                             if not self.editor1.commit():
                                 success = False
                                 debug = "commit for editor1 failed"
@@ -316,6 +319,9 @@ class SecureNFS(Rule):
                         debug = "editor1 fix failed"
                         self.logger.log(LogPriority.DEBUG, debug)
                     else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.editor1.setEventID(myid)
                         if not self.editor1.commit():
                             success = False
                             debug = "editor1 commit failed"
@@ -346,6 +352,9 @@ class SecureNFS(Rule):
                             debug = "fix for editor2 failed"
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            self.editor2.setEventID(myid)
                             if not self.editor2.commit():
                                 success = False
                                 debug = "commit for editor2 failed"
