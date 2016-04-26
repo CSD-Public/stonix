@@ -221,6 +221,9 @@ and media.'''
                     self.editor.report()
                     if self.editor.fixables:
                         if self.editor.fix():
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            self.editor.setEventID(myid)
                             if self.editor.commit():
                                 debug = self.path2 + "'s contents have been " \
                                     + "corrected\n"
