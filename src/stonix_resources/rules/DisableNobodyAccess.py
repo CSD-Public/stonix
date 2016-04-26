@@ -137,6 +137,9 @@ class DisableNobodyAccess(Rule):
                          "filepath": self.path}
                 self.statechglogger.recordchgevent(myid, event)
                 if self.editor.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
                     if self.editor.commit():
                         os.chown(self.path, 0, 0)
                         os.chmod(self.path, 292)
