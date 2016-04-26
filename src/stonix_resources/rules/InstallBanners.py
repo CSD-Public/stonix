@@ -658,7 +658,7 @@ class InstallBanners(RuleKVEditor):
                 for key in contentdict:
                     for line in contentlines:
                         if re.search(key, line):
-                            contentlines = [c.replace(line, contentdict[key]) for c in contentlines]
+                            contentlines = [c.replace(line, contentdict[key] + '\n') for c in contentlines]
                             replacedict[contentdict[key]] = True
                 for item in replacedict:
                     if not replacedict[item]:
