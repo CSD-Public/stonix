@@ -105,6 +105,7 @@ Setup default set of policy blocks for CUPS'''
         self.isApplicableBlackList = ["darwin"]
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
+        self.iditerator = 0
 
         # init CIs
         self.SecureCUPS = self.__initializeSecureCUPS()
