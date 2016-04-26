@@ -27,6 +27,7 @@ after 15 minutes.
 @author: Eric Ball
 @change: 2015/07/01 eball Original implementation
 @change: 2015/08/28 eball - Fixed permissions changes, cleaned up code
+@change: 2015/04/26 ekkehard - Results Formatting
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -67,6 +68,7 @@ Windows, as it will close terminal windows in the X environment.'''
 
     def report(self):
         try:
+            self.detailedresults = ""
             self.path1 = "/etc/profile.d/tmout.sh"
             self.data1 = {"TMOUT": "900"}
             self.data2 = {"readonly": "TMOUT", "export": "TMOUT"}
@@ -129,104 +131,105 @@ Windows, as it will close terminal windows in the X environment.'''
 
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
-                return
-            success = True
-            results = ""
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-
-            if not os.path.exists(self.path1):
-                createFile(self.path1, self.logger)
-                self.created = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.path1}
-                self.statechglogger.recordchgevent(myid, event)
-
-            self.tmppath = self.path1 + ".tmp"
-            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", self.path1, self.tmppath,
-                                          self.data1, "present", "closedeq")
-            self.editor1.report()
-            self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", self.path1, self.tmppath,
-                                          self.data2, "present", "space")
-            self.editor2.report()
-
-            if self.editor1.fixables or self.editor2.fixables:
-                if self.editor1.fix():
-                    if self.editor1.commit():
-                        debug = self.path1 + "'s contents have been " + \
-                            "corrected\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        resetsecon(self.path1)
+            self.detailedresults = ""
+            self.rulesuccess = True
+            if self.ci.getcurrvalue():
+                success = True
+                results = ""
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+    
+                if not os.path.exists(self.path1):
+                    createFile(self.path1, self.logger)
+                    self.created = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": self.path1}
+                    self.statechglogger.recordchgevent(myid, event)
+    
+                self.tmppath = self.path1 + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.path1, self.tmppath,
+                                              self.data1, "present", "closedeq")
+                self.editor1.report()
+                self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.path1, self.tmppath,
+                                              self.data2, "present", "space")
+                self.editor2.report()
+    
+                if self.editor1.fixables or self.editor2.fixables:
+                    if self.editor1.fix():
+                        if self.editor1.commit():
+                            debug = self.path1 + "'s contents have been " + \
+                                "corrected\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            resetsecon(self.path1)
+                        else:
+                            debug = "kveditor commit not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                            results += self.path1 + \
+                                " properties could not be set\n"
                     else:
-                        debug = "kveditor commit not successful\n"
+                        debug = "kveditor fix not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                        results += self.path1 + \
-                            " properties could not be set\n"
-                else:
-                    debug = "kveditor fix not successful\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-                    results += self.path1 + " properties could not be set\n"
-                if self.editor2.fix():
-                    if self.editor2.commit():
-                        debug = self.path1 + "'s contents have been " + \
-                            "corrected\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        resetsecon(self.path1)
+                        results += self.path1 + " properties could not be set\n"
+                    if self.editor2.fix():
+                        if self.editor2.commit():
+                            debug = self.path1 + "'s contents have been " + \
+                                "corrected\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            resetsecon(self.path1)
+                        else:
+                            debug = "kveditor commit not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                            results += self.path1 + \
+                                " properties could not be set\n"
                     else:
-                        debug = "kveditor commit not successful\n"
+                        debug = "kveditor fix not successful\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                        results += self.path1 + \
-                            " properties could not be set\n"
+                        results += self.path1 + " properties could not be set\n"
+                if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
+                   not checkPerms(self.path1, [0, 0, 0644], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.path1, [0, 0, 0644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        results += "Could not set permissions for " + \
+                                   self.path1 + "\n"
+    
+                if not os.path.exists(self.path2):
+                    createFile(self.path2, self.logger)
+                    self.created = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": self.path2}
+                    self.statechglogger.recordchgevent(myid, event)
+                writeFile(self.path2, self.cshData, self.logger)
+                if not checkPerms(self.path2, [0, 0, 0755], self.logger) and \
+                   not checkPerms(self.path2, [0, 0, 0644], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.path2, [0, 0, 0644],
+                                    self.logger, self.statechglogger, myid):
+                        success = False
+                        results += "Could not set permissions for " + \
+                                   self.path2 + "\n"
+    
+                self.rulesuccess = success
+                if self.rulesuccess:
+                    self.detailedresults = "ShellTimeout fix has been run to " + \
+                        "completion"
                 else:
-                    debug = "kveditor fix not successful\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-                    results += self.path1 + " properties could not be set\n"
-            if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
-               not checkPerms(self.path1, [0, 0, 0644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path1, [0, 0, 0644], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-                    results += "Could not set permissions for " + \
-                               self.path1 + "\n"
-
-            if not os.path.exists(self.path2):
-                createFile(self.path2, self.logger)
-                self.created = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.path2}
-                self.statechglogger.recordchgevent(myid, event)
-            writeFile(self.path2, self.cshData, self.logger)
-            if not checkPerms(self.path2, [0, 0, 0755], self.logger) and \
-               not checkPerms(self.path2, [0, 0, 0644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path2, [0, 0, 0644],
-                                self.logger, self.statechglogger, myid):
-                    success = False
-                    results += "Could not set permissions for " + \
-                               self.path2 + "\n"
-
-            self.rulesuccess = success
-            if self.rulesuccess:
-                self.detailedresults = "ShellTimeout fix has been run to " + \
-                    "completion"
-            else:
-                self.detailedresults = "ShellTimeout fix was unsuccessful\n" \
+                    self.detailedresults = "ShellTimeout fix was unsuccessful\n" \
                                        + self.results
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
