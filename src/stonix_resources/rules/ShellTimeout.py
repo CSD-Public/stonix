@@ -159,6 +159,9 @@ Windows, as it will close terminal windows in the X environment.'''
 
             if self.editor1.fixables or self.editor2.fixables:
                 if self.editor1.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor1.setEventID(myid)
                     if self.editor1.commit():
                         debug = self.path1 + "'s contents have been " + \
                             "corrected\n"
@@ -176,6 +179,9 @@ Windows, as it will close terminal windows in the X environment.'''
                     success = False
                     results += self.path1 + " properties could not be set\n"
                 if self.editor2.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor2.setEventID(myid)
                     if self.editor2.commit():
                         debug = self.path1 + "'s contents have been " + \
                             "corrected\n"
