@@ -36,15 +36,19 @@ import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
+from src.tests.lib.manage_users.macos_users import MacOSUser
+from src.tests.lib.isapplicable import IsApplicable
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.environment import Environment
+from src.tests.lib.logdispatcher_lite import LogPriority
+from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.rules.CheckDupIDs import CheckDupIDs
 
-
-class zzzTestRuleCheckDupIDs(RuleTest):
+class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
 
     def setUp(self):
         RuleTest.setUp(self)
+        IsApplicable.__init__(self, self.logdispatch, self.environ)
         self.rule = CheckDupIDs(self.config,
                                 self.environ,
                                 self.logdispatch,
@@ -52,11 +56,12 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.users = MacOSUser()
 
     def tearDown(self):
         pass
 
-    def runTest(self):
+    def test_rule(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -110,6 +115,70 @@ class zzzTestRuleCheckDupIDs(RuleTest):
                              str(pRuleSuccess) + ".")
         success = True
         return success
+
+    def test_checkForMacosDuplicateUser(self):
+        """
+        Tests the rule method that uses the /usr/bin/dscl command to
+        check for duplicate User IDs in the local directory service
+        """
+        self.applicable = {'type': 'white',
+                           'family': ['darwin']}
+
+        isTestApplicableHere = self.getApplicable()
+
+        if not isTestApplicableHere:
+            raise unittest.SkipTest("RamDisk does not support this OS")
+
+        uid = "7000"
+
+        self.users.createBasicUser("AutoTestMacDuplicateUserOne")
+        self.users.createBasicUser("AutoTestMacDuplicateUserTwo")
+
+        successOne = self.users.setUserUid("AutoTestMacDuplicateUserOne",
+                                           "\"" + uid + "\"")
+        successTwo = self.users.setUserUid("AutoTestMacDuplicateUserTwo",
+                                           "\"" + uid + "\"")
+        self.assertTrue(successOne)
+        self.assertTrue(successTwo)
+        self.assertTrue(successOne == successTwo)
+
+        self.users.rmUser("AutoTestMacDuplicateUserOne")
+        self.users.rmUser("AutoTestMacDuplicateUserTwo")
+
+    def test_checkForUnixDuplicateUser(self):
+        """
+        Tests the rule method that checks unix uids with the combination
+        of /etc/passwd and /etc/shadow.
+        """
+        self.applicable = {'type': 'white',
+                           'family': ['linux', 'solaris', 'freebsd'],
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        isTestApplicableHere = self.getApplicable()
+        if not isTestApplicableHere:
+            raise unittest.SkipTest("RamDisk does not support this OS")
+        self.assertTrue(isTestApplicableHere)
+
+    def test_checkForUnixUnknownUserGroup(self):
+        """
+        
+        """
+        self.applicable = {'type': 'white',
+                           'family': ['linux', 'solaris', 'freebsd'],
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        isTestApplicableHere = self.getApplicable()
+        if not isTestApplicableHere:
+            raise unittest.SkipTest("RamDisk does not support this OS")
+        self.assertTrue(isTestApplicableHere)
+
+    def test_checkForMacOSUnknownUserGroup(self):
+        """
+        """
+        self.applicable = {'type': 'white',
+                           'family': ['darwin']}
+        isTestApplicableHere = self.getApplicable()
+        if not isTestApplicableHere:
+            raise unittest.SkipTest("RamDisk does not support this OS")
+        self.assertTrue(isTestApplicableHere)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

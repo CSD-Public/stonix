@@ -9,9 +9,9 @@ unionfs functionality.
 #from __future__ import absolute_import
 import re
 
-from lib.run_commands import RunWith
-from lib.loggers import CrazyLogger
-from lib.loggers import LogPriority as lp
+from src.tests.lib.logdispatcher_lite import LogPriority as lp
+from src.tests.lib.logdispatcher_lite import LogDispatcher
+from src.stonix_resources.CommandHelper import CommandHelper
 
 class BadUserInfoError(Exception):
     """
@@ -36,49 +36,42 @@ class ManageUser(object):
 
         #####
         # Set up logging
-        if not isinstance(logger, CrazyLogger):
-            self.logger = CrazyLogger()
-            #####
-            # THIS IS A LIBRARY, SO LOGS SHOULD BE INITIALIZED ELSEWHERE...
-            # self.logger.initializeLogs()
-            self.logger.log(lp.INFO, "Logger: " + str(self.logger))
-        else:
-            self.logger = logger
-            self.logger.log(lp.INFO, "Logger: " + str(self.logger))
-
-        if self.saneUserName(userName):
+        self.logger = LogDispatcher()
+        #####
+        # THIS IS A LIBRARY, SO LOGS SHOULD BE INITIALIZED ELSEWHERE...
+        # self.logger.initializeLogs()
+        self.logger.log(lp.INFO, "Logger: " + str(self.logger))
+        """
+        if self.isSaneUserName(userName):
             self.userName = userName
         else:
             raise BadUserInfoError("Need a valid user name...")
 
-        if self.saneUserShell(userShell):
+        if self.isSaneUserShell(userShell):
             self.userShell = userShell
         else:
             raise BadUserInfoError("Need a valid user shell...")
 
-        if self.saneUserComment(userComment):
+        if self.isSaneUserComment(userComment):
             self.userComment = userComment
         else:
             self.userComment=""
 
-        if self.saneUserUid(str(userUid)):
+        if self.isSaneUserUid(str(userUid)):
             self.userUid = self.userUid
         else:
             raise BadUserInfoError("Need a valid user UID...")
 
-        if self.saneUserPriGid(str(userPriGid)):
+        if self.isSaneUserPriGid(str(userPriGid)):
             self.userUid = userUid
         else:
             raise BadUserInfoError("Need a valid user Primary GID...")
 
-        if self.saneUserHomeDir(userHomeDir):
+        if self.isSaneUserHomeDir(userHomeDir):
             self.userHomeDir = userHomeDir
         else:
             raise BadUserInfoError("Need a user Home Directory...")
-
-        #####
-        # Initialize the RunWith helper for executing shelled out commands.
-        self.runWith = RunWith(self.logger)
+        """
 
     def isSaneUserName(self, userName=""):
         """
