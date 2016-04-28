@@ -22,13 +22,15 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule CheckDupIDs
 
 @author: ekkehard j. koch
 @change: 2013/03/18 Original Implementation
 @change: 2015/10/28 Update name
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+@change: 2016/02/10 rsn Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/04/27 rsn Added use of ApplicableCheck class
+@change: 2016/04/27 rsn Added use of precursor to manage_user class
 '''
 from __future__ import absolute_import
 import sys
@@ -37,18 +39,17 @@ import unittest
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.manage_users.macos_users import MacOSUser
-from src.tests.lib.isapplicable import IsApplicable
+from src.tests.lib.isapplicable import ApplicableCheck
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogPriority
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.rules.CheckDupIDs import CheckDupIDs
 
-class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
+class zzzTestRuleCheckDupIDs(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        IsApplicable.__init__(self, self.logdispatch, self.environ)
         self.rule = CheckDupIDs(self.config,
                                 self.environ,
                                 self.logdispatch,
@@ -57,6 +58,9 @@ class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.users = MacOSUser()
+        #####
+        # Set up an applicable check class
+        self.appChk = ApplicableCheck(self.environ)
 
     def tearDown(self):
         pass
@@ -121,10 +125,10 @@ class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
         Tests the rule method that uses the /usr/bin/dscl command to
         check for duplicate User IDs in the local directory service
         """
-        self.applicable = {'type': 'white',
-                           'family': ['darwin']}
+        self.appChk.setCheckParams = {'type': 'white',
+                                      'family': ['darwin']}
 
-        isTestApplicableHere = self.getApplicable()
+        isTestApplicableHere = self.appChk.isApplicable()
 
         if not isTestApplicableHere:
             raise unittest.SkipTest("RamDisk does not support this OS")
@@ -135,9 +139,9 @@ class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
         self.users.createBasicUser("AutoTestMacDuplicateUserTwo")
 
         successOne = self.users.setUserUid("AutoTestMacDuplicateUserOne",
-                                           "\"" + uid + "\"")
+                                           str(uid))
         successTwo = self.users.setUserUid("AutoTestMacDuplicateUserTwo",
-                                           "\"" + uid + "\"")
+                                           str(uid))
         self.assertTrue(successOne)
         self.assertTrue(successTwo)
         self.assertTrue(successOne == successTwo)
@@ -150,10 +154,10 @@ class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
         Tests the rule method that checks unix uids with the combination
         of /etc/passwd and /etc/shadow.
         """
-        self.applicable = {'type': 'white',
+        self.appChk.setCheckParams = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        isTestApplicableHere = self.getApplicable()
+        isTestApplicableHere = self.appChk.isApplicable()
         if not isTestApplicableHere:
             raise unittest.SkipTest("RamDisk does not support this OS")
         self.assertTrue(isTestApplicableHere)
@@ -162,10 +166,10 @@ class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
         """
         
         """
-        self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        isTestApplicableHere = self.getApplicable()
+        self.appChk.setCheckParams = {'type': 'white',
+                                      'family': ['linux', 'solaris', 'freebsd'],
+                                      'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+        isTestApplicableHere = self.appChk.isApplicable()
         if not isTestApplicableHere:
             raise unittest.SkipTest("RamDisk does not support this OS")
         self.assertTrue(isTestApplicableHere)
@@ -173,13 +177,13 @@ class zzzTestRuleCheckDupIDs(RuleTest, IsApplicable):
     def test_checkForMacOSUnknownUserGroup(self):
         """
         """
-        self.applicable = {'type': 'white',
-                           'family': ['darwin']}
-        isTestApplicableHere = self.getApplicable()
+        self.appChk.setCheckParams = {'type': 'white',
+                                      'family': ['darwin']}
+        isTestApplicableHere = self.appChk.isApplicable()
         if not isTestApplicableHere:
             raise unittest.SkipTest("RamDisk does not support this OS")
         self.assertTrue(isTestApplicableHere)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+
     unittest.main()
