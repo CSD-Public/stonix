@@ -169,6 +169,13 @@ class zzzTestRuleConfigureAppleSoftwareUpdate(RuleTest):
         success = self.checkReportForRule(True, pRuleSuccess)
         return success
 
+    def checkReportFinalForRule(self, pCompliance, pRuleSuccess):
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+                             str(pCompliance) + ".")
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+                             str(pRuleSuccess) + ".")
+        return True
+    
     def checkUndoForRule(self, pRuleSuccess):
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
