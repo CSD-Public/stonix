@@ -116,13 +116,10 @@ class zzzTestRuleConfigureAppleSoftwareUpdate(RuleTest):
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
-        To see what happended run these commans:
-        defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate CatalogURL
-        defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload
-        defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled
-        defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate ConfigDataInstall
-        defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate DisableCriticalUpdateInstall
+        Did the first rule report do what it was supposed to
         @param self: essential if you override this definition
+        @param pCompliance: compliance of first rule report boolean
+        @param pRuleSuccess: success of first report execution boolean
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
@@ -131,55 +128,65 @@ class zzzTestRuleConfigureAppleSoftwareUpdate(RuleTest):
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
-        if success:
-            command = [self.dc, "-currentHost", "read",
-                       "/Library/Preferences/com.apple.SoftwareUpdate",
-                       "CatalogURL"]
-            self.logdispatch.log(LogPriority.DEBUG, str(command))
-            success = self.ch.executeCommand(command)
-        if success:
-            command = [self.dc, "-currentHost", "read",
-                       "/Library/Preferences/com.apple.SoftwareUpdate",
-                       "AutomaticDownload"]
-            self.logdispatch.log(LogPriority.DEBUG, str(command))
-            success = self.ch.executeCommand(command)
-        if success:
-            command = [self.dc, "-currentHost", "read",
-                       "/Library/Preferences/com.apple.SoftwareUpdate",
-                       "AutomaticCheckEnabled"]
-            self.logdispatch.log(LogPriority.DEBUG, str(command))
-            success = self.ch.executeCommand(command)
-        if success:
-            command = [self.dc, "-currentHost", "read",
-                       "/Library/Preferences/com.apple.SoftwareUpdate",
-                       "ConfigDataInstall"]
-            self.logdispatch.log(LogPriority.DEBUG, str(command))
-            success = self.ch.executeCommand(command)
-        if success:
-            command = [self.dc, "-currentHost", "read",
-                       "/Library/Preferences/com.apple.SoftwareUpdate",
-                       "DisableCriticalUpdateInstall"]
-            self.logdispatch.log(LogPriority.DEBUG, str(command))
-            success = self.ch.executeCommand(command)
+        if pCompliance:
+            success = False
+            self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+                             str(pCompliance) + " it should be false!")
+        if not pRuleSuccess:
+            success = False
+            self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+                                 str(pRuleSuccess) + " it should be true!")
         return success
 
     def checkFixForRule(self, pRuleSuccess):
+        '''
+        Did the rule fix do what it was supposed to
+        @param self: essential if you override this definition
+        @param pRuleSuccess: success of fix execution boolean
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
-        success = self.checkReportForRule(True, pRuleSuccess)
+        success = True
+        if not pRuleSuccess:
+            success = False
+            self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+                                 str(pRuleSuccess) + " it should be true!")
         return success
 
     def checkReportFinalForRule(self, pCompliance, pRuleSuccess):
+        '''
+        Did the final rule report do what it was supposed to
+        @param self: essential if you override this definition
+        @param pCompliance: compliance of final rule report boolean
+        @param pRuleSuccess: success of final report execution boolean
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
+
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
-        return True
+        success = True
+        if not pCompliance:
+            success = False
+            self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+                             str(pCompliance) + " it should be true!")
+        if not pRuleSuccess:
+            success = False
+            self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+                                 str(pRuleSuccess) + " it should be true!")
+        return success
     
     def checkUndoForRule(self, pRuleSuccess):
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
-        success = self.checkReportForRule(False, pRuleSuccess)
+        if not pRuleSuccess:
+            success = False
+            self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+                                 str(pRuleSuccess) + " it should be true!")
         return success
 
 if __name__ == "__main__":

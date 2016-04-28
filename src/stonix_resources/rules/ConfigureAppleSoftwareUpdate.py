@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -34,6 +34,7 @@ dictionary
 @change: 2015/04/14 dkennel updated for new style isApplicable
 @change: 2015/09/21 ekkehard OS X El Capitan 10.11 & Implement New Guidance
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/04/28 ekkehard test enhancements
 '''
 from __future__ import absolute_import
 import re
