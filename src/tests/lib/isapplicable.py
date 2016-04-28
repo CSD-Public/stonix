@@ -2,6 +2,7 @@
 
 Class to determine applicability at runtime of code.
 
+@author: dkennel
 """
 import re
 import sys
@@ -11,18 +12,41 @@ from src.tests.lib.logdispatcher_lite import LogPriority
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 
-class IsApplicable(object):
+class ApplicableCheck(object):
 
     def __init__(self, logger=False, environ=False):
         """
         initialization method
         """
-        self.applicable = {'default': 'default'}
-
-        self.environ = Environment()
+        #####
+        # Perform input validation and ensure we have an Environment instance.
+        if isinstance(environ, Environment):
+            self.environ = environ
+        else:
+            self.environ = Environment()
         self.logdispatch = LogDispatcher(self.environ)
 
-    def getApplicable(self):
+        #####
+        # Initialize the class applicable variable.
+        self.applicable = {"default": "default"}
+
+    def setCheckParams(self, applicableCheck={"default": "default"}):
+        """
+        Set the applicable instance variable.  The passed in value will be used
+        by the isApplicable method.
+
+        @author: Roy Nielsen
+        """
+        success = False
+        #####
+        # Need to figure out proper input validation for the "check" parameter.
+        # Current check is insufficient
+        if isinstance(check, dict):
+            self.applicable = check
+            success = True
+        return success
+
+    def isApplicable(self):
         """
         This method returns true if the rule applies to the platform on which
         stonix is currently running. The method in this template class will
@@ -92,6 +116,8 @@ class IsApplicable(object):
         @return bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
+        @change: 2016/04/27 rsn Created a class specificly surrounding 
+                                this method.
         """
         # return True
         # Shortcut if we are defaulting to true
