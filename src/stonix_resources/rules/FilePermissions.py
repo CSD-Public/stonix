@@ -35,6 +35,8 @@ systems. Added code to remove world write from files in the root users path.
 rule class
 @change: 2015/08/28 eball - Updated suidlist
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/04/21 eball Added checks and fixes for group writable and non-
+    root owned files in lib and bin paths.
 
 '''
 from __future__ import absolute_import
@@ -98,7 +100,9 @@ run.'''
                          'NSA 2.2.3.2', 'CCE-3399-3', 'NSA 2.2.3.4',
                          'CCE-4178-0', 'CCE-3324-1', 'CCE-4743-1',
                          'CCE-4281-2', 'NSA 2.2.3.5', 'CCE-4223-4',
-                         'CCE-3573-3']
+                         'CCE-3573-3', 'CCE-26966-2 2.2.3.2.1',
+                         'CCE-26966-2 2.2.3.2.2', 'CCE-26966-2 2.2.3.2.3',
+                         'CCE-26966-2 2.2.3.2.4']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
@@ -123,35 +127,56 @@ run.'''
         self.nolast = os.path.join(self.noownerdir, 'no-owners-previous.db')
         datatype = 'bool'
         key = 'setsticky'
-        instructions = '''If set to yes or true the WorldWritables rule will attempt to
-set the sticky bit on any world writable directories the do not currently have
-the sticky bit set. SETSTICKY cannot be undone.'''
+        instructions = '''If set to yes or true the WorldWritables rule will \
+attempt to set the sticky bit on any world writable directories the do not \
+currently have the sticky bit set. SETSTICKY cannot be undone.'''
         default = True
         self.setsticky = self.initCi(datatype, key, instructions, default)
         datat = 'list'
         keyname = 'bypassfs'
-        instr = '''Because this rule performs a full file system scan you may not
-want it to scan very large directly attached file systems (especially file
-systems on USB media). Any file systems listed in a space separated list after
-the BYPASSFS variable will not be scanned. N.B. This list does not handle
+        instr = '''Because this rule performs a full file system scan you may \
+not want it to scan very large directly attached file systems (especially file \
+systems on USB media). Any file systems listed in a space separated list after \
+the BYPASSFS variable will not be scanned. N.B. This list does not handle \
 file system names with spaces.'''
         defval = ['/run/media', '/media']
         self.bypassfs = self.initCi(datat, keyname, instr, defval)
         ww_datatype = 'bool'
         ww_key = 'fixww'
-        ww_instructions = '''To prevent the FilePermissions rule from removing
-the world write permissions of files in the root users path set the value of
-FIXWW to False. You should not need to do this World Writable files in the root
-users path are very dangerous.'''
+        ww_instructions = '''To prevent the FilePermissions rule from removing \
+the world write permissions of files in the root user's path, set the value of \
+FIXWW to False. You should not need to do this; World Writable files in the \
+root user's path are very dangerous.'''
         ww_default = True
         self.fixww = self.initCi(ww_datatype, ww_key, ww_instructions,
                                  ww_default)
+        datatype = 'bool'
+        key = 'fixgw'
+        instructions = '''To prevent the FilePermissions rule from removing \
+the group write permissions of files in the lib and bin directories, set the \
+value of FIXGW to False. The affected directories are: /bin, /usr/bin, \
+/usr/local/bin, /sbin, /usr/sbin, /usr/local/sbin, /lib, /lib64, /usr/lib, \
+/usr/lib64, /lib/modules.'''
+        default = True
+        self.fixgw = self.initCi(datatype, key, instructions, default)
+        datatype = 'bool'
+        key = 'fixrootownership'
+        instructions = '''To prevent the FilePermissions rule from setting \
+ownership on all files in the lib and bin directories to root, set the \
+value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
+/usr/bin, /usr/local/bin, /sbin, /usr/sbin, /usr/local/sbin, /lib, /lib64, \
+/usr/lib, /usr/lib64, /lib/modules.'''
+        default = True
+        self.fixroot = self.initCi(datatype, key, instructions, default)
         self.hasrunalready = False
         self.wwresults = ''
+        self.gwresults = ''
         self.suidresults = ''
         self.unownedresults = ''
         self.firstrun = False
         self.findoverrun = False
+        self.gwfiles = []
+        self.nrofiles = []
         random.seed()
 
     def processconfig(self):
@@ -555,6 +580,91 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
         else:
             compliant = True
             self.wwresults = 'No new World Writable files since last run.'
+        return compliant
+
+    def gwreport(self):
+        '''Public method to report on group-writable and non-root owned files
+        in lib and bin directories.
+        @author: eball
+        '''
+        compliant = False
+        locationList = ["/lib", "/lib64", "/usr/lib", "/usr/lib64",
+                        "/lib/modules", "/bin", "/usr/bin", "/usr/local/bin",
+                        "/sbin", "/usr/sbin", "/usr/local/sbin"]
+        gwfiles = []
+        nrofiles = []
+
+        for loc in locationList:
+            if os.path.islink(loc):
+                continue
+            for root, dirs, files in os.walk(loc):
+                for dirname in dirs:
+                    path = os.path.join(root, dirname)
+#                     if os.path.islink(path):
+#                         continue
+                    try:
+                        mode = os.stat(path)
+                    except OSError:
+                        continue
+                    groupwrite = mode.st_mode & stat.S_IWGRP
+                    if groupwrite:
+                        gwfiles.append(path)
+                    if mode.st_uid != 0:
+                        nrofiles.append(path)
+                for name in files:
+                    fpath = os.path.join(root, name)
+                    if os.path.islink(fpath):
+                        continue
+                    try:
+                        fmode = os.stat(fpath)
+                    except OSError:
+                        continue
+                    groupwrite = fmode.st_mode & stat.S_IWGRP
+                    if groupwrite:
+                        gwfiles.append(fpath)
+                    if fmode.st_uid != 0:
+                        nrofiles.append(fpath)
+
+        self.logger.log(LogPriority.DEBUG,
+                        ['GroupWritable.report',
+                         'Group Writable files found: '
+                         + str(gwfiles)])
+        self.logger.log(LogPriority.DEBUG,
+                        ['GroupWritable.report',
+                         'Non-root owned files found: '
+                         + str(nrofiles)])
+
+        self.gwfiles = gwfiles
+        self.nrofiles = nrofiles
+
+        if not gwfiles and not nrofiles:
+            compliant = True
+            self.gwresults = "No group writable files found in lib and " + \
+                "bin paths.\n"
+            self.gwresults += "No non-root owned files found in lib " + \
+                "and bin paths.\n"
+        else:
+            gwFileLen = len(gwfiles)
+            if gwFileLen > 0 and gwFileLen <= 15:
+                self.gwresults = "Group writable files from lib and bin " + \
+                    "paths: " + " ".join(gwfiles) + "\n"
+            elif gwFileLen > 15:
+                self.gwresults = "Group writable files from lib and bin " + \
+                    "paths: " + str(gwFileLen) + "\n"
+            else:
+                self.gwresults = "No group writable files found in lib and " + \
+                    "bin paths.\n"
+            nroFileLen = len(nrofiles)
+            if nroFileLen > 0 and nroFileLen <= 15:
+                self.gwresults += "Non-root owned files from lib and bin " + \
+                    "paths: " + " ".join(nrofiles) + "\n"
+            elif nroFileLen > 15:
+                self.gwresults += "Non-root owned files from lib and bin " + \
+                    "paths: " + str(nroFileLen) + "\n"
+            else:
+                self.gwresults += "No non-root owned files found in lib " + \
+                    "and bin paths.\n"
+
         return compliant
 
     def suidreport(self):
@@ -1071,11 +1181,12 @@ find / -xdev \( -nouser -o -nogroup \) -print
                                  ' first run ' + str(self.firstrun)])
                 self.multifind()
                 wwstatus = self.wwreport()
+                gwstatus = self.gwreport()
                 suidstatus = self.suidreport()
                 ownerstatus = self.noownersreport()
-                self.detailedresults = self.wwresults + '\n' + \
-                    self.suidresults + '\n' + self.unownedresults
-                if wwstatus and suidstatus and ownerstatus:
+                self.detailedresults = self.wwresults + '\n' + self.gwresults \
+                    + '\n' + self.suidresults + '\n' + self.unownedresults
+                if wwstatus and gwstatus and suidstatus and ownerstatus:
                     self.compliant = True
                 self.hasrunalready = True
                 if os.path.exists(self.wwlast):
@@ -1087,6 +1198,7 @@ find / -xdev \( -nouser -o -nogroup \) -print
                                  + ' first run ' + str(self.firstrun) +
                                  ' compliant: ' + str(self.compliant) +
                                  ' wwstatus: ' + str(wwstatus) +
+                                 ' gwstatus: ' + str(gwstatus) +
                                  ' suidstatus: ' + str(suidstatus) +
                                  ' ownerstatus: ' + str(ownerstatus)])
             else:
@@ -1097,8 +1209,9 @@ find / -xdev \( -nouser -o -nogroup \) -print
                                  str(self.firstrun)])
                 note = '''This rule only runs once for performance reasons. It \
 has been called a second time. The previous results are displayed. '''
-                self.detailedresults = note + "\n" + self.wwresults + '\n' \
-                    + self.suidresults + '\n' + self.unownedresults
+                self.detailedresults = note + "\n" + self.wwresults + '\n' + \
+                    self.gwresults + '\n' + self.suidresults + '\n' + \
+                    self.unownedresults
             self.formatDetailedResults("report", self.compliant,
                                        self.detailedresults)
 
@@ -1131,9 +1244,8 @@ has been called a second time. The previous results are displayed. '''
                 for wwfile in wwfiles:
                     wwfile = wwfile.strip()
                     if os.path.isdir(wwfile):
-                        # 1023 is decimal of '1777'
                         try:
-                            os.chmod(wwfile, 1023)
+                            os.chmod(wwfile, 01777)
                         except (OSError):
                             # catch OSError because we may be NFS or RO
                             continue
@@ -1149,7 +1261,7 @@ has been called a second time. The previous results are displayed. '''
                                          str(wwfile)])
                         newmode = fstat.st_mode ^ stat.S_IWOTH
                         self.logger.log(LogPriority.DEBUG,
-                                        ['FilePermissions.report',
+                                        ['FilePermissions.fix',
                                          'Changing mode of ' +
                                          str(wwfile) + ' from ' +
                                          str(oct(fstat.st_mode)) + ' to ' +
@@ -1159,6 +1271,37 @@ has been called a second time. The previous results are displayed. '''
                         except (OSError):
                             # catch OSError because we may be NFS or RO
                             continue
+            if self.fixgw.getcurrvalue():
+                for gwfile in self.gwfiles:
+                    fstat = os.stat(gwfile)
+                    # this call is doing a bitwise exclusive or operation
+                    # on the original file mode to remove the group write
+                    # permission from the file
+                    newmode = fstat.st_mode ^ stat.S_IWGRP
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['FilePermissions.fix',
+                                     'Changing mode of ' +
+                                     str(gwfile) + ' from ' +
+                                     str(oct(fstat.st_mode)) + ' to ' +
+                                     str(oct(newmode))])
+                    try:
+                        os.chmod(gwfile, newmode)
+                    except (OSError):
+                        # catch OSError because we may be NFS or RO
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['FilePermissions.fix',
+                                         str(traceback.format_exc())])
+                        continue
+            if self.fixroot.getcurrvalue():
+                for nrofile in self.nrofiles:
+                    os.chown(nrofile, 0, -1)
+                    self.logger.log(LogPriority.DEBUG,
+                                    ["FilePermissions.fix",
+                                     "Changing owner of " + str(nrofile) +
+                                     " to root"])
+            # Re-run gwreport(), so that group writable and non-root owned
+            # lists are updated
+            self.gwreport()
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
