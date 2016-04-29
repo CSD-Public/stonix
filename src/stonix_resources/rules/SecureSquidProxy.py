@@ -24,6 +24,7 @@
 Created on Jul 7, 2015
 
 @author: dwalker
+@change: 2016/04/26 ekkehard Results Formatting
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -70,6 +71,7 @@ class SecureSquidProxy(Rule):
     def report(self):
         ''''''
         try:
+            self.detailedresults = ""
             compliant = True
             debug = ""
             self.ph = Pkghelper(self.logger, self.environ)
@@ -155,73 +157,72 @@ class SecureSquidProxy(Rule):
     def fix(self):
         ''''''
         try:
-            if not self.ci1.getcurrvalue():
-                return
             self.detailedresults = ""
-            deleted1 = []
-            deleted2 = []
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-
-            if self.ph.check("squid"):
-                tempstring = ""
-                contents = readFile(self.path, self.logger)
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
+            if self.ci1.getcurrvalue():
+                deleted1 = []
+                deleted2 = []
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+    
+                if self.ph.check("squid"):
+                    tempstring = ""
+                    contents = readFile(self.path, self.logger)
+                    if not checkPerms(self.path, [0, 0, 420], self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        if not setPerms(self.path, [0, 0, 420], self.logger,
+                                        self.statechglogger, myid):
+                            success = False
+                    for key in self.data1:
+                        i = 0
+                        found = False
+                        for line in contents:
+                            if re.match('^#', line) or re.match(r'^\s*$', line):
+                                i += 1
+                                continue
+                            temp = line.strip()
+                            if re.search("^" + key, temp):
+    
+                                if found:
+                                    deleted1.append(contents.pop(i))
+                                    continue
+                                temp = re.sub("\s+", " ", temp)
+                                if re.search(self.data1[key], temp):
+                                    i += 1
+                                    found = True
+                                    continue
+                                else:
+                                    deleted1.append(contents.pop(i))
+                            else:
+                                i += 1
+                        if found:
+                            deleted2.append(key)
+                if deleted2:
+                    for item in deleted2:
+                        del self.data1[item]
+                for item in contents:
+                    tempstring += item
+                if self.data1:
+                    tempstring += "#The follwing lines were added by stonix\n"
+                    for item in self.data1:
+                        tempstring += self.data1[item] + "\n"
+                tmpfile = self.path + ".tmp"
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    success = False
+                else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.path, [0, 0, 420], self.logger,
-                                    self.statechglogger, myid):
-                        success = False
-                for key in self.data1:
-                    i = 0
-                    found = False
-                    for line in contents:
-                        if re.match('^#', line) or re.match(r'^\s*$', line):
-                            i += 1
-                            continue
-                        temp = line.strip()
-                        if re.search("^" + key, temp):
-
-                            if found:
-                                deleted1.append(contents.pop(i))
-                                continue
-                            temp = re.sub("\s+", " ", temp)
-                            if re.search(self.data1[key], temp):
-                                i += 1
-                                found = True
-                                continue
-                            else:
-                                deleted1.append(contents.pop(i))
-                        else:
-                            i += 1
-                    if found:
-                        deleted2.append(key)
-            if deleted2:
-                for item in deleted2:
-                    del self.data1[item]
-            for item in contents:
-                tempstring += item
-            if self.data1:
-                tempstring += "#The follwing lines were added by stonix\n"
-                for item in self.data1:
-                    tempstring += self.data1[item] + "\n"
-            tmpfile = self.path + ".tmp"
-            if not writeFile(tmpfile, tempstring, self.logger):
-                success = False
-            else:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf",
-                         "filepath": self.path}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.path, tmpfile, myid)
-                os.rename(tmpfile, self.path)
-                os.chown(self.path, 0, 0)
-                os.chmod(self.path, 420)
-                resetsecon(self.path)
-            self.rulesuccess = success
+                    event = {"eventtype": "conf",
+                             "filepath": self.path}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.path, tmpfile, myid)
+                    os.rename(tmpfile, self.path)
+                    os.chown(self.path, 0, 0)
+                    os.chmod(self.path, 420)
+                    resetsecon(self.path)
+                self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
