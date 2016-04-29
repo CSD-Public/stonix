@@ -37,6 +37,8 @@ rule class
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2016/04/21 eball Added checks and fixes for group writable and non-
     root owned files in lib and bin paths.
+@change: 2016/04/29 eball wwreport now checks ww dirs to make sure they are
+    owned by a system account, per RHEL 7 STIG
 
 '''
 from __future__ import absolute_import
@@ -102,7 +104,8 @@ run.'''
                          'CCE-4281-2', 'NSA 2.2.3.5', 'CCE-4223-4',
                          'CCE-3573-3', 'CCE-26966-2 2.2.3.2.1',
                          'CCE-26966-2 2.2.3.2.2', 'CCE-26966-2 2.2.3.2.3',
-                         'CCE-26966-2 2.2.3.2.4']
+                         'CCE-26966-2 2.2.3.2.4', "CCE-RHEL7-CCE-TBD 2.2.3.8",
+                         "CCE-RHEL7-CCE-TBD 2.2.3.9"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
@@ -442,6 +445,7 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
         newfilessincelast = []
         newfilessinceorigin = []
         notsticky = []
+        notsysowned = []
         notknown = []
         # Important! lines coming from the files will have newlines unless
         # they are stripped.
@@ -453,8 +457,12 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
                 newfilessinceorigin.append(wwpath)
             try:
                 mode = os.stat(wwpath)[stat.ST_MODE]
-                if os.path.isdir(wwpath) and not bool(mode & stat.S_ISVTX):
-                    notsticky.append(wwpath)
+                owner = os.stat(wwpath)[stat.ST_UID]
+                if os.path.isdir(wwpath):
+                    if not bool(mode & stat.S_ISVTX):
+                        notsticky.append(wwpath)
+                    if owner > 999:
+                        notsysowned.append(wwpath)
                 if wwpath not in wwlist:
                     notknown.append(wwpath)
             except OSError:
@@ -490,6 +498,16 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
                              'Not Sticky: ' + str(notsticky)])
+        if len(notsysowned) > 15:
+            self.logger.log(LogPriority.DEBUG,
+                            ['WorldWritables.report',
+                             'Not system account owned: Too many files ' +
+                             'details suppressed, review file at ' +
+                             '/var/local/info. New: ' + str(len(notsysowned))])
+        else:
+            self.logger.log(LogPriority.DEBUG,
+                            ['WorldWritables.report',
+                             'Not system account owned: ' + str(notsysowned)])
         if len(notknown) > 15:
             self.logger.log(LogPriority.DEBUG,
                             ['WorldWritables.report',
@@ -522,6 +540,17 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
                         ['WorldWritables.report',
                          'World Writable directories without sticky bit: '
                          + strnotsticky])
+        strnotsysowned = ''
+        if len(notsysowned) > 15:
+            strnotsysowned = str(len(notsysowned))
+        else:
+            for entry in notsysowned:
+                strnotsysowned = strnotsysowned + entry + ' '
+            strnotsysowned = strnotsysowned.strip()
+        self.logger.log(LogPriority.INFO,
+                        ['WorldWritables.report',
+                         'World Writable directories not owned by a system ' +
+                         'account: ' + strnotsysowned])
         strnotknown = ''
         if len(notknown) > 15:
             strnotknown = str(len(notknown))
@@ -551,6 +580,9 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
             self.wwresults = self.wwresults + ' '
             self.wwresults = self.wwresults + '\nWorld Writable directories ' + \
                 'without sticky bit: ' + strnotsticky
+            self.wwresults = self.wwresults + ' '
+            self.wwresults = self.wwresults + '\nWorld Writable directories ' + \
+                'not owned by system account: ' + strnotsysowned
             self.wwresults = self.wwresults + ' '
             self.wwresults = self.wwresults + '\nWorld Writable files not ' + \
                 'known to STONIX: ' + strnotknown
