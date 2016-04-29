@@ -244,6 +244,43 @@ class RuleTest(unittest.TestCase):
             str(rulecompliance) + "' after rule.fix() and rule.report() " + \
             "have run."
             self.assertTrue(rulecompliance, prefixRuleInfo + messagestring)
+
+# Run checkReportFinalForRule()
+            messagestring = "Run checkReportFinalForRule(" + str(rulecompliance) + \
+            ", " + str(rulesuccess) + ")"
+            self.logdispatch.log(LogPriority.DEBUG, prefixHeadline + \
+                                 prefixRuleInfo + messagestring)
+            checkReportFinalConditions = self.checkReportFinalForRule(rulecompliance,
+                                                                 rulesuccess)
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 "checkReportFinalForRule()" + \
+                                 " = " + \
+                                 str(checkReportFinalConditions))
+            if checkReportFinalConditions and not rulecompliance:
+                nextstep = True
+            else:
+                nextstep = False
+            messagestring = ": Rule checkReportFinalForRule() = " + \
+            str(checkReportFinalConditions) + "."
+            
+            if checkReportFinalConditions:
+                self.assertTrue(checkReportFinalConditions, prefixRuleInfo + \
+                                messagestring)
+                
+                self.assertTrue(checkReportFinalConditions,
+                                self.rulename + "(" + str(self.rulenumber) + ")" +
+                                ": Rule " + \
+                                "checkReportFinalForRule() = " + \
+                                str(checkReportFinalConditions) + ".")
+            else:
+                self.assertFalse(checkReportFinalConditions, prefixRuleInfo + \
+                                messagestring)
+                
+                self.assertFalse(checkReportFinalConditions,
+                                self.rulename + "(" + str(self.rulenumber) + ")" +
+                                ": Rule " + \
+                                "checkReportFinalForRule() = " + \
+                                str(checkReportFinalConditions) + ".")
             if rulecompliance:
                 nextstep = False
 
@@ -266,6 +303,15 @@ class RuleTest(unittest.TestCase):
 ###############################################################################
 
     def checkFixForRule(self, pRuleSuccess):
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+                             str(pRuleSuccess) + ".")
+        return True
+
+###############################################################################
+
+    def checkReportFinalForRule(self, pCompliance, pRuleSuccess):
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+                             str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         return True

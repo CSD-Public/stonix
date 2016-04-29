@@ -31,6 +31,7 @@ RHEL 7
 @change: 2015/04/15 dkennel: updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/30 dwalker: added additional services to allowed list.
+@change: 2016/04/26 ekkehard Results Formatting
 '''
 from __future__ import absolute_import
 
@@ -59,6 +60,7 @@ class MinimizeServices(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 12
         self.rulename = 'MinimizeServices'
+        self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''The MinimizeServices rule will minimize the \
 services that the system is running. Each running service is a potential \
@@ -499,6 +501,7 @@ should be space separated.'''
         compliant = True
         myresults = "Unauthorized running services detected: "
         try:
+            self.detailedresults = ""
             servicelist = self.servicehelper.listservices()
             allowedlist = self.svcslistci.getcurrvalue()
             corelist = self.svcslistci.getdefvalue()
@@ -542,10 +545,11 @@ should be space separated.'''
             self.detailedresults = self.detailedresults + traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
-                            ['MinimizeServices.report',
-                             self.detailedresults])
-            return False
-        return True
+                            self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
 
     def fix(self):
         """
@@ -554,44 +558,44 @@ should be space separated.'''
         @author: D. Kennel
         """
         changes = []
-        if not self.minimizeci.getcurrvalue():
-            return True
-        try:
-            servicelist = self.servicehelper.listservices()
-            allowedlist = self.svcslistci.getcurrvalue()
-            for service in servicelist:
-                if service in allowedlist:
-                    continue
-                else:
-                    running = self.servicehelper.auditservice(service)
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['MinimizeServices.fix',
-                                     "Audit: " + service + str(running)])
-                    if running and service not in self.specials:
-                        changes.append(service)
-                        self.servicehelper.disableservice(service)
-            mytype = 'command'
-            mystart = []
-            myend = changes
-            myid = '0013001'
-            event = {'eventtype': mytype,
-                     'startstate': mystart,
-                     'endstate': myend}
-            self.statechglogger.recordchgevent(myid, event)
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
-            self.rulesuccess = False
-            self.logger.log(LogPriority.ERROR,
-                            ['MinimizeServices.fix',
-                             self.detailedresults])
-            return False
-        if self.report():
-            self.currstate = 'configured'
-        return True
+        fixed = True
+        if self.minimizeci.getcurrvalue():
+            try:
+                servicelist = self.servicehelper.listservices()
+                allowedlist = self.svcslistci.getcurrvalue()
+                for service in servicelist:
+                    if service in allowedlist:
+                        continue
+                    else:
+                        running = self.servicehelper.auditservice(service)
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['MinimizeServices.fix',
+                                         "Audit: " + service + str(running)])
+                        if running and service not in self.specials:
+                            changes.append(service)
+                            self.servicehelper.disableservice(service)
+                mytype = 'command'
+                mystart = []
+                myend = changes
+                myid = '0013001'
+                event = {'eventtype': mytype,
+                         'startstate': mystart,
+                         'endstate': myend}
+                self.statechglogger.recordchgevent(myid, event)
+            except (KeyboardInterrupt, SystemExit):
+                # User initiated exit
+                raise
+            except Exception:
+                fixed = False
+                self.detailedresults = 'MinimizeServices: '
+                self.detailedresults = self.detailedresults + traceback.format_exc()
+                self.rulesuccess = False
+                self.logger.log(LogPriority.ERROR,
+                                self.detailedresults)
+        self.formatDetailedResults("fix", fixed,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return fixed
 
     def undo(self):
         """

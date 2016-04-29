@@ -341,6 +341,9 @@ from the normal system performance curve.'''
                     if not editor.report():
                         if editor.fixables:
                             if editor.fix():
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                editor.setEventID(myid)
                                 if not editor.commit():
                                     success = False
                                     self.detailedresults += "KVEditor " + \
