@@ -257,8 +257,8 @@ class DisableRemoveableStorage(Rule):
         debug = ""
         self.detailedresults = ""
         compliant = True
-        self.plistpath1 = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist1"
-        self.plistpath2 = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist2"
+        self.plistpath1 = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage1.plist"
+        self.plistpath2 = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage2.plist"
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
 #         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 # <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -303,8 +303,7 @@ class DisableRemoveableStorage(Rule):
 </plist>
 '''
         self.plistcontents2 = '''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>LimitLoadToSessionType</key>
@@ -364,7 +363,7 @@ def main():
     sd = "AppleSDXC"
     cmd = check + "| grep " + sd
     retcode = call(cmd, shell=True)
-    if retcode:
+    if retcode == 0:
         cmd = unload + "/System/Library/Extensions/" + sd + ".kext/"
         call(cmd, shell=True)
 
@@ -466,11 +465,11 @@ if __name__ == '__main__':
                 contentstring += line.strip()
             if not re.search(self.plistregex1, contentstring):
                 compliant = False
-                self.detailedresults += "plist file doesn't contain the " + \
+                self.detailedresults += "1st plist file doesn't contain the " + \
                     "correct contents\n"
         else:
             compliant = False
-            self.detailedresults += "daemon plist file doesn't exist\n"
+            self.detailedresults += "1st daemon plist file doesn't exist\n"
         if os.path.exists(self.plistpath2):
             statdata = os.stat(self.plistpath2)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -503,11 +502,11 @@ if __name__ == '__main__':
                 contentstring += line.strip()
             if not re.search(self.plistregex2, contentstring):
                 compliant = False
-                self.detailedresults += "plist file doesn't contain the " + \
+                self.detailedresults += "2nd plist file doesn't contain the " + \
                     "correct contents\n"
         else:
             compliant = False
-            self.detailedresults += "daemon plist file doesn't exist\n"
+            self.detailedresults += "2nd daemon plist file doesn't exist\n"
         if os.path.exists(self.daemonpath):
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -523,7 +522,7 @@ if __name__ == '__main__':
                 contentstring += line
             if contentstring != self.daemoncontents:
                 compliant = False
-                self.detailedresults += "disablestorage.py file doesn't " + \
+                self.detailedresults += "disablestorage script doesn't " + \
                     "contain the correct contents\n"
         else:
             compliant = False
@@ -1001,7 +1000,12 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
-        cmd = ["/bin/launchctl", "load", self.plistpath]
+        cmd = ["/bin/launchctl", "load", self.plistpath1]
+        if not self.ch.executeCommand(cmd):
+            debug += "Unable to load the launchctl job to regularly " + \
+                "disable removeable storage.  May need to be done manually\n"
+            success = False
+        cmd = ["/bin/launchctl", "load", self.plistpath2]
         if not self.ch.executeCommand(cmd):
             debug += "Unable to load the launchctl job to regularly " + \
                 "disable removeable storage.  May need to be done manually\n"
