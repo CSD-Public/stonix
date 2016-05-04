@@ -33,6 +33,7 @@ from ..stonixutilityfunctions import readFile, writeFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
+from ..ruleKVEditor import RuleKVEditor
 import traceback
 import os
 import re
@@ -42,7 +43,8 @@ class SetTFTPDSecureMode(Rule):
 
 ###############################################################################
     def __init__(self, config, environ, logger, statechglogger):
-        Rule.__init__(self, config, environ, logger, statechglogger)
+        RuleKVEditor.__init__(self, config, environ, logger,
+                              statechglogger)
         self.logger = logger
         self.rootrequired = True
         self.rulenumber = 98
@@ -69,19 +71,22 @@ mode.'''
     def report(self):
         try:
             compliant = True
-            self.ph = Pkghelper(self.logger, self.environ)
-            if self.ph.manager == "apt-get":
-                pkg = "tftpd-hpa"
-                if self.ph.check(pkg):
-                    self.tftpFile = "/etc/default/tftpd-hpa"
-                    if os.path.exists(self.tftpFile):
-                        compliant = self.reportDebianSys()
+            if self.environ.getostype() == "Mac OS X":
+                compliant = self.reportMac()
             else:
-                pkg = "tftp-server"
-                if self.ph.check(pkg):
-                    self.tftpFile = "/etc/xinetd.d/tftp"
-                    if os.path.exists(self.tftpFile):
-                        compliant = self.reportOtherSys()
+                self.ph = Pkghelper(self.logger, self.environ)
+                if self.ph.manager == "apt-get":
+                    pkg = "tftpd-hpa"
+                    if self.ph.check(pkg):
+                        self.tftpFile = "/etc/default/tftpd-hpa"
+                        if os.path.exists(self.tftpFile):
+                            compliant = self.reportDebianSys()
+                else:
+                    pkg = "tftp-server"
+                    if self.ph.check(pkg):
+                        self.tftpFile = "/etc/xinetd.d/tftp"
+                        if os.path.exists(self.tftpFile):
+                            compliant = self.reportOtherSys()
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -94,6 +99,9 @@ mode.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
+    def reportMac(self):
+        self.add
+    
     def reportDebianSys(self):
         contents = readFile(self.tftpFile, self.logger)
         found1 = False
