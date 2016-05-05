@@ -943,6 +943,35 @@ class MacInfoLANL():
                         fileToOpen.close()
         return self.LANLAssetTagFilesystem
 
+    def initializeLANLAssetTagNVRAM(self, forceInitializtion = False):
+        '''
+        get assetTag from NVRAM
+        @author: ekkehard
+        @return: boolean - True
+        '''
+        success = True
+        try:
+            if forceInitializtion:
+                self.initializeLANLAssetTagNVRAMBoolean = False
+            if not self.initializeLANLAssetTagNVRAMBoolean:
+                self.initializeLANLAssetTagNVRAMBoolean = True
+                self.LANLAssetTagNVRAM = ""
+                command = [self.nvram, "asset_id"]
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                if len(output) >= 1:
+                    self.LANLAssetTagNVRAM = str(output[-1].strip().split("\t")[1])
+                else:
+                    self.LANLAssetTagNVRAM = ""
+            else:
+                success = True
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            msg = traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, msg)
+        return success
+
     def initializeLANLImagedFilesystem(self, forceInitializtion = False):
         '''
         get imaged info from the file system
@@ -1047,144 +1076,6 @@ class MacInfoLANL():
             except Exception:
                 msg = traceback.format_exc() + " - " + str(errorcode) + " - " + str(output)
                 self.logdispatch.log(LogPriority.ERROR, msg)
-        return success
-
-    def initializeLANLAssetTagNVRAM(self, forceInitializtion = False):
-        '''
-        get assetTag from NVRAM
-        @author: ekkehard
-        @return: boolean - True
-        '''
-        success = True
-        try:
-            if forceInitializtion:
-                self.initializeLANLAssetTagNVRAMBoolean = False
-            if not self.initializeLANLAssetTagNVRAMBoolean:
-                self.initializeLANLAssetTagNVRAMBoolean = True
-                self.LANLAssetTagNVRAM = ""
-                command = [self.nvram, "asset_id"]
-                self.ch.executeCommand(command)
-                output = self.ch.getOutput()
-                if len(output) >= 1:
-                    self.LANLAssetTagNVRAM = str(output[-1].strip().split("\t")[1])
-                else:
-                    self.LANLAssetTagNVRAM = ""
-            else:
-                success = True
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            msg = traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, msg)
-        return success
-
-    def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
-                             forceInitializtion = False):
-        '''
-        get LDAP data from
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
-        @note: None
-        '''
-        try:
-# lookup in LDAP based on macAddress
-            success = True
-            if self.ldapnotworking:
-                output = []
-            else:
-                command = [self.ldap,
-                           "-x",
-                           "-h",
-                           "ldap.lanl.gov",
-                           "-b",
-                           "dc=lanl,dc=gov",
-                           addressType + "=" + address]
-                self.ch.executeCommand(command)
-                output = self.ch.getOutput()
-                returncode = self.ch.returncode
-                if returncode == 0:
-                    self.ldapnotworking = False
-                else:
-                    self.ldapnotworking = True
-            macAddress = ""
-            ipAddress = ""
-            computerName = ""
-            localHostname = ""
-            endUsername = ""
-            assetTag = ""
-            newRecord = False
-            for line in output:
-                try:
-                    if re.search("^dn:", line):
-                        newRecord = True
-                    else:
-                        newRecord = False
-                    if re.search("^ipHostNumber:", line):
-                        temp = line.split(": ")
-                        ipAddress = temp[1].strip()
-                    if re.search("^macAddress:", line):
-                        temp = line.split(": ")
-                        macAddress = temp[1].strip()
-                    if re.search("^cn:", line):
-                        temp = line.split(": ")
-                        computerName = temp[1].strip()
-                        temp = computerName.split(".")
-                        localHostname = temp[0].strip()
-                    if re.search("^owner:", line):
-                        temp = line.split(",")
-                        temp = temp[0].split("=")
-                        endUsername = temp[1].strip()
-                    if re.search("^lanlPN:", line):
-                        temp = line.split(" ")
-                        assetTag = temp[1].strip()
-                    if newRecord:
-                        if not(assetTag == ""):
-                            self.entries = self.entries + 1
-                            self.initializeDictionaryItemLDAP(self.entries)
-                            self.dictionaryItem["Tag"] = tag
-                            self.dictionaryItem["Weight"] = weightValue
-                            self.dictionaryItem["searchTerm"] = addressType + "=" + address
-                            self.dictionaryItem["hardwarePort"] = hardwarePort
-                            self.dictionaryItem["device"] = device
-                            self.dictionaryItem["macAddress"] = macAddress
-                            self.dictionaryItem["ipAddress"] = ipAddress
-                            self.dictionaryItem["ComputerName"] = computerName
-                            self.dictionaryItem["HostName"] = computerName
-                            self.dictionaryItem["LocalHostname"] = localHostname
-                            self.dictionaryItem["assetTag"] = assetTag
-                            self.dictionaryItem["endUsername"] = endUsername
-                        macAddress = ""
-                        ipAddress = ""
-                        computerName = ""
-                        localHostname = ""
-                        assetTag = ""
-                        endUsername = ""
-                except Exception, err:
-                    msg = str(err) + " - " + str(traceback.format_exc())
-                    self.logdispatch.log(LogPriority.ERROR, msg)
-                    continue
-            if not(assetTag == ""):
-                self.entries = self.entries + 1
-                self.initializeDictionaryItemLDAP(self.entries)
-                self.dictionaryItem["Tag"] = tag
-                self.dictionaryItem["Weight"] = weightValue
-                self.dictionaryItem["searchTerm"] = addressType + "=" + address
-                self.dictionaryItem["hardwarePort"] = hardwarePort
-                self.dictionaryItem["device"] = device
-                self.dictionaryItem["macAddress"] = macAddress
-                self.dictionaryItem["ipAddress"] = ipAddress
-                self.dictionaryItem["ComputerName"] = computerName
-                self.dictionaryItem["HostName"] = computerName
-                self.dictionaryItem["LocalHostname"] = localHostname
-                self.dictionaryItem["assetTag"] = assetTag
-                self.dictionaryItem["endUsername"] = endUsername
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            success = False
-            msg = traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, msg)
         return success
     
     def initializePopulateFromMac(self, forceInitializtion = False):
@@ -1298,6 +1189,115 @@ class MacInfoLANL():
                 str(self.getLANLAssetTagFilesystem())
                 self.logdispatch.log(LogPriority.DEBUG, msg)
             self.initializePopulateFromMacBoolean = True
+        return success
+
+    def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
+                             forceInitializtion = False):
+        '''
+        get LDAP data from
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
+        try:
+# lookup in LDAP based on macAddress
+            success = True
+            if self.ldapnotworking:
+                output = []
+            else:
+                command = [self.ldap,
+                           "-x",
+                           "-h",
+                           "ldap.lanl.gov",
+                           "-b",
+                           "dc=lanl,dc=gov",
+                           addressType + "=" + address]
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                returncode = self.ch.returncode
+                if returncode == 0:
+                    self.ldapnotworking = False
+                else:
+                    self.ldapnotworking = True
+            macAddress = ""
+            ipAddress = ""
+            computerName = ""
+            localHostname = ""
+            endUsername = ""
+            assetTag = ""
+            newRecord = False
+            for line in output:
+                try:
+                    if re.search("^dn:", line):
+                        newRecord = True
+                    else:
+                        newRecord = False
+                    if re.search("^ipHostNumber:", line):
+                        temp = line.split(": ")
+                        ipAddress = temp[1].strip()
+                    if re.search("^macAddress:", line):
+                        temp = line.split(": ")
+                        macAddress = temp[1].strip()
+                    if re.search("^cn:", line):
+                        temp = line.split(": ")
+                        computerName = temp[1].strip()
+                        temp = computerName.split(".")
+                        localHostname = temp[0].strip()
+                    if re.search("^owner:", line):
+                        temp = line.split(",")
+                        temp = temp[0].split("=")
+                        endUsername = temp[1].strip()
+                    if re.search("^lanlPN:", line):
+                        temp = line.split(" ")
+                        assetTag = temp[1].strip()
+                    if newRecord:
+                        if not(assetTag == ""):
+                            self.entries = self.entries + 1
+                            self.initializeDictionaryItemLDAP(self.entries)
+                            self.dictionaryItem["Tag"] = tag
+                            self.dictionaryItem["Weight"] = weightValue
+                            self.dictionaryItem["searchTerm"] = addressType + "=" + address
+                            self.dictionaryItem["hardwarePort"] = hardwarePort
+                            self.dictionaryItem["device"] = device
+                            self.dictionaryItem["macAddress"] = macAddress
+                            self.dictionaryItem["ipAddress"] = ipAddress
+                            self.dictionaryItem["ComputerName"] = computerName
+                            self.dictionaryItem["HostName"] = computerName
+                            self.dictionaryItem["LocalHostname"] = localHostname
+                            self.dictionaryItem["assetTag"] = assetTag
+                            self.dictionaryItem["endUsername"] = endUsername
+                        macAddress = ""
+                        ipAddress = ""
+                        computerName = ""
+                        localHostname = ""
+                        assetTag = ""
+                        endUsername = ""
+                except Exception, err:
+                    msg = str(err) + " - " + str(traceback.format_exc())
+                    self.logdispatch.log(LogPriority.ERROR, msg)
+                    continue
+            if not(assetTag == ""):
+                self.entries = self.entries + 1
+                self.initializeDictionaryItemLDAP(self.entries)
+                self.dictionaryItem["Tag"] = tag
+                self.dictionaryItem["Weight"] = weightValue
+                self.dictionaryItem["searchTerm"] = addressType + "=" + address
+                self.dictionaryItem["hardwarePort"] = hardwarePort
+                self.dictionaryItem["device"] = device
+                self.dictionaryItem["macAddress"] = macAddress
+                self.dictionaryItem["ipAddress"] = ipAddress
+                self.dictionaryItem["ComputerName"] = computerName
+                self.dictionaryItem["HostName"] = computerName
+                self.dictionaryItem["LocalHostname"] = localHostname
+                self.dictionaryItem["assetTag"] = assetTag
+                self.dictionaryItem["endUsername"] = endUsername
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            success = False
+            msg = traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, msg)
         return success
 
     def report(self):
