@@ -23,7 +23,7 @@ class BadUserInfoError(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
-class ManageUser(object):
+class ParentManageUser(object):
     """
     Class to manage user properties.
 
@@ -41,37 +41,6 @@ class ManageUser(object):
         # THIS IS A LIBRARY, SO LOGS SHOULD BE INITIALIZED ELSEWHERE...
         # self.logger.initializeLogs()
         self.logger.log(lp.INFO, "Logger: " + str(self.logger))
-        """
-        if self.isSaneUserName(userName):
-            self.userName = userName
-        else:
-            raise BadUserInfoError("Need a valid user name...")
-
-        if self.isSaneUserShell(userShell):
-            self.userShell = userShell
-        else:
-            raise BadUserInfoError("Need a valid user shell...")
-
-        if self.isSaneUserComment(userComment):
-            self.userComment = userComment
-        else:
-            self.userComment=""
-
-        if self.isSaneUserUid(str(userUid)):
-            self.userUid = self.userUid
-        else:
-            raise BadUserInfoError("Need a valid user UID...")
-
-        if self.isSaneUserPriGid(str(userPriGid)):
-            self.userUid = userUid
-        else:
-            raise BadUserInfoError("Need a valid user Primary GID...")
-
-        if self.isSaneUserHomeDir(userHomeDir):
-            self.userHomeDir = userHomeDir
-        else:
-            raise BadUserInfoError("Need a user Home Directory...")
-        """
 
     def isSaneUserName(self, userName=""):
         """

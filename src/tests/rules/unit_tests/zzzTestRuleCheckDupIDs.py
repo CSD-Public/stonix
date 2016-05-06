@@ -38,7 +38,7 @@ import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.tests.lib.manage_users.macos_users import MacOSUser
+from src.tests.lib.manage_user.manage_user import ManageUser
 from src.tests.lib.isapplicable import ApplicableCheck
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.environment import Environment
@@ -57,7 +57,7 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.users = MacOSUser()
+        self.users = ManageUser(self.logdispatch)
         #####
         # Set up an applicable check class
         self.appChk = ApplicableCheck(self.environ)

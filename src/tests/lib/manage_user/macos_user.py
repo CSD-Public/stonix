@@ -12,8 +12,8 @@ import os
 import sys
 import shutil
 
-from src.tests.lib.manage_users.parent_manage_user import ManageUser
-from src.tests.lib.manage_users.parent_manage_user import BadUserInfoError
+from src.tests.lib.manage_user.parent_manage_user import ParentManageUser
+from src.tests.lib.manage_user.parent_manage_user import BadUserInfoError
 from src.tests.lib.logdispatcher_lite import LogPriority as lp
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.CommandHelper import CommandHelper
@@ -38,7 +38,7 @@ class CreateHomeDirError(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
-class MacOSUser(ManageUser):
+class MacOSUser(ParentManageUser):
     """
     Class to manage users on Mac OS.
 
@@ -118,6 +118,8 @@ class MacOSUser(ManageUser):
                                 str(reterr).strip() + ")")
         return success
 
+    #----------------------------------------------------------------------
+
     def getDscl(self, directory="", action="", dirobj="", property=""):
         """
         Using dscl to retrieve a value from the directory
@@ -155,10 +157,14 @@ class MacOSUser(ManageUser):
             retval = self.cmdh.getOutput()
             reterr = self.cmdh.getErrorString()
 
-            if reterr:
+            if not reterr:
+                success = True
+            else:
                 raise DsclError("Error trying to get a value with dscl (" + \
                                 str(reterr).strip() + ")")
         return ("\n").join(retval)
+
+    #----------------------------------------------------------------------
 
     def findUniqueUid(self):
         """
