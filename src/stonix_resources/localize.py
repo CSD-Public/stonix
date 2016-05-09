@@ -41,6 +41,7 @@ that access the version variable to use this copy.
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
 @change: 2016/02/03 - ekkehard - incremented STONIXVERSION = '0.9.5'
+@change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -311,3 +312,7 @@ LANLLOGROTATE = "700.lanl.logrotate"
 
 # These are accounts to exclude from DisableInactiveAccounts rule
 EXCLUDEACCOUNTS = []
+
+# The following list is used by AuditFirefoxUsage(84). It lists domains that
+# are approved for browsing by the root user.
+LOCALDOMAINS = ["127.0.0.1", "localhost", "bar.com"]
