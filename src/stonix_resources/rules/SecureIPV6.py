@@ -27,6 +27,7 @@ Created on Jan 14, 2014
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2016/04/26 ekkehard Results Formatting
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -88,6 +89,7 @@ False.'''
 
     def report(self):
         try:
+            self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
                 self.compliant = self.reportLinux()
             if self.environ.getosfamily() == "freebsd":

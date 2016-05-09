@@ -29,6 +29,7 @@ This class will secure samba file sharing
 @author: bemalmbe
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2015/10/08 eball Help text cleanup
+@change: 2016/04/26 ekkeahrd Results Formatting
 '''
 
 from __future__ import absolute_import
@@ -62,6 +63,7 @@ class SecureWinFileSharing(Rule):
         self.currstate = 'notconfigured'
         self.targetstate = 'configured'
         self.rulename = 'SecureWinFileSharing'
+        self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
         self.helptext = '''This rule will secure SAMBA file sharing settings'''
@@ -141,7 +143,7 @@ value of SecureWinFileSharing to False.'''
         @author: bemalmbe
         '''
         try:
-
+            self.detailedresults = ""
             self.compliant = self.kvosmb.report()
         except (KeyError, TypeError):
             self.detailedresults = traceback.format_exc()
@@ -152,7 +154,10 @@ value of SecureWinFileSharing to False.'''
             self.rulesuccess = False
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return self.rulesuccess
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
 
     def fix(self):
         '''
@@ -162,7 +167,7 @@ value of SecureWinFileSharing to False.'''
         '''
 
         try:
-
+            self.detailedresults = ""
             myid = '0142001'
 
             self.kvosmb.setEventID(myid)
@@ -178,3 +183,7 @@ value of SecureWinFileSharing to False.'''
             self.rulesuccess = False
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess

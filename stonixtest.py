@@ -72,7 +72,26 @@ class ConsoleAndFileWriter():
         sys.stderr.flush()
         self.fo.flush()
 
-class test_rules_and_unit_test (unittest.TestCase):
+def name_test_template(*args):
+    """ 
+    decorator for monkeypatching
+    """
+    def foo(self):
+        self.assert_value(*args)
+    return foo 
+
+class test_ruleNtestConsistency(unittest.TestCase):
+
+    def setUp(self):
+        self.environ = Environment()
+        self.logdispatcher = LogDispatcher(self.environ)
+
+    def assert_value(self, match, name, reportstring):
+
+        self.assertTrue(match, reportstring)
+
+
+class test_rules_and_unit_test():
     '''
     This class is designed to make sure there is a unit test
     for every rule and a rule for every unit test
@@ -81,43 +100,58 @@ class test_rules_and_unit_test (unittest.TestCase):
     @change: 2015-02-25 - ekkehard - Original Implementation
     '''
 
-    def setUp(self):
+    def __init__(self):
         success = True
         self.ruleDictionary = RuleDictionary()
-        return success
+        self.tests4rules = []
+        self.rules4tests = []
+        self.tests = {}
 
-    def runTest(self):
-        '''
-        This is to check all os x rules
-        @author: ekkehard j. koch
-        @note: Make sure it can handle entire rule scenario
-        '''
-        success = self.zzz_for_every_rule()
-        if success:
-            success = self.rule_for_every_zzz()
-        return success
+        self.zzz_for_every_rule()
+        self.rule_for_every_zzz()
+        
+        self.tests["tests4rules"] = self.tests4rules
+        self.tests["rules4tests"] = self.rules4tests
+        
+        self.test_ruleNtestConsistency = test_ruleNtestConsistency
+        
+        self.set_up_tests()
+
+    def set_up_tests(self):
+        """
+        Run tests based on the data structure that has the test data
+        """
+        for behavior, test_cases in self.tests.items():
+            for test_case_data in test_cases:
+                moduletestfound, name, messagestring = test_case_data
+                my_test_name = "test_{0}_{1}_{2}".format(str(behavior),
+                                                         str(name),
+                                                         str(moduletestfound))
+                my_test_case = name_test_template(*test_case_data)
+                setattr(self.test_ruleNtestConsistency, my_test_name, my_test_case)
+
+    def getTest(self):
+        return self.test_ruleNtestConsistency
 
     def zzz_for_every_rule(self):
-        success = True
         self.ruleDictionary.gotoFirstRule()
         while not (self.ruleDictionary.getCurrentRuleItem() == None):
             moduletestfound = self.ruleDictionary.getHasUnitTest()
             name = self.ruleDictionary.getRuleName()
             messagestring = "No unit test available for rule " + str(name)
-            self.assertTrue(moduletestfound, messagestring)
+            data_set = (moduletestfound, name, messagestring)
+            self.tests4rules.append(data_set)
             self.ruleDictionary.gotoNextRule()
-        return success
 
     def rule_for_every_zzz(self):
-        success = True
         self.ruleDictionary.gotoFirstRule()
         while not (self.ruleDictionary.getCurrentRuleItem() == None):
             moduletestfound = self.ruleDictionary.getHasRule()
             name = self.ruleDictionary.getTestName()
             messagestring = "No rule available for unit test " + str(name)
-            self.assertTrue(moduletestfound, messagestring)
+            data_set = (moduletestfound, name, messagestring)
+            self.rules4tests.append(data_set)
             self.ruleDictionary.gotoNextRule()
-        return success
 
 
 class FrameworkDictionary():
@@ -1388,7 +1422,8 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
 
     if  rule:
         # Add the test for every rule and rule for every test... test.
-        suite.addTests(unittest.makeSuite(test_rules_and_unit_test))
+        anotherTest = test_rules_and_unit_test()
+        suite.addTests(unittest.makeSuite(anotherTest.getTest()))
 
     if rule:
         ruleDictionary.ruleReport()
