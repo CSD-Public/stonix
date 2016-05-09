@@ -281,7 +281,7 @@ class RuleTest(unittest.TestCase):
                                 ": Rule " + \
                                 "checkReportFinalForRule() = " + \
                                 str(checkReportFinalConditions) + ".")
-            if not rulecompliance:
+            if rulecompliance:
                 nextstep = False
 
         return nextstep
