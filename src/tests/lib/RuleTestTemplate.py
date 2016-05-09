@@ -45,6 +45,7 @@ class RuleTest(unittest.TestCase):
         self.rule = None
         self.rulename = ""
         self.rulenumber = ""
+        self.checkUndo = False
 
 ###############################################################################
 
@@ -138,6 +139,7 @@ class RuleTest(unittest.TestCase):
             self.logdispatch.log(LogPriority.DEBUG, "rule.report() = " +
                                  str(report))
             rulesuccess = self.rule.getrulesuccess()
+            originalResults = self.rule.getdetailedresults()
             self.logdispatch.log(LogPriority.DEBUG, "rule.getrulesuccess() = "
                                  + str(rulesuccess))
             valueIsInList = rulesuccess in [True, False]
@@ -164,7 +166,7 @@ class RuleTest(unittest.TestCase):
             checkReportConditions = self.checkReportForRule(rulecompliance,
                                                             rulesuccess)
             self.logdispatch.log(LogPriority.DEBUG,
-                                 "checkReportForRule()" + " = " +
+                                 "checkReportForRule() = " +
                                  str(checkReportConditions))
             if checkReportConditions and not rulecompliance:
                 nextstep = True
@@ -175,11 +177,8 @@ class RuleTest(unittest.TestCase):
 
             self.assertTrue(checkReportConditions,
                             self.rulename + "(" + str(self.rulenumber) +
-                            ")" + ": Rule " +
-                            "checkReportForRule() = " +
+                            "): Rule checkReportForRule() = " +
                             str(checkReportConditions) + ".")
-
-
 # Run rule.fix()
         if nextstep:
             messagestring = "Run rule.fix()"
@@ -233,10 +232,10 @@ class RuleTest(unittest.TestCase):
             if not rulesuccess:
                 nextstep = False
             self.assertTrue(rulesuccess,
-                            self.rulename + "(" + str(self.rulenumber) + ")" +
-                            ": rule.getrulesuccess() is '" +
+                            self.rulename + "(" + str(self.rulenumber) +
+                            "): rule.getrulesuccess() is '" +
                             str(rulesuccess) + "' with reported error '" +
-                            str(self.rule.getdetailedresults()))
+                            str(self.rule.getdetailedresults()) + "'")
             rulecompliance = self.rule.iscompliant()
             self.logdispatch.log(LogPriority.DEBUG, "rule.iscompliant() = " +
                                  str(rulecompliance))
@@ -249,7 +248,6 @@ class RuleTest(unittest.TestCase):
                 str(rulecompliance) + "' after rule.fix() and " + \
                 "rule.report() have run."
             self.assertTrue(rulecompliance, prefixRuleInfo + messagestring)
-
 # Run checkReportFinalForRule()
             messagestring = "Run checkReportFinalForRule(" + \
                 str(rulecompliance) + ", " + str(rulesuccess) + ")"
@@ -258,20 +256,47 @@ class RuleTest(unittest.TestCase):
             checkReportFinalConditions = self.checkReportFinalForRule(rulecompliance,
                                                                       rulesuccess)
             self.logdispatch.log(LogPriority.DEBUG,
-                                 "checkReportFinalForRule()" +
-                                 " = " + str(checkReportFinalConditions))
+                                 "checkReportFinalForRule() = " +
+                                 str(checkReportFinalConditions))
             if checkReportFinalConditions and rulecompliance:
                 nextstep = True
             else:
                 nextstep = False
-            messagestring = ": Rule checkReportFinalForRule() = " + \
-                str(checkReportFinalConditions) + "."
 
             self.assertTrue(checkReportFinalConditions,
                             self.rulename + "(" + str(self.rulenumber) +
-                            ")" + ": Rule " +
-                            "checkReportFinalForRule() = " +
+                            "): Rule checkReportFinalForRule() = " +
                             str(checkReportFinalConditions) + ".")
+# Run rule.undo()
+        if nextstep and self.checkUndo:
+            messagestring = "Run rule.undo()"
+            self.logdispatch.log(LogPriority.DEBUG, prefixHeadline +
+                                 prefixRuleInfo + messagestring)
+            undo = self.rule.undo()
+            self.logdispatch.log(LogPriority.DEBUG, "rule.undo() = " +
+                                 str(undo))
+            self.rule.report()
+            postUndoResults = self.rule.getdetailedresults()
+            self.assertTrue(originalResults == postUndoResults,
+                            "After undo, the report results were not the " +
+                            "same as the initial pre-fix report.")
+# Run CheckUndoForRule()
+            messagestring = "Run CheckUndoForRule(" + str(rulesuccess) + ")"
+            self.logdispatch.log(LogPriority.DEBUG, prefixHeadline +
+                                 prefixRuleInfo + messagestring)
+            checkUndoConditions = self.CheckUndoForRule(rulesuccess)
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 "CheckUndoForRule()" +
+                                 " = " + str(checkUndoConditions))
+            if checkUndoConditions and not rulecompliance:
+                nextstep = True
+            else:
+                nextstep = False
+
+            self.assertTrue(checkUndoConditions,
+                            self.rulename + "(" + str(self.rulenumber) +
+                            "): Rule CheckUndoForRule() = " +
+                            str(checkUndoConditions) + ".")
 
         return nextstep
 
