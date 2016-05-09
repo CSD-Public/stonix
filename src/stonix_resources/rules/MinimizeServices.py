@@ -32,6 +32,7 @@ RHEL 7
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/30 dwalker: added additional services to allowed list.
 @change: 2016/04/26 ekkehard Results Formatting
+@change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
 '''
 from __future__ import absolute_import
 
@@ -540,20 +541,23 @@ elements should be space separated.'''
                          'startstate': mystart,
                          'endstate': myend}
                 self.statechglogger.recordchgevent(myid, event)
+
+                self.rulesuccess = fixed
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
             except Exception:
-                fixed = False
+                self.rulesuccess = False
                 self.detailedresults = 'MinimizeServices: '
-                self.detailedresults = self.detailedresults + traceback.format_exc()
+                self.detailedresults = self.detailedresults + \
+                    traceback.format_exc()
                 self.rulesuccess = False
                 self.logger.log(LogPriority.ERROR,
                                 self.detailedresults)
-        self.formatDetailedResults("fix", fixed,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return fixed
+        return self.rulesuccess
 
     def undo(self):
         """
