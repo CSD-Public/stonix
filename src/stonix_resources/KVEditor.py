@@ -311,7 +311,6 @@ class KVEditor(object):
 
     def validateTag(self):
         validate = True
-        self.fixables = {}
         keyvals = {}
         if not self.checkTag():
             return False

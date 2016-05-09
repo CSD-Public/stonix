@@ -27,6 +27,7 @@ ExecShield overflow prevention and the randomize_va_space ASLR mechanism.
 @author: dkennel
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/04/26 ekkehard Results Formatting
 '''
 from __future__ import absolute_import
 import os
@@ -136,7 +137,7 @@ regions.'''
 
         @author dkennel
         '''
-        self.detailedresults = 'Results: '
+        self.detailedresults = ''
         try:
             if self.execshieldapplies:
                 execval = int(self.checkproc(self.shieldprocpath))
@@ -169,8 +170,10 @@ regions.'''
             self.detailedresults += traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                                 ['ExecShield.report',
-                                  self.detailedresults])
+                                 self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def fix(self):
@@ -182,42 +185,42 @@ regions.'''
 
         @author: dkennel
         '''
-        if not self.ExecCI.getcurrvalue():
-            return True
-
-        try:
-            kvtype = "conf"
-            intent = "present"
-            self.editor = KVEditorStonix(self.statechglogger, self.logdispatch,
-                                         kvtype, self.sysctlconf, self.tmpPath,
-                                         self.directives, intent, "openeq")
-            if self.execshieldapplies:
-                cmdshield = '/sbin/sysctl -w kernel.exec-shield=1'
-                subprocess.call(cmdshield, shell=True)
-            cmdvarand = '/sbin/sysctl -w kernel.randomize_va_space=2'
-            subprocess.call(cmdvarand, shell=True)
-
-            if not self.editor.report():
-                if self.editor.fixables:
-                    myid = '0063001'
-                    self.editor.setEventID(myid)
-                    if not self.editor.fix():
-                        return False
-                    elif not self.editor.commit():
-                        return False
-                    os.chown(self.sysctlconf, 0, 0)
-                    os.chmod(self.sysctlconf, 420)
-                    resetsecon(self.sysctlconf)
-
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            self.detailedresults = 'ExecShield.fix: '
-            self.detailedresults += traceback.format_exc()
-            self.rulesuccess = False
-            self.logdispatch.log(LogPriority.ERROR,
-                                 ['ExecShield.fix',
-                                  self.detailedresults])
+        self.detailedresults = ""
+        self.rulesuccess = False
+        if self.ExecCI.getcurrvalue():
+            try:
+                kvtype = "conf"
+                intent = "present"
+                self.editor = KVEditorStonix(self.statechglogger, self.logdispatch,
+                                             kvtype, self.sysctlconf, self.tmpPath,
+                                             self.directives, intent, "openeq")
+                if self.execshieldapplies:
+                    cmdshield = '/sbin/sysctl -w kernel.exec-shield=1'
+                    subprocess.call(cmdshield, shell=True)
+                cmdvarand = '/sbin/sysctl -w kernel.randomize_va_space=2'
+                subprocess.call(cmdvarand, shell=True)
+    
+                if not self.editor.report():
+                    if self.editor.fixables:
+                        myid = '0063001'
+                        self.editor.setEventID(myid)
+                        if not self.editor.fix():
+                            return False
+                        elif not self.editor.commit():
+                            return False
+                        os.chown(self.sysctlconf, 0, 0)
+                        os.chmod(self.sysctlconf, 420)
+                        resetsecon(self.sysctlconf)
+    
+            except (KeyboardInterrupt, SystemExit):
+                # User initiated exit
+                raise
+            except Exception:
+                self.detailedresults = 'ExecShield.fix: '
+                self.detailedresults += traceback.format_exc()
+                self.rulesuccess = False
+                self.logdispatch.log(LogPriority.ERROR,
+                                     self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
