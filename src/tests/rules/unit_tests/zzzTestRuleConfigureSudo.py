@@ -45,7 +45,7 @@ from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, che
 class zzzTestRuleConfigureSudo(RuleTest):
 
     def setUp(self):
-        RuleTest.setUp(self)
+        RuleTest.templateconfigure(self)
         self.rule = ConfigureSudo(self.config,
                                  self.environ,
                                  self.logdispatch,
@@ -55,9 +55,9 @@ class zzzTestRuleConfigureSudo(RuleTest):
         self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
-        pass
+        self.rule.fixSudoers()
 
-    def runTest(self):
+    def test_simple_rule_run(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -71,7 +71,7 @@ class zzzTestRuleConfigureSudo(RuleTest):
         success = True
         groupname = "%wheel"
 
-        if self.environ.getostype() == "Mac OS X":
+        if self.environ.getosfamily() == "darwin":
             self.path = "/private/etc/sudoers"
             groupname = "%admin"
         elif self.environ.getosfamily() == "linux":
@@ -83,7 +83,7 @@ class zzzTestRuleConfigureSudo(RuleTest):
         tempstring = ""
 
         for line in contents:
-            if re.search("^" + groupname, line):
+            if re.match("^" + groupname, line):
                 continue
             else:
                 tempstring += line
@@ -132,11 +132,12 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
+        '''
+        pass
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
