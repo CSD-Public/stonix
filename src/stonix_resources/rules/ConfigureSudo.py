@@ -44,14 +44,13 @@ from ..pkghelper import Pkghelper
 import traceback
 import os
 import re
-
+import sys
 
 class ConfigureSudo(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
-        self.environ = environ
         self.rulenumber = 56
         self.rulename = "ConfigureSudo"
         self.formatDetailedResults("initialize")
@@ -80,10 +79,11 @@ below and hit save before running.***"""
         "into the sudoers file with permissions to run all commands."
 
         if self.environ.getosfamily() == 'darwin':
-            default = "admin"
+            self.default = "admin"
         else:
-            default = "wheel"
-        self.ci = self.initCi(datatype, key, instructions, default)
+            self.default = "wheel"
+
+        self.ci = self.initCi(datatype, key, instructions, self.default)
 
         datatype2 = 'bool'
         key2 = 'CONFIGURESUDO'
@@ -122,6 +122,14 @@ CONFIGURESUDO to False.'''
                 self.searchusl = "ALL=\(ALL\:ALL\)"
                 self.fixusl = "ALL=(ALL:ALL)"
 
+            # set up some class variables
+            self.groupname = "%{0}".format(self.ci.getcurrvalue())
+            self.defaultgroupname = "%{0}".format(self.default)
+            self.fixstring = '# Added by STONIX\n' + self.groupname + '\t' + self.fixusl + '\tALL\n'
+            self.fixdefaultstring = '# Added by STONIX\n' + self.defaultgroupname + '\t' + self.fixusl + '\tALL\n'
+            self.defaultsearchstring = '^' + self.defaultgroupname + '\s+{0}\s+ALL'.format(self.searchusl)
+            self.searchstring = '^' + self.groupname + '\s+{0}\s+ALL'.format(self.searchusl)
+ 
         except Exception:
             raise
 
@@ -179,7 +187,7 @@ CONFIGURESUDO to False.'''
 
         return found
 
-    def fixSudoers(self, fixstring):
+    def fixSudoers(self):
         '''
         wrapper to run fix actions for sudoers
 
@@ -199,6 +207,18 @@ CONFIGURESUDO to False.'''
             self.logger.log(LogPriority.DEBUG, "Running fixSudoers() method...")
 
             contentlines = self.readFile(self.sudoersfile)
+            founddefault = False
+            for line in contentlines:
+                if re.match(self.defaultsearchstring, line):
+                    founddefault = True
+                    self.logger.log(LogPriority.INFO, "Found a valid administration group...")
+                    break
+
+            if not founddefault:
+                self.logger.log(LogPriority.DEBUG, "Didn't find an appropriate administration group")
+                contentlines.append('\n' + self.fixdefaultstring)
+                appended = True
+
             found = False
             for line in contentlines:
                 if re.match(self.searchstring, line):
@@ -208,7 +228,7 @@ CONFIGURESUDO to False.'''
 
             if not found:
                 self.logger.log(LogPriority.DEBUG, "Didn't find an appropriate administration group")
-                contentlines.append('\n' + fixstring)
+                contentlines.append('\n' + self.fixstring)
                 appended = True
             f = open(sudoerstmp, 'w')
             f.writelines(contentlines)
@@ -222,7 +242,7 @@ CONFIGURESUDO to False.'''
             self.statechglogger.recordfilechange(self.sudoersfile, sudoerstmp, myid)
             os.rename(sudoerstmp, self.sudoersfile)
 
-            if not replaced and not appended:
+            if not found and not appended:
                 retval = False
                 self.logger.log(LogPriority.DEBUG, "Contents were unable to be changed in file: " + str(self.sudoersfile))
 
@@ -248,9 +268,11 @@ CONFIGURESUDO to False.'''
 
             # set up some class variables
             self.groupname = "%{0}".format(self.ci.getcurrvalue())
+            self.defaultgroupname = "%{0}".format(self.default)
             self.fixstring = '# Added by STONIX\n' + self.groupname + '\t' + self.fixusl + '\tALL\n'
-            #self.searchstring = '^' + self.groupname + '\s+' + self.searchusl + '\s+ALL'
-            self.searchstring = self.groupname + '\s+{0}\s+ALL'.format(self.searchusl)
+            self.fixdefaultstring = '# Added by STONIX\n' + self.defaultgroupname + '\t' + self.fixusl + '\tALL\n'
+            self.defaultsearchstring = '^' + self.defaultgroupname + '\s+{0}\s+ALL'.format(self.searchusl)
+            self.searchstring = '^' + self.groupname + '\s+{0}\s+ALL'.format(self.searchusl)
  
             # make sure the sudoers file exists
             if not os.path.exists(self.sudoersfile):
@@ -262,7 +284,7 @@ CONFIGURESUDO to False.'''
                 return self.compliant
             else:
                 # make sure the sudoers file contains the correct user specification configuration
-                if not self.findString(self.searchstring):
+                if not self.findString(self.searchstring) or not self.findString(self.defaultsearchstring):
                     self.compliant = False
                     self.detailedresults += '\nCorrect User specification line was not found in sudoers file. Should be:\n' + self.groupname + '\t' + self.fixusl + '\tALL'
                     self.logger.log(LogPriority.DEBUG, 'Correct User specification line was not found in sudoers file')
@@ -313,7 +335,7 @@ CONFIGURESUDO to False.'''
                 self.statechglogger.deleteentry(event)
 
             # run fix actions
-            if not self.fixSudoers(self.fixstring):
+            if not self.fixSudoers():
                 fixresult = False
 
             #we don't record a change event for permissions
