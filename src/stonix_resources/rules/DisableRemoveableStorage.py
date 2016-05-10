@@ -348,11 +348,11 @@ def main():
     if retcode == 0:
         cmd = unload + filepath + usb + ".kext/"
         call(cmd, shell=True)
-    fw = "IOFireWireSerialBusProtocolTransport"
+    fw = "IOFireWireFamily"
     cmd = check + "| grep " + fw
     retcode = call(cmd, shell=True)
     if retcode == 0:
-        cmd = unload + filepath + fw + ".kext/"
+        cmd = unload + filepath + fw + ".kext/Contents/PlugIns/AppleFWOHCI.kext/"
         call(cmd, shell=True)
     tb = "AppleThunderboltUTDM"
     cmd = check + "| grep " + tb
@@ -413,11 +413,11 @@ if __name__ == '__main__':
             "    if retcode \=\=0:\n" + \
             "        cmd \= unload \+ filepath \+ usb \+ \"\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n" + \
-            "    fw \= \"IOFireWireSerialBusProtocolTransport\"\n" + \
+            "    fw \= \"IOFireFamily\"\n" + \
             "    cmd \= check \+ \"\| grep \" \+ fw\n" + \
             "    retcode \= call\(cmd\, shell\=True\)" + \
             "    if retcode \=\=0:\n" + \
-            "        cmd \= unload \+ filepath \+ fw \+ \"\.kext/\"\n" + \
+            "        cmd \= unload \+ filepath \+ fw \+ \"\.kext/Contents/PlugIns/AppleFWOHCI\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n" + \
             "    tb \= \"AppleThunderboltUTDM\"\n" + \
             "    cmd \= check \+ \"\| grep \" \+ fw\n" + \
@@ -542,8 +542,8 @@ if __name__ == '__main__':
             compliant = False
             debug += "USB Kernel module is loaded\n"
             self.detailedresults += "USB Kernel module is loaded\n"
-
-        fw = "IOFireWireSerialBusProtocolTransport"
+        fw = "IOFireWireFamily"
+        #fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
         # if return code is 0, the kernel module is loaded, thus we need
@@ -946,14 +946,15 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
-        fw = "IOFireWireSerialBusProtocolTransport"
+        fw = "IOFirewWireFamily"
+        #fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
 
         # if return code is 0, the kernel module is loaded, thus we need
         # to disable it
         if self.ch.getReturnCode() == 0:
-            cmd = unload + filepath + fw + ".kext/"
+            cmd = unload + filepath + fw + ".kext/Contents/PlugIns/AppleFWOHCI.kext/"
             if not self.ch.executeCommand(cmd):
                 debug += "Unable to disable Firewire\n"
                 success = False
