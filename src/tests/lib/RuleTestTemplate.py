@@ -280,13 +280,13 @@ class RuleTest(unittest.TestCase):
             self.assertTrue(originalResults == postUndoResults,
                             "After undo, the report results were not the " +
                             "same as the initial pre-fix report.")
-# Run CheckUndoForRule()
-            messagestring = "Run CheckUndoForRule(" + str(rulesuccess) + ")"
+# Run checkUndoForRule()
+            messagestring = "Run checkUndoForRule(" + str(rulesuccess) + ")"
             self.logdispatch.log(LogPriority.DEBUG, prefixHeadline +
                                  prefixRuleInfo + messagestring)
-            checkUndoConditions = self.CheckUndoForRule(rulesuccess)
+            checkUndoConditions = self.checkUndoForRule(rulesuccess)
             self.logdispatch.log(LogPriority.DEBUG,
-                                 "CheckUndoForRule()" +
+                                 "checkUndoForRule()" +
                                  " = " + str(checkUndoConditions))
             if checkUndoConditions and not rulecompliance:
                 nextstep = True
@@ -295,7 +295,7 @@ class RuleTest(unittest.TestCase):
 
             self.assertTrue(checkUndoConditions,
                             self.rulename + "(" + str(self.rulenumber) +
-                            "): Rule CheckUndoForRule() = " +
+                            "): Rule checkUndoForRule() = " +
                             str(checkUndoConditions) + ".")
 
         return nextstep
