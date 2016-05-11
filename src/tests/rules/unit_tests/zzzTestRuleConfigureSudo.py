@@ -22,12 +22,13 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigureSudo
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/05/11 eball Replace original file once test is over
 '''
 from __future__ import absolute_import
 import unittest
@@ -42,20 +43,22 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureSudo import ConfigureSudo
 from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms
 
+
 class zzzTestRuleConfigureSudo(RuleTest):
 
     def setUp(self):
-        RuleTest.templateconfigure(self)
+        RuleTest.setUp(self)
         self.rule = ConfigureSudo(self.config,
-                                 self.environ,
-                                 self.logdispatch,
-                                 self.statechglogger)
+                                  self.environ,
+                                  self.logdispatch,
+                                  self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
-        self.rule.fixSudoers()
+        if os.path.exists(self.path + ".stonixUT"):
+            os.rename(self.path + ".stonixUT", self.path)
 
     def test_simple_rule_run(self):
         self.simpleRuleTest()
@@ -74,16 +77,17 @@ class zzzTestRuleConfigureSudo(RuleTest):
         if self.environ.getosfamily() == "darwin":
             self.path = "/private/etc/sudoers"
             groupname = "%admin"
-        elif self.environ.getosfamily() == "linux":
-            self.path = "/etc/sudoers"
         elif self.environ.getosfamily() == "freebsd":
             self.path = "/usr/local/etc/sudoers"
+        else:
+            self.path = "/etc/sudoers"
 
         contents = readFile(self.path, self.logdispatch)
-        tempstring = ""
+        os.rename(self.path, self.path + ".stonixUT")
 
+        tempstring = ""
         for line in contents:
-            if re.match("^" + groupname, line):
+            if re.search("^" + groupname, line):
                 continue
             else:
                 tempstring += line
@@ -91,8 +95,8 @@ class zzzTestRuleConfigureSudo(RuleTest):
         writeFile(self.path + ".tmp", tempstring, self.logdispatch)
         os.rename(self.path + ".tmp", self.path)
 
-        if checkPerms(self.path, [0, 0, 288], self.logdispatch):
-            os.chmod(self.path, 256)
+        if checkPerms(self.path, [0, 0, 0o440], self.logdispatch):
+            os.chmod(self.path, 0o400)
 
         return success
 
@@ -105,9 +109,9 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -120,7 +124,7 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -132,12 +136,11 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        '''
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
-        '''
-        pass
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
