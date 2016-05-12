@@ -546,8 +546,8 @@ for the login.defs file"""
                 success = False
         return success
 
-###############################################################################
-
+###############################################################################       
+    
     def chkpassword(self, package):
         '''Private method to check for the presence of the correct
         pwquality/cracklib directives. In this method we want
@@ -559,16 +559,49 @@ for the login.defs file"""
         regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         if package == "quality":
+            compliant1 = self.chkpwquality()
             regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
                 "lcredit=0 ocredit=0 retry=3"
+            compliant2 = self.chkPwCheck(regex1, regex2, package)
+            if compliant1 and compliant2:
+                compliant = True
         elif package == "cracklib":
             regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
                 "lcredit=0 ocredit=0 retry=3"
-        compliant = self.chkPwCheck(regex1, regex2, package)
+            compliant = self.chkPwCheck(regex1, regex2, package)
         return compliant
 
+###############################################################################
+    
+    def chkpwquality(self):
+        compliant = True
+        self.pwqeditor = ""
+        pwqfile = "/etc/security/pwquality.conf"
+        if os.path.exists(pwqfile):
+            tmpfile = pwqfile + ".tmp"
+            data = {"difok": "4",
+                    "minlen": "14",
+                    "dcredit" : "-1",
+                    "ucredit": "-1",
+                    "lcredit": "-1",
+                    "ocredit": "-1",
+                    "maxrepeat": "3",
+                    "minclass": "3"}
+            self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "conf", pwqfile, tmpfile, data,
+                                            "present", "openeq")
+            if not self.pwqeditor.report():
+                compliant = False
+                self.detailedresults += "Not all correct contents were " + \
+                    "found in " + pwqfile + "\n"
+        else:
+            compliant = False
+            self.detailedresults += "System is using pwquality and " + \
+                "crucial file /etc/security/pwquality doesn't exist\n"
+        return compliant
+    
 ###############################################################################
 
     def chkPwCheck(self, regex1, regex2, package):
@@ -909,7 +942,8 @@ for the login.defs file"""
             data = {"MD5_CRYPT_ENAB": "no",
                     "ENCRYPT_METHOD": "SHA512",
                     "PASS_MAX_DAYS": "180",
-                    "PASS_MIN_DAYS": "1"}
+                    "PASS_MIN_DAYS": "1",
+                    "PASS_WARN_AGE": "7"}
             datatype = "conf"
             intent = "present"
             tmppath = self.logindefs + ".tmp"
@@ -1103,17 +1137,22 @@ for the login.defs file"""
 ###############################################################################
 
     def setpassword(self, package):
+        success = False
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         data2 = "password\tsufficient\tpam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10\n"
         if package == "quality":
+            success1 = self.setpwquality()
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
                 + "ocredit=0 retry=3"
             data1 = "password\trequisite\tpam_pwquality.so minlen=14 " + \
                 "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
                 "ocredit=0 retry=3\n"
+            success2 = self.setPwCheck(regex1, regex2, data1, data2, package)
+            if success1 and success2:
+                success = True
         elif package == "cracklib":
             regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
@@ -1121,10 +1160,50 @@ for the login.defs file"""
             data1 = "password\trequisite\tpam_cracklib.so minlen=14 " + \
                 "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
                 "ocredit=0 retry=3\n"
-        success = self.setPwCheck(regex1, regex2, data1, data2, package)
+            success = self.setPwCheck(regex1, regex2, data1, data2, package)
         return success
 ###############################################################################
 
+    def setpwquality(self):
+        success = False
+        created = False
+        if not self.pwqeditor:
+            pwqfile = "/etc/security/pwquality.conf"
+            if not os.path.exists(pwqfile):
+                createFile(pwqfile, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {'eventtype': 'creation',
+                         'filepath': pwqfile}
+                self.statechglogger.recordchgevent(myid, event)
+                created = True
+            tmpfile = pwqfile + ".tmp"
+            data = {"difok": "4",
+                    "minlen": "14",
+                    "dcredit" : "-1",
+                    "ucredit": "-1",
+                    "lcredit": "-1",
+                    "ocredit": "-1",
+                    "maxrepeat": "3",
+                    "minclass": "3"}
+            self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "conf", pwqfile, tmpfile, data,
+                                            "present", "openeq")
+            self.pwqeditor.report()
+        if self.pwqeditor.fixables:
+            if self.pwqeditor.fix():
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.pwqeditor.setEventID(myid)
+                if not self.pwqeditor.commit():
+                    success = False
+                    self.detailedresults += "Unable to correct " + pwqfile + "\n"
+            else:
+                success = False
+                self.detailedresults += "Unable to correct " + pwqfile + "\n"
+        return success
+                        
     def setPwCheck(self, regex1, regex2, data1, data2, package):
         '''Private method to set the pwquality/cracklib directive in
         password-auth or common-password. retval is a list of two items.
