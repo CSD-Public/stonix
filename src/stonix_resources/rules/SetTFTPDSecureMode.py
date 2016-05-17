@@ -33,7 +33,6 @@ from ..stonixutilityfunctions import readFile, writeFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-from ..ruleKVEditor import RuleKVEditor
 import traceback
 import os
 import re
@@ -43,7 +42,7 @@ class SetTFTPDSecureMode(Rule):
 
 ###############################################################################
     def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger,
+        Rule.__init__(self, config, environ, logger,
                               statechglogger)
         self.logger = logger
         self.rootrequired = True
@@ -53,7 +52,6 @@ class SetTFTPDSecureMode(Rule):
         self.mandatory = True
         self.helptext = '''This ensures that the tftp daemon uses secure \
 mode.'''
-                # init CIs
         datatype = 'bool'
         key = 'SETTFTPDSECUREMODE'
         instructions = "To disable this rule set the value of " + \
@@ -70,6 +68,7 @@ mode.'''
         
     def report(self):
         try:
+            self.detailedresults = ""
             compliant = True
             if self.environ.getostype() == "Mac OS X":
                 compliant = self.reportMac()
@@ -100,7 +99,7 @@ mode.'''
         return self.compliant
 
     def reportMac(self):
-        self.add
+        pass
     
     def reportDebianSys(self):
         contents = readFile(self.tftpFile, self.logger)
