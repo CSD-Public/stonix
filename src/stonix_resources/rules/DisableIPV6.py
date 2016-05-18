@@ -663,7 +663,7 @@ contain the correct contents\n"
         #stig stuff
         if self.helper.manager == "apt-get":
             nfspkg = "nfs-common"
-        elif self.helper.manager == "yum":
+        else:
             nfspkg = "nfs-utils.x86_64"
         if self.helper.check(nfspkg):
             if os.path.exists("/etc/netconfig"):
