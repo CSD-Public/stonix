@@ -48,7 +48,7 @@ import traceback
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import getOctalPerms
-from ..localize import ALLOWNET, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
+from ..localize import ALLOWNET, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT, LEGACYALLOWNET
 
 
 class TCPWrappers(Rule):
@@ -98,11 +98,18 @@ hosts.deny files.'''
                               "value of TCPWrappers to False.",
                               True)
 
-        self.allownetCI = self.initCi("string", "Allow Subnet",
-                                      "Enter the subnet you wish to allow " +
-                                      "services access to on the network." +
-                                      " To allow none, leave blank.",
-                                      str(ALLOWNET))
+        datatype = "string"
+        key = "Allow Subnet"
+        instructions = "Enter the subnet you wish to allow services access to on the network. To allow none, leave blank."
+        default = ALLOWNET
+
+        if os.path.exists('/etc/redhat-release'):
+            osver = self.environ.getosver()
+            if re.search('6\.[0-9]', osver):
+                print "\n\nLEGACYALLOWNET SET\n\n"
+                default = LEGACYALLOWNET
+
+        self.allownetCI = self.initCi(datatype, key, instructions, default)
 
     def report(self):
         '''
