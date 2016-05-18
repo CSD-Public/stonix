@@ -144,8 +144,11 @@ PROXYDOMAIN = "bar.com"
 # Domain Name Server (DNS) defaults
 DNS = "192.168.0.1 192.168.0.2"
 
-# Specify a subnet to allow services access to in /etc/hosts.allow
+# (for redhat 7 and later) Specify a subnet to allow services access to in /etc/hosts.allow
 ALLOWNET = '192.168.0.1/24'
+
+# (for redhat 6 and earlier) Specify a subnet to allow services access to in /etc/hosts.allow
+LEGACYALLOWNET = '192.168.'
 
 # Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
 XINETDALLOW = '192.168.0.1/24'
