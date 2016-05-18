@@ -48,7 +48,7 @@ import traceback
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import getOctalPerms
-from ..localize import ALLOWNET, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
+from ..localize import ALLOWNET, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT, LEGACYALLOWNET
 
 
 class TCPWrappers(Rule):
