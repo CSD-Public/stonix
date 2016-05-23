@@ -534,21 +534,21 @@ users path are very dangerous.'''
                 'since install: ' + strnewsincefirst
             if self.findoverrun:
                 self.wwresults = self.wwresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for world writable files and folders and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for world writable files and folders and correct \
 permissions as needed.
 
-To find world writable directories:
+To find world writable directories, run the following command as root:
 find / -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -print
 To find world writable files:
 find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
         elif self.findoverrun:
             self.wwresults = '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for world writable files and folders and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for world writable files and folders and correct \
 permissions as needed.
 
-To find world writable directories:
+To find world writable directories, run the following command as root:
 find / -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -print
 To find world writable files:
 find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
@@ -891,20 +891,20 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                 strwrongmode
             if self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for SUID / SGID files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for SUID / SGID files and correct \
 permissions as needed.
 
-To find SUID/SGID files:
+To find SUID/SGID files, run the following command as root:
 find / -xdev \( -perm -04000 -o -perm -02000 \) -print
 '''
         elif self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for SUID / SGID files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for SUID / SGID files and correct \
 permissions as needed.
 
-To find SUID/SGID files:
+To find SUID/SGID files, run the following command as root:
 find / -xdev \( -perm -04000 -o -perm -02000 \) -print
 '''
         else:
@@ -980,20 +980,20 @@ find / -xdev \( -perm -04000 -o -perm -02000 \) -print
                 'owners since first run: ' + strnewfilessinceorigin
             if self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for unowned files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for unowned files and correct \
 permissions as needed.
 
-To find unowned files:
+To find unowned files, run the following command as root:
 find / -xdev \( -nouser -o -nogroup \) -print
 '''
         elif self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for unowned files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for unowned files and correct \
 permissions as needed.
 
-To find unowned files:
+To find unowned files, run the following command as root:
 find / -xdev \( -nouser -o -nogroup \) -print
 '''
         else:
