@@ -1321,31 +1321,38 @@ class InstallBanners(RuleKVEditor):
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
+        @change: Breen Malmberg - 5/25/2016 - moved the commit calls to ensure they
+        are only called if the fix calls completed successfully
         '''
 
         retval = True
 
         try:
+
+            if not self.kdefile:
+                self.logger.log(LogPriority.DEBUG, "The kde configuration file is missing or is not in the place it is expected to be in. This can cause problems with the operation of fixkde() method!")
+
             if not self.kdeditor.fix():
                 retval = False
-                self.detailedresults += '\nkveditor fix did not complete successfully'
+                self.detailedresults += '\nkveditor fix did not complete successfully. kveditor commit will not be run.'
             else:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.kdeditor.setEventID(myid)
-            if not self.kdeditor.commit():
-                retval = False
-                self.detailedresults += '\nkveditor commit did not complete successfully'
+                if not self.kdeditor.commit():
+                    retval = False
+                    self.detailedresults += '\nkveditor commit did not complete successfully.'
             if not self.kdeditor2.fix():
                 retval = False
-                self.detailedresults += '\nkveditor fix did not complete successfully'
+                self.detailedresults += '\nkveditor fix did not complete successfully. kveditor commit will not be run.'
             else:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.kdeditor2.setEventID(myid)
-            if not self.kdeditor2.commit():
-                retval = False
-                self.detailedresults += '\nkveditor commit did not complete successfully'
+                if not self.kdeditor2.commit():
+                    retval = False
+                    self.detailedresults += '\nkveditor commit did not complete successfully'
+
         except Exception:
             raise
         return retval
