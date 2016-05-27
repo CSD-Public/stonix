@@ -737,6 +737,10 @@ this system, set the value of EnableKernelAuditing to False"""
                         fixsuccess = False
                         self.detailedresults += '\nAudit dispatcher editor ' + \
                             'fix failed'
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.auditdeditor.setEventID(myid)
                     if not self.audispeditor.commit():
                         fixsuccess = False
                         self.detailedresults += '\nAudit dispatcher editor ' + \
@@ -748,6 +752,10 @@ this system, set the value of EnableKernelAuditing to False"""
                     if not self.auditdeditor.fix():
                         fixsuccess = False
                         self.detailedresults += '\nAudit daemon editor fix failed'
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.auditdeditor.setEventID(myid)
                     if not self.auditdeditor.commit():
                         fixsuccess = False
                         self.detailedresults += '\nAudit daemon editor ' + \

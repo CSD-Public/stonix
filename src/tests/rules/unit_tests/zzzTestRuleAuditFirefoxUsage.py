@@ -22,77 +22,86 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule AuditFirefoxUsage
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Eric Ball
+@change: 2016/05/06 eball Original implementation
 '''
 from __future__ import absolute_import
-import unittest
-import re
 import os
-import sys
-
-sys.path.append("../../../..")
-from src.tests.lib.RuleTestTemplate import RuleTest
+import shutil
+import unittest
+from time import sleep
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.pkghelper import Pkghelper
+from src.stonix_resources.rules.AuditFirefoxUsage import AuditFirefoxUsage
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureSudo import ConfigureSudo
-from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms
+from src.tests.lib.RuleTestTemplate import RuleTest
 
-class zzzTestRuleConfigureSudo(RuleTest):
+
+class zzzTestRuleAuditFirefoxUsage(RuleTest):
 
     def setUp(self):
-        RuleTest.templateconfigure(self)
-        self.rule = ConfigureSudo(self.config,
-                                 self.environ,
-                                 self.logdispatch,
-                                 self.statechglogger)
+        RuleTest.setUp(self)
+        self.rule = AuditFirefoxUsage(self.config,
+                                      self.environ,
+                                      self.logdispatch,
+                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.initMozDir = False
+        self.moveMozDir = False
 
     def tearDown(self):
-        self.rule.fixSudoers()
+        if self.initMozDir:
+            shutil.rmtree("/root/.mozilla")
+        elif self.moveMozDir:
+            shutil.rmtree("/root/.mozilla")
+            os.rename("/root/.mozilla.stonixtmp", "/root/.mozilla")
 
-    def test_simple_rule_run(self):
-        self.simpleRuleTest()
+    def runTest(self):
+        if self.ph.check("firefox"):
+            self.browser = "firefox"
+            self.setConditionsForRule()
+            self.assertFalse(self.rule.report())
+        elif self.ph.check("iceweasel"):
+            self.browser = "iceweasel"
+            self.setConditionsForRule()
+            self.assertFalse(self.rule.report())
+        else:
+            debug = "Firefox not installed. Unit test will not make any " + \
+                "changes."
+            self.logdispatch.log(LogPriority.DEBUG, debug)
+            return True
 
     def setConditionsForRule(self):
         '''
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
-
         success = True
-        groupname = "%wheel"
+        browser = self.browser
 
-        if self.environ.getosfamily() == "darwin":
-            self.path = "/private/etc/sudoers"
-            groupname = "%admin"
-        elif self.environ.getosfamily() == "linux":
-            self.path = "/etc/sudoers"
-        elif self.environ.getosfamily() == "freebsd":
-            self.path = "/usr/local/etc/sudoers"
+        if not os.path.exists("/root/.mozilla"):
+            self.ch.wait = False
+            command = [browser, "google.com"]
+            self.ch.executeCommand(command)
+            sleep(5)
+            self.initMozDir = True
+        else:
+            self.ch.wait = False
+            os.rename("/root/.mozilla", "/root/.mozilla.stonixtmp")
+            command = [browser, "google.com"]
+            self.ch.executeCommand(command)
+            sleep(10)
+            self.moveMozDir = True
 
-        contents = readFile(self.path, self.logdispatch)
-        tempstring = ""
-
-        for line in contents:
-            if re.match("^" + groupname, line):
-                continue
-            else:
-                tempstring += line
-
-        writeFile(self.path + ".tmp", tempstring, self.logdispatch)
-        os.rename(self.path + ".tmp", self.path)
-
-        if checkPerms(self.path, [0, 0, 288], self.logdispatch):
-            os.chmod(self.path, 256)
+        command = ["killall", "-q", "-u", "root", browser]
+        self.ch.executeCommand(command)
 
         return success
 
@@ -105,9 +114,9 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -120,7 +129,7 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -132,12 +141,11 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        '''
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
-        '''
-        pass
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -28,11 +28,15 @@ This is a Unit Test for Rule SecureMDNS
 @change: 03/18/2013 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/05/10 eball Removed PListBuddy delete command, which was deleting
+    important information from the plist. Also moved plist for Mac test to a
+    temporary location, and copied it back after test is complete.
 '''
 from __future__ import absolute_import
 import os
-import unittest
+import re
 import sys
+import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
@@ -41,6 +45,7 @@ from src.stonix_resources.KVEditorStonix import KVEditorStonix
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.pkghelper import Pkghelper
 from src.stonix_resources.ServiceHelper import ServiceHelper
+from src.stonix_resources.stonixutilityfunctions import readFile, writeFile
 from src.stonix_resources.rules.SecureMDNS import SecureMDNS
 
 
@@ -55,13 +60,13 @@ class zzzTestRuleSecureMDNS(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
-        self.lc = "/bin/launchctl"
         self.plb = "/usr/libexec/PlistBuddy"
         self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.service = ""
 
     def tearDown(self):
-        pass
+        if os.path.exists(self.service + ".stonixtmp"):
+            os.rename(self.service + ".stonixtmp", self.service)
 
     def runTest(self):
         self.simpleRuleTest()
@@ -87,8 +92,9 @@ class zzzTestRuleSecureMDNS(RuleTest):
                     "/System/Library/LaunchDaemons/com.apple.discoveryd.plist"
                 servicename = "com.apple.networking.discoveryd"
                 parameter = "--no-multicast"
-                pbd = self.plb + ' -c "Delete :ProgramArguments: string ' \
-                    + parameter + '" ' + service
+                plistText = readFile(service, self.logdispatch)
+                newPlistText = re.sub("<string>" + parameter + "</string>",
+                                      "", "".join(plistText))
                 success = True
             else:
                 debug = "Using mDNSResponder LaunchDaemon"
@@ -101,11 +107,15 @@ class zzzTestRuleSecureMDNS(RuleTest):
                 else:
                     servicename = "com.apple.mDNSResponder"
                     parameter = "-NoMulticastAdvertisements"
-                pbd = self.plb + ' -c "Delete :ProgramArguments: string ' \
-                    + parameter + '" ' + service
+                plistText = readFile(service, self.logdispatch)
+                newPlistText = re.sub("<string>" + parameter + "</string>",
+                                      "", "".join(plistText))
                 success = True
+            self.service = service
             if success and self.sh.auditservice(service, servicename):
-                success = self.ch.executeCommand(pbd)
+                success = writeFile(service + ".stonixtmp", "".join(plistText),
+                                    self.logdispatch)
+                success = writeFile(service, newPlistText, self.logdispatch)
             if success and self.sh.auditservice(service, servicename):
                 success = self.sh.reloadservice(service, servicename)
         else:

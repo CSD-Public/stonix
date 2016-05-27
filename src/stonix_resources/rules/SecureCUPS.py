@@ -56,6 +56,7 @@ from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..KVEditorStonix import KVEditorStonix
+from ..stonixutilityfunctions import iterate
 from ..localize import PRINTBROWSESUBNET
 
 
@@ -104,6 +105,7 @@ Setup default set of policy blocks for CUPS'''
         self.isApplicableBlackList = ["darwin"]
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
+        self.iditerator = 0
 
         # init CIs
         self.SecureCUPS = self.__initializeSecureCUPS()
@@ -992,6 +994,9 @@ DisablePrintBrowsing to True.'
                                          kvintent, kvconftype)
             self.kvodpb.report()
             self.kvodpb.fix()
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.kvodpb.setEventID(myid)
             self.kvodpb.commit()
 
         except (KeyboardInterrupt, SystemExit):
@@ -1030,6 +1035,9 @@ DisablePrintBrowsing to True.'
                                          kvintent, kvconftype)
             self.kvopbs.report()
             self.kvopbs.fix()
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.kvopbs.setEventID(myid)
             self.kvopbs.commit()
 
         except (KeyboardInterrupt, SystemExit):
@@ -1068,6 +1076,9 @@ DisablePrintBrowsing to True.'
                                          kvintent, kvconftype)
             self.kvodgp.report()
             self.kvodgp.fix()
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.kvodgp.setEventID(myid)
             self.kvodgp.commit()
 
         except (KeyboardInterrupt, SystemExit):
