@@ -281,6 +281,27 @@ class DisableRemoveableStorage(Rule):
 </dict>
 </plist>
 '''
+        self.plistcontents2 = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>Label</key>
+    <string>gov.lanl.stonix.disablestorage2</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>sh</string>
+        <string>-c</string>
+        <string>''' + self.daemonpath + '''</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>'''
         self.daemoncontents = '''#!/usr/bin/python
 \'\'\'
 Created on Jan 5, 2016
@@ -413,11 +434,11 @@ if __name__ == '__main__':
                 contentstring += line.strip()
             if not re.search(self.plistregex1, contentstring):
                 compliant = False
-                self.detailedresults += "1st plist file doesn't contain the " + \
+                self.detailedresults += "plist file doesn't contain the " + \
                     "correct contents\n"
         else:
             compliant = False
-            self.detailedresults += "1st daemon plist file doesn't exist\n"
+            self.detailedresults += "daemon plist file doesn't exist\n"
         if os.path.exists(self.plistpath2):
             statdata = os.stat(self.plistpath2)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -450,11 +471,11 @@ if __name__ == '__main__':
                 contentstring += line.strip()
             if not re.search(self.plistregex2, contentstring):
                 compliant = False
-                self.detailedresults += "2nd plist file doesn't contain the " + \
+                self.detailedresults += "plist file doesn't contain the " + \
                     "correct contents\n"
         else:
             compliant = False
-            self.detailedresults += "2nd daemon plist file doesn't exist\n"
+            self.detailedresults += "daemon plist file doesn't exist\n"
         if os.path.exists(self.daemonpath):
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -470,7 +491,7 @@ if __name__ == '__main__':
                 contentstring += line
             if contentstring != self.daemoncontents:
                 compliant = False
-                self.detailedresults += "disablestorage script doesn't " + \
+                self.detailedresults += "disablestorage.py file doesn't " + \
                     "contain the correct contents\n"
         else:
             compliant = False

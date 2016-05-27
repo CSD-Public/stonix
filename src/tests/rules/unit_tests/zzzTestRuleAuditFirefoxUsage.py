@@ -22,75 +22,88 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule CheckRootPath
+This is a Unit Test for Rule AuditFirefoxUsage
 
-@author: ekkehard j. koch
-@change: 03/18/2013 ekkehard Original Implementation
-@change: 04/21/2013 ekkehard Renamed from SecureRootPath to CheckRootPath
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Eric Ball
+@change: 2016/05/06 eball Original implementation
 '''
 from __future__ import absolute_import
 import os
-import stat
-import sys
+import shutil
 import unittest
-
-sys.path.append("../../../..")
-from src.tests.lib.RuleTestTemplate import RuleTest
+from time import sleep
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.pkghelper import Pkghelper
+from src.stonix_resources.rules.AuditFirefoxUsage import AuditFirefoxUsage
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.CheckRootPath import CheckRootPath
+from src.tests.lib.RuleTestTemplate import RuleTest
 
 
-class zzzTestRuleCheckRootPath(RuleTest):
+class zzzTestRuleAuditFirefoxUsage(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = CheckRootPath(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = AuditFirefoxUsage(self.config,
+                                      self.environ,
+                                      self.logdispatch,
+                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.initMozDir = False
+        self.moveMozDir = False
 
     def tearDown(self):
-        pass
+        if self.initMozDir:
+            shutil.rmtree("/root/.mozilla")
+        elif self.moveMozDir:
+            shutil.rmtree("/root/.mozilla")
+            os.rename("/root/.mozilla.stonixtmp", "/root/.mozilla")
 
-    def testRun(self):
-        self.simpleRuleTest()
+    def runTest(self):
+        if self.ph.check("firefox"):
+            self.browser = "firefox"
+            self.setConditionsForRule()
+            self.assertFalse(self.rule.report())
+        elif self.ph.check("iceweasel"):
+            self.browser = "iceweasel"
+            self.setConditionsForRule()
+            self.assertFalse(self.rule.report())
+        else:
+            debug = "Firefox not installed. Unit test will not make any " + \
+                "changes."
+            self.logdispatch.log(LogPriority.DEBUG, debug)
+            return True
 
     def setConditionsForRule(self):
         '''
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
         success = True
-        path = os.environ['PATH']
-        path += ":/home"
-        os.environ['PATH'] = path
+        browser = self.browser
+
+        if not os.path.exists("/root/.mozilla"):
+            self.ch.wait = False
+            command = [browser, "google.com"]
+            self.ch.executeCommand(command)
+            sleep(5)
+            self.initMozDir = True
+        else:
+            self.ch.wait = False
+            os.rename("/root/.mozilla", "/root/.mozilla.stonixtmp")
+            command = [browser, "google.com"]
+            self.ch.executeCommand(command)
+            sleep(10)
+            self.moveMozDir = True
+
+        command = ["killall", "-q", "-u", "root", browser]
+        self.ch.executeCommand(command)
 
         return success
-
-    def testReportFindsWorldWritableFile(self):
-        self.logdispatch.log(LogPriority.DEBUG,
-                             "Running testReportFindsWorldWritableFile")
-        fileName = "tempWorldWriteableFile"
-        filePath = "/usr/local/bin/" + fileName
-
-        open(filePath, "w").write("")
-        os.chmod(filePath, stat.S_IWOTH)
-
-        self.rule.report()
-        self.rule.fix()
-        self.assertFalse(self.rule.report(), "CheckRootPath report did not" +
-                         "detect world writable file in /usr/local/bin")
-
-        os.remove(filePath)
-
-        self.logdispatch.log(LogPriority.DEBUG,
-                             "End testReportFindsWorldWritableFile")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

@@ -32,6 +32,7 @@ RHEL 7
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/30 dwalker: added additional services to allowed list.
 @change: 2016/04/26 ekkehard Results Formatting
+@change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
 '''
 from __future__ import absolute_import
 
@@ -127,13 +128,13 @@ administrators may want to disable this rule.
                              'network-manager', 'exim4', 'rmnologin',
                              'minissdpd']
         self.specials = ['apparmor', 'urandom', 'x11-common', 'sendsigs',
-                              'unmountnfs.sh', 'networking', 'umountfs',
-                              'umountroot', 'reboot', 'halt', 'killprocs',
-                              'single', 'unattended-upgrades', 'devfs', 'dmesg',
-                              'bootmisc', 'fsck', 'hostname', 'hwclock',
-                              'keymaps', 'localmount', 'modules', 'mount-ro',
-                              'mtab', 'net.lo', 'procfs', 'root', 'savecache',
-                              'swap', 'sysctl', 'termencoding', 'udev']
+                         'unmountnfs.sh', 'networking', 'umountfs',
+                         'umountroot', 'reboot', 'halt', 'killprocs',
+                         'single', 'unattended-upgrades', 'devfs', 'dmesg',
+                         'bootmisc', 'fsck', 'hostname', 'hwclock',
+                         'keymaps', 'localmount', 'modules', 'mount-ro',
+                         'mtab', 'net.lo', 'procfs', 'root', 'savecache',
+                         'swap', 'sysctl', 'termencoding', 'udev']
         self.soldefault = ['lrc:/etc/rc2_d/S10lu', 'lrc:/etc/rc2_d/S20sysetup',
                            'lrc:/etc/rc2_d/S40llc2',
                            'lrc:/etc/rc2_d/S42ncakmod',
@@ -303,8 +304,8 @@ administrators may want to disable this rule.
                               'polkit.service', 'postfix.service',
                               'poweroff.service', 'prefdm.service',
                               'procps.service',
-                              'procps',
-                              'rc-local.service',
+                              'procps', 'psacct.service',
+                              'psacct', 'rc-local.service',
                               'rc.local',
                               'reboot.service',
                               'remount-rootfs.service', 'rescue.service',
@@ -395,6 +396,7 @@ administrators may want to disable this rule.
                               'ypbind.service',
                               'sysstat-collect.service',
                               'sysstat-summary.service']
+
         datatype = 'bool'
         key = 'minimizesvcs'
         instructions = '''To disable this rule set the value of MINIMIZESVCS to
@@ -405,90 +407,44 @@ False.'''
         # self.svcslistci = self.__initializeenablelist()
         datatype2 = 'list'
         key2 = 'serviceenable'
-        instructions2 = '''This list contains services that are permitted to run on this
-platform. If you need to run a service not currently in this list add the
-service to the list and STONIX will ensure that it is set to run. List elements
-should be space separated.'''
+        instructions2 = '''This list contains services that are permitted to \
+run on this platform. If you need to run a service not currently in this \
+list, add the service to the list and STONIX will not disable it. List \
+elements should be space separated.'''
         self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                            "Starting platform detection"])
+                        ['MinimizeServices.__init__',
+                         "Starting platform detection"])
         if os.path.exists('/bin/systemctl'):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "systemctl found using systemd list"])
+                             "systemctl found using systemd list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.systemddefault)
+                                          self.systemddefault)
         elif self.environ.getosfamily() == 'linux':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "Linux OS found using Linux default list"])
+                             "Linux OS found using Linux default list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.linuxdefault)
+                                          self.linuxdefault)
         elif self.environ.getosfamily() == 'solaris':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "Solaris OS found using Solaris list"])
+                             "Solaris OS found using Solaris list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.soldefault)
+                                          self.soldefault)
         elif self.environ.getosfamily() == 'freebsd':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "FreeBSD OS found using BSD list"])
+                             "FreeBSD OS found using BSD list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.bsddefault)
+                                          self.bsddefault)
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
+                             "Detection fell through. Return from ENV:" +
+                             self.environ.getosfamily()])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.linuxdefault)
-
-    def __initializeenablelist(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        serviceenable list.
-        @return: configuration object instance
-        '''
-        datatype = 'list'
-        key = 'serviceenable'
-        instructions = '''This list contains services that are permitted to run on this
-platform. If you need to run a service not currently in this list add the
-service to the list and STONIX will ensure that it is set to run. List elements
-should be space separated.'''
-        self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Starting platform detection"])
-        if os.path.exists('/bin/systemctl'):
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "systemctl found using systemd list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.systemddefault)
-        elif self.environ.getosfamily() == 'linux':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Linux OS found using Linux default list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.linuxdefault)
-        elif self.environ.getosfamily() == 'solaris':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Solaris OS found using Solaris list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.soldefault)
-        elif self.environ.getosfamily() == 'freebsd':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "FreeBSD OS found using BSD list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.bsddefault)
-        else:
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.linuxdefault)
-        return cienablelist
+                                          self.linuxdefault)
 
     def report(self):
         """
@@ -507,16 +463,17 @@ should be space separated.'''
             corelist = self.svcslistci.getdefvalue()
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.report',
-                            "ServiceList: " + str(servicelist)])
+                             "ServiceList: " + str(servicelist)])
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.report',
-                            "AllowedList: " + str(allowedlist)])
+                             "AllowedList: " + str(allowedlist)])
             for service in servicelist:
                 if service in allowedlist:
                     if service not in corelist:
                         self.logger.log(LogPriority.WARNING,
                                         ['MinimizeServices',
-                                         'Non-core service running: ' + service])
+                                         'Non-core service running: ' +
+                                         service])
                 else:
                     running = self.servicehelper.auditservice(service)
                     self.logger.log(LogPriority.DEBUG,
@@ -532,7 +489,7 @@ should be space separated.'''
                 self.detailedresults = myresults
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.report',
-                            "Compliant: " + str(compliant)])
+                             "Compliant: " + str(compliant)])
             self.compliant = compliant
             self.targetstate = 'notconfigured'
             return compliant
@@ -542,7 +499,8 @@ should be space separated.'''
             raise
         except Exception:
             self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults = self.detailedresults + \
+                traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
                             self.detailedresults)
@@ -582,20 +540,23 @@ should be space separated.'''
                          'startstate': mystart,
                          'endstate': myend}
                 self.statechglogger.recordchgevent(myid, event)
+
+                self.rulesuccess = fixed
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
             except Exception:
-                fixed = False
+                self.rulesuccess = False
                 self.detailedresults = 'MinimizeServices: '
-                self.detailedresults = self.detailedresults + traceback.format_exc()
+                self.detailedresults = self.detailedresults + \
+                    traceback.format_exc()
                 self.rulesuccess = False
                 self.logger.log(LogPriority.ERROR,
                                 self.detailedresults)
-        self.formatDetailedResults("fix", fixed,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return fixed
+        return self.rulesuccess
 
     def undo(self):
         """
@@ -611,13 +572,15 @@ should be space separated.'''
                 self.servicehelper.enableservice(service)
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
-                        ['MinimizeServices.undo', "EventID 0013001 not found"])
+                            ['MinimizeServices.undo',
+                             "EventID 0013001 not found"])
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception:
             self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults = self.detailedresults + \
+                traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
                             ['MinimizeServices.fix',
@@ -625,5 +588,6 @@ should be space separated.'''
             return False
         self.report()
         if self.currstate == self.targetstate:
-            self.detailedresults = 'MinimizeServices: Changes successfully reverted'
+            self.detailedresults = 'MinimizeServices: Changes ' + \
+                'successfully reverted'
         return True
