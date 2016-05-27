@@ -354,6 +354,9 @@ enabled.'''
                     editor.report()
                     if editor.fixables:
                         if editor.fix():
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            editor.setEventID(myid)
                             debug = "kveditor fix ran successfully\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             if editor.commit():
