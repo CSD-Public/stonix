@@ -133,7 +133,7 @@ class SHsystemctl(object):
         command = [self.cmd, "is-enabled", service]
         self.ch.executeCommand(command)
         output = self.ch.getOutputString()
-        if output == "enabled":
+        if re.search("enabled", output):
             running = True
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.audit ' + service + ' '
