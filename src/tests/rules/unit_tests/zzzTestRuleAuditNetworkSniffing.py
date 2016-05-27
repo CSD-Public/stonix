@@ -22,41 +22,39 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule CheckRootPath
+This is a Unit Test for Rule DisableInactiveAccounts
 
-@author: ekkehard j. koch
-@change: 03/18/2013 ekkehard Original Implementation
-@change: 04/21/2013 ekkehard Renamed from SecureRootPath to CheckRootPath
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Breen Malmberg
+@change: 04/11/2016 original implementation
 '''
+
 from __future__ import absolute_import
-import os
-import stat
 import sys
 import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.CheckRootPath import CheckRootPath
+from src.stonix_resources.rules.AuditNetworkSniffing import AuditNetworkSniffing
 
 
-class zzzTestRuleCheckRootPath(RuleTest):
+class zzzTestRuleAuditNetworkSniffing(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = CheckRootPath(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = AuditNetworkSniffing(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
 
-    def testRun(self):
+    def runTest(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -66,31 +64,49 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        success = True
-        path = os.environ['PATH']
-        path += ":/home"
-        os.environ['PATH'] = path
 
+        success = True
         return success
 
-    def testReportFindsWorldWritableFile(self):
-        self.logdispatch.log(LogPriority.DEBUG,
-                             "Running testReportFindsWorldWritableFile")
-        fileName = "tempWorldWriteableFile"
-        filePath = "/usr/local/bin/" + fileName
+    def test_initobjs(self):
+        '''
+        test the validity of the class objects
 
-        open(filePath, "w").write("")
-        os.chmod(filePath, stat.S_IWOTH)
+        @author: Breen Malmberg
+        '''
 
-        self.rule.report()
-        self.rule.fix()
-        self.assertFalse(self.rule.report(), "CheckRootPath report did not" +
-                         "detect world writable file in /usr/local/bin")
+        self.rule.initobjs()
+        self.assertTrue(self.rule.cmdhelper)
 
-        os.remove(filePath)
+    def test_searchOutput(self):
+        '''
+        test the functionality of the searchOutput method
 
-        self.logdispatch.log(LogPriority.DEBUG,
-                             "End testReportFindsWorldWritableFile")
+        @author: Breen Malmberg
+        '''
+
+        testlist = ['stuff', 'otherstuff']
+        self.assertFalse(self.rule.searchOutput(testlist, 'searchterm'))
+        self.assertTrue(self.rule.searchOutput(testlist, 'stuff'))
+        self.assertFalse(self.rule.searchOutput('notalist', 'whatever'))
+        self.assertFalse(self.rule.searchOutput(testlist, testlist))
+
+    def test_vars_initd(self):
+        '''
+        test the functionality of the appendiName method
+
+        @author: Breen Malmberg
+        '''
+
+        self.rule.setup()
+
+        self.assertTrue(self.rule.command, "The self.command variable was not properly initialized")
+        self.assertTrue(self.rule.searchterm, "The self.searchterm variable was not properly initialized")
+        self.assertTrue(isinstance(self.rule.searchterm, basestring))
+        self.assertTrue(self.rule.cmdlinetool, "The self.cmdlinetool variable was not properly initialized")
+        self.assertTrue(isinstance(self.rule.cmdlinetool, basestring))
+        self.assertTrue(self.rule.lisl, "The self.lisl variable was not properly initialized")
+        self.assertTrue(isinstance(self.rule.lisl, int))
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -101,9 +117,9 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -116,7 +132,7 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -129,7 +145,7 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success

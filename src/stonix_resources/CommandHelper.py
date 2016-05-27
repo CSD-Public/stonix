@@ -498,19 +498,19 @@ class CommandHelper(object):
 
             if (success):
                 commandobj = subprocess.Popen(self.command,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, 
-                               shell=self.shell)
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE,
+                                              shell=self.shell)
                 outlines = []
                 errlines = []
-                for line in iter(commandobj.stdout.readline, ''):
-                    outlines.append(line)
-                commandobj.stdout.close()
-                for line in iter(commandobj.stderr.readline, ''):
-                    errlines.append(line)
-                commandobj.stderr.close()
-
+                # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
+                    for line in iter(commandobj.stdout.readline, ''):
+                        outlines.append(line)
+                    commandobj.stdout.close()
+                    for line in iter(commandobj.stderr.readline, ''):
+                        errlines.append(line)
+                    commandobj.stderr.close()
                     commandobj.wait()
 
                 if commandobj is not None:
