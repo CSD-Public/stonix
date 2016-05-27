@@ -301,7 +301,7 @@ administrators may want to disable this rule.
                               'polkit.service', 'postfix.service',
                               'poweroff.service', 'prefdm.service',
                               'procps.service',
-                              'procps',
+                              'procps', 'psacct.service',
                               'rc-local.service',
                               'rc.local',
                               'reboot.service',
