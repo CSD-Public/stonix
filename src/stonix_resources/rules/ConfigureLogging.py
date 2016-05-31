@@ -33,12 +33,12 @@ Created on May 20, 2013
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/01/22 eball Changed daemon log level from daemon.info to daemon.*
-
+@change: 2016/05/31 ekkehard Added OpenDirectory Logging
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
 from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
-from ..rule import Rule
+from ..ruleKVEditor import RuleKVEditor
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
@@ -49,14 +49,14 @@ import os
 import traceback
 import re
 import grp
-import pwd
 import stat
 
 
-class ConfigureLogging(Rule):
+class ConfigureLogging(RuleKVEditor):
 
     def __init__(self, config, environ, logger, statechglogger):
-        Rule.__init__(self, config, environ, logger, statechglogger)
+        RuleKVEditor.__init__(self, config, environ, logger,
+                              statechglogger)
         self.logger = logger
         self.rulenumber = 16
         self.rulename = "ConfigureLogging"
@@ -99,6 +99,20 @@ invalid."""
         self.logs = {"rsyslog": False,
                      "syslog": False}
         self.created1, self.created2 = True, True
+        if self.environ.getostype() == "Mac OS X":
+            self.addKVEditor("OpenDirectoryLogging",
+                             "defaults",
+                             "/Library/Preferences/OpenDirectory/opendirectoryd",
+                             "",
+                             {'"Debug Logging Level"': ["5", "5"]},
+                             "present",
+                             "",
+                             "Set OpenDirectory Logging Level to '5' " +
+                             "This show user creationg and deletion events " + \
+                             "in '/private/var/log/opendirectoryd.log'.",
+                             None,
+                             False,
+                             {None})
 
     def report(self):
         '''ConfigureLogging.report() Public method to report on the
@@ -1419,7 +1433,7 @@ because these values are optional\n"
 
     def reportMac(self):
         debug = ""
-        compliant = True
+        compliant = RuleKVEditor.report(self, True)
         self.macDirs = ["/var/log/cron.log",
                         "/var/log/daemon.log",
                         "/var/log/kern.log",
@@ -1601,7 +1615,7 @@ because these values are optional\n"
         aslfile = "/etc/asl.conf"
         service = "/System/Library/LaunchDaemons/com.apple.syslogd.plist"
         servicename = "com.apple.syslogd"
-        success = True
+        success = RuleKVEditor.fix(self, True)
         debug = ""
         universal = "#The following lines were added by stonix\n"
         for path in self.macDirs:
