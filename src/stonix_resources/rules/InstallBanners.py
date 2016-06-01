@@ -212,6 +212,12 @@ class InstallBanners(RuleKVEditor):
             if os.path.exists(loc):
                 self.gdmdir = loc
 
+        self.locksdir = self.gdmdir + 'locks/'
+        self.locksfile = self.locksdir + '00-required-locks'
+        self.locksettings = {'/org/gnome/login-screen/banner-message-enable': False,
+                             '/org/gnome/login-screen/banner-message-text': False,
+                             '/org/gnome/login-screen/disable-user-list': False}
+
         bannermessagefile = '01-banner-message'
         self.bannerfile = self.gdmdir + bannermessagefile
 
@@ -943,8 +949,46 @@ class InstallBanners(RuleKVEditor):
                     retval = False
                     self.detailedresults += '\ncould not locate required configuration options in ' + str(self.bannerfile)
 
+            if not self.reportlocks():
+                retval = False
+
         except Exception:
             raise
+        return retval
+
+    def reportlocks(self):
+        '''
+        report status of configuration settings locks for gnome3
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not os.path.exists(self.locksfile):
+                retval = False
+                self.detailedresults += "The locks file does not exist."
+            else:
+                f = open(self.locksfile, 'r')
+                contentlines = f.readlines()
+                f.close()
+                for line in contentlines:
+                    for item in self.locksettings:
+                        if re.search(item.strip(), line):
+                            self.locksettings[item] = True
+
+                for item in self.locksettings:
+                    if not self.locksettings[item]:
+                        retval = False
+                        self.detailedresults += "Required lock setting: " + str(item) + " is missing from the locks file."
+
+        except Exception:
+            raise
+
         return retval
 
     def reportlightdm(self):
@@ -1244,6 +1288,8 @@ class InstallBanners(RuleKVEditor):
                 if not self.setFileContents(self.bannerfile, self.gnome3optlist):
                     retval = False
                     self.detailedresults += '\nunable to create gdm banner file: ' + str(self.bannerfile)
+                if not self.fixlocks():
+                    retval = False
                 if not self.cmdhelper.executeCommand(self.dconfupdate):
                     retval = False
                     output = self.cmdhelper.getOutputString()
@@ -1282,6 +1328,52 @@ class InstallBanners(RuleKVEditor):
                         self.detailedresults += '\nEncountered a problem trying to run command: dpkg-reconfigure gdm3\nError was: ' + str(errout)
         except Exception:
             raise
+        return retval
+
+    def fixlocks(self):
+        '''
+        create and/or configure locks file for gdm3 settings
+
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not os.path.exists(self.locksdir):
+                os.mkdir(self.locksdir)
+
+            if not os.path.exists(self.locksfile):
+                f = open(self.locksfile, 'w')
+                f.write('')
+                f.close()
+
+            f = open(self.locksfile, 'r')
+            contentlines = f.readlines()
+            f.close()
+
+            for line in contentlines:
+                for item in self.locksettings:
+                    if re.search(item.strip(), line):
+                        self.locksettings[item] = True
+
+            for item in self.locksettings:
+                if not self.locksettings[item]:
+                    contentlines.append('\n' + item)
+
+            tf = self.locksfile + '.stonixtmp'
+            f = open(tf, 'w')
+            f.writelines(contentlines)
+            f.close()
+
+            os.rename(tf, self.locksfile)
+            os.chmod(self.locksfile, 0644)
+            os.chown(self.locksfile, 0, 0)
+
+        except Exception:
+            raise
+
         return retval
 
     def fixlightdm(self):
