@@ -33,6 +33,7 @@ Created on Feb 19, 2013
 @change: 2015/09/23 eball Removed Banner setting to resolve InstallBanners conflict
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2016/06/01 dwalker - new additions for ssh idle time out and ciphers
 '''
 from __future__ import absolute_import
 import os
@@ -77,6 +78,15 @@ appropriate contents in them whether installed or not.'''
                        "of SECURESSH to False"
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
+        
+        datatype = 'bool'
+        key = "SETIDLETIMEOUT"
+        instructions = "If this is enabled, the ssh session with exit " + \
+            "if there is no activity for 15 minutes.  This is enabled by " + \
+            "default.  To disable this set the value of SETIDLETIMEOUT " + \
+            "to False"
+        default = True
+        self.timeoutci = self.initCi(datatype, key, instructions, default)
         self.guidance = ['CIS, NSA(3.5.2.1)', 'CCE 4325-7', 'CCE 4726-6',
                          'CCE 4475-0', 'CCE 4370-3', 'CCE 4387-7',
                          'CCE 3660-8', 'CCE 4431-3', 'CCE 14716-5',
@@ -105,8 +115,10 @@ appropriate contents in them whether installed or not.'''
                            "GSSAPIAuthentication": "yes",
                            "GSSAPICleanupCredentials": "yes",
                            "UsePAM": "yes",
-                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
-                           "PermitUserEnvironment": "no"}
+                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc",
+                           "PermitUserEnvironment": "no",
+                           "ClientAliveInterval": "900",
+                           "ClientAliveCountMax": "0"}
             self.detailedresults = ""
             compliant = True
             debug = ""
@@ -241,11 +253,16 @@ appropriate contents in them whether installed or not.'''
                     else:
                         if not setPerms(self.path1, [0, 0, 420], self.logger):
                             self.rulesuccess = False
-                if self.ed1.fixables or self.ed1.removeables:
+                if self.ed1.fixables:
                     if not created1:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.ed1.setEventID(myid)
+                    if not self.timeoutci.getcurrvalue():
+                        if "ClientAliveInterval" in self.ed1.fixables:
+                            del(self.ed1.fixables["ClientAliveInterval"])
+                        if "ClientAliveCountMax" in self.ed1.fixables:
+                            del(self.ed1.fixables["ClientAliveCountMax"])
                     if self.ed1.fix():
                         self.detailedresults += "kveditor1 fix ran successfully\n"
                         if self.ed1.commit():
