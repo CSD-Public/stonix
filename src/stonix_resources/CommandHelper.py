@@ -506,8 +506,8 @@ class CommandHelper(object):
                 # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
                     outs, errs = commandobj.communicate()
-                    outlines = str(outs).split("\n")
-                    errlines = str(errs).split("\n")
+                    outlines = str(outs).splitlines()
+                    errlines = str(errs).splitlines()
 
                 if commandobj is not None:
                     self.stdout = outlines
