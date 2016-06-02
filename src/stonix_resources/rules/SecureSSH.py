@@ -253,7 +253,7 @@ appropriate contents in them whether installed or not.'''
                     else:
                         if not setPerms(self.path1, [0, 0, 420], self.logger):
                             self.rulesuccess = False
-                if self.ed1.fixables:
+                if self.ed1.fixables or self.ed1.removeables:
                     if not created1:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
