@@ -162,46 +162,6 @@ class NetworkTuning(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-    def fix(self):
-        '''Main parent fix method that calls the sub fix methods
-        @return: bool'''
-        try:
-            if not self.networkTuning2 and not self.networkTuning1:
-                return
-            self.detailedresults = ""
-
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-
-            success1, success2 = True, True
-            if self.environ.getosfamily() == "linux":
-                success1 = self.fixLinux()
-            elif self.environ.getosfamily() == "freebsd":
-                success1 = self.fixFreebsd()
-            elif self.environ.getosfamily() == "darwin":
-                success1 = self.fixMac()
-            elif self.environ.getosfamily() == "solaris":
-                if self.networkTuning1.getcurrvalue():
-                    success1 = self.fixSolaris1()
-                if self.networkTuning2.getcurrvalue():
-                    success2 = self.fixSolaris2()
-            if success1 and success2:
-                self.rulesuccess = True
-            else:
-                self.rulesuccess = False
-            return
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
     def reportLinux1(self):
@@ -228,16 +188,16 @@ class NetworkTuning(Rule):
                    "net.ipv4.tcp_max_syn_backlog": "4096"}
             kvtype = "conf"
             intent = "present"
-            self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, self.path, self.tmpPath, lfc,
-                                         intent, "openeq")
-            if not self.editor.report():
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    kvtype, self.path, self.tmpPath, lfc,
+                                    intent, "openeq")
+            if not editor.report():
                 self.detailedresults += self.path + " is not configured " + \
-                    "correctly for checked configuration item 1\n"
+                    "correctly for configuration item 1\n"
                 compliant = False
             else:
                 self.detailedresults += self.path + " is configured " + \
-                    "correctly for checked configuration item 1\n"
+                    "correctly for configuration item 1\n"
             if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.path + ": Expected 644, found " + \
@@ -258,26 +218,18 @@ class NetworkTuning(Rule):
             lfc = {"net.ipv4.conf.default.send_redirects": "0",
                    "net.ipv4.conf.all.send_redirects": "0",
                    "net.ipv4.ip_forward": "0"}
-            if not self.networkTuning1.getcurrvalue():
-                kvtype = "conf"
-                intent = "present"
-                self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                             kvtype, self.path, self.tmpPath,
-                                             lfc, intent, "openeq")
-            else:
-                self.editor.setData(lfc)
-            if not self.editor.report():
+            kvtype = "conf"
+            intent = "present"
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    kvtype, self.path, self.tmpPath,
+                                    lfc, intent, "openeq")
+            if not editor.report():
                 self.detailedresults += self.path + " is not configured " + \
-                    "correctly for checked configuration item 2\n"
+                    "correctly for configuration item 2\n"
                 compliant = False
             else:
                 self.detailedresults += self.path + " is configured " + \
-                    "correctly for checked configuration item 2\n"
-            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-                self.detailedresults += "Permissions are incorrect on " + \
-                    self.path + ": Expected 644, found " + \
-                    getOctalPerms(self.path) + "\n"
-                compliant = False
+                    "correctly for configuration item 2\n"
         return compliant
 
     def reportMac2(self):
@@ -545,6 +497,43 @@ class NetworkTuning(Rule):
                 compliant = False
         return compliant
 
+    def fix(self):
+        '''Main parent fix method that calls the sub fix methods
+        @return: bool'''
+        try:
+            self.detailedresults = ""
+            success = True
+            if self.networkTuning2 or self.networkTuning1:
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+
+                if self.environ.getosfamily() == "linux":
+                    success = self.fixLinux()
+                elif self.environ.getosfamily() == "freebsd":
+                    success = self.fixFreebsd()
+                elif self.environ.getosfamily() == "darwin":
+                    success = self.fixMac()
+                elif self.environ.getosfamily() == "solaris":
+                    if self.networkTuning1.getcurrvalue():
+                        success = self.fixSolaris1()
+                    if self.networkTuning2.getcurrvalue():
+                        success &= self.fixSolaris2()
+            if success:
+                self.rulesuccess = True
+            else:
+                self.rulesuccess = False
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
     def fixLinux(self):
         success = True
         if not os.path.exists(self.path):
@@ -554,30 +543,56 @@ class NetworkTuning(Rule):
                 event = {"eventtype": "creation", "filepath": self.path}
                 self.statechglogger.recordchgevent(myid, event)
             else:
+                self.detailedresults += "Could not create file " + self.path + \
+                    "\n"
                 return False
         if self.networkTuning1.getcurrvalue() or \
                 self.networkTuning2.getcurrvalue():
-            if self.editor.fixables:
+            lfc = {}
+            if self.networkTuning1.getcurrvalue():
+                lfc.update({"net.ipv4.conf.all.secure_redirects": "0",
+                            "net.ipv4.conf.all.accept_redirects": "0",
+                            "net.ipv4.conf.all.rp_filter": "1",
+                            "net.ipv4.conf.all.log_martians": "1",
+                            "net.ipv4.conf.all.accept_source_route": "0",
+                            "net.ipv4.conf.default.accept_redirects": "0",
+                            "net.ipv4.conf.default.secure_redirects": "0",
+                            "net.ipv4.conf.default.rp_filter": "1",
+                            "net.ipv4.conf.default.accept_source_route": "0",
+                            "net.ipv4.tcp_syncookies": "1",
+                            "net.ipv4.icmp_echo_ignore_broadcasts": "1",
+                            "net.ipv4.tcp_max_syn_backlog": "4096"})
+            if self.networkTuning2.getcurrvalue():
+                lfc.update({"net.ipv4.conf.default.send_redirects": "0",
+                            "net.ipv4.conf.all.send_redirects": "0",
+                            "net.ipv4.ip_forward": "0"})
+            kvtype = "conf"
+            intent = "present"
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    kvtype, self.path, self.tmpPath,
+                                    lfc, intent, "openeq")
+            if not editor.report():
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
-                if not self.editor.fix():
+                editor.setEventID(myid)
+                if editor.fix():
+                    if not editor.commit():
+                        success = False
+                        self.detailedresults += "KVEditor commit to " + \
+                            self.path + " was not successful\n"
+                else:
                     success = False
-                elif not self.editor.commit():
-                    success = False
+                    self.detailedresults += "KVEditor fix of " + self.path + \
+                        " was not successful\n"
                 resetsecon(self.path)
-                cmd = ["/sbin/sysctl", "-q", "-e", "-p"]
-                self.ch.executeCommand(cmd)
-                if self.ch.getReturnCode() != 0:
-                    self.detailedresults += "Unable to restart sysctl\n"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.detailedresults += "Could not set permissions on " + \
+                        self.path + "\n"
                     success = False
-        if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.path, [0, 0, 0o644], self.logger,
-                            self.statechglogger, myid):
-                success = False
         return success
 
     def fixMac(self):
@@ -613,12 +628,14 @@ class NetworkTuning(Rule):
                     self.detailedresults += "KVEditor fix of " + self.path + \
                         " was not successful\n"
                 resetsecon(self.path)
-        if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.path, [0, 0, 0o644], self.logger,
-                            self.statechglogger, myid):
-                success = False
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.detailedresults += "Could not set permissions on " + \
+                        self.path + "\n"
+                    success = False
         return success
 
     def fixSolaris1(self):
