@@ -28,6 +28,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 03/04/2013 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/06/01 eball Added statechglogger to FileHelper parameters
 '''
 from __future__ import absolute_import
 import unittest
@@ -50,7 +51,7 @@ class zzzTestRuleNetworkTuning(RuleTest):
                                   self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
 
     def tearDown(self):
         pass
@@ -75,13 +76,12 @@ class zzzTestRuleNetworkTuning(RuleTest):
                               }
                 for filelabel, fileinfo in sorted(self.files.items()):
                     success = self.fh.addFile(filelabel,
-                                                    fileinfo["path"],
-                                                    fileinfo["remove"],
-                                                    fileinfo["content"],
-                                                    fileinfo["permissions"],
-                                                    fileinfo["owner"],
-                                                    fileinfo["group"]
-                                                    )
+                                              fileinfo["path"],
+                                              fileinfo["remove"],
+                                              fileinfo["content"],
+                                              fileinfo["permissions"],
+                                              fileinfo["owner"],
+                                              fileinfo["group"])
                     if not success:
                         break
             if success:
@@ -97,9 +97,9 @@ class zzzTestRuleNetworkTuning(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -112,7 +112,7 @@ class zzzTestRuleNetworkTuning(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -125,7 +125,7 @@ class zzzTestRuleNetworkTuning(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
