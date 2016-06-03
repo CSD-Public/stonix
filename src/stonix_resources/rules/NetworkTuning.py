@@ -91,7 +91,7 @@ class NetworkTuning(Rule):
         self.solarisRou = False
         self.missing = []
         self.iditerator = 0
-        self.editor = ""
+        self.editor = None
         self.ch = CommandHelper(self.logger)
 
     def __InitializeNetworkTuning1(self):
@@ -591,14 +591,27 @@ class NetworkTuning(Rule):
             else:
                 return False
         if self.networkTuning2.getcurrvalue():
-            if self.editor.fixables:
+            if not self.editor:
+                mfc = {"net.inet.ip.forwarding": "0",
+                       "net.inet.ip.redirect": "0"}
+                kvtype = "conf"
+                intent = "present"
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             kvtype, self.path, self.tmpPath,
+                                             mfc, intent, "closedeq")
+            if not self.editor.report():
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.editor.setEventID(myid)
-                if not self.editor.fix():
+                if self.editor.fix():
+                    if not self.editor.commit():
+                        success = False
+                        self.detailedresults += "KVEditor commit to " + \
+                            self.path + " was not successful\n"
+                else:
                     success = False
-                elif not self.editor.commit():
-                    success = False
+                    self.detailedresults += "KVEditor fix of " + self.path + \
+                        " was not successful\n"
                 resetsecon(self.path)
         if not checkPerms(self.path, [0, 0, 0o644], self.logger):
             self.iditerator += 1
