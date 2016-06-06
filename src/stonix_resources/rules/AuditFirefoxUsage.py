@@ -36,8 +36,12 @@ from ..rule import Rule
 from glob import glob
 import os
 import re
-import sqlite3
 import traceback
+
+try:
+    import sqlite3
+except ImportError:
+    pass
 
 
 class AuditFirefoxUsage(Rule):
