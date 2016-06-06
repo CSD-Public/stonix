@@ -1280,6 +1280,9 @@ has been called a second time. The previous results are displayed. '''
                             os.chmod(wwfile, 01777)
                         except (OSError):
                             # catch OSError because we may be NFS or RO
+                            self.logger.log(LogPriority.DEBUG,
+                                            ['FilePermissions.fix',
+                                             str(traceback.format_exc())])
                             continue
                     elif os.path.isfile(wwfile) and re.match(pathre, wwfile):
                         # File is in the root users path, remove world write
@@ -1302,6 +1305,9 @@ has been called a second time. The previous results are displayed. '''
                             os.chmod(wwfile, newmode)
                         except (OSError):
                             # catch OSError because we may be NFS or RO
+                            self.logger.log(LogPriority.DEBUG,
+                                            ['FilePermissions.fix',
+                                             str(traceback.format_exc())])
                             continue
             if self.fixgw.getcurrvalue():
                 for gwfile in self.gwfiles:
@@ -1326,11 +1332,17 @@ has been called a second time. The previous results are displayed. '''
                         continue
             if self.fixroot.getcurrvalue():
                 for nrofile in self.nrofiles:
-                    os.chown(nrofile, 0, -1)
                     self.logger.log(LogPriority.DEBUG,
                                     ["FilePermissions.fix",
                                      "Changing owner of " + str(nrofile) +
                                      " to root"])
+                    try:
+                        os.chown(nrofile, 0, -1)
+                    except OSError:
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['FilePermissions.fix',
+                                         str(traceback.format_exc())])
+                        continue
             # Re-run gwreport(), so that group writable and non-root owned
             # lists are updated
             self.gwreport()
