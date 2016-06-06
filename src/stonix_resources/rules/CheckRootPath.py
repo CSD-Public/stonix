@@ -135,6 +135,8 @@ entries.'''
                 pathEntries = os.listdir(exPath)
                 for entry in pathEntries:
                     absPath = exPath + "/" + entry
+                    if not os.path.exists(absPath):
+                        continue
                     entryStat = os.stat(absPath)
                     userMode = oct(entryStat.st_mode)[-1]
                     if userMode == "7" or userMode == "6" or userMode == "2":
