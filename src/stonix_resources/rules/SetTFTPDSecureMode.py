@@ -25,6 +25,8 @@
 Created on Apr 20, 2016
 
 @author: dwalker
+@change: 2016/06/06 dwalker updated applicability to not run on Mac until
+    configuration on Mac OS X is fully researched.
 '''
 
 from __future__ import absolute_import
@@ -63,8 +65,7 @@ mode.'''
         self.iditerator = 0
         self.editor = ""
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'family': ['linux', 'solaris', 'freebsd']}
         
     def report(self):
         try:
@@ -238,7 +239,9 @@ mode.'''
                 self.statechglogger.deleteentry(event)
             if not self.tftpdci.getcurrvalue():
                 return
-            if self.ph.manager == "apt-get":
+            if self.environ.getostype() == "Mac OS X":
+                success = self.fixMac()
+            elif self.ph.manager == "apt-get":
                 if os.path.exists(self.tftpFile):
                     success = self.fixDebianSys()
             else:
@@ -420,3 +423,6 @@ mode.'''
                 "to " + self.tftpFile + " file.\n"
             success = False
         return success
+    
+    def fixMac(self):
+        pass
