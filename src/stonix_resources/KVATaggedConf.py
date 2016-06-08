@@ -104,9 +104,11 @@ class KVATaggedConf():
             missing = {}
             present = {}
             for line in contents:
+                print line + "\n\n"
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
-                elif re.search(re.escape("^\[" + tag + "\]"), line.strip()):
+                elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
+                    print "found tag!!!!\n\n"
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -114,7 +116,7 @@ class KVATaggedConf():
                     for line2 in temp:
                         if re.search("^#", line2) or re.match('^\s*$', line2):
                             iter2 += 1
-                        elif re.search(re.escape("^\[.*\]$"), line2):
+                        elif re.search("^\[.*\]$", line2):
                             contents2 = temp[:iter2]
                             break
                         elif iter2 == length:
@@ -124,6 +126,7 @@ class KVATaggedConf():
                 else:
                     iter1 += 1
             if not foundtag:
+                print "didn't find tag!!\n\n"
                 return dict1
             if contents2:
                 if self.intent == "present":
