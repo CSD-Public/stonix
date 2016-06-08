@@ -106,7 +106,7 @@ class KVATaggedConf():
             for line in contents:
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
-                elif re.search("^\[" + tag + "\]", line.strip()):
+                elif re.search(re.escape("^\[" + tag + "\]"), line.strip()):
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -114,7 +114,7 @@ class KVATaggedConf():
                     for line2 in temp:
                         if re.search("^#", line2) or re.match('^\s*$', line2):
                             iter2 += 1
-                        elif re.search("^\[.*\]$", line2):
+                        elif re.search(re.escape("^\[.*\]$"), line2):
                             contents2 = temp[:iter2]
                             break
                         elif iter2 == length:
@@ -187,7 +187,7 @@ class KVATaggedConf():
                     for line2 in temp:
                         if re.search("^#", line2) or re.match('^\s*$', line2):
                             iter2 += 1
-                        elif re.search("^\[.*\]$", line2):
+                        elif re.search(re.escape("^\[.*\]$"), line2):
                             contents2 = temp[:iter2]
                             break
                         elif iter2 == length:
@@ -209,7 +209,7 @@ class KVATaggedConf():
                                 temp = line.strip().split(" ")
                                 if len(temp) != 2:  # there were more than one blank space
                                     return "invalid"
-                                if re.search("^" + key + "$", temp[0].strip()):
+                                if re.search(re.escape("^" + key + "$"), temp[0].strip()):
                                     if temp[1].strip() == dict1[key]:
                                         found = True
                                         continue
