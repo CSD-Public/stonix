@@ -58,14 +58,21 @@ class ConfigureProfileManagement(Rule):
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
-        datatype = "bool"
-        key = "PASSCODECONFIG"
-        instructions = "To disable this rule set the value of " + \
-            "PASSCODECONFIG to False"
-        default = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.10', 'r', '10.11.13']}}
-        self.ci = self.initCi(datatype, key, instructions, default)
+        datatype = "bool"
+        key = "PASSCODECONFIG"
+        instructions = "To disable the installation of the password " + \
+            "profile set the value of PASSCODECONFIG to False"
+        default = True
+        self.pwci = self.initCi(datatype, key, instructions, default)
+        
+        datatype = "bool"
+        key = "SECURITYCONFIG"
+        instructions = "To disable the installation of the security " + \
+            "profile set the value of SECURITYCONFIG to False"
+        default = True
+        self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
 
     def report(self):
@@ -90,19 +97,31 @@ class ConfigureProfileManagement(Rule):
                    "SPConfigurationProfileDataType"]
             self.ch = CommandHelper(self.logger)
             self.neededprofiles = []
+            self.profpaths = {}
             '''form key = val;'''
-
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                   {"allowSimple": ["1", "bool"],
                                    "forcePIN": ["1", "bool"],
-                                   "maxFailedAttempts": ["4", "int", "less"],
+                                   "maxFailedAttempts": ["5", "int", "less"],
                                    "maxPINAgeInDays": ["180", "int", "more"],
                                    "minComplexChars": ["1", "int", "more"],
-                                   "minLength": ["14", "int", "more"],
+                                   "minLength": ["8", "int", "more"],
                                    "minutesUntilFailedLoginReset":
                                    ["15", "int", "more"],
                                    "pinHistory": ["5", "int", "more"],
                                    "requireAlphanumeric": ["1", "bool"]}}
+            '''STIG dictionary'''
+#             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
+#                                   {"allowSimple": ["1", "bool"],
+#                                    "forcePIN": ["1", "bool"],
+#                                    "maxFailedAttempts": ["4", "int", "less"],
+#                                    "maxPINAgeInDays": ["180", "int", "more"],
+#                                    "minComplexChars": ["1", "int", "more"],
+#                                    "minLength": ["14", "int", "more"],
+#                                    "minutesUntilFailedLoginReset":
+#                                    ["15", "int", "more"],
+#                                    "pinHistory": ["5", "int", "more"],
+#                                    "requireAlphanumeric": ["1", "bool"]}}
             self.spprofiledict = {"com.apple.screensaver": "",
                                   "com.apple.loginwindow": "",
                                   "com.apple.systempolicy.managed": "",
@@ -111,25 +130,30 @@ class ConfigureProfileManagement(Rule):
                                   "com.apple.MCX": "",
                                   "com.apple.applicationaccess": "",
                                   "com.apple.systempolicy.control": ""}
-
-            self.profpaths = \
-                {os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
+#             if self.pwci.getcurrvalue():
+#                 self.profpaths[os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
+#                  "/stonix_resources/files/stonix4macPasscodeProfileFor" +
+#                  "OSXElCapitan10.11STIG.mobileconfig"] = self.pwprofiledict
+            if self.pwci.getcurrvalue():
+                self.profpaths[os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
                  "/stonix_resources/files/stonix4macPasscodeProfileFor" +
-                 "OSXElCapitan10.11STIG.mobileconfig": self.pwprofiledict,
-                 os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
+                 "OSXElCapitan10.11.mobileconfig"] = self.pwprofiledict
+            if self.sci.getcurrvalue():
+                self.profpaths[os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
                  "/stonix_resources/files/stonix4macSecurity&Privacy" +
-                 "ForOSXElCapitan10.11.mobileconfig": self.spprofiledict}
+                 "ForOSXElCapitan10.11.mobileconfig"] = self.spprofiledict
             '''Run the system_proflier command'''
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
                 if output:
-                    for profilepath, values in self.profpaths.iteritems():
-                        self.editor = KVEditorStonix(self.statechglogger,
-                                                     self.logger, "profiles",
-                                                     "", "", values, "", "",
-                                                     output)
-                        if not self.editor.report():
-                            self.neededprofiles.append(profilepath)
+                    if self.profpaths:
+                        for profilepath, values in self.profpaths.iteritems():
+                            self.editor = KVEditorStonix(self.statechglogger,
+                                                         self.logger, "profiles",
+                                                         "", "", values, "", "",
+                                                         output)
+                            if not self.editor.report():
+                                self.neededprofiles.append(profilepath)
                 else:
                     self.detailedresults += "There are no profiles installed\n"
                     for profile in self.profpaths:
@@ -157,7 +181,7 @@ class ConfigureProfileManagement(Rule):
 
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
+            if not self.pwci.getcurrvalue() and not self.sci.getcurrvalue():
                 return
             self.detailedresults = ""
 
@@ -166,13 +190,13 @@ class ConfigureProfileManagement(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             success = True
-            pathsexist = True
+            profileexist = True
             if self.neededprofiles:
                 for profilepath in self.profpaths:
                     if not os.path.exists(profilepath):
-                        pathsexist = False
+                        profileexist = False
                         break
-                if not pathsexist:
+                if not profileexist:
                     self.detailedresults += "You need profiles installed " + \
                         "but you don't have all the necessary profiles\n"
                     success = False
