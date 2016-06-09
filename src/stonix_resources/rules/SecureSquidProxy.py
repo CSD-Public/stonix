@@ -28,7 +28,7 @@ Created on Jul 7, 2015
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, readFile, writeFile
+from ..stonixutilityfunctions import resetsecon, readFile, writeFile, createFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
@@ -49,11 +49,12 @@ class SecureSquidProxy(Rule):
 
         datatype1 = "bool"
         key1 = "SECURESQUIDPROXY"
-        instructions1 = '''To disable this rule set the value of \
-        SECURESQUIDPROXY to False.  MinimizeServices rule disables squid \
-        by default however this rule will still configure it if installed'''
+        instructions1 = "To disable this rule set the value of " + \
+            "SECURESQUIDPROXY to False.  MinimizeServices rule disables " + \
+            "squid by default however this rule will still configure it " + \
+            "if installed"
         default1 = True
-        self.ci1 = self.initCi(datatype1, key1, instructions1, default1)
+        self.ci = self.initCi(datatype1, key1, instructions1, default1)
 
         self.guidance = ["NSA 3.19", "CCE 4454-5", "CCE 4353-9", "CCE 4503-9",
                          "CCE 3585-7", "CCE 4419-8", "CCE 3692-1",
@@ -76,27 +77,23 @@ class SecureSquidProxy(Rule):
             debug = ""
             self.ph = Pkghelper(self.logger, self.environ)
             if self.ph.check("squid"):
-                if self.ph.manager in ("zypper", "yum"):
-                    self.path = "/etc/squid/squid.conf"
-                elif self.ph.manager == "apt-get":
-                    self.path = "/etc/squid3/squid.conf"
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
-                    self.detailedresults += "Permissions are not correct " + \
-                        "on " + self.path + "\n"
-                self.data1 = {"ftp_passive": "ftp_passive on",
-                              "ftp_sanitycheck": "ftp_sanitycheck on",
-                              "check_hostnames": "check_hostnames on",
-                              "request_header_max_size": "request_header_max_size 20 KB",
-                              "reply_header_max_size": "reply_header_max_size 20 KB",
-                              "cache_effective_user": "cache_effective_user squid",
-                              "cache_effective_group": "cache_effective_group squid",
-                              "ignore_unknown_nameservers": "ignore_unknown_nameservers on",
-                              "allow_underscore": "allow_underscore off",
-                              "httpd_suppress_version_string": "httpd_suppress_version_string on",
-                              "forwarded_for": "forwarded_for off",
-                              "log_mime_hdrs": "log_mime_hdrs on"}
-                self.data2 = "http access deny to_localhost"
-
+                if self.ph.manager == "apt-get":
+                    self.squidfile = "/etc/squid3/squid.conf"
+                else:
+                    self.squidfile = "/etc/squid/squid.conf"
+                self.data1 = {"ftp_passive": "on",
+                              "ftp_sanitycheck": "on",
+                              "check_hostnames": "on",
+                              "request_header_max_size": "20 KB",
+                              "reply_header_max_size": "20 KB",
+                              "cache_effective_user": "squid",
+                              "cache_effective_group": "squid",
+                              "ignore_unknown_nameservers": "on",
+                              "allow_underscore": "off",
+                              "httpd_suppress_version_string": "on",
+                              "forwarded_for": "off",
+                              "log_mime_hdrs": "on"}
+                self.data2 = {"http_access": "deny to_localhost"}
                 #make sure these aren't in the file
                 self.denied = ["acl Safe_ports port 70",
                                "acl Safe_ports port 210",
@@ -104,44 +101,72 @@ class SecureSquidProxy(Rule):
                                "acl Safe_ports port 488",
                                "acl Safe_ports port 591",
                                "acl Safe_ports port 777"]
-                contents = readFile(self.path, self.logger)
-                for key in self.data1:
-                    found = False
-                    for line in contents:
-                        if re.match('^#', line) or re.match(r'^\s*$', line):
-                            continue
-                        elif re.search(key, line):
-                            if found:
-                                continue
-                            temp = line.strip()
-                            temp = re.sub("\s+", " ", temp)
-                            if re.search("^" + key, line):
-                                if re.search(self.data1[key], temp):
+                if os.path.exists(self.squidfile):
+                    if not checkPerms(self.squidfile, [0, 0, 420], self.logger):
+                        self.detailedresults += "Permissions are not correct " + \
+                            "on " + self.squidfile + "\n"
+                    contents = readFile(self.squidfile, self.logger)
+                    if contents:
+                        found = False
+                        for line in contents:
+                            if re.search("^http_access", line.strip()):
+                                temp = line.strip()
+                                temp = re.sub("\s+", " ", temp)
+                                temp = re.sub("http_access\s+", "", temp)
+                                if re.search("^deny to_localhost", temp):
                                     found = True
-                                else:
-                                    found = False
                                     break
-                    if not found:
-                        debug += key + " either not found or has wrong value\n"
-                        self.detailedresults += key + " either not found " + \
-                            "or has wrong value\n"
-                        compliant = False
-                if debug:
-                    self.logger.log(LogPriority.DEBUG, debug)
-                debug = ""
-                contents = readFile(self.path, self.logger)
-                for line in contents:
-                    if re.search("^" + "acl", line):
-                        temp = line.strip()
-                        temp = re.sub("\s+", " ", temp)
-                        if temp in self.denied:
-                            debug += "line: " + temp + \
-                                "should not exist in this file\n"
-                            self.detailedresults += "line: " + temp + \
-                                "should not exist in this file\n"
+                        if not found:
                             compliant = False
-                if debug:
-                    self.logger.log(LogPriority.DEBUG, debug)
+                        for key in self.data1:
+                            found = False
+                            for line in contents:
+                                if re.match('^#', line) or re.match(r'^\s*$', line):
+                                    continue
+                                elif re.search("^" + key + " ", line):
+                                    temp = line.strip()
+                                    temp = re.sub("\s+", " ", temp)
+                                    temp = temp.split(" ")
+                                    if len(temp) >= 3:
+                                        joinlist = [temp[1], temp[2]]
+                                        joinstring = " ".join(joinlist)
+                                        if self.data1[key] == joinstring:
+                                            found = True
+                                        else:
+                                            found = False
+                                            break
+                                    else:
+                                        if self.data1[key] == temp[1]:
+                                            found = True
+                                        else:
+                                            found = False
+                                            break
+                            if not found:
+                                debug += key + " either not found or has wrong value\n"
+                                self.detailedresults += key + " either not found " + \
+                                    "or has wrong value\n"
+                                compliant = False
+                        if debug:
+                            self.logger.log(LogPriority.DEBUG, debug)
+                        debug = ""
+                        for entry in self.denied:
+                            for line in contents:
+                                if re.search(entry + "\s+", line.strip()):
+                                    debug += "line: " + line + \
+                                        "should not exist in this file\n"
+                                    self.detailedresults += "line: " + line + \
+                                        "should not exist in this file\n"
+                                    compliant = False
+                        if debug:
+                            self.logger.log(LogPriority.DEBUG, debug)
+                    else:
+                        compliant = False
+                        self.detailedresults += "Contents of squid " + \
+                            "configuration file are blank\n"
+                else:
+                    compliant = False
+                    self.detailedresults += "squid configuration file " + \
+                        "doesn't exist\n"
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -157,71 +182,136 @@ class SecureSquidProxy(Rule):
     def fix(self):
         ''''''
         try:
+            if not self.ci.getcurrvalue():
+                return
             self.detailedresults = ""
-            if self.ci1.getcurrvalue():
-                deleted1 = []
-                deleted2 = []
-                self.iditerator = 0
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
-    
-                if self.ph.check("squid"):
-                    tempstring = ""
-                    contents = readFile(self.path, self.logger)
-                    if not checkPerms(self.path, [0, 0, 420], self.logger):
+            success = True
+            created = False
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+
+            if self.ph.check("squid"):
+                if not os.path.exists(self.squidfile):
+                    if not createFile(self.squidfile, self.logger):
+                        success = False
+                    else:
+                        created = True
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path, [0, 0, 420], self.logger,
+                        event = {"eventtype": "creation",
+                                 "filepath": self.squidfile}
+                        self.statechglogger.recordchgevent(myid, event)
+                if not checkPerms(self.squidfile, [0, 0, 420], self.logger):
+                    if not created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        if not setPerms(self.squidfile, [0, 0, 420], self.logger,
                                         self.statechglogger, myid):
                             success = False
+                    else:
+                        if not setPerms(self.squidfile, [0, 0, 420], self.logger):
+                            success = False
+                tempstring = ""
+                contents = readFile(self.squidfile, self.logger)
+                newcontents = []
+                if contents:
+                    '''Remove any undesired acl lines'''
+                    for line in contents:
+                        if re.match('^#', line) or re.match(r'^\s*$', line):
+                            newcontents.append(line)
+                        elif re.search("^acl Safe_ports port ", line.strip()):
+                            m = re.search("acl Safe_ports port ([0-9]+).*", line)
+                            if m.group(1):
+                                item = "acl Safe_ports port " + m.group(1)
+                                if item in self.denied:
+                                    continue
+                                else:
+                                    newcontents.append(line)
+                        else:
+                            newcontents.append(line)
+                    '''removeables list holds key vals we find in the file'''
+                    removeables = []
                     for key in self.data1:
-                        i = 0
                         found = False
-                        for line in contents:
+                        i = 0
+                        for line in reversed(newcontents):
                             if re.match('^#', line) or re.match(r'^\s*$', line):
                                 i += 1
                                 continue
-                            temp = line.strip()
-                            if re.search("^" + key, temp):
-    
+                            elif re.search("^" + key + " ", line):
+                                '''We already found this line and value
+                                No need for duplicates'''
                                 if found:
-                                    deleted1.append(contents.pop(i))
+                                    newcontents.remove(line)
                                     continue
+                                temp = line.strip()
                                 temp = re.sub("\s+", " ", temp)
-                                if re.search(self.data1[key], temp):
-                                    i += 1
-                                    found = True
-                                    continue
+                                temp = temp.split(" ")
+                                if len(temp) >= 3:
+                                    joinlist = [temp[1], temp[2]]
+                                    joinstring = " ".join(joinlist)
+                                    if self.data1[key] == joinstring:
+                                        removeables.append(key)
+                                        found = True
+                                    else:
+                                        continue
                                 else:
-                                    deleted1.append(contents.pop(i))
-                            else:
-                                i += 1
-                        if found:
-                            deleted2.append(key)
-                if deleted2:
-                    for item in deleted2:
-                        del self.data1[item]
-                for item in contents:
-                    tempstring += item
-                if self.data1:
-                    tempstring += "#The follwing lines were added by stonix\n"
-                    for item in self.data1:
-                        tempstring += self.data1[item] + "\n"
-                tmpfile = self.path + ".tmp"
-                if not writeFile(tmpfile, tempstring, self.logger):
-                    success = False
+                                    if self.data1[key] == temp[1]:
+                                        removeables.append(key)
+                                        found = True
+                    '''anything in removeables we found in the file so
+                    we will remove from the self.data1 dictionary'''
+                    if removeables:
+                        for item in removeables:
+                            del(self.data1[item])
+                    '''now check if there is anything left over in self.data1
+                    if there is we need to add that to newcontents list'''
+                    if self.data1:
+                        for item in self.data1:
+                            line = item + " " + self.data1[item] + "\n"
+                            newcontents.append(line)
+                    for item in newcontents:
+                        tempstring += item
+                    tmpfile = self.squidfile + ".tmp"
+                    if not writeFile(tmpfile, tempstring, self.logger):
+                        success = False
+                    else:
+                        if not created:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf",
+                                     "filepath": self.squidfile}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(self.squidfile,
+                                                                 tmpfile, myid)
+                            os.rename(tmpfile, self.squidfile)
+                            os.chown(self.squidfile, 0, 0)
+                            os.chmod(self.squidfile, 420)
+                            resetsecon(self.squidfile)
                 else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.path}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.path, tmpfile, myid)
-                    os.rename(tmpfile, self.path)
-                    os.chown(self.path, 0, 0)
-                    os.chmod(self.path, 420)
-                    resetsecon(self.path)
+                    tempstring = ""
+                    for item in self.data1:
+                        tempstring += item + " " + self.data1[item] + "\n"
+                    for item in self.data2:
+                        tempstring += item + " " + self.data2[item] + "\n"
+                    tmpfile = self.squidfile + ".tmp"
+                    if not writeFile(tmpfile, tempstring, self.logger):
+                        success = False
+                    else:
+                        if not created:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf",
+                                     "filepath": self.squidfile}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(self.squidfile,
+                                                                 tmpfile, myid)
+                        os.rename(tmpfile, self.squidfile)
+                        os.chown(self.squidfile, 0, 0)
+                        os.chmod(self.squidfile, 420)
+                        resetsecon(self.squidfile)
                 self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
