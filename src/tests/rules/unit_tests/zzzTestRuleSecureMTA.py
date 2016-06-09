@@ -67,6 +67,16 @@ class zzzTestRuleSecureMTA(RuleTest):
             self.pfPathlist = ['/etc/postfix/main.cf',
                                '/private/etc/postfix/main.cf',
                                '/usr/lib/postfix/main.cf']
+            pfpkgnames = ['postfix', 'squeeze', 'squeeze-backports',
+               'wheezy', 'jessie', 'sid', 'CNDpostfix', 'lucid',
+               'lucid-updates', 'lucid-backports', 'precise',
+               'precise-updates', 'quantal', 'quantal-updates',
+               'raring', 'saucy', 'wheezy-backports', 'postfix-current',
+               'trusty', 'trusty-updates', 'vivid', 'wily', 'xenial']
+            self.postfixpkg = ""
+            for pkg in pfpkgnames:
+                if self.ph.check(pkg):
+                    self.postfixpkg = pkg
             self.pfPath = ""
             for path in self.pfPathlist:
                 if os.path.exists(path):
@@ -82,10 +92,10 @@ class zzzTestRuleSecureMTA(RuleTest):
             elif self.origState[0] is False and self.ph.check("sendmail"):
                 self.ph.remove("sendmail")
 
-            if self.origState[1] is True and not self.ph.check("postfix"):
-                self.ph.install("postfix")
-            elif self.origState[1] is False and self.ph.check("postfix"):
-                self.ph.remove("postfix")
+            if self.origState[1] is True and not self.ph.check(self.postfixpkg):
+                self.ph.install(self.postfixpkg)
+            elif self.origState[1] is False and self.ph.check(self.postfixpkg):
+                self.ph.remove(self.postfixpkg)
 
             if self.origState[2] is True and os.path.exists(self.smTmp):
                 smDir = os.path.split(self.smPath)[0]
@@ -117,7 +127,7 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if self.ph.check("sendmail"):
                 self.origState[0] = True
-            if self.ph.check("postfix"):
+            if self.ph.check(self.postfixpkg):
                 self.origState[1] = True
             if os.path.exists(self.smPath):
                 self.origState[2] = True
@@ -131,8 +141,8 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if self.ph.check("sendmail"):
                 self.ph.remove("sendmail")
-            if self.ph.check("postfix"):
-                self.ph.remove("postfix")
+            if self.ph.check(self.postfixpkg):
+                self.ph.remove(self.postfixpkg)
             if os.path.exists(self.smPath):
                 os.remove(self.smPath)
             if os.path.exists(self.pfPath):
@@ -143,8 +153,8 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if not self.ph.check("sendmail"):
                 self.ph.install("sendmail")
-            if self.ph.check("postfix"):
-                self.ph.remove("postfix")
+            if self.ph.check(self.postfixpkg):
+                self.ph.remove(self.postfixpkg)
             if os.path.exists(self.smPath):
                 os.remove(self.smPath)
             if os.path.exists(self.pfPath):
@@ -155,8 +165,8 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if not self.ph.check("sendmail"):
                 self.ph.install("sendmail")
-            if not self.ph.check("postfix"):
-                self.ph.install("postfix")
+            if not self.ph.check(self.postfixpkg):
+                self.ph.install(self.postfixpkg)
             if os.path.exists(self.smPath):
                 os.remove(self.smPath)
             if os.path.exists(self.pfPath):
@@ -167,9 +177,14 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if not self.ph.check("sendmail"):
                 self.ph.install("sendmail")
-            if not self.ph.check("postfix"):
-                self.ph.install("postfix")
+            if not self.ph.check(self.postfixpkg):
+                self.ph.install(self.postfixpkg)
             if not os.path.exists(self.smPath):
+                splitpath = self.smPath.split('/')
+                del splitpath[-1]
+                subdir = "/".join(splitpath)
+                if not os.path.exists(subdir):
+                    os.makedirs(subdir, 0755)
                 open(self.smPath, "w")
             if os.path.exists(self.pfPath):
                 os.remove(self.pfPath)
@@ -179,11 +194,21 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if not self.ph.check("sendmail"):
                 self.ph.install("sendmail")
-            if not self.ph.check("postfix"):
-                self.ph.install("postfix")
+            if not self.ph.check(self.postfixpkg):
+                self.ph.install(self.postfixpkg)
             if not os.path.exists(self.smPath):
+                splitpath = self.smPath.split('/')
+                del splitpath[-1]
+                subdir = "/".join(splitpath)
+                if not os.path.exists(subdir):
+                    os.makedirs(subdir, 0755)
                 open(self.smPath, "w")
             if not os.path.exists(self.pfPath):
+                splitpath = self.pfPath.split('/')
+                del splitpath[-1]
+                subdir = "/".join(splitpath)
+                if not os.path.exists(subdir):
+                    os.makedirs(subdir, 0755)
                 open(self.pfPath, "w")
             self.simpleRuleTest()
 
@@ -191,9 +216,14 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if not self.ph.check("sendmail"):
                 self.ph.install("sendmail")
-            if self.ph.check("postfix"):
-                self.ph.remove("postfix")
+            if self.ph.check(self.postfixpkg):
+                self.ph.remove(self.postfixpkg)
             if not os.path.exists(self.smPath):
+                splitpath = self.smPath.split('/')
+                del splitpath[-1]
+                subdir = "/".join(splitpath)
+                if not os.path.exists(subdir):
+                    os.makedirs(subdir, 0755)
                 open(self.smPath, "w")
             if os.path.exists(self.pfPath):
                 os.remove(self.pfPath)
@@ -203,8 +233,8 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if self.ph.check("sendmail"):
                 self.ph.remove("sendmail")
-            if not self.ph.check("postfix"):
-                self.ph.install("postfix")
+            if not self.ph.check(self.postfixpkg):
+                self.ph.install(self.postfixpkg)
             if os.path.exists(self.smPath):
                 os.remove(self.smPath)
             if os.path.exists(self.pfPath):
@@ -215,11 +245,16 @@ class zzzTestRuleSecureMTA(RuleTest):
         if not self.isMac:
             if self.ph.check("sendmail"):
                 self.ph.remove("sendmail")
-            if not self.ph.check("postfix"):
-                self.ph.install("postfix")
+            if not self.ph.check(self.postfixpkg):
+                self.ph.install(self.postfixpkg)
             if os.path.exists(self.smPath):
                 os.remove(self.smPath)
             if not os.path.exists(self.pfPath):
+                splitpath = self.pfPath.split('/')
+                del splitpath[-1]
+                subdir = "/".join(splitpath)
+                if not os.path.exists(subdir):
+                    os.makedirs(subdir, 0755)
                 open(self.pfPath, "w")
             self.simpleRuleTest()
 
