@@ -180,6 +180,8 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         @author: Breen Malmberg
         '''
 
+        packagename = ""
+
         self.logger.log(LogPriority.DEBUG, "Getting system-specific package name...")
 
         if not systemos:
@@ -192,7 +194,9 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         # set default variables for this method
         defaultpackagename = "kernel-PAE"
         syspkgdict = {"redhat": "kernel-PAE",
+                      "red hat": "kernel-PAE",
                       "centos": "kernel-PAE",
+                      "cent os": "kernel-PAE",
                       "fedora": "kernel-PAE",
                       "debian": "linux-generic-pae",
                       "ubuntu": "linux-generic-pae",
@@ -215,6 +219,10 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
             self.logger.log(LogPriority.DEBUG, "Unable to determine system-specific package name. Defaulting to " + str(defaultpackagename))
         except Exception:
             raise
+
+        if not packagename:
+            packagename = defaultpackagename
+
         return packagename
 
     def checkPAE(self, package):
