@@ -231,21 +231,18 @@ class SecureSquidProxy(Rule):
                                     newcontents.append(line)
                         else:
                             newcontents.append(line)
-                    '''removeables list holds key vals we find in the file'''
+                    '''removeables list holds key vals we find in the file
+                    that we can remove from self.data'''
                     removeables = []
+                    '''deleteables list holds key vals we can delete from 
+                    newcontents list if it's incorrect.'''
+                    deleteables = {}
                     for key in self.data1:
                         found = False
-                        i = 0
                         for line in reversed(newcontents):
                             if re.match('^#', line) or re.match(r'^\s*$', line):
-                                i += 1
                                 continue
-                            elif re.search("^" + key + " ", line):
-                                '''We already found this line and value
-                                No need for duplicates'''
-                                if found:
-                                    newcontents.remove(line)
-                                    continue
+                            elif re.search("^" + key + " ", line) or re.search("^" + key, line):
                                 temp = line.strip()
                                 temp = re.sub("\s+", " ", temp)
                                 temp = temp.split(" ")
@@ -253,14 +250,43 @@ class SecureSquidProxy(Rule):
                                     joinlist = [temp[1], temp[2]]
                                     joinstring = " ".join(joinlist)
                                     if self.data1[key] == joinstring:
+                                        '''We already found this line and value
+                                        No need for duplicates'''
+                                        if found:
+                                            newcontents.remove(line)
+                                            continue
                                         removeables.append(key)
                                         found = True
                                     else:
+                                        try:
+                                            deleteables[line] = ""
+                                        except Exception:
+                                            continue
                                         continue
-                                else:
+                                elif len(temp) == 2:
                                     if self.data1[key] == temp[1]:
+                                        '''We already found this line and value
+                                        No need for duplicates'''
+                                        if found:
+                                            newcontents.remove(line)
+                                            continue
                                         removeables.append(key)
                                         found = True
+                                    else:
+                                        try:
+                                            deleteables[line] = ""
+                                        except Exception:
+                                            continue
+                                        continue
+                                elif len(temp) == 1:
+                                    try:
+                                        deleteables[line] = ""
+                                    except Exception:
+                                        continue
+                                    continue
+                    if deleteables:
+                        for item in deleteables:
+                            newcontents.remove(item)
                     '''anything in removeables we found in the file so
                     we will remove from the self.data1 dictionary'''
                     if removeables:
@@ -272,6 +298,17 @@ class SecureSquidProxy(Rule):
                         for item in self.data1:
                             line = item + " " + self.data1[item] + "\n"
                             newcontents.append(line)
+                    for line in newcontents:
+                        found = False
+                        if re.search("^http_access", line.strip()):
+                            temp = line.strip()
+                            temp = re.sub("\s+", " ", temp)
+                            temp = re.sub("http_access\s+", "", temp)
+                            if re.search("^deny to_localhost", temp):
+                                found = True
+                                break
+                        if not found:
+                            newcontents.append("http_access deny to_localhost\n")
                     for item in newcontents:
                         tempstring += item
                     tmpfile = self.squidfile + ".tmp"
