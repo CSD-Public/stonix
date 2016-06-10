@@ -22,35 +22,34 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableRemoveableStorage
+This is a Unit Test for Rule RestrictAccessToKernelMessageBuffer
 
 @author: Breen Malmberg
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@change: 05/17/2016 original implementation
 '''
+
 from __future__ import absolute_import
-import unittest
 import sys
+import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableRemoveableStorage import DisableRemoveableStorage
+from src.stonix_resources.rules.RestrictAccessToKernelMessageBuffer import RestrictAccessToKernelMessageBuffer
 
 
-class zzzTestRuleDisableRemoveableStorage(RuleTest):
+class zzzTestRuleRestrictAccessToKernelMessageBuffer(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableRemoveableStorage(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = RestrictAccessToKernelMessageBuffer(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.rule.storageci.updatecurrvalue(True)
 
     def tearDown(self):
         pass
@@ -65,8 +64,45 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
+
         success = True
+        self.ch.executeCommand("sysctl -w kernel.dmesg_restrict=0")
         return success
+
+    def test_initobjs(self):
+        '''
+        test initobjs method of RestrictAccessToKernelMessageBuffer
+        '''
+
+        self.rule.initobjs()
+        self.assertFalse(self.rule.ch == None, "initobjs method should successfully initialize the command helper object self.ch within the rule.")
+
+    def test_localize(self):
+        '''
+        test localize method of RestrictAccessToKernelMessageBuffer
+        '''
+
+        self.rule.localize()
+        self.assertFalse(self.rule.fixcommand == "", "localize should set the fixcommand variable to the correct command string.")
+        self.assertFalse(self.rule.fixcommand == None, "localize should set the fixcommand variable to the correct command string.")
+        self.assertFalse(self.rule.reportcommand == "", "localize should set the reportcommand variable to the correct command string.")
+        self.assertFalse(self.rule.reportcommand == None, "localize should set the reportcommand variable to the correct command string.")
+
+    def test_reportFalse(self):
+        '''
+        test report return value in case of non compliant state
+        '''
+
+        self.ch.executeCommand("sysctl -w kernel.dmesg_restrict=0")
+        self.assertFalse(self.rule.report(), "when the kernel.dmesg_restrict option is set to 0, report should always return False")
+
+    def test_reportTrue(self):
+        '''
+        test report return value in case of compliant state
+        '''
+
+        self.ch.executeCommand("sysctl -w kernel.dmesg_restrict=1")
+        self.assertTrue(self.rule.report(), "when the kernel.dmesg_restrict option is set to 1, report should always return True")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

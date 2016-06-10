@@ -368,6 +368,9 @@ are an end user please report a bug.''')
         eventtype: conf | creation | deletion
         filepath: string
         ==========================================
+        eventtype: comm | commandstring (same function)
+        command: string | list
+        ==========================================
         eventtype: perms
         filepath: string
         startstate: [owner_uid, group_gid, mode]

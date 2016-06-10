@@ -22,35 +22,34 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableRemoveableStorage
+This is a Unit Test for Rule DisableInactiveAccounts
 
 @author: Breen Malmberg
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@change: 04/11/2016 original implementation
 '''
+
 from __future__ import absolute_import
-import unittest
 import sys
+import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableRemoveableStorage import DisableRemoveableStorage
+from src.stonix_resources.rules.AuditNetworkSniffing import AuditNetworkSniffing
 
 
-class zzzTestRuleDisableRemoveableStorage(RuleTest):
+class zzzTestRuleAuditNetworkSniffing(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableRemoveableStorage(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = AuditNetworkSniffing(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.rule.storageci.updatecurrvalue(True)
 
     def tearDown(self):
         pass
@@ -65,8 +64,49 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
+
         success = True
         return success
+
+    def test_initobjs(self):
+        '''
+        test the validity of the class objects
+
+        @author: Breen Malmberg
+        '''
+
+        self.rule.initobjs()
+        self.assertTrue(self.rule.cmdhelper)
+
+    def test_searchOutput(self):
+        '''
+        test the functionality of the searchOutput method
+
+        @author: Breen Malmberg
+        '''
+
+        testlist = ['stuff', 'otherstuff']
+        self.assertFalse(self.rule.searchOutput(testlist, 'searchterm'))
+        self.assertTrue(self.rule.searchOutput(testlist, 'stuff'))
+        self.assertFalse(self.rule.searchOutput('notalist', 'whatever'))
+        self.assertFalse(self.rule.searchOutput(testlist, testlist))
+
+    def test_vars_initd(self):
+        '''
+        test the functionality of the appendiName method
+
+        @author: Breen Malmberg
+        '''
+
+        self.rule.setup()
+
+        self.assertTrue(self.rule.command, "The self.command variable was not properly initialized")
+        self.assertTrue(self.rule.searchterm, "The self.searchterm variable was not properly initialized")
+        self.assertTrue(isinstance(self.rule.searchterm, basestring))
+        self.assertTrue(self.rule.cmdlinetool, "The self.cmdlinetool variable was not properly initialized")
+        self.assertTrue(isinstance(self.rule.cmdlinetool, basestring))
+        self.assertTrue(self.rule.lisl, "The self.lisl variable was not properly initialized")
+        self.assertTrue(isinstance(self.rule.lisl, int))
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

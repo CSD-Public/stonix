@@ -22,35 +22,34 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableRemoveableStorage
+This is a Unit Test for Rule EnablePAEandNX
 
 @author: Breen Malmberg
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@change: 5/9/2016 Original Implementation
 '''
 from __future__ import absolute_import
-import unittest
 import sys
+import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableRemoveableStorage import DisableRemoveableStorage
+from src.stonix_resources.rules.EnablePAEandNX import EnablePAEandNX
 
 
-class zzzTestRuleDisableRemoveableStorage(RuleTest):
+class zzzTestRuleEnablePAEandNX(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableRemoveableStorage(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = EnablePAEandNX(self.config,
+                                  self.environ,
+                                  self.logdispatch,
+                                  self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.rule.ci.updatecurrvalue(True)
         self.ch = CommandHelper(self.logdispatch)
-        self.rule.storageci.updatecurrvalue(True)
 
     def tearDown(self):
         pass
@@ -65,8 +64,51 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
+
         success = True
         return success
+
+    def test_checkPAE(self):
+        '''
+        test for correct return values for checkPAE method, under multiple conditions
+
+        @author: Breen Malmberg
+        '''
+
+        self.assertFalse(self.rule.checkPAE(""), "checkPAE should return False if no package is specified")
+        self.assertFalse(self.rule.checkPAE([]), "checkPAE should return False if package specified is not of type: string")
+        self.assertFalse(self.rule.checkPAE(1), "checkPAE should return False if package specified is not of type: string")
+        self.assertFalse(self.rule.checkPAE({}), "checkPAE should return False if package specified is not of type: string")
+        self.assertFalse(self.rule.checkPAE(), "checkPAE should return False if package specified is not of type: string")
+
+    def test_getSystemARCH(self):
+        '''
+        test the return values for getSystemARCH method
+
+        @author: Breen Malmberg
+        '''
+
+        self.assertFalse(self.rule.getSystemARCH() not in [32, 64], "The return value of getSystemARCH should always be either 32 or 64")
+        self.assertTrue(self.rule.getSystemARCH() in [32, 64], "The return value of getSystemARCH should always be either 32 or 64")
+
+    def test_getSystemOS(self):
+        '''
+        test return values of getSystemOS method
+
+        @author: Breen Malmberg
+        '''
+
+        self.assertFalse(self.rule.getSystemOS() == "", "getSystemOS should never return a blank string")
+
+    def test_checkNX(self):
+        '''
+        test returns for checkNX method
+
+        @author: Breen Malmberg
+        '''
+
+        # stub
+        pass
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -77,9 +119,9 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -92,7 +134,7 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -105,11 +147,11 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

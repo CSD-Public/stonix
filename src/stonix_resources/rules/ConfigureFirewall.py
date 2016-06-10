@@ -29,6 +29,7 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/05/31 ekkehard fix help text
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -51,7 +52,7 @@ class ConfigureFirewall(RuleKVEditor):
         self.rulename = 'ConfigureFirewall'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules disables listed cloud-based services " + \
+        self.helptext = "This rules configures OS X's firewall. " + \
             "on your system."
         self.rootrequired = True
         self.guidance = []

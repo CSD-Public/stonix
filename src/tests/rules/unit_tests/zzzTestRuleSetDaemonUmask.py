@@ -53,7 +53,7 @@ class zzzTestRuleSetDaemonUmask(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
 
     def tearDown(self):
         pass

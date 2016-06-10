@@ -25,6 +25,8 @@
 Created on Apr 20, 2016
 
 @author: dwalker
+@change: 2016/06/06 dwalker updated applicability to not run on Mac until
+    configuration on Mac OS X is fully researched.
 '''
 
 from __future__ import absolute_import
@@ -33,7 +35,6 @@ from ..stonixutilityfunctions import readFile, writeFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-from ..ruleKVEditor import RuleKVEditor
 import traceback
 import os
 import re
@@ -43,7 +44,7 @@ class SetTFTPDSecureMode(Rule):
 
 ###############################################################################
     def __init__(self, config, environ, logger, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logger,
+        Rule.__init__(self, config, environ, logger,
                               statechglogger)
         self.logger = logger
         self.rootrequired = True
@@ -53,7 +54,6 @@ class SetTFTPDSecureMode(Rule):
         self.mandatory = True
         self.helptext = '''This ensures that the tftp daemon uses secure \
 mode.'''
-                # init CIs
         datatype = 'bool'
         key = 'SETTFTPDSECUREMODE'
         instructions = "To disable this rule set the value of " + \
@@ -65,11 +65,11 @@ mode.'''
         self.iditerator = 0
         self.editor = ""
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'family': ['linux', 'solaris', 'freebsd']}
         
     def report(self):
         try:
+            self.detailedresults = ""
             compliant = True
             if self.environ.getostype() == "Mac OS X":
                 compliant = self.reportMac()
@@ -100,7 +100,7 @@ mode.'''
         return self.compliant
 
     def reportMac(self):
-        self.add
+        pass
     
     def reportDebianSys(self):
         contents = readFile(self.tftpFile, self.logger)
@@ -239,7 +239,9 @@ mode.'''
                 self.statechglogger.deleteentry(event)
             if not self.tftpdci.getcurrvalue():
                 return
-            if self.ph.manager == "apt-get":
+            if self.environ.getostype() == "Mac OS X":
+                success = self.fixMac()
+            elif self.ph.manager == "apt-get":
                 if os.path.exists(self.tftpFile):
                     success = self.fixDebianSys()
             else:
@@ -421,3 +423,6 @@ mode.'''
                 "to " + self.tftpFile + " file.\n"
             success = False
         return success
+    
+    def fixMac(self):
+        pass

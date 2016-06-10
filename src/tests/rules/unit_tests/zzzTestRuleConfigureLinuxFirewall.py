@@ -22,11 +22,11 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableRemoveableStorage
+Created on May 27, 2016
+This is a Unit Test for Rule ConfigureLinuxFirewall
 
-@author: Breen Malmberg
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: D. Kennel
+
 '''
 from __future__ import absolute_import
 import unittest
@@ -36,21 +36,20 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableRemoveableStorage import DisableRemoveableStorage
+from src.stonix_resources.rules.ConfigureLinuxFirewall import ConfigureLinuxFirewall
 
 
-class zzzTestRuleDisableRemoveableStorage(RuleTest):
+class zzzTestRuleDisableIPV6(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableRemoveableStorage(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = ConfigureLinuxFirewall(self.config,
+                                self.environ,
+                                self.logdispatch,
+                                self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.rule.storageci.updatecurrvalue(True)
 
     def tearDown(self):
         pass

@@ -22,12 +22,12 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableRemoveableStorage
+This is a Unit Test for Rule SetTFTPD
+Created on Jun 8, 2016
 
-@author: Breen Malmberg
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: dwalker
 '''
+
 from __future__ import absolute_import
 import unittest
 import sys
@@ -35,22 +35,28 @@ import sys
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.stonixutilityfunctions import setPerms, checkPerms
+from src.stonix_resources.stonixutilityfunctions import readFile, writeFile
+from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableRemoveableStorage import DisableRemoveableStorage
+from src.stonix_resources.rules.SecureSquidProxy import SecureSquidProxy
+from shutil import copyfile
+import os
+import re
 
-
-class zzzTestRuleDisableRemoveableStorage(RuleTest):
+class zzzTestRuleSecureSquidProxy(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableRemoveableStorage(self.config,
-                                             self.environ,
-                                             self.logdispatch,
-                                             self.statechglogger)
+        self.rule = SecureSquidProxy(self.config,
+                                        self.environ,
+                                        self.logdispatch,
+                                        self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.rule.storageci.updatecurrvalue(True)
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.fileexisted = True
 
     def tearDown(self):
         pass
@@ -63,9 +69,58 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: dwalker
         '''
         success = True
+        if self.ph.check("squid"):
+            if self.ph.manager == "apt-get":
+                self.squidfile = "/etc/squid3/squid.conf"
+            else:
+                self.squidfile = "/etc/squid/squid.conf"
+            self.backup = self.squidfile + ".original"
+            self.data1 = {"ftp_passive": "on",
+                          "ftp_sanitycheck": "on",
+                          "check_hostnames": "on",
+                          "request_header_max_size": "20 KB",
+                          "reply_header_max_size": "20 KB",
+                          "cache_effective_user": "squid",
+                          "cache_effective_group": "squid",
+                          "ignore_unknown_nameservers": "on",
+                          "allow_underscore": "off",
+                          "httpd_suppress_version_string": "on",
+                          "forwarded_for": "off",
+                          "log_mime_hdrs": "on",
+                          "http_access": "deny to_localhost"}
+
+            #make sure these aren't in the file
+            self.denied = ["acl Safe_ports port 70",
+                           "acl Safe_ports port 210",
+                           "acl Safe_ports port 280",
+                           "acl Safe_ports port 488",
+                           "acl Safe_ports port 591",
+                           "acl Safe_ports port 777"]
+            if os.path.exists(self.squidfile):
+                if checkPerms(self.squidfile, [0, 0, 420], self.logdispatch):
+                    if not setPerms(self.squidfile, [0, 0, 416], self.logdispatch):
+                        success = False
+                copyfile(self.squidfile, self.backup)
+                tempstring = ""
+                contents = readFile(self.squidfile, self.logdispatch)
+                if contents:
+                    for line in contents:
+                        if re.search("^ftp_passive", line.strip()):
+                            '''Delete this line'''
+                            continue
+                        else:
+                            tempstring += line
+                '''insert line with incorrect value'''
+                tempstring += "request_header_max_size 64 KB\n"
+                '''insert line with no value'''
+                tempstring += "ignore_unknown_nameservers\n"
+                '''insert these two lines we don't want in there'''
+                tempstring += "acl Safe_ports port 70\nacl Safe_ports port 210\n"
+                if not writeFile(self.squidfile, tempstring, self.logdispatch):
+                    success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -95,6 +150,8 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
+        if not self.fileexisted:
+            os.remove(self.path)
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
@@ -113,3 +170,4 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
+

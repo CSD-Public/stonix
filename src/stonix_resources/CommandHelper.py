@@ -30,7 +30,7 @@
 @change: 2014/04/01 dwalker added setRegexFlag & enhanced findInOutput
 @change: 2014/04/15 ekkehard enhance documentation & pep8 compliance
 @change: 2014/04/15 ekkehard made logging more intelligent
-@change: 2014/10/20 ekkehard fix pep8 viloation
+@change: 2014/10/20 ekkehard fix pep8 violation
 @change: 2015/09/22 ekkehard Uniform logging
 '''
 import re
@@ -498,20 +498,16 @@ class CommandHelper(object):
 
             if (success):
                 commandobj = subprocess.Popen(self.command,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, 
-                               shell=self.shell)
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE,
+                                              shell=self.shell)
                 outlines = []
                 errlines = []
-                for line in iter(commandobj.stdout.readline, ''):
-                    outlines.append(line)
-                commandobj.stdout.close()
-                for line in iter(commandobj.stderr.readline, ''):
-                    errlines.append(line)
-                commandobj.stderr.close()
-
+                # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
-                    commandobj.wait()
+                    outs, errs = commandobj.communicate()
+                    outlines = str(outs).splitlines()
+                    errlines = str(errs).splitlines()
 
                 if commandobj is not None:
                     self.stdout = outlines
