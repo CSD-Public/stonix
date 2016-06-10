@@ -97,6 +97,12 @@ False.'''
             self.isfirewalld = True
         if os.path.exists('/usr/sbin/ufw'):
             self.isufw = True
+        self.iptables = "/usr/sbin/iptables"
+        if not os.path.exists(self.iptables):
+            self.iptables = '/sbin/iptables'
+        self.ip6tables = "/usr/sbin/ip6tables"
+        if not os.path.exists(self.ip6tables):
+            self.ip6tables = '/sbin/ip6tables'
 
     def report(self):
         """
@@ -132,43 +138,79 @@ False.'''
                 if self.servicehelper.auditservice('iptables.service') or \
                 self.servicehelper.auditservice('iptables'):
                     iptablesrunning = True
+                self.logger.log(LogPriority.DEBUG,
+                            ['ConfigureLinuxFirewall.report',
+                             "RHEL 6 type system. iptables service: " + 
+                             str(iptablesrunning)])
                 if self.servicehelper.auditservice('ip6tables.service') or \
                 self.servicehelper.auditservice('ip6tables'):
                     ip6tablesrunning = True
-                cmd = ["/usr/sbin/iptables", "-L"]
+                self.logger.log(LogPriority.DEBUG,
+                            ['ConfigureLinuxFirewall.report',
+                             "RHEL 6 type system. ip6tables service: " + 
+                             str(ip6tablesrunning)])
+                cmd = [self.iptables, "-L"]
                 if not self.cmdhelper.executeCommand(cmd):
                     self.detailedresults += "Unable to run " + \
                     "iptables -L command\n"
                     return False
                 output = self.cmdhelper.getOutput()
                 for line in output:
-                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+anywhere\s+anywhere', line):
+                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+--\s+anywhere\s+anywhere', line):
                         catchall = True
-                cmd6 = ["/usr/sbin/ip6tables", "-L"]
+                self.logger.log(LogPriority.DEBUG,
+                            ['ConfigureLinuxFirewall.report',
+                             "RHEL 6 type system. ipv4 catchall rule: " + 
+                             str(catchall)])
+                cmd6 = [self.ip6tables, "-L"]
                 if not self.cmdhelper.executeCommand(cmd6):
                     self.detailedresults += "Unable to run " + \
                     "ip6tables -L command\n"
                     return False
                 output6 = self.cmdhelper.getOutput()
                 for line in output6:
-                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+anywhere\s+anywhere', line):
+                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+--\s+anywhere\s+anywhere', line):
                         catchall6 = True
+                self.logger.log(LogPriority.DEBUG,
+                            ['ConfigureLinuxFirewall.report',
+                             "RHEL 6 type system. ipv6 catchall rule: " + 
+                             str(catchall)])
                 if not iptablesrunning:
                     self.detailedresults = 'This system appears to use iptables but it is not running as required.'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. IPtables not running."])
                 if not ip6tablesrunning:
                     self.detailedresults = self.detailedresults + '\n'
                     self.detailedresults = self.detailedresults + \
                     'This system appears to use ip6tables but it is not running as required.'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. IP6tables not running."])
                 if not catchall:
                     self.detailedresults = self.detailedresults + '\n'
                     self.detailedresults = self.detailedresults + \
                     'This system appears to use iptables but the expected deny all is missing from the rules.'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. Missing v4 deny all."])
                 if not catchall6:
                     self.detailedresults = self.detailedresults + '\n'
                     self.detailedresults = self.detailedresults + \
                     'This system appears to use ip6tables but the expected deny all is missing from the rules.'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. Missing v6 deny all."])
                 if iptablesrunning and ip6tablesrunning and catchall and catchall6:
                     compliant = True
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. Check passed."])
+                else:
+                    compliant = False
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. Check failed."])
             if compliant:
                 self.detailedresults = 'The firewall configuration appears to meet minimum expectations.'
                 self.targetstate = 'configured'
@@ -242,8 +284,8 @@ COMMIT
 -A INPUT -i lo -j ACCEPT
 -A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
 -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp6-host-prohibited
--A FORWARD -j REJECT --reject-with icmp6-host-prohibited
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
 COMMIT
 '''
                     fwhandle = open('/etc/sysconfig/system-config-firewall',
