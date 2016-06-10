@@ -149,16 +149,22 @@ class Zypper(object):
                 for line in output:
                     if search(package, line):
                         installed = True
-                if installed:
-                    self.detailedresults += package + " pkg is installed\n"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    return True
+                        break
+            elif self.ch.getReturnCode() == 106:
+                for line in output:
+                    if search(package, line):
+                        installed = True
+                        break
             else:
                 installed = False
+                
+            if installed:
+                self.detailedresults += package + " pkg is installed\n"
+            else:
                 self.detailedresults += package + " pkg not found or may be \
 misspelled\n"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
+                return installed
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
