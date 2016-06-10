@@ -35,8 +35,8 @@ import sys
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.stonixutilityfunctions import iterate, setPerms, checkPerms
-from src.stonix_resources.stonixutilityfunctions import resetsecon, readFile, writeFile, createFile
+from src.stonix_resources.stonixutilityfunctions import setPerms, checkPerms
+from src.stonix_resources.stonixutilityfunctions import readFile, writeFile
 from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.SecureSquidProxy import SecureSquidProxy
@@ -78,9 +78,6 @@ class zzzTestRuleSecureSquidProxy(RuleTest):
             else:
                 self.squidfile = "/etc/squid/squid.conf"
             self.backup = self.squidfile + ".original"
-            if checkPerms(self.squidfile, [0, 0, 420], self.logdispatch):
-                if not setPerms(self.squidfile, [0, 0, 416], self.logdispatch):
-                    success = False
             self.data1 = {"ftp_passive": "on",
                           "ftp_sanitycheck": "on",
                           "check_hostnames": "on",
@@ -102,36 +99,28 @@ class zzzTestRuleSecureSquidProxy(RuleTest):
                            "acl Safe_ports port 488",
                            "acl Safe_ports port 591",
                            "acl Safe_ports port 777"]
-            print "about to begin\n"
-            if not os.path.exists(self.squidfile):
-                print "squid file doesn't exist, creating it...\n"
-                self.fileexisted = False
-                createFile(self.squidfile, self.logdispatch)
-            else:
-                print "copying the file for backup\n"
+            if os.path.exists(self.squidfile):
+                if checkPerms(self.squidfile, [0, 0, 420], self.logdispatch):
+                    if not setPerms(self.squidfile, [0, 0, 416], self.logdispatch):
+                        success = False
                 copyfile(self.squidfile, self.backup)
-            tempstring = ""
-            contents = readFile(self.squidfile, self.logdispatch)
-            if contents:
-                print "there are contents!\n"
-                print "they are: " + str(contents)
-                for line in contents:
-                    if re.search("^ftp_passive", line.strip()):
-                        '''Delete this line'''
-                        continue
-                    else:
-                        tempstring += line
-            else:
-                print "file was blank"
-            print "messing up the file\n\n"
-            '''insert line with incorrect value'''
-            tempstring += "request_header_max_size 64 KB\n"
-            '''insert line with no value'''
-            tempstring += "ignore_unknown_nameservers\n"
-            '''insert these two lines we don't want in there'''
-            tempstring += "acl Safe_ports port 70\nacl Safe_ports port 210\n"
-            if not writeFile(self.squidfile, tempstring, self.logdispatch):
-                success = False
+                tempstring = ""
+                contents = readFile(self.squidfile, self.logdispatch)
+                if contents:
+                    for line in contents:
+                        if re.search("^ftp_passive", line.strip()):
+                            '''Delete this line'''
+                            continue
+                        else:
+                            tempstring += line
+                '''insert line with incorrect value'''
+                tempstring += "request_header_max_size 64 KB\n"
+                '''insert line with no value'''
+                tempstring += "ignore_unknown_nameservers\n"
+                '''insert these two lines we don't want in there'''
+                tempstring += "acl Safe_ports port 70\nacl Safe_ports port 210\n"
+                if not writeFile(self.squidfile, tempstring, self.logdispatch):
+                    success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
