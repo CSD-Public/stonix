@@ -32,6 +32,8 @@ import os
 import traceback
 import re
 import shutil
+import subprocess
+import time
 
 from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
@@ -169,7 +171,7 @@ False.'''
                     return False
                 output6 = self.cmdhelper.getOutput()
                 for line in output6:
-                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+--\s+anywhere\s+anywhere', line):
+                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+anywhere\s+anywhere', line):
                         catchall6 = True
                 self.logger.log(LogPriority.DEBUG,
                             ['ConfigureLinuxFirewall.report',
@@ -214,6 +216,7 @@ False.'''
             if compliant:
                 self.detailedresults = 'The firewall configuration appears to meet minimum expectations.'
                 self.targetstate = 'configured'
+                self.compliant = True
             else:
                 self.targetstate = 'notconfigured'
             return compliant
@@ -300,6 +303,18 @@ COMMIT
                     ip6whandle.close()
                     self.servicehelper.enableservice('iptables')
                     self.servicehelper.enableservice('ip6tables')
+                    # we restart iptables here because it doesn't respond
+                    # to reload
+                    proc = subprocess.Popen('/sbin/service iptables restart',
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            shell=True, close_fds=True)
+                    proc = subprocess.Popen('/sbin/service ip6tables restart',
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            shell=True, close_fds=True)
+                    # Sleep for a bit to let the restarts occur
+                    time.sleep(3)
                     self.detailedresults += "Firewall configured.\n "
                 else:
                     self.detailedresults += "Unable to configure a " + \
@@ -311,7 +326,7 @@ COMMIT
                 raise
             except Exception:
                 self.rulesuccess = False
-                self.detailedresults = 'MinimizeServices: '
+                self.detailedresults = 'ConfigureLinuxFirewall: '
                 self.detailedresults = self.detailedresults + \
                     traceback.format_exc()
                 self.rulesuccess = False
