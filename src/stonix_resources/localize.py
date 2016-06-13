@@ -316,3 +316,34 @@ EXCLUDEACCOUNTS = []
 # The following list is used by AuditFirefoxUsage(84). It lists domains that
 # are approved for browsing by the root user.
 LOCALDOMAINS = ["127.0.0.1", "localhost", "bar.com"]
+
+# these options will be set in /etc/dhcp/dhclient.conf
+# a value of 'request' will cause the client to request that
+# option's configuration from the dhcp server. a value of
+# 'supersede' will cause the client to use the locally-defined
+# value in the dhclient.conf configuration file
+DHCPDict = {'subnet-mask': 'request',
+            'broadcast-address': 'supersede',
+            'time-offset': 'supersede',
+            'routers': 'supersede',
+            'domain-name': 'supersede',
+            'domain-name-servers': 'supersede',
+            'host-name': 'supersede',
+            'nis-domain': 'supersede',
+            'nis-servers': 'supersede',
+            'ntp-servers': 'supersede'}
+
+# these options will be used whenever a value of
+# 'supersede' is specified for one of the options in
+# DCHPDict. Change these to reflect your organization's
+# actual servers/domains/settings
+DHCPSup = {'subnet-mask': '"example.com"',
+           'broadcast-address': '192.168.1.255',
+           'time-offset': '-18000',
+           'routers': '192.168.1.1',
+           'domain-name': '"example.com"',
+           'domain-name-servers': '192.168.1.2',
+           'host-name': '"localhost"',
+           'nis-domain': '""',
+           'nis-servers': '""',
+           'ntp-servers': '"ntp.example.com"'}
