@@ -320,6 +320,10 @@ LANLLOGROTATE = "700.lanl.logrotate"
 # The following should be system accounts which should not be disabled by DisableInactiveAccounts
 EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
 
+# The following list is used by AuditFirefoxUsage(84). It lists domains that
+# are approved for browsing by the root user.
+LOCALDOMAINS = ["127.0.0.1", "localhost", "lanl.gov"]
+
 # LANL root certificate
 ROOTCERT = """-----BEGIN CERTIFICATE-----
 MIIDsTCCAxqgAwIBAgIEPZxq5jANBgkqhkiG9w0BAQUFADBvMQswCQYDVQQGEwJV
