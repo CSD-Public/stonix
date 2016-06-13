@@ -22,10 +22,9 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableRemoveableStorage
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: Breen Malmberg
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
@@ -51,6 +50,7 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.rule.storageci.updatecurrvalue(True)
 
     def tearDown(self):
         pass

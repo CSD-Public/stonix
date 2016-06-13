@@ -22,45 +22,36 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureSudo
+This is a Unit Test for Rule InstallRootCert
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
-@change: 2016/05/11 eball Replace original file once test is over
+@author: Eric Ball
+@change: 2016/03/25 eball Original implementation
 '''
 from __future__ import absolute_import
-import unittest
 import re
-import os
-import sys
-
-sys.path.append("../../../..")
-from src.tests.lib.RuleTestTemplate import RuleTest
+import unittest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.rules.InstallRootCert import InstallRootCert
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureSudo import ConfigureSudo
-from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms
+from src.tests.lib.RuleTestTemplate import RuleTest
 
 
-class zzzTestRuleConfigureSudo(RuleTest):
+class zzzTestRuleInstallRootCert(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureSudo(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = InstallRootCert(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
-        if os.path.exists(self.path + ".stonixUT"):
-            os.rename(self.path + ".stonixUT", self.path)
+        pass
 
-    def test_simple_rule_run(self):
+    def runTest(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -68,37 +59,29 @@ class zzzTestRuleConfigureSudo(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
-
         success = True
-        groupname = "%wheel"
-
-        if self.environ.getosfamily() == "darwin":
-            self.path = "/private/etc/sudoers"
-            groupname = "%admin"
-        elif self.environ.getosfamily() == "freebsd":
-            self.path = "/usr/local/etc/sudoers"
-        else:
-            self.path = "/etc/sudoers"
-
-        contents = readFile(self.path, self.logdispatch)
-        os.rename(self.path, self.path + ".stonixUT")
-
-        tempstring = ""
-        for line in contents:
-            if re.search("^" + groupname, line):
-                continue
-            else:
-                tempstring += line
-
-        writeFile(self.path + ".tmp", tempstring, self.logdispatch)
-        os.rename(self.path + ".tmp", self.path)
-
-        if checkPerms(self.path, [0, 0, 0o440], self.logdispatch):
-            os.chmod(self.path, 0o400)
-
+        self.missingSystemCert = False
+        cmd = ["curl", "https://gitlab.lanl.gov"]
+        if not self.ch.executeCommand(cmd):
+            success = False
+        if re.search("not recoginized", self.ch.getAllString()):
+            self.missingSystemCert = True
         return success
+
+    def testUndo(self):
+        self.rule.report()
+        initialDetailedResults = self.rule.detailedresults
+        self.rule.fix()
+        postFixDetailedResults = self.rule.detailedresults
+        if not (initialDetailedResults == postFixDetailedResults):
+            self.rule.undo()
+            self.rule.report()
+            postUndoDetailedResults = self.rule.detailedresults
+            self.assertEqual(initialDetailedResults, postUndoDetailedResults,
+                             "Undo did not return the system to its initial " +
+                             "state")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -122,11 +105,18 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Eric Ball
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
+        cmd = ["curl", "https://gitlab.lanl.gov"]
+        if not self.ch.executeCommand(cmd):
+            success = False
+        if self.missingSystemCert:
+            self.assertTrue(re.search("<html>", self.ch.getAllString()),
+                            "Rule fix did not allow error-free connection " +
+                            "to gitlab.lanl.gov")
         return success
 
     def checkUndoForRule(self, pRuleSuccess):

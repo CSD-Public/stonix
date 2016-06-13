@@ -246,11 +246,17 @@ class RootMailAlias(Rule):
 
         try:
 
-            # check format of user-entered root mail alias address
-            self.logger.log(LogPriority.DEBUG, "Checking user-entered value for root mail alias for correct format...")
-            if not re.search(self.aliasformat, str(self.ci2.getcurrvalue())):
+            # check if user-entered root mail alias is blank
+            self.logger.log(LogPriority.DEBUG, "Checking if there is a non-blank value for root mail alias...")
+            if str(self.ci2.getcurrvalue()) == "":
                 self.compliant = False
-                self.detailedresults += '\nUser-entered root mail alias is not a valid email address format'
+                self.detailedresults += "User must enter a value for root mail alias. Currently there is no value entered (it is blank)."
+            else:
+                # check format of user-entered root mail alias address
+                self.logger.log(LogPriority.DEBUG, "Checking user-entered value for root mail alias for correct format...")
+                if not re.search(self.aliasformat, str(self.ci2.getcurrvalue())):
+                    self.compliant = False
+                    self.detailedresults += '\nUser-entered root mail alias is not a valid email address format'
 
             # check if the alias file has the correct configuration entry
             self.logger.log(LogPriority.DEBUG, "Checking root mail alias file for correct configuration...")

@@ -591,21 +591,21 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
                 'since install: ' + strnewsincefirst
             if self.findoverrun:
                 self.wwresults = self.wwresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for world writable files and folders and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for world writable files and folders and correct \
 permissions as needed.
 
-To find world writable directories:
+To find world writable directories, run the following command as root:
 find / -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -print
 To find world writable files:
 find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
         elif self.findoverrun:
             self.wwresults = '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for world writable files and folders and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for world writable files and folders and correct \
 permissions as needed.
 
-To find world writable directories:
+To find world writable directories, run the following command as root:
 find / -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -print
 To find world writable files:
 find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
@@ -1033,20 +1033,20 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                 strwrongmode
             if self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for SUID / SGID files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for SUID / SGID files and correct \
 permissions as needed.
 
-To find SUID/SGID files:
+To find SUID/SGID files, run the following command as root:
 find / -xdev \( -perm -04000 -o -perm -02000 \) -print
 '''
         elif self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for SUID / SGID files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for SUID / SGID files and correct \
 permissions as needed.
 
-To find SUID/SGID files:
+To find SUID/SGID files, run the following command as root:
 find / -xdev \( -perm -04000 -o -perm -02000 \) -print
 '''
         else:
@@ -1122,20 +1122,20 @@ find / -xdev \( -perm -04000 -o -perm -02000 \) -print
                 'owners since first run: ' + strnewfilessinceorigin
             if self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for unowned files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for unowned files and correct \
 permissions as needed.
 
-To find unowned files:
+To find unowned files, run the following command as root:
 find / -xdev \( -nouser -o -nogroup \) -print
 '''
         elif self.findoverrun:
                 self.suidresults = self.suidresults + '''
-WARNING! Large numbers of files with incorrect permissions detected. Please
-conduct a manual check for unowned files and correct
+WARNING! Large numbers of files with incorrect permissions detected. Please \
+conduct a manual check for unowned files and correct \
 permissions as needed.
 
-To find unowned files:
+To find unowned files, run the following command as root:
 find / -xdev \( -nouser -o -nogroup \) -print
 '''
         else:
@@ -1280,6 +1280,9 @@ has been called a second time. The previous results are displayed. '''
                             os.chmod(wwfile, 01777)
                         except (OSError):
                             # catch OSError because we may be NFS or RO
+                            self.logger.log(LogPriority.DEBUG,
+                                            ['FilePermissions.fix',
+                                             str(traceback.format_exc())])
                             continue
                     elif os.path.isfile(wwfile) and re.match(pathre, wwfile):
                         # File is in the root users path, remove world write
@@ -1302,6 +1305,9 @@ has been called a second time. The previous results are displayed. '''
                             os.chmod(wwfile, newmode)
                         except (OSError):
                             # catch OSError because we may be NFS or RO
+                            self.logger.log(LogPriority.DEBUG,
+                                            ['FilePermissions.fix',
+                                             str(traceback.format_exc())])
                             continue
             if self.fixgw.getcurrvalue():
                 for gwfile in self.gwfiles:
@@ -1326,11 +1332,17 @@ has been called a second time. The previous results are displayed. '''
                         continue
             if self.fixroot.getcurrvalue():
                 for nrofile in self.nrofiles:
-                    os.chown(nrofile, 0, -1)
                     self.logger.log(LogPriority.DEBUG,
                                     ["FilePermissions.fix",
                                      "Changing owner of " + str(nrofile) +
                                      " to root"])
+                    try:
+                        os.chown(nrofile, 0, -1)
+                    except OSError:
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['FilePermissions.fix',
+                                         str(traceback.format_exc())])
+                        continue
             # Re-run gwreport(), so that group writable and non-root owned
             # lists are updated
             self.gwreport()

@@ -141,9 +141,19 @@ STONIXDEVS = 'stonix-dev@lanl.gov'
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
 PROXY = 'http://proxyout.lanl.gov:8080'
+PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
+PROXYDOMAIN = "lanl.gov"
 
-# Specify a subnet to allow services access to in /etc/hosts.allow
+# Domain Name Server (DNS) defaults
+DNS = "128.165.4.4 128.165.4.33"
+
+# (redhat 7 and after) Specify a subnet to allow services access to in /etc/hosts.allow
+# use format: xxx.xxx.0.0/16
 ALLOWNET = '128.165.0.0/16'
+
+# (redhat 6 and before) Specify a subnet to allow services access to in /etc/hosts.allow
+# use format: xxx.xxx.
+LEGACYALLOWNET = '128.165.'
 
 # Specify a subnet to allow in xinetd.conf
 XINETDALLOW = '128.165.0.0/16'
@@ -307,7 +317,29 @@ GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@winlog.lanl.gov"
 LANLLOGROTATE = "700.lanl.logrotate"
 
-## Proxy setting
-PROXYSERVER = "proxyout.lanl.gov"
-PROXYPORT = "8080"
-PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
+# The following should be system accounts which should not be disabled by DisableInactiveAccounts
+EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
+
+# LANL root certificate
+ROOTCERT = """-----BEGIN CERTIFICATE-----
+MIIDsTCCAxqgAwIBAgIEPZxq5jANBgkqhkiG9w0BAQUFADBvMQswCQYDVQQGEwJV
+UzEYMBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MR0wGwYDVQQLExREZXBhcnRtZW50
+IG9mIEVuZXJneTEnMCUGA1UECxMeTG9zIEFsYW1vcyBOYXRpb25hbCBMYWJvcmF0
+b3J5MB4XDTAyMTAwMzE1MzYwMFoXDTIyMTAwMzE2MDYwMFowbzELMAkGA1UEBhMC
+VVMxGDAWBgNVBAoTD1UuUy4gR292ZXJubWVudDEdMBsGA1UECxMURGVwYXJ0bWVu
+dCBvZiBFbmVyZ3kxJzAlBgNVBAsTHkxvcyBBbGFtb3MgTmF0aW9uYWwgTGFib3Jh
+dG9yeTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAtH18PJVcwScwCqq8vcPW
+QRsdx5Olyh8ebMIi4y+2UnHxvOe5V/5C7ScGmwNk1Aiik6zu4r/k5HDMA/mukHhT
+SKYzPqv76ta3BShLIvTUL+vIMb8l3ujxhjJZ2caD/0bgWm0o2Zn9tT83bUptV0u8
+0WiA0nPUulgtfSjn7E8Brw0CAwEAAaOCAVgwggFUMBEGCWCGSAGG+EIBAQQEAwIA
+BzCBlwYDVR0fBIGPMIGMMIGJoIGGoIGDpIGAMH4xCzAJBgNVBAYTAlVTMRgwFgYD
+VQQKEw9VLlMuIEdvdmVybm1lbnQxHTAbBgNVBAsTFERlcGFydG1lbnQgb2YgRW5l
+cmd5MScwJQYDVQQLEx5Mb3MgQWxhbW9zIE5hdGlvbmFsIExhYm9yYXRvcnkxDTAL
+BgNVBAMTBENSTDEwKwYDVR0QBCQwIoAPMjAwMjEwMDMxNTM2MDBagQ8yMDIyMTAw
+MzE2MDYwMFowCwYDVR0PBAQDAgEGMB8GA1UdIwQYMBaAFGpUvk0hTQtmaeQo/XTb
+RQpSbe8KMB0GA1UdDgQWBBRqVL5NIU0LZmnkKP1020UKUm3vCjAMBgNVHRMEBTAD
+AQH/MB0GCSqGSIb2fQdBAAQQMA4bCFY1LjA6NC4wAwIEkDANBgkqhkiG9w0BAQUF
+AAOBgQBzHXovZ7uyqHEmT8H1ov83leUZrg7IYjtUBxhQ//YkmCLtrUoklzjC0qyT
+i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
+i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
+-----END CERTIFICATE-----"""

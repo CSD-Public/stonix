@@ -22,45 +22,40 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureSudo
+This is a Unit Test for Rule DisableInactiveAccounts
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
-@change: 2016/05/11 eball Replace original file once test is over
+@author: Breen Malmberg
+@change: 02/11/2016 Original Implementation
 '''
+
 from __future__ import absolute_import
-import unittest
-import re
-import os
 import sys
+import unittest
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureSudo import ConfigureSudo
-from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms
+from src.stonix_resources.rules.DisableInactiveAccounts import DisableInactiveAccounts
 
 
-class zzzTestRuleConfigureSudo(RuleTest):
+class zzzTestRuleBootloaderPerms(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureSudo(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = DisableInactiveAccounts(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
-        if os.path.exists(self.path + ".stonixUT"):
-            os.rename(self.path + ".stonixUT", self.path)
+        pass
 
-    def test_simple_rule_run(self):
+    def runTest(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -70,35 +65,57 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-
         success = True
-        groupname = "%wheel"
-
-        if self.environ.getosfamily() == "darwin":
-            self.path = "/private/etc/sudoers"
-            groupname = "%admin"
-        elif self.environ.getosfamily() == "freebsd":
-            self.path = "/usr/local/etc/sudoers"
-        else:
-            self.path = "/etc/sudoers"
-
-        contents = readFile(self.path, self.logdispatch)
-        os.rename(self.path, self.path + ".stonixUT")
-
-        tempstring = ""
-        for line in contents:
-            if re.search("^" + groupname, line):
-                continue
-            else:
-                tempstring += line
-
-        writeFile(self.path + ".tmp", tempstring, self.logdispatch)
-        os.rename(self.path + ".tmp", self.path)
-
-        if checkPerms(self.path, [0, 0, 0o440], self.logdispatch):
-            os.chmod(self.path, 0o400)
-
         return success
+
+    def test_dscl_path(self):
+        '''
+        test for valid location of dscl command path
+        @author: Breen Malmberg
+        '''
+
+        found = False
+        if os.path.exists('/usr/bin/dscl'):
+            found = True
+        self.assertTrue(found, True)
+
+    def test_get_users(self):
+        '''
+        test the command to get the list of users
+        @author: Breen Malmberg
+        '''
+
+        self.ch.executeCommand('/usr/bin/dscl . -ls /Users')
+        rc = self.ch.getReturnCode()
+        self.assertTrue(rc, 0)
+
+    def test_pwpolicy_path(self):
+        '''
+        test for valid location of pwpolicy command path
+        @author: Breen Malmberg
+        '''
+
+        found = False
+        if os.path.exists('/usr/bin/pwpolicy'):
+            found = True
+        self.assertTrue(found, True)
+
+    def test_initobjs(self):
+        '''
+        test whether the private method initobjs works
+        @author: Breen Malmberg
+        '''
+
+        self.rule.initobjs()
+        self.assertFalse(self.rule.cmdhelper, None)
+
+    def test_ci(self):
+        '''
+        test whether ci initialized correctly
+        @author: Breen Malmberg
+        '''
+
+        self.assertFalse(self.rule.ci, None)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -109,9 +126,9 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -124,7 +141,7 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -137,7 +154,7 @@ class zzzTestRuleConfigureSudo(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
