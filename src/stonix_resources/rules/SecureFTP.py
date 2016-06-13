@@ -33,6 +33,7 @@ copy of Environment was instantiated, fixed bug where CI was not referenced in
 the Fix method.
 @change: 2014/08/26 Multiple bugs on RHEL 7 fixed.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/04/26 ekkehard Results Formatting
 '''
 
 from __future__ import absolute_import
@@ -64,6 +65,7 @@ of users allowed to access ftp and set the default umask for ftp users.
         self.statechglogger = statechglogger
         self.rulenumber = 32
         self.rulename = 'SecureFTP'
+        self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = 'Enable logging for all attempted access and ' + \
         'ftp commands, restrict the set of users allowed to access ftp ' + \
@@ -390,6 +392,10 @@ of users allowed to access ftp and set the default umask for ftp users.
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, ['SecureFTP.fix ',
                                                 self.detailedresults])
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
 
 ###############################################################################
     def fixLinux(self):

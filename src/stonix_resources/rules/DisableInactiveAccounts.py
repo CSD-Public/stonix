@@ -27,7 +27,7 @@ Created on Jan 21, 2016
 This rule will set the global policy for inactive accounts so that any account
 not accessed/used within 35 days will be automatically disabled.
 
-@author: bemalmbe
+@author: Breen Malmberg
 '''
 
 from __future__ import absolute_import
@@ -35,9 +35,10 @@ from __future__ import absolute_import
 import re
 import traceback
 import time
+
+from ..localize import EXCLUDEACCOUNTS
 from datetime import datetime
 from decimal import Decimal
-
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate
 from ..logdispatcher import LogPriority
@@ -91,17 +92,25 @@ automatically disabled.'
 
     def report(self):
         '''
+        get a list of users
+        determine each user's password last set time
+        determine if each user is inactive
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
         self.compliant = True
         self.detailedresults = ''
-        getuserscmd = 'dscl . -ls /Users'
+        getuserscmd = '/usr/bin/dscl . -ls /Users'
         # do not check any accounts with these regex terms found in them
-        accexcludere = ['_', 'nobody', 'daemon', 'root', 'jss-server-account']
+        # these are accounts which would not have the passwordlastsettime key in their accountpolicydata
+        # and also accounts which we do not want to disable, ever
+        accexcludere = ['_', 'nobody', 'daemon', 'root']
+        if EXCLUDEACCOUNTS:
+            accexcludere.append(EXCLUDEACCOUNTS)
         self.inactiveaccounts = []
 
         try:
@@ -187,7 +196,7 @@ automatically disabled.'
                                 "of the correct type (int)!")
                 return inactivedays
 
-            self.cmdhelper.executeCommand('dscl . readpl /Users/' + user +
+            self.cmdhelper.executeCommand('/usr/bin/dscl . readpl /Users/' + user +
                                           ' accountPolicyData ' +
                                           'passwordLastSetTime')
             epochchangetimestr = self.cmdhelper.getOutputString()
@@ -214,9 +223,13 @@ automatically disabled.'
 
     def fix(self):
         '''
+        check if ci is enabled
+        if it is, run fix actions for this rule
+        if not, report that it is disabled
 
-        @return: bool
-        @author: bemalmbe
+        @return: fixsuccess
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -231,7 +244,7 @@ automatically disabled.'
                 if self.inactiveaccounts:
                     for user in self.inactiveaccounts:
                         self.cmdhelper.executeCommand('/usr/bin/pwpolicy ' +
-                                                      '-disableuser ' + user)
+                                                      '-disableuser -u ' + user)
                         errout = self.cmdhelper.getErrorString()
                         rc = self.cmdhelper.getReturnCode()
                         if rc != 0:

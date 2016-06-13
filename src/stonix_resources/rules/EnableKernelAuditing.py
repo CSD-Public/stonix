@@ -39,6 +39,7 @@ from ..logdispatcher import LogPriority
 from ..rule import Rule
 from ..KVEditorStonix import KVEditorStonix
 from ..CommandHelper import CommandHelper
+from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..stonixutilityfunctions import resetsecon
 from ..stonixutilityfunctions import iterate
@@ -263,13 +264,11 @@ this system, set the value of EnableKernelAuditing to False"""
             # AUDIT RULES SECTION
             auditruleslocs = ['/etc/audit/audit.rules',
                               '/etc/audit/rules.d/audit.rules']
-            self.auditrulesfile = ''
-            for loc in auditruleslocs:
-                if os.path.exists(loc):
-                    self.auditrulesfile = loc
-            if not self.auditrulesfile:
-                self.logger.log(LogPriority.DEBUG,
-                                "Couldn't locate audit rules file")
+            self.auditrulesfile = '/etc/audit/audit.rules'
+            if not os.path.exists(self.auditrulesfile):
+                for loc in auditruleslocs:
+                    if os.path.exists(loc):
+                        self.auditrulesfile = loc
 
             self.logger.log(LogPriority.DEBUG, "Setting up Grub variables...")
             # GRUB SECTION
@@ -297,7 +296,7 @@ this system, set the value of EnableKernelAuditing to False"""
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Setting Grub v1 variables")
+        self.logger.log(LogPriority.DEBUG, "Setting Grub v1 variables...")
 
         self.grubver = 1
 
@@ -308,7 +307,7 @@ this system, set the value of EnableKernelAuditing to False"""
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables")
+        self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables...")
         self.grubver = 2
         self.grubcfgloc = ''
         grubcfglocs = ['/boot/grub/grub.cfg', '/boot/grub2/grub.cfg']
@@ -339,20 +338,19 @@ this system, set the value of EnableKernelAuditing to False"""
         self.grubstatus = True
         self.auditpkgstatus = False
         self.detailedresults = ""
-        self.auditrulesoptions = {'-w /etc/localtime -p wa -k time-change':
-                                  True,
+        suidfiles = []
+        arch = ''
+        uidstart = ''
+        self.auditrulesoptions = {'-w /etc/localtime -p wa -k time-change': True,
                                   '-w /etc/group -p wa -k identity': True,
                                   '-w /etc/passwd -p wa -k identity': True,
                                   '-w /etc/gshadow -p wa -k identity': True,
                                   '-w /etc/shadow -p wa -k identity': True,
-                                  '-w /etc/security/opasswd -p wa -k identity':
-                                  True,
-                                  '-w /etc/issue -p wa -k system-locale': True,
-                                  '-w /etc/issue.net -p wa -k system-locale':
-                                  True,
-                                  '-w /etc/hosts -p wa -k system-locale': True,
-                                  '-w /etc/sysconfig/network -p wa -k ' +
-                                  'system-locale': True,
+                                  '-w /etc/security/opasswd -p wa -k identity': True,
+                                  '-w /etc/issue -p wa -k audit_rules_networkconfig_modification': True,
+                                  '-w /etc/issue.net -p wa -k audit_rules_networkconfig_modification': True,
+                                  '-w /etc/hosts -p wa -k audit_rules_networkconfig_modification': True,
+                                  '-w /etc/sysconfig/network -p wa -k audit_rules_networkconfig_modification': True,
                                   '-w /etc/selinux/ -p wa -k MAC-policy': True,
                                   '-w /var/log/faillog -p wa -k logins': True,
                                   '-w /var/log/lastlog -p wa -k logins': True,
@@ -363,10 +361,19 @@ this system, set the value of EnableKernelAuditing to False"""
                                   '-w /sbin/insmod -p x -k modules': True,
                                   '-w /sbin/rmmod -p x -k modules': True,
                                   '-w /sbin/modprobe -p x -k modules': True,
-                                  '-a always,exit -S init_module -S ' +
-                                  'delete_module -k modules': True,
+                                  '-w /etc/localtime -p wa -k audit_time_rules': True,
+                                  '-a always,exit -F arch=b32 -S chmod -S lchown -S fsetxattr -S fremovexattr -S fchownat -S fchown -S fchmodat -S fchmod -S chown -S lremovexattr -S lsetxattr -S setxattr -F auid>=1000 -F auid!=4294967295 -k perm_mod': True,
+                                  '-a always,exit -F arch=b32 -S creat -S open -S openat -S open_by_handle_at -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access': True,
+                                  '-a always,exit -F arch=b32 -S creat -S open -S openat -S open_by_handle_at -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access': True,
+                                  '-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k export': True,
+                                  '-a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete': True,
+                                  '-a always,exit -F arch=b32 -S init_module -S delete_module -k modules': True,
+                                  '-a always,exit -F arch=b32 -S settimeofday -S stime -S adjtimex -S clock_settime -k audit_time_rules': True,
+                                  '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k audit_rules_networkconfig_modification': True,
+                                  '-a always,exit -F perm=x -F euid=0 -F auid>=1000 -F auid!=4294967295 -k privileged': True,
                                   '-e 2': True}
         self.cmdhelper = CommandHelper(self.logger)
+        self.svchelper = ServiceHelper(self.environ, self.logger)
 
         try:
 
@@ -378,6 +385,85 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
 
+            outputlines = []
+
+            # get the system's architecture type (32 or 64)
+            self.cmdhelper.executeCommand('uname -m')
+            outputlines = self.cmdhelper.getOutput()
+            errout = self.cmdhelper.getErrorString()
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                self.detailedresults += '\nCould not determine this system\'s architecture (32/64).'
+                self.logger.log(LogPriority.DEBUG, errout)
+            if outputlines:
+                for line in outputlines:
+                    if re.search('x86\_64', line):
+                        arch = '64'
+
+            if not arch:
+                arch = '32'
+
+            outputlines = []
+
+            # get list of setuid/setgid files on the system
+            self.cmdhelper.executeCommand('find / -xdev -type f -perm -4000 -o -type f -perm -2000')
+            outputlines = self.cmdhelper.getOutput()
+            errout = self.cmdhelper.getErrorString()
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                self.detailedresults += '\nThere was an error running the find command to get the list of setuid/setgid files.'
+                self.logger.log(LogPriority.DEBUG, errout)
+            if outputlines:
+                for line in outputlines:
+                    if re.search('^/', line):
+                        suidfiles.append(line.strip())
+            else:
+                self.logger.log(LogPriority.DEBUG, "no setuid or setgid files were found in root (/)")
+
+            # add privileged access rule for all existing setuid/setgid files on the system
+            if suidfiles:
+                self.logger.log(LogPriority.DEBUG, "Found setuid/setgid files on the system; Adding audit rules for them...")
+                for sf in suidfiles:
+                    self.auditrulesoptions['-a always,exit -F path=' + str(sf) + ' -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged'] = True
+                self.logger.log(LogPriority.DEBUG, "Finished adding audit rules for setuid/setgid files.")
+            else:
+                self.logger.log(LogPriority.DEBUG, "no setuid or setgid files were found, to add to audit rules")
+
+            # add 64bit copies of rules, if the system is 64 bit
+            if arch == '64':
+                newaurulesoptsdict = {}
+                self.logger.log(LogPriority.DEBUG, "System is 64 bit architecture; Adding 64 bit rules to list...")
+                for item in self.auditrulesoptions:
+                    if re.search('arch=b32', item):
+                        newitem = item.replace('arch=b32', 'arch=b64')
+                        newaurulesoptsdict[newitem] = True
+                if newaurulesoptsdict:
+                    for item in newaurulesoptsdict:
+                        self.auditrulesoptions[item] = True
+            self.logger.log(LogPriority.DEBUG, "Finished adding 64 bit rules to list.")
+
+            # if the system starts issuing user id's at 500 instead of the newer 1000
+            # then change all auid>=1000 entries, in auditrulesoptions dict, to auid>=500
+            # first find whether the system starts issuing uid's at 500 or 1000
+            if os.path.exists('/etc/login.defs'):
+                f = open('/etc/login.defs')
+                contentlines = f.readlines()
+                f.close()
+                for line in contentlines:
+                    if re.search('^UID\_MIN\s+500', line):
+                        uidstart = '500'
+                    if re.search('^UID\_MIN\s+1000', line):
+                        uidstart = '1000'
+            else:
+                self.logger.log(LogPriority.DEBUG, "Could not locate login.defs file. Cannot determine uid start number.")
+
+            # if this system starts uid's for users at 500, then replace all instances of auid>=1000
+            if uidstart == '500':
+                for item in self.auditrulesoptions:
+                    if re.search('auid>=1000', item):
+                        newitem = item.replace('auid>=1000', 'auid>=500')
+                        self.auditrulesoptions[newitem] = self.auditrulesoptions.pop(item)
+
             self.pkghelper = Pkghelper(self.logger, self.environ)
             self.auditpkgs = ['auditd', 'audit']
 
@@ -386,6 +472,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 if self.pkghelper.check(pkg):
                     self.auditpkgstatus = True
                     self.auditdpkg = pkg
+
             # if we have no audit installation to report on, we cannot continue
             if not self.auditpkgstatus:
                 self.compliant = False
@@ -420,7 +507,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.detailedresults += '\nThe following required options ' + \
                     'are missing (or incorrect) from ' + \
                     str(self.auditdispconffile) + ':\n' + \
-                    '\n'.join(str(f) for f in self.audispeditor.fixables)
+                    '\n'.join(str(f) for f in self.audispeditor.fixables) + '\n'
                 self.audispstatus = False
 
             if not self.auditdeditor.report():
@@ -428,33 +515,31 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.detailedresults += '\nThe following required options ' + \
                     'are missing (or incorrect) from ' + \
                     str(self.auditconffile) + ':\n' + \
-                    '\n'.join(str(f) for f in self.auditdeditor.fixables)
+                    '\n'.join(str(f) for f in self.auditdeditor.fixables) + '\n'
                 self.auditdstatus = False
 
             if self.grubver == 1:
                 if not self.report_grub_one():
                     self.detailedresults += '\nThe required audit=1 ' + \
                         'configuration option was missing from the grub ' + \
-                        'conf file'
+                        'conf file\n'
                     self.compliant = False
                     self.grubstatus = False
             elif self.grubver == 2:
                 if not self.report_grub_two():
                     self.detailedresults += '\nThe required audit=1 ' + \
                         'configuration option was missing from the grub ' + \
-                        'conf file'
+                        'conf file\n'
                     self.compliant = False
                     self.grubstatus = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -537,7 +622,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             contentlines = self.getFileContents(self.grubconffile)
             for line in contentlines:
-                if re.search('^kernel\s+.*audit=1', line):
+                if re.search('kernel\s+.*audit=1', line):
                     retval = True
 
         except Exception:
@@ -598,7 +683,7 @@ this system, set the value of EnableKernelAuditing to False"""
                     self.auditrulesoptions[item] = False
                     self.detailedresults += '\nRequired configuration ' + \
                         'option: "' + str(item) + '\" was not found in ' + \
-                        str(self.auditrulesfile)
+                        str(self.auditrulesfile) + '\n'
 
         except Exception:
             raise
@@ -647,22 +732,36 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.fixAuditRules():
                     fixsuccess = False
 
-                if not self.audispeditor.fix():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit dispatcher editor ' + \
-                        'fix failed'
-                if not self.audispeditor.commit():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit dispatcher editor ' + \
-                        'commit failed'
+                if self.audispeditor.fixables:
+                    if not self.audispeditor.fix():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit dispatcher editor ' + \
+                            'fix failed'
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.auditdeditor.setEventID(myid)
+                    if not self.audispeditor.commit():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit dispatcher editor ' + \
+                            'commit failed'
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing to fix for audit dispatcher")
 
-                if not self.auditdeditor.fix():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit daemon editor fix failed'
-                if not self.auditdeditor.commit():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit daemon editor ' + \
-                        'commit failed'
+                if self.auditdeditor.fixables:
+                    if not self.auditdeditor.fix():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit daemon editor fix failed'
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.auditdeditor.setEventID(myid)
+                    if not self.auditdeditor.commit():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit daemon editor ' + \
+                            'commit failed'
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing to fix for audit daemon")
 
                 if not self.grubstatus:
                     if self.grubver == 1:
@@ -672,16 +771,25 @@ this system, set the value of EnableKernelAuditing to False"""
                         if not self.fix_grub_two():
                             fixsuccess = False
 
+                # start/restart the audit service so it reads the new config
+                self.logger.log(LogPriority.DEBUG, "Checking 'auditd' service status...")
+                if self.svchelper.isrunning('auditd'):
+                    self.logger.log(LogPriority.DEBUG, "auditd service was running. Restarting the auditd service...")
+                    self.svchelper.reloadservice('auditd')
+                else:
+                    self.logger.log(LogPriority.DEBUG, "auditd service was not running. Attempting to start the auditd service...")
+                    self.svchelper.enableservice('auditd')
+
             else:
                 self.detailedresults += '\nRule was not enabled. Nothing was done...'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            fixsuccess = False
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -885,10 +993,11 @@ this system, set the value of EnableKernelAuditing to False"""
                                 str(auditinitcmd) + ' ...')
                 self.cmdhelper.executeCommand(auditinitcmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
                     retval = False
-                    self.detailedresults += '\nUnable to successfully ' + \
-                        'complete command: ' + str(auditinitcmd)
+                    self.detailedresults += '\nUnable to successfully complete command: ' + str(auditinitcmd)
+                    self.logger.log(LogPriority.DEBUG, errout)
 
         except Exception:
             raise
@@ -922,12 +1031,9 @@ this system, set the value of EnableKernelAuditing to False"""
                 return retval
 
             for line in contentlines:
-                if re.search('^kernel\s+.*', line):
-                    if re.search('audit=1', line):
-                        continue
-                    else:
-                        contentlines = [c.replace(line, line + ' audit=1\n')
-                                        for c in contentlines]
+                if re.search('kernel\s+.*', line):
+                    if not re.search('audit=1', line):
+                        contentlines = [c.replace(line, line.rstrip() + ' audit=1\n') for c in contentlines]
                         replaced = True
 
             if replaced:
@@ -1035,10 +1141,11 @@ this system, set the value of EnableKernelAuditing to False"""
                                 "command, to update the grub.cfg file...")
                 self.cmdhelper.executeCommand(self.grubupdatecmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
                     retval = False
-                    self.detailedresults += '\n' + str(self.grubupdatecmd) + \
-                        ' command had error output: ' + str(errout)
+                    self.detailedresults += '\nThere was an error running the grub update command.'
+                    self.logger.log(LogPriority.DEBUG, errout)
 
         except Exception:
             raise

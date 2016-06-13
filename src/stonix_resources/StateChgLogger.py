@@ -29,6 +29,8 @@ Created on Aug 22, 2012
 prompt and wait issues during undo.
 @change: 2015/07/08 eball - Updated documentation for recordchgevent method
 @change: 2015/11/18 eball - Fixed recording of deletion event
+@change: 2016/06/10 dkennel - Updated recordfilechange to handle case where
+oldfile does not exist
 '''
 import shelve
 import shutil
@@ -154,11 +156,14 @@ are an end user please report a bug.''')
                         ['StateChgLogger',
                          "Recording changes in %s" % oldfile])
         self.archivefile(oldfile)
-        oldfilehandle = open(oldfile, 'r')
+        if os.path.exists(oldfile):
+            oldfilehandle = open(oldfile, 'r')
+            oldfiledata = oldfilehandle.readlines()
+            oldfilehandle.close()
+        else:
+            oldfiledata = []
         newfilehandle = open(newfile, 'r')
-        oldfiledata = oldfilehandle.readlines()
         newfiledata = newfilehandle.readlines()
-        oldfilehandle.close()
         newfilehandle.close()
         path, filename = os.path.split(oldfile)
         self.logger.log(LogPriority.DEBUG,
@@ -367,6 +372,9 @@ are an end user please report a bug.''')
         contains the following key:data element sets:
         eventtype: conf | creation | deletion
         filepath: string
+        ==========================================
+        eventtype: comm | commandstring (same function)
+        command: string | list
         ==========================================
         eventtype: perms
         filepath: string

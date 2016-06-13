@@ -1,54 +1,46 @@
-###############################################################################
-#                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
-# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
-# National Laboratory (LANL), which is operated by Los Alamos National        #
-# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
-# rights to use, reproduce, and distribute this software.  NEITHER THE        #
-# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
-# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
-# If software is modified to produce derivative works, such modified software #
-# should be clearly marked, so as not to confuse it with the version          #
-# available from LANL.                                                        #
-#                                                                             #
-# Additionally, this program is free software; you can redistribute it and/or #
-# modify it under the terms of the GNU General Public License as published by #
-# the Free Software Foundation; either version 2 of the License, or (at your  #
-# option) any later version. Accordingly, this program is distributed in the  #
-# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
-# See the GNU General Public License for more details.                        #
-#                                                                             #
-###############################################################################
 """
+Mac ramdisk + unionfs implementation
+
+@Notes:  Below are the initial notes for creating a ramdisk on the Mac
+
+Things we need to modularize:
+* create
+* mount
+* unmount
+* detach?
+* format (newfs_hfs vs. diskutil)
+* randomize mountpoint
+* turn off journaling, for faster access
+* unionfs setup
+
+Maybe function, or other module
+* Find available memory,
+  - Linux - just read /proc
+  - Mac - Use top's "unused" so it doesn't try to use swap
+          swap would defeat the purpose.
+
+Maybe function, method  or other module
+* rsync from spinning disk to ram disk
+
 @author: Roy Nielsen
-@change: 2016/02/03 ekkehard converted from log_message to print
-@change: 2016/02/22 ekkehard converted to 0.9.5
 """
-from __future__ import absolute_import
+#--- Native python libraries
 import os
 import re
-import sys
-from tempfile import mkdtemp
-from subprocess import Popen, PIPE, STDOUT
+import shutil
+from subprocess import Popen, PIPE
 
-sys.path.append("../..")
-
-from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
-from src.stonix_resources.environment import Environment
-
-LOGGER = LogDispatcher(Environment())
-
-def ResourcesNotAvailable(Exception):
-    """
-    Custom Exception    
-    """
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
+#--- non-native python libraries in this source tree
+from commonRamdiskTemplate import RamDiskTemplate
+from lib.run_commands import RunWith
+from lib.loggers import CyLogger
+from lib.loggers import LogPriority as lp
+from lib.libHelperFunctions import getOsFamily
+from lib.libHelperExceptions import NotValidForThisOS
 
 ###############################################################################
 
-class RamDisk(object) :
+class RamDisk(RamDiskTemplate) :
     """
     Class to manage a ramdisk
 
@@ -60,17 +52,27 @@ class RamDisk(object) :
                    or the creation will fail.
     @param: mountpoint - where to mount the disk, if left empty, will mount
                          on locaiton created by tempfile.mkdtemp.
+    @param: message_level - level at which to log.
 
     @author: Roy Nielsen
     """
-    def __init__(self, size=0, mountpoint="") :
+    def __init__(self, size=0, mountpoint="", logger=False) :
         """
         Constructor
         """
-        self.logger = LOGGER
-        self.version = "0.9.5"
+        super(RamDisk, self).__init__(size, mountpoint, logger)
+
+        if not getOsFamily() == "darwin":
+            raise NotValidForThisOS("This ramdisk is only viable for a MacOS.")
+
+        self.module_version = '20160225.125554.540679'
+
         #####
-        # Calculating the size of ramdisk in 1Mb chunks     
+        # Initialize the RunWith helper for executing shelled out commands.
+        self.runWith = RunWith(self.logger)
+
+        #####
+        # Calculating the size of ramdisk in 1Mb chunks
         self.diskSize = str(int(size) * 1024 * 1024 / 512)
 
         self.hdiutil = "/usr/bin/hdiutil"
@@ -87,37 +89,43 @@ class RamDisk(object) :
         # device, such as formatting the disk.
         self.devPartition = ""
 
+        #####
+        # Indicate if the ramdisk is "mounted" in the Mac sense - attached,
+        # but not mounted.
+        self.mounted = False
+
         success = False
 
         #####
         # Passed in disk size must have a non-default value
-        if self.diskSize == 0 :
-            success  = False
+        if not self.diskSize == 0 :
+            success  = True
         #####
         # Checking to see if memory is availalbe...
         if not self.__isMemoryAvailable() :
-            self.logger.log(LogPriority.DEBUG, "Physical memory not available to create ramdisk.")
+            self.logger.log(lp.DEBUG, "Physical memory not available to create ramdisk.")
+            success = False
         else:
             success = True
 
         if success :
 
             #####
-            # If a mountpoint is passed in, use that, otherwise, set up for a 
+            # If a mountpoint is passed in, use that, otherwise, set up for a
             # random mountpoint.
             if mountpoint:
-
-                self.logger.log(LogPriority.INFO, "Attempting to use mount point of: " + str(mountpoint))
+                self.logger.log(lp.INFO, "\n\n\n\tMOUNTPOINT: " + str(mountpoint) + "\n\n\n")
                 self.mntPoint = mountpoint
                 #####
                 # eventually have checking to make sure that directory
                 # doesn't already exist, and have data in it.
             else :
-                self.logger.log(LogPriority.INFO, "Attempting to acquire a radomized mount point. . .")
                 #####
                 # If a mountpoint is not passed in, create a randomized
                 # mount point.
-                if not self.__getRandomizedMountpoint() :
+                self.logger.log(lp.DEBUG, "Attempting to acquire a radomized mount " + \
+                           "point. . .")
+                if not self.getRandomizedMountpoint() :
                     success = False
 
             #####
@@ -127,13 +135,13 @@ class RamDisk(object) :
                 # Attempt to create the ramdisk
                 if not self.__create():
                     success = False
-                    self.logger.log(LogPriority.INFO, "Create appears to have failed..")
+                    self.logger.log(lp.WARNING, "Create appears to have failed..")
                 else:
                     #####
                     # Ramdisk created, try mounting it.
                     if not self.__mount():
                         success = False
-                        self.logger.log(LogPriority.INFO, "Mount appears to have failed..")
+                        self.logger.log(lp.WARNING, "Mount appears to have failed..")
                     else:
                         #####
                         # Filessystem journal will only slow the ramdisk down...
@@ -142,47 +150,16 @@ class RamDisk(object) :
                         # forensics on the volume.
                         if not self.__remove_journal():
                             success = False
-                            self.logger.log(LogPriority.INFO, "Remove journal appears to have failed..")
+                            self.logger.log(lp.WARNING, "Remove journal " + \
+                                            "appears to have failed..")
 
         self.success = success
         if success:
-            self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
-            self.logger.log(LogPriority.INFO, "Mount point: " + str(self.mntPoint))
-            self.logger.log(LogPriority.INFO, "Device: " + str(self.myRamdiskDev))
-        else:
-            self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
-            raise(ResourcesNotAvailable("Can't create a ramdisk..."))
+            self.logger.log(lp.INFO, "Mount point: " + str(self.mntPoint))
+            self.logger.log(lp.INFO, "Device: " + str(self.myRamdiskDev))
+        self.logger.log(lp.INFO, "Success: " + str(self.success))
+            
 
-    ###########################################################################
-
-    def get_data(self):
-        """
-        Getter for mount data, and if the mounting of a ramdisk was successful
-        """
-        self.logger.log(LogPriority.INFO, "Success: " + str(self.success))
-        self.logger.log(LogPriority.INFO, "Mount point: " + str(self.mntPoint))
-        self.logger.log(LogPriority.INFO, "Device: " + str(self.myRamdiskDev))
-        return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
-
-    ###########################################################################
-
-    def __getRandomizedMountpoint(self) :
-        """
-        Create a randomized (secure) mount point - per python's implementation
-        of mkdtemp - a way to make an unguessable directory on the system
-        
-        @author: Roy Nielsen
-        """
-        success = False
-        try :
-            self.mntPoint = mkdtemp()
-        except Exception, err :
-            self.logger.log(LogPriority.INFO, "Exception trying to create temporary directory")
-        else :
-            success = True
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __get_randomizedMountpoint: " + str(self.mntPoint))            
-        return success
-    
     ###########################################################################
 
     def __create(self) :
@@ -197,17 +174,19 @@ class RamDisk(object) :
         #####
         # Create the ramdisk and attach it to a device.
         cmd = [self.hdiutil, "attach", "-nomount", "ram://" + self.diskSize]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
-        self.logger.log(LogPriority.INFO, "retval: " + str(retval))
-        self.logger.log(LogPriority.INFO,"reterr: " + str(reterr))
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
+
         if reterr:
             success = False
-            raise Exception("Error trying to create ramdisk(" + str(reterr).strip() + ")")
+            raise Exception("Error trying to create ramdisk(" + \
+                            str(reterr).strip() + ")")
         else:
             self.myRamdiskDev = retval.strip()
-            self.logger.log(LogPriority.INFO,"Device: \"" + str(self.myRamdiskDev) + "\"")
+            self.logger.log(lp.DEBUG, "Device: \"" + str(self.myRamdiskDev) + "\"")
             success = True
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __create")            
+        self.logger.log(lp.DEBUG, "Success: " + str(success) + " in __create")
         return success
 
     ###########################################################################
@@ -222,7 +201,32 @@ class RamDisk(object) :
         """
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
-    
+    ###########################################################################
+
+    def getNlogData(self):
+        """
+        Getter for mount data, and if the mounting of a ramdisk was successful
+
+        Also logs the data.
+
+        @author: Roy Nielsen
+        """
+        self.logger.log(lp.INFO, "Success: " + str(self.success))
+        self.logger.log(lp.INFO, "Mount point: " + str(self.mntPoint))
+        self.logger.log(lp.INFO, "Device: " + str(self.myRamdiskDev))
+        return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
+
+    ###########################################################################
+
+    def getNprintData(self):
+        """
+        Getter for mount data, and if the mounting of a ramdisk was successful
+        """
+        print "Success: " + str(self.success)
+        print "Mount point: " + str(self.mntPoint)
+        print "Device: " + str(self.myRamdiskDev)
+        return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
+
     ###########################################################################
 
     def __mount(self) :
@@ -233,6 +237,8 @@ class RamDisk(object) :
         """
         success = False
         success = self.__attach()
+        if success:
+            self.mounted = True
         return success
 
     ###########################################################################
@@ -254,25 +260,27 @@ class RamDisk(object) :
                 #####
                 # "Mac" unmount (not eject)
                 cmd = [self.diskutil, "unmount", self.myRamdiskDev + "s1"]
-                retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+                self.runWith.setCommand(cmd)
+                self.runWith.communicate()
+                retval, reterr, retcode = self.runWith.getNlogReturns()
+
                 if not reterr:
                     success = True
 
                 if success:
                     #####
                     # remount to self.mntPoint
-                    cmd = [self.diskutil, "mount", "-mountPoint", self.mntPoint, 
-                           self.devPartition]
-                    retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+                    cmd = [self.diskutil, "mount", "-mountPoint",
+                           self.mntPoint, self.devPartition]
+                    self.runWith.setCommand(cmd)
+                    self.runWith.communicate()
+                    retval, reterr, retcode = self.runWith.getNlogReturns()
+
                     if not reterr:
                         success = True
-            self.logger.log(LogPriority.INFO, "*******************************************")
-            self.logger.log(LogPriority.INFO, r"retval:   " + str(retval).strip())
-            self.logger.log(LogPriority.INFO, r"reterr:   " + str(reterr).strip())
-            self.logger.log(LogPriority.INFO, r"mntPoint: " + str(self.mntPoint).strip())
-            self.logger.log(LogPriority.INFO, r"device:   " + str(self.myRamdiskDev).strip())
-            self.logger.log(LogPriority.INFO, "*******************************************")
-            self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __mount")
+            self.runWith.getNlogReturns()
+            self.getData()
+            self.logger.log(lp.DEBUG, "Success: " + str(success) + " in __mount")
         return success
 
     ###########################################################################
@@ -291,24 +299,118 @@ class RamDisk(object) :
         """
         success = False
         cmd = [self.diskutil, "disableJournal", self.myRamdiskDev + "s1"]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
         if not reterr:
             success = True
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __remove_journal")
+        self.logger.log(lp.DEBUG, "Success: " + str(success) + " in __remove_journal")
         return success
-    
+
+    ###########################################################################
+
+    def unionOver(self, target="", fstype="hfs", nosuid=None, noowners=True,
+                        noatime=None, nobrowse=None):
+        """
+        Use unionfs to mount a ramdisk on top of a location already on the
+        filesystem.
+
+        @parameter: target - where to lay the ramdisk on top of, ie the lower
+                             filesystem layer.
+
+        @parameter: nosuid - from the mount manpage: "Do not allow
+                             set-user-identifier bits to take effect.
+
+        @parameter: noowners - From the mount manpage: "Ignore the ownership
+                               field for the entire volume.  This causes all
+                               objects to appear as owned by user ID 99 and
+                               group ID 99.  User ID 99 is interpreted as
+                               the current effective user ID, while group
+                               99 is used directly and translates to "unknown".
+
+        @parameter: noatime - from the mount manpage: "Do not update the file
+                              access time when reading from a file.  This
+                              option is useful on file systems where there are
+                              large numbers of files and performance is more
+                              critical than updating the file access time
+                              (which is rarely ever important).
+
+        @parameter: nobrowse - from the mount manpage: "This option indicates
+                               that the mount point should not be visible via
+                               the GUI (i.e., appear on the Desktop as a
+                               separate volume).
+
+        @author: Roy Nielsen
+        """
+        success = False
+
+        #####
+        # If the ramdisk is mounted, unmount it (not eject...)
+        if self.mounted:
+            self._unmount()
+
+        #####
+        # Create the target directory if it doesn't exist yet...
+        if not os.path.isdir(target):
+            if os.path.isfile(target):
+                shutil.move(target, target + ".bak")
+            os.makedirs(target)
+
+        #####
+        # Put together the command if the base options are given
+        if fstype and self.devPartition:
+            #####
+            # Compile the options
+            options = "union"
+            if nosuid:
+                options = options + ",nosuid"
+            if noowners:
+                options = options + ",noowners"
+            if noatime:
+                options = options + ",noatime"
+            if nobrowse:
+                options = options + ",nobrowse"
+            #####
+            # Put the command together.
+            cmd = ["/sbin/mount", "-t", str(fstype), "-o", options,
+                   self.devPartition, target]
+
+            #####
+            # Run the command
+            self.runWith.setCommand(cmd)
+            self.runWith.communicate()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
+            if not reterr:
+                success = True
+
+        return success
+
     ###########################################################################
 
     def unmount(self) :
         """
-        Unmount the disk - same functionality as eject on the mac
+        Unmount the disk - same functionality as __eject on the mac
 
         @author: Roy Nielsen
         """
         success = False
         if self.eject() :
             success = True
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in unmount")
+        self.logger.log(lp.DEBUG, "Success: " + str(success) + " in unmount")
+        return success
+
+    ###########################################################################
+
+    def detach(self) :
+        """
+        Unmount the disk - same functionality as __eject on the mac
+
+        @author: Roy Nielsen
+        """
+        success = False
+        if self.eject() :
+            success = True
+        self.logger.log(lp.DEBUG, "Success: " + str(success) + " in detach")
         return success
 
     ###########################################################################
@@ -321,7 +423,9 @@ class RamDisk(object) :
         """
         success = False
         cmd = [self.diskutil, "unmount", self.devPartition]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
         if not reterr:
             success = True
         return success
@@ -330,14 +434,16 @@ class RamDisk(object) :
 
     def _mount(self) :
         """
-        Mount in the Mac sense - ie, mount an already accessible device to 
+        Mount in the Mac sense - ie, mount an already accessible device to
         a mount point.
 
         @author: Roy Nielsen
         """
         success = False
         cmd = [self.diskutil, "mount", "-mountPoint", self.mntPoint, self.devPartition]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
         if not reterr:
             success = True
         return success
@@ -351,21 +457,20 @@ class RamDisk(object) :
         Detach (on the mac) is a better solution than unmount and eject
         separately.. Besides unmounting the disk, it also stops any processes
         related to the mntPoint
-        
+
         @author: Roy Nielsen
         """
         success = False
         cmd = [self.hdiutil, "detach", self.myRamdiskDev]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
         if not reterr:
             success = True
-        self.logger.log(LogPriority.INFO, "*******************************************")
-        self.logger.log(LogPriority.INFO, "retval: \"" + str(retval).strip() + "\"")
-        self.logger.log(LogPriority.INFO, "reterr: \"" + str(reterr).strip() + "\"")
-        self.logger.log(LogPriority.INFO, "*******************************************")
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in eject")
+        self.runWith.getNlogReturns()
+
         return success
-        
+
     ###########################################################################
 
     def _format(self) :
@@ -382,17 +487,14 @@ class RamDisk(object) :
         #####
         # Format the disk (partition)
         cmd = ["/sbin/newfs_hfs", "-v", "ramdisk", self.devPartition]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
         if not reterr:
             success = True
         #####
         # Re-mount the disk
         self._mount()
-        self.logger.log(LogPriority.INFO, "*******************************************")
-        self.logger.log(LogPriority.INFO, "retval: \"" + str(retval).strip() + "\"")
-        self.logger.log(LogPriority.INFO, "reterr: \"" + str(reterr).strip() + "\"")
-        self.logger.log(LogPriority.INFO, "*******************************************")
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __format")
         return success
 
     ###########################################################################
@@ -407,7 +509,9 @@ class RamDisk(object) :
         size = str(int(self.diskSize)/(2*1024))
         cmd = [self.diskutil, "partitionDisk", self.myRamdiskDev, str(1),
                "MBR", "HFS+", "ramdisk", str(size) + "M"]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        self.runWith.setCommand(cmd)
+        self.runWith.communicate()
+        retval, reterr, retcode = self.runWith.getNlogReturns()
         if not reterr:
             success = True
         if success:
@@ -416,14 +520,13 @@ class RamDisk(object) :
             # self.devPartition
             for line in retval.split("\n"):
                 if re.match("^Initialized (\S+)\s+", line):
-                    linematch = re.match("Initialized\s+(\S+)\s+", line)
-                    self.devPartition = linematch.group(1)
+                    linematch = re.match("Initialized\s+(\S+)", line)
+                    rdevPartition = linematch.group(1)
+                    self.devPartition = re.sub("rdisk", "disk", rdevPartition)
                     break
-        self.logger.log(LogPriority.INFO, "*******************************************")
-        self.logger.log(LogPriority.INFO, "retval: \"\"\"" + str(retval).strip() + "\"\"\"")
-        self.logger.log(LogPriority.INFO, "reterr: \"" + str(reterr).strip() + "\"")
-        self.logger.log(LogPriority.INFO, "*******************************************")
-        self.logger.log(LogPriority.INFO, "Success: " + str(success) + " in __format")
+
+        self.runWith.getNlogReturns()
+
         return success
 
     ###########################################################################
@@ -470,8 +573,8 @@ class RamDisk(object) :
             #almost_size = almost_size.strip()
             size = size.strip()
 
-            self.logger.log(LogPriority.DEBUG, "size: " + str(size))
-            self.logger.log(LogPriority.DEBUG, "found: " + str(found))
+            self.logger.log(lp.INFO, "size: " + str(size))
+            self.logger.log(lp.INFO, "found: " + str(found))
 
             if re.search("unused", found) or re.search("free", found):
                 #####
@@ -498,10 +601,10 @@ class RamDisk(object) :
                             self.free = str(self.free)
                         elif re.search("M", freeMagnitude.strip()):
                             self.free = freeNumber
-        self.logger.log(LogPriority.DEBUG, "free: " + str(self.free))
-        self.logger.log(LogPriority.DEBUG, "Size requested: " + str(self.diskSize))
+        self.logger.log(lp.DEBUG, "free: " + str(self.free))
+        self.logger.log(lp.DEBUG, "Size requested: " + str(self.diskSize))
         if int(self.free) > int(self.diskSize)/(2*1024):
-            success = True    
+            success = True
         print str(self.free)
         print str(success)
         return success
@@ -542,17 +645,17 @@ class RamDisk(object) :
 
 ###############################################################################
 
-def unmount(device=" "):
+def unmount(device=" ", logger=False):
     """
     On the Mac, call detach.
 
     @author: Roy Nielsen
     """
-    detach(device)
+    detach(device, logger)
 
 ###############################################################################
 
-def detach(device=" "):
+def detach(device=" ", logger=False):
     """
     Eject the ramdisk
     Detach (on the mac) is a better solution than unmount and eject
@@ -562,18 +665,20 @@ def detach(device=" "):
     @author: Roy Nielsen
     """
     success = False
+    if not logger:
+        logger = CyLogger()
+    else:
+        logger = logger
+    myRunWith = RunWith(logger)
     if not re.match("^\s*$", device):
         cmd = ["/usr/bin/hdiutil", "detach", device]
-        retval, reterr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        myRunWith.setCommand(cmd)
+        myRunWith.communicate()
+        retval, reterr, retcode = myRunWith.getNlogReturns()
         if not reterr:
             success = True
 
-        LOGGER.log(LogPriority.INFO, "*******************************************")
-        LOGGER.log(LogPriority.INFO, "retval: " + re.escape(str(retval).strip("\"")))
-        LOGGER.log(LogPriority.INFO, "reterr: " + re.escape(str(reterr).strip("\"")))
-        LOGGER.log(LogPriority.INFO, "*******************************************")
-        LOGGER.log(LogPriority.INFO, "Success: " + str(success) + " in eject")
+        myRunWith.getNlogReturns()
     else:
         raise Exception("Cannot eject a device with an empty name..")
     return success
-

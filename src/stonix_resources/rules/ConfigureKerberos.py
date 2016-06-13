@@ -78,7 +78,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
-                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
+                           "eventid": str(self.rulenumber).zfill(4) + "krb5"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": True,

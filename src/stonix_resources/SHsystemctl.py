@@ -24,10 +24,13 @@
 Created on Sep 19, 2012
 
 @author: dkennel
+@change: 2016/05/09 eball Changed auditservice to check output for "enabled"
+    rather than just checking the return code.
 '''
 import subprocess
 import re
 import os
+from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
@@ -43,6 +46,7 @@ class SHsystemctl(object):
         '''
         self.environment = environment
         self.logdispatcher = logdispatcher
+        self.ch = CommandHelper(self.logdispatcher)
         if os.path.exists('/bin/systemctl'):
             self.cmd = '/bin/systemctl '
         elif os.path.exists('/usr/bin/systemctl'):
@@ -113,7 +117,7 @@ class SHsystemctl(object):
         if confsuccess and svcon:
             return True
         else:
-            return False 
+            return False
 
     def auditservice(self, service):
         '''
@@ -126,14 +130,14 @@ class SHsystemctl(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.audit ' + service)
         running = False
-        chk = subprocess.call(self.cmd + '-q is-enabled ' + service,
-                              shell=True, close_fds=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if chk == 0:
+        command = [self.cmd, "is-enabled", service]
+        self.ch.executeCommand(command)
+        output = self.ch.getOutputString()
+        if re.search("enabled", output):
             running = True
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.audit ' + service + ' ' + str(running) + str(chk))
+                               'SHsystemctl.audit ' + service + ' '
+                               + str(running) + ' ' + str(output))
         return running
 
     def isrunning(self, service):

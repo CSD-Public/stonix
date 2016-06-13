@@ -31,6 +31,7 @@
 import os
 import re
 import sys
+import ctypes
 import shutil
 import unittest
 
@@ -70,6 +71,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         if not re.match("^darwin$", self.osfamily.strip()):
             raise unittest.SkipTest("RamDisk does not support this OS" + \
                                     " family: " + str(self.osfamily))
+        else:
+            self.libc = ctypes.CDLL("/usr/lib/libc.dylib")
 
         self.logger = LogDispatcher(self.environ)
 
@@ -324,6 +327,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        success = False
         try:
             #####
             # make sure the test .pkg is NOT installed
@@ -365,7 +369,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
                                   ".tar.bz", ".tbz", ".zip"]
                     for extension in compressed:
                         if self.pkgUrl.endswith(extension):
-                            self.unArchive()
+                            self.pkgr.unArchive()
                         try:
                             self.libc.sync()
                         except:
@@ -384,15 +388,14 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             else:
                 self.assertTrue(False)
         else:
-            self.assertTrue(False)
+            self.logger.log(LogPriority.INFO, "Not able to connect to server...")
+            self.assertTrue(True)
 
         if success:
             #####
             # run checkInstall again
             self.assertTrue(self.pkgr.checkInstall(self.macPackageName))
             self.assertTrue(self.isInstalled())
-        else:
-            self.assertTrue(False)
 
         try:
             #####

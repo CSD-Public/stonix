@@ -32,7 +32,7 @@ import traceback
 import types
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from src.stonix_resources.SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
+from ..SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
 
 
 class SystemIntegrityProtection(Rule):
@@ -63,7 +63,7 @@ class SystemIntegrityProtection(Rule):
             compliant = True
             if compliant:
                 compliant = self.sipobject.report()
-                self.resultAppend(self.sipobject.getDetailedresults())
+                self.resultAppend(self.sipobject.messageGet())
             self.compliant = compliant
             self.rulesuccess = True
         except (KeyboardInterrupt, SystemExit):
