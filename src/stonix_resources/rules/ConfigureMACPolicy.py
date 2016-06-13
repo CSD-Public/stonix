@@ -25,7 +25,7 @@ Created on Jan 30, 2013
 
 The ConfigureMACPolicy class enables and configures SELinux on support OS platforms.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: dwalker 3/10/2014
 @change: dkennel 04/18/2014 Replaced old style CI invocation
 @change: 2015/04/15 dkennel updated for new isApplicable
@@ -109,7 +109,14 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         if self.pkghelper.manager == "zypper":
             self.setopensuse()
         if self.pkghelper.manager == "apt-get":
-            self.setubuntu()
+            if re.search("Debian", self.environ.getostype()):
+                self.setDebian()
+            else:
+                self.setubuntu()
+        if self.pkghelper.manager == 'yum':
+            self.setRedHat()
+        if self.pkghelper.manager == 'dnf':
+            self.setFedora()
 
     def setcommon(self):
         '''
@@ -119,8 +126,14 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @author: Breen Malmberg
         '''
 
+        self.releasefiles = ['/etc/os-release', '/etc/redhat-release']
+        self.path1 = "/etc/selinux/config"
+        self.tpath1 = "/etc/selinux/config.tmp"
         self.ubuntu = False
         self.opensuse = False
+        self.fedora = False
+        self.debian = False
+        self.redhat = False
         self.detailedresults = ""
 
         # for generating a new profile, you need the command, plus the target profile name
@@ -128,8 +141,6 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.aaprofiledir = '/etc/apparmor.d/'
         self.aastatuscmd = '/usr/sbin/apparmor_status'
         self.aaunconf = '/usr/sbin/aa-unconfined'
-
-        self.initobjs()
 
     def initobjs(self):
         '''
@@ -147,6 +158,233 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         except Exception:
             raise
 
+    def setRedHat(self):
+        '''
+        set variables for red hat systems
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "This system is using Red Hat operating system")
+        self.redhat = True
+        self.selinux = 'libselinux'
+        self.setype = 'targeted'
+        self.path2 = ''
+        self.tpath2 = ''
+        self.perms2 = []
+
+        try:
+
+            if re.search('(7\.)|(^[7-9]$)', self.getOsVer()):
+                # set variables for redhat 7 or higher
+                self.logger.log(LogPriority.DEBUG, "This system is using version 7 or higher of the operating system")
+                self.path2 = '/etc/default/grub'
+                self.perms2 = [0, 0, 384]
+            elif re.search('(6\.)|(^[1-6]$)', self.getOsver()):
+                # set variables for redhat 6 or lower
+                self.logger.log(LogPriority.DEBUG, "This system is using version 6 or lower of the operating system")
+                self.path2 = '/etc/grub.conf'
+                self.perms2 = [0, 0, 420]
+            else:
+                self.logger.log(LogPriority.DEBUG, "Unable to determine os version number")
+                self.setRedHatBackupMethod()
+
+        except Exception:
+            raise
+
+        if not self.path2:
+            self.logger.log(LogPriority.DEBUG, "Could not determine location of grub file")
+
+        self.tpath2 = self.path2 + '.tmp'
+
+    def setRedHatBackupMethod(self):
+        '''
+        a backup method for attempting to determine, ad-hoc, which file names and directories apply to this system
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "This system is using Red Hat operating system")
+        self.redhat = True
+
+        try:
+
+            # attempt to set grub path
+            possiblegrublocs = ['/etc/default/grub', '/etc/grub.conf']
+            for loc in possiblegrublocs:
+                if os.path.exists(loc):
+                    self.path2 = loc
+            if not self.path2:
+                self.logger.log(LogPriority.DEBUG, "Backup Method for determining grub conf location failed.")
+
+        except Exception:
+            raise
+
+        # attempt to set permissions
+        if self.path2 == '/etc/default/grub':
+            self.perms2 = [0, 0, 384]
+        else:
+            self.perms2 = [0, 0, 420]
+
+    def getOsVer(self):
+        '''
+        get and return the os version number (x.y) as a string
+
+        @return: osver
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        osver = ""
+        releasefile = ""
+
+        try:
+
+            # determine which release file name this system uses
+            for relfile in self.releasefiles:
+                if os.path.exists(relfile):
+                    releasefile = relfile
+
+            # read the release file
+            if os.path.exists(releasefile):
+                f = open(releasefile, 'r')
+                contentlines = f.readlines()
+                f.close()
+
+                # parse the release file
+                if releasefile == '/etc/redhat-release':
+                    # parse redhat-release file
+                    osver = self.parseRedhatRelease(contentlines)
+                elif releasefile == '/etc/os-release':
+                    # parse os-release file
+                    osver = self.parseRedhatRelease(contentlines)
+            else:
+                self.logger.log(LogPriority.DEBUG, "Unable to locate release file")
+
+        except Exception:
+            raise
+
+        return osver
+
+    def parseRedhatRelease(self, contentlines):
+        '''
+        parse the contents of the redhat-release file
+
+        @param contentlines: list list of strings
+        @return: osver
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        osver = ""
+
+        try:
+
+            for line in contentlines:
+                sline = line.split()
+                for item in sline:
+                    if re.search('([1-6]\.)|(^[1-6]$)', item):
+                        osver = item
+                    elif re.search('([7-9]\.)|(^[7-9]$)', item):
+                        osver = item
+
+        except Exception:
+            raise
+
+        return osver
+
+    def parseOSRelease(self, contentlines):
+        '''
+        parse the contents of the os-release file
+
+        @param contentlines: list list of strings
+        @return: osver
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        osver = ""
+
+        try:
+
+            for line in contentlines:
+                if re.search('VERSION=\"', line):
+                    sline = line.split('=')
+                    osver = str(sline[1]).strip()
+
+        except Exception:
+            raise
+
+        return osver
+
+    def setFedora(self):
+        '''
+        set variables for fedora systems
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "This system is using Fedora operating system")
+        self.fedora = True
+        self.selinux = 'libselinux'
+        self.setype = 'targeted'
+        self.path2 = ''
+        self.tpath2 = ''
+        self.perms2 = []
+
+        try:
+
+            if re.search('([2][0-3]\.)|(^[2][0-3]$)', self.getOsVer()):
+                # set options for fedora 20 or higher
+                self.logger.log(LogPriority.DEBUG, "This system is using version 20 or higher of the operating system")
+                self.path2 = '/etc/default/grub'
+                self.perms2 = [0, 0, 384]
+            elif re.search('([1][0-9]\.)|(^[1][0-9]$)', self.getOsVer()):
+                # set options for fedora 19 or lower
+                self.logger.log(LogPriority.DEBUG, "This system is using version 19 or lower of the operating system")
+                self.path2 = '/etc/grub.conf'
+                self.perms2 = [0, 0, 420]
+            else:
+                self.logger.log(LogPriority.DEBUG, "Unable to determine os version number")
+
+            if not self.path2:
+                self.logger.log(LogPriority.DEBUG, "Could not determine location of grub file")
+
+        except Exception:
+            raise
+
+        self.tpath2 = self.path2 + '.tmp'
+
+    def setDebian(self):
+        '''
+        set variables for Debian systems
+        although many things are the same for Debian and Ubuntu,
+        not all of them are..
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "This system is using Debian operating system")
+        self.debian = True
+        self.selinux = "selinux-basics"
+        self.setype = "default"
+        self.path2 = "/etc/default/grub"
+        self.tpath2 = self.path2 + ".tmp"
+        self.perms2 = [0, 0, 420]
+        self.pkgdict = {'apparmor': True,
+                        'apparmor-utils': True,
+                        'apparmor-profiles': True}
+
+        self.aastartcmd = 'invoke-rc.d apparmor start'
+        self.aaupdatecmd = 'update-rc.d apparmor start 5 S .'
+        self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
+        self.aadefscmd = 'update-rc.d apparmor defaults'
+        self.aastatuscmd = '/usr/sbin/aa-status'
+
     def setopensuse(self):
         '''
         set variables for opensuse systems
@@ -154,6 +392,13 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @return: void
         @author: Breen Malmberg
         '''
+
+        self.logger.log(LogPriority.DEBUG, "This system is using OpenSUSE operating system")
+        self.selinux = 'libselinux1'
+        self.setype = "default"
+        self.path2 = "/etc/default/grub"
+        self.tpath2 = self.path2 + ".tmp"
+        self.perms2 = [0, 0, 420]
 
         self.opensuse = True
         self.pkgdict = {'libapparmor1': True,
@@ -173,6 +418,13 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @return: void
         @author: Breen Malmberg
         '''
+
+        self.logger.log(LogPriority.DEBUG, "This system is using Ubuntu operating system")
+        self.selinux = 'selinux'
+        self.setype = "default"
+        self.path2 = "/etc/default/grub"
+        self.tpath2 = self.path2 + ".tmp"
+        self.perms2 = [0, 0, 420]
 
         self.ubuntu = True
         self.pkgdict = {'apparmor': True,
@@ -199,7 +451,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.detailedresults = ''
 
         try:
-            if self.pkghelper.manager in ("yum", "portage"):
+            if self.pkghelper.manager in ("yum", "portage", "dnf"):
                 if not self.reportSELinux():
                     self.compliant = False
             elif self.pkghelper.manager in ("zypper", "apt-get"):
@@ -378,51 +630,20 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         if the rule does not succeed.
 
         @return bool
-        @author bemalmbe
+        @author Breen Malmberg
         @change: dwalker 4/04/2014 implemented commandhelper, added more
             accurate implementation per system basis for apt-get systems
             especially.
+        @change: Breen Malmberg 6/2/2016 moved all of the localization to the
+        separate localization methods chain at the top of the class
+        @change: Breen Malmberg 6/10/2016 changed the commands to look for unconfined daemons and
+        unlabled device files so that they actually work and do not produce errors when
+        run on rhel7
         '''
+
         self.detailedresults = ""
         self.mode = self.modeci.getcurrvalue()
-        self.ch = CommandHelper(self.logger)
         compliant = True
-        # the selinux path is the same for all systems
-        self.path1 = "/etc/selinux/config"
-        self.tpath1 = "/etc/selinux/config.tmp"
-        # set the appropriate name of the selinux package
-        if self.pkghelper.manager == "apt-get":
-            if re.search("Debian", self.environ.getostype()):
-                self.selinux = "selinux-basics"
-            else:
-                self.selinux = "selinux"
-        elif self.pkghelper.manager == "yum":
-            self.selinux = "libselinux"
-        # set the grub path for each system and certain values to be found
-        # inside the file
-        if re.search("Red Hat", self.environ.getostype()) or \
-                re.search("Fedora", self.environ.getostype()):
-            if re.search("^7", str(self.environ.getosver()).strip()) or \
-                    re.search("^20", str(self.environ.getosver()).strip()):
-                self.setype = "targeted"
-                self.path2 = "/etc/default/grub"
-                self.tpath2 = "/etc/default/grub.tmp"
-                self.perms2 = [0, 0, 420]
-            else:
-                self.setype = "targeted"
-                self.path2 = "/etc/grub.conf"
-                self.tpath2 = "/etc/grub.conf.tmp"
-                self.perms2 = [0, 0, 384]
-        elif self.pkghelper.manager == "apt-get" or self.pkghelper.manager == "zypper":
-            self.setype = "default"
-            self.path2 = "/etc/default/grub"
-            self.tpath2 = "/etc/default/grub.tmp"
-            self.perms2 = [0, 0, 420]
-        else:
-            self.setype = "targeted"
-            self.path2 = "/etc/grub.conf"
-            self.tpath2 = "/etc/grub.conf.tmp"
-            self.perms2 = [0, 0, 384]
 
         if not self.pkghelper.check(self.selinux):
             compliant = False
@@ -431,23 +652,21 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                                        self.detailedresults)
             self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         else:
-            cmd = ["ps", "-eZ", "|", "egrep", "\"initrc\"", "|", "egrep",
-                   "-vw", "\"tr", "|", "ps", "|", "egrep", "|", "bash", "|",
-                   "awk\"", "|", "tr", "\':\'", "'", "'", "|", "awk",
-                   "\'{", "print", "$NF", "}\'"]
-            if not self.ch.executeCommand(cmd):
+            cmd = "ps -eZ | egrep 'initrc' | egrep -vw 'tr | ps | egrep | bash | awk' | tr ':' ' ' | awk '{ print $NF }'"
+            if not self.cmdhelper.executeCommand(cmd):
                 self.detailedresults += "Unable to check for unconfined " + \
                 "daemons\n"
                 compliant = False
-            elif self.ch.getReturnCode() != 0:
+            elif self.cmdhelper.getReturnCode() != 0:
                 self.detailedresults += "Unconfined daemons found running\n"
                 compliant = False
-            cmd = "find /dev -context *:device_t:* \( -type c -o -type b \) -printf \"%p %Z\n\""
-            if not self.ch.executeCommand(cmd):
+            cmd = "ls -Z /dev | grep -i unlabled_t"
+            if not self.cmdhelper.executeCommand(cmd):
                 self.detailedresults += "Unable to check for unlabled " + \
                     "device files\n"
                 compliant = False
-            elif self.ch.getReturnCode() != 0:
+            # for whatever reason, the success exit code for the above command on rhel7 is 1 instead of 0...
+            elif self.cmdhelper.getReturnCode() != 1:
                 self.detailedresults += "Unlabeled device files found\n"
                 compliant = False
             self.f1 = readFile(self.path1, self.logger)
@@ -530,9 +749,9 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                     if conf1 or conf2:
                         self.detailedresults += "Grub file is non compliant\n"
                         compliant = False
-            if self.ch.executeCommand(["/usr/sbin/sestatus"]):
-                output = self.ch.getOutput()
-                error = self.ch.getError()
+            if self.cmdhelper.executeCommand(["/usr/sbin/sestatus"]):
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
                 if output:
                     # self.statuscfglist is a list of regular expressions to match
                     for item in self.statuscfglist:
@@ -572,7 +791,7 @@ the sestatus command to see if selinux is configured properly\n"
         '''
 
         fixresult = True
-        self.detailedresults = ''
+        self.detailedresults = ""
         self.iditerator = 0
 
         try:
@@ -586,10 +805,10 @@ the sestatus command to see if selinux is configured properly\n"
                     if not self.fixAppArmor():
                         fixresult = False
                 else:
-                    self.detailedresults += '\nCould not identify your OS type, or OS not supported for this rule.'
+                    self.detailedresults += 'Could not identify your OS type, or OS not supported for this rule.'
 
             else:
-                self.detailedresults += '\nThe CI for this rule was not enabled. Nothing was done.'
+                self.detailedresults += 'The CI for this rule was not enabled. Nothing was done.'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
@@ -617,7 +836,7 @@ the sestatus command to see if selinux is configured properly\n"
 
             if self.modeci.getcurrvalue() in ['complain', 'permissive']:
                 aamode = '/usr/sbin/aa-complain'
-            elif self.modeci.getcurrvalue() == ['enforce', 'enforcing']:
+            elif self.modeci.getcurrvalue() in ['enforce', 'enforcing']:
                 aamode = '/usr/sbin/aa-enforce'
             if not aamode:
                 self.detailedresults += '\nNo valid mode was specified for apparmor profiles. Valid modes include: enforce, or complain.'
@@ -821,161 +1040,173 @@ the sestatus command to see if selinux is configured properly\n"
         enable and configure selinux. self.rulesuccess will be updated if this
         method does not succeed.
 
-        @author bemalmbe
+        @return: fixresult
+        @rtype: bool
+        @author Breen Malmberg
         @change: dwalker 4/04/2014 implemented commandhelper, added more
             accurate implementation per system basis for apt-get systems
             especially.
         '''
-        if not self.ConfigureMAC.getcurrvalue():
-            return
-        self.detailedresults = ""
+
+        fixresult = True
+
         if not self.kernel:
             return
-        #clear out event history so only the latest fix is recorded
-        self.iditerator = 0
-        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-        for event in eventlist:
-            self.statechglogger.deleteentry(event)
 
-        if not self.pkghelper.check(self.selinux):
-            if self.pkghelper.checkAvailable(self.selinux):
-                if not self.pkghelper.install(self.selinux):
-                    self.rulesuccess = False
-                    self.detailedresults += "selinux was not able to be \
-installed\n"
-                    self.formatDetailedResults("report", self.compliant,
+        try:
+
+            #clear out event history so only the latest fix is recorded
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+
+            if not self.pkghelper.check(self.selinux):
+                if self.pkghelper.checkAvailable(self.selinux):
+                    if not self.pkghelper.install(self.selinux):
+                        fixresult = False
+                        self.detailedresults += "selinux was not able to be \
+    installed\n"
+                        self.formatDetailedResults("fix", fixresult,
+                                                   self.detailedresults)
+                        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                        return
+                    else:
+                        self.seinstall = True
+                else:
+                    self.detailedresults += "selinux package not available \
+    for install on this linux distribution\n"
+                    fixresult = False
+                    self.formatDetailedResults("fix", fixresult,
                                                self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return
-                else:
-                    self.seinstall = True
-            else:
-                self.detailedresults += "selinux package not available \
-for install on this linux distribution\n"
-                self.rulesuccess = False
-                self.formatDetailedResults("report", self.rulesuccess,
-                                           self.detailedresults)
-                return
-        self.f1 = readFile(self.path1, self.logger)
-        self.f2 = readFile(self.path2, self.logger)
-        if self.f1:
-            if not checkPerms(self.path1, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                setPerms(self.path1, [0, 0, 420], self.logger,
-                         self.statechglogger, myid)
-                self.detailedresults += "Corrected permissions on file: \
-" + self.path1 + "\n"
-            val1 = ""
-            tempstring = ""
-            for line in self.f1:
-                if re.match("^#", line) or re.match("^\s*$", line):
-                    tempstring += line
-                    continue
-                if re.match("^SELINUX\s{0,1}=", line.strip()):
-                    if re.search("=", line.strip()):
-                        temp = line.split("=")
-                        if temp[1].strip() == "permissive" or temp[1].strip() == "enforcing":
-                            val1 = temp[1].strip()
-                        if val1 != self.modeci.getcurrvalue():
-                            val1 = self.modeci.getcurrvalue()
-                            continue
-                if re.match("^SELINUXTYPE", line.strip()):
-                    continue
-                else:
-                    tempstring += line
-            tempstring += self.universal
-            if val1:
-                tempstring += "SELINUX=" + val1 + "\n"
-            else:
-                tempstring += "SELINUX=permissive\n"
-            tempstring += "SELINUXTYPE=" + self.setype + "\n"
-
-        else:
-            tempstring = ""
-            tempstring += self.universal
-            tempstring += "SELINUX=permissive\n"
-            tempstring += "SELINUXTYPE=" + self.setype + "\n"
-        if writeFile(self.tpath1, tempstring, self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf",
-                     "filepath": self.path1}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(self.path1, self.tpath1,
-                                                 myid)
-            os.rename(self.tpath1, self.path1)
-            os.chown(self.path1, 0, 0)
-            os.chmod(self.path1, 420)
-            resetsecon(self.path1)
-            self.detailedresults += "Corrected the contents of the file: \
-" + self.path1 + " to be compliant\n"
-        else:
-            self.rulesuccess = False
-        if self.f2:
-            if not checkPerms(self.path2, self.perms2, self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                setPerms(self.path2, self.perms2, self.logger,
-                         self.statechglogger, myid)
-                self.detailedresults += "Corrected permissions on file: \
-" + self.path2 + "\n"
-            if self.pkghelper.manager == "apt-get":
-                tempstring = ""
-                for line in self.f2:
-                    if re.match("^GRUB_CMDLINE_LINUX_DEFAULT", line.strip()):
-                        newstring = re.sub("security=[a-zA-Z0-9]+", "", line)
-                        newstring = re.sub("selinux=[a-zA-Z0-9]+", "", newstring)
-                        newstring = re.sub("\s+", " ", newstring)
-                        tempstring += newstring + "\n"
-                    else:
-                        tempstring += line
-            else:
-                tempstring = ""
-                for line in self.f2:
-                    if re.match("^kernel", line):
-                        temp = line.strip().split()
-                        i = 0
-                        for item in temp:
-                            if re.search("selinux", item):
-                                temp.pop(i)
-                                i += 1
-                                continue
-                            if re.search("enforcing", item):
-                                temp.pop(i)
-                                i += 1
-                                continue
-                            i += 1
-                        tempstringtemp = ""
-                        for item in temp:
-                            tempstringtemp += item
-                        tempstringtemp += "\n"
-                        tempstring += tempstringtemp
-                    else:
-                        tempstring += line
-            if tempstring:
-                if writeFile(self.tpath2, tempstring, self.logger):
+            self.f1 = readFile(self.path1, self.logger)
+            self.f2 = readFile(self.path2, self.logger)
+            if self.f1:
+                if not checkPerms(self.path1, [0, 0, 420], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.path2}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.path2,
-                                                         self.tpath2, myid)
-                    os.rename(self.tpath2, self.path2)
-                    os.chown(self.path2, self.perms2[0], self.perms2[1])
-                    os.chmod(self.path2, self.perms2[2])
-                    resetsecon(self.path2)
-                    self.detailedresults += "Corrected the contents of \
-the file: " + self.path2 + " to be compliant\n"
+                    setPerms(self.path1, [0, 0, 420], self.logger,
+                             self.statechglogger, myid)
+                    self.detailedresults += "Corrected permissions on file: \
+    " + self.path1 + "\n"
+                val1 = ""
+                tempstring = ""
+                for line in self.f1:
+                    if re.match("^#", line) or re.match("^\s*$", line):
+                        tempstring += line
+                        continue
+                    if re.match("^SELINUX\s{0,1}=", line.strip()):
+                        if re.search("=", line.strip()):
+                            temp = line.split("=")
+                            if temp[1].strip() == "permissive" or temp[1].strip() == "enforcing":
+                                val1 = temp[1].strip()
+                            if val1 != self.modeci.getcurrvalue():
+                                val1 = self.modeci.getcurrvalue()
+                                continue
+                    if re.match("^SELINUXTYPE", line.strip()):
+                        continue
+                    else:
+                        tempstring += line
+                tempstring += self.universal
+                if val1:
+                    tempstring += "SELINUX=" + val1 + "\n"
                 else:
-                    self.rulesuccess = False
-        if not self.seinstall:
-            if self.pkghelper.manager == "apt-get":
-                if re.search("Debian", self.environ.getostype()):
-                    cmd = ["/usr/sbin/selinux-activate"]
-                elif re.search("Ubuntu", self.environ.getostype()):
-                    cmd = ["/usr/sbin/setenforce", "Enforcing"]
-                if self.ch.executeCommand(cmd):
-                    if not self.ch.getReturnCode() == 0:
-                        self.rulesuccess = False
+                    tempstring += "SELINUX=permissive\n"
+                tempstring += "SELINUXTYPE=" + self.setype + "\n"
+
+            else:
+                tempstring = ""
+                tempstring += self.universal
+                tempstring += "SELINUX=permissive\n"
+                tempstring += "SELINUXTYPE=" + self.setype + "\n"
+            if writeFile(self.tpath1, tempstring, self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": self.path1}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(self.path1, self.tpath1,
+                                                     myid)
+                os.rename(self.tpath1, self.path1)
+                os.chown(self.path1, 0, 0)
+                os.chmod(self.path1, 420)
+                resetsecon(self.path1)
+                self.detailedresults += "Corrected the contents of the file: \
+    " + self.path1 + " to be compliant\n"
+            else:
+                fixresult = False
+            if self.f2:
+                if not checkPerms(self.path2, self.perms2, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    setPerms(self.path2, self.perms2, self.logger,
+                             self.statechglogger, myid)
+                    self.detailedresults += "Corrected permissions on file: \
+    " + self.path2 + "\n"
+                if self.pkghelper.manager == "apt-get":
+                    tempstring = ""
+                    for line in self.f2:
+                        if re.match("^GRUB_CMDLINE_LINUX_DEFAULT", line.strip()):
+                            newstring = re.sub("security=[a-zA-Z0-9]+", "", line)
+                            newstring = re.sub("selinux=[a-zA-Z0-9]+", "", newstring)
+                            newstring = re.sub("\s+", " ", newstring)
+                            tempstring += newstring + "\n"
+                        else:
+                            tempstring += line
+                else:
+                    tempstring = ""
+                    for line in self.f2:
+                        if re.match("^kernel", line):
+                            temp = line.strip().split()
+                            i = 0
+                            for item in temp:
+                                if re.search("selinux", item):
+                                    temp.pop(i)
+                                    i += 1
+                                    continue
+                                if re.search("enforcing", item):
+                                    temp.pop(i)
+                                    i += 1
+                                    continue
+                                i += 1
+                            tempstringtemp = ""
+                            for item in temp:
+                                tempstringtemp += item
+                            tempstringtemp += "\n"
+                            tempstring += tempstringtemp
+                        else:
+                            tempstring += line
+                if tempstring:
+                    if writeFile(self.tpath2, tempstring, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.path2}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.path2,
+                                                             self.tpath2, myid)
+                        os.rename(self.tpath2, self.path2)
+                        os.chown(self.path2, self.perms2[0], self.perms2[1])
+                        os.chmod(self.path2, self.perms2[2])
+                        resetsecon(self.path2)
+                        self.detailedresults += "Corrected the contents of \
+    the file: " + self.path2 + " to be compliant\n"
+                    else:
+                        fixresult = False
+                        self.detailedresults += "Failed to write configuration to file: " + str(self.tpath2)
+            if not self.seinstall:
+                if self.pkghelper.manager == "apt-get":
+                    if re.search("Debian", self.environ.getostype()):
+                        cmd = ["/usr/sbin/selinux-activate"]
+                    elif re.search("Ubuntu", self.environ.getostype()):
+                        cmd = ["/usr/sbin/setenforce", "Enforcing"]
+                    if self.cmdhelper.executeCommand(cmd):
+                        if not self.cmdhelper.getReturnCode() == 0:
+                            errout = self.cmdhelper.getErrorString()
+                            fixresult = False
+                            self.detailedresults += "The command: " + str(cmd) + " returned an error"
+                            self.logger.log(LogPriority.DEBUG, errout)
+
+        except Exception:
+            raise
+        return fixresult

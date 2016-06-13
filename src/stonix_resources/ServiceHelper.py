@@ -26,6 +26,8 @@ Created on Aug 9, 2012
 @author: dkennel
 @change: 2015/10/15 eball Added method names to debug output
 @change: 2015/10/15 eball disableservice now checks audit and isrunning
+@change: 2016/06/10 dkennel wrapped audit in try catch in case service is not
+installed.
 '''
 import os
 import types
@@ -406,13 +408,20 @@ class ServiceHelper(object):
                 self.logdispatcher.log(LogPriority.DEBUG,
                                '--auditing dual parameter service ('
                                + service + ', ' + servicename + ')')
-                chksingle = self.svchelper.auditservice(self.getService(),
+                try:
+                    chksingle = self.svchelper.auditservice(self.getService(),
                                                         self.getServiceName())
+                except(OSError):
+                    # OS Error usually indicates program is not installed
+                    chksingle = False
                 if self.ishybrid:
                     self.logdispatcher.log(LogPriority.DEBUG,
                                '--Service is a hybrid')
-                    chksecond = self.secondary.auditservice(self.getService(),
+                    try:
+                        chksecond = self.secondary.auditservice(self.getService(),
                                                             self.getServiceName())
+                    except(OSError):
+                        chksecond = False
                 if chksingle or chksecond:
                     servicesuccess = True
                 else:
@@ -424,11 +433,17 @@ class ServiceHelper(object):
                 self.logdispatcher.log(LogPriority.DEBUG,
                                '--auditing single parameter service ('
                                + service + ')')
-                chksingle = self.svchelper.auditservice(self.getService())
+                try:
+                    chksingle = self.svchelper.auditservice(self.getService())
+                except(OSError):
+                    chksingle = False
                 if self.ishybrid:
                     self.logdispatcher.log(LogPriority.DEBUG,
                                '--Service is a hybrid')
-                    chksecond = self.secondary.auditservice(self.getService())
+                    try:
+                        chksecond = self.secondary.auditservice(self.getService())
+                    except(OSError):
+                        chksecond = False
                 if chksingle or chksecond:
                     servicesuccess = True
                 else:
