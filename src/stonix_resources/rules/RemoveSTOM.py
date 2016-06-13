@@ -116,7 +116,7 @@ class RemoveSTOM(Rule):
                          "gov.lanl.STOM2":
                          "/Library/LaunchDaemons/gov.lanl.STOM2.plist"
                          }
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
         for filelabel, fileinfo in sorted(self.files.items()):
             addfilereturn = self.fh.addFile(filelabel,
                                             fileinfo["path"],

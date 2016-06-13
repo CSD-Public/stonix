@@ -93,7 +93,7 @@ class InstallCasperSuite(Rule):
 # Set up CommandHelper instance
         self.ch = CommandHelper(self.logdispatch)
 # Set up FileHelper instance
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
         self.files = {
           "LANL Self Service":
           {"path": "/Applications/LANL Self Service.app",
