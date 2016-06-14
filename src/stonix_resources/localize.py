@@ -322,7 +322,6 @@ EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
 
 # The following list is used by AuditFirefoxUsage(84). It lists domains that
 # are approved for browsing by the root user.
-<<<<<<< HEAD
 LOCALDOMAINS = ["127.0.0.1", "localhost", "lanl.gov"]
 
 # LANL root certificate
@@ -348,8 +347,6 @@ AAOBgQBzHXovZ7uyqHEmT8H1ov83leUZrg7IYjtUBxhQ//YkmCLtrUoklzjC0qyT
 i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
 i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
-=======
-LOCALDOMAINS = ["127.0.0.1", "localhost", "bar.com"]
 
 # these options will be set in /etc/dhcp/dhclient.conf
 # a value of 'request' will cause the client to request that
@@ -381,4 +378,3 @@ DHCPSup = {'subnet-mask': '"example.com"',
            'nis-domain': '""',
            'nis-servers': '""',
            'ntp-servers': '"ntp.example.com"'}
->>>>>>> develop
