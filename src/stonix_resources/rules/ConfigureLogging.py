@@ -112,7 +112,7 @@ invalid."""
                              "in '/private/var/log/opendirectoryd.log'.",
                              None,
                              False,
-                             {None})
+                             {})
 
     def report(self):
         '''ConfigureLogging.report() Public method to report on the
