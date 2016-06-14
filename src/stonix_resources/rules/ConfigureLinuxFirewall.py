@@ -165,6 +165,7 @@ CONFIGURELINUXFIREWALL to False.'''
                         if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
                                      '\s+all\s+--\s+anywhere\s+anywhere', line):
                             catchall = True
+                            break
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. ipv4 catchall rule: "
@@ -180,33 +181,34 @@ CONFIGURELINUXFIREWALL to False.'''
                         if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
                                      '\s+all\s+anywhere\s+anywhere', line):
                             catchall6 = True
+                            break
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. ipv6 catchall rule: "
                                      + str(catchall)])
                 if not iptablesrunning:
                     self.detailedresults += 'This system appears to use ' + \
-                        'iptables but it is not running as required.'
+                        'iptables but it is not running as required.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IPtables not running."])
                 if not ip6tablesrunning:
                     self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but it is not running as required.'
+                        'ip6tables but it is not running as required.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IP6tables not running."])
                 if not catchall:
                     self.detailedresults += 'This system appears to use ' + \
                         'iptables but the expected deny all is missing ' + \
-                        'from the rules.'
+                        'from the rules.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. Missing v4 deny all."])
                 if not catchall6:
                     self.detailedresults += 'This system appears to use ' + \
                         'ip6tables but the expected deny all is missing ' + \
-                        'from the rules.'
+                        'from the rules.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. Missing v6 deny all."])
