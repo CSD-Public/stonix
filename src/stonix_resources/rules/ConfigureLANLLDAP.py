@@ -29,6 +29,7 @@ from LANL-stor.
 @change: 2015/10/01 eball - Refactoring Red Hat code for sssd
 @change: 2015/10/23 eball - Adding undo methods to new code in fix()
 @change: 2015/11/16 eball - Moving RHEL6 back to nslcd
+@change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG standards
 @change: 2016/01/28 eball - Improved handling for LDAPServer CI
 '''
 from __future__ import absolute_import
@@ -113,12 +114,14 @@ effect."""
                 self.nslcd = False
 
             packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
-                           "krb5-workstation", "oddjob-mkhomedir"]
+                           "krb5-workstation", "oddjob-mkhomedir",
+                           "libpwquality"]
             packagesRhel6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                             "oddjob-mkhomedir"]
-            packagesUbu = ["libpam-ldapd", "libpam-passwdqc", "libpam-krb5"]
+                             "oddjob-mkhomedir", "libpwquality"]
+            packagesUbu = ["libpam-ldapd", "libpam-cracklib",
+                           "libpam-krb5"]
             packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
-                           "libpam-passwdqc", "libpam-krb5"]
+                           "libpam-cracklib", "libpam-krb5"]
             packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
                             "pam_pwquality", "sssd", "krb5"]
             if self.ph.determineMgr() == "apt-get":
@@ -387,8 +390,10 @@ effect."""
                     results += "Failed to write good configuration to " + \
                         self.sssdconfpath + "\n"
                 if not self.sh.disableservice("nscd"):
-                    success = False
-                    results += "Failed to disable nscd\n"
+                    warning = "Failed to disable nscd. This may require " + \
+                        "an administrator to disable this service after a " + \
+                        "reboot."
+                    self.logger.log(LogPriority.WARNING, warning)
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -399,8 +404,10 @@ effect."""
                     self.statechglogger.recordchgevent(myid, event)
                 if self.sh.isrunning("sssd"):
                     if not self.sh.reloadservice("sssd"):
-                        success = False
-                        results += "Failed to reload sssd service\n"
+                        warning = "Failed to reload sssd service; the " + \
+                            "system should be rebooted to finalize the " + \
+                            "configuration."
+                        self.logger.log(LogPriority.WARNING, warning)
                 if not self.sh.auditservice("sssd"):
                     if not self.sh.enableservice("sssd"):
                         success = False
@@ -627,9 +634,10 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
             pamconf[passwd] = '''password    requisite     \
-pam_passwdqc.so min=disabled,disabled,16,12,8
+pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3
 password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=6
+use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
@@ -662,9 +670,10 @@ account sufficient      pam_localuser.so
 account required        pam_sss.so      use_first_pass
 '''
             pamconf[passwd] = '''password        requisite       \
-pam_pwquality.so minlen=8 minclass=3
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3
 password        sufficient      pam_unix.so sha512 shadow nullok \
-try_first_pass use_authtok remember=6
+try_first_pass use_authtok remember=10
 password        optional        pam_gnome_keyring.so    use_authtok
 password        required        pam_sss.so      use_authtok
 '''
@@ -704,9 +713,10 @@ account     sufficient    pam_succeed_if.so uid < 500 quiet
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 
-password    requisite     pam_passwdqc.so min=disabled,disabled,16,12,8
+password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
+dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
 password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=6
+nullok try_first_pass use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 
@@ -749,9 +759,10 @@ account     [default=bad success=ok user_unknown=ignore] pam_sss.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 
-password    requisite     pam_pwquality.so minlen=8 minclass=3
+password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
+dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
 password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=6
+nullok try_first_pass use_authtok remember=10
 password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
