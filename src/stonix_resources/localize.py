@@ -324,6 +324,38 @@ EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
 # are approved for browsing by the root user.
 LOCALDOMAINS = ["127.0.0.1", "localhost", "lanl.gov"]
 
+# these options will be set in /etc/dhcp/dhclient.conf
+# a value of 'request' will cause the client to request that
+# option's configuration from the dhcp server. a value of
+# 'supersede' will cause the client to use the locally-defined
+# value in the DHCPSup dictionary, defined here in localize.py
+# below are the request/supersede settings used at LANL. do not
+# change, unless you have an exception or deviation
+DHCPDict = {'subnet-mask': 'request',
+            'time-offset': 'supersede',
+            'routers': 'request',
+            'domain-name': 'supersede',
+            'domain-name-servers': 'supersede',
+            'nis-domain': 'supersede',
+            'nis-servers': 'supersede',
+            'ntp-servers': 'supersede'}
+
+# these options will be used whenever a value of
+# 'supersede' is specified for one of the options in
+# DCHPDict. Change these to reflect your organization's
+# actual servers/domains/settings
+# change the 'changeme' values if you choose to supersede
+# them in the DHCPDict dictionary, above!
+DHCPSup = {'subnet-mask': 'changeme',
+           'time-offset': '-21600',
+           'routers': 'changeme',
+           'domain-name': '"lanl.gov"',
+           'domain-name-servers': '128.165.4.4, 128.165.4.33',
+           'nis-domain': '""',
+           'nis-servers': '""',
+           'ntp-servers': '"ntp.lanl.gov"'}
+
+
 # LANL root certificate
 ROOTCERT = """-----BEGIN CERTIFICATE-----
 MIIDsTCCAxqgAwIBAgIEPZxq5jANBgkqhkiG9w0BAQUFADBvMQswCQYDVQQGEwJV
@@ -347,34 +379,3 @@ AAOBgQBzHXovZ7uyqHEmT8H1ov83leUZrg7IYjtUBxhQ//YkmCLtrUoklzjC0qyT
 i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
 i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
-
-# these options will be set in /etc/dhcp/dhclient.conf
-# a value of 'request' will cause the client to request that
-# option's configuration from the dhcp server. a value of
-# 'supersede' will cause the client to use the locally-defined
-# value in the dhclient.conf configuration file
-DHCPDict = {'subnet-mask': 'request',
-            'broadcast-address': 'supersede',
-            'time-offset': 'supersede',
-            'routers': 'supersede',
-            'domain-name': 'supersede',
-            'domain-name-servers': 'supersede',
-            'host-name': 'supersede',
-            'nis-domain': 'supersede',
-            'nis-servers': 'supersede',
-            'ntp-servers': 'supersede'}
-
-# these options will be used whenever a value of
-# 'supersede' is specified for one of the options in
-# DCHPDict. Change these to reflect your organization's
-# actual servers/domains/settings
-DHCPSup = {'subnet-mask': '"example.com"',
-           'broadcast-address': '192.168.1.255',
-           'time-offset': '-18000',
-           'routers': '192.168.1.1',
-           'domain-name': '"example.com"',
-           'domain-name-servers': '192.168.1.2',
-           'host-name': '"localhost"',
-           'nis-domain': '""',
-           'nis-servers': '""',
-           'ntp-servers': '"ntp.example.com"'}
