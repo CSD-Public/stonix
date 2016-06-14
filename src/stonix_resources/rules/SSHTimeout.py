@@ -95,7 +95,7 @@ automatically logged out. '''
                     compliant = False
                     results += "Package " + openssh + " is not installed\n"
             self.ssh = {"ClientAliveInterval": "900",
-                        "ClientAliveCountMax": "0"}
+                        "ClientAliveCountMax": "1"}
             if os.path.exists(self.sshfile):
                 kvtype = "conf"
                 intent = "present"
