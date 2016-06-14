@@ -89,7 +89,7 @@ invalid."""
             "CONFIGURELOGGING to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
+        self.rootrequired = True
         self.service = ""
         self.logd = ""
         self.iditerator = 0
@@ -112,7 +112,7 @@ invalid."""
                              "in '/private/var/log/opendirectoryd.log'.",
                              None,
                              False,
-                             {None})
+                             {})
 
     def report(self):
         '''ConfigureLogging.report() Public method to report on the
