@@ -89,8 +89,8 @@ STONIX has done the baseline configuration.
                          'DISA RHEL 7 STIG 2.5.8.2.4']
         datatype = 'bool'
         key = 'configurelinuxfirewall'
-        instructions = '''To disable this rule set the value of CONFIGURELINUXFIREWALL to
-False.'''
+        instructions = '''To disable this rule set the value of \
+CONFIGURELINUXFIREWALL to False.'''
         default = True
         self.clfci = self.initCi(datatype, key, instructions, default)
         self.isfirewalld = False
@@ -125,81 +125,90 @@ False.'''
                     compliant = True
                 else:
                     compliant = False
-                    self.detailedresults = 'This system appears to have firewalld but it is not running as required'
+                    self.detailedresults = 'This system appears to have ' + \
+                        'firewalld but it is not running as required'
             elif self.isufw:
                 cmdufw = '/usr/sbin/ufw status'
                 if not self.cmdhelper.executeCommand(cmdufw):
                     self.detailedresults += "Unable to run " + \
-                    "ufw status command\n"
-                    return False
-                outputufw = self.cmdhelper.getOutputString()
-                if re.search('Status: inactive', outputufw):
+                        "ufw status command\n"
                     compliant = False
-                    self.detailedresults = 'This system appears to have ufw but it is not running as required'
+                else:
+                    outputufw = self.cmdhelper.getOutputString()
+                    if re.search('Status: inactive', outputufw):
+                        compliant = False
+                        self.detailedresults = 'This system appears to have ' + \
+                            'ufw but it is not running as required'
             else:
                 if self.servicehelper.auditservice('iptables.service') or \
-                self.servicehelper.auditservice('iptables'):
+                   self.servicehelper.auditservice('iptables'):
                     iptablesrunning = True
                 self.logger.log(LogPriority.DEBUG,
-                            ['ConfigureLinuxFirewall.report',
-                             "RHEL 6 type system. iptables service: " + 
-                             str(iptablesrunning)])
+                                ['ConfigureLinuxFirewall.report',
+                                 "RHEL 6 type system. iptables service: " +
+                                 str(iptablesrunning)])
                 if self.servicehelper.auditservice('ip6tables.service') or \
-                self.servicehelper.auditservice('ip6tables'):
+                   self.servicehelper.auditservice('ip6tables'):
                     ip6tablesrunning = True
                 self.logger.log(LogPriority.DEBUG,
-                            ['ConfigureLinuxFirewall.report',
-                             "RHEL 6 type system. ip6tables service: " + 
-                             str(ip6tablesrunning)])
+                                ['ConfigureLinuxFirewall.report',
+                                 "RHEL 6 type system. ip6tables service: " +
+                                 str(ip6tablesrunning)])
                 cmd = [self.iptables, "-L"]
                 if not self.cmdhelper.executeCommand(cmd):
                     self.detailedresults += "Unable to run " + \
-                    "iptables -L command\n"
-                    return False
-                output = self.cmdhelper.getOutput()
-                for line in output:
-                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+--\s+anywhere\s+anywhere', line):
-                        catchall = True
-                self.logger.log(LogPriority.DEBUG,
-                            ['ConfigureLinuxFirewall.report',
-                             "RHEL 6 type system. ipv4 catchall rule: " + 
-                             str(catchall)])
+                        "iptables -L command\n"
+                    compliant = False
+                else:
+                    output = self.cmdhelper.getOutput()
+                    for line in output:
+                        if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                     '\s+all\s+--\s+anywhere\s+anywhere', line):
+                            catchall = True
+                            break
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. ipv4 catchall rule: "
+                                     + str(catchall)])
                 cmd6 = [self.ip6tables, "-L"]
                 if not self.cmdhelper.executeCommand(cmd6):
                     self.detailedresults += "Unable to run " + \
-                    "ip6tables -L command\n"
-                    return False
-                output6 = self.cmdhelper.getOutput()
-                for line in output6:
-                    if re.search('Chain INPUT \(policy REJECT\)|REJECT\s+all\s+anywhere\s+anywhere', line):
-                        catchall6 = True
-                self.logger.log(LogPriority.DEBUG,
-                            ['ConfigureLinuxFirewall.report',
-                             "RHEL 6 type system. ipv6 catchall rule: " + 
-                             str(catchall)])
+                        "ip6tables -L command\n"
+                    compliant = False
+                else:
+                    output6 = self.cmdhelper.getOutput()
+                    for line in output6:
+                        if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                     '\s+all\s+anywhere\s+anywhere', line):
+                            catchall6 = True
+                            break
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "RHEL 6 type system. ipv6 catchall rule: "
+                                     + str(catchall)])
                 if not iptablesrunning:
-                    self.detailedresults = 'This system appears to use iptables but it is not running as required.'
+                    self.detailedresults += 'This system appears to use ' + \
+                        'iptables but it is not running as required.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IPtables not running."])
                 if not ip6tablesrunning:
-                    self.detailedresults = self.detailedresults + '\n'
-                    self.detailedresults = self.detailedresults + \
-                    'This system appears to use ip6tables but it is not running as required.'
+                    self.detailedresults += 'This system appears to use ' + \
+                        'ip6tables but it is not running as required.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IP6tables not running."])
                 if not catchall:
-                    self.detailedresults = self.detailedresults + '\n'
-                    self.detailedresults = self.detailedresults + \
-                    'This system appears to use iptables but the expected deny all is missing from the rules.'
+                    self.detailedresults += 'This system appears to use ' + \
+                        'iptables but the expected deny all is missing ' + \
+                        'from the rules.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. Missing v4 deny all."])
                 if not catchall6:
-                    self.detailedresults = self.detailedresults + '\n'
-                    self.detailedresults = self.detailedresults + \
-                    'This system appears to use ip6tables but the expected deny all is missing from the rules.'
+                    self.detailedresults += 'This system appears to use ' + \
+                        'ip6tables but the expected deny all is missing ' + \
+                        'from the rules.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. Missing v6 deny all."])
@@ -214,12 +223,13 @@ False.'''
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. Check failed."])
             if compliant:
-                self.detailedresults = 'The firewall configuration appears to meet minimum expectations.'
+                self.detailedresults = 'The firewall configuration appears ' + \
+                    'to meet minimum expectations.'
                 self.targetstate = 'configured'
                 self.compliant = True
             else:
                 self.targetstate = 'notconfigured'
-            return compliant
+                self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -243,6 +253,7 @@ False.'''
         @author: D. Kennel
         """
         if self.clfci.getcurrvalue():
+            self.rulesuccess = True
             try:
                 if self.isfirewalld:
                     self.servicehelper.enableservice('firewalld.service')
@@ -251,11 +262,12 @@ False.'''
                     ufwcmd = '/usr/sbin/ufw enable'
                     if not self.cmdhelper.executeCommand(ufwcmd):
                         self.detailedresults += "Unable to run " + \
-                        "ufw enable command\n"
-                        return False
-                    self.detailedresults += "Firewall configured.\n "
+                            "ufw enable command\n"
+                        self.rulesuccess = False
+                    else:
+                        self.detailedresults += "Firewall configured.\n "
                 elif os.path.exists('/usr/bin/system-config-firewall') or \
-                os.path.exists('/usr/bin/system-config-firewall-tui'):
+                     os.path.exists('/usr/bin/system-config-firewall-tui'):
 
                     systemconfigfirewall = '''# Configuration file for system-config-firewall
 
@@ -320,7 +332,7 @@ COMMIT
                     self.detailedresults += "Unable to configure a " + \
                         "firewall for this system. The system " + \
                         "administrator should configure an iptables firewall.\n"
-                self.rulesuccess = True
+                    self.rulesuccess = False
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
@@ -352,11 +364,11 @@ COMMIT
                 ufwcmd = '/usr/sbin/ufw disable'
                 if not self.cmdhelper.executeCommand(ufwcmd):
                     self.detailedresults += "Unable to run " + \
-                    "ufw disable command\n"
+                        "ufw disable command\n"
                     return False
                 self.detailedresults += "Firewall configured.\n "
             elif os.path.exists('/usr/bin/system-config-firewall') or \
-            os.path.exists('/usr/bin/system-config-firewall-tui'):
+                 os.path.exists('/usr/bin/system-config-firewall-tui'):
                 systemconfigfirewall = '''# Configuration file for system-config-firewall
 
 --disabled
