@@ -80,10 +80,10 @@ automatically logged out. '''
             compliant = True
             results = ""
             if self.environ.getostype() == "Mac OS X":
-                self.path = '/private/etc/sshd_config'
-                self.tpath = '/private/etc/sshd_config.tmp'
+                self.sshfile = '/private/etc/ssh/sshd_config'
+                self.tpath = '/private/etc/ssh/sshd_config.tmp'
             else:
-                self.path = '/etc/ssh/sshd_config'
+                self.sshfile = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
 
                 self.ph = Pkghelper(self.logger, self.environ)
@@ -96,23 +96,22 @@ automatically logged out. '''
                     results += "Package " + openssh + " is not installed\n"
             self.ssh = {"ClientAliveInterval": "900",
                         "ClientAliveCountMax": "0"}
-            if os.path.exists(self.path):
-                compliant = True
+            if os.path.exists(self.sshfile):
                 kvtype = "conf"
                 intent = "present"
                 self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                             kvtype, self.path, self.tpath,
+                                             kvtype, self.sshfile, self.tpath,
                                              self.ssh, intent, "space")
                 if not self.editor.report():
                     compliant = False
-                    results += "Settings in " + self.path + " are not " + \
+                    results += "Settings in " + self.sshfile + " are not " + \
                         "correct\n"
-                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                if not checkPerms(self.sshfile, [0, 0, 0644], self.logger):
                     compliant = False
-                    results += self.path + " permissions are incorrect\n"
+                    results += self.sshfile + " permissions are incorrect\n"
             else:
                 compliant = False
-                results += self.path + " does not exist\n"
+                results += self.sshfile + " does not exist\n"
 
             self.detailedresults = results
             self.compliant = compliant
@@ -169,38 +168,41 @@ automatically logged out. '''
                             self.statechglogger.recordchgevent(myid, event)
                             self.detailedresults += "Installed openssh-server\n"
                             self.editor = KVEditorStonix(self.statechglogger, 
-                                self.logger,"conf", self.path, self.tpath, 
+                                self.logger,"conf", self.sshfile, self.tpath, 
                                                       self.ssh, "present", "space")
                             self.editor.report()
                     else:
                         debug += "openssh-server not available to install\n"
                         self.rulesuccess = False
                         return
-            if not os.path.exists(self.path):
-                createFile(self.path, self.logger)
-                created = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.path}
-                self.statechglogger.recordchgevent(myid, event)
-                self.editor = KVEditorStonix(self.statechglogger, 
-                    self.logger, "conf", self.path, self.tpath, self.ssh, 
+            if not os.path.exists(self.sshfile):
+                if createFile(self.sshfile, self.logger):
+                    created = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": self.sshfile}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.editor = KVEditorStonix(self.statechglogger, 
+                        self.logger, "conf", self.sshfile, self.tpath, self.ssh, 
                                                             "present", "space")
-                self.editor.report()
-
-            if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
+                    self.editor.report()
+                else:
+                    self.detailedresults += "Unable to create the " + self.sshfile + \
+                        " file\n"
+                    success = False
+            if os.path.exists(self.sshfile):
+                if not checkPerms(self.sshfile, [0, 0, 420], self.logger):
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path, [0, 0, 420], self.logger,
+                        if not setPerms(self.sshfile, [0, 0, 420], self.logger,
                                         self.statechglogger, myid):
                             debug += "Unable to set Permissions \
     for: " + self.editor.getPath() + "\n"
                             success = False
                     else:
-                        if not setPerms(self.path, [0, 0, 420], self.logger):
+                        if not setPerms(self.sshfile, [0, 0, 420], self.logger):
                             success = False
                 if self.editor.fixables or self.editor.removeables:
                     if not created:
@@ -218,9 +220,9 @@ automatically logged out. '''
                         debug += "Unable to complete kveditor fix\n"
                         success = False
                         success = False
-                    os.chown(self.path, 0, 0)
-                    os.chmod(self.path, 420)
-                    resetsecon(self.path)
+                    os.chown(self.sshfile, 0, 0)
+                    os.chmod(self.sshfile, 420)
+                    resetsecon(self.sshfile)
                 self.rulesuccess = success
             if debug:
                 self.logger.log(LogPriority.DEBUG, debug)
