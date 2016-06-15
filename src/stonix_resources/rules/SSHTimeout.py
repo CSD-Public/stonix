@@ -55,7 +55,7 @@ class SSHTimeout(Rule):
         self.mandatory = True
         self.helptext = '''SSH allows administrators to set an idle timeout \
 interval. After this interval has passed, the idle user will be \
-automatically logged out. '''
+automatically logged out. This rule sets the timeout to 15 minutes'''
         self.ci = self.initCi("bool",
                               "SSHTIMEOUT",
                               "To disable this rule set the value " + \
@@ -112,7 +112,6 @@ automatically logged out. '''
             else:
                 compliant = False
                 results += self.sshfile + " does not exist\n"
-
             self.detailedresults = results
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -173,6 +172,7 @@ automatically logged out. '''
                             self.editor.report()
                     else:
                         debug += "openssh-server not available to install\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                         self.rulesuccess = False
                         return
             if not os.path.exists(self.sshfile):
@@ -190,6 +190,8 @@ automatically logged out. '''
                 else:
                     self.detailedresults += "Unable to create the " + self.sshfile + \
                         " file\n"
+                    debug = "Unable to create the " + self.sshfile + " file\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     success = False
             if os.path.exists(self.sshfile):
                 if not checkPerms(self.sshfile, [0, 0, 420], self.logger):
@@ -198,12 +200,17 @@ automatically logged out. '''
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(self.sshfile, [0, 0, 420], self.logger,
                                         self.statechglogger, myid):
-                            debug += "Unable to set Permissions \
-    for: " + self.editor.getPath() + "\n"
+                            debug += "Unable to set Permissions " + \
+                                "for: " + self.editor.getPath() + "\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                     else:
                         if not setPerms(self.sshfile, [0, 0, 420], self.logger):
+                            debug += "Unable to set Permissions " + \
+                                "for: " + self.editor.getPath() + "\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                             success = False
+                            
                 if self.editor.fixables or self.editor.removeables:
                     if not created:
                         self.iditerator += 1
@@ -213,19 +220,19 @@ automatically logged out. '''
                         debug += "kveditor fix ran successfully\n"
                         if self.editor.commit():
                             debug += "kveditor commit ran successfully\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                         else:
                             debug += "Unable to complete kveditor commit\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                     else:
                         debug += "Unable to complete kveditor fix\n"
-                        success = False
+                        self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     os.chown(self.sshfile, 0, 0)
                     os.chmod(self.sshfile, 420)
                     resetsecon(self.sshfile)
                 self.rulesuccess = success
-            if debug:
-                self.logger.log(LogPriority.DEBUG, debug)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
