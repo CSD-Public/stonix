@@ -368,7 +368,8 @@ this system, set the value of EnableKernelAuditing to False"""
                                   '-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k export': True,
                                   '-a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete': True,
                                   '-a always,exit -F arch=b32 -S init_module -S delete_module -k modules': True,
-                                  '-a always,exit -F arch=b32 -S settimeofday -S stime -S adjtimex -S clock_settime -k audit_time_rules': True,
+                                  '-a always,exit -F arch=b32 -S settimeofday -S adjtimex -S clock_settime -k audit_time_rules': True,
+                                  '-a always,exit -F arch=b32 -S stime -k audit_time_rules': True,
                                   '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k audit_rules_networkconfig_modification': True,
                                   '-a always,exit -F perm=x -F euid=0 -F auid>=1000 -F auid!=4294967295 -k privileged': True,
                                   '-e 2': True}
@@ -435,8 +436,12 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.logger.log(LogPriority.DEBUG, "System is 64 bit architecture; Adding 64 bit rules to list...")
                 for item in self.auditrulesoptions:
                     if re.search('arch=b32', item):
-                        newitem = item.replace('arch=b32', 'arch=b64')
-                        newaurulesoptsdict[newitem] = True
+                        # the syscall stime only has a 32bit component
+                        # so we can't change the arch for it to 64bit -
+                        # even on 64 bit systems!
+                        if not re.search('stime', item):
+                            newitem = item.replace('arch=b32', 'arch=b64')
+                            newaurulesoptsdict[newitem] = True
                 if newaurulesoptsdict:
                     for item in newaurulesoptsdict:
                         self.auditrulesoptions[item] = True
@@ -836,9 +841,18 @@ this system, set the value of EnableKernelAuditing to False"""
 
                 aurulestmp = self.auditrulesfile + '.stonixtmp'
 
+                # find -e 2 line if it already exists, remove it
+                # and move it to the end of the file
+                for line in contentlines:
+                    if re.search('-e 2', line):
+                        contentlines.remove(line)
+
                 for item in self.auditrulesoptions:
                     if not self.auditrulesoptions[item]:
-                        contentlines.append(item + '\n')
+                        if not re.search('-e 2', item):
+                            contentlines.append(item + '\n')
+
+                contentlines.append('-e 2\n')
 
                 self.logger.log(LogPriority.DEBUG,
                                 "Writing contentlines to " +
@@ -859,7 +873,10 @@ this system, set the value of EnableKernelAuditing to False"""
                                 " path does not exist")
                 contentlines = []
                 for item in self.auditrulesoptions:
-                    contentlines.append(item + '\n')
+                    if not re.search('-e 2', item):
+                        contentlines.append(item + '\n')
+
+                contentlines.append('-e 2\n')
 
                 self.logger.log(LogPriority.DEBUG,
                                 "Creating " + str(self.auditrulesfile) +
