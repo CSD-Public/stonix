@@ -239,14 +239,14 @@ class ConfigureScreenLocking(RuleKVEditor):
                    "true",
                    " --get /apps/gnome-screensaver/lock_enabled": "true",
                    " --get /apps/gnome-screensaver/mode": "blank-only",
-                   " --get /apps/gnome-screensaver/idle_delay": "15"}
+                   " --get /desktop/gnome/session/idle_delay": "15"}
         for cmd in getcmds:
             cmd2 = gconf + cmd
             self.cmdhelper.executeCommand(cmd2)
             output = self.cmdhelper.getOutput()
             error = self.cmdhelper.getError()
             if output:
-                if cmd == " --get /apps/gnome-screensaver/idle_delay":
+                if cmd == " --get /desktop/gnome/session/idle_delay":
                     if int(output[0].strip()) > 15:
                         compliant = False
                 elif output[0].strip() != getcmds[cmd]:
@@ -475,11 +475,11 @@ for this portion of the rule\n"
         gcmd1 = " --get /apps/gnome-screensaver/idle_activation_enabled"
         gcmd2 = " --get /apps/gnome-screensaver/lock_enabled"
         gcmd3 = " --get /apps/gnome-screensaver/mode"
-        gcmd4 = " --get /apps/gnome-screensaver/idle_delay"
+        gcmd4 = " --get /desktop/gnome/session/idle_delay"
         scmd1 = " --type bool --set /apps/gnome-screensaver/idle_activation_enabled true"
         scmd2 = " --type bool --set /apps/gnome-screensaver/lock_enabled true"
         scmd3 = ' --type string --set /apps/gnome-screensaver/mode "blank-only"'
-        scmd4 = " --type int --set /apps/gnome-screensaver/idle_delay 15"
+        scmd4 = " --type int --set /desktop/gnome/session/idle_delay 15"
         success = True
         cmd = gconf + gcmd1
         if self.cmdhelper.executeCommand(cmd):
