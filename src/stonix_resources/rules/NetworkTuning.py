@@ -201,7 +201,7 @@ class NetworkTuning(Rule):
             if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.path + ": Expected 644, found " + \
-                    getOctalPerms(self.path) + "\n"
+                    str(getOctalPerms(self.path)) + "\n"
                 compliant = False
         return compliant
 
@@ -259,7 +259,7 @@ class NetworkTuning(Rule):
             if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.path + ": Expected 644, found " + \
-                    getOctalPerms(self.path) + "\n"
+                    str(getOctalPerms(self.path)) + "\n"
                 compliant = False
         return compliant
 
@@ -463,7 +463,7 @@ class NetworkTuning(Rule):
             if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.path + ": Expected 644, found " + \
-                    getOctalPerms(self.path) + "\n"
+                    str(getOctalPerms(self.path)) + "\n"
                 compliant = False
         return compliant
 
@@ -493,7 +493,7 @@ class NetworkTuning(Rule):
             if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.path + ": Expected 644, found " + \
-                    getOctalPerms(self.path) + "\n"
+                    str(getOctalPerms(self.path)) + "\n"
                 compliant = False
         return compliant
 
