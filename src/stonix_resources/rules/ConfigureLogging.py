@@ -104,11 +104,11 @@ invalid."""
                              "defaults",
                              "/Library/Preferences/OpenDirectory/opendirectoryd",
                              "",
-                             {'"Debug Logging Level"': ["5", "5"]},
+                             {"Debug Logging Level": ["5", "5"]},
                              "present",
                              "",
-                             "Set OpenDirectory Logging Level to '5' " +
-                             "This show user creationg and deletion events " + \
+                             'Set OpenDirectory "Debug Logging Level" Level to 5 ' + \
+                             "This show user creation and deletion events " + \
                              "in '/private/var/log/opendirectoryd.log'.",
                              None,
                              False,

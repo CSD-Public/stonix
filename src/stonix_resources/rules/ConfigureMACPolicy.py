@@ -181,7 +181,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 self.logger.log(LogPriority.DEBUG, "This system is using version 7 or higher of the operating system")
                 self.path2 = '/etc/default/grub'
                 self.perms2 = [0, 0, 384]
-            elif re.search('(6\.)|(^[1-6]$)', self.getOsver()):
+            elif re.search('(6\.)|(^[1-6]$)', self.getOsVer()):
                 # set variables for redhat 6 or lower
                 self.logger.log(LogPriority.DEBUG, "This system is using version 6 or lower of the operating system")
                 self.path2 = '/etc/grub.conf'
