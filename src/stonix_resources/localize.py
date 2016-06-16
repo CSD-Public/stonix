@@ -147,13 +147,9 @@ PROXYDOMAIN = "lanl.gov"
 # Domain Name Server (DNS) defaults
 DNS = "128.165.4.4 128.165.4.33"
 
-# (redhat 7 and after) Specify a subnet to allow services access to in /etc/hosts.allow
+# Specify a subnet to allow services access to in /etc/hosts.allow
 # use format: xxx.xxx.0.0/16
-ALLOWNET = '128.165.0.0/16'
-
-# (redhat 6 and before) Specify a subnet to allow services access to in /etc/hosts.allow
-# use format: xxx.xxx.
-LEGACYALLOWNET = '128.165.'
+ALLOWNETS = ['128.165.0.0/16']
 
 # Specify a subnet to allow in xinetd.conf
 XINETDALLOW = '128.165.0.0/16'
