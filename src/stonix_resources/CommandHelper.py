@@ -230,13 +230,18 @@ class CommandHelper(object):
 
             if self.stdout:
                 if not isinstance(self.stdout, list):
-                    self.logdispatcher.log(LogPriority.DEBUG, "Parameter self.stdout is not a list. Cannot compile stdout string. Returning blank stdout string...")
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Parameter self.stdout is not a " +
+                                           "list. Cannot compile stdout " +
+                                           "string. Returning blank stdout " +
+                                           "string...")
                     return stdstring
 
                 for line in self.stdout:
-                    stdstring += line
+                    stdstring += line + "\n"
             else:
-                self.logdispatcher.log(LogPriority.DEBUG, "No stdout string to display")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "No stdout string to display")
 
         except Exception:
             raise
@@ -260,13 +265,18 @@ class CommandHelper(object):
 
             if self.stderr:
                 if not isinstance(self.stderr, list):
-                    self.logdispatcher.log(LogPriority.DEBUG, "Parameter self.stderr is not a list. Cannot compile error string. Returning blank error string...")
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Parameter self.stderr is not a " +
+                                           "list. Cannot compile error " +
+                                           "string. Returning blank error " +
+                                           "string...")
                     return errstring
 
                 for line in self.stderr:
-                    errstring += line
+                    errstring += line + "\n"
             else:
-                self.logdispatcher.log(LogPriority.DEBUG, "No error string to display")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "No error string to display")
 
         except Exception:
             raise
@@ -291,11 +301,17 @@ class CommandHelper(object):
         try:
 
             if not isinstance(stdoutstring, basestring):
-                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stdoutstring is not in string format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "Content of parameter stdoutstring " +
+                                       "is not in string format. Will not " +
+                                       "include content in output!")
                 stdoutstring = ""
 
             if not isinstance(stderrstring, basestring):
-                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stderrstring is not in string format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "Content of parameter stderrstring " +
+                                       "is not in string format. Will not " +
+                                       "include content in output!")
                 stderrstring = ""
 
             if stderrstring:
@@ -306,7 +322,8 @@ class CommandHelper(object):
                 allstring += stdoutstring
 
             if not allstring:
-                self.logdispatcher.log(LogPriority.DEBUG, "There was no output to return")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "There was no output to return")
 
         except Exception:
             raise
