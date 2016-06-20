@@ -105,7 +105,7 @@ class PasswordExpiration(Rule):
                               "PASS_MIN_LEN": "8",
                               "PASS_WARN_AGE": "28"}
                 if self.ph.manager == "apt-get":
-                    # apt-get systems don't set min length in the same file
+                    # apt-get systems do not set min length in the same file
                     # as other systems(login.defs)
                     del self.specs["PASS_MIN_LEN"]
 
@@ -188,21 +188,8 @@ class PasswordExpiration(Rule):
         compliant = True
         debug = ""
         if not os.path.exists(self.logdeffile):
-            if createFile(self.logdeffile, self.logger):
-                self.logindefcreate = True
-                setPerms(self.logdeffile, [0, 0, 0o644], self.logger)
-                tmpfile = self.logdeffile + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", self.logdeffile, tmpfile,
-                                              specs, "present", "space")
-                if not self.editor1.report():
-                    self.detailedresults += self.logdeffile + " does not " + \
-                        "contain the correct contents\n"
-                    compliant = False
-            else:
-                self.detailedresults += "Wasn't able to create " + \
-                    self.logdeffile + " file\n"
-                compliant = False
+            compliant = False
+            self.detailedresults += self.logdeffile + " file does not exist\n"
         else:
             if not checkPerms(self.logdeffile, [0, 0, 0o644], self.logger):
                 compliant = False
@@ -214,8 +201,8 @@ class PasswordExpiration(Rule):
                                           "conf", self.logdeffile, tmpfile,
                                           specs, "present", "space")
             if not self.editor1.report():
-                self.detailedresults += "chkLogDef editor.report is not " + \
-                    "compliant\n"
+                self.detailedresults += self.logdeffile + " does not " + \
+                    "contain all necessary values:\n" + str(specs) + "\n"
                 compliant = False
         debug += "chkLogDef method is returning " + str(compliant) + \
             " compliance\n"
@@ -239,9 +226,9 @@ class PasswordExpiration(Rule):
                         "group is not shadow).\n"
                 if mode != 0o640:
                     compliant = False
-                self.detailedresults += self.shadowfile + " does not have " + \
-                    "the correct permissions. Expected 640, found " + \
-                    str(getOctalPerms(self.shadowfile)) + ".\n"
+                    self.detailedresults += self.shadowfile + " does not have " + \
+                        "the correct permissions. Expected 640, found " + \
+                        str(getOctalPerms(self.shadowfile)) + ".\n"
             elif not checkPerms(self.shadowfile, [0, 0, 0o400], self.logger) and \
                  not checkPerms(self.shadowfile, [0, 0, 0], self.logger):
                 compliant = False
@@ -378,13 +365,8 @@ class PasswordExpiration(Rule):
         compliant = True
         debug = ""
         if not os.path.exists(self.useraddfile):
-            if createFile(self.useraddfile, self.logger):
-                self.useraddcreate = True
-                setPerms(self.useraddfile, [0, 0, 0o600], self.logger)
-            else:
-                self.detailedresults += self.useraddfile + \
-                    " couldn't be created\n"
-                compliant = False
+            self.detailedresults += self.useraddfile + " file does not exist\n"
+            compliant = False
         else:
             if not checkPerms(self.useraddfile, [0, 0, 0o600], self.logger):
                 compliant = False
@@ -410,8 +392,8 @@ class PasswordExpiration(Rule):
                     self.useraddfile + "\n"
             if found and not valcorrect:
                 compliant = False
-                self.detailedresults += "INACTIVE key was found but " + \
-                    "value is incorrect\n"
+                self.detailedresults += "INACTIVE key was found in " + \
+                    self.useraddfile + ", but value is incorrect\n"
         debug += "chkUserAdd method is returning " + str(compliant) + \
             " compliance\n"
         if debug:
@@ -432,7 +414,6 @@ class PasswordExpiration(Rule):
             compliant = False
 
         if os.path.exists(self.libuserfile):
-
             # check permissions on /etc/libuser.conf
             if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
                 compliant = False
@@ -511,7 +492,9 @@ class PasswordExpiration(Rule):
                         compliant = False
             return compliant
         else:
-            self.detailedresults += self.loginfile + "does not exist\n"
+            self.detailedresults += self.loginfile + "does not exist. " + \
+                "Please note that the fix for this rule will not attempt " + \
+                "to create this file.\n"
             compliant = False
         debug = "chkLogin method is returning " + (compliant) + " compliance\n"
         self.logger.log(LogPriority.DEBUG, debug)
@@ -550,7 +533,7 @@ class PasswordExpiration(Rule):
 ###############################################################################
 
     def fixLinux(self):
-        success1 = self.fixLogDef()
+        success1 = self.fixLogDef(self.specs)
         success2 = self.fixShadow()
         success3 = self.fixUserAdd()
         success4 = self.fixLibUsers()
@@ -581,20 +564,41 @@ class PasswordExpiration(Rule):
 
 ###############################################################################
 
-    def fixLogDef(self):
+    def fixLogDef(self, specs):
         success = True
         debug = ""
+        if not os.path.exists(self.logdeffile):
+            if createFile(self.logdeffile, self.logger):
+                self.logindefcreate = True
+                setPerms(self.logdeffile, [0, 0, 0o644], self.logger)
+                tmpfile = self.logdeffile + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", self.logdeffile, tmpfile,
+                                              specs, "present", "space")
+            else:
+                self.detailedresults += "Was not able to create " + \
+                    self.logdeffile + " file\n"
+                success = False
         if self.logindefcreate:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
-                     "filepath": self.edior1.getPath()}
+                     "filepath": self.logdeffile}
             self.statechglogger.recordchgevent(myid, event)
-        if not checkPerms(self.logdeffile, [0, 0, 0o644], self.logger):
+        elif not checkPerms(self.logdeffile, [0, 0, 0o644], self.logger):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.logdeffile, [0, 0, 0o644], self.logger,
-                            self.statechglogger, myid):
+            statdata = os.stat(self.logdeffile)
+            owner = statdata.st_uid
+            group = statdata.st_gid
+            mode = stat.S_IMODE(statdata.st_mode)
+            if setPerms(self.logdeffile, [0, 0, 0o644], self.logger,
+                        self.statechglogger, myid):
+                event = {"eventtype": "perms",
+                         "filepath": self.logdeffile,
+                         "startstate": [owner, group, mode],
+                         "endstate": [0, 0, 0o644]}
+            else:
                 debug += "permissions not correct on: " + \
                     self.logdeffile + "\n"
                 success = False
@@ -624,7 +628,7 @@ class PasswordExpiration(Rule):
         date = ""
         contents = readFile(self.shadowfile, self.logger)
         if not os.path.exists(self.shadowfile) or not contents:
-            self.detailedresults += self.shadowfile + "doesn't exist. \
+            self.detailedresults += self.shadowfile + "does not exist. \
 Will not perform fix on shadow file\n"
             return False
         if self.ph.manager == "apt-get":
@@ -636,7 +640,7 @@ Will not perform fix on shadow file\n"
             if retval[0] != "root" or retval[1] != "shadow" or mode != 416:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'perm',
+                event = {'eventtype': 'perms',
                          'startstate': [owner, group, mode],
                          'endstate': [0, 42, 0o640],
                          'filepath': self.shadowfile}
@@ -668,63 +672,77 @@ Will not perform fix on shadow file\n"
     def fixUserAdd(self):
         success = True
         if not os.path.exists(self.useraddfile):
-            self.detailedresults = self.useraddfile + "doesn't exist. " + \
-                "Will not perform fix on useradd file\n"
-            success = False
-        else:
-            if self.useraddcreate:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.useraddfile}
-                self.statechglogger.recordchgevent(myid, event)
+            if createFile(self.useraddfile, self.logger):
+                self.useraddcreate = True
+                setPerms(self.useraddfile, [0, 0, 0o600], self.logger)
+            else:
+                self.detailedresults += self.useraddfile + \
+                    " could not be created\n"
+                success = False
+        if self.useraddcreate:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.useraddfile}
+            self.statechglogger.recordchgevent(myid, event)
 
-            if not checkPerms(self.useraddfile, [0, 0, 0o600], self.logger):
-                if not self.useraddcreate:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.useraddfile, [0, 0, 0o600],
-                                    self.logger, self.statechglogger, myid):
-                        success = False
-            tempstring = ""
-            contents = readFile(self.useraddfile, self.logger)
-            found = False
-            for line in contents:
-                if re.search("^\#", line) or re.match('^\s*$', line):
-                    tempstring += line
-                    continue
-                if re.search("^INACTIVE", line.strip()):
-                    if re.search("=", line):
-                        temp = line.split("=")
-                        if int(temp[1].strip()) <= -1 or \
-                           int(temp[1].strip()) > 35:
-                            continue
-                        else:
-                            found = True
-                            tempstring += line
-                    else:
-                        continue
-                elif re.search("^" + self.universal, line.strip()):
-                    continue
-                else:
-                    tempstring += line
-            if not found:
-                tempstring += "INACTIVE=35\n"
-            tmpfile = self.useraddfile + ".tmp"
-            if not writeFile(tmpfile, tempstring, self.logger):
-                return False
+        if not checkPerms(self.useraddfile, [0, 0, 0o600], self.logger):
             if not self.useraddcreate:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.useraddfile}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.useraddfile, tmpfile,
-                                                     myid)
-            os.rename(tmpfile, self.useraddfile)
-            os.chown(self.useraddfile, 0, 0)
-            os.chmod(self.useraddfile, 0o600)
-            resetsecon(self.useraddfile)
+                statdata = os.stat(self.useraddfile)
+                owner = statdata.st_uid
+                group = statdata.st_gid
+                mode = stat.S_IMODE(statdata.st_mode)
+                if setPerms(self.useraddfile, [0, 0, 0o600],
+                            self.logger, self.statechglogger, myid):
+                    event = {"eventtype": "perms",
+                             "filepath": self.useraddfile,
+                             "startstate": [owner, group, mode],
+                             "endstate": [0, 0, 0o600]}
+                else:
+                    self.detailedresults += "Could not set permissions on " + \
+                        self.useraddfile
+                    success = False
+        tempstring = ""
+        contents = readFile(self.useraddfile, self.logger)
+        found = False
+        for line in contents:
+            if re.search("^\#", line) or re.match('^\s*$', line):
+                tempstring += line
+                continue
+            if re.search("^INACTIVE", line.strip()):
+                if re.search("=", line):
+                    temp = line.split("=")
+                    if int(temp[1].strip()) <= -1 or \
+                       int(temp[1].strip()) > 35:
+                        continue
+                    else:
+                        found = True
+                        tempstring += line
+                else:
+                    continue
+            elif re.search("^" + self.universal, line.strip()):
+                continue
+            else:
+                tempstring += line
+        if not found:
+            tempstring += "INACTIVE=35\n"
+        tmpfile = self.useraddfile + ".tmp"
+        if not writeFile(tmpfile, tempstring, self.logger):
+            return False
+        if not self.useraddcreate:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'conf',
+                     'filepath': self.useraddfile}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(self.useraddfile, tmpfile,
+                                                 myid)
+        os.rename(tmpfile, self.useraddfile)
+        os.chown(self.useraddfile, 0, 0)
+        os.chmod(self.useraddfile, 0o600)
+        resetsecon(self.useraddfile)
         return success
 
 ###############################################################################
@@ -744,9 +762,10 @@ Will not perform fix on shadow file\n"
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    commandstring = self.ph.getRemove() + self.libuser
-                    event = {"eventtype": "commandstring",
-                             "command": commandstring}
+                    event = {"eventtype": "pkghelper",
+                             "pkgname": self.libuser,
+                             "startstate": "removed",
+                             "endstate": "installed"}
                     self.statechglogger.recordchgevent(myid, event)
             else:
                 self.detailedresults += "There is no libuser package " + \
@@ -776,8 +795,19 @@ Will not perform fix on shadow file\n"
                 if not created:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.libuserfile, [0, 0, 0o644],
-                                    self.logger, self.stchlogger, myid):
+                    statdata = os.stat(self.libuserfile)
+                    owner = statdata.st_uid
+                    group = statdata.st_gid
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    if setPerms(self.libuserfile, [0, 0, 0o644],
+                                self.logger, self.statechglogger, myid):
+                        event = {"eventtype": "perms",
+                                 "filepath": self.libuserfile,
+                                 "startstate": [owner, group, mode],
+                                 "endstate": [0, 0, 0o644]}
+                    else:
+                        self.detailedresults += "Could not set permissions on " + \
+                            self.libuserfile
                         success = False
                 else:
                     if not setPerms(self.libuserfile, [0, 0, 0o644],
@@ -809,7 +839,7 @@ Will not perform fix on shadow file\n"
         tempstring = ""
         debug = ""
         if not os.path.exists(self.loginfile):
-            self.detailedresults = self.loginfile + "doesn't exist. \
+            self.detailedresults = self.loginfile + "does not exist. \
 Will not perform fix on useradd file\n"
             return False
         if not checkPerms(self.loginfile, [0, 0, 0o644], self.logger):
