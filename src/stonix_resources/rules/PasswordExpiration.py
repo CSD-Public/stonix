@@ -44,11 +44,12 @@ from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
-from time import strftime
 from subprocess import Popen, PIPE
+from time import strftime
 import traceback
 import re
 import os
+import shutil
 import stat
 
 
@@ -588,17 +589,8 @@ class PasswordExpiration(Rule):
         elif not checkPerms(self.logdeffile, [0, 0, 0o644], self.logger):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            statdata = os.stat(self.logdeffile)
-            owner = statdata.st_uid
-            group = statdata.st_gid
-            mode = stat.S_IMODE(statdata.st_mode)
-            if setPerms(self.logdeffile, [0, 0, 0o644], self.logger,
-                        self.statechglogger, myid):
-                event = {"eventtype": "perms",
-                         "filepath": self.logdeffile,
-                         "startstate": [owner, group, mode],
-                         "endstate": [0, 0, 0o644]}
-            else:
+            if not setPerms(self.logdeffile, [0, 0, 0o644], self.logger,
+                            self.statechglogger, myid):
                 debug += "permissions not correct on: " + \
                     self.logdeffile + "\n"
                 success = False
@@ -624,47 +616,52 @@ class PasswordExpiration(Rule):
 
     def fixShadow(self):
         success = True
-        debug = ""
-        date = ""
-        contents = readFile(self.shadowfile, self.logger)
-        if not os.path.exists(self.shadowfile) or not contents:
+        if not os.path.exists(self.shadowfile):
             self.detailedresults += self.shadowfile + "does not exist. \
 Will not perform fix on shadow file\n"
             return False
-        if self.ph.manager == "apt-get":
-            statdata = os.stat(self.shadowfile)
-            owner = statdata.st_uid
-            group = statdata.st_gid
-            mode = stat.S_IMODE(statdata.st_mode)
-            retval = getUserGroupName(self.shadowfile)
-            if retval[0] != "root" or retval[1] != "shadow" or mode != 416:
+        if self.fixusers:
+            contents = readFile(self.shadowfile, self.logger)
+
+            if self.ph.manager == "apt-get":
+                perms = [0, 42, 0o640]
+            else:
+                perms = [0, 0, 0o400]
+            if not checkPerms(self.shadowfile, perms, self.logger) and \
+               not checkPerms(self.shadowfile, [0, 0, 0], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'perms',
-                         'startstate': [owner, group, mode],
-                         'endstate': [0, 42, 0o640],
-                         'filepath': self.shadowfile}
-                self.statechglogger.recordchgevent(myid, event)
-                os.chown(self.shadowfile, 0, 42)
-                os.chmod(self.shadowfile, 0o640)
-        elif not checkPerms(self.shadowfile, [0, 0, 0o400], self.logger) and \
-             not checkPerms(self.shadowfile, [0, 0, 0], self.logger):
+                setPerms(self.shadowfile, perms, self.logger,
+                         self.statechglogger, myid)
+
+            tmpdate = strftime("%Y%m%d")
+            tmpdate = list(tmpdate)
+            date = tmpdate[0] + tmpdate[1] + tmpdate[2] + tmpdate[3] + "-" + \
+                tmpdate[4] + tmpdate[5] + "-" + tmpdate[6] + tmpdate[7]
+            for user in self.fixusers:
+                cmd = ["chage", "-d", date, "-m", "7", "-M", "180", "-W", "28",
+                       "-I", "35", user]
+                self.ch.executeCommand(cmd)
+
+            # We have to do some gymnastics here, because chage writes directly
+            # to /etc/shadow, but statechglogger expects the new contents to
+            # be in a temp file.
+            newContents = readFile(self.shadowfile, self.logger)
+            shadowTmp = "/tmp/shadow.stonixtmp"
+            createFile(shadowTmp, self.logger)
+            writeFile(shadowTmp, "".join(newContents) + "\n", self.logger)
+            writeFile(self.shadowfile, "".join(contents) + "\n", self.logger)
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.shadowfile, [0, 0, 0o400], self.logger,
-                            self.statechglogger, myid):
-                debug = "unable to set permisssions on " + self.shadowfile + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                success = False
-        tmpdate = strftime("%Y%m%d")
-        tmpdate = list(tmpdate)
-        date += tmpdate[0] + tmpdate[1] + tmpdate[2] + tmpdate[3] + "-" + \
-            tmpdate[4] + tmpdate[5] + "-" + tmpdate[6] + tmpdate[7]
-        if self.fixusers:
-            for item in self.fixusers:
-                cmd = ["chage", "-d", date, "-m", "7", "-M", "180", "-W", "28",
-                       "-I", "35", item]
-                self.ch.executeCommand(cmd)
+            event = {'eventtype': 'conf',
+                     'filepath': self.shadowfile}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(self.shadowfile, shadowTmp,
+                                                 myid)
+            shutil.move(shadowTmp, self.shadowfile)
+            os.chmod(self.shadowfile, perms[2])
+            os.chown(self.shadowfile, perms[0], perms[1])
+            resetsecon(self.shadowfile)
         return success
 
 ###############################################################################
@@ -690,17 +687,8 @@ Will not perform fix on shadow file\n"
             if not self.useraddcreate:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                statdata = os.stat(self.useraddfile)
-                owner = statdata.st_uid
-                group = statdata.st_gid
-                mode = stat.S_IMODE(statdata.st_mode)
-                if setPerms(self.useraddfile, [0, 0, 0o600],
-                            self.logger, self.statechglogger, myid):
-                    event = {"eventtype": "perms",
-                             "filepath": self.useraddfile,
-                             "startstate": [owner, group, mode],
-                             "endstate": [0, 0, 0o600]}
-                else:
+                if not setPerms(self.useraddfile, [0, 0, 0o600],
+                                self.logger, self.statechglogger, myid):
                     self.detailedresults += "Could not set permissions on " + \
                         self.useraddfile
                     success = False
@@ -739,7 +727,7 @@ Will not perform fix on shadow file\n"
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(self.useraddfile, tmpfile,
                                                  myid)
-        os.rename(tmpfile, self.useraddfile)
+        shutil.move(tmpfile, self.useraddfile)
         os.chown(self.useraddfile, 0, 0)
         os.chmod(self.useraddfile, 0o600)
         resetsecon(self.useraddfile)
@@ -795,17 +783,8 @@ Will not perform fix on shadow file\n"
                 if not created:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    statdata = os.stat(self.libuserfile)
-                    owner = statdata.st_uid
-                    group = statdata.st_gid
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    if setPerms(self.libuserfile, [0, 0, 0o644],
-                                self.logger, self.statechglogger, myid):
-                        event = {"eventtype": "perms",
-                                 "filepath": self.libuserfile,
-                                 "startstate": [owner, group, mode],
-                                 "endstate": [0, 0, 0o644]}
-                    else:
+                    if not setPerms(self.libuserfile, [0, 0, 0o644],
+                                    self.logger, self.statechglogger, myid):
                         self.detailedresults += "Could not set permissions on " + \
                             self.libuserfile
                         success = False
@@ -912,7 +891,7 @@ Will not perform fix on useradd file\n"
                      'filepath': self.loginfile}
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(self.loginfile, tmpfile, myid)
-            os.rename(tmpfile, self.loginfile)
+            shutil.move(tmpfile, self.loginfile)
             os.chown(self.loginfile, 0, 0)
             os.chmod(self.loginfile, 0o644)
             resetsecon(self.loginfile)
