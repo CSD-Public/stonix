@@ -76,7 +76,10 @@ class PasswordExpiration(Rule):
             "PASSWORDEXPIRATION to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.libusercreate, self.libuserinstall, self.useraddcreate, self.logindefcreate = False, False, False, False
+        self.libusercreate = False
+        self.libuserinstall = False
+        self.useraddcreate = False
+        self.logindefcreate = False
         self.fixable, self.shadow = True, True
         self.editor1, self.editor2 = "", ""
         self.fixusers = []
@@ -101,8 +104,8 @@ class PasswordExpiration(Rule):
                               "PASS_MIN_LEN": "8",
                               "PASS_WARN_AGE": "28"}
                 if self.ph.manager == "apt-get":
-                    #apt-get systems don't set min length in the same file
-                    #as other systems(login.defs)
+                    # apt-get systems don't set min length in the same file
+                    # as other systems(login.defs)
                     del self.specs["PASS_MIN_LEN"]
 
                 self.shadowfile = "/etc/shadow"
@@ -127,8 +130,7 @@ class PasswordExpiration(Rule):
                 self.logdeffile = "/etc/default/passwd"
                 self.compliant = self.reportSolaris(self.specs)
             elif self.environ.getosfamily() == "freebsd":
-                self.specs = {#'warnexpire':'28d',
-                              "warnpassword": "28d",
+                self.specs = {"warnpassword": "28d",
                               "minpasswordlen": "8",
                               "passwordtime": "180d"}
                 self.shadowfile = "/etc/master.passwd"
@@ -231,14 +233,14 @@ class PasswordExpiration(Rule):
                 retval = getUserGroupName(self.shadowfile)
                 if retval[0] != "root" or retval[1] != "shadow":
                     compliant = False
-                if mode != 416:
+                if mode != 0o640:
                     compliant = False
-            elif not checkPerms(self.shadowfile, [0, 0, 256], self.logger) and \
-                not checkPerms(self.shadowfile, [0, 0, 0], self.logger):
+            elif not checkPerms(self.shadowfile, [0, 0, 0o400], self.logger) and \
+                 not checkPerms(self.shadowfile, [0, 0, 0], self.logger):
                 compliant = False
             contents = readFile(self.shadowfile, self.logger)
             if self.environ.getosfamily() == "solaris" or \
-                self.environ.getosfamily() == "linux":
+               self.environ.getosfamily() == "linux":
                 if self.environ.getosfamily() == "linux":
                     whichid = "/usr/bin/id"
                 elif self.environ.getosfamily() == "solaris":
@@ -290,9 +292,9 @@ class PasswordExpiration(Rule):
                                     compliant = False
                                     debug += "warnings not set to 28 days\n"
                                     badacct = True
-                                if field[6] > 7 or field[6] == "":
+                                if field[6] != 35 or field[6] == "":
                                     compliant = False
-                                    debug += "Account lock is not set to 7\n"
+                                    debug += "Account lock is not set to 35 days\n"
                                     badacct = True
                         except IndexError:
                             compliant = False
@@ -630,7 +632,7 @@ self.logdeffile + "\n"
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return success
-    
+
 ###############################################################################
 
     def fixShadow(self):
@@ -663,17 +665,18 @@ Will not perform fix on shadow file\n"
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             if not setPerms(self.shadowfile, [0, 0, 256], self.logger,
-                                                    self.statechglogger, myid):
+                            self.statechglogger, myid):
                 debug = "unable to set permisssions on " + self.shadowfile + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
         tmpdate = strftime("%Y%m%d")
         tmpdate = list(tmpdate)
         date += tmpdate[0] + tmpdate[1] + tmpdate[2] + tmpdate[3] + "-" + \
-        tmpdate[4] + tmpdate[5] + "-" + tmpdate[6] + tmpdate[7]
+            tmpdate[4] + tmpdate[5] + "-" + tmpdate[6] + tmpdate[7]
         if self.fixusers:
             for item in self.fixusers:
-                cmd = ["chage", "-d", date, "-m", "7", "-M", "180", "-W", "28", "-I", "7", item]
+                cmd = ["chage", "-d", date, "-m", "7", "-M", "180", "-W", "28",
+                       "-I", "35", item]
                 self.ch.executeCommand(cmd)
         #put in sections for bsd and solaris which both use passwd command
         return success
