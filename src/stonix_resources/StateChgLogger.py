@@ -376,7 +376,7 @@ are an end user please report a bug.''')
         eventtype: comm | commandstring (same function)
         command: string | list
         ==========================================
-        eventtype: perms
+        eventtype: perm
         filepath: string
         startstate: [owner_uid, group_gid, mode]
         endstate: [owner_uid, group_gid, mode]
