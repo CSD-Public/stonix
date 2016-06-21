@@ -901,46 +901,50 @@ class FileHelper(object):
                 file_permissions_fixed = True
                 message = "file path '" + str(file_path) + "' does not exist!"
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-        if success and file_permissions == None:
+        if success and file_permissions is None:
             success = False
             file_permissions_fixed = True
             message = "file_permissions are default value of '" + \
-            str(file_permissions) + "'! no action taken"
+                str(file_permissions) + "'! no action taken"
             self.logdispatcher.log(LogPriority.DEBUG, message)
         if success:
             file_permissions_masked = file_permissions & 0o7777
             if not file_permissions == file_permissions_masked:
                 message = "file_permissions of " + str(file_permissions) + \
-                " were masked to " + str(file_permissions_masked) + "!"
+                    " were masked to " + str(file_permissions_masked) + "!"
                 self.logdispatcher.log(LogPriority.DEBUG, message)
         if success:
             try:
                 if shouldI:
-                    oldPerms = os.stat(file_path).st_mode
+                    statdata = os.stat(file_path)
+                    owner = statdata.st_uid
+                    group = statdata.st_gid
+                    mode = stat.S_IMODE(statdata.st_mode)
                     os.chmod(file_path, file_permissions_masked)
                     if self.file_eventid:
-                        event = {"eventtype": "perms",
+                        event = {"eventtype": "perm",
                                  "filepath": file_path,
-                                 "startstate": oldPerms,
-                                 "endstate": file_permissions_masked}
+                                 "startstate": [owner, group, mode],
+                                 "endstate": [owner, group,
+                                              file_permissions_masked]}
                         self.statechglogger.recordchgevent(self.file_eventid,
                                                            event)
                     message = "File Permissions for '" + file_path + \
-                    "' were successfully updated to '" + \
-                    str(file_permissions_masked) + "'"
+                        "' were successfully updated to '" + \
+                        str(file_permissions_masked) + "'"
                     file_permissions_fixed = True
                 else:
                     message = "File Permissions for '" + file_path + \
-                    "' should be fixed to '" + str(file_permissions_masked) + \
-                    "' but shouldI was set to '" + str(shouldI) + "'!"
+                        "' should be fixed to '" + str(file_permissions_masked) + \
+                        "' but shouldI was set to '" + str(shouldI) + "'!"
                     file_permissions_fixed = False
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
             except Exception, err:
                 success = False
                 message = "os.chmod('" + file_path + "'," + \
-                str(file_permissions_masked) + "). failed with Error '" + \
-                str(err) + "' - " + traceback.format_exc()
+                    str(file_permissions_masked) + "). failed with Error '" + \
+                    str(err) + "' - " + traceback.format_exc()
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
                 raise
