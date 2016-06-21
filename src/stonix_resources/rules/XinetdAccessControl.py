@@ -41,6 +41,7 @@ from ..stonixutilityfunctions import iterate
 import traceback
 import os
 import re
+import stat
 
 
 class XinetdAccessControl(Rule):
@@ -206,17 +207,17 @@ class XinetdAccessControl(Rule):
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(tmppath, path, myid)
 
-            octperms = getOctalPerms(path)
-
             os.rename(tmppath, path)
 
+            statdata = os.stat(path)
+            mode = stat.S_IMODE(statdata.st_mode)
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
 
-            event = {'eventtype': 'perms',
+            event = {'eventtype': 'perm',
                      'filepath': path,
-                     'startstate': ['0', '0', '0' + str(octperms)],
-                     'endstate': [str(perms[1]), str(perms[2]), '0' + str(perms[0])]}
+                     'startstate': [0, 0, mode],
+                     'endstate': [perms[1], perms[2], perms[0]]}
 
             os.chmod(path, perms[0])
             os.chown(path, perms[1], perms[2])
@@ -282,17 +283,17 @@ class XinetdAccessControl(Rule):
                 self.statechglogger.recordchgevent(myid, event)
                 self.statechglogger.recordfilechange(tmppath, path, myid)
 
-                octperms = getOctalPerms(path)
-
                 os.rename(tmppath, path)
 
+                statdata = os.stat(path)
+                mode = stat.S_IMODE(statdata.st_mode)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
 
-                event = {'eventtype': 'perms',
+                event = {'eventtype': 'perm',
                          'filepath': path,
-                         'startstate': ['0', '0', '0' + str(octperms)],
-                         'endstate': [str(perms[1]), str(perms[2]), '0' + str(perms[0])]}
+                         'startstate': [0, 0, mode],
+                         'endstate': [perms[1], perms[2], perms[0]]}
 
                 os.chmod(path, perms[0])
                 os.chown(path, perms[1], perms[2])
