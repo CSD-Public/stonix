@@ -122,8 +122,7 @@ for the login.defs file"""
         try:
             self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
-                self.compliant, results = self.reportLinux()
-                self.detailedresults += results
+                self.compliant = self.reportLinux()
             elif self.environ.getosfamily() == "solaris":
                 self.compliant = self.reportSolaris()
             elif self.environ.getosfamily() == "freebsd":
@@ -180,35 +179,43 @@ for the login.defs file"""
             if not self.chkpassword(cracklib):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Cracklib is not configured\n"
                 compliant = False
         elif self.ph.check(self.quality):
             if not self.chkpassword(quality):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "pwquality is not configured\n"
                 compliant = False
         elif not self.ph.checkAvailable(self.quality):
             if self.ph.check(self.cracklib):
                 if not self.chkpassword(cracklib):
                     debug = "chkpassword() is not compliant\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Cracklib is not configured\n"
                     compliant = False
             elif not self.ph.checkAvailable(self.cracklib):
                 debug = "There is no password checking program " + \
-                    "installed nor available for your system\n"
+                    "installed nor available on this system\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
+                self.detailedresults += "There is no password checking " + \
+                    "program installed nor available for your system\n"
                 compliant = False
             # cracklib is not installed but available for install
             else:
                 debug = "cracklib not installed but is available\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
+                self.detailedresults += "This system will use cracklib " + \
+                    "password checking program but is not installed.  " + \
+                    "Will install and be configured when fix is run\n"
                 compliant = False
         # pwquality is not installed but available for install
         else:
-            debug = "pamquality not installed but is available\n"
+            debug = "pwquality not installed but is available\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            results += debug
+            self.detailedresults += "This system will use pwquality " + \
+                    "password checking program but is not installed.  " + \
+                    "Will install and be configured when fix is run\n"
             compliant = False
         #######################################################################
 
@@ -218,7 +225,7 @@ for the login.defs file"""
                 self.detailedresults += "zypper based systems do not have " + \
                     "a lockout program\n"
             else:
-                debug = "chklockout() is not compliant\n"
+                debug = "Account locking configuration is incorrect\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
 
@@ -233,7 +240,7 @@ for the login.defs file"""
             debug = "chkdefspasshash() is not compliant\n"
             self.logger.log(LogPriority.DEBUG, debug)
             compliant = False
-        return compliant, results
+        return compliant
 
 ###############################################################################
 
@@ -556,6 +563,7 @@ for the login.defs file"""
         @author: dwalker
         @return: bool
         '''
+        compliant = False
         regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=5"
         if package == "quality":
@@ -727,11 +735,13 @@ for the login.defs file"""
                 return False
         elif self.ph.manager == "portage":
             return True
-        elif self.ph.manager in ["zypper", "apt-get"]:
-            compliant = self.chkPamtally2()
         else:
-            compliant = self.chkPamfaillock()
-        return compliant
+            compliant = False
+            if self.ph.manager in ["zypper", "apt-get"]:
+                compliant = self.chkPamtally2()
+            else:
+                compliant = self.chkPamfaillock()
+            return compliant
 ###############################################################################
 
     def chkPamtally2(self):
