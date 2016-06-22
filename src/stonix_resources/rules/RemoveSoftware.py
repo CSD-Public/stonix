@@ -105,60 +105,6 @@ class RemoveSoftware(Rule):
                    "slapd",
                    "openldap-servers"
                    "openldap2"]
-#         if self.ph.manager == "apt-get":
-#             default = ["squid",
-#                        "rsh-server",
-#                        "rsh-client",
-#                        "talk",
-#                        "talkd",
-#                        "libpam-ccreds",
-#                        "tftp",
-#                        "tftpd",
-#                        "udhcpd",
-#                        "vsftpd",
-#                        "dovecot-imapd",
-#                        "dovecot-pop3d",
-#                        "snmpd",
-#                        "ipsec-tools",
-#                        "irda-utils",
-#                        "slapd"]
-#         elif self.ph.manager == "yum":
-#             default = ["squid",
-#                        "telnet-server",
-#                        "rsh",
-#                        "rsh-server",
-#                        "talk",
-#                        "talk-server",
-#                        "pam_ccreds",
-#                        "tftp-server",
-#                        "dhcpd",
-#                        "dhcp",
-#                        "vsftpd",
-#                        "httpd",
-#                        "dovecot",
-#                        "net-snmpd",
-#                        "net-snmp",
-#                        "ipsec-tools",
-#                        "irda-utils",
-#                        "openldap-servers"]
-#         elif self.ph.manager == "zypper":
-#             default =["squid",
-#                       "telnet-server",
-#                       "rsh",
-#                       "rsh-server",
-#                       "talk",
-#                       "talk-server",
-#                       "pam_ccreds",
-#                       "yast2-tftp-server",
-#                       "dhcp-server",
-#                       "yast2-dhcp-server",
-#                       "vsftpd",
-#                       "httpd",
-#                       "dovecot",
-#                       "net-snmp",
-#                       "ipsec-tools",
-#                       "irda",
-#                       "openldap2"]
         self.pkgci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
