@@ -147,9 +147,9 @@ for the login.defs file"""
         '''
         self.logindefs = "/etc/login.defs"
         debug = ""
-        results = ""
         compliant = True
         self.editor1, self.editor2 = "", ""
+        self.pwqeditor = ""
         self.ph = Pkghelper(self.logger, self.environ)
         if self.ph.manager == "apt-get":
             self.pam = "/etc/pam.d/common-password"
@@ -585,7 +585,6 @@ for the login.defs file"""
     
     def chkpwquality(self):
         compliant = True
-        self.pwqeditor = ""
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
             tmpfile = pwqfile + ".tmp"
