@@ -429,8 +429,6 @@ LANL-stonix."""
                         self.logdispatch.log(LogPriority.DEBUG,
                                              [self.prefix(),
                                               "kveditor is not compliant!"])
-                        self.resultAppend("None Compliant Value for " + \
-                                          self.kveditorName)
             compliant = self.afterreport()
             if not compliant:
                 allcompliant = False
