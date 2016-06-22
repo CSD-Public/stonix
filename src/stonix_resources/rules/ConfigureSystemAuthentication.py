@@ -557,7 +557,7 @@ for the login.defs file"""
         @return: bool
         '''
         regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=10"
+            "try_first_pass use_authtok remember=5"
         if package == "quality":
             compliant1 = self.chkpwquality()
             regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
@@ -825,11 +825,11 @@ for the login.defs file"""
                 return False
         regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
             "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-            "deny=5 unlock_time=900\n" + \
+            "deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
             ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = r"^account[ \t]+required[ \t]+pam_faillock.so"
         for pam in pamfiles:
@@ -1139,9 +1139,9 @@ for the login.defs file"""
     def setpassword(self, package):
         success = False
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=10"
+            "try_first_pass use_authtok remember=5"
         data2 = "password\tsufficient\tpam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=10\n"
+            "try_first_pass use_authtok remember=5\n"
         if package == "quality":
             success1 = self.setpwquality()
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
@@ -1421,19 +1421,19 @@ for the login.defs file"""
                 return False
         regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
             "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-            "deny=5 unlock_time=900\n" + \
+            "deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
             ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
         data1 = """auth\trequired\tpam_env.so
-auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900
+auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900 fail_interval=900
 auth\tsufficient\tpam_unix.so try_first_pass
 auth\trequisite\tpam_succeed_if.so uid >= 500 quiet
 auth\tsufficient\tpam_krb5.so use_first_pass
-auth\t[default=die]\tpam_faillock.so authfail audit deny=5
+auth\t[default=die]\tpam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900
 auth\trequired\tpam_deny.so
 """
         data2 = "account\trequired\tpam_faillock.so\n"
