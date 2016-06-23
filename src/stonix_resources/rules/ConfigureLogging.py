@@ -169,8 +169,7 @@ invalid."""
                 else:
                     self.detailedresults = "no log daemons exist\n"
             elif self.environ.getostype() == "Mac OS X":
-                if self.reportMac():
-                    self.compliant = True
+                self.compliant = self.reportMac()
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -1438,7 +1437,7 @@ because these values are optional\n"
                         "/var/log/local.log",
                         "/var/log/syslog.log",
                         "/var/log/user.log",
-                        "/var/log/stom2.log",
+                        "/var/log/stonix.log",
                         "/var/log/system.log",
                         "/var/log/lpr.log",
                         "/var/log/mail.log",
@@ -1456,7 +1455,7 @@ because these values are optional\n"
                          "mail,uucp,news.*": "/var/log/mail.log",
                          "local0,local1,local2,local3.*": "/var/log/local.log",
                          "local4,local,local6,local7.*": "/var/log/local.log",
-                         "local5.*": "/var/log/stom2.log",
+                         "local5.*": "/var/log/stonix.log",
                          "install.*": "/var/log/install.log",
                          "netinfo.*": "/var/log/netinfo.log",
                          "remoteauth,authpriv.*": "/var/log/secure.log",
