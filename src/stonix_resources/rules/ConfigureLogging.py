@@ -169,8 +169,7 @@ invalid."""
                 else:
                     self.detailedresults = "no log daemons exist\n"
             elif self.environ.getostype() == "Mac OS X":
-                if self.reportMac():
-                    self.compliant = True
+                self.compliant = self.reportMac()
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
