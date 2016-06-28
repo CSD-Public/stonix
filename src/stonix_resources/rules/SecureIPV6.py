@@ -28,6 +28,7 @@ Created on Jan 14, 2014
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
 @change: 2016/04/26 ekkehard Results Formatting
+@change: 2016/06/23 dwalker adding mac os x configuration
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -61,29 +62,14 @@ generation, and limiting network-transmitted configuration information.'''
 False.'''
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
-#may implement in the future to allow user to configure their ipv6 addr and gw
-#         datatype = "string"
-#         key = "IPV6ADDRESS"
-#         instructions = '''Enter the machine's ipv6 address here if applicable,\
-#  then enable the check box and click save'''
-#         default = "1:1:1:1"
-#         self.ipaddr = self.initCi(datatype, key, instructions, default)
-
-#         datatype = "string"
-#         key = "IPV6GATEWAY"
-#         instructions = '''Enter the machine's ipv6 gateway address here if \
-# applicable, then enable the check box and click save'''
-#         default = "1:1:1:1"
-#         self.gateway = self.initCi(datatype, key, instructions, default)
-
         self.guidance = ["NSA 2.5.3.2", "CCE 4269-7", "CCE 4291-1",
                          "CCE 4313-3", "CCE 4198-8", "CCE 3842-2",
                          "CCE 4221-8", "CCE 4137-6", "CCE 4159-0",
                          "CCE 3895-0", "CCE 4287-9", "CCE 4058-4",
                          "CCE 4128-5"]
         self.applicable = {'type': 'white',
-                           'family': ['linux']}
+                           'family': ['linux'],
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.iditerator = 0
         self.created = False
 
@@ -109,7 +95,42 @@ False.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 ###############################################################################
-
+    def reportMac(self):
+        compliant = True
+        self.cmdhelper = CommandHelper(self.logger)
+        sysctl = "/usr/sbin/sysctl"
+        directives = {"net.inet6.ip6.forwarding": "0",
+                      "net.inet6.ip6.maxifprefixes": "1",
+                      "net.inet6.ip6.maxfrags": "0",
+                      "net.inet6.ip6.maxfragpackets": "0",
+                      "net.inet6.ip6.neighborgcthresh": "1024",
+                      "net.inet6.ip6.use_deprecated": "0",
+                      "net.inet6.ip6.hdrnestlimit": "0",
+                      "net.inet6.ip6.only_allow_rfc4193_prefixes": "1",
+                      "net.inet6.ip6.dad_count": "0",
+                      "net.inet6.icmp6.nodeinfo": "0",
+                      "net.inet6.icmp6.rediraccept": "1",
+                      "net.inet6.ip6.maxdynroutes": "0"}
+        self.fixables = {}
+        for directive in directives:
+            cmd = [sysctl, "-n", directive]
+            if self.cmdhelper.executeCommand(cmd):
+                output = self.cmdhelper.getOutputString().strip()
+                if output != directives[directive]:
+                    self.detailedresults += "The value for " + directive + \
+                        " is not " + directives[directive] + ", it's " + \
+                        output + "\n"
+                    compliant = False
+                    self.fixables[directive] = directives[directive]
+            else:
+                error = self.cmdhelper.getErrorString()
+                self.detailedresults += "There was an error running the " + \
+                    "the command " + cmd + "\n"
+                self.logger.log(LogPriority.DEBUG, error)
+                self.fixables[directive] = directives[directive]
+                compliant = False 
+        return compliant
+###############################################################################
     def reportLinux(self):
         netwrkfile = ""
         ifacefile = ""
@@ -269,7 +290,20 @@ the correct contents\n"
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 ###############################################################################
-
+    def fixMac(self):
+        success = True
+        if self.fixables:
+            sysctl = "/usr/sbin/sysctl"
+            for directive in self.fixables:
+                cmd = [sysctl, "-w", directive + "=" + self.fixables[directive]]
+                if not self.cmdhelper.executeCommand(cmd):
+                    error = self.cmdhelper.getErrorString()
+                    self.detailedresults += "There was an error running " + \
+                    "the command " + cmd + "\n"
+                    self.logger.log(LogPriority.DEBUG, error)
+                    success = False
+        return success
+###############################################################################
     def fixLinux(self):
         universal = "#The following lines were added by stonix\n"
         debug = ""
