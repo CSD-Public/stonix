@@ -97,38 +97,54 @@ False.'''
 ###############################################################################
     def reportMac(self):
         compliant = True
+        self.editor = ""
+        self.path = "/private/etc/sysctl.conf"
+        self.tmpPath = self.path + ".tmp"
         self.cmdhelper = CommandHelper(self.logger)
         sysctl = "/usr/sbin/sysctl"
-        directives = {"net.inet6.ip6.forwarding": "0",
-                      "net.inet6.ip6.maxifprefixes": "1",
-                      "net.inet6.ip6.maxfrags": "0",
-                      "net.inet6.ip6.maxfragpackets": "0",
-                      "net.inet6.ip6.neighborgcthresh": "1024",
-                      "net.inet6.ip6.use_deprecated": "0",
-                      "net.inet6.ip6.hdrnestlimit": "0",
-                      "net.inet6.ip6.only_allow_rfc4193_prefixes": "1",
-                      "net.inet6.ip6.dad_count": "0",
-                      "net.inet6.icmp6.nodeinfo": "0",
-                      "net.inet6.icmp6.rediraccept": "1",
-                      "net.inet6.ip6.maxdynroutes": "0"}
+        self.directives = {"net.inet6.ip6.forwarding": "0",
+                           "net.inet6.ip6.maxifprefixes": "1",
+                           "net.inet6.ip6.maxfrags": "0",
+                           "net.inet6.ip6.maxfragpackets": "0",
+                           "net.inet6.ip6.neighborgcthresh": "1024",
+                           "net.inet6.ip6.use_deprecated": "0",
+                           "net.inet6.ip6.hdrnestlimit": "0",
+                           "net.inet6.ip6.only_allow_rfc4193_prefixes": "1",
+                           "net.inet6.ip6.dad_count": "0",
+                           "net.inet6.icmp6.nodeinfo": "0",
+                           "net.inet6.icmp6.rediraccept": "1",
+                           "net.inet6.ip6.maxdynroutes": "0"}
         self.fixables = {}
-        for directive in directives:
+        for directive in self.directives:
             cmd = [sysctl, "-n", directive]
             if self.cmdhelper.executeCommand(cmd):
                 output = self.cmdhelper.getOutputString().strip()
-                if output != directives[directive]:
+                if output != self.directives[directive]:
                     self.detailedresults += "The value for " + directive + \
-                        " is not " + directives[directive] + ", it's " + \
+                        " is not " + self.directives[directive] + ", it's " + \
                         output + "\n"
                     compliant = False
-                    self.fixables[directive] = directives[directive]
+                    self.fixables[directive] = self.directives[directive]
             else:
                 error = self.cmdhelper.getErrorString()
                 self.detailedresults += "There was an error running the " + \
                     "the command " + cmd + "\n"
                 self.logger.log(LogPriority.DEBUG, error)
-                self.fixables[directive] = directives[directive]
-                compliant = False 
+                self.fixables[directive] = self.directives[directive]
+                compliant = False
+        if not os.path.exists(self.path):
+            compliant = False
+        else:
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tmpPath,
+                                             self.directives, "present",
+                                             "closedeq")
+            if not self.editor.report():
+                compliant = False
+                self.detailedresults += "Didn't find the correct contents " + \
+                    "inside " + self.path + "\n"
+            if not checkPerms(self.path, [0, 0, 420], self.logger):
+                compliant = False
         return compliant
 ###############################################################################
     def reportLinux(self):
@@ -292,6 +308,7 @@ the correct contents\n"
 ###############################################################################
     def fixMac(self):
         success = True
+        created = False
         if self.fixables:
             sysctl = "/usr/sbin/sysctl"
             for directive in self.fixables:
@@ -301,6 +318,57 @@ the correct contents\n"
                     self.detailedresults += "There was an error running " + \
                     "the command " + cmd + "\n"
                     self.logger.log(LogPriority.DEBUG, error)
+                    success = False
+        if not os.path.exists(self.path):
+            if createFile(self.path, self.logger):
+                created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": self.path}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
+                return False
+        if not self.editor:
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tmpPath,
+                                             self.directives, "present",
+                                             "closedeq")
+            if not self.editor.report():
+                if self.editor.fix():
+                    if not self.editor.commit():
+                        success = False
+                        self.detailedresults += "KVEditor commit to " + \
+                            self.path + " was not successful\n"
+                else:
+                    success = False
+                    self.detailedresults += "KVEditor fix of " + self.path + \
+                        " was not successful\n"
+        else:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.editor.setEventID(myid)
+            if self.editor.fix():
+                if not self.editor.commit():
+                    success = False
+                    self.detailedresults += "KVEditor commit to " + \
+                        self.path + " was not successful\n"
+            else:
+                success = False
+                self.detailedresults += "KVEditor fix of " + self.path + \
+                    " was not successful\n"
+        if not checkPerms(self.path, [0, 0, 420], self.logger):
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path, [0, 0, 420], self.logger,
+                            self.statechglogger, myid):
+                    self.detailedresults += "Could not set permissions" + \
+                        " on " + self.path + "\n"
+                    success = False
+            else:
+                if not setPerms(self.path, [0, 0, 420], self.logger):
+                    self.detailedresults += "Could not set permissions" + \
+                        " on " + self.path + "\n"
                     success = False
         return success
 ###############################################################################
