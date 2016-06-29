@@ -98,6 +98,7 @@ class KVATaggedConf():
     def getOpenClosedValue(self, tag, dict1):
         if self.contents:
             contents = self.contents
+            contents2 = ""
             foundtag = False
             length = len(contents) - 1
             iter1 = 0
