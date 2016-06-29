@@ -34,6 +34,7 @@ Created on May 20, 2013
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/01/22 eball Changed daemon log level from daemon.info to daemon.*
 @change: 2016/05/31 ekkehard Added OpenDirectory Logging
+@change: 2016/06/22 eball Improved report feedback for reportMac
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
@@ -168,8 +169,7 @@ invalid."""
                 else:
                     self.detailedresults = "no log daemons exist\n"
             elif self.environ.getostype() == "Mac OS X":
-                if self.reportMac():
-                    self.compliant = True
+                self.compliant = self.reportMac()
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -369,10 +369,6 @@ daemon config file: " + self.logpath
                 self.config.append(key + "\t\t\t" + self.logfiles[key] + "\n")
             compliant = False
         self.logger.log(LogPriority.DEBUG, debug)
-
-
-
-
 
         # check if correct contents of logrotate file exist
         self.logrotpath = self.checkLogRotation()
@@ -1434,13 +1430,14 @@ because these values are optional\n"
     def reportMac(self):
         debug = ""
         compliant = RuleKVEditor.report(self, True)
+        self.detailedresults += "\n"
         self.macDirs = ["/var/log/cron.log",
                         "/var/log/daemon.log",
                         "/var/log/kern.log",
                         "/var/log/local.log",
                         "/var/log/syslog.log",
                         "/var/log/user.log",
-                        "/var/log/stom2.log",
+                        "/var/log/stonix.log",
                         "/var/log/system.log",
                         "/var/log/lpr.log",
                         "/var/log/mail.log",
@@ -1458,7 +1455,7 @@ because these values are optional\n"
                          "mail,uucp,news.*": "/var/log/mail.log",
                          "local0,local1,local2,local3.*": "/var/log/local.log",
                          "local4,local,local6,local7.*": "/var/log/local.log",
-                         "local5.*": "/var/log/stom2.log",
+                         "local5.*": "/var/log/stonix.log",
                          "install.*": "/var/log/install.log",
                          "netinfo.*": "/var/log/netinfo.log",
                          "remoteauth,authpriv.*": "/var/log/secure.log",
@@ -1497,6 +1494,7 @@ because these values are optional\n"
 #----------Check /etc/syslog.conf file for correct contents-------------------#
         contents = readFile(syslog, self.logger)
         bad = False
+        missing = []
         for log in self.logfiles:
             found = False
             for line in contents:
@@ -1523,15 +1521,20 @@ because these values are optional\n"
                 bad = True
                 debug = "didn't find: " + str(log) + " in " + syslog + "\n"
                 self.logger.log(LogPriority, debug)
+                missing.append(log)
                 compliant = False
         if exist:
             for item in exist:
                 del self.logfiles[item]
         if bad:
-            self.detailedresults += syslog + " file was not configured well\n"
+            self.detailedresults += "The following lines were not found in " + \
+                syslog + ":\n"
+            for item in missing:
+                self.detailedresults += str(item) + "\n"
 #-------------------Check asl.conf file---------------------------------------#
         bad = False
         exist = []
+        missing = []
         contents = readFile(aslfile, self.logger)
         for asl in self.asl:
             found = False
@@ -1545,12 +1548,16 @@ because these values are optional\n"
                 bad = True
                 debug = "didn't find: " + str(asl) + " in " + aslfile + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                missing.append(asl)
                 compliant = False
         if exist:
             for item in exist:
                 self.asl.remove(item)
         if bad:
-            self.detailedresults += aslfile + " file was not configured well\n"
+            self.detailedresults += "The following lines were not found in " + \
+                aslfile + ":\n"
+            for item in missing:
+                self.detailedresults += str(item) + "\n"
 #-----------------check newsyslog.conf file-----------------------------------#
         if os.path.exists(newsyslog):
             contents = readFile(newsyslog, self.logger)
@@ -1605,6 +1612,9 @@ because these values are optional\n"
         if not self.sh.isrunning(service, servicename):
             compliant = False
             self.detailedresults += "syslogd is not running\n"
+        if not compliant:
+            self.detailedresults += "Log rotation is not correctly " + \
+                "set up in " + newsyslog + "\n"
         return compliant
 
 ###############################################################################

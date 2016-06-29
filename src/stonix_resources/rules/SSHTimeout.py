@@ -30,6 +30,7 @@ Created on Mar 12, 2013
 @change: 04/18/2014 ekkehard ci updates
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/09 eball Improved feedback
+@change: 2016/06/29 eball Fixed Mac path, added timeout as a CI
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
@@ -43,8 +44,6 @@ import os
 
 
 class SSHTimeout(Rule):
-
-###############################################################################
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
@@ -55,12 +54,19 @@ class SSHTimeout(Rule):
         self.mandatory = True
         self.helptext = '''SSH allows administrators to set an idle timeout \
 interval. After this interval has passed, the idle user will be \
-automatically logged out. This rule sets the timeout to 15 minutes'''
-        self.ci = self.initCi("bool",
-                              "SSHTIMEOUT",
-                              "To disable this rule set the value " + \
-                              "of SSHTIMEOUT to False",
-                              True)
+automatically logged out.
+
+Note that this rule will consider any value other than the number in the \
+SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
+        self.boolCi = self.initCi("bool",
+                                  "SSHTIMEOUTON",
+                                  "To disable this rule set the value " +
+                                  "of SSHTIMEOUTON to False",
+                                  True)
+        self.intCi = self.initCi("int", "SSHTIMEOUT",
+                                 "Set your preferred timeout value here, " +
+                                 "in seconds. Default is 900 (15 minutes).",
+                                 900)
         self.guidance = ['NSA 3.5.2.3']
         self.iditerator = 0
         self.editor = ""
@@ -79,11 +85,12 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
         try:
             compliant = True
             results = ""
+            timeout = self.intCi.getcurrvalue()
             if self.environ.getostype() == "Mac OS X":
-                self.sshfile = '/private/etc/ssh/sshd_config'
+                self.path = '/private/etc/ssh/sshd_config'
                 self.tpath = '/private/etc/ssh/sshd_config.tmp'
             else:
-                self.sshfile = '/etc/ssh/sshd_config'
+                self.path = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
 
                 self.ph = Pkghelper(self.logger, self.environ)
@@ -94,24 +101,26 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
                 if not self.ph.check(openssh):
                     compliant = False
                     results += "Package " + openssh + " is not installed\n"
-            self.ssh = {"ClientAliveInterval": "900",
-                        "ClientAliveCountMax": "1"}
-            if os.path.exists(self.sshfile):
+            self.ssh = {"ClientAliveInterval": str(timeout),
+                        "ClientAliveCountMax": "0"}
+            if os.path.exists(self.path):
+                compliant = True
                 kvtype = "conf"
                 intent = "present"
                 self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                             kvtype, self.sshfile, self.tpath,
+                                             kvtype, self.path, self.tpath,
                                              self.ssh, intent, "space")
                 if not self.editor.report():
                     compliant = False
-                    results += "Settings in " + self.sshfile + " are not " + \
+                    results += "Settings in " + self.path + " are not " + \
                         "correct\n"
-                if not checkPerms(self.sshfile, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     compliant = False
-                    results += self.sshfile + " permissions are incorrect\n"
+                    results += self.path + " permissions are incorrect\n"
             else:
                 compliant = False
-                results += self.sshfile + " does not exist\n"
+                results += self.path + " does not exist\n"
+
             self.detailedresults = results
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -133,7 +142,7 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
         '''
 
         try:
-            if not self.ci.getcurrvalue():
+            if not self.boolCi.getcurrvalue():
                 return
             created = False
             self.iditerator = 0
@@ -141,7 +150,7 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
             self.detailedresults = ""
             debug = ""
 
-            #clear out event history so only the latest fix is recorded
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -161,54 +170,47 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
                         else:
                             cmd = self.ph.getRemove() + openssh
                             event = {"eventtype": "commandstring",
-                                     "command":cmd}
+                                     "command": cmd}
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             self.statechglogger.recordchgevent(myid, event)
                             self.detailedresults += "Installed openssh-server\n"
-                            self.editor = KVEditorStonix(self.statechglogger, 
-                                self.logger,"conf", self.sshfile, self.tpath, 
-                                                      self.ssh, "present", "space")
+                            self.editor = KVEditorStonix(self.statechglogger,
+                                                         self.logger, "conf",
+                                                         self.path, self.tpath,
+                                                         self.ssh, "present",
+                                                         "space")
                             self.editor.report()
                     else:
                         debug += "openssh-server not available to install\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.rulesuccess = False
                         return
-            if not os.path.exists(self.sshfile):
-                if createFile(self.sshfile, self.logger):
-                    created = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.sshfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.editor = KVEditorStonix(self.statechglogger, 
-                        self.logger, "conf", self.sshfile, self.tpath, self.ssh, 
-                                                            "present", "space")
-                    self.editor.report()
-                else:
-                    self.detailedresults += "Unable to create the " + self.sshfile + \
-                        " file\n"
-                    debug = "Unable to create the " + self.sshfile + " file\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-            if os.path.exists(self.sshfile):
-                if not checkPerms(self.sshfile, [0, 0, 420], self.logger):
+            if not os.path.exists(self.path):
+                createFile(self.path, self.logger)
+                created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.path}
+                self.statechglogger.recordchgevent(myid, event)
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tpath,
+                                             self.ssh, "present", "space")
+                self.editor.report()
+
+            if os.path.exists(self.path):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.sshfile, [0, 0, 420], self.logger,
+                        if not setPerms(self.path, [0, 0, 0o644], self.logger,
                                         self.statechglogger, myid):
-                            debug += "Unable to set Permissions " + \
-                                "for: " + self.editor.getPath() + "\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
+                            debug += "Unable to set Permissions \
+    for: " + self.editor.getPath() + "\n"
                             success = False
                     else:
-                        if not setPerms(self.sshfile, [0, 0, 420], self.logger):
-                            debug += "Unable to set Permissions " + \
-                                "for: " + self.editor.getPath() + "\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
+                        if not setPerms(self.path, [0, 0, 0o644], self.logger):
                             success = False
                             
                 if self.editor.fixables or self.editor.removeables:
@@ -229,9 +231,10 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
                         debug += "Unable to complete kveditor fix\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                    os.chown(self.sshfile, 0, 0)
-                    os.chmod(self.sshfile, 420)
-                    resetsecon(self.sshfile)
+                        success = False
+                    os.chown(self.path, 0, 0)
+                    os.chmod(self.path, 0o644)
+                    resetsecon(self.path)
                 self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -240,7 +243,7 @@ automatically logged out. This rule sets the timeout to 15 minutes'''
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
     
