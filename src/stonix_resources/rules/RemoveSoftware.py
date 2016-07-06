@@ -24,17 +24,20 @@
 Created on Apr 5, 2016
 
 @author: dwalker
+@change: 2016/07/06 eball Added undo events to fix
 '''
 from __future__ import absolute_import
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
+from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 import traceback
 
+
 class RemoveSoftware(Rule):
     '''
-    This class removes any unecessary software installed on the system
+    This class removes any unnecessary software installed on the system
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -46,7 +49,7 @@ class RemoveSoftware(Rule):
         self.rulenumber = 91
         self.rulename = "RemoveSoftware"
         self.mandatory = True
-        self.helptext = "The RemoveSoftware rule removes any unecessary " + \
+        self.helptext = "The RemoveSoftware rule removes any unnecessary " + \
             "software installed on the system.\n" + \
             "****WARNING*****\n" + \
             "This rule is optional for a reason.  This program removes " + \
@@ -54,12 +57,12 @@ class RemoveSoftware(Rule):
             "This can cause adverse effects during run time for your " + \
             "operating system.  Full knowledge and risk assessment is " + \
             "assumed when running this rule.\n" + \
-            "*****************"   
+            "*****************"
         self.rootrequired = True
-        self.detailedresults = "RemoveSoftware has not yet been run."
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
+        self.iditerator = 0
         self.ph = Pkghelper(self.logger, self.environ)
         self.sh = ServiceHelper(self.environ, self.logger)
         # Configuration item instantiation
@@ -69,7 +72,7 @@ class RemoveSoftware(Rule):
             "REMOVESOFTWARE TO False."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
-        
+
         datatype = "list"
         key = "PACKAGES"
         instructions = "Enter the package(s) that you wish to remove.  By " + \
@@ -108,6 +111,7 @@ class RemoveSoftware(Rule):
         self.pkgci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
+        self.detailedresults = ""
         try:
             compliant = True
             if self.pkgci.getcurrvalue():
@@ -124,7 +128,7 @@ class RemoveSoftware(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
     def fix(self):
         try:
             success = True
@@ -140,7 +144,15 @@ class RemoveSoftware(Rule):
             for pkg in self.pkgci.getcurrvalue():
                 if self.ph.check(pkg):
                     try:
-                        if not self.ph.remove(pkg):
+                        if self.ph.remove(pkg):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": pkg,
+                                     "startstate": "installed",
+                                     "endstate": "removed"}
+                            self.statechglogger.recordchgevent(myid, event)
+                        else:
                             success = False
                     except Exception:
                         continue
