@@ -32,9 +32,10 @@ from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
 import traceback
 
+
 class RemoveSoftware(Rule):
     '''
-    This class removes any unecessary software installed on the system
+    This class removes any unnecessary software installed on the system
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -46,7 +47,7 @@ class RemoveSoftware(Rule):
         self.rulenumber = 91
         self.rulename = "RemoveSoftware"
         self.mandatory = True
-        self.helptext = "The RemoveSoftware rule removes any unecessary " + \
+        self.helptext = "The RemoveSoftware rule removes any unnecessary " + \
             "software installed on the system.\n" + \
             "****WARNING*****\n" + \
             "This rule is optional for a reason.  This program removes " + \
@@ -54,7 +55,7 @@ class RemoveSoftware(Rule):
             "This can cause adverse effects during run time for your " + \
             "operating system.  Full knowledge and risk assessment is " + \
             "assumed when running this rule.\n" + \
-            "*****************"   
+            "*****************"
         self.rootrequired = True
         self.detailedresults = "RemoveSoftware has not yet been run."
         self.guidance = ["NSA 2.3.5.6"]
@@ -69,7 +70,7 @@ class RemoveSoftware(Rule):
             "REMOVESOFTWARE TO False."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
-        
+
         datatype = "list"
         key = "PACKAGES"
         instructions = "Enter the package(s) that you wish to remove.  By " + \
@@ -124,7 +125,7 @@ class RemoveSoftware(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
     def fix(self):
         try:
             success = True
