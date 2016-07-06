@@ -24,6 +24,8 @@
 Created on Apr 11, 2016
 
 @author: dwalker
+@change: 2016/07/06 eball Shortened software test list, added backup for
+    removed software
 '''
 from __future__ import absolute_import
 import sys
@@ -48,9 +50,11 @@ class zzzTestRuleRemoveSoftware(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.checkUndo = True
 
     def tearDown(self):
-        pass
+        for pkg in self.installed:
+            self.ph.install(pkg)
 
     def runTest(self):
         self.simpleRuleTest()
@@ -63,6 +67,8 @@ class zzzTestRuleRemoveSoftware(RuleTest):
         @author: dwalker
         '''
         success = True
+        self.rule.ci.updatecurrvalue(True)
+        self.installed = []
         default = ["squid",
                    "telnet-server",
                    "rsh-server",
@@ -75,30 +81,12 @@ class zzzTestRuleRemoveSoftware(RuleTest):
                    "pam_ccreds",
                    "tftp-server",
                    "tftp",
-                   "tftpd",
-                   "udhcpd",
-                   "dhcpd",
-                   "dhcp",
-                   "dhcp-server",
-                   "yast2-dhcp-server",
-                   "vsftpd",
-                   "httpd"
-                   "dovecot",
-                   "dovecot-imapd",
-                   "dovecot-pop3d",
-                   "snmpd",
-                   "net-snmpd",
-                   "net-snmp",
-                   "ipsec-tools",
-                   "irda-utils",
-                   "slapd",
-                   "openldap-servers"
-                   "openldap2"]
+                   "tftpd"]
         for pkg in default:
-            try:
+            if not self.ph.check(pkg) and self.ph.checkAvailable(pkg):
                 self.ph.install(pkg)
-            except Exception:
-                continue
+            elif self.ph.check(pkg) and self.ph.checkAvailable(pkg):
+                self.installed.append(pkg)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
