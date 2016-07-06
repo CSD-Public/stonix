@@ -24,11 +24,13 @@
 Created on Apr 5, 2016
 
 @author: dwalker
+@change: 2016/07/06 eball Added undo events to fix
 '''
 from __future__ import absolute_import
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
+from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 import traceback
 
@@ -57,10 +59,10 @@ class RemoveSoftware(Rule):
             "assumed when running this rule.\n" + \
             "*****************"
         self.rootrequired = True
-        self.detailedresults = "RemoveSoftware has not yet been run."
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
+        self.iditerator = 0
         self.ph = Pkghelper(self.logger, self.environ)
         self.sh = ServiceHelper(self.environ, self.logger)
         # Configuration item instantiation
@@ -109,6 +111,7 @@ class RemoveSoftware(Rule):
         self.pkgci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
+        self.detailedresults = ""
         try:
             compliant = True
             if self.pkgci.getcurrvalue():
@@ -141,7 +144,15 @@ class RemoveSoftware(Rule):
             for pkg in self.pkgci.getcurrvalue():
                 if self.ph.check(pkg):
                     try:
-                        if not self.ph.remove(pkg):
+                        if self.ph.remove(pkg):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": pkg,
+                                     "startstate": "installed",
+                                     "endstate": "removed"}
+                            self.statechglogger.recordchgevent(myid, event)
+                        else:
                             success = False
                     except Exception:
                         continue
