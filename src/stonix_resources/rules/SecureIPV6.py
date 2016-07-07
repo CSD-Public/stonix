@@ -29,6 +29,7 @@ Created on Jan 14, 2014
 @change: 2015/10/08 eball Help text cleanup
 @change: 2016/04/26 ekkehard Results Formatting
 @change: 2016/06/23 dwalker adding mac os x configuration
+@change: 2016/07/07 ekkehard added net.inet6.ip6.maxifdefrouters = 1
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -104,6 +105,7 @@ False.'''
         sysctl = "/usr/sbin/sysctl"
         self.directives = {"net.inet6.ip6.forwarding": "0",
                            "net.inet6.ip6.maxifprefixes": "1",
+                           "net.inet6.ip6.maxifdefrouters": "1",
                            "net.inet6.ip6.maxfrags": "0",
                            "net.inet6.ip6.maxfragpackets": "0",
                            "net.inet6.ip6.neighborgcthresh": "1024",
