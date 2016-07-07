@@ -70,7 +70,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
                              {"ARD_AllLocalUsers": ["0", "-bool no"]},
                              "present",
                              "",
-                             "",
+                             "Do not allow local users remote management rights.",
                              None,
                              False,
                              {"ARD_AllLocalUsers": ["1", "-bool yes"]})
@@ -82,7 +82,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
                               ["1", "-bool yes"]},
                              "present",
                              "",
-                             "",
+                             "Enable remote users to request permissions for screen sharing.",
                              None,
                              False,
                              {"ScreenSharingReqPermEnabled":
@@ -95,7 +95,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
                               ["0", "-bool no"]},
                              "present",
                              "",
-                             "",
+                             "Disable Legacy VNC Connections.",
                              None,
                              False,
                              {"VNCLegacyConnectionsEnabled":
@@ -108,7 +108,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
                               ["1", "-bool yes"]},
                              "present",
                              "",
-                             "",
+                             "Load the remote management menu item.",
                              None,
                              False,
                              {"LoadRemoteManagementMenuExtra":
