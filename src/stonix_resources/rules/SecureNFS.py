@@ -306,8 +306,13 @@ class SecureNFS(Rule):
                 for line in contentlines:
                     if re.search('^#', line):
                         continue
-                    elif not re.search('^\/', line):
-                        continue
+                    elif re.search('^\/', line):
+                        # search for overly broad exports
+                        broadexports = ['^\/\w+.*\s*\d{2,3}\.\d{2,3}\.0\.0\/16\b', '^\/\w+.*\s*\d{2,3}\.0\.0\.0\/8\b', '^\/\w+.*\s*.*\*.*']
+                        for be in broadexports:
+                            if re.search(be, line):
+                                retval = False
+                                self.detailedresults += "The nfs export line:\n" + str(line) + "\nin " + str(filename) + " contains an export that is overly broad."
                     else:
                         if re.search('^([^ !$`&*()+]|(\\[ !$`&*()+]))+\s*', line):
                             sline = line.split()
