@@ -29,6 +29,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 @change: 2016/06/01 eball Added statechglogger to FileHelper parameters
+@change: 2016/07/08 ekkehard complete renaming to SecureIPV4
 '''
 from __future__ import absolute_import
 import unittest
@@ -38,17 +39,17 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.filehelper import FileHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.NetworkTuning import NetworkTuning
+from src.stonix_resources.rules.SecureIPV4 import SecureIPV4
 
 
 class zzzTestRuleNetworkTuning(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = NetworkTuning(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = SecureIPV4(self.config,
+                               self.environ,
+                               self.logdispatch,
+                               self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
