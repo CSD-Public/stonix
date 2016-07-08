@@ -35,6 +35,7 @@ variable.
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2016/05/23 eball Improvements to feedback and workflow
+@change: 2016/07/08 ekkehard complete renaming to SecureIPV4
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -50,7 +51,7 @@ import traceback
 import re
 
 
-class NetworkTuning(Rule):
+class SecureIPV4(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -60,7 +61,7 @@ class NetworkTuning(Rule):
         self.logger = logger
         self.rulenumber = 15
         self.cmdhelper = CommandHelper(self.logger)
-        self.rulename = "NetworkTuning"
+        self.rulename = "SecureIPV4"
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule configures the system's network stack " + \
