@@ -382,6 +382,8 @@ class networksetup():
             newserviceonnexline = False
             newservice = False
             noinfo = False
+            servicename = ""
+            
             for line in self.ch.getOutput():
                 if newserviceonnexline:
                     newservice = True
@@ -423,32 +425,34 @@ class networksetup():
                     for item in linearray:
                         lineprocessed = item.strip()
                         itemarray = lineprocessed.split(":")
-                        if len(itemarray) > 1:
-                            self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
-                    hardwareport = self.ns[servicename]["hardware port"].lower()
-                    splitline = hardwareport.split()
-                    networktype = ""
-                    for item in splitline:
-                        if item.lower() == "ethernet":
-                            networktype = item.lower()
-                        elif item.lower() == "bluetooth":
-                            networktype = item.lower()
-                        elif item.lower() == "usb":
-                            networktype = item.lower()
-                        elif item.lower() == "wi-fi":
-                            networktype = item.lower()
-                        elif item.lower() == "firewire":
-                            networktype = item.lower()
-                        elif item.lower() == "thunderbolt":
-                            networktype = item.lower()
-                    if networktype == "":
-                        networktype = "unknown"
+                        if servicename <> "":
+                            if len(itemarray) > 1:
+                                self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
+                    if servicename <> "":
+                        hardwareport = self.ns[servicename]["hardware port"].lower()
+                        splitline = hardwareport.split()
+                        networktype = ""
+                        for item in splitline:
+                            if item.lower() == "ethernet":
+                                networktype = item.lower()
+                            elif item.lower() == "bluetooth":
+                                networktype = item.lower()
+                            elif item.lower() == "usb":
+                                networktype = item.lower()
+                            elif item.lower() == "wi-fi":
+                                networktype = item.lower()
+                            elif item.lower() == "firewire":
+                                networktype = item.lower()
+                            elif item.lower() == "thunderbolt":
+                                networktype = item.lower()
+                        if networktype == "":
+                            networktype = "unknown"
 # update dictionary entry for network
-                    self.ns[servicename]["type"] = networktype
+                        self.ns[servicename]["type"] = networktype
 # create an ordered list to look up later
-                    orderkey = str(order).zfill(4)
-                    self.nso[orderkey] = servicename
-                    self.updateNetworkConfigurationDictionaryEntry(servicename)
+                        orderkey = str(order).zfill(4)
+                        self.nso[orderkey] = servicename
+                        self.updateNetworkConfigurationDictionaryEntry(servicename)
 
 ## this portion specifically for wi-fi on el capitan
             xcommand = [self.nsc, "-listallhardwareports"]
