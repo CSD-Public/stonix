@@ -33,7 +33,6 @@ This is a rule to disable password hints, specifically started for the Mac.
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
-from ..stonixutilityfunctions import *
 
 
 class DisablePasswordHints(RuleKVEditor):
