@@ -769,8 +769,9 @@ class MacInfoLANL():
                 self.updateAssetTagAccuracy(self.getLANLAssetTagFilesystem() == self.getLANLAssetTagNVRAM(),
                                             1000, "LANLAssetTagNVRAM is not equal to LANLAssetTagFilesystem;")
 # AssetTag for property database not equal to blank is worth 10000
-            self.updateAssetTagAccuracy(self.getLANLAssetTagFromProperty() <> "",
-                                            10000, "LANLAssetTagNVRAM is not equal to LANLAssetTagFilesystem;")
+            if not(self.getLANLAssetTagFromProperty() == ""):
+                self.updateAssetTagAccuracy(self.getLANLAssetTagFromProperty() <> "",
+                                                10000, "LANLAssetTagFromProperty is blank;")
             self.gotoFirstItemLDAP()
 # Build a dictionary based upon assetTag. If all is right there should only be one.
             while not(self.getCurrentItemLDAP() == None):
