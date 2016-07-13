@@ -50,7 +50,7 @@ class DisableAdminLoginOverride(Rule):
         self.helptext = '''This rule disables the ability of administrators \
 to log into another user's active, locked session.'''
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # Configuration item instantiation
         datatype = "bool"

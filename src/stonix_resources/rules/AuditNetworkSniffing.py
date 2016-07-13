@@ -69,7 +69,7 @@ in promiscuous mode or not.'
         self.guidance = ['CCE-RHEL7-CCE-TBD 2.5.3']
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # set up class var's and objects
         self.setup()

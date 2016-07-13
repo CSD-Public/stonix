@@ -76,7 +76,7 @@ automatically disabled.'
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         self.initobjs()
 

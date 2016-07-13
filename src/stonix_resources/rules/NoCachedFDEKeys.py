@@ -56,7 +56,7 @@ class NoCachedFDEKeys(Rule):
             "NOCACHEDFDEKEYS to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):

@@ -45,7 +45,7 @@ class DisableFTP(RuleKVEditor):
         self.mandatory = True
         self.helptext = "This rule disables FTP services for the Mac"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # init CIs
         datatype = 'bool'
