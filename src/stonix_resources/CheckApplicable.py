@@ -169,7 +169,7 @@ class CheckApplicable(object):
 
         return applies
 
-    def isInRange(self, rangeList):
+    def isInRange(self, rangeList, myversion=0):
         """
         This method separates out the range-checking functionality of the
         original rule.isapplicable() method. The proper formats for a version
@@ -178,6 +178,8 @@ class CheckApplicable(object):
         @return: bool
         @author: David Kennel, Eric Ball
         """
+        if not myversion:
+            myversion = self.myosversion
         # Process version and up
         if '+' in rangeList:
             assert len(rangeList) is 2, "Wrong number of entries for a +"
