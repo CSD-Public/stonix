@@ -84,7 +84,7 @@ class SecureIPV4(Rule):
         self.guidance = ["NSA 2.5.1.1", "NSA 2.5.1.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.iditerator = 0
         self.rep1success = True
         self.rep2success = True

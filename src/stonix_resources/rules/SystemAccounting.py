@@ -83,7 +83,7 @@ from the normal system performance curve.'''
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # set up configuration items for this rule
         datatype = 'bool'

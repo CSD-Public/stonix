@@ -69,7 +69,7 @@ a secure state at initial startup.'''
         self.guidance = []
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.servicehelper = ServiceHelper(environ, logger)
         self.type = 'rclocal'
         self.rclocalpath = '/etc/rc.local'

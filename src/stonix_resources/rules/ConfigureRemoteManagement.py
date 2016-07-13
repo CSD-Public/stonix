@@ -60,7 +60,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
         self.guidance = ['CIS 2.4.9', 'Apple HT201710']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("ARD_AllLocalUsers",
