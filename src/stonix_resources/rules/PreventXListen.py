@@ -56,7 +56,7 @@ class PreventXListen(Rule):
         self.guidance = ["NSA 3.6.1.3.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         datatype = 'bool'
         key = 'PREVENTXLISTEN'

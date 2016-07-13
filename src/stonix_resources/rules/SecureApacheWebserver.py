@@ -76,7 +76,7 @@ this rule to ensure that it will not affect their deployed applications.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.comment = re.compile('^#|^;')
         conflocations = ['/etc/httpd/conf/httpd.conf',
                          '/etc/apache2/apache2.conf',

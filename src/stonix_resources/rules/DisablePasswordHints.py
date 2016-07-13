@@ -55,7 +55,7 @@ class DisablePasswordHints(RuleKVEditor):
                         "is 0, indicating password hints will never be " + \
                         "displayed."
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.addKVEditor("DisablePasswordHints",
                          "defaults",
                          "/Library/Preferences/com.apple.loginwindow",

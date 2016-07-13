@@ -72,7 +72,7 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
         self.editor = ""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
 ###############################################################################
 
