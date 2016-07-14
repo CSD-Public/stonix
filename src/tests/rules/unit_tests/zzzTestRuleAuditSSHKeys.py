@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -22,34 +21,29 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a (dummy) Unit Test for Rule InstalledSoftwareVerification
+Created on Jul 12, 2016
 
-@author: Eric Ball
-@change: 2015/08/04 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
-@change: 2016/07/12 eball Removed simpleRuleTest, since failure rate is
-    nearly 100%. This rule is audit-only and uses a system facility. It does
-    not require unit testing.
+This is a unit test for rule AuditSSHKeys
+
+@author: Breen Malmberg
 '''
+
 from __future__ import absolute_import
+
 import unittest
-import sys
-
-sys.path.append("../../../..")
-from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.rules.AuditSSHKeys import AuditSSHKeys
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.InstalledSoftwareVerification import InstalledSoftwareVerification
+from src.tests.lib.RuleTestTemplate import RuleTest
 
 
-class zzzTestRuleInstalledSoftwareVerification(RuleTest):
+class zzzTestRuleAuditSSHKeys(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = InstalledSoftwareVerification(self.config,
-                                                  self.environ,
-                                                  self.logdispatch,
-                                                  self.statechglogger)
+        self.rule = AuditSSHKeys(self.config,
+                                      self.environ,
+                                      self.logdispatch,
+                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
 
@@ -57,15 +51,17 @@ class zzzTestRuleInstalledSoftwareVerification(RuleTest):
         pass
 
     def runTest(self):
-        pass
+        self.setConditionsForRule()
+        self.simpleRuleTest()
 
     def setConditionsForRule(self):
         '''
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
+
         success = True
         return success
 
@@ -76,11 +72,12 @@ class zzzTestRuleInstalledSoftwareVerification(RuleTest):
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -91,9 +88,10 @@ class zzzTestRuleInstalledSoftwareVerification(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -104,9 +102,10 @@ class zzzTestRuleInstalledSoftwareVerification(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
