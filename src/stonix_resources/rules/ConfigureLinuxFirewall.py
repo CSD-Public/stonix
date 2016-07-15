@@ -105,6 +105,12 @@ CONFIGURELINUXFIREWALL to False.'''
         self.ip6tables = "/usr/sbin/ip6tables"
         if not os.path.exists(self.ip6tables):
             self.ip6tables = '/sbin/ip6tables'
+        self.iprestore = "/sbin/iptables-restore"
+        self.ip6restore = "/sbin/ip6tables-restore"
+        if not os.path.exists(self.iprestore):
+            self.iprestore = "/usr/sbin/iptables-restore"
+            self.ip6restore = "/usr/sbin/ip6tables-restore"
+        self.scriptType = ""
 
     def report(self):
         """
@@ -139,6 +145,89 @@ CONFIGURELINUXFIREWALL to False.'''
                         compliant = False
                         self.detailedresults = 'This system appears to have ' + \
                             'ufw but it is not running as required'
+            elif "iptables" not in self.servicehelper.listservices():
+                # Debian systems do not provide a service for iptables
+                cmd = [self.iptables, "-L"]
+                if not self.cmdhelper.executeCommand(cmd):
+                    self.detailedresults += "Unable to run " + \
+                        "iptables -L command\n"
+                    compliant = False
+                else:
+                    output = self.cmdhelper.getOutput()
+                    for line in output:
+                        if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                     '\s+all\s+--\s+anywhere\s+anywhere', line):
+                            catchall = True
+                            break
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. ipv4 catchall rule: "
+                                     + str(catchall)])
+                cmd6 = [self.ip6tables, "-L"]
+                if not self.cmdhelper.executeCommand(cmd6):
+                    self.detailedresults += "Unable to run " + \
+                        "ip6tables -L command\n"
+                    compliant = False
+                else:
+                    output6 = self.cmdhelper.getOutput()
+                    for line in output6:
+                        if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                     '\s+all\s+anywhere\s+anywhere', line):
+                            catchall6 = True
+                            break
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. ipv6 catchall rule: "
+                                     + str(catchall6)])
+
+                if os.path.exists("/etc/network/if-pre-up.d"):
+                    self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                    self.scriptType = "debian"
+                elif os.path.exists("/etc/sysconfig/scripts"):
+                    self.iptScriptPath = \
+                        "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                    self.scriptType = "suse"
+                else:
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "No acceptable path for a startup " +
+                                     "script found"])
+                if os.path.exists(self.iptScriptPath):
+                    scriptExists = True
+                else:
+                    scriptExists = False
+
+                if not catchall:
+                    self.detailedresults += 'This system appears to use ' + \
+                        'iptables but the expected deny all is missing ' + \
+                        'from the rules.\n'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. Missing v4 deny all."])
+                if not catchall6:
+                    self.detailedresults += 'This system appears to use ' + \
+                        'ip6tables but the expected deny all is missing ' + \
+                        'from the rules.\n'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. Missing v6 deny all."])
+                if not scriptExists:
+                    self.detailedresults += 'This system appears to use ' + \
+                        'iptables but the startup script is not present\n'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. Missing startup " +
+                                     "script"])
+                if catchall and catchall6 and scriptExists:
+                    compliant = True
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. Check passed."])
+                else:
+                    compliant = False
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Debian type system. Check failed."])
             else:
                 if self.servicehelper.auditservice('iptables.service') or \
                    self.servicehelper.auditservice('iptables'):
@@ -185,7 +274,7 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. ipv6 catchall rule: "
-                                     + str(catchall)])
+                                     + str(catchall6)])
                 if not iptablesrunning:
                     self.detailedresults += 'This system appears to use ' + \
                         'iptables but it is not running as required.\n'
@@ -252,6 +341,7 @@ CONFIGURELINUXFIREWALL to False.'''
 
         @author: D. Kennel
         """
+        self.detailedresults = ""
         if self.clfci.getcurrvalue():
             self.rulesuccess = True
             try:
@@ -328,6 +418,90 @@ COMMIT
                     # Sleep for a bit to let the restarts occur
                     time.sleep(3)
                     self.detailedresults += "Firewall configured.\n "
+                elif os.path.exists(self.iprestore) and \
+                     os.path.exists(self.ip6restore):
+                    iptables = '''*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+'''
+                    ip6tables = '''*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+COMMIT
+'''
+                    proc = subprocess.Popen(self.iprestore,
+                                            stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE)
+                    proc.communicate(input=iptables)
+                    proc = subprocess.Popen(self.ip6restore,
+                                            stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE)
+                    proc.communicate(input=ip6tables)
+                    if self.scriptType == "debian":
+                        iptScript = '#!/bin/bash\n' + self.iprestore + \
+                            ' <<< "' + iptables + '"\n' + self.ip6restore + \
+                            ' <<< "' + ip6tables + '"'
+                    else:
+                        iptScript = '''fw_custom_after_chain_creation() {
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+    true
+}
+
+fw_custom_before_port_handling() {
+    true
+}
+
+fw_custom_before_masq() {
+    true
+}
+
+fw_custom_before_denyall() {
+    true
+}
+
+fw_custom_after_finished() {
+    true
+}
+'''
+                    if os.path.exists(self.iptScriptPath):
+                        shutil.move(self.iptScriptPath,
+                                    self.iptScriptPath + ".stonix.bak")
+                    iptShellHandle = open(self.iptScriptPath, "w")
+                    iptShellHandle.write(iptScript)
+                    iptShellHandle.close()
+                    os.chmod(self.iptScriptPath, 0755)
+                    self.detailedresults += "Firewall configured.\n "
                 else:
                     self.detailedresults += "Unable to configure a " + \
                         "firewall for this system. The system " + \
@@ -382,9 +556,18 @@ COMMIT
                             '/etc/sysconfig/ip6tables.stonix.bak')
                 self.servicehelper.disableservice('iptables')
                 self.servicehelper.disableservice('ip6tables')
+            elif os.path.exists(self.iprestore) and \
+                 os.path.exists(self.ip6restore):
+                if os.path.exists(self.iptScriptPath + ".stonix.bak"):
+                    shutil.move(self.iptScriptPath + ".stonix.bak",
+                                self.iptScriptPath)
+                elif os.path.exists(self.iptScriptPath):
+                    os.remove(self.iptScriptPath)
+                self.cmdhelper.executeCommand([self.iptables, "-F"])
+                self.cmdhelper.executeCommand([self.ip6tables, "-F"])
             else:
-                    self.detailedresults += "Unable to configure a " + \
-                        "firewall for this system. Nothing to undo.\n "
+                self.detailedresults += "Unable to configure a " + \
+                    "firewall for this system. Nothing to undo.\n "
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

@@ -50,6 +50,7 @@ class zzzTestRuleDisableIPV6(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.checkUndo = True
 
     def tearDown(self):
         pass
