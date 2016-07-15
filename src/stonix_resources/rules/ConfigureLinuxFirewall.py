@@ -181,17 +181,18 @@ CONFIGURELINUXFIREWALL to False.'''
                                      + str(catchall6)])
 
                 if os.path.exists("/etc/network/if-pre-up.d"):
-                    iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                    self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
                     self.scriptType = "debian"
                 elif os.path.exists("/etc/sysconfig/scripts"):
-                    iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                    self.iptScriptPath = \
+                        "/etc/sysconfig/scripts/SuSEfirewall2-custom"
                     self.scriptType = "suse"
                 else:
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "No acceptable path for a startup " +
                                      "script found"])
-                if os.path.exists(iptScriptPath):
+                if os.path.exists(self.iptScriptPath):
                     scriptExists = True
                 else:
                     scriptExists = False
@@ -458,7 +459,6 @@ COMMIT
                         iptScript = '#!/bin/bash\n' + self.iprestore + \
                             ' <<< "' + iptables + '"\n' + self.ip6restore + \
                             ' <<< "' + ip6tables + '"'
-                        iptScriptPath = "/etc/network/if-pre-up.d/iptables"
                     else:
                         iptScript = '''fw_custom_after_chain_creation() {
 *filter
@@ -494,12 +494,13 @@ fw_custom_after_finished() {
     true
 }
 '''
-                        iptScriptPath = \
-                            "/etc/sysconfig/scripts/SuSEfirewall2-custom"
-                    iptShellHandle = open(iptScriptPath, "w")
+                    if os.path.exists(self.iptScriptPath):
+                        shutil.move(self.iptScriptPath,
+                                    self.iptScriptPath + ".stonix.bak")
+                    iptShellHandle = open(self.iptScriptPath, "w")
                     iptShellHandle.write(iptScript)
                     iptShellHandle.close()
-                    os.chmod(iptScriptPath, 0755)
+                    os.chmod(self.iptScriptPath, 0755)
                     self.detailedresults += "Firewall configured.\n "
                 else:
                     self.detailedresults += "Unable to configure a " + \
@@ -555,9 +556,18 @@ fw_custom_after_finished() {
                             '/etc/sysconfig/ip6tables.stonix.bak')
                 self.servicehelper.disableservice('iptables')
                 self.servicehelper.disableservice('ip6tables')
+            elif os.path.exists(self.iprestore) and \
+                 os.path.exists(self.ip6restore):
+                if os.path.exists(self.iptScriptPath + ".stonix.bak"):
+                    shutil.move(self.iptScriptPath + ".stonix.bak",
+                                self.iptScriptPath)
+                elif os.path.exists(self.iptScriptPath):
+                    os.remove(self.iptScriptPath)
+                self.cmdhelper.executeCommand([self.iptables, "-F"])
+                self.cmdhelper.executeCommand([self.ip6tables, "-F"])
             else:
-                    self.detailedresults += "Unable to configure a " + \
-                        "firewall for this system. Nothing to undo.\n "
+                self.detailedresults += "Unable to configure a " + \
+                    "firewall for this system. Nothing to undo.\n "
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
