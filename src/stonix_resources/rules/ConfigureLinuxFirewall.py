@@ -105,6 +105,12 @@ CONFIGURELINUXFIREWALL to False.'''
         self.ip6tables = "/usr/sbin/ip6tables"
         if not os.path.exists(self.ip6tables):
             self.ip6tables = '/sbin/ip6tables'
+        self.iprestore = "/sbin/iptables-restore"
+        self.ip6restore = "/sbin/ip6tables-restore"
+        if not os.path.exists(self.iprestore):
+            self.iprestore = "/usr/sbin/iptables-restore"
+            self.ip6restore = "/usr/sbin/ip6tables-restore"
+        self.scriptType = ""
 
     def report(self):
         """
@@ -173,11 +179,23 @@ CONFIGURELINUXFIREWALL to False.'''
                                     ['ConfigureLinuxFirewall.report',
                                      "Debian type system. ipv6 catchall rule: "
                                      + str(catchall6)])
-                iptShellPath = "/etc/network/if-pre-up.d/iptables"
-                if os.path.exists(iptShellPath):
+
+                if os.path.exists("/etc/network/if-pre-up.d"):
+                    iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                    self.scriptType = "debian"
+                elif os.path.exists("/etc/sysconfig/scripts"):
+                    iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                    self.scriptType = "suse"
+                else:
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "No acceptable path for a startup " +
+                                     "script found"])
+                if os.path.exists(iptScriptPath):
                     scriptExists = True
                 else:
                     scriptExists = False
+
                 if not catchall:
                     self.detailedresults += 'This system appears to use ' + \
                         'iptables but the expected deny all is missing ' + \
@@ -322,6 +340,7 @@ CONFIGURELINUXFIREWALL to False.'''
 
         @author: D. Kennel
         """
+        self.detailedresults = ""
         if self.clfci.getcurrvalue():
             self.rulesuccess = True
             try:
@@ -398,8 +417,8 @@ COMMIT
                     # Sleep for a bit to let the restarts occur
                     time.sleep(3)
                     self.detailedresults += "Firewall configured.\n "
-                elif os.path.exists('/sbin/iptables-restore') and \
-                     os.path.exists('/sbin/ip6tables-restore'):
+                elif os.path.exists(self.iprestore) and \
+                     os.path.exists(self.ip6restore):
                     iptables = '''*filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -425,24 +444,62 @@ COMMIT
 -A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
 COMMIT
 '''
-                    proc = subprocess.Popen('/sbin/iptables-restore',
+                    proc = subprocess.Popen(self.iprestore,
                                             stdin=subprocess.PIPE,
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE)
                     proc.communicate(input=iptables)
-                    proc = subprocess.Popen('/sbin/ip6tables-restore',
+                    proc = subprocess.Popen(self.ip6restore,
                                             stdin=subprocess.PIPE,
                                             stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE)
                     proc.communicate(input=ip6tables)
-                    iptShellScript = '#!/bin/bash\n/sbin/iptables-restore <<< "' + \
-                        iptables + '"\n/sbin/ip6tables-restore <<< "' + \
-                        ip6tables + '"'
-                    iptShellPath = "/etc/network/if-pre-up.d/iptables"
-                    iptShellHandle = open(iptShellPath, "w")
-                    iptShellHandle.write(iptShellScript)
+                    if self.scriptType == "debian":
+                        iptScript = '#!/bin/bash\n' + self.iprestore + \
+                            ' <<< "' + iptables + '"\n' + self.ip6restore + \
+                            ' <<< "' + ip6tables + '"'
+                        iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                    else:
+                        iptScript = '''fw_custom_after_chain_creation() {
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+    true
+}
+
+fw_custom_before_port_handling() {
+    true
+}
+
+fw_custom_before_masq() {
+    true
+}
+
+fw_custom_before_denyall() {
+    true
+}
+
+fw_custom_after_finished() {
+    true
+}
+'''
+                        iptScriptPath = \
+                            "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                    iptShellHandle = open(iptScriptPath, "w")
+                    iptShellHandle.write(iptScript)
                     iptShellHandle.close()
-                    os.chmod(iptShellPath, 0755)
+                    os.chmod(iptScriptPath, 0755)
                     self.detailedresults += "Firewall configured.\n "
                 else:
                     self.detailedresults += "Unable to configure a " + \
