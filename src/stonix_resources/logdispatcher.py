@@ -37,6 +37,8 @@
 Created on Aug 24, 2010
 
 @author: dkennel
+@change: 2016/07/18 eball Added smtplib.SMTPRecipientsRefused to try/except for
+    reporterr method, and added debug output for both exceptions.
 '''
 
 from observable import Observable
@@ -283,7 +285,11 @@ Subject: STONIX Error Report: ''' + prefix + '''
             server.sendmail(frm, to, message)
             server.quit()
         except socket.error:
-            pass
+            self.log(LogPriority.DEBUG, "Could not send error e-mail: " +
+                     "error contacting e-mail server")
+        except smtplib.SMTPRecipientsRefused:
+            self.log(LogPriority.DEBUG, "Could not send error e-mail: " +
+                     "bad e-mail address in localize.STONIXDEVS")
 
     def format_message_data(self, msg_data):
         """
