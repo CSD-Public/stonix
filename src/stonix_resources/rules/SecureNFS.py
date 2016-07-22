@@ -308,7 +308,7 @@ class SecureNFS(Rule):
                         continue
                     elif re.search('^\/', line):
                         # search for overly broad exports
-                        broadexports = ['^\/\w+.*\s*\d{2,3}\.\d{2,3}\.0\.0\/16\b', '^\/\w+.*\s*\d{2,3}\.0\.0\.0\/8\b', '^\/\w+.*\s*.*\*.*']
+                        broadexports = ['^\/\w+.*\s*\d{2,3}\.\d{2,3}\.0\.0\/16\b', '^\/\w+.*\s*\d{1,3}\.0\.0\.0\/8\b', '^\/\w+.*\s*.*\*.*']
                         for be in broadexports:
                             if re.search(be, line):
                                 retval = False

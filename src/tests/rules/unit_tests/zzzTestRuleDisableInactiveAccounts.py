@@ -40,7 +40,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableInactiveAccounts import DisableInactiveAccounts
 
 
-class zzzTestRuleBootloaderPerms(RuleTest):
+class zzzTestRuleDisableInactiveAccounts(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
@@ -56,6 +56,7 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         pass
 
     def runTest(self):
+        self.setConditionsForRule()
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -63,7 +64,7 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
         success = True
         return success
@@ -87,7 +88,9 @@ class zzzTestRuleBootloaderPerms(RuleTest):
 
         self.ch.executeCommand('/usr/bin/dscl . -ls /Users')
         rc = self.ch.getReturnCode()
-        self.assertTrue(rc, 0)
+        # rc should always be 0 after this command is run (means it ran successfully)
+        # however 0 is interpreted as false by python, so.. assertFalse
+        self.assertFalse(rc, "The return code for getting the list of users should always be 0 (success)")
 
     def test_pwpolicy_path(self):
         '''
@@ -107,15 +110,7 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         '''
 
         self.rule.initobjs()
-        self.assertFalse(self.rule.cmdhelper, None)
-
-    def test_ci(self):
-        '''
-        test whether ci initialized correctly
-        @author: Breen Malmberg
-        '''
-
-        self.assertFalse(self.rule.ci, None)
+        self.assertTrue(self.rule.cmdhelper, "CommandHelper object should always initialize after initobjs() is run")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -124,7 +119,7 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -139,7 +134,7 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -152,7 +147,7 @@ class zzzTestRuleBootloaderPerms(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
