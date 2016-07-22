@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -22,40 +21,37 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on May 27, 2016
-This is a Unit Test for Rule ConfigureLinuxFirewall
+Created on Jul 12, 2016
 
-@author: D. Kennel
+This is a unit test for rule AuditSSHKeys
 
+@author: Breen Malmberg
 '''
+
 from __future__ import absolute_import
+
 import unittest
-import sys
-
-sys.path.append("../../../..")
-from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.rules.AuditSSHKeys import AuditSSHKeys
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureLinuxFirewall import ConfigureLinuxFirewall
+from src.tests.lib.RuleTestTemplate import RuleTest
 
 
-class zzzTestRuleDisableIPV6(RuleTest):
+class zzzTestRuleAuditSSHKeys(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureLinuxFirewall(self.config,
-                                self.environ,
-                                self.logdispatch,
-                                self.statechglogger)
+        self.rule = AuditSSHKeys(self.config,
+                                      self.environ,
+                                      self.logdispatch,
+                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
-        self.checkUndo = True
 
     def tearDown(self):
         pass
 
     def runTest(self):
+        self.setConditionsForRule()
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -63,8 +59,9 @@ class zzzTestRuleDisableIPV6(RuleTest):
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
+
         success = True
         return success
 
@@ -75,11 +72,12 @@ class zzzTestRuleDisableIPV6(RuleTest):
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -90,9 +88,10 @@ class zzzTestRuleDisableIPV6(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -103,9 +102,10 @@ class zzzTestRuleDisableIPV6(RuleTest):
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: Breen Malmberg
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
