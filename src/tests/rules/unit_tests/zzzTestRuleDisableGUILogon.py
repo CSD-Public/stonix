@@ -34,6 +34,7 @@ This is a Unit Test for Rule DisableGUILogon
                         file as well as with the test harness.
 @change: 2016/07/06 eball Bypassed simpleRuleTest, since this will always be
     false due to keeping REMOVEX CI disabled.
+@change: 2016/07/22 eball Added destructive testing
 '''
 from __future__ import absolute_import
 import unittest
@@ -60,6 +61,7 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.destructive = self.runDestructive()
 
     def tearDown(self):
         self.rule.undo()
@@ -75,11 +77,9 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         # Enable CIs
         self.rule.ci1.updatecurrvalue(True)
         self.rule.ci2.updatecurrvalue(True)
-        # CI 3 is REMOVEX, which will remove X Windows entirely. STONIX unit
-        # tests should generally only be run in virtual environments anyway,
-        # but due to the severity of the changes caused by this rule, it is
-        # disabled by default. To enable, uncomment the line below.
-        #self.rule.ci3.updatecurrvalue(True)
+        # CI 3 is REMOVEX, which will remove X Windows entirely.
+        if self.destructive:
+            self.rule.ci3.updatecurrvalue(True)
 
         # Ensure GUI logon is enabled
         self.myos = self.environ.getostype().lower()
@@ -89,12 +89,20 @@ class zzzTestRuleDisableGUILogon(RuleTest):
             if not self.ch.executeCommand(cmd):
                 success = False
         elif re.search("debian", self.myos):
-            if not self.sh.enableservice("gdm3"):
-                if not self.sh.enableservice("gdm"):
-                    if not self.sh.enableservice("kdm"):
-                        if not self.sh.enableservice("xdm"):
-                            if not self.sh.enableservice("lightdm"):
+            if not self.sh.auditservice("gdm3") and \
+               not self.sh.enableservice("gdm3"):
+                if not self.sh.auditservice("gdm") and \
+                   not self.sh.enableservice("gdm"):
+                    if not self.sh.auditservice("kdm") and \
+                       not self.sh.enableservice("kdm"):
+                        if not self.sh.auditservice("xdm") and \
+                           not self.sh.enableservice("xdm"):
+                            if not self.sh.auditservice("lightdm") and \
+                               not self.sh.enableservice("lightdm"):
                                 success = False
+                                self.logdispatch.log(LogPriority.DEBUG,
+                                                     "Could not find an " +
+                                                     "active DM")
         elif re.search("ubuntu", self.myos):
             ldmover = "/etc/init/lightdm.override"
             grub = "/etc/default/grub"
@@ -123,25 +131,26 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         return success
 
     def testRule(self):
-        self.rule.report()
         self.assertTrue(self.setConditionsForRule(),
                         "setConditionsForRule was not successful")
+        self.rule.report()
         self.assertTrue(self.rule.fix(), "DisableGUILogon.fix failed")
         self.rule.report()
         # This test does not attempt to remove the core X11 components, so this
         # result can be considered a false positive and removed.
-        results = re.sub("Core X11 components are present\n", "",
-                         self.rule.detailedresults)
-        splitresults = results.splitlines()
-        # Results will always have a header line, which can be removed. If the
-        # results consist only of the header line, we will consider the test
-        # to be compliant
-        if len(splitresults) > 1:
-            # Remove header line
-            results = "\n".join(splitresults[1:])
-            self.assertFalse(re.search(r"[^\s]", results),
-                             "After running DisableGUILogon.fix, the " +
-                             "following issues were present: " + results)
+        if not self.destructive:
+            results = re.sub("Core X11 components are present\n", "",
+                             self.rule.detailedresults)
+            splitresults = results.splitlines()
+            # Results will always have a header line, which can be removed. If
+            # the results consist only of the header line, we will consider the
+            # test to be compliant
+            if len(splitresults) > 1:
+                # Remove header line
+                results = "\n".join(splitresults[1:])
+                self.assertFalse(re.search(r"[^\s]", results),
+                                 "After running DisableGUILogon.fix, the " +
+                                 "following issues were present: " + results)
 
 
 if __name__ == "__main__":
