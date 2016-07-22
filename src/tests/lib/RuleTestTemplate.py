@@ -25,6 +25,7 @@ from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.StateChgLogger import StateChgLogger
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+import os
 import unittest
 
 
@@ -346,6 +347,11 @@ class RuleTest(unittest.TestCase):
 
     def getCheckUndo(self):
         return self.checkUndo
+
+###############################################################################
+
+    def runDestructive(self):
+        return os.path.exists("/etc/stonix-destructive")
 
 ###############################################################################
 
