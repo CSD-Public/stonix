@@ -77,7 +77,8 @@ managers will not save work in progress when the logout occurs.
 '''
         self.rootrequired = False
         self.applicable = {'type': 'white',
-                           'family': ['linux']}
+                           'family': ['linux'],
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
         self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
@@ -333,6 +334,17 @@ logout. It should contain the lines: AutoLogout=true, and \
 AutoLogoutTimeout=""" + str(seconds)
                         return False
 
+    def chkosx(self):
+        globalprefs = "/Library/Preferences/.GlobalPreferences.plist"
+        globalprefstemp = globalprefs + ".stonixtmp"
+        timeout = self.timeoutci.getcurrvalue() * 60
+        data = {"com.apple.autologout.AutoLogOutDelay":
+                [str(timeout), "-int " + str(timeout)]}
+        self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                     "defaults", globalprefs, globalprefstemp,
+                                     data, "present")
+        return self.editor.report()
+
     def report(self):
         """
         Report on whether the Idle Logout settings are correct.
@@ -356,13 +368,17 @@ Gnome and KDE GUI environments do not appear to be correctly configured for \
 automatic logout of idle sessions. This guidance is optional in STONIX, check \
 local policy to see if it is required."""
                     compliant = False
+            elif self.environ.getosfamily() == 'darwin':
+                compliant = self.chkosx()
+                if not compliant:
+                    self.detailedresults += "Idle logout value is not set to " + \
+                        str(self.timeoutci.getcurrvalue()) + "\n"
             if compliant:
                 self.targetstate = 'configured'
                 self.compliant = True
             else:
                 self.targetstate = 'notconfigured'
-                self.compliant = True
-            return compliant
+                self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -587,13 +603,27 @@ AutoLogoutTimeout=''' + str(seconds)
                 os.chown(rcpath, uidnum, defgid)
                 resetsecon(rcpath)
 
+    def fixosx(self):
+        if not self.editor.report():
+            if self.editor.fix():
+                if self.editor.commit():
+                    self.rulesuccess = True
+                else:
+                    self.detailedresults += "KVEditor could not commit " + \
+                        "correct configuration\n"
+                    self.rulesuccess = False
+            else:
+                self.detailedresults += "KVEditor could not fix configuration\n"
+                self.rulesuccess = False
+
     def fix(self):
         """
        Configure the system to enforce logout of idle GUI sessions
 
         @author: D. Kennel
         """
-        if self.filci.getcurrvalue():
+        self.rulesuccess = True
+        if self.filci.getcurrvalue() and self.environ.getosfamily() == "linux":
             try:
                 self.fixgnome3()
             except (KeyboardInterrupt, SystemExit):
@@ -609,6 +639,21 @@ AutoLogoutTimeout=''' + str(seconds)
                                 self.detailedresults)
             try:
                 self.fixkde4()
+            except (KeyboardInterrupt, SystemExit):
+                # User initiated exit
+                raise
+            except Exception:
+                self.rulesuccess = False
+                self.detailedresults = 'ForceIdleLogout: '
+                self.detailedresults = self.detailedresults + \
+                    traceback.format_exc()
+                self.rulesuccess = False
+                self.logger.log(LogPriority.ERROR,
+                                self.detailedresults)
+        elif self.filci.getcurrvalue() and \
+             self.environ.getosfamily() == "darwin":
+            try:
+                self.fixosx()
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
