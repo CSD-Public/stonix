@@ -69,19 +69,22 @@ class zzzTestRuleSecureMTA(RuleTest):
                                '/private/etc/postfix/main.cf',
                                '/usr/lib/postfix/main.cf']
             pfpkgnames = ['postfix', 'squeeze', 'squeeze-backports',
-               'wheezy', 'jessie', 'sid', 'CNDpostfix', 'lucid',
-               'lucid-updates', 'lucid-backports', 'precise',
-               'precise-updates', 'quantal', 'quantal-updates',
-               'raring', 'saucy', 'wheezy-backports', 'postfix-current',
-               'trusty', 'trusty-updates', 'vivid', 'wily', 'xenial']
+                          'wheezy', 'jessie', 'sid', 'CNDpostfix', 'lucid',
+                          'lucid-updates', 'lucid-backports', 'precise',
+                          'precise-updates', 'quantal', 'quantal-updates',
+                          'raring', 'saucy', 'wheezy-backports',
+                          'postfix-current', 'trusty', 'trusty-updates',
+                          'vivid', 'wily', 'xenial']
             self.postfixpkg = ""
             for pkg in pfpkgnames:
                 if self.ph.check(pkg):
                     self.postfixpkg = pkg
+                    break
             self.pfPath = ""
             for path in self.pfPathlist:
                 if os.path.exists(path):
                     self.pfPath = path
+                    break
             if self.pfPath == "":
                 self.pfPath = "/etc/postfix/main.cf"
             self.pfTmp = self.pfPath + ".stonixUT"
