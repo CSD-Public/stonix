@@ -38,7 +38,7 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.pkghelper import Pkghelper
 from src.stonix_resources.stonixutilityfunctions import readFile, setPerms
-from src.stonix_resources.stonixutilityfunctions import checkPerms
+from src.stonix_resources.stonixutilityfunctions import checkPerms, writeFile
 from src.stonix_resources.rules.SetTFTPDSecureMode import SetTFTPDSecureMode
 import os, re
 
@@ -72,6 +72,7 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
             self.ph = Pkghelper(self.logger, self.environ)
             if self.ph.manager == "apt-get":
                 self.tftpfile = "/etc/default/tftpd-hpa"
+                tmpfile = self.tftpfile + ".tmp"
                 if os.path.exists(self.tftpfile):
                     contents = readFile(self.tftpfile, self.logger)
                     tempstring = ""
@@ -84,6 +85,12 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
                             continue
                         else:
                             tempstring += line
+                    if not writeFile(tmpfile, tempstring, self.logger):
+                        success = False
+                    else:
+                        os.rename(tmpfile, self.tftpfile)
+                        os.chown(self.tftpfile, 0, 0)
+                        os.chmod(self.tftpfile, 400)
             else:
                 #if server_args line found, remove to make non-compliant
                 self.tftpfile = "/etc/xinetd.d/tftp"
