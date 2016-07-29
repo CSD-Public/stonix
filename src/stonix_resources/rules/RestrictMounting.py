@@ -138,6 +138,7 @@ and media.'''
                 if re.search("true", self.ch.getOutputString()):
                     autorunNever = True
                     debug = "autorun-never is enabled"
+                    self.logger.log(LogPriority.DEBUG, debug)
 
                 self.automountOff = automountOff
                 self.autorunNever = autorunNever
@@ -312,7 +313,7 @@ and media.'''
                                       "/etc/gconf/gconf.xml.mandatory",
                                       "--type", "bool", "--set",
                                       "/desktop/gnome/volume_manager/" +
-                                      "automount_media", "false"]}
+                                      "automount_media", "true"]}
                             self.statechglogger.recordchgevent(myid, event)
 
                     if self.automountDrives:
@@ -334,7 +335,7 @@ and media.'''
                                       "--type", "bool", "--set",
                                       "/desktop/gnome/volume_manager/" +
                                       "automount_drives",
-                                      "false"]}
+                                      "true"]}
                             self.statechglogger.recordchgevent(myid, event)
 
                 if returnCode:
