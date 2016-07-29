@@ -50,6 +50,7 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
                                         self.environ,
                                         self.logdispatch,
                                         self.statechglogger)
+        self.logger = self.logdispatch
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -78,7 +79,7 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
                     tempstring = ""
                     for line in contents:
                         '''Take TFTP_OPTIONS line out of file'''
-                        if re.search("TFTP_OPTIONS", line.strip):
+                        if re.search("TFTP_OPTIONS", line.strip()):
                             continue
                         elif re.search("TFTP_DIRECTORY", line.strip()):
                             tempstring += 'TFTP_DIRECTORY="/var/lib/tftpbad"'
