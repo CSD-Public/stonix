@@ -65,11 +65,13 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
         if self.ph.check("firefox"):
             self.browser = "firefox"
             self.setConditionsForRule()
-            self.assertFalse(self.rule.report())
+            self.assertFalse(self.rule.report(), "Report was not false " +
+                             "after test conditions were set")
         elif self.ph.check("iceweasel"):
             self.browser = "iceweasel"
             self.setConditionsForRule()
-            self.assertFalse(self.rule.report())
+            self.assertFalse(self.rule.report(), "Report was not false " +
+                             "after test conditions were set")
         else:
             debug = "Firefox not installed. Unit test will not make any " + \
                 "changes."
@@ -90,14 +92,14 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
             self.ch.wait = False
             command = [browser, "google.com"]
             self.ch.executeCommand(command)
-            sleep(5)
+            sleep(20)
             self.initMozDir = True
         else:
             self.ch.wait = False
             os.rename("/root/.mozilla", "/root/.mozilla.stonixtmp")
             command = [browser, "google.com"]
             self.ch.executeCommand(command)
-            sleep(10)
+            sleep(20)
             self.moveMozDir = True
 
         command = ["killall", "-q", "-u", "root", browser]
