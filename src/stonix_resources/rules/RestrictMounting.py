@@ -263,7 +263,7 @@ and media.'''
             if self.gnomeCi.getcurrvalue():
                 if os.path.exists("/usr/bin/gsettings"):
                     if not self.automountOff:
-                        cmd = ["gsettings", "set",
+                        cmd = ["dbus-launch", "gsettings", "set",
                                "org.gnome.desktop.media-handling",
                                "automount", "false"]
                         self.ch.executeCommand(cmd)
@@ -273,13 +273,13 @@ and media.'''
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "comm", "command":
-                                     ["gsettings", "set",
+                                     ["dbus-launch", "gsettings", "set",
                                       "org.gnome.desktop.media-handling",
                                       "automount", "true"]}
                             self.statechglogger.recordchgevent(myid, event)
 
                     if not self.autorunNever:
-                        cmd = ["gsettings", "set",
+                        cmd = ["dbus-launch", "gsettings", "set",
                                "org.gnome.desktop.media-handling",
                                "autorun-never", "true"]
                         self.ch.executeCommand(cmd)
@@ -289,7 +289,7 @@ and media.'''
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "comm", "command":
-                                     ["gsettings", "set",
+                                     ["dbus-launch", "gsettings", "set",
                                       "org.gnome.desktop.media-handling",
                                       "autorun-never", "false"]}
                             self.statechglogger.recordchgevent(myid, event)
