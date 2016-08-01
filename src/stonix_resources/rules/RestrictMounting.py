@@ -138,6 +138,7 @@ and media.'''
                 if re.search("true", self.ch.getOutputString()):
                     autorunNever = True
                     debug = "autorun-never is enabled"
+                    self.logger.log(LogPriority.DEBUG, debug)
 
                 self.automountOff = automountOff
                 self.autorunNever = autorunNever
@@ -262,7 +263,7 @@ and media.'''
             if self.gnomeCi.getcurrvalue():
                 if os.path.exists("/usr/bin/gsettings"):
                     if not self.automountOff:
-                        cmd = ["gsettings", "set",
+                        cmd = ["dbus-launch", "gsettings", "set",
                                "org.gnome.desktop.media-handling",
                                "automount", "false"]
                         self.ch.executeCommand(cmd)
@@ -272,13 +273,13 @@ and media.'''
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "comm", "command":
-                                     ["gsettings", "set",
+                                     ["dbus-launch", "gsettings", "set",
                                       "org.gnome.desktop.media-handling",
                                       "automount", "true"]}
                             self.statechglogger.recordchgevent(myid, event)
 
                     if not self.autorunNever:
-                        cmd = ["gsettings", "set",
+                        cmd = ["dbus-launch", "gsettings", "set",
                                "org.gnome.desktop.media-handling",
                                "autorun-never", "true"]
                         self.ch.executeCommand(cmd)
@@ -288,7 +289,7 @@ and media.'''
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "comm", "command":
-                                     ["gsettings", "set",
+                                     ["dbus-launch", "gsettings", "set",
                                       "org.gnome.desktop.media-handling",
                                       "autorun-never", "false"]}
                             self.statechglogger.recordchgevent(myid, event)
@@ -312,7 +313,7 @@ and media.'''
                                       "/etc/gconf/gconf.xml.mandatory",
                                       "--type", "bool", "--set",
                                       "/desktop/gnome/volume_manager/" +
-                                      "automount_media", "false"]}
+                                      "automount_media", "true"]}
                             self.statechglogger.recordchgevent(myid, event)
 
                     if self.automountDrives:
@@ -334,7 +335,7 @@ and media.'''
                                       "--type", "bool", "--set",
                                       "/desktop/gnome/volume_manager/" +
                                       "automount_drives",
-                                      "false"]}
+                                      "true"]}
                             self.statechglogger.recordchgevent(myid, event)
 
                 if returnCode:
