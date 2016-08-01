@@ -157,14 +157,14 @@ class Zypper(object):
                         break
             else:
                 installed = False
-                
+
             if installed:
                 self.detailedresults += package + " pkg is installed\n"
             else:
                 self.detailedresults += package + " pkg not found or may be \
 misspelled\n"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return installed
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            return installed
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
