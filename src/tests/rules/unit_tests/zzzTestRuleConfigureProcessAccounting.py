@@ -76,6 +76,8 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
             self.sh.disableservice(package)
 
     def testPkghelperFunctions(self):
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "Running testPkghelperFunctions")
         package = self.package
         if self.pkgInstalled:
             self.ph.remove(package)
@@ -93,6 +95,8 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
                              "not False after Pkghelper.remove")
 
     def testServiceHelperFunctions(self):
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "Running testServiceHelperFunctions")
         package = self.package
         self.ph.install(package)
         if self.svcEnabled:
@@ -115,6 +119,8 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
                              "after ServiceHelper.disableservice")
 
     def testReport(self):
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "Running testReport")
         package = self.package
         if self.pkgInstalled:
             self.ph.remove(package)
@@ -131,6 +137,8 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
                          package + " was not enabled")
 
     def testFixAndUndoForServiceOnly(self):
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "Running testFixAndUndoForServiceOnly")
         package = self.package
         if not self.pkgInstalled:
             self.ph.install(package)
@@ -151,6 +159,8 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
                          "they were before fix")
 
     def testFixAndUndoForServiceAndPackage(self):
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "Running testFixAndUndoForServiceAndPackage")
         package = self.package
         if self.pkgInstalled:
             self.ph.remove(package)
