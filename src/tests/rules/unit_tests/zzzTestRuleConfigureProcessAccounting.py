@@ -26,6 +26,8 @@ This is a Unit Test for Rule ConfigureProcessAccounting
 
 @author: Eric Ball
 @change: 2016/04/19 eball Original Implementation
+@change: 2016/08/02 eball Added debug statements to the beginning of tests to
+    make debug output more useful
 
 '''
 from __future__ import absolute_import

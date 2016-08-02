@@ -40,6 +40,7 @@ class Zypper(object):
         search for installed or available separately
     @change: 2014/12/24 bemalmbe - fixed multiple pep8 violations
     @change: 2015/08/20 eball - Added getPackageFromFile and self.rpm var
+    @change: 2016/08/02 eball - Moved checkInstall return out of else block
     '''
 
     def __init__(self, logger):

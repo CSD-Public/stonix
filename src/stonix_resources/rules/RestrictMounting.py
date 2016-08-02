@@ -24,8 +24,10 @@
 This rule restricts mounting rights and options.
 
 @author: Eric Ball
-@change: 2015-07-06 eball Original implementation
-@change: 2016-04-22 eball Added GNOME 3 method for disabling GNOME mounting
+@change: 2015/07/06 eball Original implementation
+@change: 2016/04/22 eball Added GNOME 3 method for disabling GNOME mounting
+@change: 2016/08/01 eball Added "dbus-launch" before all gsettings commands,
+    and fixed undos that were the same as the fix commands
 '''
 from __future__ import absolute_import
 import os
