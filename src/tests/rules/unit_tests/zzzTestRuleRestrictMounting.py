@@ -25,9 +25,11 @@
 This is a Unit Test for Rule RestrictMounting
 
 @author: Eric Ball
-@change: 07/07/2015 Original Implementation
+@change: 2015/07/07 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/08/01 eball Removed testFixAndUndo, replaced with checkUndo flag.
+    Also simplified setting of CIs.
 '''
 from __future__ import absolute_import
 import os
