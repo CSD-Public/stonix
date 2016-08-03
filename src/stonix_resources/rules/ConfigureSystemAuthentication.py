@@ -389,11 +389,12 @@ for the login.defs file"""
                     " authority\n"
                 success = False
         if self.ci3.getcurrvalue():
-            if not self.chklockout():
-                if not self.setlockout():
-                    self.detailedresults += "Unable to set the pam " + \
-                        "lockout authority\n"
-                    success = False
+            if self.ph.manager != "zypper": 
+                if not self.chklockout():
+                    if not self.setlockout():
+                        self.detailedresults += "Unable to set the pam " + \
+                            "lockout authority\n"
+                        success = False
         if self.ci4.getcurrvalue():
             if not os.path.exists(self.libuserfile):
                 if not self.pamsha512present:
@@ -1187,7 +1188,7 @@ for the login.defs file"""
 ###############################################################################
 
     def setpwquality(self):
-        success = False
+        success = True
         created = False
         if not self.pwqeditor:
             pwqfile = "/etc/security/pwquality.conf"
