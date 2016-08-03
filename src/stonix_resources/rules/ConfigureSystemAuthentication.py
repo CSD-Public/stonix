@@ -151,6 +151,7 @@ for the login.defs file"""
         self.editor1, self.editor2 = "", ""
         self.pwqeditor = ""
         self.ph = Pkghelper(self.logger, self.environ)
+        self.pamsha512present = True
         if self.ph.manager == "apt-get":
             self.pam = "/etc/pam.d/common-password"
             self.pam2 = "/etc/pam.d/common-auth"
@@ -394,7 +395,18 @@ for the login.defs file"""
                         "lockout authority\n"
                     success = False
         if self.ci4.getcurrvalue():
-            if not self.chklibuserhash():
+            if not os.path.exists(self.libuserfile):
+                if not self.pamsha512present:
+                    if self.ph.checkAvailable("libuser"):
+                        if self.ph.install("libuser"):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            comm  = self.ph.getRemove()
+                            event = {"eventtype": "commandstring",
+                                     "command": comm}
+                            self.statechglogger.recordchgevent(myid, event)
+                            
+            elif not self.chklibuserhash():
                 if not self.setlibhash():
                     debug = "setlibhash() failed\n"
                     self.detailedresults += "Unable to configure " + \
@@ -629,6 +641,7 @@ for the login.defs file"""
                 self.detailedresults += pam + " does not exist.  Due to " + \
                     "the complexity of pam, stonix will not attempt to " + \
                     "create this file\n"
+                self.pamsha512present = False
                 return False
         if self.ph.manager == "solaris":
             config = self.config
