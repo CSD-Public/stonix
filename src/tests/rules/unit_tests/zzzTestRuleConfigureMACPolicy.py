@@ -50,6 +50,7 @@ class zzzTestRuleConfigureMACPolicy(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.ignoreresults = True
 
     def tearDown(self):
         pass
