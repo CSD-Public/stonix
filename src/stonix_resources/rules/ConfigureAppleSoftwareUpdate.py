@@ -99,7 +99,7 @@ to our ASUS server."""
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("ConfigureCatalogURL",

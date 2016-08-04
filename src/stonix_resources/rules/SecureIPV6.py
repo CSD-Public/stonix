@@ -70,7 +70,7 @@ False.'''
                          "CCE 4128-5"]
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.iditerator = 0
         self.created = False
 

@@ -60,7 +60,7 @@ Mail Client."""
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         mailplist = "/Library/Containers/com.apple.mail/Data/Library/" + \
             "Preferences/com.apple.mail.plist"

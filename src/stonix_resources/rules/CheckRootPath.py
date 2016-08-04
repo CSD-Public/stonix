@@ -75,7 +75,7 @@ entries.'''
                          "CCE-RHEL7-CCE-TBD 2.4.1.1.7"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # Configuration item instantiation
         datatype = "bool"

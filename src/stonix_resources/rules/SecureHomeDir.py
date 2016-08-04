@@ -64,7 +64,7 @@ False.'''
         self.guidance = ['NSA 2.3.4.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         self.iditerator = 0
         self.cmdhelper = CommandHelper(self.logger)
