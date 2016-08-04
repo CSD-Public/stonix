@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SecureIPV4
 
 @author: ekkehard j. koch
 @change: 03/04/2013 Original Implementation
@@ -30,6 +30,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
                         file as well as with the test harness.
 @change: 2016/06/01 eball Added statechglogger to FileHelper parameters
 @change: 2016/07/08 ekkehard complete renaming to SecureIPV4
+@change: 2016/07/28 eball Complete renaming to SecureIPV4 (again)
 '''
 from __future__ import absolute_import
 import unittest
@@ -42,7 +43,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.SecureIPV4 import SecureIPV4
 
 
-class zzzTestRuleNetworkTuning(RuleTest):
+class zzzTestRuleSecureIPV4(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)

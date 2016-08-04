@@ -73,8 +73,12 @@ class zzzTestRuleDisablePrelinking(RuleTest):
             self.prelinkInstalled = True
         elif self.ph.checkAvailable("prelink"):
             self.ph.install("prelink")
-        cmd = ["/usr/sbin/prelink", "/bin/ls"]
-        self.ch.executeCommand(cmd)
+        else:
+            return True
+        path = "/usr/sbin/prelink"
+        cmd = [path, "/bin/ls"]
+        if os.path.exists(path):
+            self.ch.executeCommand(cmd)
 
         if re.search("debian|ubuntu", self.environ.getostype().lower()):
             path = "/etc/default/prelink"

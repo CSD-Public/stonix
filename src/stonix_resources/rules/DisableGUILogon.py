@@ -347,18 +347,21 @@ enabled.'''
         elif self.initver == "ubuntu":
             ldmover = "/etc/init/lightdm.override"
             tmpfile = ldmover + ".tmp"
+            created = False
             if not os.path.exists(ldmover):
                 createFile(ldmover, self.logger)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation", "filepath": ldmover}
                 self.statechglogger.recordchgevent(myid, event)
-            writeFile(tmpfile, "manual", self.logger)
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf", "filepath": ldmover}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(ldmover, tmpfile, myid)
+                created = True
+            writeFile(tmpfile, "manual\n", self.logger)
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf", "filepath": ldmover}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(ldmover, tmpfile, myid)
             os.rename(tmpfile, ldmover)
             resetsecon(ldmover)
 
@@ -442,11 +445,8 @@ enabled.'''
             self.ch.executeCommand(cmd)
         elif re.search("debian|ubuntu", self.myos):
             cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
-                   "xserver.*", "gnome.*", "x11.*", "lightdm.*",
-                   "libx11.*", "libqt.*"]
+                   "xserver-xorg-core", "lightdm.*", "libx11.*"]
             self.ch.executeCommand(cmd)
-            cmd2 = ["apt-get", "autoremove", "-y"]
-            self.ch.executeCommand(cmd2)
         elif re.search("fedora", self.myos):
             # Fedora does not use the same group packages as other
             # RHEL-based OSs. Removing this package will remove the X

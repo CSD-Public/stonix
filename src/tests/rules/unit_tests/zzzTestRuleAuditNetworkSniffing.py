@@ -105,7 +105,6 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
         self.assertTrue(isinstance(self.rule.searchterm, basestring))
         self.assertTrue(self.rule.cmdlinetool, "The self.cmdlinetool variable was not properly initialized")
         self.assertTrue(isinstance(self.rule.cmdlinetool, basestring))
-        self.assertTrue(self.rule.lisl, "The self.lisl variable was not properly initialized")
         self.assertTrue(isinstance(self.rule.lisl, int))
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
