@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule EnableKernelAuditing
 
 @author: Breen Malmberg
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
@@ -42,7 +42,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
 
 
-class zzzTestRuleConsoleRootOnly(RuleTest):
+class zzzTestRuleEnableKernelAuditing(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
@@ -139,7 +139,12 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
     def test_release_file_exists(self):
         '''
         does at least one of the release file paths that the code relies on exist?
+        linux-only
+        @author: Breen Malmberg
         '''
+
+        if self.environ.getosfamily() == 'darwin':
+            return True
 
         found = False
 
@@ -152,11 +157,13 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
     def test_audit_rules_file_exists(self):
         '''
         does at least one of the audit rules file paths that the code relies on exist?
+        @author: Breen Malmberg
         '''
 
         found = False
 
-        auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules']
+        auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules',
+                          '/etc/security/audit/control']
         for loc in auditruleslocs:
             if os.path.exists(loc):
                 found = True
@@ -165,7 +172,12 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
     def test_grub_cfg_file_exists(self):
         '''
         does at least one of the grub config file paths that the code relies on exist?
+        linux-only
+        @author: Breen Malmberg
         '''
+
+        if self.environ.getosfamily() == 'darwin':
+            return True
 
         found = False
 

@@ -59,7 +59,10 @@ class SecureNFS(Rule):
         self.rulenumber = 39
         self.rulename = "SecureNFS"
         self.formatDetailedResults("initialize")
-        self.helptext = "Configures and secures NFS"
+        self.helptext = """This rule secures the NFS server by configuring \
+NFS services to use fixed ports and checking the /etc/exports file for \
+malformed export lines, export lines that are too permissive, and lines that \
+contain the no_root_squash, all_squash or insecure_locks options."""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}

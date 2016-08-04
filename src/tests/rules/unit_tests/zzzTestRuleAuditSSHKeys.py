@@ -46,6 +46,7 @@ class zzzTestRuleAuditSSHKeys(RuleTest):
                                       self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.ignoreresults = True
 
     def tearDown(self):
         pass
