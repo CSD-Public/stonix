@@ -46,14 +46,15 @@ class Connectivity(object):
     
     @author: Roy Nielsen
     """
-    def __init__(self, logger):
+    def __init__(self, logger, use_proxy=False):
         """
         Constructor
         """
         self.logger = logger
         ##########################
         # Make it so this will only work on the yellow.
-        set_no_proxy()
+        if not use_proxy:
+            set_no_proxy()
 
     ############################################################
         

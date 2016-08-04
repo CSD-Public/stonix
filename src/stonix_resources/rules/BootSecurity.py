@@ -94,9 +94,7 @@ a secure state at initial startup.'''
     <key>Label</key>
     <string>gov.lanl.stonix.bootsecurity</string>
     <key>Program</key>
-    <string>
-        <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
-    </string>
+    <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
     <key>RunAtLoad</key>
     <true/>
 </dict>

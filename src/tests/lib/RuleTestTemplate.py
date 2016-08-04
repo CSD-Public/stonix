@@ -47,6 +47,7 @@ class RuleTest(unittest.TestCase):
         self.rulename = ""
         self.rulenumber = ""
         self.checkUndo = False
+        self.ignoreresults = False
 
 ###############################################################################
 
@@ -329,6 +330,8 @@ class RuleTest(unittest.TestCase):
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
+        if self.ignoreresults:
+            return True
         return True
 
 ###############################################################################
