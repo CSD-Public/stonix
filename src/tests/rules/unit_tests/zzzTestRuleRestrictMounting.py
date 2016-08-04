@@ -25,12 +25,13 @@
 This is a Unit Test for Rule RestrictMounting
 
 @author: Eric Ball
-@change: 07/07/2015 Original Implementation
+@change: 2015/07/07 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/08/01 eball Removed testFixAndUndo, replaced with checkUndo flag.
+    Also simplified setting of CIs.
 '''
 from __future__ import absolute_import
-import unittest
 import os
 import sys
 
@@ -54,22 +55,33 @@ class zzzTestRuleRestrictMounting(RuleTest):
         self.ch = CommandHelper(self.logdispatch)
         self.ph = Pkghelper(self.logdispatch, self.environ)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
-        self.setConditionsForRule()
+        self.checkUndo = True
 
+    def tearDown(self):
+        # Cleanup: put original perms files back
+        if os.path.exists(self.path1) and os.path.exists(self.tmpfile1):
+            os.remove(self.path1)
+            os.rename(self.tmpfile1, self.path1)
+        if os.path.exists(self.path2) and os.path.exists(self.tmpfile2):
+            os.remove(self.path2)
+            os.rename(self.tmpfile2, self.path2)
+
+    def runTest(self):
+        self.simpleRuleTest()
+
+    def setConditionsForRule(self):
+        '''
+        Configure system for the unit test
+        @param self: essential if you override this definition
+        @return: boolean - If successful True; If failure False
+        @author: Eric Ball
+        '''
         # Enable CIs
-        datatype = "bool"
-        key = "RESTRICTCONSOLEACCESS"
-        instructions = "Unit test"
-        default = True
-        self.rule.consoleCi = self.rule.initCi(datatype, key, instructions,
-                                               default)
-        key = "DISABLEAUTOFS"
-        self.rule.autofsCi = self.rule.initCi(datatype, key, instructions,
-                                              default)
-        key = "DISABLEGNOMEAUTOMOUNT"
-        self.rule.gnomeCi = self.rule.initCi(datatype, key, instructions,
-                                             default)
+        self.rule.consoleCi.updatecurrvalue(True)
+        self.rule.autofsCi.updatecurrvalue(True)
+        self.rule.gnomeCi.updatecurrvalue(True)
 
+        # Set some bad perms
         self.path1 = "/etc/security/console.perms.d/50-default.perms"
         self.path2 = "/etc/security/console.perms"
         self.data1 = ["<floppy>=/dev/fd[0-1]* \\",
@@ -127,43 +139,7 @@ class zzzTestRuleRestrictMounting(RuleTest):
                "/desktop/gnome/volume_manager/automount_drives",
                "true"]
         cmdSuccess &= self.ch.executeCommand(cmd)
-
-    def tearDown(self):
-        # Cleanup: put original perms files back
-        if os.path.exists(self.path1) and os.path.exists(self.tmpfile1):
-            os.remove(self.path1)
-            os.rename(self.tmpfile1, self.path1)
-        if os.path.exists(self.path2) and os.path.exists(self.tmpfile2):
-            os.remove(self.path2)
-            os.rename(self.tmpfile2, self.path2)
-
-    def runTest(self):
-        self.simpleRuleTest()
-
-    def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
-        @author: Eric Ball
-        '''
-        success = True
-
-        return success
-
-    def testFixAndUndo(self):
-        self.assertFalse(self.rule.report(), "Report was compliant before " +
-                         "the fix ran")
-        originalResults = self.rule.detailedresults
-        self.assertTrue(self.rule.fix(), "Fix was not successful")
-        self.assertTrue(self.rule.report(), "Rule is NCAF")
-        self.assertTrue(self.rule.undo(), "Undo was not successful")
-        self.assertFalse(self.rule.report(), "Report is still compliant " +
-                         "after undo")
-        self.assertEqual(originalResults, self.rule.detailedresults,
-                         "Report results are not the same after undo as " +
-                         "they were before fix.\nOriginal: " + originalResults +
-                         "\nPost-undo results: " + self.rule.detailedresults)
+        return cmdSuccess
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

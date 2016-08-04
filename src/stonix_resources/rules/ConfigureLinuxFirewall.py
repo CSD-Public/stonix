@@ -265,12 +265,16 @@ CONFIGURELINUXFIREWALL to False.'''
                         "ip6tables -L command\n"
                     compliant = False
                 else:
-                    output6 = self.cmdhelper.getOutput()
-                    for line in output6:
-                        if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
-                                     '\s+all\s+anywhere\s+anywhere', line):
-                            catchall6 = True
-                            break
+                    output6 = self.cmdhelper.getAllString()
+                    if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                 '\s+all\s+anywhere\s+anywhere', output6):
+                        catchall6 = True
+                    elif re.search("can't initialize ip6tables", output6):
+                        catchall6 = True
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['ConfigureLinuxFirewall.report',
+                                         "IPv6 is disabled. " +
+                                         "Reporting as compliant."])
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. ipv6 catchall rule: "
