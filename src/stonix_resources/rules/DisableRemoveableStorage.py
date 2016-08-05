@@ -75,11 +75,12 @@ class DisableRemoveableStorage(Rule):
             "thunderbolt, and SD cards (if applicable) " + \
             "from accessing or being accessed from the system.  " + \
             "This rule will be mandatory for those who work on the red " + \
-            "network."
+            "network.  This rule will also require a full reboot to fully " + \
+            "tak effect\n"
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # configuration item instantiation
         datatype = "bool"
@@ -116,7 +117,6 @@ class DisableRemoveableStorage(Rule):
                 compliant = self.reportMac()
             else:
                 self.mvcmd = "/bin/mv"
-                output = ""
                 removeables = []
                 self.ph = Pkghelper(self.logger, self.environ)
                 self.ch = CommandHelper(self.logger)
@@ -137,21 +137,6 @@ class DisableRemoveableStorage(Rule):
                                         self.logger.log(LogPriority.DEBUG,
                                                         debug)
                                         compliant = False
-
-                # check if usb kernel module exists, non compliant if yes
-                self.ch.wait = False
-                self.ch.executeCommand("uname -r")
-                self.ch.wait = True
-                output = self.ch.getOutput()
-                if output:
-                    output = output[0].strip()
-                    if os.path.exists("/lib/modules/" + output +
-                                      "/kernel/drivers/usb/storage/usb-storage.ko"):
-                        debug = "Kernel module exists but shouldn't\n"
-                        self.detailedresults += "Kernel module exists " + \
-                            "but shouldn't\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
 
                 # check for existence of certain usb packages, non-compliant
                 # if any exist
@@ -274,27 +259,7 @@ class DisableRemoveableStorage(Rule):
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
-#         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
-# <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-# <plist version="1.0">
-# <dict>
-#      <key>Label</key>
-#      <string>gov.lanl.stonix.disablestorage</string>
-#      <key>ProgramArguments</key>
-#      <array>
-#          <string>sh</string>
-#          <string>-c</string>
-#          <string>''' + self.daemonpath + '''</string>
-#      </array>
-#      <key>WatchPaths</key>
-#      <array>
-#          <string>/Volumes/</string>
-#      </array>
-#      <key>KeepAlive</key>
-#          <false/>
-# </dict>
-# </plist>
-# '''
+        self.cronfile = "/usr/lib/cron/tabs/root"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -316,6 +281,27 @@ class DisableRemoveableStorage(Rule):
 </dict>
 </plist>
 '''
+        self.plistcontents2 = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>Label</key>
+    <string>gov.lanl.stonix.disablestorage2</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>sh</string>
+        <string>-c</string>
+        <string>''' + self.daemonpath + '''</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>'''
         self.daemoncontents = '''#!/usr/bin/python
 \'\'\'
 Created on Jan 5, 2016
@@ -342,11 +328,11 @@ def main():
     if retcode == 0:
         cmd = unload + filepath + usb + ".kext/"
         call(cmd, shell=True)
-    fw = "IOFireWireSerialBusProtocolTransport"
+    fw = "IOFireWireFamily"
     cmd = check + "| grep " + fw
     retcode = call(cmd, shell=True)
     if retcode == 0:
-        cmd = unload + filepath + fw + ".kext/"
+        cmd = unload + filepath + fw + ".kext/Contents/PlugIns/AppleFWOHCI.kext/"
         call(cmd, shell=True)
     tb = "AppleThunderboltUTDM"
     cmd = check + "| grep " + tb
@@ -357,7 +343,7 @@ def main():
     sd = "AppleSDXC"
     cmd = check + "| grep " + sd
     retcode = call(cmd, shell=True)
-    if retcode:
+    if retcode == 0:
         cmd = unload + "/System/Library/Extensions/" + sd + ".kext/"
         call(cmd, shell=True)
 
@@ -365,17 +351,6 @@ def main():
 if __name__ == '__main__':
     main()
 '''     
-#         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
-#             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
-#             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
-#             "<key>ProgramArguments</key>" + \
-#             "<array>" + \
-#             "<string>sh</string>" + \
-#             "<string>\-c</string>" + \
-#             "<string>" + re.escape(self.daemonpath) + "</string>" + \
-#             "</array>" + \
-#             "<key>WatchPaths</key><array><string>/Volumes/</string>" + \
-#             "</array><key>KeepAlive</key><false/></dict></plist>"
         self.plistregex = "<\?xml version\=\"1\.0\" encoding\=\"UTF\-8\"\?>" + \
             "<!DOCTYPE plist PUBLIC \"\-//Apple//DTD PLIST 1\.0//EN\" \"http://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
             "<plist version\=\"1\.0\"><dict><key>Label</key><string>gov\.lanl\.stonix\.disablestorage</string>" + \
@@ -407,11 +382,11 @@ if __name__ == '__main__':
             "    if retcode \=\=0:\n" + \
             "        cmd \= unload \+ filepath \+ usb \+ \"\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n" + \
-            "    fw \= \"IOFireWireSerialBusProtocolTransport\"\n" + \
+            "    fw \= \"IOFireFamily\"\n" + \
             "    cmd \= check \+ \"\| grep \" \+ fw\n" + \
             "    retcode \= call\(cmd\, shell\=True\)" + \
             "    if retcode \=\=0:\n" + \
-            "        cmd \= unload \+ filepath \+ fw \+ \"\.kext/\"\n" + \
+            "        cmd \= unload \+ filepath \+ fw \+ \"\.kext/Contents/PlugIns/AppleFWOHCI\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n" + \
             "    tb \= \"AppleThunderboltUTDM\"\n" + \
             "    cmd \= check \+ \"\| grep \" \+ fw\n" + \
@@ -426,7 +401,18 @@ if __name__ == '__main__':
             "        cmd \= unload \+ filepath \+ sd \+ \"\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n\n\n" + \
             "if __name__ \=\= \'__main__\':\n    main()\n"
-
+        if os.path.exists(self.cronfile):
+            #for this file we don't worry about permissions, SIP protected
+            contents = readFile(self.cronfile, self.logger)
+            found = False
+            for line in contents:
+                if re.search("\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist", line):
+                    found = True
+                    break
+            if not found:
+                compliant = False
+                self.detailedresults += "Didn't find the correct contents " + \
+                    "in crontab file\n"
         if os.path.exists(self.plistpath):
             statdata = os.stat(self.plistpath)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -464,7 +450,6 @@ if __name__ == '__main__':
         else:
             compliant = False
             self.detailedresults += "daemon plist file doesn't exist\n"
-
         if os.path.exists(self.daemonpath):
             statdata = os.stat(self.daemonpath)
             mode = stat.S_IMODE(statdata.st_mode)
@@ -500,8 +485,8 @@ if __name__ == '__main__':
             compliant = False
             debug += "USB Kernel module is loaded\n"
             self.detailedresults += "USB Kernel module is loaded\n"
-
-        fw = "IOFireWireSerialBusProtocolTransport"
+        fw = "IOFireWireFamily"
+        #fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
         # if return code is 0, the kernel module is loaded, thus we need
@@ -558,7 +543,6 @@ if __name__ == '__main__':
                 if self.environ.getostype() == "Mac OS X":
                     success = self.fixMac()
                 else:
-                    output = ""
                     changed = False
                     tempstring = ""
                     grub = "/etc/grub.conf"
@@ -680,24 +664,6 @@ if __name__ == '__main__':
                                 os.chown(blacklistf, 0, 0)
                                 os.chmod(blacklistf, 420)
                                 resetsecon(blacklistf)
-                    # get the current version of the kernel
-                    self.wait = False
-                    self.ch.executeCommand("uname -r")
-                    self.wait = True
-                    output = self.ch.getOutput()
-                    if output:
-                        output = output[0].strip()
-                        originalPath = "/lib/modules/" + output + \
-                            "/kernel/drivers/usb/storage/usb-storage.ko"
-                        newPath = "/usb-storage.ko"
-                        if os.path.exists(originalPath):
-                            os.rename(originalPath, newPath)
-                            cmd = self.mvcmd + " " + newPath + " " + originalPath
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "commandstring",
-                                         "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
                     for item in self.pcmcialist:
                         if self.ph.check(item):
                             self.ph.remove(item)
@@ -737,6 +703,46 @@ if __name__ == '__main__':
         success = True
         #created1 = False
         created2 = False
+        croncreated = False
+        if not os.path.exists(self.cronfile):
+            createFile(self.cronfile, self.logger)
+            croncreated = True
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.logger)
+            event = {"eventtype": "creation",
+                     "filepath": self.cronfile}
+            self.statechglogger.recordchgevent(myid, event)
+        if os.path.exists(self.cronfile):
+            #for this file we don't worry about permissions, SIP protected
+            contents = readFile(self.cronfile, self.logger)
+            found = False
+            badline = False
+            tempstring = ""
+            for line in contents:
+                if not re.search("^\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist$", line.strip()):
+                    tempstring += line
+                elif re.search("^@reboot /bin/launchctl load /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist$", line.strip()):
+                    badline = True
+                    continue
+                else:
+                    tempstring += line
+                    found = True
+            if not found:
+                tempstring += "@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com.apple.diskarbitrationd.plist\n"
+            if not found or badline:
+                tmpfile = self.cronfile + ".tmp"
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    success = False
+                else:
+                    os.rename(tmpfile, self.cronfile)
+                    if not croncreated:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.cronfile}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.cronfile,
+                                                                     tmpfile, myid)
         if not os.path.exists(self.plistpath):
             createFile(self.plistpath, self.logger)
         self.iditerator += 1
@@ -886,14 +892,15 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
-        fw = "IOFireWireSerialBusProtocolTransport"
+        fw = "IOFirewWireFamily"
+        #fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
 
         # if return code is 0, the kernel module is loaded, thus we need
         # to disable it
         if self.ch.getReturnCode() == 0:
-            cmd = unload + filepath + fw + ".kext/"
+            cmd = unload + filepath + fw + ".kext/Contents/PlugIns/AppleFWOHCI.kext/"
             if not self.ch.executeCommand(cmd):
                 debug += "Unable to disable Firewire\n"
                 success = False
@@ -940,6 +947,11 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
+        cmd = ["/bin/launchctl", "load", self.plistpath]
+        if not self.ch.executeCommand(cmd):
+            debug += "Unable to load the launchctl job to regularly " + \
+                "disable removeable storage.  May need to be done manually\n"
+            success = False
         cmd = ["/bin/launchctl", "load", self.plistpath]
         if not self.ch.executeCommand(cmd):
             debug += "Unable to load the launchctl job to regularly " + \

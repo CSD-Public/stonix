@@ -29,6 +29,9 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/05/31 ekkehard fix help text
+@change: 2016/06/22 eball Added &= to afterfix checks so that all checks before
+    the last one are not discarded. Also cleaned up help text (again!)
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -51,12 +54,11 @@ class ConfigureFirewall(RuleKVEditor):
         self.rulename = 'ConfigureFirewall'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules disables listed cloud-based services " + \
-            "on your system."
+        self.helptext = "This rule configures the OS X firewall."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.addKVEditor("FirewallOn",
@@ -97,7 +99,7 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
         servicename = "com.apple.alf"
-        afterfixsuccessful = self.sh.auditservice(service, servicename)
-        afterfixsuccessful = self.sh.disableservice(service, servicename)
-        afterfixsuccessful = self.sh.enableservice(service, servicename)
+        afterfixsuccessful &= self.sh.auditservice(service, servicename)
+        afterfixsuccessful &= self.sh.disableservice(service, servicename)
+        afterfixsuccessful &= self.sh.enableservice(service, servicename)
         return afterfixsuccessful

@@ -29,6 +29,7 @@ bluetooth, microphones, and cameras.
 @author: dkennel
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/02/22 ekkehard Updated Plist Name from
+@change: 2016/04/26 ekkehard Results Formatting
 /Library/LaunchDaemons/stonixBootSecurity.plist to
 /Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist
 '''
@@ -68,7 +69,7 @@ a secure state at initial startup.'''
         self.guidance = []
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.servicehelper = ServiceHelper(environ, logger)
         self.type = 'rclocal'
         self.rclocalpath = '/etc/rc.local'
@@ -93,9 +94,7 @@ a secure state at initial startup.'''
     <key>Label</key>
     <string>gov.lanl.stonix.bootsecurity</string>
     <key>Program</key>
-    <string>
-        <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
-    </string>
+    <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
     <key>RunAtLoad</key>
     <true/>
 </dict>
@@ -163,6 +162,7 @@ to False.'''
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def report(self):
+        self.detailedresults = ""
         if self.type == 'mac':
             self.logdispatch.log(LogPriority.DEBUG,
                                  'Checking for Mac plist')
@@ -187,6 +187,9 @@ to False.'''
         if self.compliant:
             self.detailedresults = 'stonixBootSecurity correctly scheduled for execution at boot.'
             self.currstate = 'configured'
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
     def setsystemd(self):
         try:
@@ -299,6 +302,8 @@ WantedBy=multi-user.target
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def fix(self):
+        self.detailedresults = ""
+        fixed = False
         if self.bootci.getcurrvalue():
             if self.type == 'mac':
                 self.logdispatch.log(LogPriority.DEBUG,
@@ -316,8 +321,13 @@ WantedBy=multi-user.target
                 self.detailedresults = 'ERROR: Fix could not determine where boot job should be scheduled!'
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
                 self.rulesuccess = False
+                fixed = False
+            fixed = True
             self.rulesuccess = True
             self.currstate = 'configured'
+        self.formatDetailedResults("fix", fixed,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
     def removemacservices(self, oldServiceOnly = False):
         try:

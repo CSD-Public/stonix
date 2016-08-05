@@ -81,7 +81,7 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         # init CIs
         datatype = 'bool'
         key = 'InstallBanners'
@@ -212,6 +212,12 @@ class InstallBanners(RuleKVEditor):
             if os.path.exists(loc):
                 self.gdmdir = loc
 
+        self.locksdir = self.gdmdir + 'locks/'
+        self.locksfile = self.locksdir + '00-required-locks'
+        self.locksettings = {'/org/gnome/login-screen/banner-message-enable': False,
+                             '/org/gnome/login-screen/banner-message-text': False,
+                             '/org/gnome/login-screen/disable-user-list': False}
+
         bannermessagefile = '01-banner-message'
         self.bannerfile = self.gdmdir + bannermessagefile
 
@@ -239,6 +245,12 @@ class InstallBanners(RuleKVEditor):
                         '/etc/kde4/kdm/kdmrc',
                         '/usr/share/config/kdm/kdmrc',
                         '/usr/share/kde4/config/kdm/kdmrc']
+        self.kdefile = '/usr/share/kde4/config/kdm/kdmrc'
+        for loc in self.kdelocs:
+            if os.path.exists(loc):
+                self.kdefile = str(loc)
+        tmpfile = self.kdefile + '.stonixtmp'
+
         key1 = 'GreetString'
         val1 = '\"' + ALTWARNINGBANNER + '\"'
         key2 = 'UserList'
@@ -259,7 +271,9 @@ class InstallBanners(RuleKVEditor):
         val9 = 'Serif,20,-1,5,50,0,0,0,0,0'
         key10 = 'FailFont'
         val10 = 'Sans Serif,10,-1,5,75,0,0,0,0,0'
-        self.kdedict = {"X-\*-Greeter": {key1: val1,
+        bkey1 = 'PreselectUser'
+        bval1 = 'None'
+        self.kdedict = {"X-*-Greeter": {key1: val1,
                         key2: val2,
                         key3: val3,
                         key4: val4,
@@ -268,22 +282,12 @@ class InstallBanners(RuleKVEditor):
                         key7: val7,
                         key8: val8,
                         key9: val9,
-                        key10: val10}}
-        bkey1 = 'PreselectUser'
-        bval1 = 'None'
-        self.kdedict2 = {"X-:\*-Greeter": {bkey1: bval1}}
-        self.kdefile = '/usr/share/kde4/config/kdm/kdmrc'
-        for loc in self.kdelocs:
-            if os.path.exists(loc):
-                self.kdefile = str(loc)
-        tmpfile = self.kdefile + '.tmp'
+                        key10: val10},
+                        "X-:*-Greeter": {bkey1: bval1}}
+
         self.kdeditor = KVEditorStonix(self.statechglogger, self.logger,
                                           "tagconf", self.kdefile, tmpfile,
-                                          self.kdedict, "present",
-                                          "closedeq")
-        self.kdeditor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                        "tagconf", self.kdefile, tmpfile,
-                                        self.kdedict2, "present")
+                                          self.kdedict, "present", "closedeq")
 
     def setlightdm(self):
         '''
@@ -658,7 +662,7 @@ class InstallBanners(RuleKVEditor):
                 for key in contentdict:
                     for line in contentlines:
                         if re.search(key, line):
-                            contentlines = [c.replace(line, contentdict[key]) for c in contentlines]
+                            contentlines = [c.replace(line, contentdict[key] + '\n') for c in contentlines]
                             replacedict[contentdict[key]] = True
                 for item in replacedict:
                     if not replacedict[item]:
@@ -943,8 +947,46 @@ class InstallBanners(RuleKVEditor):
                     retval = False
                     self.detailedresults += '\ncould not locate required configuration options in ' + str(self.bannerfile)
 
+            if not self.reportlocks():
+                retval = False
+
         except Exception:
             raise
+        return retval
+
+    def reportlocks(self):
+        '''
+        report status of configuration settings locks for gnome3
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not os.path.exists(self.locksfile):
+                retval = False
+                self.detailedresults += "The locks file does not exist."
+            else:
+                f = open(self.locksfile, 'r')
+                contentlines = f.readlines()
+                f.close()
+                for line in contentlines:
+                    for item in self.locksettings:
+                        if re.search(item.strip(), line):
+                            self.locksettings[item] = True
+
+                for item in self.locksettings:
+                    if not self.locksettings[item]:
+                        retval = False
+                        self.detailedresults += "Required lock setting: " + str(item) + " is missing from the locks file."
+
+        except Exception:
+            raise
+
         return retval
 
     def reportlightdm(self):
@@ -983,15 +1025,19 @@ class InstallBanners(RuleKVEditor):
         retval = True
 
         try:
-            if not self.kdeditor.report():
-                retval = False
-                self.detailedresults += '\none or more of the required configuration items is missing from ' + str(self.kdefile)
-            if not self.kdeditor2.report():
-                retval = False
-                self.detailedresults += '\none or more of the required configuration items is missing from ' + str(self.kdefile)
+
             if not os.path.exists(self.kdefile):
                 retval = False
-                self.detailedresults += '\nrequired configuration file: ' + str(self.kdefile) + ' not found'
+                self.detailedresults += 'Required configuration file: ' + str(self.kdefile) + ' not found'
+            else:
+                if not self.kdeditor.report():
+                    retval = False
+                    if self.kdeditor.fixables:
+                        self.detailedresults += '\nThe following required options ' + \
+                        'are missing from ' + \
+                        str(self.kdefile) + ':\n' + \
+                        '\n'.join(str(f) for f in self.kdeditor.fixables) + '\n'
+
         except Exception:
             raise
         return retval
@@ -1244,6 +1290,8 @@ class InstallBanners(RuleKVEditor):
                 if not self.setFileContents(self.bannerfile, self.gnome3optlist):
                     retval = False
                     self.detailedresults += '\nunable to create gdm banner file: ' + str(self.bannerfile)
+                if not self.fixlocks():
+                    retval = False
                 if not self.cmdhelper.executeCommand(self.dconfupdate):
                     retval = False
                     output = self.cmdhelper.getOutputString()
@@ -1284,6 +1332,52 @@ class InstallBanners(RuleKVEditor):
             raise
         return retval
 
+    def fixlocks(self):
+        '''
+        create and/or configure locks file for gdm3 settings
+
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if not os.path.exists(self.locksdir):
+                os.mkdir(self.locksdir)
+
+            if not os.path.exists(self.locksfile):
+                f = open(self.locksfile, 'w')
+                f.write('')
+                f.close()
+
+            f = open(self.locksfile, 'r')
+            contentlines = f.readlines()
+            f.close()
+
+            for line in contentlines:
+                for item in self.locksettings:
+                    if re.search(item.strip(), line):
+                        self.locksettings[item] = True
+
+            for item in self.locksettings:
+                if not self.locksettings[item]:
+                    contentlines.append('\n' + item)
+
+            tf = self.locksfile + '.stonixtmp'
+            f = open(tf, 'w')
+            f.writelines(contentlines)
+            f.close()
+
+            os.rename(tf, self.locksfile)
+            os.chmod(self.locksfile, 0644)
+            os.chown(self.locksfile, 0, 0)
+
+        except Exception:
+            raise
+
+        return retval
+
     def fixlightdm(self):
         '''
         run fix functionality for lightdm-based systems
@@ -1321,23 +1415,49 @@ class InstallBanners(RuleKVEditor):
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
+        @change: Breen Malmberg - 5/25/2016 - moved the commit calls to ensure they
+        are only called if the fix calls completed successfully
         '''
 
         retval = True
 
         try:
+
+            if not self.kdefile:
+                self.logger.log(LogPriority.DEBUG, "Unable to identify kde configuration file. Can not continue with fix")
+                self.detailedresults += "Unable to identify kde configuration file. Can not continue with fix."
+                retval = False
+                return retval
+            if not os.path.exists(self.kdefile):
+                kdelist = self.kdefile.split('/')
+                del kdelist[-1]
+                kdesubdir = '/'.join(kdelist)
+                if os.path.exists(kdesubdir):
+                    f = open(self.kdefile, 'w')
+                    f.write('')
+                    f.close()
+                    os.chmod(self.kdefile, 0644)
+                    os.chown(self.kdefile, 0, 0)
+                else:
+                    os.makedirs(kdesubdir, 0755)
+                    f = open(self.kdefile, 'w')
+                    f.write('')
+                    f.close()
+                    os.chmod(self.kdefile, 0644)
+                    os.chown(self.kdefile, 0, 0)
+                self.report()
+
             if not self.kdeditor.fix():
                 retval = False
-                self.detailedresults += '\nkveditor fix did not complete successfully'
-            if not self.kdeditor.commit():
-                retval = False
-                self.detailedresults += '\nkveditor commit did not complete successfully'
-            if not self.kdeditor2.fix():
-                retval = False
-                self.detailedresults += '\nkveditor fix did not complete successfully'
-            if not self.kdeditor2.commit():
-                retval = False
-                self.detailedresults += '\nkveditor commit did not complete successfully'
+                self.detailedresults += "kdeditor fix failed. Fix not applied"
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.kdeditor.setEventID(myid)
+                if not self.kdeditor.commit():
+                    retval = False
+                    self.detailedresults += 'kdeditor commit failed. Fix not applied'
+
         except Exception:
             raise
         return retval

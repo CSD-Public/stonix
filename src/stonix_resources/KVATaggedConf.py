@@ -98,6 +98,7 @@ class KVATaggedConf():
     def getOpenClosedValue(self, tag, dict1):
         if self.contents:
             contents = self.contents
+            contents2 = ""
             foundtag = False
             length = len(contents) - 1
             iter1 = 0
@@ -106,7 +107,7 @@ class KVATaggedConf():
             for line in contents:
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
-                elif re.search("^\[" + tag + "\]", line.strip()):
+                elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -179,7 +180,7 @@ class KVATaggedConf():
             for line in contents:
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
-                elif re.search("^\[" + tag + "\]", line.strip()):
+                elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -209,7 +210,7 @@ class KVATaggedConf():
                                 temp = line.strip().split(" ")
                                 if len(temp) != 2:  # there were more than one blank space
                                     return "invalid"
-                                if re.search("^" + key + "$", temp[0].strip()):
+                                if re.search("^" + re.escape(key) + "$", temp[0].strip()):
                                     if temp[1].strip() == dict1[key]:
                                         found = True
                                         continue
@@ -229,7 +230,7 @@ class KVATaggedConf():
                                 temp = line.strip().split(" ")
                                 if len(temp) != 2:
                                     return "invalid"
-                                if re.search("^" + key + "$", temp[0].strip()):
+                                if re.search("^" + re.escape(key) + "$", temp[0].strip()):
                                     found = True
                                     break
                                 else:
@@ -271,7 +272,7 @@ class KVATaggedConf():
                         keys = fixables[tag]
                         if re.search("^#", line) or re.match('^\s*$', line):
                             iter1 += 1
-                        elif re.search("^\[" + tag + "\]", line.strip()):
+                        elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
                             contents1 = contents[:iter1 + 1]
                             tempcontents = contents[iter1 + 1:]
                             iter2 = 0
@@ -298,7 +299,7 @@ class KVATaggedConf():
                                     i += 1
                                 elif re.search("=", line2.strip()):
                                     temp = line2.strip().split("=")
-                                    if re.match("^" + key + "$", temp[0].strip()):
+                                    if re.match("^" + re.escape(key) + "$", temp[0].strip()):
                                         contents2.pop(i)
                                     i += 1
                                 else:
@@ -325,7 +326,7 @@ class KVATaggedConf():
                     keys = removeables[tag]
                     if re.search("^#", line) or re.match('^\s*$', line):
                         iter1 += 1
-                    elif re.search("^\[" + tag + "\]", line.strip()):
+                    elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
                         contents1 = contents[:iter1 + 1]
                         tempcontents = contents[iter1 + 1:]
                         iter2 = 0
@@ -352,7 +353,7 @@ class KVATaggedConf():
                                 i += 1
                             elif re.search("=", line2.strip()):
                                 temp = line2.strip().split("=")
-                                if re.match("^" + key + "$", temp[0].strip()):
+                                if re.match("^" + re.escape(key) + "$", temp[0].strip()):
                                     contents2.pop(i)
                                 i += 1
                             else:
@@ -386,7 +387,7 @@ class KVATaggedConf():
                         keys = fixables[tag]
                         if re.search("^#", line) or re.match('^\s*$', line):
                             iter1 += 1
-                        elif re.search("^\[" + tag + "\]", line.strip()):
+                        elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
                             contents1 = contents[:iter1 + 1]
                             tempcontents = contents[iter1 + 1:]
                             iter2 = 0
@@ -413,7 +414,7 @@ class KVATaggedConf():
                                     i += 1
                                 elif re.search(" ", line2.strip()):
                                     temp = line2.strip().split(" ")
-                                    if re.match("^" + key + "$", temp[0].strip()):
+                                    if re.match("^" + re.escape(key) + "$", temp[0].strip()):
                                         contents2.pop(i)
                                     i += 1
                                 else:
@@ -437,7 +438,7 @@ class KVATaggedConf():
                     keys = removeables[tag]
                     if re.search("^#", line) or re.match('^\s*$', line):
                         iter1 += 1
-                    elif re.search("^\[" + tag + "\]", line.strip()):
+                    elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
                         contents1 = contents[:iter1 + 1]
                         tempcontents = contents[iter1 + 1:]
                         iter2 = 0
@@ -464,7 +465,7 @@ class KVATaggedConf():
                                 i += 1
                             elif re.search(" ", line2.strip()):
                                 temp = line2.strip().split(" ")
-                                if re.match("^" + key + "$", temp[0].strip()):
+                                if re.match("^" + re.escape(key) + "$", temp[0].strip()):
                                     contents2.pop(i)
                                 i += 1
                             else:

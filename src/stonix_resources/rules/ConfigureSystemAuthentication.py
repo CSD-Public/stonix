@@ -122,8 +122,7 @@ for the login.defs file"""
         try:
             self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
-                self.compliant, results = self.reportLinux()
-                self.detailedresults += results
+                self.compliant = self.reportLinux()
             elif self.environ.getosfamily() == "solaris":
                 self.compliant = self.reportSolaris()
             elif self.environ.getosfamily() == "freebsd":
@@ -148,10 +147,11 @@ for the login.defs file"""
         '''
         self.logindefs = "/etc/login.defs"
         debug = ""
-        results = ""
         compliant = True
         self.editor1, self.editor2 = "", ""
+        self.pwqeditor = ""
         self.ph = Pkghelper(self.logger, self.environ)
+        self.pamsha512present = True
         if self.ph.manager == "apt-get":
             self.pam = "/etc/pam.d/common-password"
             self.pam2 = "/etc/pam.d/common-auth"
@@ -180,35 +180,43 @@ for the login.defs file"""
             if not self.chkpassword(cracklib):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Cracklib is not configured\n"
                 compliant = False
         elif self.ph.check(self.quality):
             if not self.chkpassword(quality):
                 debug = "chkpassword() is not compliant\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "pwquality is not configured\n"
                 compliant = False
         elif not self.ph.checkAvailable(self.quality):
             if self.ph.check(self.cracklib):
                 if not self.chkpassword(cracklib):
                     debug = "chkpassword() is not compliant\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Cracklib is not configured\n"
                     compliant = False
             elif not self.ph.checkAvailable(self.cracklib):
                 debug = "There is no password checking program " + \
-                    "installed nor available for your system\n"
+                    "installed nor available on this system\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
+                self.detailedresults += "There is no password checking " + \
+                    "program installed nor available for your system\n"
                 compliant = False
             # cracklib is not installed but available for install
             else:
                 debug = "cracklib not installed but is available\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-                results += debug
+                self.detailedresults += "This system will use cracklib " + \
+                    "password checking program but is not installed.  " + \
+                    "Will install and be configured when fix is run\n"
                 compliant = False
         # pwquality is not installed but available for install
         else:
-            debug = "pamquality not installed but is available\n"
+            debug = "pwquality not installed but is available\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            results += debug
+            self.detailedresults += "This system will use pwquality " + \
+                    "password checking program but is not installed.  " + \
+                    "Will install and be configured when fix is run\n"
             compliant = False
         #######################################################################
 
@@ -218,7 +226,7 @@ for the login.defs file"""
                 self.detailedresults += "zypper based systems do not have " + \
                     "a lockout program\n"
             else:
-                debug = "chklockout() is not compliant\n"
+                debug = "Account locking configuration is incorrect\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
 
@@ -233,7 +241,7 @@ for the login.defs file"""
             debug = "chkdefspasshash() is not compliant\n"
             self.logger.log(LogPriority.DEBUG, debug)
             compliant = False
-        return compliant, results
+        return compliant
 
 ###############################################################################
 
@@ -381,13 +389,25 @@ for the login.defs file"""
                     " authority\n"
                 success = False
         if self.ci3.getcurrvalue():
-            if not self.chklockout():
-                if not self.setlockout():
-                    self.detailedresults += "Unable to set the pam " + \
-                        "lockout authority\n"
-                    success = False
+            if self.ph.manager != "zypper": 
+                if not self.chklockout():
+                    if not self.setlockout():
+                        self.detailedresults += "Unable to set the pam " + \
+                            "lockout authority\n"
+                        success = False
         if self.ci4.getcurrvalue():
-            if not self.chklibuserhash():
+            if not os.path.exists(self.libuserfile):
+                if not self.pamsha512present:
+                    if self.ph.checkAvailable("libuser"):
+                        if self.ph.install("libuser"):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            comm  = self.ph.getRemove()
+                            event = {"eventtype": "commandstring",
+                                     "command": comm}
+                            self.statechglogger.recordchgevent(myid, event)
+                            
+            elif not self.chklibuserhash():
                 if not self.setlibhash():
                     debug = "setlibhash() failed\n"
                     self.detailedresults += "Unable to configure " + \
@@ -546,8 +566,8 @@ for the login.defs file"""
                 success = False
         return success
 
-###############################################################################
-
+###############################################################################       
+    
     def chkpassword(self, package):
         '''Private method to check for the presence of the correct
         pwquality/cracklib directives. In this method we want
@@ -556,19 +576,52 @@ for the login.defs file"""
         @author: dwalker
         @return: bool
         '''
+        compliant = False
         regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "nullok try_first_pass use_authtok remember=10"
+            "try_first_pass use_authtok remember=5"
         if package == "quality":
+            compliant1 = self.chkpwquality()
             regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
                 "lcredit=0 ocredit=0 retry=3"
+            compliant2 = self.chkPwCheck(regex1, regex2, package)
+            if compliant1 and compliant2:
+                compliant = True
         elif package == "cracklib":
             regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
                 "lcredit=0 ocredit=0 retry=3"
-        compliant = self.chkPwCheck(regex1, regex2, package)
+            compliant = self.chkPwCheck(regex1, regex2, package)
         return compliant
 
+###############################################################################
+    
+    def chkpwquality(self):
+        compliant = True
+        pwqfile = "/etc/security/pwquality.conf"
+        if os.path.exists(pwqfile):
+            tmpfile = pwqfile + ".tmp"
+            data = {"difok": "4",
+                    "minlen": "14",
+                    "dcredit" : "-1",
+                    "ucredit": "-1",
+                    "lcredit": "-1",
+                    "ocredit": "-1",
+                    "maxrepeat": "3",
+                    "minclass": "3"}
+            self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "conf", pwqfile, tmpfile, data,
+                                            "present", "openeq")
+            if not self.pwqeditor.report():
+                compliant = False
+                self.detailedresults += "Not all correct contents were " + \
+                    "found in " + pwqfile + "\n"
+        else:
+            compliant = False
+            self.detailedresults += "System is using pwquality and " + \
+                "crucial file /etc/security/pwquality doesn't exist\n"
+        return compliant
+    
 ###############################################################################
 
     def chkPwCheck(self, regex1, regex2, package):
@@ -589,6 +642,7 @@ for the login.defs file"""
                 self.detailedresults += pam + " does not exist.  Due to " + \
                     "the complexity of pam, stonix will not attempt to " + \
                     "create this file\n"
+                self.pamsha512present = False
                 return False
         if self.ph.manager == "solaris":
             config = self.config
@@ -694,11 +748,13 @@ for the login.defs file"""
                 return False
         elif self.ph.manager == "portage":
             return True
-        elif self.ph.manager in ["zypper", "apt-get"]:
-            compliant = self.chkPamtally2()
         else:
-            compliant = self.chkPamfaillock()
-        return compliant
+            compliant = False
+            if self.ph.manager in ["zypper", "apt-get"]:
+                compliant = self.chkPamtally2()
+            else:
+                compliant = self.chkPamfaillock()
+            return compliant
 ###############################################################################
 
     def chkPamtally2(self):
@@ -792,11 +848,11 @@ for the login.defs file"""
                 return False
         regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
             "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-            "deny=5 unlock_time=900\n" + \
-            ".*auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
+            "deny=5 unlock_time=900 fail_interval=900\n" + \
+            ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
             ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = r"^account[ \t]+required[ \t]+pam_faillock.so"
         for pam in pamfiles:
@@ -909,7 +965,8 @@ for the login.defs file"""
             data = {"MD5_CRYPT_ENAB": "no",
                     "ENCRYPT_METHOD": "SHA512",
                     "PASS_MAX_DAYS": "180",
-                    "PASS_MIN_DAYS": "1"}
+                    "PASS_MIN_DAYS": "1",
+                    "PASS_WARN_AGE": "7"}
             datatype = "conf"
             intent = "present"
             tmppath = self.logindefs + ".tmp"
@@ -1103,17 +1160,22 @@ for the login.defs file"""
 ###############################################################################
 
     def setpassword(self, package):
+        success = False
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "nullok try_first_pass use_authtok remember=10"
-        data2 = "password\tsufficient\tpam_unix.so sha512 shadow nullok " + \
-            "try_first_pass use_authtok remember=10\n"
+            "try_first_pass use_authtok remember=5"
+        data2 = "password\tsufficient\tpam_unix.so sha512 shadow " + \
+            "try_first_pass use_authtok remember=5\n"
         if package == "quality":
+            success1 = self.setpwquality()
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
                 + "ocredit=0 retry=3"
             data1 = "password\trequisite\tpam_pwquality.so minlen=14 " + \
                 "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
                 "ocredit=0 retry=3\n"
+            success2 = self.setPwCheck(regex1, regex2, data1, data2, package)
+            if success1 and success2:
+                success = True
         elif package == "cracklib":
             regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
@@ -1121,10 +1183,50 @@ for the login.defs file"""
             data1 = "password\trequisite\tpam_cracklib.so minlen=14 " + \
                 "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
                 "ocredit=0 retry=3\n"
-        success = self.setPwCheck(regex1, regex2, data1, data2, package)
+            success = self.setPwCheck(regex1, regex2, data1, data2, package)
         return success
 ###############################################################################
 
+    def setpwquality(self):
+        success = True
+        created = False
+        if not self.pwqeditor:
+            pwqfile = "/etc/security/pwquality.conf"
+            if not os.path.exists(pwqfile):
+                createFile(pwqfile, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {'eventtype': 'creation',
+                         'filepath': pwqfile}
+                self.statechglogger.recordchgevent(myid, event)
+                created = True
+            tmpfile = pwqfile + ".tmp"
+            data = {"difok": "4",
+                    "minlen": "14",
+                    "dcredit" : "-1",
+                    "ucredit": "-1",
+                    "lcredit": "-1",
+                    "ocredit": "-1",
+                    "maxrepeat": "3",
+                    "minclass": "3"}
+            self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "conf", pwqfile, tmpfile, data,
+                                            "present", "openeq")
+            self.pwqeditor.report()
+        if self.pwqeditor.fixables:
+            if self.pwqeditor.fix():
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.pwqeditor.setEventID(myid)
+                if not self.pwqeditor.commit():
+                    success = False
+                    self.detailedresults += "Unable to correct " + pwqfile + "\n"
+            else:
+                success = False
+                self.detailedresults += "Unable to correct " + pwqfile + "\n"
+        return success
+                        
     def setPwCheck(self, regex1, regex2, data1, data2, package):
         '''Private method to set the pwquality/cracklib directive in
         password-auth or common-password. retval is a list of two items.
@@ -1342,19 +1444,19 @@ for the login.defs file"""
                 return False
         regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
             "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-            "deny=5 unlock_time=900\n" + \
-            ".*auth[ \t]+sufficient[ \t]+pam_unix.so nullok try_first_pass\n" + \
+            "deny=5 unlock_time=900 fail_interval=900\n" + \
+            ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
             ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
         data1 = """auth\trequired\tpam_env.so
-auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900
-auth\tsufficient\tpam_unix.so nullok try_first_pass
+auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900 fail_interval=900
+auth\tsufficient\tpam_unix.so try_first_pass
 auth\trequisite\tpam_succeed_if.so uid >= 500 quiet
 auth\tsufficient\tpam_krb5.so use_first_pass
-auth\t[default=die]\tpam_faillock.so authfail audit deny=5
+auth\t[default=die]\tpam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900
 auth\trequired\tpam_deny.so
 """
         data2 = "account\trequired\tpam_faillock.so\n"

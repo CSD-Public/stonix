@@ -44,37 +44,47 @@ with large amounts of original code and comments left intact.
 @change: 2016/02/08 rsn - managing relative paths for libraries better.
 @change: 2016/02/09 eball Added removal of /tmp/the_luggage, removed logging
     arguments from ramdisk calls.
+@change: 2016/04/04 rsn - changing logger to ramdisk's logger
+@change: 2016/04/04 rsn - changing ramdisk to public repo of ramdisk (without git history)
 '''
-from __future__ import absolute_import
-import sys
-sys.path.append("../..")
-
+#--- Python specific libraries
 import os
+import re
+import sys
 import stat
 import optparse
-import re
 import traceback
 from glob import glob
 from tempfile import mkdtemp
 from time import time
 from subprocess import call
 from shutil import rmtree, copy2
-from src.stonix_resources.environment import Environment
-from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
-from src.MacBuild.macbuildlib import macbuildlib
-from src.MacBuild.macRamdisk import RamDisk, detach
 
+#-- Internal libraries
+from macbuildlib import macbuildlib
+# For setupRamdisk() and detachRamdisk()
+sys.path.append("./ramdisk/")
+from ramdisk.macRamdisk import RamDisk, detach
+from ramdisk.lib.loggers import CyLogger
+from ramdisk.lib.loggers import LogPriority as lp
 
 class MacBuilder():
 
     def __init__(self,
                  options=optparse.Values({"compileGui": False, "version": "0",
-                                          "clean": False, "test": False}),
+                                          "clean": False, "test": False, "debug":False}),
                  ramdisk_size=1024):
         '''
         Build .pkg and .dmg for stonix4mac
         @param ramdisk_size: int that defines ramdisk size in MB
+        @param debug: to print debug messages
         '''
+        if isinstance(options.debug, bool) and options.debug:
+            debug = 20
+        else:
+            debug = 40
+        self.logger = CyLogger(level=debug)
+        self.logger.initializeLogs()
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
@@ -521,5 +531,7 @@ if __name__ == '__main__':
                       default=False, help="If run in testing mode, " +
                       "the driver method does not execute, allowing for " +
                       "unit testing of functions")
+    parser.add_option("-d", "--debug", action="store_true", dest="debug",
+                      default=False, help="debug mode, on or off.  Default off.")
     options, __ = parser.parse_args()
     stonix4mac = MacBuilder(options)

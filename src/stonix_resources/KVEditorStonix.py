@@ -73,7 +73,7 @@ class KVEditorStonix(KVEditor):
     def report(self):
         retval = self.validate()
         if retval == "invalid":
-            debug = "Data is not in correct format\n" + \
+            debug = "Configuration file is in bad format\n" + \
                 "KVEditorStonix report is returning False\n"
             self.logger.log(LogPriority.DEBUG, debug)
             return False

@@ -101,7 +101,7 @@ the Avahi service in order to secure it.'''
                          'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
@@ -481,6 +481,9 @@ the Avahi service in order to secure it.'''
                                                          "present", "closedeq")
                         if not self.editor.report():
                             if self.editor.fix():
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                self.editor.setEventID(myid)
                                 if not self.editor.commit():
                                     self.rulesuccess = False
                                     self.detailedresults += "Could not " + \

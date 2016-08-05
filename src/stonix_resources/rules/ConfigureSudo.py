@@ -31,6 +31,8 @@ Created on Mar 7, 2013
 @change: 2015/09/06 Breen Malmberg, re-wrote rule
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/09 eball Fixed bad variable name in report
+@change: 2016/05/09 rsn put default on Mac as admin, also
+                        fixed search string and stopped removing lines.
 '''
 from __future__ import absolute_import
 
@@ -42,7 +44,7 @@ from ..pkghelper import Pkghelper
 import traceback
 import os
 import re
-
+import sys
 
 class ConfigureSudo(Rule):
 
@@ -60,22 +62,28 @@ If the rule is non-compliant after you have run the fix, ensure that the \
 group entered in the text field exists, and that the usernames of all \
 administrators who should be allowed to execute commands as root are members \
 of that group. This rule will not be applicable to Solaris.
-***Please be aware that the default group for this rule is wheel. If you \
+This rule does not remove any lines from the sudoers file.
+***Please be aware that the default group for this rule is wheel or of on a Mac, it is admin. If you \
 would like to change the group, enter the desired group in the text field \
 below and hit save before running.***"""
 
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         #configuration item instantiation
         datatype = 'string'
         key = 'GROUPNAME'
         instructions = "The group listed is the group that will be placed " + \
         "into the sudoers file with permissions to run all commands."
-        default = "wheel"
-        self.ci = self.initCi(datatype, key, instructions, default)
+
+        if self.environ.getosfamily() == 'darwin':
+            self.default = "admin"
+        else:
+            self.default = "wheel"
+
+        self.ci = self.initCi(datatype, key, instructions, self.default)
 
         datatype2 = 'bool'
         key2 = 'CONFIGURESUDO'
@@ -114,6 +122,14 @@ CONFIGURESUDO to False.'''
                 self.searchusl = "ALL=\(ALL\:ALL\)"
                 self.fixusl = "ALL=(ALL:ALL)"
 
+            # set up some class variables
+            self.groupname = "%{0}".format(self.ci.getcurrvalue())
+            self.defaultgroupname = "%{0}".format(self.default)
+            self.fixstring = '# Added by STONIX\n' + self.groupname + '\t' + self.fixusl + '\tALL\n'
+            self.fixdefaultstring = '# Added by STONIX\n' + self.defaultgroupname + '\t' + self.fixusl + '\tALL\n'
+            self.defaultsearchstring = '^' + self.defaultgroupname + '\s+{0}\s+ALL'.format(self.searchusl)
+            self.searchstring = '^' + self.groupname + '\s+{0}\s+ALL'.format(self.searchusl)
+ 
         except Exception:
             raise
 
@@ -171,7 +187,7 @@ CONFIGURESUDO to False.'''
 
         return found
 
-    def fixSudoers(self, fixstring):
+    def fixSudoers(self):
         '''
         wrapper to run fix actions for sudoers
 
@@ -191,15 +207,28 @@ CONFIGURESUDO to False.'''
             self.logger.log(LogPriority.DEBUG, "Running fixSudoers() method...")
 
             contentlines = self.readFile(self.sudoersfile)
+            founddefault = False
             for line in contentlines:
-                if re.search('^' + self.groupname, line):
-                    contentlines = [c.replace(line, fixstring + '\n') for c in contentlines]
-                    replaced = True
-                    self.logger.log(LogPriority.DEBUG, "Found incorrect entry in file: " + str(self.sudoersfile) + ' and replaced it')
+                if re.match(self.defaultsearchstring, line):
+                    founddefault = True
+                    self.logger.log(LogPriority.INFO, "Found a valid administration group...")
+                    break
 
-            if not replaced:
-                self.logger.log(LogPriority.DEBUG, "Appended correct config entry to file: " + str(self.sudoersfile))
-                contentlines.append('\n' + fixstring)
+            if not founddefault:
+                self.logger.log(LogPriority.DEBUG, "Didn't find an appropriate administration group")
+                contentlines.append('\n' + self.fixdefaultstring)
+                appended = True
+
+            found = False
+            for line in contentlines:
+                if re.match(self.searchstring, line):
+                    found = True
+                    self.logger.log(LogPriority.INFO, "Found a valid administration group...")
+                    break
+
+            if not found:
+                self.logger.log(LogPriority.DEBUG, "Didn't find an appropriate administration group")
+                contentlines.append('\n' + self.fixstring)
                 appended = True
             f = open(sudoerstmp, 'w')
             f.writelines(contentlines)
@@ -213,7 +242,7 @@ CONFIGURESUDO to False.'''
             self.statechglogger.recordfilechange(self.sudoersfile, sudoerstmp, myid)
             os.rename(sudoerstmp, self.sudoersfile)
 
-            if not replaced and not appended:
+            if not found and not appended:
                 retval = False
                 self.logger.log(LogPriority.DEBUG, "Contents were unable to be changed in file: " + str(self.sudoersfile))
 
@@ -238,10 +267,13 @@ CONFIGURESUDO to False.'''
             self.compliant = True
 
             # set up some class variables
-            self.groupname = "%" + self.ci.getcurrvalue()
+            self.groupname = "%{0}".format(self.ci.getcurrvalue())
+            self.defaultgroupname = "%{0}".format(self.default)
             self.fixstring = '# Added by STONIX\n' + self.groupname + '\t' + self.fixusl + '\tALL\n'
-            self.searchstring = '^' + self.groupname + '\s*' + self.searchusl + '\s*ALL'
-
+            self.fixdefaultstring = '# Added by STONIX\n' + self.defaultgroupname + '\t' + self.fixusl + '\tALL\n'
+            self.defaultsearchstring = '^' + self.defaultgroupname + '\s+{0}\s+ALL'.format(self.searchusl)
+            self.searchstring = '^' + self.groupname + '\s+{0}\s+ALL'.format(self.searchusl)
+ 
             # make sure the sudoers file exists
             if not os.path.exists(self.sudoersfile):
                 self.detailedresults += '\nUnable to locate the sudoers file!'
@@ -252,7 +284,7 @@ CONFIGURESUDO to False.'''
                 return self.compliant
             else:
                 # make sure the sudoers file contains the correct user specification configuration
-                if not self.findString(self.searchstring):
+                if not self.findString(self.searchstring) or not self.findString(self.defaultsearchstring):
                     self.compliant = False
                     self.detailedresults += '\nCorrect User specification line was not found in sudoers file. Should be:\n' + self.groupname + '\t' + self.fixusl + '\tALL'
                     self.logger.log(LogPriority.DEBUG, 'Correct User specification line was not found in sudoers file')
@@ -303,7 +335,7 @@ CONFIGURESUDO to False.'''
                 self.statechglogger.deleteentry(event)
 
             # run fix actions
-            if not self.fixSudoers(self.fixstring):
+            if not self.fixSudoers():
                 fixresult = False
 
             #we don't record a change event for permissions

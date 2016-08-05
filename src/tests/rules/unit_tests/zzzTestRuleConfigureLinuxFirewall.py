@@ -22,12 +22,11 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+Created on May 27, 2016
+This is a Unit Test for Rule ConfigureLinuxFirewall
 
-@author: ekkehard j. koch
-@change: 03/04/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: D. Kennel
+
 '''
 from __future__ import absolute_import
 import unittest
@@ -35,22 +34,23 @@ import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.filehelper import FileHelper
+from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.NetworkTuning import NetworkTuning
+from src.stonix_resources.rules.ConfigureLinuxFirewall import ConfigureLinuxFirewall
 
 
-class zzzTestRuleNetworkTuning(RuleTest):
+class zzzTestRuleDisableIPV6(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = NetworkTuning(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = ConfigureLinuxFirewall(self.config,
+                                self.environ,
+                                self.logdispatch,
+                                self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.fh = FileHelper(self.logdispatch)
+        self.ch = CommandHelper(self.logdispatch)
+        self.checkUndo = True
 
     def tearDown(self):
         pass
@@ -60,32 +60,12 @@ class zzzTestRuleNetworkTuning(RuleTest):
 
     def setConditionsForRule(self):
         '''
-        Reset sysctl.conf to original
+        Configure system for the unit test
+        @param self: essential if you override this definition
+        @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
         success = True
-        if self.environ.getosfamily() == 'darwin':
-            if success:
-                self.files = {"sysctl.conf": {"path": "/private/etc/sysctl.conf",
-                                              "remove": True,
-                                              "content": None,
-                                              "permissions": None,
-                                              "owner": "root",
-                                              "group": "wheel"}
-                              }
-                for filelabel, fileinfo in sorted(self.files.items()):
-                    success = self.fh.addFile(filelabel,
-                                                    fileinfo["path"],
-                                                    fileinfo["remove"],
-                                                    fileinfo["content"],
-                                                    fileinfo["permissions"],
-                                                    fileinfo["owner"],
-                                                    fileinfo["group"]
-                                                    )
-                    if not success:
-                        break
-            if success:
-                success = self.fh.fixFiles()
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

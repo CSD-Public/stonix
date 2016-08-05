@@ -28,6 +28,13 @@ Created on Mar 11, 2015
 @change: 2015/04/14 dkennel - Now using new isApplicable method
 @change: 2015/07/27 eball - Added logger to setPerms call in fix()
 @change: 2016/02/09 eball - Added dnf pkghelper, did PEP8 cleanup
+@change: 2016/04/26 Breen Malmberg - added doc string sections to report and fix;
+added 2 new methods: checknfscontents() and checkNFSexports(); made variable returns more consistent;
+added detailedresults messaging; added formatdetailedresults calls where needed;
+added 3 new imports: listdir, isfile, join; added check for nfs exports in report method;
+removed unnecessary return call (return success) - in fix method - which was at the same tab level as the
+method's return self.rulesuccess call, but before it, so it was always being called instead of
+return self.rulesuccess. self.rulesuccess will now return instead of success.
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -39,6 +46,9 @@ from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
 import traceback
 import os
+import re
+from os import listdir
+from os.path import isfile, join
 
 
 class SecureNFS(Rule):
@@ -49,10 +59,13 @@ class SecureNFS(Rule):
         self.rulenumber = 39
         self.rulename = "SecureNFS"
         self.formatDetailedResults("initialize")
-        self.helptext = "Configures and secures NFS"
+        self.helptext = """This rule secures the NFS server by configuring \
+NFS services to use fixed ports and checking the /etc/exports file for \
+malformed export lines, export lines that are too permissive, and lines that \
+contain the no_root_squash, all_squash or insecure_locks options."""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.guidance = ["NSA(3.13.4)", "cce-4241-6", "cce-4465-1",
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]
@@ -60,18 +73,26 @@ class SecureNFS(Rule):
         # Configuration item instantiation
         datatype = 'bool'
         key = 'SECURENFS'
-        instructions = "To disable this rule set the value of SECURENFS " + \
-            "to False."
+        instructions = "To disable this rule set the value of SECURENFS to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
         '''
+        Run report actions for SecureNFS
+
+        @return: self.compliant
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 4/26/2016 - added check for nfs exports
         '''
 
+        self.detailedresults = ""
+        self.compliant = True
+        nfsexports = True
+
         try:
-            self.detailedresults = ""
-            self.compliant = True
+
             if self.environ.getosfamily() == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
 
@@ -124,26 +145,49 @@ class SecureNFS(Rule):
                         self.logdispatch.log(LogPriority.INFO,
                                              self.detailedresults)
                         return self.compliant
+
+            if not self.checkNFSexports():
+                nfsexports = False
+
             if os.path.exists(nfsfile):
                 nfstemp = nfsfile + ".tmp"
+                eqtype = ""
+                eqtypestr = ""
                 if self.environ.getostype() == "Mac OS X":
+                    eqtype = "openeq"
                     self.editor1 = KVEditorStonix(self.statechglogger,
                                                   self.logger, "conf", nfsfile,
                                                   nfstemp, data1, "present",
-                                                  "openeq")
+                                                  eqtype)
                 elif self.ph.manager in ("yum", "zypper", "dnf"):
+                    eqtype = "closedeq"
                     self.editor1 = KVEditorStonix(self.statechglogger,
                                                   self.logger, "conf", nfsfile,
                                                   nfstemp, data1, "present",
-                                                  "closedeq")
+                                                  eqtype)
                 elif self.ph.manager == "apt-get":
+                    eqtype = "space"
                     self.editor1 = KVEditorStonix(self.statechglogger,
                                                   self.logger, "conf", nfsfile,
                                                   nfstemp, data1, "present",
-                                                  "space")
+                                                  eqtype)
+                if eqtype == "openeq":
+                    eqtypestr = " = "
+                elif eqtype == "closedeq":
+                    eqtypestr = "="
+                elif eqtype == "space":
+                    eqtypestr = " "
+
                 if not self.editor1.report():
-                    self.detailedresults += "\nReport for editor1 is " + \
-                        "not compliant"
+                    if self.editor1.fixables:
+                        missingconfiglines = []
+                        for item in self.editor1.fixables:
+                            if isinstance(data1[item], list):
+                                for li in data1[item]:
+                                    missingconfiglines.append(str(item) + eqtypestr + str(li))
+                            else:
+                                missingconfiglines.append(str(item) + eqtypestr + str(data1[item]))
+                        self.detailedresults += "\nThe following configuration lines are missing from " + str(nfsfile) + ":\n" + "\n".join(missingconfiglines)
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
                 if not checkPerms(nfsfile, [0, 0, 420], self.logger):
@@ -166,7 +210,11 @@ class SecureNFS(Rule):
                                               "conf", export, extemp, data2,
                                               "notpresent", "space")
                 if not self.editor2.report():
-                    self.detailedresults += "\neditor2 report is not compliant"
+                    incorrectconfiglines = []
+                    if self.editor2.fixables:
+                        for item in self.editor2.fixables: # no fixables being generated for items not compliant with data2 and the "notpresent" directive
+                            incorrectconfiglines.append(str(item))
+                        self.detailedresults += "\nThe following configuration options are insecure, in file " + str(export) + ":\n" + "\n".join(incorrectconfiglines)
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
                 if not checkPerms(export, [0, 0, 420], self.logger):
@@ -177,6 +225,8 @@ class SecureNFS(Rule):
             else:
                 self.detailedresults += "\n" + export + " file doesn't exist"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                self.compliant = False
+            if not nfsexports:
                 self.compliant = False
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -190,16 +240,118 @@ class SecureNFS(Rule):
 
 ###############################################################################
 
-    def fix(self):
+    def checkNFSexports(self):
         '''
+        check the NFS export lines in the exports configuration file
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        @change: method first added 4/26/2016
         '''
+
+        retval = True
+        filename = "/etc/exports"
+        directory = "/etc/exports.d"
+        fileslist = []
 
         try:
-            if not self.ci.getcurrvalue():
-                self.rulesuccess = True
-                return self.rulesuccess
 
-            self.detailedresults = ""
+            if os.path.exists(filename):
+
+                f = open(filename, "r")
+                contentlines = f.readlines()
+                f.close()
+
+                if not self.checkNFScontents(contentlines, filename):
+                    retval = False
+
+            if os.path.exists(directory):
+                fileslist = [f for f in listdir(directory) if isfile(join(directory, f))]
+            if fileslist:
+                for f in fileslist:
+                    f = open(filename, "r")
+                    contentlines = f.readlines()
+                    f.close()
+                    if not self.checkNFScontents(contentlines, str(f)):
+                        retval = False
+
+        except Exception:
+            raise
+        return retval
+
+    def checkNFScontents(self, contentlines, filename=""):
+        '''
+        check given list of contentlines for required nfs export formatting
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        @change: method first added 4/29/2016
+        '''
+
+        retval = True
+
+        if not filename:
+            filename = "(file name not specified)"
+        if not isinstance(filename, basestring):
+            filename = "(file name not specified)"
+
+        if not isinstance(contentlines, list):
+            self.logger.log(LogPriority.DEBUG, "Parameter contentlines must be of type: list!")
+
+        if not contentlines:
+            self.logger.log(LogPriority.DEBUG, "Parameter contentlines was empty!")
+
+        try:
+
+            if contentlines:
+                for line in contentlines:
+                    if re.search('^#', line):
+                        continue
+                    elif re.search('^\/', line):
+                        # search for overly broad exports
+                        broadexports = ['^\/\w+.*\s*\d{2,3}\.\d{2,3}\.0\.0\/16\b', '^\/\w+.*\s*\d{1,3}\.0\.0\.0\/8\b', '^\/\w+.*\s*.*\*.*']
+                        for be in broadexports:
+                            if re.search(be, line):
+                                retval = False
+                                self.detailedresults += "The nfs export line:\n" + str(line) + "\nin " + str(filename) + " contains an export that is overly broad."
+                    else:
+                        if re.search('^([^ !$`&*()+]|(\\[ !$`&*()+]))+\s*', line):
+                            sline = line.split()
+                            if len(sline) < 2:
+                                retval = False
+                                self.detailedresults += "\nThe export line:\n" + str('\"' + line.strip() + '\"') + " in " + str(filename) + " lacks a host specification."
+            if not retval:
+                self.detailedresults += "\n\nThere is no automatic fix action for host exports. Please ensure that each NFS export in " + str(filename) + " has a host specification.\nSee man exports for help.\n"
+
+        except Exception:
+            raise
+        return retval
+
+    def fix(self):
+        '''
+        Run fix actions for SecureNFS
+
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 4/26/2016 - changed location of defaults variables in method;
+        added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
+        changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
+        '''
+
+        self.rulesuccess = True
+        success = True
+        self.detailedresults = ""
+
+        try:
+
+            if not self.ci.getcurrvalue():
+                self.detailedresults += "\nThe CI for this rule was not enabled. Nothing has been done."
+                self.rulesuccess = True
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                return self.rulesuccess
 
             # Clear out event history so only the latest fix is recorded
             self.iditerator = 0
@@ -285,6 +437,9 @@ class SecureNFS(Rule):
                             debug = "fix for editor1 failed"
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            self.editor1.setEventID(myid)
                             if not self.editor1.commit():
                                 success = False
                                 debug = "commit for editor1 failed"
@@ -316,6 +471,9 @@ class SecureNFS(Rule):
                         debug = "editor1 fix failed"
                         self.logger.log(LogPriority.DEBUG, debug)
                     else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.editor1.setEventID(myid)
                         if not self.editor1.commit():
                             success = False
                             debug = "editor1 commit failed"
@@ -346,6 +504,9 @@ class SecureNFS(Rule):
                             debug = "fix for editor2 failed"
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            self.editor2.setEventID(myid)
                             if not self.editor2.commit():
                                 success = False
                                 debug = "commit for editor2 failed"
@@ -402,7 +563,8 @@ class SecureNFS(Rule):
                     debug = "Unable to restart nfs service"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-            return success
+            if not success:
+                self.rulesuccess = False
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:

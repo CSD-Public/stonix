@@ -30,19 +30,14 @@ are vulnerable to exploit and monitoring.
 @author: bemalmbe
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/07/07 eball Converted to RuleKVEditor
 '''
 
 from __future__ import absolute_import
-
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
-
-import traceback
+from ..ruleKVEditor import RuleKVEditor
 
 
-class ConfigureRemoteManagement(Rule):
+class ConfigureRemoteManagement(RuleKVEditor):
     '''
     classdocs
     '''
@@ -51,13 +46,12 @@ class ConfigureRemoteManagement(Rule):
         '''
         Constructor
         '''
-        Rule.__init__(self, config, environ, logger, statechglogger)
+        RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 261
         self.rulename = 'ConfigureRemoteManagement'
         self.compliant = True
         self.formatDetailedResults("initialize")
-        self.mandatory = True
         self.helptext = 'Remote management should only be enabled on ' + \
             'trusted networks with strong user controls present in a ' + \
             'Directory system. Mobile devices without strict controls are ' + \
@@ -66,88 +60,56 @@ class ConfigureRemoteManagement(Rule):
         self.guidance = ['CIS 2.4.9', 'Apple HT201710']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        self.iditerator = 0
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
-    def report(self):
-        '''
-        '''
-
-        self.detailedresults = ''
-        self.cmdhelper = CommandHelper(self.logger)
-        self.compliant = True
-
-        reportdict = {"ARD_AllLocalUsers": "0",
-                      "ScreenSharingReqPermEnabled": "1",
-                      "VNCLegacyConnectionsEnabled": "0",
-                      "LoadRemoteManagementMenuExtra": "1"}
-        self.origstate = {}
-
-        try:
-
-            for key in reportdict:
-                self.cmdhelper.executeCommand("defaults read /Library/Preferences/com.apple.RemoteManagement " + key)
-                output = self.cmdhelper.getOutputString()
-                if not reportdict[key] == output.strip():
-                    self.detailedresults += '\n' + key + ' not set to ' + \
-                        reportdict[key]
-                    self.compliant = False
-                if output.strip() == "0":
-                    self.origstate[key] = "False"
-                elif output.strip() == "1":
-                    self.origstate[key] = "True"
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-
-        return self.compliant
-
-    def fix(self):
-        '''
-        '''
-
-        self.detailedresults = ''
-        success = True
-        self.iditerator = 0
-
-        fixdict = {"ARD_AllLocalUsers": "False",
-                   "ScreenSharingReqPermEnabled": "True",
-                   "VNCLegacyConnectionsEnabled": "False",
-                   "LoadRemoteManagementMenuExtra": "True"}
-
-        try:
-
-            for key in fixdict:
-                self.cmdhelper.executeCommand("defaults write /Library/Preferences/com.apple.RemoteManagement " + key + " -bool " + fixdict[key])
-                errout = self.cmdhelper.getError()
-                if errout:
-                    success = False
-                if self.compliant:
-                    if len(self.origstate) > 0 and key in self.origstate:
-                        event = {"eventtype": "commandstring",
-                                 "command": "defaults write /Library/Preferences/com.apple.RemoteManagement " + key + " -bool " + self.origstate[key]}
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.statechglogger.recordchgevent(myid, event)
-                    elif len(self.origstate) == 0:
-                        event = {"eventtype": "commandstring",
-                                 "command": "defaults delete /Library/Preferences/com.apple.RemoteManagement " + key}
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.statechglogger.recordchgevent(myid, event)
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return success
+        if self.environ.getostype() == "Mac OS X":
+            self.addKVEditor("ARD_AllLocalUsers",
+                             "defaults",
+                             "/Library/Preferences/com.apple.RemoteManagement",
+                             "",
+                             {"ARD_AllLocalUsers": ["0", "-bool no"]},
+                             "present",
+                             "",
+                             "Do not allow local users remote management rights.",
+                             None,
+                             False,
+                             {"ARD_AllLocalUsers": ["1", "-bool yes"]})
+            self.addKVEditor("ScreenSharingReqPermEnabled",
+                             "defaults",
+                             "/Library/Preferences/com.apple.RemoteManagement",
+                             "",
+                             {"ScreenSharingReqPermEnabled":
+                              ["1", "-bool yes"]},
+                             "present",
+                             "",
+                             "Enable remote users to request permissions for screen sharing.",
+                             None,
+                             False,
+                             {"ScreenSharingReqPermEnabled":
+                              ["0", "-bool no"]})
+            self.addKVEditor("VNCLegacyConnectionsEnabled",
+                             "defaults",
+                             "/Library/Preferences/com.apple.RemoteManagement",
+                             "",
+                             {"VNCLegacyConnectionsEnabled":
+                              ["0", "-bool no"]},
+                             "present",
+                             "",
+                             "Disable Legacy VNC Connections.",
+                             None,
+                             False,
+                             {"VNCLegacyConnectionsEnabled":
+                              ["1", "-bool yes"]})
+            self.addKVEditor("LoadRemoteManagementMenuExtra",
+                             "defaults",
+                             "/Library/Preferences/com.apple.RemoteManagement",
+                             "",
+                             {"LoadRemoteManagementMenuExtra":
+                              ["1", "-bool yes"]},
+                             "present",
+                             "",
+                             "Load the remote management menu item.",
+                             None,
+                             False,
+                             {"LoadRemoteManagementMenuExtra":
+                              ["0", "-bool no"]})

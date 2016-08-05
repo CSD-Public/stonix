@@ -28,7 +28,7 @@ namely /root/.rhosts, /root/.shosts, and /etc/hosts.equiv, and symlinks them to
 /dev/null in order to prevent a potentially exploitable weak form of access
 control.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 02/16/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/16/2014 ekkehard Implemented isapplicable
 @change: 02/16/2014 ekkehard blacklisted darwin '/dev/null' and /root/.rhosts, /root/.shosts do
@@ -42,6 +42,7 @@ from __future__ import absolute_import
 
 import os
 import traceback
+import re
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -54,7 +55,7 @@ class SymlinkDangerFiles(Rule):
     them to /dev/null in order to prevent a potentially exploitable weak form
     of access control.
 
-    @author bemalmbe
+    @author Breen Malmberg
     '''
     # do we need @author section for each method? or is ok for just the class?
     def __init__(self, config, environ, logger, statechglogger):
@@ -81,7 +82,7 @@ class SymlinkDangerFiles(Rule):
         self.guidance = ['CIS RHEL 5 Benchmark Appendix A SN.1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # init CIs
         self.ci = self.initCi("bool",
@@ -89,8 +90,7 @@ class SymlinkDangerFiles(Rule):
                               "Execute Symlink Danger Files fix.",
                               True)
         self.dangerfiles = ['/root/.rhosts', '/root/.shosts',
-                            '/etc/hosts.equiv', '/etc/shosts.equiv',
-                            '/private/etc/hosts.equiv']
+                            '/etc/hosts.equiv', '/etc/shosts.equiv']
 
     def fix(self):
         '''
@@ -99,12 +99,20 @@ class SymlinkDangerFiles(Rule):
         Search for the rhosts, shosts and hosts.equiv and if found, delete
         them and then symlink them to /dev/null
 
-        @author bemalmbe
+        @author Breen Malmberg
         '''
 
+        # defaults
+        self.rulesuccess = True
+        self.detailedresults = ""
+
         try:
+
             if self.ci.getcurrvalue():
-                self.detailedresults = ""
+
+                if os.path.exists('/private/etc/hosts.equiv'):
+                    self.makeHostsBlank()
+
                 for item in self.dangerfiles:
                     if os.path.exists(item):
                         os.remove(item)
@@ -132,30 +140,67 @@ class SymlinkDangerFiles(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
+    def makeHostsBlank(self):
+        '''
+        ensure that there is no content (except for commented lines)
+        in hosts.equiv
+
+        @author: Breen Malmberg
+        '''
+
+        newcontentlines = []
+        hostsfile = '/private/etc/hosts.equiv'
+        tempfile = hostsfile + '.stonixtmp'
+
+        try:
+
+            f = open('/private/etc/hosts.equiv', 'r')
+            contentlines = f.readlines()
+            f.close()
+
+            for line in contentlines:
+                if line != '' and not re.search('^#', line):
+                    newcontentlines = ['#This file enforced to be blank, except for this line, by STONIX']
+
+            if newcontentlines:
+                tf = open(tempfile, 'w')
+                tf.writelines(newcontentlines)
+                tf.close()
+
+                os.rename(tempfile, hostsfile)
+
+        except Exception:
+            raise
+
     def report(self):
         '''
-        Perform a check to see if the files (.rhosts, .shosts, hosts.equiv) are
+        Perform a check to see if the files (.rhosts, .shosts) are
         already symlinked to /dev/null or not
 
         @return bool
-        @author bemalmbe
+        @author Breen Malmberg
         '''
 
         # defaults
-        retval = True
+        self.compliant = True
+        self.detailedresults = ""
 
         try:
-            self.detailedresults = ""
+
+            if os.path.exists('/private/etc/hosts.equiv'):
+                if not self.checkHostsBlank():
+                    self.compliant = False
+
             for item in self.dangerfiles:
                 message = ""
                 if os.path.exists(item):
 
                     if not os.path.islink(item):
-                        retval = False
+                        self.compliant = False
                         message = str(item) + " is not a link"
                     else:
                         if os.readlink(item) != '/dev/null':
-                            retval = False
+                            self.compliant = False
                             message = str(item) + \
                             " is not a symlink to /dev/null"
                 if not message == "":
@@ -164,11 +209,6 @@ class SymlinkDangerFiles(Rule):
                     else:
                         self.detailedresults = self.detailedresults + "\n" + \
                         message
-            if retval:
-                self.compliant = True
-
-            else:
-                self.compliant = False
 
         except OSError:
             self.detailedresults = traceback.format_exc()
@@ -186,11 +226,43 @@ class SymlinkDangerFiles(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
+    def checkHostsBlank(self):
+        '''
+        special check for single file: hosts.equiv
+        this check added as a replacement for symlinking this file
+        due to a race condition which existed between verifysysfileperms
+        and this rule (symlinkdangerfiles)
+        the file hosts.equiv will not be symlinked but instead will be
+        checked to make sure it remains empty
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        hostsfile = '/private/etc/hosts.equiv'
+
+        try:
+
+            f = open(hostsfile, 'r')
+            contentlines = f.readlines()
+            f.close()
+            for line in contentlines:
+                if line != '' and not re.search('^#', line):
+                    retval = False
+                    self.detailedresults += "non-blank, non-comment line found in hosts.equiv. This file needs to remain blank."
+
+        except Exception:
+            raise
+
+        return retval
+
     def undo(self):
         '''
         no undo operations permitted for this rule due to security reasons
 
-        @author bemalmbe
+        @author Breen Malmberg
         '''
 
         self.detailedresults = "No undo operations are permitted for this rule\

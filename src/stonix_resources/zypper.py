@@ -40,6 +40,7 @@ class Zypper(object):
         search for installed or available separately
     @change: 2014/12/24 bemalmbe - fixed multiple pep8 violations
     @change: 2015/08/20 eball - Added getPackageFromFile and self.rpm var
+    @change: 2016/08/02 eball - Moved checkInstall return out of else block
     '''
 
     def __init__(self, logger):
@@ -149,16 +150,22 @@ class Zypper(object):
                 for line in output:
                     if search(package, line):
                         installed = True
-                if installed:
-                    self.detailedresults += package + " pkg is installed\n"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    return True
+                        break
+            elif self.ch.getReturnCode() == 106:
+                for line in output:
+                    if search(package, line):
+                        installed = True
+                        break
             else:
                 installed = False
+
+            if installed:
+                self.detailedresults += package + " pkg is installed\n"
+            else:
                 self.detailedresults += package + " pkg not found or may be \
 misspelled\n"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            return installed
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:

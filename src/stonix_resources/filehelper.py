@@ -38,7 +38,6 @@ import traceback
 import types
 from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
-from random import randint
 from stonixutilityfunctions import writeFile, resetsecon
 
 
@@ -51,7 +50,7 @@ class FileHelper(object):
     '''
 
 # initialize attributes
-    def __init__(self, logdispatcher, statechglogger=None):
+    def __init__(self, logdispatcher, statechglogger):
 # By Default Use OSs default directory mode to create directories in
 # createfile_path
         self.defaultDirectoryMode = ""
@@ -679,7 +678,6 @@ class FileHelper(object):
         '''
         success = True
         directory = os.path.dirname(file_path)
-        basename = os.path.basename(file_path)
         removaltype = ""
 # blank path
         if success and file_path == "":
@@ -704,8 +702,8 @@ class FileHelper(object):
                 removaltype = "os.remove"
 # Now let's remove the file_path
         if success and not removaltype == "" and not shouldI:
-            message = "Would have directory via " + str(removaltype) + \
-            "(" + file_path + ")"
+            message = "Would have removed directory via " + str(removaltype) + \
+                "(" + file_path + ")"
             self.logdispatcher.log(LogPriority.DEBUG, message)
             success = False
         elif success and removaltype == "shutil.rmtree":
@@ -723,6 +721,16 @@ class FileHelper(object):
                 raise
         elif success and removaltype == "os.remove":
             try:
+                if self.file_eventid:
+                    debug = "EventID for " + file_path + ": " + \
+                        str(self.file_eventid)
+                    self.logdispatcher.log(LogPriority.DEBUG, debug)
+                    event = {"eventtype": "deletion",
+                             "filepath": file_path}
+                    self.statechglogger.recordfiledelete(file_path,
+                                                         self.file_eventid)
+                    self.statechglogger.recordchgevent(self.file_eventid,
+                                                       event)
                 os.remove(file_path)
                 message = "removed " + file_path + " via " + removaltype + \
                 "('" + file_path + "')."
@@ -773,7 +781,6 @@ class FileHelper(object):
         success = True
         creationtype = ""
         directory = os.path.dirname(file_path)
-        basename = os.path.basename(file_path)
 # blank path
         if success and file_path == "":
             success = False
@@ -784,7 +791,7 @@ class FileHelper(object):
             success = False
             message = "'" + str(file_path) + "' is not an absolute path!"
             self.logdispatcher.log(LogPriority.DEBUG, message)
-# if the directory does not exist create ti
+# if the directory does not exist create it
         if success and not os.path.exists(directory):
             message = "directory '" + str(directory) + "' for file_path '" + \
             str(file_path) + "'does not exist!"
@@ -830,8 +837,13 @@ class FileHelper(object):
         elif success and creationtype == "open":
             try:
                 open(file_path, 'w').close()
-                message = "successfully created file '" + file_path + \
-                "' via " + creationtype + "(" + file_path + ",'w').close."
+                if self.file_eventid:
+                    event = {"eventtype": "creation",
+                             "filepath": file_path}
+                    self.statechglogger.recordchgevent(self.file_eventid,
+                                                       event)
+                message = "Successfully created file '" + file_path + \
+                    "' via " + creationtype + "(" + file_path + ",'w').close."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
             except Exception, err:
                 success = False
@@ -889,38 +901,50 @@ class FileHelper(object):
                 file_permissions_fixed = True
                 message = "file path '" + str(file_path) + "' does not exist!"
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-        if success and file_permissions == None:
+        if success and file_permissions is None:
             success = False
             file_permissions_fixed = True
             message = "file_permissions are default value of '" + \
-            str(file_permissions) + "'! no action taken"
+                str(file_permissions) + "'! no action taken"
             self.logdispatcher.log(LogPriority.DEBUG, message)
         if success:
             file_permissions_masked = file_permissions & 0o7777
             if not file_permissions == file_permissions_masked:
                 message = "file_permissions of " + str(file_permissions) + \
-                " were masked to " + str(file_permissions_masked) + "!"
+                    " were masked to " + str(file_permissions_masked) + "!"
                 self.logdispatcher.log(LogPriority.DEBUG, message)
         if success:
             try:
                 if shouldI:
+                    statdata = os.stat(file_path)
+                    owner = statdata.st_uid
+                    group = statdata.st_gid
+                    mode = stat.S_IMODE(statdata.st_mode)
                     os.chmod(file_path, file_permissions_masked)
+                    if self.file_eventid:
+                        event = {"eventtype": "perm",
+                                 "filepath": file_path,
+                                 "startstate": [owner, group, mode],
+                                 "endstate": [owner, group,
+                                              file_permissions_masked]}
+                        self.statechglogger.recordchgevent(self.file_eventid,
+                                                           event)
                     message = "File Permissions for '" + file_path + \
-                    "' were successfully updated to '" + \
-                    str(file_permissions_masked) + "'"
+                        "' were successfully updated to '" + \
+                        str(file_permissions_masked) + "'"
                     file_permissions_fixed = True
                 else:
                     message = "File Permissions for '" + file_path + \
-                    "' should be fixed to '" + str(file_permissions_masked) + \
-                    "' but shouldI was set to '" + str(shouldI) + "'!"
+                        "' should be fixed to '" + str(file_permissions_masked) + \
+                        "' but shouldI was set to '" + str(shouldI) + "'!"
                     file_permissions_fixed = False
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
             except Exception, err:
                 success = False
                 message = "os.chmod('" + file_path + "'," + \
-                str(file_permissions_masked) + "). failed with Error '" + \
-                str(err) + "' - " + traceback.format_exc()
+                    str(file_permissions_masked) + "). failed with Error '" + \
+                    str(err) + "' - " + traceback.format_exc()
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
                 raise
@@ -1039,7 +1063,8 @@ class FileHelper(object):
             try:
                 if shouldI:
                     tmpfile = file_path + ".stonixtmp"
-                    if writeFile(tmpfile, file_content, self.logdispatcher):
+                    if writeFile(tmpfile, file_content, self.logdispatcher) \
+                       and self.file_eventid:
                         event = {'eventtype': 'conf',
                                  'filepath': file_path}
                         self.statechglogger.recordchgevent(self.file_eventid,
@@ -1087,7 +1112,6 @@ class FileHelper(object):
         @param self:essential if you override this definition
         @param file_label: string - required kveditorname
         @return: boolean - true
-        @note: OS X Rules, Linux Drools
         '''
         self.saveFileHelperValues()
         self.file_label = file_label
@@ -1110,6 +1134,7 @@ class FileHelper(object):
             self.file_group = item["file_group"]
             self.file_group_matches = item["file_group_matches"]
             self.file_messages = item["file_messages"]
+            self.file_eventid = item["file_eventid"]
         else:
             self.resetFileHelperValues()
         return True
@@ -1123,7 +1148,6 @@ class FileHelper(object):
         @param self:essential if you override this definition
         @param file_label: string - required kveditorname
         @return: boolean - true
-        @note: OS X Rules, Linux Drools
         '''
         if not (self.file_label == ""):
             item = {"file_path": self.file_path,
@@ -1159,7 +1183,6 @@ class FileHelper(object):
         @author: ekkehard j. koch
         @param self:essential if you override this definition
         @return: boolean - true
-        @note: OS X Rules, Linux Drools
         '''
         self.file_label = ""
         self.file_path = ""

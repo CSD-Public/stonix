@@ -34,10 +34,13 @@ variable.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2016/05/23 eball Improvements to feedback and workflow
+@change: 2016/07/08 ekkehard complete renaming to SecureIPV4
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
 from ..stonixutilityfunctions import checkPerms, setPerms, createFile
+from ..stonixutilityfunctions import getOctalPerms
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
@@ -48,7 +51,7 @@ import traceback
 import re
 
 
-class NetworkTuning(Rule):
+class SecureIPV4(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -58,7 +61,7 @@ class NetworkTuning(Rule):
         self.logger = logger
         self.rulenumber = 15
         self.cmdhelper = CommandHelper(self.logger)
-        self.rulename = "NetworkTuning"
+        self.rulename = "SecureIPV4"
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule configures the system's network stack " + \
@@ -81,7 +84,7 @@ class NetworkTuning(Rule):
         self.guidance = ["NSA 2.5.1.1", "NSA 2.5.1.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.iditerator = 0
         self.rep1success = True
         self.rep2success = True
@@ -89,42 +92,36 @@ class NetworkTuning(Rule):
         self.solarisRou = False
         self.missing = []
         self.iditerator = 0
-        self.editor = ""
+        self.editor = None
         self.ch = CommandHelper(self.logger)
-
-###############################################################################
 
     def __InitializeNetworkTuning1(self):
         '''Private method to initialize the configurationitem object for the
-        NetworkTuning bool.
+        NetworkTuning1 bool.
         @return: configurationitem object instance'''
 
         datatype = 'bool'
         key = "NETWORKTUNING1"
-        instructions = "Network Parameter Tuning.  You should not need " + \
-            "to override this unless you are doing something really weird."
+        instructions = "Network Parameter Tuning. You should not need " + \
+            "to override this under normal circumstances."
         default = True
         ci = self.initCi(datatype, key, instructions, default)
         return ci
 
-###############################################################################
-
     def __InitializeNetworkTuning2(self):
         '''Private method to initialize the configurationitem object for the
-        NoNetworkTuning bool.
+        NetworkTuning2 bool.
         @return: configurationitem object instance'''
 
         key = "NETWORKTUNING2"
-        instructions = "Additional network Parameters.  Set this to 'no' " + \
-            "if you are running a router or a bridge.  Also, in rare " + \
-            "cases, you may need to set this to no for vmware, if you are " + \
-            "using normal vmware routing yes is OK."
+        instructions = "Additional network parameters. Set this to False " + \
+            "if you are running a router or a bridge. Also, in rare " + \
+            "cases, you may need to set this to False for VMware (if you " + \
+            "are using normal VMware routing, True should be fine)."
         default = True
         datatype = "bool"
         ci = self.initCi(datatype, key, instructions, default)
         return ci
-
-###############################################################################
 
     def report(self):
         '''Main parent report method that calls the sub report methods
@@ -166,50 +163,7 @@ class NetworkTuning(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-###############################################################################
-
-    def fix(self):
-        '''Main parent fix method that calls the sub fix methods
-        @return: bool'''
-        try:
-            if not self.networkTuning2 and not self.networkTuning1:
-                return
-            self.detailedresults = ""
-
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-
-            success1, success2 = True, True
-            if self.environ.getosfamily() == "linux":
-                success1 = self.fixLinux()
-            elif self.environ.getosfamily() == "freebsd":
-                success1 = self.fixFreebsd()
-            elif self.environ.getosfamily() == "darwin":
-                success1 = self.fixMac()
-            elif self.environ.getosfamily() == "solaris":
-                if self.networkTuning1.getcurrvalue():
-                    success1 = self.fixSolaris1()
-                if self.networkTuning2.getcurrvalue():
-                    success2 = self.fixSolaris2()
-            if success1 and success2:
-                self.rulesuccess = True
-            else:
-                self.rulesuccess = False
-            return
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-###############################################################################
 
     def reportLinux1(self):
         '''Linux specific report method that ensures the items in fileContents
@@ -218,37 +172,39 @@ class NetworkTuning(Rule):
         @return: bool'''
         compliant = True
         if not os.path.exists(self.path):
-            createFile(self.path, self.logger)
-        lfc = {"net.ipv4.conf.all.secure_redirects": "0",
-               "net.ipv4.conf.all.accept_redirects": "0",
-               "net.ipv4.conf.all.rp_filter": "1",
-               "net.ipv4.conf.all.log_martians": "1",
-               "net.ipv4.conf.all.accept_source_route": "0",
-               "net.ipv4.conf.default.accept_redirects": "0",
-               "net.ipv4.conf.default.secure_redirects": "0",
-               "net.ipv4.conf.default.rp_filter": "1",
-               "net.ipv4.conf.default.accept_source_route": "0",
-               "net.ipv4.tcp_syncookies": "1",
-               "net.ipv4.icmp_echo_ignore_broadcasts": "1",
-               "net.ipv4.tcp_max_syn_backlog": "4096"}
-        kvtype = "conf"
-        intent = "present"
-        self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-                                     self.path, self.tmpPath, lfc, intent,
-                                     "openeq")
-        if not self.editor.report():
-            self.detailedresults += "/etc/sysctl.conf is not configured " + \
-                "correctly for checked configuration item 1\n"
+            self.detailedresults += self.path + " does not exist\n"
             compliant = False
         else:
-            self.detailedresults += "/etc/sysctl.conf is configured " + \
-                "correctly for checked configuration item 1\n"
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            self.detailedresults += "Permissions are incorrect on " + \
-                "/etc/sysctl.con\n"
-            compliant = False
+            lfc = {"net.ipv4.conf.all.secure_redirects": "0",
+                   "net.ipv4.conf.all.accept_redirects": "0",
+                   "net.ipv4.conf.all.rp_filter": "1",
+                   "net.ipv4.conf.all.log_martians": "1",
+                   "net.ipv4.conf.all.accept_source_route": "0",
+                   "net.ipv4.conf.default.accept_redirects": "0",
+                   "net.ipv4.conf.default.secure_redirects": "0",
+                   "net.ipv4.conf.default.rp_filter": "1",
+                   "net.ipv4.conf.default.accept_source_route": "0",
+                   "net.ipv4.tcp_syncookies": "1",
+                   "net.ipv4.icmp_echo_ignore_broadcasts": "1",
+                   "net.ipv4.tcp_max_syn_backlog": "4096"}
+            kvtype = "conf"
+            intent = "present"
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    kvtype, self.path, self.tmpPath, lfc,
+                                    intent, "openeq")
+            if not editor.report():
+                self.detailedresults += self.path + " is not configured " + \
+                    "correctly for configuration item 1\n"
+                compliant = False
+            else:
+                self.detailedresults += self.path + " is configured " + \
+                    "correctly for configuration item 1\n"
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions are incorrect on " + \
+                    self.path + ": Expected 644, found " + \
+                    str(getOctalPerms(self.path)) + "\n"
+                compliant = False
         return compliant
-###############################################################################
 
     def reportLinux2(self):
         '''Linux specific report method2 that ensures the items in fileContents
@@ -257,54 +213,25 @@ class NetworkTuning(Rule):
         @return: bool'''
         compliant = True
         if not os.path.exists(self.path):
-            createFile(self.path, self.logger)
-        lfc = {"net.ipv4.conf.default.send_redirects": "0",
-               "net.ipv4.conf.all.send_redirects": "0",
-               "net.ipv4.ip_forward": "0"}
-        if not self.networkTuning1.getcurrvalue():
+            self.detailedresults += self.path + " does not exist\n"
+            compliant = False
+        else:
+            lfc = {"net.ipv4.conf.default.send_redirects": "0",
+                   "net.ipv4.conf.all.send_redirects": "0",
+                   "net.ipv4.ip_forward": "0"}
             kvtype = "conf"
             intent = "present"
-            self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, self.path, self.tmpPath, lfc,
-                                         intent, "openeq")
-        else:
-            self.editor.setData(lfc)
-        if not self.editor.report():
-            self.detailedresults += "/etc/sysctl.conf is not configured " + \
-                "correctly for checked configuration item 2\n"
-            compliant = False
-        else:
-            self.detailedresults += "/etc/sysctl.conf is configured " + \
-                "correctly for checked configuration item 2\n"
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            self.detailedresults += "Permissions are incorrect on " + \
-                "/etc/sysctl.con\nf"
-            compliant = False
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    kvtype, self.path, self.tmpPath,
+                                    lfc, intent, "openeq")
+            if not editor.report():
+                self.detailedresults += self.path + " is not configured " + \
+                    "correctly for configuration item 2\n"
+                compliant = False
+            else:
+                self.detailedresults += self.path + " is configured " + \
+                    "correctly for configuration item 2\n"
         return compliant
-###############################################################################
-#     def reportMac1(self,method):
-#         '''Mac specific report method1 that ensures the items in fileContents
-#         exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
-#         exist in the file.
-#         @return: bool'''
-#         compliant = True
-#         method += ".reportMac1"
-#         if re.search("10\.9\.*",self.enviro.getosver()):
-#             mfc = {}
-#         elif re.search("10\.8\.*",self.enviro.getosver()):
-# #              mfc = {"kern.ipc.somaxconn":"4096",
-# #                     "net.inet.ip.accept_sourceroute":"0",
-# #                     "net.inet.icmp.bmcastecho":"1"}
-#         kvtype = "conf"
-#         intent = "present"
-#         self.editor = KVEditorStonix(self.statechglogger,self.logger,kvtype,
-#                                   self.path,self.tmpPath,mfc,intent,"closedeq")
-#         if not self.editor.report():
-#             compliant = False
-#         if not checkPerms(self.path,[0,0,420],self.logger,method):
-#             compliant = False
-#         return compliant
-###############################################################################
 
     def reportMac2(self):
         '''Mac specific report method1 that ensures the items in fileContents
@@ -313,27 +240,29 @@ class NetworkTuning(Rule):
         @return: bool'''
         compliant = True
         if not os.path.exists(self.path):
-            createFile(self.path, self.logger)
-        mfc = {"net.inet.ip.forwarding": "0",
-               "net.inet.ip.redirect": "0"}
-        kvtype = "conf"
-        intent = "present"
-        self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                     kvtype, self.path, self.tmpPath, mfc,
-                                     intent, "closedeq")
-        if not self.editor.report():
-            self.detailedresults += "/private/etc/sysctl.conf is not \
-configured correctly\n"
+            self.detailedresults += self.path + " does not exist\n"
             compliant = False
         else:
-            self.detailedresults += "/private/etc/sysctl.conf is configured \
-correctly\n"
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            self.detailedresults += "Permissions are incorrect on \
-/private/etc/sysctl.conf\n"
-            compliant = False
+            mfc = {"net.inet.ip.forwarding": "0",
+                   "net.inet.ip.redirect": "0"}
+            kvtype = "conf"
+            intent = "present"
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                         kvtype, self.path, self.tmpPath, mfc,
+                                         intent, "closedeq")
+            if not self.editor.report():
+                self.detailedresults += self.path + " is not " + \
+                    "configured correctly\n"
+                compliant = False
+            else:
+                self.detailedresults += self.path + " is " + \
+                    "configured correctly\n"
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions are incorrect on " + \
+                    self.path + ": Expected 644, found " + \
+                    str(getOctalPerms(self.path)) + "\n"
+                compliant = False
         return compliant
-###############################################################################
 
     def reportSolaris1(self):
         compliant = True
@@ -358,7 +287,7 @@ correctly\n"
                "ndd -set /dev/ip ip_send_redirects": "0"}
         path = "/etc/init.d/S70ndd-nettune"
         if os.path.exists(path):
-            if not checkPerms(path, [0, 3, 484], self.logger):
+            if not checkPerms(path, [0, 3, 0o744], self.logger):
                 compliant = False
             contents = readFile(path, self.logger)
             if not contents:
@@ -401,8 +330,8 @@ correctly\n"
                         break
         else:
             compliant = False
-        '''with each of the three links we need to make sure that they exist
-        and also point to the right file'''
+        # With each of the three links we need to make sure that they exist
+        # and point to the right file
         sympath = "/etc/init.d/S70ndd-nettune"
         path = "/etc/rc1.d/K70ndd-nettune"
         if not os.path.exists(path):
@@ -488,7 +417,6 @@ correctly\n"
                     compliant = False
                     self.logger.log(LogPriority.DEBUG, error)
         return compliant
-###############################################################################
 
     def reportSolaris2(self):
         '''Solaris specific report method2 that Sets self.compliant to True if
@@ -509,7 +437,6 @@ correctly\n"
                         self.solarisRou = True
             except(IndexError):
                 continue
-###############################################################################
 
     def reportFreebsd1(self):
         '''Freebsd specific report method1 that ensures the items in the file
@@ -518,105 +445,199 @@ correctly\n"
         @return: bool'''
         compliant = True
         if not os.path.exists(self.path):
-            createFile(self.path, self.logger)
-        ffc = {"net.inet.icmp.bmcastecho": "0",
-               "net.inet.ip.redirect": "0",
-               "net.inet.icmp.maskrepl": "0",
-               "net.inet.ip.sourceroute": "0",
-               "net.inet.ip.accept_sourceroute": "0",
-               "net.inet.tcp.syncookies": "1"}
-        kvtype = "conf"
-        intent = "present"
-        self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-                                     self.path, self.tmpPath, ffc, intent,
-                                     "openeq")
-        if not self.editor.report():
+            self.detailedresults += self.path + " does not exist\n"
             compliant = False
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            compliant = False
-        return compliant
-###############################################################################
-
-    def reportFreebsd2(self):
-        '''Freebsd specific report method1 that ensures the items in fileContents 
-        exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
-        exist in the file.  Returns True if successful in updating the file
-        @return: bool'''
-        compliant = True
-        if not os.path.exists(self.path):
-            createFile(self.path, self.logger)
-        ffc = {"net.inet.ip.forwarding": "0",
-               "net.inet.ip.fastforwarding": "0"}
-        if not self.networkTuning1.getcurrvalue():
+        else:
+            ffc = {"net.inet.icmp.bmcastecho": "0",
+                   "net.inet.ip.redirect": "0",
+                   "net.inet.icmp.maskrepl": "0",
+                   "net.inet.ip.sourceroute": "0",
+                   "net.inet.ip.accept_sourceroute": "0",
+                   "net.inet.tcp.syncookies": "1"}
             kvtype = "conf"
             intent = "present"
             self.editor = KVEditorStonix(self.statechglogger, self.logger,
                                          kvtype, self.path, self.tmpPath, ffc,
-                                         intent, "closedeq")
-        else:
-            self.editor.setData(ffc)
-        if not self.editor.report():
-            compliant = False
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            compliant = False
+                                         intent, "openeq")
+            if not self.editor.report():
+                compliant = False
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions are incorrect on " + \
+                    self.path + ": Expected 644, found " + \
+                    str(getOctalPerms(self.path)) + "\n"
+                compliant = False
         return compliant
-###############################################################################
+
+    def reportFreebsd2(self):
+        '''Freebsd specific report method1 that ensures the items in
+        fileContents exist in /etc/sysctl.conf. Sets self.compliant to True
+        if all items exist in the file. Returns True if successful in updating
+        the file
+        @return: bool'''
+        compliant = True
+        if not os.path.exists(self.path):
+            self.detailedresults += self.path + " does not exist\n"
+            compliant = False
+        else:
+            ffc = {"net.inet.ip.forwarding": "0",
+                   "net.inet.ip.fastforwarding": "0"}
+            if not self.networkTuning1.getcurrvalue():
+                kvtype = "conf"
+                intent = "present"
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             kvtype, self.path, self.tmpPath,
+                                             ffc, intent, "closedeq")
+            else:
+                self.editor.setData(ffc)
+            if not self.editor.report():
+                compliant = False
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions are incorrect on " + \
+                    self.path + ": Expected 644, found " + \
+                    str(getOctalPerms(self.path)) + "\n"
+                compliant = False
+        return compliant
+
+    def fix(self):
+        '''Main parent fix method that calls the sub fix methods
+        @return: bool'''
+        try:
+            self.detailedresults = ""
+            success = True
+            if self.networkTuning2 or self.networkTuning1:
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+
+                if self.environ.getosfamily() == "linux":
+                    success = self.fixLinux()
+                elif self.environ.getosfamily() == "freebsd":
+                    success = self.fixFreebsd()
+                elif self.environ.getosfamily() == "darwin":
+                    success = self.fixMac()
+                elif self.environ.getosfamily() == "solaris":
+                    if self.networkTuning1.getcurrvalue():
+                        success = self.fixSolaris1()
+                    if self.networkTuning2.getcurrvalue():
+                        success &= self.fixSolaris2()
+            if success:
+                self.rulesuccess = True
+            else:
+                self.rulesuccess = False
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
     def fixLinux(self):
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.path, [0, 0, 420], self.logger,
-                            self.statechglogger, myid):
+        success = True
+        if not os.path.exists(self.path):
+            if createFile(self.path, self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": self.path}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
+                self.detailedresults += "Could not create file " + self.path + \
+                    "\n"
                 return False
         if self.networkTuning1.getcurrvalue() or \
                 self.networkTuning2.getcurrvalue():
-            if self.editor.fixables:
+            lfc = {}
+            if self.networkTuning1.getcurrvalue():
+                lfc.update({"net.ipv4.conf.all.secure_redirects": "0",
+                            "net.ipv4.conf.all.accept_redirects": "0",
+                            "net.ipv4.conf.all.rp_filter": "1",
+                            "net.ipv4.conf.all.log_martians": "1",
+                            "net.ipv4.conf.all.accept_source_route": "0",
+                            "net.ipv4.conf.default.accept_redirects": "0",
+                            "net.ipv4.conf.default.secure_redirects": "0",
+                            "net.ipv4.conf.default.rp_filter": "1",
+                            "net.ipv4.conf.default.accept_source_route": "0",
+                            "net.ipv4.tcp_syncookies": "1",
+                            "net.ipv4.icmp_echo_ignore_broadcasts": "1",
+                            "net.ipv4.tcp_max_syn_backlog": "4096"})
+            if self.networkTuning2.getcurrvalue():
+                lfc.update({"net.ipv4.conf.default.send_redirects": "0",
+                            "net.ipv4.conf.all.send_redirects": "0",
+                            "net.ipv4.ip_forward": "0"})
+            kvtype = "conf"
+            intent = "present"
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    kvtype, self.path, self.tmpPath,
+                                    lfc, intent, "openeq")
+            if not editor.report():
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
-                if not self.editor.fix():
-                    return False
-                elif not self.editor.commit():
-                    return False
-                os.chown(self.path, 0, 0)
-                os.chmod(self.path, 420)
-                resetsecon(self.path)
-                cmd = ["/sbin/sysctl", "-q", "-e", "-p"]
-                self.ch.executeCommand(cmd)
-                if self.ch.getReturnCode() != 0:
-                    self.detailedresults += "Unable to restart sysctl\n"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    return False
+                editor.setEventID(myid)
+                if editor.fix():
+                    if not editor.commit():
+                        success = False
+                        self.detailedresults += "KVEditor commit to " + \
+                            self.path + " was not successful\n"
                 else:
-                    return True
-            else:
-                return True
-##############################################################################
+                    success = False
+                    self.detailedresults += "KVEditor fix of " + self.path + \
+                        " was not successful\n"
+                resetsecon(self.path)
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.detailedresults += "Could not set permissions on " + \
+                        self.path + "\n"
+                    success = False
+        return success
 
     def fixMac(self):
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.path, [0, 0, 420], self.logger,
-                            self.statechglogger, myid):
+        success = True
+        if not os.path.exists(self.path):
+            if createFile(self.path, self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": self.path}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
                 return False
         if self.networkTuning2.getcurrvalue():
-            if self.editor.fixables:
+            if not self.editor:
+                mfc = {"net.inet.ip.forwarding": "0",
+                       "net.inet.ip.redirect": "0"}
+                kvtype = "conf"
+                intent = "present"
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             kvtype, self.path, self.tmpPath,
+                                             mfc, intent, "closedeq")
+            if not self.editor.report():
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.editor.setEventID(myid)
-                if not self.editor.fix():
-                    return False
-                elif not self.editor.commit():
-                    return False
-                os.chown(self.path, 0, 0)
-                os.chmod(self.path, 420)
+                if self.editor.fix():
+                    if not self.editor.commit():
+                        success = False
+                        self.detailedresults += "KVEditor commit to " + \
+                            self.path + " was not successful\n"
+                else:
+                    success = False
+                    self.detailedresults += "KVEditor fix of " + self.path + \
+                        " was not successful\n"
                 resetsecon(self.path)
-                return True
-            else:
-                return True
-###############################################################################
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.detailedresults += "Could not set permissions on " + \
+                        self.path + "\n"
+                    success = False
+        return success
 
     def fixSolaris1(self):
         sfc = {"ndd -set /dev/tcp tcp_rev_src_routes": "0",
@@ -844,7 +865,6 @@ correctly\n"
                     self.logger.log(LogPriority.DEBUG, [error])
                     success = False
         return success
-###############################################################################
 
     def fixSolaris2(self):
         '''Solaris specific fix method 2 that runs routeadm commands
@@ -885,13 +905,12 @@ correctly\n"
                          'id': myid}
                 self.statechglogger.recordchgevent(myid, event)
         return success
-###############################################################################
 
     def fixFreebsd(self):
-        if not checkPerms(self.path, [0, 0, 420], self.logger):
+        if not checkPerms(self.path, [0, 0, 0o644], self.logger):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.path, [0, 0, 420], self.logger,
+            if not setPerms(self.path, [0, 0, 0o644], self.logger,
                             self.statechglogger, myid):
                 return False
         if self.networkTuning1.getcurrvalue() or \
@@ -905,7 +924,7 @@ correctly\n"
                 elif not self.editor.commit():
                     return False
                 os.chown(self.path, 0, 0)
-                os.chmod(self.path, 420)
+                os.chmod(self.path, 0o644)
                 resetsecon(self.path)
                 cmd = ["/usr/sbin/service", "sysctl", "restart"]
                 self.ch.executeCommand(cmd)

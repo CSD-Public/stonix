@@ -34,6 +34,7 @@
 @change: 2015/12/14 ekkehard implemented lazy initialization
 @change: 2016/01/19 ekkehard bug fixes
 @change: 2016/01/26 ekkehard real bug fixes
+@change: 2016/01/26 ekkehard add property database lookup
 '''
 import os
 import re
@@ -41,7 +42,6 @@ import traceback
 import types
 from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
-from sre_constants import SUCCESS
 
 
 class MacInfoLANL():
@@ -66,9 +66,9 @@ class MacInfoLANL():
 # Make sure we have the full path for all commands
         self.logdispatch = logdispatcher
         self.ch = CommandHelper(self.logdispatch)
+        self.LANLAssetTagFromProperty = ""
         self.LANLAssetTagNVRAM = ""
         self.LANLAssetTagFilesystem = ""
-        self.LANLAssetTagPropertyDB = ""
         self.macAddressDictionary = {}
         self.accuracyDictionary = {}
         self.dictionary = {}
@@ -91,16 +91,16 @@ class MacInfoLANL():
         self.macAddress = ""
         self.ipAddress = ""
         self.ipAddressActive = []
-        self.serialNumber = ""
         self.ldapnotworking = False
+        self.serialnumber = ""
 # Set all initialization boolean
+        self.initializeLANLAssetTagFromPropertyBoolean = False
         self.initializeLANLAssetTagNVRAMBoolean = False
         self.initializeLANLAssetTagFilesystemBoolean = False
         self.initializeLANLImagedFilesystemBoolean = False
         self.initializeDiskUtilityInfoBoolean = False
         self.initializePopulateFromMacBoolean = False
         self.initializeAccuracyDeterminationBoolean = False
-        self.initializeSerialNumberBoolean = False
 # Make sure we have the full path for all commands
         jamflocation = "/usr/local/bin/jamf"
         if not os.path.exists(jamflocation):
@@ -111,9 +111,9 @@ class MacInfoLANL():
         self.jamf = jamflocation
         self.nvram = "/usr/sbin/nvram"
         self.ldap = "/usr/bin/ldapsearch"
-        self.serialNumberCommand = "/usr/sbin/system_profiler SPHardwareDataType | grep 'Serial Number (system)' | awk '{print $NF}'"
         self.lanl_property_file = "/Library/Preferences/lanl_property_number.txt"
         self.lanl_imaged_files = ["/etc/dds.txt", "/var/log/dds.log"]
+        self.lanl_property_web_service = "http://int.lanl.gov/liveupdate/stom/getPropertyNumber.php?serial"
 # Reset messages
         self.messageReset()
     
@@ -284,6 +284,15 @@ class MacInfoLANL():
         self.initializePopulateFromMac()
         return self.ipAddress
 
+    def getLANLAssetTagFromProperty(self):
+        '''
+        get the AssetTag from the LANL property Database
+        @author: ekkehard
+        @return: string
+        '''
+        self.initializeLANLAssetTagFromProperty()
+        return str(self.LANLAssetTagFromProperty)
+
     def getLANLAssetTagNVRAM(self):
         '''
         get the asset_id set in NVRAM determined
@@ -310,15 +319,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLImagedFilesystem()
         return str(self.LANLAssetTagFilesystem)
-
-    def getSerialNumber(self):
-        '''
-        get the SerialNumber
-        @author: ekkehard
-        @return: string
-        '''
-        self.initializeSerialNumber()
-        return self.serialNumber
 
     def getSuggestedAssetTag(self):
         '''
@@ -768,6 +768,10 @@ class MacInfoLANL():
             if not(self.getLANLAssetTagNVRAM() == "") and not(self.getLANLAssetTagFilesystem() == ""):
                 self.updateAssetTagAccuracy(self.getLANLAssetTagFilesystem() == self.getLANLAssetTagNVRAM(),
                                             1000, "LANLAssetTagNVRAM is not equal to LANLAssetTagFilesystem;")
+# AssetTag for property database not equal to blank is worth 10000
+            if not(self.getLANLAssetTagFromProperty() == ""):
+                self.updateAssetTagAccuracy(self.getLANLAssetTagFromProperty() <> "",
+                                                10000, "LANLAssetTagFromProperty is blank;")
             self.gotoFirstItemLDAP()
 # Build a dictionary based upon assetTag. If all is right there should only be one.
             while not(self.getCurrentItemLDAP() == None):
@@ -919,6 +923,145 @@ class MacInfoLANL():
         self.dictionaryItem = self.dictionary[key]
         return self.dictionaryItem
 
+    def initializeLANLAssetTagFilesystem(self, forceInitializtion = False):
+        '''
+        get assetTag from the file system
+        @author: ekkehard
+        @return: string
+        '''
+        if forceInitializtion:
+            self.initializeLANLAssetTagFilesystemBoolean = False
+        if not self.initializeLANLAssetTagFilesystemBoolean:
+            self.initializeLANLAssetTagFilesystemBoolean = True
+            self.LANLAssetTagFilesystem = ""
+            if os.path.exists(self.lanl_property_file):
+                try:
+                    fileToOpen = open(self.lanl_property_file, "r")
+                except Exception, err:
+                    msg = "Cannot open: " + self.lanl_property_file + \
+                        "\nException: " + str(err)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+                else:
+                    try:
+                        for line in fileToOpen:
+                            if re.match("[0-9]+", line.strip()):
+                                self.LANLAssetTagFilesystem = line.strip()
+                                msg = self.lanl_property_file + \
+                                " property number = " + self.LANLAssetTagFilesystem
+                                self.logdispatch.log(LogPriority.DEBUG, msg)
+                                break
+                            else :
+                                self.LANLAssetTagFilesystem = ""
+                    except Exception, err:
+                        msg = str(err) + " - Can't find a line in the file: " + \
+                        self.LANLAssetTagFilesystem
+                        self.logdispatch.log(LogPriority.DEBUG, msg)
+                        self.LANLAssetTagFilesystem = ""
+                    else:
+                        fileToOpen.close()
+        return self.LANLAssetTagFilesystem
+
+    def initializeLANLAssetTagNVRAM(self, forceInitializtion = False):
+        '''
+        get assetTag from NVRAM
+        @author: ekkehard
+        @return: boolean - True
+        '''
+        success = True
+        try:
+            if forceInitializtion:
+                self.initializeLANLAssetTagNVRAMBoolean = False
+            if not self.initializeLANLAssetTagNVRAMBoolean:
+                self.initializeLANLAssetTagNVRAMBoolean = True
+                self.LANLAssetTagNVRAM = ""
+                command = [self.nvram, "asset_id"]
+                self.ch.executeCommand(command)
+                output = self.ch.getOutput()
+                if len(output) >= 1:
+                    self.LANLAssetTagNVRAM = str(output[-1].strip().split("\t")[1])
+                else:
+                    self.LANLAssetTagNVRAM = ""
+            else:
+                success = True
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            msg = traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, msg)
+        return success
+
+    def initializeLANLAssetTagFromProperty(self, forceInitializtion = False):
+        '''
+        get assetTag from NVRAM
+        @author: ekkehard
+        @return: boolean - True
+        '''
+        success = True
+        try:
+            if forceInitializtion:
+                self.initializeLANLAssetTagFromPropertyBoolean = False
+            if not self.initializeLANLAssetTagFromPropertyBoolean:
+                self.initializeLANLAssetTagFromPropertyBoolean = True
+                self.LANLLANLAssetTagFromProperty = ""
+                self.serialnumber = ''
+                command = "/usr/sbin/system_profiler SPHardwareDataType | awk '/Serial/ {print $4}'"
+                self.ch.executeCommand(command)
+                errorcode = self.ch.getError()
+                output = self.ch.getOutput()
+                msg = "Error:" + str(errorcode) + "; output:" + str(output) + "; command:" + str(command)
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                if len(output) >= 1:
+                    self.serialnumber = output[0].strip()
+                if self.serialnumber <> "":
+                    command = "/usr/bin/curl " + self.lanl_property_web_service + "=" + str(self.serialnumber)
+                    self.ch.executeCommand(command)
+                    errorcode = self.ch.getError()
+                    output = self.ch.getOutput()
+                    if len(output) >= 1:
+                        self.LANLAssetTagFromProperty = output[0].strip()
+            else:
+                success = True
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            msg = traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, msg)
+        return success
+            
+
+    def initializeLANLImagedFilesystem(self, forceInitializtion = False):
+        '''
+        get imaged info from the file system
+        @author: ekkehard
+        @return: string
+        '''
+        if forceInitializtion:
+            self.initializeLANLImagedFilesystemBoolean = False
+        if not self.initializeLANLImagedFilesystemBoolean:
+            self.initializeLANLImagedFilesystemBoolean = True
+            self.LANLImaged = "Not LANL Configured"   
+            for myfile in self.lanl_imaged_files:
+            
+                try:
+                    fileToOpen = open(myfile, "r")
+                except Exception, err:
+                    msg = "Cannot open: " + myfile + \
+                        " - Exception: " + str(err)
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+                else:
+                    try :
+                        for line in fileToOpen:
+                            if re.match("^Imaged", line.strip()):
+                                self.LANLImaged = line.strip()
+                                break                            
+                    except Exception, err:
+                        msg = "Can't find a line in the file to grep in "+ myfile + \
+                            " - Exception: " + str(err)
+                        self.logdispatch.log(LogPriority.DEBUG, msg)
+                    else:
+                        fileToOpen.close()
+        return self.LANLImaged
+
     def initializeDiskUtilityInfo(self, forceInitializtion = False):
         '''
         get ComputerName, HostName, LocalHostName of the current computer
@@ -991,106 +1134,6 @@ class MacInfoLANL():
                 msg = traceback.format_exc() + " - " + str(errorcode) + " - " + str(output)
                 self.logdispatch.log(LogPriority.ERROR, msg)
         return success
-
-    def initializeLANLAssetTagFilesystem(self, forceInitializtion = False):
-        '''
-        get assetTag from the file system
-        @author: ekkehard
-        @return: string
-        '''
-        if forceInitializtion:
-            self.initializeLANLAssetTagFilesystemBoolean = False
-        if not self.initializeLANLAssetTagFilesystemBoolean:
-            self.initializeLANLAssetTagFilesystemBoolean = True
-            self.LANLAssetTagFilesystem = ""
-            if os.path.exists(self.lanl_property_file):
-                try:
-                    fileToOpen = open(self.lanl_property_file, "r")
-                except Exception, err:
-                    msg = "Cannot open: " + self.lanl_property_file + \
-                        "\nException: " + str(err)
-                    self.logdispatch.log(LogPriority.DEBUG, msg)
-                else:
-                    try:
-                        for line in fileToOpen:
-                            if re.match("[0-9]+", line.strip()):
-                                self.LANLAssetTagFilesystem = line.strip()
-                                msg = self.lanl_property_file + \
-                                " property number = " + self.LANLAssetTagFilesystem
-                                self.logdispatch.log(LogPriority.DEBUG, msg)
-                                break
-                            else :
-                                self.LANLAssetTagFilesystem = ""
-                    except Exception, err:
-                        msg = str(err) + " - Can't find a line in the file: " + \
-                        self.LANLAssetTagFilesystem
-                        self.logdispatch.log(LogPriority.DEBUG, msg)
-                        self.LANLAssetTagFilesystem = ""
-                    else:
-                        fileToOpen.close()
-        return self.LANLAssetTagFilesystem
-
-    def initializeLANLAssetTagNVRAM(self, forceInitializtion = False):
-        '''
-        get assetTag from NVRAM
-        @author: ekkehard
-        @return: boolean - True
-        '''
-        success = True
-        try:
-            if forceInitializtion:
-                self.initializeLANLAssetTagNVRAMBoolean = False
-            if not self.initializeLANLAssetTagNVRAMBoolean:
-                self.initializeLANLAssetTagNVRAMBoolean = True
-                self.LANLAssetTagNVRAM = ""
-                command = [self.nvram, "asset_id"]
-                self.ch.executeCommand(command)
-                output = self.ch.getOutput()
-                if len(output) >= 1:
-                    self.LANLAssetTagNVRAM = str(output[-1].strip().split("\t")[1])
-                else:
-                    self.LANLAssetTagNVRAM = ""
-            else:
-                success = True
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            msg = traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, msg)
-        return success
-
-    def initializeLANLImagedFilesystem(self, forceInitializtion = False):
-        '''
-        get imaged info from the file system
-        @author: ekkehard
-        @return: string
-        '''
-        if forceInitializtion:
-            self.initializeLANLImagedFilesystemBoolean = False
-        if not self.initializeLANLImagedFilesystemBoolean:
-            self.initializeLANLImagedFilesystemBoolean = True
-            self.LANLImaged = "Not LANL Configured"   
-            for myfile in self.lanl_imaged_files:
-            
-                try:
-                    fileToOpen = open(myfile, "r")
-                except Exception, err:
-                    msg = "Cannot open: " + myfile + \
-                        " - Exception: " + str(err)
-                    self.logdispatch.log(LogPriority.DEBUG, msg)
-                else:
-                    try :
-                        for line in fileToOpen:
-                            if re.match("^Imaged", line.strip()):
-                                self.LANLImaged = line.strip()
-                                break                            
-                    except Exception, err:
-                        msg = "Can't find a line in the file to grep in "+ myfile + \
-                            " - Exception: " + str(err)
-                        self.logdispatch.log(LogPriority.DEBUG, msg)
-                    else:
-                        fileToOpen.close()
-        return self.LANLImaged
     
     def initializePopulateFromMac(self, forceInitializtion = False):
         '''
@@ -1104,7 +1147,6 @@ class MacInfoLANL():
         if forceInitializtion:
             self.initializePopulateFromMacBoolean = False
         if not self.initializePopulateFromMacBoolean:
-            self.initializePopulateFromMacBoolean= True
             try:
                 macAddress = ""
                 hardwarePort = ""
@@ -1183,7 +1225,7 @@ class MacInfoLANL():
             if not(self.computerNameDiskUtilityHostName == ""):
                 self.populateDataFromLDAP("ComputerName", 100, "cn", self.computerNameDiskUtilityHostName,
                                           "", "")
-    # add entries from property number in LANLAssetTagNVRAM
+# add entries from property number in LANLAssetTagNVRAM
             if not(self.getLANLAssetTagNVRAM() == "")  and not(int(self.getLANLAssetTagNVRAM()) == 0):
                 if self.getNumberOfLDAPEntries() > 0:
                     weight = 0
@@ -1191,7 +1233,7 @@ class MacInfoLANL():
                     weight = 100
                 self.populateDataFromLDAP("NVRAM", weight, "lanlPN", self.getLANLAssetTagNVRAM(),
                                           "", "")
-    # add entries from property number in LANLAssetTagNVRAM
+# add entries from property number in LANLAssetTagNVRAM
             if not(self.getLANLAssetTagFilesystem() == "") and not(int(self.getLANLAssetTagFilesystem()) == 0):
                 if self.getNumberOfLDAPEntries() > 0:
                     weight = 0
@@ -1204,28 +1246,6 @@ class MacInfoLANL():
                 str(self.getLANLAssetTagFilesystem())
                 self.logdispatch.log(LogPriority.DEBUG, msg)
             self.initializePopulateFromMacBoolean = True
-        return success
-
-    def initializeSerialNumber(self, forceInitializtion = False):
-        success = True
-        if forceInitializtion:
-            self.initializeSerialNumberBoolean = False
-        if not self.initializeSerialNumberBoolean:
-            self.initializeSerialNumberBoolean = True
-            try:
-                serialNumber = ""
-# Get Serial Number
-                command = self.serialNumberCommand
-                self.ch.executeCommand(command)
-                output = self.ch.getOutput()
-                outputstring = self.ch.getOutputString()
-                serialNumber = outputstring
-                self.serialNumber = serialNumber
-            except Exception, err:
-                success = False
-                msg = str(err) + " - " + str(traceback.format_exc())
-                self.logdispatch.log(LogPriority.ERROR, msg)
-                self.serialNumber = ""
         return success
 
     def populateDataFromLDAP(self, tag, weightValue, addressType, address, hardwarePort, device,
@@ -1340,6 +1360,7 @@ class MacInfoLANL():
     def report(self):
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
+        self.initializeLANLAssetTagFromProperty()
         self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
@@ -1371,6 +1392,7 @@ class MacInfoLANL():
         msg = ""
         self.messageAppend(msg)
         self.reportLDAP()
+        self.reportProperty()
         return self.messageGet()
 
     def reportAssetValues(self):
@@ -1397,6 +1419,8 @@ class MacInfoLANL():
         msg = "LANLAssetTagNVRAM=" + self.getLANLAssetTagNVRAM() + ";"
         self.messageAppend(msg)
         msg = "LANLAssetTagFilesystem=" + self.getLANLAssetTagFilesystem() + ";"
+        self.messageAppend(msg)
+        msg = "LANLAssetTagFromProperty=" + self.getLANLAssetTagFromProperty() + ";"
         self.messageAppend(msg)
         return self.messageGet()
 
@@ -1439,32 +1463,6 @@ class MacInfoLANL():
             self.gotoNextItemLDAP()
         return self.messageGet()
 
-    def updateAssetTagAccuracy(self, condition, point, message, reset=False):
-        '''
-        set assetTag accuracy.
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: real
-        @note: None
-        '''
-        if reset:
-            self.assetTagAccuracyLevelWhy = ""
-            self.assetTagAccuracyLevelTotal = 0
-            self.assetTagAccuracyLevelMax = 0
-            self.assetTagAccuracyLevel = 0
-        if condition:
-            self.assetTagAccuracyLevelTotal = self.assetTagAccuracyLevelTotal + point
-        else:
-            self.assetTagAccuracyLevelWhy = (self.assetTagAccuracyLevelWhy + " " + message).strip()
-        self.assetTagAccuracyLevelMax = self.assetTagAccuracyLevelMax + point
-        if self.assetTagAccuracyLevelMax > 0:
-            percentagefloat = float(self.assetTagAccuracyLevelTotal) / float(self.assetTagAccuracyLevelMax)
-            percentagefloat = percentagefloat * 100.0
-            self.assetTagAccuracyLevel = int(percentagefloat)
-        else:
-            self.assetTagAccuracyLevel = 0
-        return self.assetTagAccuracyLevel
-
     def updateComputerNameAccuracy(self, condition, point, message, reset=False):
         '''
         set ComputerName accuracy.
@@ -1496,6 +1494,32 @@ class MacInfoLANL():
         else:
             self.computerNameAccuracyLevel = 0
         return self.computerNameAccuracyLevel
+
+    def updateAssetTagAccuracy(self, condition, point, message, reset=False):
+        '''
+        set assetTag accuracy.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: real
+        @note: None
+        '''
+        if reset:
+            self.assetTagAccuracyLevelWhy = ""
+            self.assetTagAccuracyLevelTotal = 0
+            self.assetTagAccuracyLevelMax = 0
+            self.assetTagAccuracyLevel = 0
+        if condition:
+            self.assetTagAccuracyLevelTotal = self.assetTagAccuracyLevelTotal + point
+        else:
+            self.assetTagAccuracyLevelWhy = (self.assetTagAccuracyLevelWhy + " " + message).strip()
+        self.assetTagAccuracyLevelMax = self.assetTagAccuracyLevelMax + point
+        if self.assetTagAccuracyLevelMax > 0:
+            percentagefloat = float(self.assetTagAccuracyLevelTotal) / float(self.assetTagAccuracyLevelMax)
+            percentagefloat = percentagefloat * 100.0
+            self.assetTagAccuracyLevel = int(percentagefloat)
+        else:
+            self.assetTagAccuracyLevel = 0
+        return self.assetTagAccuracyLevel
 
     def updateEndUserNameAccuracy(self, condition, point, message, reset=False):
         '''
@@ -1529,6 +1553,16 @@ class MacInfoLANL():
             self.endUserNameAccuracyLevel = 0
         return self.endUserNameAccuracyLevel
 
+    def messageGet(self):
+        '''
+        get the formatted message string.
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: string
+        @note: None
+        '''
+        return self.msg
+
     def messageAppend(self, pMessage=""):
         '''
         append and format message to the message string.
@@ -1561,16 +1595,6 @@ class MacInfoLANL():
                             "type " + str(types.StringType) + \
                             " or type " + str(types.ListType) + \
                             " as expected!")
-        return self.msg
-
-    def messageGet(self):
-        '''
-        get the formatted message string.
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: string
-        @note: None
-        '''
         return self.msg
 
     def messageReset(self):

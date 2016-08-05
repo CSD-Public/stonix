@@ -80,7 +80,7 @@ class VerifySysFilePerms(Rule):
                                              "10.4", "10.5", "10.6", "10.7",
                                              "10.8"]}]
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         self.findsysvol = '/usr/sbin/bless --info --getBoot'
         self.hasrun = False

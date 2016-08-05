@@ -91,16 +91,16 @@ CENTRALLOGHOST = 'winlog.lanl.gov'
 # You may edit the text of the warning banner here to reflect your particular
 # site
 WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
-"This is a Department of Energy (DOE) computer system. DOE computer\n" + \
-"systems are provided for the processing of official U.S. Government\n" + \
-"information only. All data contained within DOE computer systems is\n" + \
-"owned by the DOE, and may be audited, intercepted, recorded, read,\n" + \
-"copied, or captured in any manner and disclosed in any manner, by\n" + \
-"authorized personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM.\n" + \
-"System personnel may disclose any potential evidence of crime found on\n" + \
-"DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY\n" + \
-"ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\n" + \
-"AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\n" + \
+"This is a Department of Energy (DOE) computer system. DOE computer " + \
+"systems are provided for the processing of official U.S. Government " + \
+"information only. All data contained within DOE computer systems is " + \
+"owned by the DOE, and may be audited, intercepted, recorded, read, " + \
+"copied, or captured in any manner and disclosed in any manner, by " + \
+"authorized personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM. " + \
+"System personnel may disclose any potential evidence of crime found on " + \
+"DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY " + \
+"ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS " + \
+"AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and " + \
 "DISCLOSURE OF COMPUTER ACTIVITY.\n\n" + \
 "**WARNING**WARNING**WARNING**WARNING**WARNING**"
 
@@ -148,7 +148,8 @@ PROXYDOMAIN = "lanl.gov"
 DNS = "128.165.4.4 128.165.4.33"
 
 # Specify a subnet to allow services access to in /etc/hosts.allow
-ALLOWNET = '128.165.0.0/16'
+# use format: xxx.xxx.0.0/16
+ALLOWNETS = ['128.165.0.0/16']
 
 # Specify a subnet to allow in xinetd.conf
 XINETDALLOW = '128.165.0.0/16'
@@ -314,6 +315,42 @@ LANLLOGROTATE = "700.lanl.logrotate"
 
 # The following should be system accounts which should not be disabled by DisableInactiveAccounts
 EXCLUDEACCOUNTS = ["jss-server-account", "puppet"]
+
+# The following list is used by AuditFirefoxUsage(84). It lists domains that
+# are approved for browsing by the root user.
+LOCALDOMAINS = ["127.0.0.1", "localhost", "lanl.gov"]
+
+# these options will be set in /etc/dhcp/dhclient.conf
+# a value of 'request' will cause the client to request that
+# option's configuration from the dhcp server. a value of
+# 'supersede' will cause the client to use the locally-defined
+# value in the DHCPSup dictionary, defined here in localize.py
+# below are the request/supersede settings used at LANL. do not
+# change, unless you have an exception or deviation
+DHCPDict = {'subnet-mask': 'request',
+            'time-offset': 'supersede',
+            'routers': 'request',
+            'domain-name': 'supersede',
+            'domain-name-servers': 'supersede',
+            'nis-domain': 'supersede',
+            'nis-servers': 'supersede',
+            'ntp-servers': 'supersede'}
+
+# these options will be used whenever a value of
+# 'supersede' is specified for one of the options in
+# DCHPDict. Change these to reflect your organization's
+# actual servers/domains/settings
+# change the 'changeme' values if you choose to supersede
+# them in the DHCPDict dictionary, above!
+DHCPSup = {'subnet-mask': 'changeme',
+           'time-offset': '-21600',
+           'routers': 'changeme',
+           'domain-name': '"lanl.gov"',
+           'domain-name-servers': '128.165.4.4, 128.165.4.33',
+           'nis-domain': '""',
+           'nis-servers': '""',
+           'ntp-servers': '"ntp.lanl.gov"'}
+
 
 # LANL root certificate
 ROOTCERT = """-----BEGIN CERTIFICATE-----
