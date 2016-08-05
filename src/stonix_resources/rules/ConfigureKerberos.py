@@ -37,7 +37,7 @@ dictionary
 from __future__ import absolute_import
 import os
 import traceback
-from ..ruleKVEditor import RuleKVEditor
+from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
@@ -47,7 +47,7 @@ from ..stonixutilityfunctions import iterate
 from ..localize import MACKRB5, LINUXKRB5
 
 
-class ConfigureKerberos(RuleKVEditor):
+class ConfigureKerberos(Rule):
     '''
     @author: ekkehard j. koch
     '''
@@ -55,7 +55,7 @@ class ConfigureKerberos(RuleKVEditor):
 ###############################################################################
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logdispatcher,
+        Rule.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 255
         self.rulename = 'ConfigureKerberos'
@@ -131,7 +131,12 @@ class ConfigureKerberos(RuleKVEditor):
                 self.ph = Pkghelper(self.logdispatch, self.environ)
         self.filepathToConfigure = []
         for filelabel, fileinfo in sorted(self.files.items()):
-            self.filepathToConfigure.append(fileinfo["path"])
+            if fileinfo["remove"]:
+                msg = "Remove if present " + str(fileinfo["path"])
+            else:
+                
+                msg = "Add or update if needed " + str(fileinfo["path"])
+            self.filepathToConfigure.append(msg)
             self.fh.addFile(filelabel,
                             fileinfo["path"],
                             fileinfo["remove"],
@@ -144,7 +149,7 @@ class ConfigureKerberos(RuleKVEditor):
         # Configuration item instantiation
         datatype = "bool"
         key = "CONFIGUREFILES"
-        instructions = "When Enabled Add/Remove/Update these files: " + \
+        instructions = "When Enabled will fix these files: " + \
             str(self.filepathToConfigure)
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
