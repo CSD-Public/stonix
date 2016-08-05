@@ -74,6 +74,17 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
+        self.initobjs()
+
+    def initobjs(self):
+        '''
+        initialize helper objects
+        @author: Breen Malmberg
+        '''
+
+        self.ch = CommandHelper(self.logger)
+        self.pkg = Pkghelper(self.logger, self.environ)
+
     def report(self):
         '''
         Run report actions for EnablePAEandNX
@@ -91,10 +102,6 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         package = ""
 
         try:
-
-            # set up objects
-            self.ch = CommandHelper(self.logger)
-            self.pkg = Pkghelper(self.logger, self.environ)
 
             # get value of other variables to be used in this method
             systemOS = self.getSystemOS()
