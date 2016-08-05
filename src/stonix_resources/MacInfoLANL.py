@@ -606,7 +606,28 @@ class MacInfoLANL():
             self.initializeDiskUtilityInfo(True)
         return success
 
-    def setInternalPropertyNumber(self, propertyNumber=False):
+    def setInternalComputerName(self, computerName=""):
+        '''
+        set the internal computerName, hostName and localHostName, as well as confidence at 100%
+        @param: computerName - FQDN
+        @author: ekkehard
+        '''
+        success = False
+        #####
+# Make sure this is a stripped string
+        computerName = str(computerName).strip()
+# Validate that this is FQDN
+        if re.match("(?=^.{1,254}$)(^(?:(?!\d+\.|-)[a-zA-Z0-9_\-]{1,63}(?<!-)\.)+(?:[a-zA-Z]{2,})$)",\
+                    computerName):
+            computerNameList = computerName.split(".")
+            self.computerName = computerName
+            self.hostName = computerName
+            self.localHostname = computerNameList[0]
+            self.computerNameAccuracyLevel = 100
+            success = True
+        return success
+
+    def setInternalPropertyNumber(self, propertyNumber=""):
         '''
         set the internal class property number, as well as confidence at 100%
         @param: propertyNumber - seven digit property number
