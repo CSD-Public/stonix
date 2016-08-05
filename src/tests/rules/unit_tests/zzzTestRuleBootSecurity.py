@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2016.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -22,33 +22,32 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule EnablePAEandNX
+This is a Unit Test for Rule BootSecurity
 
-@author: Breen Malmberg
-@change: 5/9/2016 Original Implementation
+@author: ekkehard j. koch
+@change: 2016/08/05 Original Implementation
 '''
 from __future__ import absolute_import
-import sys
 import unittest
+import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.EnablePAEandNX import EnablePAEandNX
+from src.stonix_resources.rules.BootSecurity import BootSecurity
 
 
-class zzzTestRuleEnablePAEandNX(RuleTest):
+class zzzTestRuleBootSecurity(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = EnablePAEandNX(self.config,
-                                  self.environ,
-                                  self.logdispatch,
-                                  self.statechglogger)
+        self.rule = BootSecurity(self.config,
+                                 self.environ,
+                                 self.logdispatch,
+                                 self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.rule.ci.updatecurrvalue(True)
         self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
@@ -64,53 +63,9 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-
         success = True
+
         return success
-
-    def test_checkPAE(self):
-        '''
-        test for correct return values for checkPAE method, under multiple conditions
-
-        @author: Breen Malmberg
-        '''
-
-        self.rule.initobjs()
-
-        self.assertFalse(self.rule.checkPAE(""), "checkPAE should return False if no package is specified")
-        self.assertFalse(self.rule.checkPAE([]), "checkPAE should return False if package specified is not of type: string")
-        self.assertFalse(self.rule.checkPAE(1), "checkPAE should return False if package specified is not of type: string")
-        self.assertFalse(self.rule.checkPAE({}), "checkPAE should return False if package specified is not of type: string")
-        self.assertFalse(self.rule.checkPAE(), "checkPAE should return False if package specified is not of type: string")
-
-    def test_getSystemARCH(self):
-        '''
-        test the return values for getSystemARCH method
-
-        @author: Breen Malmberg
-        '''
-
-        self.assertFalse(self.rule.getSystemARCH() not in [32, 64], "The return value of getSystemARCH should always be either 32 or 64")
-        self.assertTrue(self.rule.getSystemARCH() in [32, 64], "The return value of getSystemARCH should always be either 32 or 64")
-
-    def test_getSystemOS(self):
-        '''
-        test return values of getSystemOS method
-
-        @author: Breen Malmberg
-        '''
-
-        self.assertFalse(self.rule.getSystemOS() == "", "getSystemOS should never return a blank string")
-
-    def test_checkNX(self):
-        '''
-        test returns for checkNX method
-
-        @author: Breen Malmberg
-        '''
-
-        # stub
-        pass
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -121,9 +76,9 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -136,7 +91,7 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -149,11 +104,11 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'Test.testName']
+    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
