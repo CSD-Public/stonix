@@ -36,6 +36,7 @@
 @change: 2016/01/26 ekkehard real bug fixes
 @change: 2016/01/26 ekkehard add property database lookup
 @change: 2016/08/05 ekkehard improve setComputerInfo with /usr/local/bin/jamf setComputerName -name "computerName"
+@change: 2016/08/05 ekkehard add setInternalComputerName
 '''
 import os
 import re
@@ -1032,7 +1033,7 @@ class MacInfoLANL():
 
     def initializeLANLAssetTagFromProperty(self, forceInitializtion = False):
         '''
-        get assetTag from NVRAM
+        get assetTag from Property Database
         @author: ekkehard
         @return: boolean - True
         '''
