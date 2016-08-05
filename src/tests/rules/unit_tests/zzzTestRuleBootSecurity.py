@@ -38,7 +38,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.BootSecurity import BootSecurity
 
 
-class zzzTestRuleBlockSystemAccounts(RuleTest):
+class zzzTestRuleBootSecurity(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
