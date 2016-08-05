@@ -113,7 +113,8 @@ class MacInfoLANL():
         self.jamf = jamflocation
         self.nvram = "/usr/sbin/nvram"
         self.ldap = "/usr/bin/ldapsearch"
-        self.lanl_property_file = "/Library/Preferences/lanl_property_number.txt"
+        self.lanl_property_file = "/Library/Preferences/gov.lanl.asset.tag.txt"
+        self.lanl_property_file_old = "/Library/Preferences/lanl_property_number.txt"
         self.lanl_imaged_files = ["/etc/dds.txt", "/var/log/dds.log"]
         self.lanl_property_web_service = "http://int.lanl.gov/liveupdate/stom/getPropertyNumber.php?serial"
 # Reset messages
@@ -321,6 +322,15 @@ class MacInfoLANL():
         '''
         self.initializeLANLImagedFilesystem()
         return str(self.LANLAssetTagFilesystem)
+
+    def getSerialNumber(self):
+        '''
+        get the serial number
+        @author: ekkehard
+        @return: string
+        '''
+        self.initializeLANLAssetTagFromProperty()
+        return str(self.serialnumber)
 
     def getSuggestedAssetTag(self):
         '''
@@ -547,7 +557,7 @@ class MacInfoLANL():
             hostname = self.getSuggestedHostName()
             localHostName = self.getSuggestedLocalHostName()
             if self.computerNameAccuracyLevel == 100:
-                if os.path(self.jamf):
+                if os.path.exists(self.jamf):
                     if not(self.computerNameDiskUtility == computerName) \
                     or not(self.hostNameDiskUtility == hostname) \
                     or not(self.localHostnameDiskUtility == localHostName):
@@ -651,6 +661,8 @@ class MacInfoLANL():
         '''
         try:
             success = True
+            errorcode = None
+            output = None
             assetTag = self.getSuggestedAssetTag()
             endUser = self.getSuggestedEndUsername()
             if self.assetTagAccuracyLevel == 100 and self.endUserNameAccuracyLevel == 100:
@@ -975,6 +987,8 @@ class MacInfoLANL():
         if not self.initializeLANLAssetTagFilesystemBoolean:
             self.initializeLANLAssetTagFilesystemBoolean = True
             self.LANLAssetTagFilesystem = ""
+            if os.path.exists(self.lanl_property_file_old):
+                os.rename(self.lanl_property_file_old, self.lanl_property_file)
             if os.path.exists(self.lanl_property_file):
                 try:
                     fileToOpen = open(self.lanl_property_file, "r")
@@ -1502,6 +1516,23 @@ class MacInfoLANL():
                 msg = msg + " device=" + str(self.dictionaryItem["device"]) + ";"
             self.messageAppend(msg)
             self.gotoNextItemLDAP()
+        return self.messageGet()
+
+    def reportProperty(self):
+        '''
+        report values available via property
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: real
+        @note: None
+        '''
+        self.initializeLANLAssetTagFromProperty(False)
+        msg = "List Of Property Database Info:"
+        self.messageAppend(msg)
+        msg = " - LANLAssetTagFromProperty=" + str(self.getLANLAssetTagFromProperty()) + ";"
+        self.messageAppend(msg)
+        msg = " - SerialNumber=" + str(self.getSerialNumber()) + ";"
+        self.messageAppend(msg)
         return self.messageGet()
 
     def updateComputerNameAccuracy(self, condition, point, message, reset=False):
