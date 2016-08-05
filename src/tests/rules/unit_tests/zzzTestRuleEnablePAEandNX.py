@@ -75,6 +75,8 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @author: Breen Malmberg
         '''
 
+        self.rule.initobjs()
+
         self.assertFalse(self.rule.checkPAE(""), "checkPAE should return False if no package is specified")
         self.assertFalse(self.rule.checkPAE([]), "checkPAE should return False if package specified is not of type: string")
         self.assertFalse(self.rule.checkPAE(1), "checkPAE should return False if package specified is not of type: string")
