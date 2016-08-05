@@ -41,6 +41,7 @@ from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
 import traceback
 import os
+import re
 
 
 class SSHTimeout(Rule):
@@ -87,8 +88,12 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
             results = ""
             timeout = self.intCi.getcurrvalue()
             if self.environ.getostype() == "Mac OS X":
-                self.path = '/private/etc/ssh/sshd_config'
-                self.tpath = '/private/etc/ssh/sshd_config.tmp'
+                if re.search("10\.11\.*", self.environ.getosver()):
+                    self.path = '/private/etc/ssh/sshd_config'
+                    self.tpath = '/private/etc/ssh/sshd_config.tmp'
+                else:
+                    self.path = "/private/etc/sshd_config"
+                    self.tpath = "/private/etc/sshd_config.tmp"
             else:
                 self.path = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
