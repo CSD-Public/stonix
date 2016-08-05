@@ -35,6 +35,7 @@
 @change: 2016/01/19 ekkehard bug fixes
 @change: 2016/01/26 ekkehard real bug fixes
 @change: 2016/01/26 ekkehard add property database lookup
+@change: 2016/08/05 ekkehard improve setComputerInfo with /usr/local/bin/jamf setComputerName -name "computerName"
 '''
 import os
 import re
@@ -545,39 +546,57 @@ class MacInfoLANL():
             hostname = self.getSuggestedHostName()
             localHostName = self.getSuggestedLocalHostName()
             if self.computerNameAccuracyLevel == 100:
-                if not(self.computerNameDiskUtility == computerName):
-                    command = [self.scutil,"--set", "ComputerName", computerName]
-                    self.ch.executeCommand(command)
-                    errorcode = self.ch.getError()
-                    output = self.ch.getOutput()
-                    updatesWhereMade = True
-                    msg = " - ComputerName set to " + computerName
-                    self.messageAppend(msg)
+                if os.path(self.jamf):
+                    if not(self.computerNameDiskUtility == computerName) \
+                    or not(self.hostNameDiskUtility == hostname) \
+                    or not(self.localHostnameDiskUtility == localHostName):
+                        command = [self.jamf,"setComputerName", "-name", '"' +\
+                                   computerName + '"']
+                        self.ch.executeCommand(command)
+                        errorcode = self.ch.getError()
+                        output = self.ch.getOutput()
+                        updatesWhereMade = True
+                        msg = " - ComputerName, HostName, and LocalHostName set to [" +\
+                        computerName + ", " + hostname + ", " + localHostName + "]"
+                        self.messageAppend(msg)
+                    else:
+                        msg = " - ComputerName, HostName, and LocalHostName were already set to [" +\
+                        computerName + ", " + hostname + ", " + localHostName + "]"
+                        self.messageAppend(msg)
                 else:
-                    msg = " - ComputerName was alreday " + computerName
-                    self.messageAppend(msg)
-                if not(self.hostNameDiskUtility == hostname):
-                    command = [self.scutil,"--set", "HostName", hostname]
-                    self.ch.executeCommand(command)
-                    errorcode = self.ch.getError()
-                    output = self.ch.getOutput()
-                    updatesWhereMade = True
-                    msg = " - HostName set to " + hostname
-                    self.messageAppend(msg)
-                else:
-                    msg = " - HostName was alreday " + hostname
-                    self.messageAppend(msg)
-                if not(self.localHostnameDiskUtility == localHostName):
-                    command = [self.scutil,"--set", "LocalHostName", localHostName]
-                    errorcode = self.ch.getError()
-                    self.ch.executeCommand(command)
-                    output = self.ch.getOutput()
-                    updatesWhereMade = True
-                    msg = " - LocalHostName set to " + localHostName
-                    self.messageAppend(msg)
-                else:
-                    msg = " - LocalHostName was alreday " + localHostName
-                    self.messageAppend(msg)
+                    if not(self.computerNameDiskUtility == computerName):
+                        command = [self.scutil,"--set", "ComputerName", computerName]
+                        self.ch.executeCommand(command)
+                        errorcode = self.ch.getError()
+                        output = self.ch.getOutput()
+                        updatesWhereMade = True
+                        msg = " - ComputerName set to " + computerName
+                        self.messageAppend(msg)
+                    else:
+                        msg = " - ComputerName was alreday " + computerName
+                        self.messageAppend(msg)
+                    if not(self.hostNameDiskUtility == hostname):
+                        command = [self.scutil,"--set", "HostName", hostname]
+                        self.ch.executeCommand(command)
+                        errorcode = self.ch.getError()
+                        output = self.ch.getOutput()
+                        updatesWhereMade = True
+                        msg = " - HostName set to " + hostname
+                        self.messageAppend(msg)
+                    else:
+                        msg = " - HostName was alreday " + hostname
+                        self.messageAppend(msg)
+                    if not(self.localHostnameDiskUtility == localHostName):
+                        command = [self.scutil,"--set", "LocalHostName", localHostName]
+                        errorcode = self.ch.getError()
+                        self.ch.executeCommand(command)
+                        output = self.ch.getOutput()
+                        updatesWhereMade = True
+                        msg = " - LocalHostName set to " + localHostName
+                        self.messageAppend(msg)
+                    else:
+                        msg = " - LocalHostName was alreday " + localHostName
+                        self.messageAppend(msg)
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
