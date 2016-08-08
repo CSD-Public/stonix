@@ -105,12 +105,15 @@ class RestrictAccessToKernelMessageBuffer(Rule):
 
             self.ch.executeCommand(self.reportcommand)
             output = self.ch.getOutput()
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                self.detailedresults += "\nError while running command: " + str(self.reportcommand)
             for line in output:
-                if re.search("kernel.dmesg_restrict", line):
+                if re.search("kernel\.dmesg\_restrict", line):
                     kernelopt = True
                     sline = line.split('=')
                     if len(sline) > 1:
-                        if str(sline[1]) == '0':
+                        if str(sline[1]).strip() == '0':
                             self.compliant = False
                             self.detailedresults += "\nKernel message buffer is currently not restricted."
                     else:
