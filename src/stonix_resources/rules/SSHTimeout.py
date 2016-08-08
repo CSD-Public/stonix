@@ -88,7 +88,7 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
             results = ""
             timeout = self.intCi.getcurrvalue()
             if self.environ.getostype() == "Mac OS X":
-                if re.search("10\.11\.*", self.environ.getosver()):
+                if re.search("10\.11\.*|10\.12\.*", self.environ.getosver()):
                     self.path = '/private/etc/ssh/sshd_config'
                     self.tpath = '/private/etc/ssh/sshd_config.tmp'
                 else:
