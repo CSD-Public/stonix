@@ -93,6 +93,7 @@ class DisableRemoveableStorage(Rule):
         self.pkgremovedlist = []
         self.iditerator = 0
         self.created = False
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
 
     def report(self):
         '''
@@ -258,7 +259,6 @@ class DisableRemoveableStorage(Rule):
         self.detailedresults = ""
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
-        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
         self.cronfile = "/usr/lib/cron/tabs/root"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -734,7 +734,6 @@ if __name__ == '__main__':
                 if not writeFile(tmpfile, tempstring, self.logger):
                     success = False
                 else:
-                    os.rename(tmpfile, self.cronfile)
                     if not croncreated:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
@@ -743,6 +742,7 @@ if __name__ == '__main__':
                         self.statechglogger.recordchgevent(myid, event)
                         self.statechglogger.recordfilechange(self.cronfile,
                                                                      tmpfile, myid)
+                        os.rename(tmpfile, self.cronfile)
         if not os.path.exists(self.plistpath):
             createFile(self.plistpath, self.logger)
         self.iditerator += 1

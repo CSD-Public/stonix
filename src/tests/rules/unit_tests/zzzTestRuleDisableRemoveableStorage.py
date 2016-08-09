@@ -66,6 +66,7 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
