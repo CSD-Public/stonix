@@ -389,9 +389,7 @@ class NoCoreDumps(Rule):
         os.chown(path, perms[0], perms[1])
         os.chmod(path, perms[2])
         resetsecon(path)
-        if self.environ.getostype() == "Mac OS X":
-            cmd = "/usr/sbin/sysctl"
-        else:
+        if self.environ.getostype() != "Mac OS X":
             cmd = "/sbin/sysctl"
         retval = call([cmd, "-p"], stdout=None, stderr=None,
                                                                    shell=False)
