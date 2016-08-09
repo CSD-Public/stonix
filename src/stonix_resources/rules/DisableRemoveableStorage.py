@@ -258,7 +258,7 @@ class DisableRemoveableStorage(Rule):
         self.detailedresults = ""
         compliant = True
         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
-        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
         self.cronfile = "/usr/lib/cron/tabs/root"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -708,7 +708,7 @@ if __name__ == '__main__':
             createFile(self.cronfile, self.logger)
             croncreated = True
             self.iditerator += 1
-            myid = iterate(self.iditerator, self.logger)
+            myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
                      "filepath": self.cronfile}
             self.statechglogger.recordchgevent(myid, event)
