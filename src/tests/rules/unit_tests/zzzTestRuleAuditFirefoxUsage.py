@@ -54,7 +54,7 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
         self.ph = Pkghelper(self.logdispatch, self.environ)
         self.initMozDir = False
         self.moveMozDir = False
-        self.mozPath = "/root/.mozilla/firefox"
+        self.mozPath = "/root/.mozilla/firefox/profiles.ini"
 
     def tearDown(self):
         mozPath = self.mozPath
