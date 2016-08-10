@@ -811,10 +811,11 @@ if __name__ == '__main__':
             if not createFile(self.daemonpath, self.logger):
                 success = False
                 self.detailedresults += "Unable to create the disablestorage python file\n"
-        self.iditerator += 1
-        myid = iterate(self.iditerator, self.rulenumber)
-        event = {"eventtype": "creation",
-                 "filepath": self.daemonpath}
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.daemonpath}
         self.statechglogger.recordchgevent(myid, event)
         if os.path.exists(self.daemonpath):
             uid, gid = "", ""
