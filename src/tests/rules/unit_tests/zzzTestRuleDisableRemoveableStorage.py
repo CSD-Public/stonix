@@ -31,6 +31,7 @@ This is a Unit Test for Rule DisableRemoveableStorage
 from __future__ import absolute_import
 import unittest
 import sys
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
