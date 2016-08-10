@@ -57,6 +57,7 @@ class zzzTestRuleSystemAccounting(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.rule.ci.updatecurrvalue(True)
 
     def tearDown(self):
         pass
