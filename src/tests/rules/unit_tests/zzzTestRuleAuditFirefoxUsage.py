@@ -26,6 +26,7 @@ This is a Unit Test for Rule AuditFirefoxUsage
 
 @author: Eric Ball
 @change: 2016/05/06 eball Original implementation
+@change: 2016/08/01 eball Added conditional before running tests
 '''
 from __future__ import absolute_import
 import os
@@ -53,26 +54,47 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
         self.ph = Pkghelper(self.logdispatch, self.environ)
         self.initMozDir = False
         self.moveMozDir = False
+        self.mozPath = "/root/.mozilla/firefox"
 
     def tearDown(self):
-        if self.initMozDir:
-            shutil.rmtree("/root/.mozilla")
+        mozPath = self.mozPath
+        if self.initMozDir and os.path.exists(mozPath):
+            shutil.rmtree(mozPath)
         elif self.moveMozDir:
-            shutil.rmtree("/root/.mozilla")
-            os.rename("/root/.mozilla.stonixtmp", "/root/.mozilla")
+            if os.path.exists(mozPath):
+                shutil.rmtree(mozPath)
+            if os.path.exists(mozPath + ".stonixtmp"):
+                os.rename(mozPath + ".stonixtmp", mozPath)
 
     def runTest(self):
+        mozPath = self.mozPath
         if self.ph.check("firefox"):
             self.browser = "firefox"
             self.setConditionsForRule()
-            self.assertFalse(self.rule.report())
+            # setConditionsForRule will not work on a remote terminal. If the
+            # path doesn't exist, we will skip the test.
+            if os.path.exists(mozPath):
+                self.assertFalse(self.rule.report(), "Report was not false " +
+                                 "after test conditions were set")
+            else:
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     "Firefox directory was not created. " +
+                                     "Skipping test.")
         elif self.ph.check("iceweasel"):
             self.browser = "iceweasel"
             self.setConditionsForRule()
-            self.assertFalse(self.rule.report())
+            # setConditionsForRule will not work on a remote terminal. If the
+            # path doesn't exist, we will skip the test.
+            if os.path.exists(mozPath):
+                self.assertFalse(self.rule.report(), "Report was not false " +
+                                 "after test conditions were set")
+            else:
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     "Firefox directory was not created. " +
+                                     "Skipping test.")
         else:
-            debug = "Firefox not installed. Unit test will not make any " + \
-                "changes."
+            debug = "Firefox not installed. Unit test will not make " + \
+                "any changes."
             self.logdispatch.log(LogPriority.DEBUG, debug)
             return True
 
@@ -85,19 +107,20 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
         '''
         success = True
         browser = self.browser
+        mozPath = self.mozPath
 
-        if not os.path.exists("/root/.mozilla"):
+        if not os.path.exists(mozPath):
             self.ch.wait = False
             command = [browser, "google.com"]
             self.ch.executeCommand(command)
-            sleep(5)
+            sleep(15)
             self.initMozDir = True
         else:
             self.ch.wait = False
-            os.rename("/root/.mozilla", "/root/.mozilla.stonixtmp")
+            os.rename(mozPath, "/root/.mozilla.stonixtmp")
             command = [browser, "google.com"]
             self.ch.executeCommand(command)
-            sleep(10)
+            sleep(15)
             self.moveMozDir = True
 
         command = ["killall", "-q", "-u", "root", browser]
@@ -148,5 +171,4 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
