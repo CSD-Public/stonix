@@ -35,6 +35,7 @@ Install and configure warning banners, to be displayed at startup.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/05/11 breen complete re-write
+@change: 2016/08/10 eball Added "dbus-launch" to gsettings commands
 '''
 
 from __future__ import absolute_import
@@ -229,8 +230,8 @@ class InstallBanners(RuleKVEditor):
         self.dconfupdate = dconf + ' update'
         gsettings = '/usr/bin/gsettings'
         schema = 'org.gnome.login-screen'
-        self.gsettingsget = gsettings + ' get ' + schema + ' '
-        self.gsettingsset = gsettings + ' set ' + schema + ' '
+        self.gsettingsget = 'dbus-launch ' + gsettings + ' get ' + schema + ' '
+        self.gsettingsset = 'dbus-launch ' + gsettings + ' set ' + schema + ' '
 
     def setkde(self):
         '''
