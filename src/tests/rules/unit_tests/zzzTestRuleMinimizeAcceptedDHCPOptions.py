@@ -103,6 +103,9 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
+        dirname = os.path.dirname(self.rule.filepath)
+        if not os.path.exists(self.rule.filepath):
+            os.makedirs(dirname, 0755)
         f = open(self.rule.filepath, 'w')
         f.write('')
         f.close()
@@ -115,6 +118,9 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
+        dirname = os.path.dirname(self.rule.filepath)
+        if not os.path.exists(self.rule.filepath):
+            os.makedirs(dirname, 0755)
         f = open(self.rule.filepath, 'w')
         f.write(' (*#%HJSDnvlw jk34nrl24km \n\nrl23978Y*@$&G i4w\n')
         f.close()
@@ -127,6 +133,9 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
+        dirname = os.path.dirname(self.rule.filepath)
+        if not os.path.exists(self.rule.filepath):
+            os.makedirs(dirname, 0755)
         f = open(self.rule.filepath, 'w')
         f.write('supersede subnet-mask "example.com";\nsupersede domain-name "example.com";\nrequest broadcast-address;\nrequire broadcast-address;\n')
         f.close()
