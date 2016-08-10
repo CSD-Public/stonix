@@ -742,7 +742,7 @@ if __name__ == '__main__':
                         self.statechglogger.recordchgevent(myid, event)
                         self.statechglogger.recordfilechange(self.cronfile,
                                                                      tmpfile, myid)
-                        os.rename(tmpfile, self.cronfile)
+                    os.rename(tmpfile, self.cronfile)
         if not os.path.exists(self.plistpath):
             createFile(self.plistpath, self.logger)
         self.iditerator += 1
