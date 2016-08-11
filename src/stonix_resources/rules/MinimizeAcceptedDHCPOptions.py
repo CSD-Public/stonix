@@ -60,7 +60,27 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.filepath = '/etc/dhcp/dhclient.conf'
+        self.localize()
+
+    def localize(self):
+        '''
+        set variables based on operating environment
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.filepath = ''
+
+        # these are known canonical locations for the dhclient.conf file
+        filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf']
+
+        for fp in filepaths:
+            if os.path.exists(fp):
+                self.filepath = fp
+
+        if not self.filepath:
+            self.logger.log(LogPriority.DEBUG, "Unable to locate required configuration file: dhclient.conf")
 
     def getFileContents(self, filepath):
         '''
