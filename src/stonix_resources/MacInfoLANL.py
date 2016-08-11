@@ -37,6 +37,7 @@
 @change: 2016/01/26 ekkehard add property database lookup
 @change: 2016/08/05 ekkehard improve setComputerInfo with /usr/local/bin/jamf setComputerName -name "computerName"
 @change: 2016/08/05 ekkehard add setInternalComputerName
+@change: 2016/08/11 ekkehard bug fixes
 '''
 import os
 import re
@@ -119,6 +120,10 @@ class MacInfoLANL():
         self.lanl_property_web_service = "http://int.lanl.gov/liveupdate/stom/getPropertyNumber.php?serial"
 # Reset messages
         self.messageReset()
+# Initialize Accuracy stuff
+        self.updateAssetTagAccuracy(True, 0, "", True)
+        self.updateEndUserNameAccuracy(True, 0, "", True)
+        self.updateComputerNameAccuracy(True, 0, "", True)
     
     def gotoFirstItemLDAP(self):
         '''
@@ -634,8 +639,10 @@ class MacInfoLANL():
             self.computerName = computerName
             self.hostName = computerName
             self.localHostname = computerNameList[0]
-            self.computerNameAccuracyLevel = 100
+            self.updateComputerNameAccuracy(True, 100, "", True)
             success = True
+            self.initializePopulateFromMacBoolean = success
+            self.initializeAccuracyDeterminationBoolean = success
         return success
 
     def setInternalPropertyNumber(self, propertyNumber=""):
@@ -649,8 +656,10 @@ class MacInfoLANL():
         # Perform input validation before setting the internal variable.
         if re.match("^\d\d\d\d\d\d\d$", str(propertyNumber).strip()):
             self.assetTag = str(propertyNumber).strip()
-            self.assetTagAccuracyLevel = 100
+            self.updateAssetTagAccuracy(True, 100, "", True)
             success = True
+            self.initializePopulateFromMacBoolean = success
+            self.initializeAccuracyDeterminationBoolean = success
         return success
 
     def setJAMFInfo(self):
