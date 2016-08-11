@@ -566,8 +566,7 @@ class MacInfoLANL():
                     if not(self.computerNameDiskUtility == computerName) \
                     or not(self.hostNameDiskUtility == hostname) \
                     or not(self.localHostnameDiskUtility == localHostName):
-                        command = [self.jamf,"setComputerName", "-name", '"' +\
-                                   computerName + '"']
+                        command = [self.jamf,"setComputerName", "-name", computerName]
                         self.ch.executeCommand(command)
                         errorcode = self.ch.getError()
                         output = self.ch.getOutput()
@@ -602,17 +601,17 @@ class MacInfoLANL():
                     else:
                         msg = " - HostName was alreday " + hostname
                         self.messageAppend(msg)
-                    if not(self.localHostnameDiskUtility == localHostName):
-                        command = [self.scutil,"--set", "LocalHostName", localHostName]
-                        errorcode = self.ch.getError()
-                        self.ch.executeCommand(command)
-                        output = self.ch.getOutput()
-                        updatesWhereMade = True
-                        msg = " - LocalHostName set to " + localHostName
-                        self.messageAppend(msg)
-                    else:
-                        msg = " - LocalHostName was alreday " + localHostName
-                        self.messageAppend(msg)
+                if not(self.localHostnameDiskUtility == localHostName):
+                    command = [self.scutil,"--set", "LocalHostName", localHostName]
+                    errorcode = self.ch.getError()
+                    self.ch.executeCommand(command)
+                    output = self.ch.getOutput()
+                    updatesWhereMade = True
+                    msg = " - LocalHostName set to " + localHostName
+                    self.messageAppend(msg)
+                else:
+                    msg = " - LocalHostName was alreday " + localHostName
+                    self.messageAppend(msg)
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
