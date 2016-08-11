@@ -134,7 +134,6 @@ class ConfigureKerberos(Rule):
             if fileinfo["remove"]:
                 msg = "Remove if present " + str(fileinfo["path"])
             else:
-                
                 msg = "Add or update if needed " + str(fileinfo["path"])
             self.filepathToConfigure.append(msg)
             self.fh.addFile(filelabel,
@@ -204,24 +203,27 @@ class ConfigureKerberos(Rule):
                 self.statechglogger.deleteentry(event)
 
             if self.ci.getcurrvalue():
+                pkgsToInstall = []
                 if self.environ.getosfamily() == 'linux':
                     for package in self.packages:
                         if not self.ph.check(package):
                             if self.ph.checkAvailable(package):
-                                if self.ph.install(package):
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator,
-                                                   self.rulenumber)
-                                    event = {"eventtype": "pkghelper",
-                                             "pkgname": package,
-                                             "startstate": "removed",
-                                             "endstate": "installed"}
-                                    self.statechglogger.recordchgevent(myid,
-                                                                       event)
-                                else:
-                                    fixsuccess = False
-                                    self.detailedresults += "Installation of " + \
-                                        package + " did not succeed.\n"
+                                pkgsToInstall.append(package)
+                    for package in pkgsToInstall:
+                        if self.ph.install(package):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator,
+                                           self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": package,
+                                     "startstate": "removed",
+                                     "endstate": "installed"}
+                            self.statechglogger.recordchgevent(myid,
+                                                               event)
+                        else:
+                            fixsuccess = False
+                            self.detailedresults += "Installation of " + \
+                                package + " did not succeed.\n"
                 if not self.fh.fixFiles():
                     fixsuccess = False
                     self.detailedresults += self.fh.getFileMessage()
