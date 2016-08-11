@@ -27,7 +27,7 @@ Created on Mar 2, 2015
 This rule will check the default owners and access permissions for all system
 packages and their associated files as well as the file contents.
 
-@author: bemalmbe
+@author: Breen Malmberg
 '''
 
 from __future__ import absolute_import
@@ -88,8 +88,9 @@ class VerifySysFilePerms(Rule):
     def report(self):
         '''
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -108,35 +109,39 @@ class VerifySysFilePerms(Rule):
                     self.detailedresults += '\nA required utility, bless, could not be found. Aborting...'
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
                     return self.compliant
 
                 self.cmdhelper.executeCommand(self.findsysvol)
-                errout = self.cmdhelper.getErrorString()
-                if not errout:
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode == 0:
                     self.sysvol = self.cmdhelper.getOutputString()
                 wrongperms = []
 
-                if errout:
+                if retcode != 0:
+                    errout = self.cmdhelper.getErrorString()
                     if re.search('Can\'t access "efi-boot-device" NVRAM variable', errout):
                         self.detailedresults += '\nIt appears this system was not properly blessed. This requires a manual fix.'
-                        self.compliant = False
                     self.compliant = False
                     self.detailedresults += '\nThere was an error retrieving the boot partition'
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    return self.compliant
 
                 # check for the presence of required utilities on the system
                 # if either is not found, log and return false
-
                 if not os.path.exists('/usr/sbin/diskutil'):
                     self.detailedresults += '\nA required utility, diskutil, could not be found. Aborting...'
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
                     return self.compliant
 
                 # run verify perms command and get output
                 self.cmdhelper.executeCommand('/usr/sbin/diskutil verifyPermissions ' + str(self.sysvol))
                 outputlist = self.cmdhelper.getOutput()
+                retcode = self.cmdhelper.getReturnCode()
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                if retcode != 0:
                     self.compliant = False
                     self.detailedresults += '\nThere was an error verifying the system file permissions'
                 for line in outputlist:
@@ -180,15 +185,17 @@ class VerifySysFilePerms(Rule):
                 return retval
             self.cmdhelper.executeCommand(reportcommand)
             errout = self.cmdhelper.getErrorString()
-            output = self.cmdhelper.getOutputString()
-            if errout:
+            retcode = self.cmdhelper.getReturnCode()
+            output = self.cmdhelper.getOutput()
+            if retcode != 0:
                 retval = False
                 self.detailedresults += '\nThere was an error running command repair_packages --verify'
                 self.logger.log(LogPriority.DEBUG, errout)
             if output:
-                retval = False
-                self.detailedresults += '\nOne or more of the standard system packages has incorrect permissions.'
-                self.logger.log(LogPriority.DEBUG, output)
+                for line in output:
+                    if re.search('differ', line, re.IGNORECASE):
+                        retval = False
+                        self.detailedresults += '\n' + str(line) + '\n'
 
         except Exception:
             raise
@@ -197,8 +204,9 @@ class VerifySysFilePerms(Rule):
     def fix(self):
         '''
 
-        @return: bool
-        @author: bemalmbe
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -255,8 +263,9 @@ class VerifySysFilePerms(Rule):
                 self.detailedresults += '\nA required utility repair_packages was not found. No fix actions were performed.'
                 return success
             self.cmdhelper.executeCommand(fixcommand)
+            retcode = self.cmdhelper.getReturnCode()
             errout = self.cmdhelper.getErrorString()
-            if errout:
+            if retcode != 0:
                 success = False
                 self.detailedresults += '\nThere was an error running command repair_packages --repair'
                 self.logger.log(LogPriority.DEBUG, errout)
@@ -267,7 +276,7 @@ class VerifySysFilePerms(Rule):
     def undo(self):
         '''
 
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         self.detailedresults += '\nThere is no undo function for this rule'
