@@ -127,18 +127,30 @@ class zzzTestRuleRestrictMounting(RuleTest):
                 debug = "Could not enable autofs\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 
-        cmd = ["gconftool-2", "--direct", "--config-source",
-               "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
-               "--type", "bool", "--set",
-               "/desktop/gnome/volume_manager/automount_media",
-               "true"]
-        cmdSuccess = self.ch.executeCommand(cmd)
-        cmd = ["gconftool-2", "--direct", "--config-source",
-               "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
-               "--type", "bool", "--set",
-               "/desktop/gnome/volume_manager/automount_drives",
-               "true"]
-        cmdSuccess &= self.ch.executeCommand(cmd)
+        cmdSuccess = True
+        if os.path.exists("/usr/bin/dbus-launch") and \
+           os.path.exists("/usr/bin/gsettings"):
+            cmd = ["dbus-launch", "gsettings", "set",
+                   "org.gnome.desktop.media-handling",
+                   "automount", "true"]
+            cmdSuccess = self.ch.executeCommand(cmd)
+            cmd = ["dbus-launch", "gsettings", "set",
+                   "org.gnome.desktop.media-handling",
+                   "autorun-never", "true"]
+            cmdSuccess &= self.ch.executeCommand(cmd)
+        elif os.path.exists("/usr/bin/gconftool-2"):
+            cmd = ["gconftool-2", "--direct", "--config-source",
+                   "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
+                   "--type", "bool", "--set",
+                   "/desktop/gnome/volume_manager/automount_media",
+                   "true"]
+            cmdSuccess = self.ch.executeCommand(cmd)
+            cmd = ["gconftool-2", "--direct", "--config-source",
+                   "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
+                   "--type", "bool", "--set",
+                   "/desktop/gnome/volume_manager/automount_drives",
+                   "true"]
+            cmdSuccess &= self.ch.executeCommand(cmd)
         return cmdSuccess
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
