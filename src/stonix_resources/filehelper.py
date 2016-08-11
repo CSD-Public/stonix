@@ -725,12 +725,11 @@ class FileHelper(object):
                     debug = "EventID for " + file_path + ": " + \
                         str(self.file_eventid)
                     self.logdispatcher.log(LogPriority.DEBUG, debug)
+                    deleteId = self.file_eventid + "d"
                     event = {"eventtype": "deletion",
                              "filepath": file_path}
-                    self.statechglogger.recordfiledelete(file_path,
-                                                         self.file_eventid)
-                    self.statechglogger.recordchgevent(self.file_eventid,
-                                                       event)
+                    self.statechglogger.recordfiledelete(file_path, deleteId)
+                    self.statechglogger.recordchgevent(deleteId, event)
                 os.remove(file_path)
                 message = "removed " + file_path + " via " + removaltype + \
                 "('" + file_path + "')."
@@ -838,10 +837,10 @@ class FileHelper(object):
             try:
                 open(file_path, 'w').close()
                 if self.file_eventid:
+                    createId = self.file_eventid + "c"
                     event = {"eventtype": "creation",
                              "filepath": file_path}
-                    self.statechglogger.recordchgevent(self.file_eventid,
-                                                       event)
+                    self.statechglogger.recordchgevent(createId, event)
                 message = "Successfully created file '" + file_path + \
                     "' via " + creationtype + "(" + file_path + ",'w').close."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
@@ -922,12 +921,13 @@ class FileHelper(object):
                     mode = stat.S_IMODE(statdata.st_mode)
                     os.chmod(file_path, file_permissions_masked)
                     if self.file_eventid:
+                        permId = self.file_eventid + "p"
                         event = {"eventtype": "perm",
                                  "filepath": file_path,
                                  "startstate": [owner, group, mode],
                                  "endstate": [owner, group,
                                               file_permissions_masked]}
-                        self.statechglogger.recordchgevent(self.file_eventid,
+                        self.statechglogger.recordchgevent(permId,
                                                            event)
                     message = "File Permissions for '" + file_path + \
                         "' were successfully updated to '" + \
@@ -1065,13 +1065,14 @@ class FileHelper(object):
                     tmpfile = file_path + ".stonixtmp"
                     if writeFile(tmpfile, file_content, self.logdispatcher) \
                        and self.file_eventid:
+                        createId = self.file_eventid + "c"
                         event = {'eventtype': 'conf',
                                  'filepath': file_path}
-                        self.statechglogger.recordchgevent(self.file_eventid,
+                        self.statechglogger.recordchgevent(createId,
                                                            event)
                         self.statechglogger.recordfilechange(file_path,
                                                              tmpfile,
-                                                             self.file_eventid)
+                                                             createId)
                         os.rename(tmpfile, file_path)
                         perms = self.getFilePermissions()
                         if perms is not None:
