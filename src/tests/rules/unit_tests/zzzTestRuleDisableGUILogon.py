@@ -47,6 +47,7 @@ from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableGUILogon import DisableGUILogon
+from src.stonix_resources.pkghelper import Pkghelper
 from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
@@ -62,9 +63,21 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.destructive = self.runDestructive()
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        # The checkPackages list can be expanded if important packages are
+        # found to be removed by REMOVEX fix
+        checkPackages = ["dbus-x11"]
+        self.reinstall = []
+        for pkg in checkPackages:
+            if self.ph.check(pkg):
+                self.reinstall.append(pkg)
 
     def tearDown(self):
         self.rule.undo()
+        # Some packages may need to be reinstalled, since the REMOVEX fix
+        # cannot be undone.
+        for pkg in self.reinstall:
+            self.ph.install(pkg)
 
     def setConditionsForRule(self):
         '''
