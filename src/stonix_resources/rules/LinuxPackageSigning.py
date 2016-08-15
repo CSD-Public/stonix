@@ -41,7 +41,7 @@ from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 
 
-class linuxPackageSigning(RuleKVEditor):
+class LinuxPackageSigning(RuleKVEditor):
     '''
     classdocs
     '''
@@ -56,7 +56,7 @@ class linuxPackageSigning(RuleKVEditor):
         self.rulenumber = 145
         self.rootrequired = True
         self.mandatory = True
-        self.rulename = 'linuxPackageSigning'
+        self.rulename = 'LinuxPackageSigning'
         self.formatDetailedResults("initialize")
         self.helptext = 'Package signing should always be enabled. On yum-based systems, this can be checked by ensuring \
 that all repos have gpgcheck=1 set.'
@@ -64,20 +64,42 @@ that all repos have gpgcheck=1 set.'
 
         # init CIs
         datatype = 'bool'
-        key = 'linuxpackagesigning'
-        instructions = 'If you wish to disable this rule, set the value of linuxpackagesigning to False.'
+        key = 'LinuxPackageSigning'
+        instructions = 'If you wish to disable this rule, set the value of LinuxPackageSigning to False.'
         default = True
-        self.applicable = {'type': 'white',
-                           'family': ['linux']}
+        self.applicable = self.isapplicable()
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.localize()
+
+    def isapplicable(self):
+        '''
+        override of normal isapplicable()
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        ostype = self.environ.getostype()
+        osfamily = self.environ.getosfamily()
+
+        if re.search('darwin', osfamily, re.IGNORECASE):
+            retval = False
+        if re.search('debian', ostype, re.IGNORECASE):
+            retval = False
+        if re.search('ubuntu', ostype, re.IGNORECASE):
+            retval = False
+
+        return retval
 
     def localize(self):
         '''
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Running localize() method for linuxPackageSigning ...")
+        self.logger.log(LogPriority.DEBUG, "Running localize() method for LinuxPackageSigning ...")
 
         self.ch = CommandHelper(self.logger)
         self.data = {}
@@ -87,42 +109,36 @@ that all repos have gpgcheck=1 set.'
         self.conftype = ""
         self.temppath = ""
         self.rhel = False
-        self.debian = False
         self.centos = False
         self.fedora = False
         self.suse = False
-        self.ubuntu = False
 
         os = self.environ.getostype()
 
-        # rhel, fedora, centos, ubuntu, debian, opensuse
+        # rhel, fedora, centos, opensuse
         if re.search('red hat', os, re.IGNORECASE):
             self.setRhel()
         elif re.search('fedora', os, re.IGNORECASE):
             self.setFedora()
         elif re.search('centos', os, re.IGNORECASE):
             self.setCentos()
-        elif re.search('debian', os, re.IGNORECASE):
-            self.setDebian()
-        elif re.search('ubuntu', os, re.IGNORECASE):
-            self.setUbuntu()
         elif re.search('suse', os, re.IGNORECASE):
             self.setOpensuse()
         else:
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
-        if not self.data:
-            self.logger.log(LogPriority.DEBUG, "KV config dictionary not set")
-        if not self.path:
-            self.logger.log(LogPriority.DEBUG, "KV config path not set")
-        if not self.intent:
-            self.logger.log(LogPriority.DEBUG, "KV config intent not set")
-        if not self.type:
-            self.logger.log(LogPriority.DEBUG, "KV config type not set")
-        if not self.conftype:
-            self.logger.log(LogPriority.DEBUG, "KV operand sign not set")
-
         if not self.suse:
+
+            if not self.data:
+                self.logger.log(LogPriority.DEBUG, "KV config dictionary not set")
+            if not self.path:
+                self.logger.log(LogPriority.DEBUG, "KV config path not set")
+            if not self.intent:
+                self.logger.log(LogPriority.DEBUG, "KV config intent not set")
+            if not self.type:
+                self.logger.log(LogPriority.DEBUG, "KV config type not set")
+            if not self.conftype:
+                self.logger.log(LogPriority.DEBUG, "KV operand sign not set")
 
             if self.path:
                 self.temppath = self.path + '.stonixtmp'
@@ -172,32 +188,6 @@ that all repos have gpgcheck=1 set.'
         self.path = "/etc/yum.conf"
         self.conftype = "openeq"
 
-    def setUbuntu(self):
-        '''
-        '''
-
-        self.ubuntu = True
-        self.logger.log(LogPriority.DEBUG, "Detected OS as: Debian")
-        self.logger.log(LogPriority.DEBUG, "Debian and Ubuntu do not sign their packages, thus setting debsig-verify would cause every package install to fail.")
-        self.logger.log(LogPriority.DEBUG, "As a result of this, STONIX will not configure this system to enforce package signing.")
-
-#         self.data = {}
-#         self.path = ""
-#         self.conftype = ""
-
-    def setDebian(self):
-        '''
-        '''
-
-        self.debian = True
-        self.logger.log(LogPriority.DEBUG, "Detected OS as: Ubuntu")
-        self.logger.log(LogPriority.DEBUG, "Debian and Ubuntu do not sign their packages, thus setting debsig-verify would cause every package install to fail.")
-        self.logger.log(LogPriority.DEBUG, "As a result of this, STONIX will not configure this system to enforce package signing.")
-
-#         self.data = {}
-#         self.path = ""
-#         self.conftype = ""
-
     def setOpensuse(self):
         '''
         '''
@@ -208,7 +198,7 @@ that all repos have gpgcheck=1 set.'
         self.logger.log(LogPriority.DEBUG, "As a result of this, STONIX will only audit the status of the GPG check for each repo.")
 
         self.repolist = []
-        cmd1 = "zypper lr -d"
+        cmd1 = "/usr/bin/zypper lr -d"
 
         self.ch.executeCommand(cmd1)
         excode = self.ch.getReturnCode()
@@ -216,8 +206,10 @@ that all repos have gpgcheck=1 set.'
             output = self.ch.getOutput()
             for line in output:
                 sline = line.split("|")
-                if re.search("^[0-9]", sline[0]) and re.search("yes", sline[3], re.IGNORECASE):
-                    self.repolist.append(str(sline[0]))
+                if len(sline) >= 4:
+                    if re.search("^\s*[0-9]+", sline[0]) and re.search("yes", sline[3], re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "\n\nFound active repo. Tracking repo number: " + sline[0].strip())
+                        self.repolist.append(sline[0].strip())
 
     def report(self):
         '''
@@ -228,12 +220,6 @@ that all repos have gpgcheck=1 set.'
 
         try:
 
-            # STONIX will not enforce, nor check for enforcement
-            # of package signing on debian or ubuntu, as they
-            # do not sign their packages
-            if self.ubuntu | self.debian:
-                self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                return self.compliant
             if self.suse:
                 if not self.reportSUSE():
                     self.compliant = False
@@ -262,20 +248,21 @@ that all repos have gpgcheck=1 set.'
         '''
 
         retval = True
-        cmd2 = "zypper lr"
+        cmd2 = "/usr/bin/zypper lr"
         gpgenabled = False
         reponame = ""
 
         try:
 
             if self.repolist:
+                self.logger.log(LogPriority.DEBUG, "Found: " + str(len(self.repolist)) + " active repositories on this system.")
                 for num in self.repolist:
                     self.ch.executeCommand(cmd2 + " " + str(num))
                     excode = self.ch.getReturnCode()
                     if not excode:
                         outputlines = self.ch.getOutput()
                         for line in outputlines:
-                            if re.search("GPG\s*Check\s*\:\s*On", line, re.IGNORECASE):
+                            if re.search("GPG\s*Check\s*\:.*(On|Yes)", line, re.IGNORECASE):
                                 gpgenabled = True
                             if re.search("Name\s*\:\s*", line, re.IGNORECASE):
                                 sline = line.split(":")
@@ -283,6 +270,8 @@ that all repos have gpgcheck=1 set.'
                         if not gpgenabled:
                             retval = False
                             self.detailedresults += "GPG check is disabled for repo: " + reponame
+            else:
+                self.detailedresults += "\nUnable to locate any repositories on this system!"
 
             if retval:
                 self.detailedresults += "\nAll currently enabled repositories have GPG checks enabled."
@@ -301,13 +290,10 @@ that all repos have gpgcheck=1 set.'
         try:
 
             if self.ci.getcurrvalue():
-                # STONIX will not enforce, nor check for enforcement
-                # of package signing on debian or ubuntu, as they
-                # do not sign their packages
-                if self.ubuntu | self.debian:
-                    pass
-                elif self.suse:
-                    pass
+
+                if self.suse:
+                    self.detailedresults += "\nGPG Check is enabled by default on SuSE and there is no specific ability to enable it."
+                    self.detailedresults += "\nAs a result of this, STONIX will only audit the status of the GPG check for each repo."
                 elif self.kve.fix():
                     if not self.kve.commit():
                         success = False
