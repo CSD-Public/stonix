@@ -559,10 +559,7 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                         debug = "Unable to set permissions on " + export
                         self.logger.log(LogPriority.DEBUG, debug)
             if changed1 or changed2:
-                if not self.sh.reloadservice(nfsservice, nfsservice):
-                    debug = "Unable to restart nfs service"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
+                self.sh.reloadservice(nfsservice, nfsservice)
             if not success:
                 self.rulesuccess = False
         except (KeyboardInterrupt, SystemExit):
