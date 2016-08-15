@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SecureNFS
 
 @author: ekkehard j. koch
 @change: 2015/03/30 ekkehard Original Implementation
@@ -40,7 +40,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.SecureNFS import SecureNFS
 
 
-class zzzTestRuleBlockSystemAccounts(RuleTest):
+class zzzTestRuleSecureNFS(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)

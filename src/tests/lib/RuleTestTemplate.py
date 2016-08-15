@@ -249,7 +249,8 @@ class RuleTest(unittest.TestCase):
             messagestring = "rule.iscompliant() is '" + \
                 str(rulecompliance) + "' after rule.fix() and " + \
                 "rule.report() have run."
-            self.assertTrue(rulecompliance, prefixRuleInfo + messagestring)
+            if not self.ignoreresults:
+                self.assertTrue(rulecompliance, prefixRuleInfo + messagestring)
 # Run checkReportFinalForRule()
             messagestring = "Run checkReportFinalForRule(" + \
                 str(rulecompliance) + ", " + str(rulesuccess) + ")"
@@ -330,8 +331,6 @@ class RuleTest(unittest.TestCase):
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        if self.ignoreresults:
-            return True
         return True
 
 ###############################################################################
