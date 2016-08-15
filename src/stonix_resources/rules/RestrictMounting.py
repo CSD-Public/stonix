@@ -263,7 +263,8 @@ and media.'''
 
             returnCode = 0
             if self.gnomeCi.getcurrvalue():
-                if os.path.exists("/usr/bin/gsettings"):
+                if os.path.exists("/usr/bin/gsettings") and \
+                   os.path.exists("/usr/bin/dbus-launch"):
                     if not self.automountOff:
                         cmd = ["dbus-launch", "gsettings", "set",
                                "org.gnome.desktop.media-handling",
