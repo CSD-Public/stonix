@@ -659,8 +659,8 @@ class MacInfoLANL():
         '''
         try:
             success = True
-            errorcode = ""
-            output = ""
+            errorcode = None
+            output = None
             assetTag = self.getSuggestedAssetTag()
             endUser = self.getSuggestedEndUsername()
             if self.assetTagAccuracyLevel == 100 and self.endUserNameAccuracyLevel == 100:
