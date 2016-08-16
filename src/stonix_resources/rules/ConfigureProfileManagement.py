@@ -74,6 +74,15 @@ class ConfigureProfileManagement(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        
+        self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig"
+        self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
+                          "Resources/stonix.app/Contents/MacOS/" + \
+                          "stonix_resources/files/" + \
+                          "stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig"
 
     def report(self):
         '''
@@ -135,13 +144,9 @@ class ConfigureProfileManagement(Rule):
 #                  "/stonix_resources/files/stonix4macPasscodeProfileFor" +
 #                  "OSXElCapitan10.11STIG.mobileconfig"] = self.pwprofiledict
             if self.pwci.getcurrvalue():
-                self.profpaths[os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
-                 "/stonix_resources/files/stonix4macPasscodeProfileFor" +
-                 "OSXElCapitan10.11.mobileconfig"] = self.pwprofiledict
+                self.profpaths[self.pwprofile] = self.pwprofiledict
             if self.sci.getcurrvalue():
-                self.profpaths[os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
-                 "/stonix_resources/files/stonix4macSecurity&Privacy" +
-                 "ForOSXElCapitan10.11.mobileconfig"] = self.spprofiledict
+                self.profpaths[self.secprofile] = self.spprofiledict
             '''Run the system_proflier command'''
             if self.ch.executeCommand(cmd):
                 output = self.ch.getOutput()
