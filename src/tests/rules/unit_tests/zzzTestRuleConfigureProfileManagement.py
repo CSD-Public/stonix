@@ -31,14 +31,14 @@ Created on Jun 9, 2015
 '''
 from __future__ import absolute_import
 import unittest
-import re
-import sys
+import re, sys, os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureProfileManagement import ConfigureProfileManagement
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
 class zzzTestRuleConfigureProfileManagement(RuleTest):
@@ -59,17 +59,60 @@ class zzzTestRuleConfigureProfileManagement(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
+        '''
+        @author: dwalker
+        @note: This unit test will install two incorrect profiles on purpose
+            to force system non-compliancy
+        '''
         success = True
-        cmd = ["/usr/bin/profiles", "-L"]
-        profilenum = "C873806E-E634-4E58-B960-62817F398E11"
+        goodprofiles = {}
+        pwprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
+                   "/src/stonix_resources/files/stonix4macPasscodeProfileFor" + \
+                   "OSXElCapitan10.11.mobileconfig"
+        secprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
+                   "/src/stonix_resources/files/stonix4macSecurity&Privacy" + \
+                   "ForOSXElcapitan10.11.mobileconfig"
+        pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
+                              {"allowSimple": ["1", "bool"],
+                               "forcePIN": ["1", "bool"],
+                               "maxFailedAttempts": ["5", "int", "less"],
+                               "maxPINAgeInDays": ["180", "int", "more"],
+                               "minComplexChars": ["1", "int", "more"],
+                               "minLength": ["8", "int", "more"],
+                               "minutesUntilFailedLoginReset":
+                               ["15", "int", "more"],
+                               "pinHistory": ["5", "int", "more"],
+                               "requireAlphanumeric": ["1", "bool"]}}
+        spprofiledict = {"com.apple.screensaver": "",
+                              "com.apple.loginwindow": "",
+                              "com.apple.systempolicy.managed": "",
+                              "com.apple.SubmitDiagInfo": "",
+                              "com.apple.preference.security": "",
+                              "com.apple.MCX": "",
+                              "com.apple.applicationaccess": "",
+                              "com.apple.systempolicy.control": ""}
+        self.rule.pwprofile = pwprofile
+        self.rule.secprofile = secprofile
+        goodprofiles[pwprofile] = pwprofiledict
+        goodprofiles[secprofile] = spprofiledict 
+        cmd = ["/usr/sbin/system_profiler", "SPConfigurationProfileDataType"]
         if self.ch.executeCommand(cmd):
             output = self.ch.getOutput()
             if output:
-                for line in output:
-                    if re.search(profilenum, line):
-                        cmd = ["/usr/bin/profiles", "-r", profilenum]
+                for item, values in goodprofiles.iteritems():
+                    self.editor = KVEditorStonix(self.statechglogger,
+                                                  self.logdispatch, "profiles", "",
+                                                  "", values, "", "", output)
+                    if self.editor.report():
+                        cmd = ["/usr/bin/profiles", "-R", "-F", item]
                         if not self.ch.executeCommand(cmd):
                             success = False
+                        else:
+                            cmd = ["/usr/bin/profiles", "-I", "-F,", item + "fake"]
+                            if not self.ch.executeCommand(cmd):
+                                success = False
+        else:
+            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

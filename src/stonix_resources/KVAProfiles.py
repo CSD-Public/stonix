@@ -61,7 +61,7 @@ class KVAProfiles():
                             if temp[1]:
                                 temp[1] = re.sub(";$", "", temp[1])
                                 if val2[1] == "bool":
-                                    if temp[1] != val2[0]:
+                                    if str(temp[1].strip()) != str(val2[0]):
                                         debug += "Key: " + key2 + " doesn't " + \
                                             "contain the correct boolean " + \
                                             "value\n"
