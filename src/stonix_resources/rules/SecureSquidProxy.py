@@ -76,11 +76,18 @@ class SecureSquidProxy(Rule):
             compliant = True
             debug = ""
             self.ph = Pkghelper(self.logger, self.environ)
-            if self.ph.check("squid"):
-                if self.ph.manager == "apt-get":
+            self.installed = False
+            if self.ph.manager == "apt-get":
+                if self.ph.check("squid3"):
+                    self.installed = True
                     self.squidfile = "/etc/squid3/squid.conf"
-                else:
+                elif self.ph.check("squid"):
+                    self.installed = True
                     self.squidfile = "/etc/squid/squid.conf"
+            if self.ph.check("squid"):
+                self.installed = True
+                self.squidfile = "/etc/squid/squid.conf"
+            if self.installed:
                 self.data1 = {"ftp_passive": "on",
                               "ftp_sanitycheck": "on",
                               "check_hostnames": "on",
@@ -192,7 +199,7 @@ class SecureSquidProxy(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if self.ph.check("squid"):
+            if self.installed:
                 if not os.path.exists(self.squidfile):
                     if not createFile(self.squidfile, self.logger):
                         success = False
@@ -307,8 +314,8 @@ class SecureSquidProxy(Rule):
                             if re.search("^deny to_localhost", temp):
                                 found = True
                                 break
-                        if not found:
-                            newcontents.append("http_access deny to_localhost\n")
+                    if not found:
+                        newcontents.append("http_access deny to_localhost\n")
                     for item in newcontents:
                         tempstring += item
                     tmpfile = self.squidfile + ".tmp"
