@@ -353,7 +353,7 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.servicehelper.enableservice('firewalld.service')
                     self.detailedresults += "Firewall configured.\n "
                 elif self.isufw:
-                    ufwcmd = '/usr/sbin/ufw enable'
+                    ufwcmd = '/usr/sbin/ufw --force enable'
                     if not self.cmdhelper.executeCommand(ufwcmd):
                         self.detailedresults += "Unable to run " + \
                             "ufw enable command\n"
