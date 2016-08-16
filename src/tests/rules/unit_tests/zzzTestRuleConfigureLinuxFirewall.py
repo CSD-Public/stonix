@@ -39,14 +39,14 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureLinuxFirewall import ConfigureLinuxFirewall
 
 
-class zzzTestRuleDisableIPV6(RuleTest):
+class zzzTestRuleConfigureLinuxFirewall(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
         self.rule = ConfigureLinuxFirewall(self.config,
-                                self.environ,
-                                self.logdispatch,
-                                self.statechglogger)
+                                           self.environ,
+                                           self.logdispatch,
+                                           self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
