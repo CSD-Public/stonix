@@ -38,6 +38,7 @@
 @change: 2016/08/05 ekkehard improve setComputerInfo with /usr/local/bin/jamf setComputerName -name "computerName"
 @change: 2016/08/05 ekkehard add setInternalComputerName
 @change: 2016/08/11 ekkehard bug fixes
+@change: 2016/08/16 ekkehard bug fixes
 '''
 import os
 import re
@@ -326,11 +327,11 @@ class MacInfoLANL():
         @return: string
         '''
         self.initializeLANLImagedFilesystem()
-        return str(self.LANLAssetTagFilesystem)
+        return str(self.LANLImaged)
 
     def getSerialNumber(self):
         '''
-        get the serial number
+        get the serialnumber
         @author: ekkehard
         @return: string
         '''
@@ -359,7 +360,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -374,7 +374,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -388,7 +387,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -404,7 +402,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -419,7 +416,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -433,7 +429,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -447,7 +442,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -462,7 +456,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -484,7 +477,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -499,7 +491,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -513,7 +504,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -527,7 +517,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -542,7 +531,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -556,6 +544,8 @@ class MacInfoLANL():
         '''
         try:
             success = True
+            errorcode = None
+            output = None
             updatesWhereMade = False
             output = []
             computerName = self.getSuggestedComputerName()
@@ -669,8 +659,8 @@ class MacInfoLANL():
         '''
         try:
             success = True
-            errorcode = None
-            output = None
+            errorcode = ""
+            output = ""
             assetTag = self.getSuggestedAssetTag()
             endUser = self.getSuggestedEndUsername()
             if self.assetTagAccuracyLevel == 100 and self.endUserNameAccuracyLevel == 100:
@@ -771,7 +761,7 @@ class MacInfoLANL():
             msg = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, msg)
         return assetTag
-        
+
     def setLANLImagedFilesystem(self, imagedString = ""):
         '''
         set the imaged on the file system
@@ -806,7 +796,7 @@ class MacInfoLANL():
             msg = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, msg)
         return imaged
-                
+
     def initializeAccuracyDetermination(self, forceInitializtion = False):
         '''
         go through all our data and see how good it is
@@ -1424,7 +1414,6 @@ class MacInfoLANL():
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
         self.initializeLANLAssetTagFromProperty()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -1445,7 +1434,6 @@ class MacInfoLANL():
         msg = "ComputerName=" + self.getSuggestedComputerNameConfidence() + ";"
         msg = msg + " Hostname=" + self.getSuggestedHostNameConfidence() + ";"
         msg = msg + " LocalHostname=" + self.getSuggestedLocalHostNameConfidence() + ";"
-        msg = msg + " Imaged=" + self.getLANLImagedFilesystem()+ ";"
         if not(self.computerNameAccuracyLevelWhy == "" ):
             msg = msg + " - " + self.computerNameAccuracyLevelWhy
         self.messageAppend(msg)
@@ -1468,7 +1456,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
@@ -1497,7 +1484,6 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagNVRAM()
         self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
         self.initializeDiskUtilityInfo()
         self.initializePopulateFromMac()
         self.initializeAccuracyDetermination()
