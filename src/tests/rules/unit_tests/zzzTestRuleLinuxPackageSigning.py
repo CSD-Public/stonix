@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule DisableInactiveAccounts
+This is a Unit Test for Rule LinuxPackageSigning
 
 @author: Breen Malmberg
 @change: 04/11/2016 original implementation
@@ -38,17 +38,17 @@ import re
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.linuxPackageSigning import linuxPackageSigning
+from src.stonix_resources.rules.LinuxPackageSigning import LinuxPackageSigning
 
 
-class zzzTestRulelinuxPackageSigning(RuleTest):
+class zzzTestRuleLinuxPackageSigning(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = linuxPackageSigning(self.config,
-                                    self.environ,
-                                    self.logdispatch,
-                                    self.statechglogger)
+        self.rule = LinuxPackageSigning(self.config,
+                                        self.environ,
+                                        self.logdispatch,
+                                        self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
 
@@ -95,7 +95,8 @@ class zzzTestRulelinuxPackageSigning(RuleTest):
 
             for line in contentlines:
                 if re.search("gpgcheck", line):
-                    contentlines = [c.replace(line, "gpgcheck=0\n") for c in contentlines]
+                    contentlines = [c.replace(line, "gpgcheck=0\n")
+                                    for c in contentlines]
                     found = 1
 
             if not found:
@@ -140,7 +141,8 @@ class zzzTestRulelinuxPackageSigning(RuleTest):
 
             for line in contentlines:
                 if re.search("gpgcheck", line):
-                    contentlines = [c.replace(line, "gpgcheck=1\n") for c in contentlines]
+                    contentlines = [c.replace(line, "gpgcheck=1\n")
+                                    for c in contentlines]
                     found = 1
 
             if not found:
@@ -165,7 +167,8 @@ class zzzTestRulelinuxPackageSigning(RuleTest):
 
             for line in contentlines:
                 if re.search("gpgcheck", line):
-                    contentlines = [c.replace(line, "gpgcheck=ab234\n") for c in contentlines]
+                    contentlines = [c.replace(line, "gpgcheck=ab234\n")
+                                    for c in contentlines]
                     found = 1
 
             if not found:
@@ -185,9 +188,9 @@ class zzzTestRulelinuxPackageSigning(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -200,7 +203,7 @@ class zzzTestRulelinuxPackageSigning(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -213,11 +216,10 @@ class zzzTestRulelinuxPackageSigning(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
