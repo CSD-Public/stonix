@@ -397,14 +397,31 @@ COMMIT
 -A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
 COMMIT
 '''
-                    fwhandle = open('/etc/sysconfig/system-config-firewall',
-                                    'w')
+                    fwPath = '/etc/sysconfig/system-config-firewall'
+                    iptPath = '/etc/sysconfig/iptables'
+                    ip6tPath = '/etc/sysconfig/ip6tables'
+                    if os.path.exists(fwPath):
+                        shutil.move(fwPath, fwPath + ".stonix.bak")
+                        debug = "Moving " + fwPath + " to " + fwPath + \
+                            ".stonix.bak"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    fwhandle = open(fwPath, 'w')
                     fwhandle.write(systemconfigfirewall)
                     fwhandle.close()
-                    ipwhandle = open('/etc/sysconfig/iptables', 'w')
+                    if os.path.exists(iptPath):
+                        shutil.move(iptPath, iptPath + ".stonix.bak")
+                        debug = "Moving " + iptPath + " to " + iptPath + \
+                            ".stonix.bak"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    ipwhandle = open(iptPath, 'w')
                     ipwhandle.write(sysconfigiptables)
                     ipwhandle.close()
-                    ip6whandle = open('/etc/sysconfig/ip6tables', 'w')
+                    if os.path.exists(ip6tPath):
+                        shutil.move(ip6tPath, ip6tPath + ".stonix.bak")
+                        debug = "Moving " + ip6tPath + " to " + ip6tPath + \
+                            ".stonix.bak"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    ip6whandle = open(ip6tPath, 'w')
                     ip6whandle.write(sysconfigip6tables)
                     ip6whandle.close()
                     self.servicehelper.enableservice('iptables')
@@ -547,17 +564,50 @@ fw_custom_after_finished() {
                 self.detailedresults += "Firewall configured.\n "
             elif os.path.exists('/usr/bin/system-config-firewall') or \
                  os.path.exists('/usr/bin/system-config-firewall-tui'):
-                systemconfigfirewall = '''# Configuration file for system-config-firewall
+                fwPath = '/etc/sysconfig/system-config-firewall'
+                if os.path.exists(fwPath + ".stonix.bak"):
+                    shutil.move(fwPath + ".stonix.bak", fwPath)
+                else:
+                    systemconfigfirewall = '''# Configuration file for system-config-firewall
 
 --disabled
 '''
-                fwhandle = open('/etc/sysconfig/system-config-firewall', 'w')
-                fwhandle.write(systemconfigfirewall)
-                fwhandle.close()
-                shutil.move('/etc/sysconfig/iptables',
-                            '/etc/sysconfig/iptables.stonix.bak')
-                shutil.move('/etc/sysconfig/ip6tables',
-                            '/etc/sysconfig/ip6tables.stonix.bak')
+                    fwhandle = open(fwPath, 'w')
+                    fwhandle.write(systemconfigfirewall)
+                    fwhandle.close()
+                iptPath = '/etc/sysconfig/iptables'
+                if os.path.exists(iptPath + ".stonix.bak"):
+                    shutil.move(iptPath + ".stonix.bak", iptPath)
+                    debug = "Restoring " + iptPath + ".stonix.bak to " + \
+                        iptPath
+                    self.logger.log(LogPriority.DEBUG, debug)
+                elif os.path.exists(iptPath):
+                    os.remove(iptPath)
+                    debug = "Removing " + iptPath
+                    self.logger.log(LogPriority.DEBUG, debug)
+
+                ip6tPath = '/etc/sysconfig/ip6tables'
+                if os.path.exists(ip6tPath + ".stonix.bak"):
+                    shutil.move(ip6tPath + ".stonix.bak", ip6tPath)
+                    debug = "Restoring " + ip6tPath + ".stonix.bak to " + \
+                        ip6tPath
+                    self.logger.log(LogPriority.DEBUG, debug)
+                elif os.path.exists(ip6tPath):
+                    os.remove(ip6tPath)
+                    debug = "Removing " + ip6tPath
+                    self.logger.log(LogPriority.DEBUG, debug)
+                # we restart iptables here because it doesn't respond
+                # to reload
+                subprocess.Popen('/sbin/service iptables restart',
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 shell=True, close_fds=True)
+                subprocess.Popen('/sbin/service ip6tables restart',
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 shell=True, close_fds=True)
+                # Sleep for a bit to let the restarts occur
+                time.sleep(3)
                 self.servicehelper.disableservice('iptables')
                 self.servicehelper.disableservice('ip6tables')
             elif os.path.exists(self.iprestore) and \
