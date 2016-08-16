@@ -1551,12 +1551,6 @@ class MacInfoLANL():
         @return: real
         @note: None
         '''
-        self.initializeLANLAssetTagNVRAM()
-        self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
-        self.initializeDiskUtilityInfo()
-        self.initializePopulateFromMac()
-        self.initializeAccuracyDetermination()
         if reset:
             self.computerNameAccuracyLevelWhy = ""
             self.computerNameAccuracyLevelTotal = 0
@@ -1609,12 +1603,6 @@ class MacInfoLANL():
         @return: real
         @note: None
         '''
-        self.initializeLANLAssetTagNVRAM()
-        self.initializeLANLAssetTagFilesystem()
-        self.initializeLANLImagedFilesystem()
-        self.initializeDiskUtilityInfo()
-        self.initializePopulateFromMac()
-        self.initializeAccuracyDetermination()
         if reset:
             self.endUserNameAccuracyLevelWhy = ""
             self.endUserNameAccuracyLevelTotal = 0
