@@ -391,12 +391,11 @@ class NoCoreDumps(Rule):
         resetsecon(path)
         if self.environ.getostype() != "Mac OS X":
             cmd = "/sbin/sysctl"
-        retval = call([cmd, "-p"], stdout=None, stderr=None,
-                                                                   shell=False)
-        if retval != 0:
-            self.detailedresults = "Unable to restart sysctl"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            success = False
+            retval = call([cmd, "-p"], stdout=None, stderr=None, shell=False)
+            if retval != 0:
+                self.detailedresults = "Unable to restart sysctl"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                success = False
         return success
 
 ###############################################################################
