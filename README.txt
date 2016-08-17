@@ -4,7 +4,7 @@ Los Alamos National Security, LLC owns the copyright to "stonix". The license fo
 
 stonix has been assigned the Los Alamos Computer Code Number LA-CC-15-021.
 
-Copyright (c) 2015, Los Alamos National Security, LLC All rights reserved.
+Copyright (c) 2015-2016, Los Alamos National Security, LLC All rights reserved.
 
 This software was produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which is operated by Los Alamos National Security, LLC for the U.S. Department of Energy. The U.S. Government has rights to use, reproduce, and distribute this software. NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. If software is modified to produce derivative works, such modified software should be clearly marked, so as not to confuse it with the version available from LANL.
 Additionally, redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -38,9 +38,9 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
   At the present time (revision 0.9.5) the following platforms are used for
   development and test: Red Hat Enterprise Linux 6 and 7, Fedora Linux
   22, OpenSuSE 13.2, Debian 7 and 8 (stable), Ubuntu 14.04 LTS, CentOS 7,
-  Apple's OS X Mavericks 10.9, OS X Yosemite 10.10, and OS X El Capitan 10.11.
-  Close derivatives of these operating systems should be well supported, 
-  more distant cousins less so.
+  Apple's OS X Mavericks 10.9, OS X Yosemite 10.10, OS X El Capitan 10.11,
+  and macOS Sierra 10.12. Close derivatives of these operating systems
+  should be well supported, more distant cousins less so.
   
 1. Documentation
 ----------------

@@ -54,7 +54,8 @@ class NoCoreDumps(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule disables the ability of the system to " + \
-        "produce core dump images"
+        "produce core dump images.  A reboot is required or Mac OS X " + \
+        "for this rule to take effect."
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -391,12 +392,11 @@ class NoCoreDumps(Rule):
         resetsecon(path)
         if self.environ.getostype() != "Mac OS X":
             cmd = "/sbin/sysctl"
-        retval = call([cmd, "-p"], stdout=None, stderr=None,
-                                                                   shell=False)
-        if retval != 0:
-            self.detailedresults = "Unable to restart sysctl"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            success = False
+            retval = call([cmd, "-p"], stdout=None, stderr=None, shell=False)
+            if retval != 0:
+                self.detailedresults = "Unable to restart sysctl"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                success = False
         return success
 
 ###############################################################################
