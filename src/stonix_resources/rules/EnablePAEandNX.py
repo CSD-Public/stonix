@@ -99,21 +99,21 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         systemARCH = 0
         self.detailedresults = ""
         self.compliant = True
-        package = ""
+        self.package = ""
 
         try:
 
             # get value of other variables to be used in this method
             systemOS = self.getSystemOS()
             systemARCH = self.getSystemARCH()
-            package = self.getSysPackage(systemOS)
+            self.package = self.getSysPackage(systemOS)
 
             # check if required utility exists; log warning if not
             if not os.path.exists("/proc/cpuinfo"):
                 self.logger.log(LogPriority.WARNING, "Unable to verify presence of required system utility /proc/cpuinfo")
 
             # check for presence of pae cpu flag as well as pae kernel package
-            if not self.checkPAE(package):
+            if not self.checkPAE(self.package):
                 self.compliant = False
 
             # check for presence of nx cpu flag
@@ -314,7 +314,7 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
 
         return retval
 
-    def fix(self, package):
+    def fix(self):
         '''
         Run fix actions for EnablePAEandNX
 
@@ -333,9 +333,9 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
                 if self.getSystemARCH() == 32:
 
                     # attempt to install the kernel pae package; inform user if this fails
-                    if not self.pkg.install(package):
+                    if not self.pkg.install(self.package):
                         success = False
-                        self.detailedresults += "\nUnable to install package: " + str(package)
+                        self.detailedresults += "\nUnable to install package: " + str(self.package)
 
                 else:
                     # inform the user if the fix actions do not apply because the system is 64-bit
