@@ -81,7 +81,6 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         self.assertFalse(self.rule.checkPAE([]), "checkPAE should return False if package specified is not of type: string")
         self.assertFalse(self.rule.checkPAE(1), "checkPAE should return False if package specified is not of type: string")
         self.assertFalse(self.rule.checkPAE({}), "checkPAE should return False if package specified is not of type: string")
-        self.assertFalse(self.rule.checkPAE(), "checkPAE should return False if package specified is not of type: string")
 
     def test_getSystemARCH(self):
         '''
