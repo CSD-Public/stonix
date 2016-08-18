@@ -53,7 +53,7 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.rule.storageci.updatecurrvalue(True)
-
+        self.ignoreresults = True
     def tearDown(self):
         pass
 
