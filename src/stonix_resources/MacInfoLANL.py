@@ -39,6 +39,7 @@
 @change: 2016/08/05 ekkehard add setInternalComputerName
 @change: 2016/08/11 ekkehard bug fixes
 @change: 2016/08/16 ekkehard bug fixes
+@change: 2016/08/19 ekkehard self.lanl_property_web_service updated to csd-web
 '''
 import os
 import re
@@ -118,7 +119,7 @@ class MacInfoLANL():
         self.lanl_property_file = "/Library/Preferences/gov.lanl.asset.tag.txt"
         self.lanl_property_file_old = "/Library/Preferences/lanl_property_number.txt"
         self.lanl_imaged_files = ["/etc/dds.txt", "/var/log/dds.log"]
-        self.lanl_property_web_service = "http://int.lanl.gov/liveupdate/stom/getPropertyNumber.php?serial"
+        self.lanl_property_web_service = "https://csd-web.lanl.gov/public/getPropertyNumber.php?serial"
 # Reset messages
         self.messageReset()
 # Initialize Accuracy stuff
