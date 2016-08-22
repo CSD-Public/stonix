@@ -25,6 +25,8 @@
 This is a Unit Test for Rule MinimizeAcceptedDHCPOptions
 
 @author: Breen Malmberg - 6/13/2016
+@change: Breen Malmberg - 8/19/2016 - re-factored all unit tests
+to account for existance of any/none/all required files
 '''
 
 from __future__ import absolute_import
@@ -52,18 +54,18 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
 
-        self.fileexisted = False
-        if os.path.exists(self.rule.filepath):
-            self.fileexisted = True
-            copyfile(self.rule.filepath, self.rule.filepath + '.stonixtestbak')
+        self.rule.localize()
+
+        if self.rule.filepaths:
+            for fp in self.rule.filepaths:
+                copyfile(fp, fp + '.stonixtestbak')
 
     def tearDown(self):
-        if os.path.exists(self.rule.filepath + '.stonixtestbak'):
-            copyfile(self.rule.filepath + '.stonixtestbak', self.rule.filepath)
-            os.remove(self.rule.filepath + '.stonixtestbak')
-        if os.path.exists(self.rule.filepath):
-            if not self.fileexisted:
-                os.remove(self.rule.filepath)
+        if self.rule.filepaths:
+            for fp in self.rule.filepaths:
+                if os.path.exists(fp + '.stonixtestbak'):
+                    copyfile(fp + '.stonixtestbak', fp)
+                    os.remove(fp + '.stonixtestbak')
 
     def setConditionsForRule(self):
         '''
@@ -72,6 +74,7 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: Breen Malmberg
         '''
+
         success = True
         return success
 
@@ -83,18 +86,11 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
-        self.simpleRuleTest()
+        if self.rule.filepaths:
 
-    def test_nofile(self):
-        '''
-        run test with no dhclient.conf file present
-
-        @author: Breen Malmberg
-        '''
-
-        if os.path.exists(self.rule.filepath):
-            os.remove(self.rule.filepath)
-        self.simpleRuleTest()
+            self.simpleRuleTest()
+        else:
+            pass
 
     def test_blankfile(self):
         '''
@@ -103,13 +99,14 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
-        dirname = os.path.dirname(self.rule.filepath)
-        if not os.path.exists(self.rule.filepath):
-            os.makedirs(dirname, 0755)
-        f = open(self.rule.filepath, 'w')
-        f.write('')
-        f.close()
-        self.simpleRuleTest()
+        if self.rule.filepaths:
+            for fp in self.rule.filepaths:
+                f = open(fp, 'w')
+                f.write('')
+                f.close()
+            self.simpleRuleTest()
+        else:
+            pass
 
     def test_garbage(self):
         '''
@@ -118,13 +115,14 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
-        dirname = os.path.dirname(self.rule.filepath)
-        if not os.path.exists(self.rule.filepath):
-            os.makedirs(dirname, 0755)
-        f = open(self.rule.filepath, 'w')
-        f.write(' (*#%HJSDnvlw jk34nrl24km \n\nrl23978Y*@$&G i4w\n')
-        f.close()
-        self.simpleRuleTest()
+        if self.rule.filepaths:
+            for fp in self.rule.filepaths:
+                f = open(fp, 'w')
+                f.write(' (*#%HJSDnvlw jk34nrl24km \n\nrl23978Y*@$&G i4w\n')
+                f.close()
+            self.simpleRuleTest()
+        else:
+            pass
 
     def test_partialconfig(self):
         '''
@@ -133,13 +131,14 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         @author: Breen Malmberg
         '''
 
-        dirname = os.path.dirname(self.rule.filepath)
-        if not os.path.exists(self.rule.filepath):
-            os.makedirs(dirname, 0755)
-        f = open(self.rule.filepath, 'w')
-        f.write('supersede subnet-mask "example.com";\nsupersede domain-name "example.com";\nrequest broadcast-address;\nrequire broadcast-address;\n')
-        f.close()
-        self.simpleRuleTest()
+        if self.rule.filepaths:
+            for fp in self.rule.filepaths:
+                f = open(fp, 'w')
+                f.write('supersede subnet-mask "example.com";\nsupersede domain-name "example.com";\nrequest broadcast-address;\nrequire broadcast-address;\n')
+                f.close()
+            self.simpleRuleTest()
+        else:
+            pass
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
