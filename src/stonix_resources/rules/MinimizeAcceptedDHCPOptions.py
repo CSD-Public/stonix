@@ -9,6 +9,9 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
  rogue DHCP server
 
 @author: Breen Malmberg
+@change: Breen Malmberg - 8/19/2016 - re-factored all methods to account for
+new configuration file locations as well as multiple simultaneous
+configuration file locations
 '''
 
 from __future__ import absolute_import
@@ -70,17 +73,29 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         @author: Breen Malmberg
         '''
 
-        self.filepath = ''
+        self.filepaths = []
 
-        # these are known canonical locations for the dhclient.conf file
-        filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf']
+        try:
 
-        for fp in filepaths:
-            if os.path.exists(fp):
-                self.filepath = fp
+            # these are known canonical locations for the dhclient.conf file
+            filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf', '/var/lib/NetworkManager/dhclient.conf']
+    
+            for fp in filepaths:
+                if os.path.exists(fp):
+                    self.filepaths.append(fp)
+    
+            basedir = '/var/lib/NetworkManager/'
+            fileslist = os.listdir(basedir)
+            for f in fileslist:
+                if os.path.isfile(basedir + f):
+                    if re.search('dhclient\-.*\.conf', f, re.IGNORECASE):
+                        self.filepaths.append(basedir + f)
 
-        if not self.filepath:
-            self.logger.log(LogPriority.DEBUG, "Unable to locate required configuration file: dhclient.conf")
+            if not self.filepaths:
+                self.logger.log(LogPriority.DEBUG, "Unable to locate required configuration file: dhclient.conf")
+    
+        except Exception:
+            raise
 
     def getFileContents(self, filepath):
         '''
@@ -198,18 +213,19 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                     self.checklist.append("request " + item)
                     self.checklist.append("require " + item)
 
-            if not self.checkFile(self.filepath, self.checkdict):
-                self.compliant = False
+            for fp in self.filepaths:
+                if not self.checkFile(fp, self.checkdict):
+                    self.compliant = False
 
-            if not self.checkFile(self.filepath, self.checklist):
-                self.compliant = False
+            for fp in self.filepaths:
+                if not self.checkFile(fp, self.checklist):
+                    self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.compliant = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+            self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -227,7 +243,6 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
 
         # defaults
         self.detailedresults = ""
-        tmpfile = self.filepath + ".stonixtmp"
         contents = []
         self.iditerator = 0
         self.rulesuccess = True
@@ -249,9 +264,10 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                         contents.append("request " + item + ";\n")
                         contents.append("require " + item + ";\n")
 
-                if os.path.exists(self.filepath):
+                for fp in self.filepaths:
+                    tmpfp = fp + '.stonixtmp'
                     # open the filepath and write the contents
-                    tf = open(tmpfile, "w")
+                    tf = open(tmpfp, "w")
                     tf.writelines(contents)
                     tf.close()
 
@@ -259,41 +275,15 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {'eventtype': 'conf',
-                             'filepath': self.filepath}
+                             'filepath': fp}
                     self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(tmpfile, self.filepath, myid)
+                    self.statechglogger.recordfilechange(tmpfp, fp, myid)
 
                     # move the temporary file/changes to the actual path
                     # ensure correct permissions/ownership after changes are made
-                    os.rename(tmpfile, self.filepath)
-                    os.chmod(self.filepath, self.fileperms)
-                    os.chown(self.filepath, self.fileowner, self.filegroup)
-
-                else:
-
-                    # if the subdirectory for the intended filepath does not exist
-                    # then create it
-                    sfilepath = self.filepath.split('/')
-                    del sfilepath[-1]
-                    subdir = '/'.join(sfilepath)
-                    if not os.path.exists(subdir):
-                        os.makedirs(subdir, self.subdirperms)
-
-                    # open the filepath and write the contents
-                    f = open(self.filepath, "w")
-                    f.writelines(contents)
-                    f.close()
-
-                    # record the change, for undo
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'creation',
-                             'filepath': self.filepath}
-                    self.statechglogger.recordchgevent(myid, event)
-
-                    # ensure the file has the correct permissions after the changes
-                    os.chmod(self.filepath, self.fileperms)
-                    os.chown(self.filepath, self.fileowner, self.filegroup)
+                    os.rename(tmpfp, fp)
+                    os.chmod(fp, self.fileperms)
+                    os.chown(fp, self.fileowner, self.filegroup)
 
             else:
                 self.detailedresults += "The CI was not enabled for this rule. Nothing will be fixed, until the CI is enabled and then fix is run again."
@@ -301,10 +291,9 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+            self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
