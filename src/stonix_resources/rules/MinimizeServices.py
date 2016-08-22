@@ -492,8 +492,6 @@ elements should be space separated.'''
                              "Compliant: " + str(compliant)])
             self.compliant = compliant
             self.targetstate = 'notconfigured'
-            return compliant
-
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -515,6 +513,7 @@ elements should be space separated.'''
 
         @author: D. Kennel
         """
+        self.detailedresults = ""
         changes = []
         fixed = True
         if self.minimizeci.getcurrvalue():
