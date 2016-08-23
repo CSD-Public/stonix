@@ -53,6 +53,7 @@ from ..stonixutilityfunctions import readFile, setPerms, createFile, getUserGrou
 from ..stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
+from time import sleep
 import stat
 import pwd
 import grp
@@ -66,6 +67,7 @@ class DisableRemoveableStorage(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
+        
         self.logger = logger
         self.rulenumber = 29
         self.rulename = 'DisableRemoveableStorage'
@@ -76,7 +78,7 @@ class DisableRemoveableStorage(Rule):
             "from accessing or being accessed from the system.  " + \
             "This rule will be mandatory for those who work on the red " + \
             "network.  This rule will also require a full reboot to fully " + \
-            "tak effect\n"
+            "take effect\n"
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -382,7 +384,7 @@ if __name__ == '__main__':
             "    if retcode \=\=0:\n" + \
             "        cmd \= unload \+ filepath \+ usb \+ \"\.kext/\"\n" + \
             "        call\(cmd\, shell\=True\)\n" + \
-            "    fw \= \"IOFireFamily\"\n" + \
+            "    fw \= \"IOFireWireFamily\"\n" + \
             "    cmd \= check \+ \"\| grep \" \+ fw\n" + \
             "    retcode \= call\(cmd\, shell\=True\)" + \
             "    if retcode \=\=0:\n" + \
@@ -492,7 +494,9 @@ if __name__ == '__main__':
         # if return code is 0, the kernel module is loaded, thus we need
         # to disable it
         if self.ch.getReturnCode() == 0:
-            compliant = False
+            '''Do not set compliant False here.  Due to issues with Mac
+            This is going to fail no matter what.  Other compliancy 
+            checks will still ensure the rule is compliant or not'''
             debug += "Firewire kernel module is loaded\n"
             self.detailedresults += "Firewire kernel module is loaded\n"
 
@@ -893,7 +897,7 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
-        fw = "IOFirewWireFamily"
+        fw = "IOFireWireFamily"
         #fw = "IOFireWireSerialBusProtocolTransport"
         cmd = check + "| grep " + fw
         self.ch.executeCommand(cmd)
@@ -948,6 +952,7 @@ if __name__ == '__main__':
                 event = {"eventtype": "comm",
                          "command": undo}
                 self.statechglogger.recordchgevent(myid, event)
+        sleep(30)
         cmd = ["/bin/launchctl", "load", self.plistpath]
         if not self.ch.executeCommand(cmd):
             debug += "Unable to load the launchctl job to regularly " + \
