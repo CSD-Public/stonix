@@ -141,6 +141,7 @@ this rule to ensure that it will not affect their deployed applications.'''
                         'proxy_connect_module modules/mod_proxy_connect.so',
                         'cache_module modules/mod_cache.so',
                         'cache_disk_module modules/mod_cache_disk.so',
+                        'cache_socache_module modules/mod_cache_socache.so',
                         'ext_filter_module modules/mod_ext_filter.so',
                         'expires_module modules/mod_expires.so',
                         'headers_module modules/mod_headers.so',
