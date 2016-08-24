@@ -21,11 +21,9 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Feb 10, 2015
+Created on Aug 23, 2016
 
 @author: dwalker
-@change: 2015/04/14 dkennel updated for new isApplicable
-@change: 2016/04/06 eball Changed rule name to ConfigureProfileManagement
 '''
 from __future__ import absolute_import
 import traceback
@@ -37,7 +35,7 @@ from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
 
 
-class ConfigureProfileManagement(Rule):
+class ConfigureProfileManagementSTIG(Rule):
     '''
     Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
     & OS Yosemite 10.10. Profile files are installed using the following
@@ -50,15 +48,15 @@ class ConfigureProfileManagement(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
-        self.rulenumber = 106
-        self.rulename = "ConfigureProfileManagement"
+        self.rulenumber = 361
+        self.rulename = "ConfigureProfileManagementSTIG"
         self.formatDetailedResults("initialize")
         self.helptext = "ConfigureProfileManagement rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11.13']}}
+                           'os': {'Mac OS X': ['10.10']}}
         datatype = "bool"
         key = "PASSCODECONFIG"
         instructions = "To disable the installation of the password " + \
@@ -77,7 +75,7 @@ class ConfigureProfileManagement(Rule):
         self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
                          "Resources/stonix.app/Contents/MacOS/" + \
                          "stonix_resources/files/" + \
-                         "stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig"
+                         "stonix4macPasscodeProfileForOSXElCapitan10.11STIG.mobileconfig"
         self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
                           "Resources/stonix.app/Contents/MacOS/" + \
                           "stonix_resources/files/" + \
@@ -108,12 +106,12 @@ class ConfigureProfileManagement(Rule):
             self.profpaths = {}
             '''form key = val;'''
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                  {"allowSimple": ["1", "bool"],
+                                  {"allowSimple": ["0", "bool"],
                                    "forcePIN": ["1", "bool"],
-                                   "maxFailedAttempts": ["5", "int", "less"],
+                                   "maxFailedAttempts": ["4", "int", "less"],
                                    "maxPINAgeInDays": ["180", "int", "more"],
                                    "minComplexChars": ["1", "int", "more"],
-                                   "minLength": ["8", "int", "more"],
+                                   "minLength": ["14", "int", "more"],
                                    "minutesUntilFailedLoginReset":
                                    ["15", "int", "more"],
                                    "pinHistory": ["5", "int", "more"],
