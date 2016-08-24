@@ -35,7 +35,7 @@ from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
 
 
-class ConfigureProfileManagement(Rule):
+class ConfigureProfileManagementSTIG(Rule):
     '''
     Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
     & OS Yosemite 10.10. Profile files are installed using the following
@@ -48,15 +48,15 @@ class ConfigureProfileManagement(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
-        self.rulenumber = 106
-        self.rulename = "ConfigureProfileManagement"
+        self.rulenumber = 361
+        self.rulename = "ConfigureProfileManagementSTIG"
         self.formatDetailedResults("initialize")
         self.helptext = "ConfigureProfileManagement rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11.13']}}
+                           'os': {'Mac OS X': ['10.10']}}
         datatype = "bool"
         key = "PASSCODECONFIG"
         instructions = "To disable the installation of the password " + \
@@ -106,7 +106,7 @@ class ConfigureProfileManagement(Rule):
             self.profpaths = {}
             '''form key = val;'''
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                  {"allowSimple": ["1", "bool"],
+                                  {"allowSimple": ["0", "bool"],
                                    "forcePIN": ["1", "bool"],
                                    "maxFailedAttempts": ["4", "int", "less"],
                                    "maxPINAgeInDays": ["180", "int", "more"],

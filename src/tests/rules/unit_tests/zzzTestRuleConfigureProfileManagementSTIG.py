@@ -22,12 +22,9 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Jun 9, 2015
+Created on Aug 24, 2016
 
 @author: dwalker
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
-@change: 2016/04/06 eball Updated name to ConfigureProfileManagement
 '''
 from __future__ import absolute_import
 import unittest
@@ -36,16 +33,16 @@ import sys, os
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureProfileManagement import ConfigureProfileManagement
+from src.stonix_resources.rules.ConfigureProfileManagementSTIG import ConfigureProfileManagementSTIG
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
-class zzzTestRuleConfigureProfileManagement(RuleTest):
+class zzzTestRuleConfigureProfileManagementSTIG(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureProfileManagement(self.config, self.environ,
+        self.rule = ConfigureProfileManagementSTIG(self.config, self.environ,
                                                self.logdispatch,
                                                self.statechglogger)
         self.rulename = self.rule.rulename
@@ -68,21 +65,21 @@ class zzzTestRuleConfigureProfileManagement(RuleTest):
         goodprofiles = {}
         pwprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
                    "/src/stonix_resources/files/stonix4macPasscodeProfileFor" + \
-                   "OSXElCapitan10.11.mobileconfig"
+                   "OSXElCapitan10.11STIG.mobileconfig"
         secprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
                    "/src/stonix_resources/files/stonix4macSecurity&Privacy" + \
                    "ForOSXElcapitan10.11.mobileconfig"
         pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                              {"allowSimple": ["1", "bool"],
-                               "forcePIN": ["1", "bool"],
-                               "maxFailedAttempts": ["5", "int", "less"],
-                               "maxPINAgeInDays": ["180", "int", "more"],
-                               "minComplexChars": ["1", "int", "more"],
-                               "minLength": ["8", "int", "more"],
-                               "minutesUntilFailedLoginReset":
-                               ["15", "int", "more"],
-                               "pinHistory": ["5", "int", "more"],
-                               "requireAlphanumeric": ["1", "bool"]}}
+                                {"allowSimple": ["0", "bool"],
+                                   "forcePIN": ["1", "bool"],
+                                   "maxFailedAttempts": ["4", "int", "less"],
+                                   "maxPINAgeInDays": ["180", "int", "more"],
+                                   "minComplexChars": ["1", "int", "more"],
+                                   "minLength": ["14", "int", "more"],
+                                   "minutesUntilFailedLoginReset":
+                                   ["15", "int", "more"],
+                                   "pinHistory": ["5", "int", "more"],
+                                   "requireAlphanumeric": ["1", "bool"]}}
         spprofiledict = {"com.apple.screensaver": "",
                               "com.apple.loginwindow": "",
                               "com.apple.systempolicy.managed": "",
