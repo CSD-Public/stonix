@@ -29,7 +29,6 @@ Created on Feb 10, 2015
 '''
 from __future__ import absolute_import
 import traceback
-import sys
 import os
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
@@ -119,18 +118,6 @@ class ConfigureProfileManagement(Rule):
                                    ["15", "int", "more"],
                                    "pinHistory": ["5", "int", "more"],
                                    "requireAlphanumeric": ["1", "bool"]}}
-            '''STIG dictionary'''
-#             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-#                                   {"allowSimple": ["1", "bool"],
-#                                    "forcePIN": ["1", "bool"],
-#                                    "maxFailedAttempts": ["4", "int", "less"],
-#                                    "maxPINAgeInDays": ["180", "int", "more"],
-#                                    "minComplexChars": ["1", "int", "more"],
-#                                    "minLength": ["14", "int", "more"],
-#                                    "minutesUntilFailedLoginReset":
-#                                    ["15", "int", "more"],
-#                                    "pinHistory": ["5", "int", "more"],
-#                                    "requireAlphanumeric": ["1", "bool"]}}
             self.spprofiledict = {"com.apple.screensaver": "",
                                   "com.apple.loginwindow": "",
                                   "com.apple.systempolicy.managed": "",
@@ -139,10 +126,6 @@ class ConfigureProfileManagement(Rule):
                                   "com.apple.MCX": "",
                                   "com.apple.applicationaccess": "",
                                   "com.apple.systempolicy.control": ""}
-#             if self.pwci.getcurrvalue():
-#                 self.profpaths[os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) +
-#                  "/stonix_resources/files/stonix4macPasscodeProfileFor" +
-#                  "OSXElCapitan10.11STIG.mobileconfig"] = self.pwprofiledict
             if self.pwci.getcurrvalue():
                 self.profpaths[self.pwprofile] = self.pwprofiledict
             if self.sci.getcurrvalue():
