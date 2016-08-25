@@ -64,11 +64,9 @@ class zzzTestRuleConfigureProfileManagementSTIG(RuleTest):
         success = True
         goodprofiles = {}
         pwprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
-                   "/src/stonix_resources/files/stonix4macPasscodeProfileFor" + \
-                   "OSXElCapitan10.11STIG.mobileconfig"
+                   "/src/stonix_resources/files/stonix4macSTIGSettingsPasscodeForOSXYosemite10.10.mobileconfig"
         secprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
-                   "/src/stonix_resources/files/stonix4macSecurity&Privacy" + \
-                   "ForOSXElcapitan10.11.mobileconfig"
+                   "/src/stonix_resources/files/stonix4macSTIGSettingsSecurityAndPrivacyForOSXYosemite10.10.mobileconfig"
         pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                 {"allowSimple": ["0", "bool"],
                                    "forcePIN": ["1", "bool"],
