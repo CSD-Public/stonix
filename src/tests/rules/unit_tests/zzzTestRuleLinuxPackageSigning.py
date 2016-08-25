@@ -87,7 +87,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
 
         found = 0
 
-        if not self.rule.debian and not self.rule.ubuntu and not self.rule.suse:
+        if not self.rule.suse:
 
             f = open(self.confpath, "r")
             contentlines = f.readlines()
@@ -111,7 +111,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
         '''
         '''
 
-        if not self.rule.debian and not self.rule.ubuntu and not self.rule.suse:
+        if not self.rule.suse:
 
             f = open(self.confpath, "r")
             contentlines = f.readlines()
@@ -133,7 +133,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
 
         found = 0
 
-        if not self.rule.debian and not self.rule.ubuntu and not self.rule.suse:
+        if not self.rule.suse:
 
             f = open(self.confpath, "r")
             contentlines = f.readlines()
@@ -159,7 +159,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
 
         found = 0
 
-        if not self.rule.debian and not self.rule.ubuntu and not self.rule.suse:
+        if not self.rule.suse:
 
             f = open(self.confpath, "r")
             contentlines = f.readlines()
