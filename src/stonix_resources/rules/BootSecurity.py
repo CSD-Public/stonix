@@ -109,8 +109,7 @@ to False.'''
 
     def auditsystemd(self):
         try:
-            servicelist = self.servicehelper.listservices()
-            if 'stonixBootSecurity.service' in servicelist:
+            if self.servicehelper.auditservice('stonixBootSecurity.service'):
                 return True
             else:
                 return False
@@ -366,13 +365,18 @@ WantedBy=multi-user.target
             traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        
 
     def undo(self):
         if self.type == 'mac':
             self.removemacservices()
         elif self.type == 'systemd':
             os.remove('/etc/systemd/system/stonixBootSecurity.service')
+            reloadcmd = '/bin/systemctl daemon-reload'
+            try:
+                proc = subprocess.Popen(reloadcmd, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, shell=True)
+            except Exception:
+                pass
         elif self.type == 'rclocal':
             try:
                 event = self.statechglogger.getchgevent('0018001')
