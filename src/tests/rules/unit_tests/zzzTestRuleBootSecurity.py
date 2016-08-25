@@ -33,7 +33,6 @@ import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.BootSecurity import BootSecurity
 
@@ -48,7 +47,7 @@ class zzzTestRuleBootSecurity(RuleTest):
                                  self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
+        self.checkUndo = True
 
     def tearDown(self):
         pass
