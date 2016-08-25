@@ -22,33 +22,29 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+Created on Aug 24, 2016
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: dwalker
 '''
 from __future__ import absolute_import
 import unittest
-import re
-import sys
+import sys, os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.MinimizeServices import MinimizeServices
+from src.stonix_resources.rules.STIGConfigureProfileManagement import STIGConfigureProfileManagement
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
-class zzzTestRuleMinimizeServices(RuleTest):
+class zzzTestRuleConfigureProfileManagementSTIG(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = MinimizeServices(self.config,
-                                     self.environ,
-                                     self.logdispatch,
-                                     self.statechglogger)
+        self.rule = STIGConfigureProfileManagement(self.config, self.environ,
+                                               self.logdispatch,
+                                               self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
@@ -57,28 +53,61 @@ class zzzTestRuleMinimizeServices(RuleTest):
         pass
 
     def runTest(self):
-        if re.search("opensuse", self.environ.getostype().lower()):
-            self.rule.report()
-            self.assertTrue(self.rule.fix(), "MinimizeServices.fix failed")
-            self.rule.report()
-            if not self.rule.compliant:
-                match = re.search("services detected: (.*?)avahi-daemon(.*)",
-                                  self.rule.detailedresults)
-                for group in match.groups():
-                    self.assertTrue(re.search("^\s*$", group),
-                                    "Unauthorized running service detected: " +
-                                    group.strip())
-        else:
-            self.simpleRuleTest()
+        self.simpleRuleTest()
 
     def setConditionsForRule(self):
         '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        @author: dwalker
+        @note: This unit test will install two incorrect profiles on purpose
+            to force system non-compliancy
         '''
         success = True
+        goodprofiles = {}
+        pwprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
+                   "/src/stonix_resources/files/stonix4macSTIGSettingsPasscodeForOSXYosemite10.10.mobileconfig"
+        secprofile = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + \
+                   "/src/stonix_resources/files/stonix4macSTIGSettingsSecurityAndPrivacyForOSXYosemite10.10.mobileconfig"
+        pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
+                                {"allowSimple": ["0", "bool"],
+                                   "forcePIN": ["1", "bool"],
+                                   "maxFailedAttempts": ["4", "int", "less"],
+                                   "maxPINAgeInDays": ["180", "int", "more"],
+                                   "minComplexChars": ["1", "int", "more"],
+                                   "minLength": ["14", "int", "more"],
+                                   "minutesUntilFailedLoginReset":
+                                   ["15", "int", "more"],
+                                   "pinHistory": ["5", "int", "more"],
+                                   "requireAlphanumeric": ["1", "bool"]}}
+        spprofiledict = {"com.apple.screensaver": "",
+                              "com.apple.loginwindow": "",
+                              "com.apple.systempolicy.managed": "",
+                              "com.apple.SubmitDiagInfo": "",
+                              "com.apple.preference.security": "",
+                              "com.apple.MCX": "",
+                              "com.apple.applicationaccess": "",
+                              "com.apple.systempolicy.control": ""}
+        self.rule.pwprofile = pwprofile
+        self.rule.secprofile = secprofile
+        goodprofiles[pwprofile] = pwprofiledict
+        goodprofiles[secprofile] = spprofiledict 
+        cmd = ["/usr/sbin/system_profiler", "SPConfigurationProfileDataType"]
+        if self.ch.executeCommand(cmd):
+            output = self.ch.getOutput()
+            if output:
+                for item, values in goodprofiles.iteritems():
+                    self.editor = KVEditorStonix(self.statechglogger,
+                                                  self.logdispatch, "profiles", "",
+                                                  "", values, "", "", output)
+                    if self.editor.report():
+                        cmd = ["/usr/bin/profiles", "-R", "-F", item]
+                        if not self.ch.executeCommand(cmd):
+                            success = False
+                        else:
+                            cmd = ["/usr/bin/profiles", "-I", "-F,", item + "fake"]
+                            if not self.ch.executeCommand(cmd):
+                                success = False
+        else:
+            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -124,4 +153,5 @@ class zzzTestRuleMinimizeServices(RuleTest):
         return success
 
 if __name__ == "__main__":
+    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

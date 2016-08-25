@@ -22,54 +22,39 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ForceIdleLogout
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Eric Ball
+@change: 2016/08/25 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
-import re
 import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.MinimizeServices import MinimizeServices
+from src.stonix_resources.rules.ForceIdleLogout import ForceIdleLogout
 
 
-class zzzTestRuleMinimizeServices(RuleTest):
+class zzzTestRuleForceIdleLogout(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = MinimizeServices(self.config,
-                                     self.environ,
-                                     self.logdispatch,
-                                     self.statechglogger)
+        self.rule = ForceIdleLogout(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
+        self.rule.filci.updatecurrvalue(True)
+        self.checkUndo = True
 
     def tearDown(self):
         pass
 
     def runTest(self):
-        if re.search("opensuse", self.environ.getostype().lower()):
-            self.rule.report()
-            self.assertTrue(self.rule.fix(), "MinimizeServices.fix failed")
-            self.rule.report()
-            if not self.rule.compliant:
-                match = re.search("services detected: (.*?)avahi-daemon(.*)",
-                                  self.rule.detailedresults)
-                for group in match.groups():
-                    self.assertTrue(re.search("^\s*$", group),
-                                    "Unauthorized running service detected: " +
-                                    group.strip())
-        else:
-            self.simpleRuleTest()
+        self.simpleRuleTest()
 
     def setConditionsForRule(self):
         '''
