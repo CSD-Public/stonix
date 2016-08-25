@@ -75,11 +75,11 @@ class STIGConfigureProfileManagement(Rule):
         self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
                          "Resources/stonix.app/Contents/MacOS/" + \
                          "stonix_resources/files/" + \
-                         "stonix4macPasscodeProfileForOSXElCapitan10.11STIG.mobileconfig"
+                         "stonix4macSTIGSettingsPasscodeForOSXYosemite10.10.mobileconfig"
         self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
                           "Resources/stonix.app/Contents/MacOS/" + \
                           "stonix_resources/files/" + \
-                          "stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig"
+                          "stonix4macSTIGSettingsSecurityAndPrivacyForOSXYosemite10.10.mobileconfig"
 
     def report(self):
         '''
