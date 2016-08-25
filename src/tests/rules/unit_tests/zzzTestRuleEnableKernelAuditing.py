@@ -163,7 +163,7 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         found = False
 
         auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules',
-                          '/etc/security/audit/control']
+                          '/etc/security/audit/control', '/etc/security/audit_control']
         for loc in auditruleslocs:
             if os.path.exists(loc):
                 found = True
