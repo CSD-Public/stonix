@@ -126,23 +126,23 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         cronddirs = ['/etc/cron.d/']
         chowndirs = ['/usr/bin/chown', '/usr/sbin/chown']
 
-        self.atallow = ''
-        self.atdeny = ''
+        self.atallow = '/etc/at.allow'
+        self.atdeny = '/etc/at.deny'
         self.rootacc = 'root'
         self.macgroups = ['admin', 'wheel']
-        self.cronlog = ''
-        self.cronallow = ''
-        self.crontab = ''
-        self.anacrontab = ''
-        self.spoolcron = ''
-        self.cronhourly = ''
-        self.crondaily = ''
-        self.cronweekly = ''
-        self.cronmonthly = ''
-        self.cronconf = ''
-        self.crondeny = ''
-        self.chown = ''
-        self.cronddir = ''
+        self.cronlog = '/var/log/cron'
+        self.cronallow = '/etc/cron.allow'
+        self.crontab = '/etc/crontab'
+        self.anacrontab = '/etc/anacrontab'
+        self.spoolcron = '/var/spool/cron'
+        self.cronhourly = '/etc/cron.hourly'
+        self.crondaily = '/etc/cron.daily'
+        self.cronweekly = '/etc/cron.weekly'
+        self.cronmonthly = '/etc/cron.monthly'
+        self.cronconf = '/etc/default/cron'
+        self.crondeny = '/etc/cron.deny'
+        self.chown = '/usr/sbin/chown'
+        self.cronddir = '/etc/cron.d/'
 
         for loc in cronddirs:
             if os.path.exists(loc):
