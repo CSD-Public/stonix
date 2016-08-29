@@ -1171,10 +1171,13 @@ def createFile(path, logger):
     @return: bool '''
     debug = ""
     try:
+        pathdir, _ = os.path.split(path)
+        if not os.path.exists(pathdir):
+            os.makedirs(pathdir)
         w = open(path, "w")
         w.close()
     except IOError:
-        debug += "unable to Create the file: " + path
+        debug += "Unable to create the file: " + path
         debug += traceback.format_exc() + "\n"
         logger.log(LogPriority.DEBUG, debug)
         return False
