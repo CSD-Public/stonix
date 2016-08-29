@@ -124,7 +124,7 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         cronconfdirs = ['/etc/default/cron']
         crondenydirs = ['/etc/cron.deny']
         cronddirs = ['/etc/cron.d/']
-        chowndirs = ['/usr/bin/chown', '/usr/sbin/chown']
+        chowndirs = ['/usr/bin/chown', '/usr/sbin/chown', '/bin/chown']
 
         self.atallow = '/etc/at.allow'
         self.atdeny = '/etc/at.deny'
