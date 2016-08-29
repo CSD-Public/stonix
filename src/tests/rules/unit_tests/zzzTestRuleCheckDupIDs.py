@@ -40,11 +40,9 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.manage_users.macos_users import MacOSUser
 from src.stonix_resources.CheckApplicable import CheckApplicable
-from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogPriority
-from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.rules.CheckDupIDs import CheckDupIDs
+
 
 class zzzTestRuleCheckDupIDs(RuleTest):
 
@@ -56,7 +54,6 @@ class zzzTestRuleCheckDupIDs(RuleTest):
                                 self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
         self.users = MacOSUser()
         #####
         # Set up an applicable check class
@@ -87,9 +84,9 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -102,7 +99,7 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -115,7 +112,7 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -149,41 +146,5 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         self.users.rmUser("AutoTestMacDuplicateUserOne")
         self.users.rmUser("AutoTestMacDuplicateUserTwo")
 
-    def test_checkForUnixDuplicateUser(self):
-        """
-        Tests the rule method that checks unix uids with the combination
-        of /etc/passwd and /etc/shadow.
-        """
-        applicable = {'type': 'white',
-                      'family': ['linux', 'solaris', 'freebsd'],
-                      'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        isTestApplicableHere = self.chkApp.isapplicable(applicable)
-        if not isTestApplicableHere:
-            raise unittest.SkipTest("RamDisk does not support this OS")
-        self.assertTrue(isTestApplicableHere)
-
-    def test_checkForUnixUnknownUserGroup(self):
-        """
-        
-        """
-        applicable = {'type': 'white',
-                      'family': ['linux', 'solaris', 'freebsd'],
-                      'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        isTestApplicableHere = self.chkApp.isapplicable(applicable)
-        if not isTestApplicableHere:
-            raise unittest.SkipTest("RamDisk does not support this OS")
-        self.assertTrue(isTestApplicableHere)
-
-    def test_checkForMacOSUnknownUserGroup(self):
-        """
-        """
-        applicable = {'type': 'white',
-                      'family': ['darwin']}
-        isTestApplicableHere = self.chkApp.isapplicable(applicable)
-        if not isTestApplicableHere:
-            raise unittest.SkipTest("RamDisk does not support this OS")
-        self.assertTrue(isTestApplicableHere)
-
 if __name__ == "__main__":
-
     unittest.main()
