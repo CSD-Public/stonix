@@ -31,6 +31,7 @@ This is a Unit Test for Rule CheckDupIDs
                         file as well as with the test harness.
 @change: 2016/04/27 rsn Added use of ApplicableCheck class
 @change: 2016/04/27 rsn Added use of precursor to manage_user class
+@change: 2016/08/29 eball Added conditional to SkipTest for Python < v2.7
 '''
 from __future__ import absolute_import
 import sys
@@ -128,7 +129,10 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         isTestApplicableHere = self.chkApp.isapplicable(applicable)
 
         if not isTestApplicableHere:
-            raise unittest.SkipTest("CheckDupID's does not support this OS")
+            if sys.version_info < (2, 7):
+                return
+            else:
+                raise unittest.SkipTest("CheckDupID's does not support this OS")
 
         uid = "7000"
 
