@@ -436,22 +436,15 @@ class InstallBanners(RuleKVEditor):
 
         retval = False
 
-        cmd1 = "ps -ef | grep '/[X]' | grep gdm"
-        val1 = '\/gdm\/'
         cmd2 = 'gnome-session --version'
         val2 = '\s3\.'
         cmd3 = 'gdm --version'
         val3 = 'GDM\s*3\.'
-        cmd4 = "ps -ef | grep '/[X]' | grep gdm"
-        val4 = '\/gdm3\/'
 
         try:
-            if self.checkCommand(cmd1, val1):
-                if self.checkCommand(cmd2, val2):
-                    self.setgnome3()
-            if self.checkCommand(cmd3, val3):
+            if self.checkCommand(cmd2, val2):
                 self.setgnome3()
-            if self.checkCommand(cmd4, val4):
+            if self.checkCommand(cmd3, val3):
                 self.setgnome3()
         except Exception:
             raise
