@@ -22,9 +22,10 @@
 ###############################################################################
 """
 @note: This test is not set up to use proxies.
-@change 2016/02/10 roy Added sys.path.append for being able to unit test this
-                       file as well as with the test harness.
-@change 2016/02/10 roy Added functionality to testInstallPkg test
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
+@change: 2016/02/10 roy Added functionality to testInstallPkg test
+@change: 2016/08/30 eball Added conditional to SkipTest for Python < 2.7
 
 @author: Roy Nielsen
 """
@@ -43,12 +44,13 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.Connectivity import Connectivity
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
-def NotApplicableToThisOS(Exception):
+
+class NotApplicableToThisOS(Exception):
     """
-    Custom Exception    
+    Custom Exception
     """
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 
 class zzzTestFrameworkMacPkgr(unittest.TestCase):
@@ -67,7 +69,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.logger.log(LogPriority.DEBUG, "##################################")
         self.logger.log(LogPriority.DEBUG, "### OS Family: " + str(self.osfamily))
         self.logger.log(LogPriority.DEBUG, "##################################")
-        
+
         if not re.match("^darwin$", self.osfamily.strip()):
             raise unittest.SkipTest("RamDisk does not support this OS" + \
                                     " family: " + str(self.osfamily))
@@ -149,6 +151,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        if sys.version_info < (2, 7):
+            return
         if not self.connection.isPageAvailable():
             self.logger.log(LogPriority.INFO, "This test fails without a " + \
                                               "properly configured Mac " + \
@@ -208,6 +212,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        if sys.version_info < (2, 7):
+            return
         if not self.connection.isPageAvailable():
             self.logger.log(LogPriority.INFO, "This test fails without a " + \
                                               "properly configured Mac " + \
@@ -257,6 +263,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        if sys.version_info < (2, 7):
+            return
         if not self.connection.isPageAvailable():
             self.logger.log(LogPriority.INFO, "This test fails without a " + \
                                               "properly configured Mac " + \
@@ -287,6 +295,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        if sys.version_info < (2, 7):
+            return
         if not self.connection.isPageAvailable():
             self.logger.log(LogPriority.INFO, "This test fails without a " + \
                                               "properly configured Mac " + \
@@ -351,6 +361,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        if sys.version_info < (2, 7):
+            return
         success = False
         try:
             #####
@@ -436,6 +448,8 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         
         @author: Roy Nielsen
         """
+        if sys.version_info < (2, 7):
+            return
         if not self.connection.isPageAvailable():
             self.logger.log(LogPriority.INFO, "This test fails without a " + \
                                               "properly configured Mac " + \
