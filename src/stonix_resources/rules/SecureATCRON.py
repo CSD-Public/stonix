@@ -370,11 +370,12 @@ CRON utilities, set the value of SECUREATCRON to False.'''
             for item in self.reportcronchmodfiledict:
                 if os.path.exists(item):
                     perms = self.getPerms(item)
-                    if perms != self.reportcronchmodfiledict[item]:
-                        print "\n\nFile perms were: " + perms
-                        print "\n\nThey need to be: " + self.reportcronchmodfiledict[item]
+                    wantedPerms = self.reportcronchmodfiledict[item]
+                    if perms != wantedPerms:
                         retval = False
-                        self.detailedresults += "\nPermissions for " + item + " are not correct"
+                        self.detailedresults += "\nPermissions for " + item + \
+                            " are not correct: expected " + wantedPerms + \
+                            ", found " + perms
 
             # check ownership on cron/at files
             for item in self.cronchownfilelist:
@@ -382,10 +383,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                     ownership = self.find_ownership(item)
                     if ownership['user'] != self.rootacc:
                         retval = False
-                        self.detailedresults += "\nUser ownership for " + item + " is not correct"
+                        self.detailedresults += "\nUser ownership for " + \
+                            item + " is not correct: expected " + \
+                            self.rootacc + ", found " + ownership['user']
                     if ownership['group'] not in self.macgroups:
                         retval = False
-                        self.detailedresults += "\nGroup ownership for " + item + " is not correct"
+                        self.detailedresults += "\nGroup ownership for " + \
+                            item + " is not correct: expected " + \
+                            self.macgroups + ", found " + ownership['group']
 
             if os.path.exists(syslog):
                 f = open(syslog, 'r')
