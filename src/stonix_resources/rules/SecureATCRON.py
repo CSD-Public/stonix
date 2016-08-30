@@ -36,7 +36,8 @@ fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/10/27 eball Added feedback to report()
 @change: 2016/08/09 Breen Malmberg Added os x implementation; refactored large parts
-of the code as well 
+of the code as well
+@change: 2016/08/30 eball Refactored fixLinux() method, PEP8 cleanup
 '''
 
 from __future__ import absolute_import
@@ -49,6 +50,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import iterate, setPerms, resetsecon
 from pwd import getpwuid
 from grp import getgrgid
 
@@ -529,9 +531,13 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         # defaults
         self.detailedresults = ""
         self.rulesuccess = True
+        self.iditerator = 0
+        # Delete old undo events
+        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+        for event in eventlist:
+            self.statechglogger.deleteentry(event)
 
         try:
-
             if self.SecureATCRON.getcurrvalue():
 
                 if self.environ.getosfamily() == 'darwin':
@@ -542,8 +548,10 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                         self.rulesuccess = False
 
             else:
-                self.detailedresults += "\nThis rule's CI is currently disabled. Fix did not run"
-                self.logger.log(LogPriority.DEBUG, "SecureATCRON's fix method was run, but the CI was disabled")
+                self.detailedresults += "\nThis rule's CI is currently " + \
+                    "disabled. Fix did not run"
+                self.logger.log(LogPriority.DEBUG, "SecureATCRON's fix " +
+                                "method was run, but the CI was disabled")
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -551,7 +559,8 @@ CRON utilities, set the value of SECUREATCRON to False.'''
             self.rulesuccess = False
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
         return self.rulesuccess
 
     def fixDarwin(self):
@@ -630,20 +639,33 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         success = True
 
         try:
-        
             # set ownership on files
             for item in self.cronchownfilelist:
                 if os.path.exists(item):
-                    os.chown(item, 0, 0)
+                    perms = stat.S_IMODE(os.stat(item).st_mode)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    setPerms(item, [0, 0, perms], self.logger,
+                             self.statechglogger, myid)
 
             # set permissions on files
             for item in self.fixcronchmodfiledict:
                 if os.path.exists(item):
-                    os.chmod(item, self.fixcronchmodfiledict[item])
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    perms = self.fixcronchmodfiledict[item]
+                    setPerms(item, [-1, -1, perms], self.logger,
+                             self.statechglogger, myid)
 
             # remove the deny files
             for item in cronremovelist:
                 if os.path.exists(item):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "deletion",
+                             "filepath": item}
+                    self.statechglogger.recordfiledelete(item, myid)
+                    self.statechglogger.recordchgevent(event, myid)
                     os.remove(item)
 
             # write root to the cron.allow file
@@ -653,24 +675,32 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 tf.write(self.rootacc)
                 tf.close()
 
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
                 event = {'eventtype': 'conf',
                          'filename': self.cronallow}
-
-                myid = '0033001'
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.cronallow, tmpcronallow, myid)
+                self.statechglogger.recordfilechange(self.cronallow,
+                                                     tmpcronallow, myid)
                 os.rename(tmpcronallow, self.cronallow)
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                setPerms(self.cronallow, [0, 0, 0o400], self.logger,
+                         self.statechglogger, myid)
+                resetsecon(self.cronallow)
 
             else:
                 f = open(self.cronallow, 'w')
                 f.write(self.rootacc)
                 f.close()
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
                 event = {'eventtype': 'creation',
                          'filename': self.cronallow}
-                myid = '0033001'
-                os.chown(self.cronallow, 0, 0)
-                os.chmod(self.cronallow, 0400)
                 self.statechglogger.recordchgevent(myid, event)
+                setPerms(self.cronallow, [0, 0, 0o400], self.logger)
 
             # write root to the at.allow file
             if os.path.exists(self.atallow):
@@ -679,25 +709,31 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 tf.write(self.rootacc)
                 tf.close()
 
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
                 event = {'eventtype': 'conf',
                          'filename': self.atallow}
-
-                myid = '0033002'
-
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.atallow, tmpatallow, myid)
+                self.statechglogger.recordfilechange(self.atallow,
+                                                     tmpatallow, myid)
                 os.rename(tmpatallow, self.atallow)
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                setPerms(self.atallow, [0, 0, 0o400], self.logger,
+                         self.statechglogger, myid)
+                resetsecon(self.atallow)
 
             else:
                 f = open(self.atallow, 'w')
                 f.write(self.rootacc)
                 f.close()
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
                 event = {'eventtype': 'creation',
                          'filename': self.atallow}
-                myid = '0033002'
-                os.chown(self.atallow, 0, 0)
-                os.chmod(self.atallow, 0400)
                 self.statechglogger.recordchgevent(myid, event)
+                setPerms(self.atallow, [0, 0, 0o400], self.logger)
 
             # enable cron logging
             if os.path.exists(self.cronconf):
@@ -706,30 +742,31 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 tf.write('CRONLOG=YES')
                 tf.close()
 
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
                 event = {'eventtype': 'conf',
                          'filename': self.cronconf}
-
-                myid = '0033003'
-
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.cronconf, tmpcronconf, myid)
+                self.statechglogger.recordfilechange(self.cronconf,
+                                                     tmpcronconf, myid)
                 os.rename(tmpcronconf, self.cronconf)
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                setPerms(self.cronconf, [0, -1, 0o400], self.logger,
+                         self.statechglogger, myid)
+                resetsecon(self.cronconf)
             else:
                 f = open(self.cronconf, 'w')
                 f.write('CRONLOG=YES')
                 f.close()
 
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
                 event = {'eventtype': 'creation',
                          'filename': self.cronconf}
-
-                myid = '0033003'
-
-                # can't use os.chmod because we don't know what gid bin
-                # group is
-                os.system(self.chown + ' ' + self.rootacc + ':bin ' + self.cronconf)
-                os.chmod(self.cronconf, 0400)
-
                 self.statechglogger.recordchgevent(myid, event)
+                setPerms(self.cronconf, [0, -1, 0o400], self.logger)
 
         except Exception:
             raise
