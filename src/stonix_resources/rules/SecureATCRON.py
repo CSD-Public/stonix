@@ -694,7 +694,7 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                     event = {"eventtype": "deletion",
                              "filepath": item}
                     self.statechglogger.recordfiledelete(item, myid)
-                    self.statechglogger.recordchgevent(event, myid)
+                    self.statechglogger.recordchgevent(myid, event)
                     os.remove(item)
 
             # write root to the cron.allow file
