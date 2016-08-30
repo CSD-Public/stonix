@@ -35,8 +35,8 @@ fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/10/27 eball Added feedback to report()
-@change: 2016/08/09 Breen Malmberg Added os x implementation; refactored large parts
-of the code as well
+@change: 2016/08/09 Breen Malmberg Added os x implementation; refactored large
+parts of the code as well
 @change: 2016/08/30 eball Refactored fixLinux() method, PEP8 cleanup
 '''
 
@@ -114,7 +114,7 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         crontabdirs = ['/etc/crontab']
         cronspooldirs = ['/var/spool/cron']
         anacrondirs = ['/etc/anacrontab']
-        rootaccs = {'darwin': 'root', # mac has used 'admin' in the past as a sub for root
+        rootaccs = {'darwin': 'root',  # mac has used 'admin' in the past
                     'linux': 'root',
                     'solaris': 'root',
                     'freebsd': 'root'}
@@ -218,17 +218,17 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         # python does not preserve data integrity
         # (the numbers change wildly)
         self.reportcronchmodfiledict = {self.crontab: '0644',
-                                  self.anacrontab: '0600',
-                                  self.spoolcron: '0700',
-                                  self.cronlog: '0600',
-                                  self.cronallow: '0400',
-                                  self.atallow: '0400'}
+                                        self.anacrontab: '0600',
+                                        self.spoolcron: '0700',
+                                        self.cronlog: '0600',
+                                        self.cronallow: '0400',
+                                        self.atallow: '0400'}
         self.fixcronchmodfiledict = {self.crontab: 0644,
-                                  self.anacrontab: 0600,
-                                  self.spoolcron: 0700,
-                                  self.cronlog: 0600,
-                                  self.cronallow: 0400,
-                                  self.atallow: 0400}
+                                     self.anacrontab: 0600,
+                                     self.spoolcron: 0700,
+                                     self.cronlog: 0600,
+                                     self.cronallow: 0400,
+                                     self.atallow: 0400}
         self.cronchownfilelist = [self.cronhourly, self.crondaily,
                                   self.cronweekly, self.cronmonthly,
                                   self.cronddir, self.crontab,
@@ -247,31 +247,42 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         if not self.cronddir:
             self.logger.log(LogPriority.DEBUG, "cron.d directory not defined")
         if not self.cronconf:
-            self.logger.log(LogPriority.DEBUG, "cron conf directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron conf directory not defined")
         if not self.crondeny:
-            self.logger.log(LogPriority.DEBUG, "cron deny directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron deny directory not defined")
         if not self.atallow:
-            self.logger.log(LogPriority.DEBUG, "at allow directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "at allow directory not defined")
         if not self.atdeny:
             self.logger.log(LogPriority.DEBUG, "at deny directory not defined")
         if not self.cronlog:
-            self.logger.log(LogPriority.DEBUG, "cron log directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron log directory not defined")
         if not self.cronallow:
-            self.logger.log(LogPriority.DEBUG, "cron allow directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron allow directory not defined")
         if not self.crontab:
             self.logger.log(LogPriority.DEBUG, "crontab directory not defined")
         if not self.anacrontab:
-            self.logger.log(LogPriority.DEBUG, "anacrontab directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "anacrontab directory not defined")
         if not self.spoolcron:
-            self.logger.log(LogPriority.DEBUG, "spool cron directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "spool cron directory not defined")
         if not self.cronhourly:
-            self.logger.log(LogPriority.DEBUG, "cron hourly directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron hourly directory not defined")
         if not self.crondaily:
-            self.logger.log(LogPriority.DEBUG, "cron daily directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron daily directory not defined")
         if not self.cronweekly:
-            self.logger.log(LogPriority.DEBUG, "cron weekly directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron weekly directory not defined")
         if not self.cronmonthly:
-            self.logger.log(LogPriority.DEBUG, "cron monthly directory not defined")
+            self.logger.log(LogPriority.DEBUG,
+                            "cron monthly directory not defined")
 
     def initobjs(self):
         '''
@@ -317,7 +328,8 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -330,9 +342,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         @rtype: dict
         @author: Breen Malmberg
         '''
-
-        user = ''
-        group = ''
         ownership = {}
 
         user = getpwuid(os.stat(filename).st_uid).pw_name
@@ -357,7 +366,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         syslog = '/etc/syslog.conf'
 
         try:
-
             # check permissions on cron/at files
             for item in self.reportcronchmodfiledict:
                 if os.path.exists(item):
@@ -385,12 +393,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 f.close()
 
                 for line in contentlines:
-                    if re.search('cron\.\*\s*' + re.escape(self.cronlog), line, re.IGNORECASE):
+                    if re.search('cron\.\*\s*' + re.escape(self.cronlog), line,
+                                 re.IGNORECASE):
                         cronlogopt = True
 
             if not cronlogopt:
                 retval = False
-                self.detailedresults += "\nCron logging not enabled in: /etc/syslog.conf"
+                self.detailedresults += "\nCron logging not enabled in: " + \
+                    "/etc/syslog.conf"
 
         except Exception:
             raise
@@ -405,7 +415,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         @rtype: string
         @author: Breen Malmberg
         '''
-
         # init the return variable to
         # some initial default value
         perms = '0000'
@@ -413,7 +422,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         try:
 
             mode = os.stat(filepath).st_mode
-    
             perms = oct(stat.S_IMODE(mode))
 
         except Exception:
@@ -439,7 +447,8 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                     perms = self.getPerms(item)
                     if perms != self.reportcronchmodfiledict[item]:
                         retval = False
-                        self.detailedresults += "\nPermissions for " + item + " are not correct"
+                        self.detailedresults += "\nPermissions for " + item + \
+                            " are not correct"
 
             # check ownership on cron/at files
             for item in self.cronchownfilelist:
@@ -447,70 +456,80 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                     ownership = self.find_ownership(item)
                     if ownership['user'] != self.rootacc:
                         retval = False
-                        self.detailedresults += "\nUser ownership for " + item + " is not correct"
+                        self.detailedresults += "\nUser ownership for " + \
+                            item + " is not correct"
                     if ownership['group'] != self.rootacc:
                         retval = False
-                        self.detailedresults += "\nGroup ownership for " + item + " is not correct"
+                        self.detailedresults += "\nGroup ownership for " + \
+                            item + " is not correct"
 
             # check for files that shouldn't exist
             if os.path.exists(self.crondeny):
                 retval = False
-                self.detailedresults += "Unwanted file: " + str(self.crondeny) + " was found and should not exist\n"
+                self.detailedresults += "Unwanted file: " + \
+                    str(self.crondeny) + " was found and should not exist\n"
             if os.path.exists(self.atdeny):
                 retval = False
-                self.detailedresults += "Unwanted file: " + str(self.crondeny) + " was found and should not exist\n"
-    
+                self.detailedresults += "Unwanted file: " + \
+                    str(self.crondeny) + " was found and should not exist\n"
+
             # check for files that need to exist
             if not os.path.exists(self.cronallow):
                 retval = False
-                self.detailedresults += "Required configuration file: " + str(self.atdeny) + " was not found\n"
+                self.detailedresults += "Required configuration file: " + \
+                    str(self.atdeny) + " was not found\n"
             else:
                 # check for correct configuration of cron.allow
                 f = open(self.cronallow, 'r')
                 contentlines = f.readlines()
                 f.close()
-    
+
                 for line in contentlines:
                     if re.search('^' + self.rootacc, line):
                         rootcronallow = True
-    
+
                 if not rootcronallow:
                     retval = False
-                    self.detailedresults += "Required configuration option not found in: " + str(self.cronallow)
+                    self.detailedresults += "Required configuration option " + \
+                        "not found in: " + str(self.cronallow)
             if not os.path.exists(self.atallow):
                 retval = False
-                self.detailedresults += "Required configuration file: " + str(self.atallow) + " was not found\n"
+                self.detailedresults += "Required configuration file: " + \
+                    str(self.atallow) + " was not found\n"
             else:
                 # check for correct configuration of at.allow
                 f = open(self.atallow, 'r')
                 contentlines = f.readlines()
                 f.close()
-    
+
                 for line in contentlines:
                     if re.search('^' + self.rootacc, line):
                         rootatallow = True
-    
+
                 if not rootatallow:
                     retval = False
-                    self.detailedresults += "Required configuration option not found in: " + str(self.atallow)
-    
+                    self.detailedresults += "Required configuration option " + \
+                        "not found in: " + str(self.atallow)
+
             # check if cron logging is enabled
             if os.path.exists(self.cronconf):
                 f = open(self.cronconf, 'r')
                 contentlines = f.readlines()
                 f.close()
-    
+
                 for line in contentlines:
                     if re.search('^CRONLOG\=YES', line, re.IGNORECASE):
                         cronlogopt = True
-    
+
                 if not cronlogopt:
                     retval = False
-                    self.detailedresults += "Required configuration option not found in: " + str(self.cronconf)
-    
+                    self.detailedresults += "Required configuration option " + \
+                        "not found in: " + str(self.cronconf)
+
             else:
                 retval = False
-                self.detailedresults += "Required configuration file: " + str(self.cronconf) + " was not found\n"
+                self.detailedresults += "Required configuration file: " + \
+                    str(self.cronconf) + " was not found\n"
 
         except Exception:
             raise
@@ -574,8 +593,10 @@ CRON utilities, set the value of SECUREATCRON to False.'''
 
         success = True
         cronlinefound = False
-        unload = "/bin/launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist"
-        load = "/bin/launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist"
+        unload = "/bin/launchctl unload " + \
+            "/System/Library/LaunchDaemons/com.apple.syslogd.plist"
+        load = "/bin/launchctl load " + \
+            "/System/Library/LaunchDaemons/com.apple.syslogd.plist"
         syslog = '/etc/syslog.conf'
 
         try:
@@ -595,7 +616,8 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 f.close()
 
                 for line in contentlines:
-                    if re.search('cron\.\*\s+' + re.escape(self.cronlog), line, re.IGNORECASE):
+                    if re.search('cron\.\*\s+' + re.escape(self.cronlog), line,
+                                 re.IGNORECASE):
                         cronlinefound = True
 
                 if not cronlinefound:
@@ -614,12 +636,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
             self.ch.executeCommand(unload)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
-                self.logger.log(LogPriority.DEBUG, "Failed to run command: " + str(unload))
+                self.logger.log(LogPriority.DEBUG,
+                                "Failed to run command: " + str(unload))
                 success = False
             self.ch.executeCommand(load)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
-                self.logger.log(LogPriority.DEBUG, "Failed to run command: " + str(load))
+                self.logger.log(LogPriority.DEBUG,
+                                "Failed to run command: " + str(load))
                 success = False
 
         except Exception:
