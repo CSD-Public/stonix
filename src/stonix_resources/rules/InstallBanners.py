@@ -770,6 +770,10 @@ class InstallBanners(RuleKVEditor):
                 found = filecontents.find(searchparams)
                 if found == -1:
                     retval = False
+            else:
+                retval = False
+                self.detailedresults += "\nFile contents for " + filepath + \
+                    "could not be read\n"
         except Exception:
             raise
         return retval
@@ -828,7 +832,7 @@ class InstallBanners(RuleKVEditor):
         retval = True
 
         try:
-            if not self.reportlinuxcommon:
+            if not self.reportlinuxcommon():
                 retval = False
             if self.gnome2:
                 if not self.reportgnome2():
@@ -842,10 +846,6 @@ class InstallBanners(RuleKVEditor):
             elif self.kde:
                 if not self.reportkde():
                     retval = False
-            else:
-                retval = False
-                self.detailedresults += '\nCould not identify display ' + \
-                    'manager, or display manager not supported.'
         except Exception:
             raise
         return retval
@@ -1237,10 +1237,6 @@ class InstallBanners(RuleKVEditor):
             elif self.kde:
                 if not self.fixkde():
                     retval = False
-            else:
-                retval = False
-                self.detailedresults += '\nCould not identify display ' + \
-                    'manager, or display manager not supported.'
         except Exception:
             raise
         return retval
