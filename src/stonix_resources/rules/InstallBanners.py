@@ -51,8 +51,8 @@ from ..KVEditorStonix import KVEditorStonix
 from ..localize import WARNINGBANNER
 from ..localize import ALTWARNINGBANNER
 from ..localize import OSXSHORTWARNINGBANNER
-from ..stonixutilityfunctions import fixInflation
-from ..stonixutilityfunctions import iterate
+from ..stonixutilityfunctions import fixInflation, iterate, createFile
+from ..stonixutilityfunctions import setPerms, resetsecon
 
 
 class InstallBanners(RuleKVEditor):
@@ -556,7 +556,7 @@ class InstallBanners(RuleKVEditor):
             if mode not in ['w', 'a']:
                 self.logger.log(LogPriority.DEBUG,
                                 "Parameter 'mode' must be either 'w' or 'a'")
-                self.detailedresults += '\nfailed to write to file: ' + \
+                self.detailedresults += '\nFailed to write to file: ' + \
                     str(filepath)
                 retval = False
                 return retval
@@ -567,7 +567,7 @@ class InstallBanners(RuleKVEditor):
                                     "Parameter 'perms' must be a list of " +
                                     "exactly size 3, and all elements of " +
                                     "the list must be integers")
-                    self.detailedresults += '\nfailed to write to file: ' + \
+                    self.detailedresults += '\nFailed to write to file: ' + \
                         str(filepath)
                     retval = False
                     return retval
@@ -576,7 +576,7 @@ class InstallBanners(RuleKVEditor):
                                 "Parameter 'perms' must be a list of " +
                                 "exactly size 3, and all elements of the " +
                                 "list must be integers")
-                self.detailedresults += '\nfailed to write to file: ' + \
+                self.detailedresults += '\nFailed to write to file: ' + \
                     str(filepath)
                 retval = False
                 return retval
@@ -584,7 +584,7 @@ class InstallBanners(RuleKVEditor):
             if not filepath:
                 self.logger.log(LogPriority.DEBUG,
                                 "Parameter 'filepath' was blank")
-                self.detailedresults += '\nfailed to write to file: ' + \
+                self.detailedresults += '\nFailed to write to file: ' + \
                     str(filepath)
                 retval = False
                 return retval
@@ -592,7 +592,7 @@ class InstallBanners(RuleKVEditor):
             if not contents:
                 self.logger.log(LogPriority.DEBUG,
                                 "Parameter 'contents' was blank")
-                self.detailedresults += '\nfailed to write to file: ' + \
+                self.detailedresults += '\nFailed to write to file: ' + \
                     str(filepath)
                 retval = False
                 return retval
@@ -601,40 +601,18 @@ class InstallBanners(RuleKVEditor):
                 self.logger.log(LogPriority.DEBUG,
                                 "Parameter 'contents' must be either a " +
                                 "list or a string")
-                self.detailedresults += '\nfailed to write to file: ' + \
+                self.detailedresults += '\nFailed to write to file: ' + \
                     str(filepath)
                 retval = False
                 return retval
 
-            pathsplit = os.path.split(filepath)
-            if not os.path.exists(pathsplit[0]):
-                self.logger.log(LogPriority.DEBUG,
-                                "Parameter 'filepath' base directory is " +
-                                "missing. Attempting to create it...")
-                try:
-                    os.makedirs(pathsplit[0], 0755)
-                except Exception:
-                    self.logger.log(LogPriority.DEBUG,
-                                    "Failed to create filepath base " +
-                                    "directory: " + str(pathsplit[0]))
-                    self.detailedresults += '\nFailed to write to file: ' + \
-                        str(filepath)
-                    retval = False
-                    return retval
-                self.logger.log(LogPriority.DEBUG,
-                                "Base directory: " + str(pathsplit[0]) +
-                                " created successfully.")
-                # FIXME need to add undo event here after rule.py is updated to
-                # correctly handle undo of directory creations
-
+            fileCreated = False
             if not os.path.exists(filepath):
                 self.logger.log(LogPriority.DEBUG,
-                                "Parameter 'filepath' does not exist. " +
+                                filepath + " does not exist. " +
                                 "Attempting to create it...")
                 try:
-                    f = open(filepath, 'w')
-                    f.write('')
-                    f.close()
+                    createFile(filepath, self.logger)
                     os.chmod(filepath, perms[0])
                     os.chown(filepath, perms[1], perms[2])
 
@@ -643,12 +621,12 @@ class InstallBanners(RuleKVEditor):
                     event = {'eventtype': 'creation',
                              'filepath': filepath}
                     self.statechglogger.recordchgevent(myid, event)
-
+                    fileCreated = True
                 except Exception:
                     self.logger.log(LogPriority.DEBUG,
                                     "Failed to create filepath: " +
                                     str(filepath))
-                    self.detailedresults += '\nfailed to write to file: ' + \
+                    self.detailedresults += '\nFailed to write to file: ' + \
                         str(filepath)
                     retval = False
                     return retval
@@ -664,16 +642,19 @@ class InstallBanners(RuleKVEditor):
                 tf.writelines(contents)
             tf.close()
 
+            if not fileCreated:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {'eventtype': 'conf',
+                         'filepath': filepath}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(tmpfilepath, filepath,
+                                                     myid)
+            os.rename(tmpfilepath, filepath)
+
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            event = {'eventtype': 'conf',
-                     'filepath': filepath}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(tmpfilepath, filepath, myid)
-
-            os.rename(tmpfilepath, filepath)
-            os.chmod(filepath, perms[0])
-            os.chown(filepath, perms[1], perms[2])
+            setPerms(filepath, perms, self.logger, self.statechglogger, myid)
 
         except Exception:
             self.rulesuccess = False
@@ -1302,7 +1283,7 @@ class InstallBanners(RuleKVEditor):
             for cmd in self.gnome2fixlist:
                 self.cmdhelper.executeCommand(cmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                if self.cmdhelper.getReturnCode():
                     retval = False
                     self.detailedresults += "Failed to run command: " + str(cmd)
                     self.logger.log(LogPriority.DEBUG,
@@ -1374,18 +1355,21 @@ class InstallBanners(RuleKVEditor):
                 os.chown('/etc/gdm3/greeter.gsettings', 0, 0)
                 self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                if self.cmdhelper.getReturnCode():
                     retval = False
                     self.detailedresults += '\nEncountered a problem ' + \
                         'trying to run command: dpkg-reconfigure ' + \
                         'gdm3\nError was: ' + str(errout)
+
+                if not self.fixlocks():
+                    retval = False
             else:
                 for opt in self.gnome3optdict:
                     self.cmdhelper.executeCommand(self.gsettingsset + opt +
                                                   ' ' +
                                                   str(self.gnome3optdict[opt]))
                     errout = self.cmdhelper.getErrorString()
-                    if errout:
+                    if self.cmdhelper.getReturnCode():
                         retval = False
                         self.detailedresults += '\n' + str(errout)
                 if not self.setFileContents(self.gdmprofile, self.profilelist):
@@ -1443,7 +1427,7 @@ class InstallBanners(RuleKVEditor):
                     os.chown('/etc/gdm3/daemon.conf', 0, 0)
                     self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
                     errout = self.cmdhelper.getErrorString()
-                    if errout:
+                    if self.cmdhelper.getReturnCode():
                         retval = False
                         self.detailedresults += '\nEncountered a problem ' + \
                             'trying to run command: dpkg-reconfigure ' + \
@@ -1460,18 +1444,21 @@ class InstallBanners(RuleKVEditor):
         '''
 
         retval = True
+        locksfile = self.locksfile
+        lockstmp = locksfile + ".stonixtmp"
 
         try:
+            fileCreated = False
+            if not os.path.exists(locksfile):
+                createFile(locksfile, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": locksfile}
+                self.statechglogger.recordchgevent(myid, event)
+                fileCreated = True
 
-            if not os.path.exists(self.locksdir):
-                os.mkdir(self.locksdir)
-
-            if not os.path.exists(self.locksfile):
-                f = open(self.locksfile, 'w')
-                f.write('')
-                f.close()
-
-            f = open(self.locksfile, 'r')
+            f = open(locksfile, 'r')
             contentlines = f.readlines()
             f.close()
 
@@ -1484,14 +1471,24 @@ class InstallBanners(RuleKVEditor):
                 if not self.locksettings[item]:
                     contentlines.append('\n' + item)
 
-            tf = self.locksfile + '.stonixtmp'
-            f = open(tf, 'w')
+            f = open(lockstmp, 'w')
             f.writelines(contentlines)
             f.close()
 
-            os.rename(tf, self.locksfile)
-            os.chmod(self.locksfile, 0644)
-            os.chown(self.locksfile, 0, 0)
+            if not fileCreated:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf", "filepath": self.locksfile}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(locksfile, lockstmp, myid)
+
+            os.rename(lockstmp, locksfile)
+            resetsecon(locksfile)
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            setPerms(locksfile, [0, 0, 0o644], self.logger,
+                     self.statechglogger, myid)
 
         except Exception:
             raise
