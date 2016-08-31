@@ -377,6 +377,9 @@ class RootMailAlias(Rule):
 
             contentlines = self.getFileContents(filepath)
             for line in contentlines:
+                if re.search("Added by STONIX", line, re.IGNORECASE):
+                    contentlines = [c.replace(line, '') for c in contentlines]
+            for line in contentlines:
                 if re.search(self.partialstring, line):
                     contentlines = [c.replace(line, '# Added by STONIX\n' + self.fixstring + '\n') for c in contentlines]
                     replaced = True
@@ -427,6 +430,9 @@ class RootMailAlias(Rule):
                 appended = True
             else:
                 contentlines = self.getFileContents(filepath)
+                for line in contentlines:
+                    if re.search("# Added by STONIX", line, re.IGNORECASE):
+                        contentlines = [c.replace(line, '') for c in contentlines]
                 contentlines.append('\n# Added by STONIX\n' + self.fixstring + '\n')
 
                 f = open(tmppath, 'w')
