@@ -282,7 +282,9 @@ class RuleTest(unittest.TestCase):
             postUndoResults = self.rule.getdetailedresults()
             self.assertTrue(originalResults == postUndoResults,
                             "After undo, the report results were not the " +
-                            "same as the initial pre-fix report.")
+                            "same as the initial pre-fix report.\nOriginal:\n" +
+                            originalResults + "\nPost-undo:\n" +
+                            postUndoResults)
 # Run checkUndoForRule()
             messagestring = "Run checkUndoForRule(" + str(rulesuccess) + ")"
             self.logdispatch.log(LogPriority.DEBUG, prefixHeadline +
