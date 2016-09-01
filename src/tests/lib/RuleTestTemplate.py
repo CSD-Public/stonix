@@ -280,11 +280,25 @@ class RuleTest(unittest.TestCase):
                                  str(undo))
             self.rule.report()
             postUndoResults = self.rule.getdetailedresults()
-            self.assertTrue(originalResults == postUndoResults,
-                            "After undo, the report results were not the " +
-                            "same as the initial pre-fix report.\nOriginal:\n" +
-                            originalResults + "\nPost-undo:\n" +
-                            postUndoResults)
+            # In order to get detailed, well-formatted error information, this
+            # has been turned into a short procedure to produce the most
+            # helpful information, rather than simply using the assert
+            # statement
+            if originalResults != postUndoResults:
+                orlines = originalResults.splitlines()
+                pulines = postUndoResults.splitlines()
+                orlinestmp = orlines[:]  # [:] to copy by value r/t reference
+                for line in orlinestmp:
+                    if line in pulines:
+                        orlines.remove(line)
+                        pulines.remove(line)
+                error = "After undo, the report results were not the same " + \
+                    "as the initial pre-fix report."
+                if orlines:
+                    error += "\nOnly in original:\n" + "\n".join(orlines)
+                if pulines:
+                    error += "\nOnly in post-undo:\n" + "\n".join(pulines)
+                self.assertTrue(False, error)
 # Run checkUndoForRule()
             messagestring = "Run checkUndoForRule(" + str(rulesuccess) + ")"
             self.logdispatch.log(LogPriority.DEBUG, prefixHeadline +
