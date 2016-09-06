@@ -204,6 +204,7 @@ LINUXKRB5 = '''# Test Configuration
 # 2016-08-31
 # https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
 # + logging
+# + ticket_lifetime = 24h, renew_lifetime = 7d, clockslew = 300
 [logging]
  default = FILE:/var/log/krb5libs.log
  kdc = FILE:/var/log/krb5kdc.log
