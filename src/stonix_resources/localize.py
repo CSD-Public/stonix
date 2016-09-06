@@ -170,52 +170,68 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
-MACKRB5 = '''[libdefaults]
-    default_realm = lanl.gov
-    allow_weak_crypto = true
-    forwardable = true
+MACKRB5 = '''# Test Configuration
+# 2016-08-31
+# https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
+# + ticket_lifetime = 24h, renew_lifetime = 7d, clockslew = 300
+[libdefaults]
+  default_realm = lanl.gov
+  forwardable = true
+  ticket_lifetime = 24h
+  renew_lifetime = 7d
+  clockslew = 300
 [realms]
-    lanl.gov = {
-    kdc = kerberos.lanl.gov
+  lanl.gov = {
     kdc = kerberos-slaves.lanl.gov
+    kdc = kerberos.lanl.gov
     admin_server = kerberos.lanl.gov
-    }
+  }
+  WIN.LANL.GOV = {
+    kdc = win.lanl.gov
+  }
 [pam]
-    debug = false
-    krb4_convert = false
+  debug = false
+  krb4_convert = false
 [domain_realm]
-    .lanl.gov = WIN.LANL.GOV
-    .lanl.gov = lanl.gov
-    .lanl.org = lanl.gov
+  win.lanl.gov = WIN.LANL.GOV
+.win.lanl.gov = WIN.LANL.GOV
+  lanl.gov = lanl.gov
+.lanl.gov = lanl.gov
+  exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
 '''
 
-LINUXKRB5 = '''[logging]
+LINUXKRB5 = '''# Test Configuration
+# 2016-08-31
+# https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
+# + logging
+[logging]
  default = FILE:/var/log/krb5libs.log
  kdc = FILE:/var/log/krb5kdc.log
  admin_server = FILE:/var/log/kadmind.log
-
 [libdefaults]
  default_realm = lanl.gov
- dns_lookup_realm = false
- dns_lookup_kdc = false
+ forwardable = true
  ticket_lifetime = 24h
  renew_lifetime = 7d
- forwardable = true
- allow_weak_crypto = true
  clockslew = 300
-
 [realms]
-
- lanl.gov = {
-  kdc = kerberos.lanl.gov
-  kdc = kerberos-slaves.lanl.gov
-  admin_server = kerberos.lanl.gov
-  default_domain = lanl.gov
- }
-
+  lanl.gov = {
+    kdc = kerberos-slaves.lanl.gov
+    kdc = kerberos.lanl.gov
+    admin_server = kerberos.lanl.gov
+  }
+  WIN.LANL.GOV = {
+    kdc = win.lanl.gov
+  }
+[pam]
+  debug = false
+  krb4_convert = false
 [domain_realm]
- lanl.gov = lanl.gov
- .lanl.gov = lanl.gov
+  win.lanl.gov = WIN.LANL.GOV
+.win.lanl.gov = WIN.LANL.GOV
+  lanl.gov = lanl.gov
+.lanl.gov = lanl.gov
+  exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
 '''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
