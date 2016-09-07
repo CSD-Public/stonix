@@ -102,7 +102,7 @@ WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
 "ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS " + \
 "AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and " + \
 "DISCLOSURE OF COMPUTER ACTIVITY.\n\n" + \
-"**WARNING**WARNING**WARNING**WARNING**WARNING**"
+"**WARNING**WARNING**WARNING**WARNING**WARNING**\n"
 
 ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE computer\\n" + \
 "systems are provided for the processing of official U.S. Government\\n" + \
@@ -120,7 +120,10 @@ ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE co
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
 "system. Authorized use only. Users have no explicit/implicit expectation " + \
 "of privacy. By using this system the user consents to monitoring and " + \
-"disclosure. See http://int.lanl.gov/copyright.shtml#disclaimers"
+"disclosure. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR UNAUTHORIZED, " + \
++"CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, " + \
++"COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. " + \
+"See http://int.lanl.gov/copyright.shtml#disclaimers"
 
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
