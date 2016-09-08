@@ -1,17 +1,35 @@
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
 '''
 Created on Jun 10, 2016
-
-By default, the DHCP client program, dhclient, requests and applies ten configuration options (in addition to the IP 
-address) from the DHCP server. subnet-mask, broadcast-address, time-offset, routers, domain-name, domain-name-servers, 
-host-name, nis-domain, nis-servers, and ntp-servers. Many of the options requested and applied by dhclient may be the 
-same for every system on a network. It is recommended that almost all configuration options be assigned statically, and 
-only options which must vary on a host-by-host basis be assigned via DHCP. This limits the damage which can be done by a
- rogue DHCP server
 
 @author: Breen Malmberg
 @change: Breen Malmberg - 8/19/2016 - re-factored all methods to account for
 new configuration file locations as well as multiple simultaneous
 configuration file locations
+@change: 2016/09/08 eball Moved self.localize() out of init. init runs on all
+    platforms, not just applicable platforms, and this was causing errors on
+    Macs
 '''
 
 from __future__ import absolute_import
@@ -46,12 +64,15 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         self.rulename = 'MinimizeAcceptedDHCPOptions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "By default, the DHCP client program, dhclient, requests and applies ten configuration options (in addition to the IP \
-address) from the DHCP server. subnet-mask, broadcast-address, time-offset, routers, domain-name, domain-name-servers, \
-host-name, nis-domain, nis-servers, and ntp-servers. Many of the options requested and applied by dhclient may be the \
-same for every system on a network. It is recommended that almost all configuration options be assigned statically, and \
-only options which must vary on a host-by-host basis be assigned via DHCP. This limits the damage which can be done by a \
- rogue DHCP server"
+        self.helptext = """By default, the DHCP client program, dhclient, \
+requests and applies ten configuration options (in addition to the IP \
+address) from the DHCP server. subnet-mask, broadcast-address, time-offset, \
+routers, domain-name, domain-name-servers, host-name, nis-domain, nis-servers, \
+and ntp-servers. Many of the options requested and applied by dhclient may be \
+the same for every system on a network. It is recommended that almost all \
+configuration options be assigned statically, and only options which must \
+vary on a host-by-host basis be assigned via DHCP. This limits the damage \
+which can be done by a rogue DHCP server"""
         self.rootrequired = True
         self.guidance = ['RHEL 7 STIG 3.8.4.1']
         self.applicable = {'type': 'white',
@@ -62,8 +83,6 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         instructions = "To prevent the MinimizeAcceptedDHCPOptions rule from being run, set the value of MinimizeAcceptedDHCPOptions to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
-        self.localize()
 
     def localize(self):
         '''
@@ -78,22 +97,25 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         try:
 
             # these are known canonical locations for the dhclient.conf file
-            filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf', '/var/lib/NetworkManager/dhclient.conf']
-    
+            filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf',
+                         '/var/lib/NetworkManager/dhclient.conf']
+
             for fp in filepaths:
                 if os.path.exists(fp):
                     self.filepaths.append(fp)
-    
+
             basedir = '/var/lib/NetworkManager/'
-            fileslist = os.listdir(basedir)
-            for f in fileslist:
-                if os.path.isfile(basedir + f):
-                    if re.search('dhclient\-.*\.conf', f, re.IGNORECASE):
-                        self.filepaths.append(basedir + f)
+            if os.path.exists(basedir):
+                fileslist = os.listdir(basedir)
+                for f in fileslist:
+                    if os.path.isfile(basedir + f):
+                        if re.search('dhclient\-.*\.conf', f, re.IGNORECASE):
+                            self.filepaths.append(basedir + f)
 
             if not self.filepaths:
-                self.logger.log(LogPriority.DEBUG, "Unable to locate required configuration file: dhclient.conf")
-    
+                self.logger.log(LogPriority.DEBUG,
+                                "Unable to locate required configuration file: dhclient.conf")
+
         except Exception:
             raise
 
@@ -111,17 +133,20 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         try:
 
             if not isinstance(filepath, basestring):
-                self.logger.log(LogPriority.DEBUG, "Specified filepath argument needs to be of type: string!")
+                self.logger.log(LogPriority.DEBUG,
+                                "Specified filepath argument needs to be of type: string!")
                 return contents
 
             if not os.path.exists(filepath):
-                self.logger.log(LogPriority.DEBUG, "Specified filepath does not exist!")
+                self.logger.log(LogPriority.DEBUG,
+                                "Specified filepath does not exist!")
                 sfilepath = filepath.split('/')
                 if len(sfilepath) > 1:
                     del sfilepath[-1]
                     subdir = '/'.join(sfilepath)
                     if not os.path.exists(subdir):
-                        self.logger.log(LogPriority.DEBUG, "Sub directory of specified filepath does not exist!")
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Sub directory of specified filepath does not exist!")
                 return contents
 
             f = open(filepath, 'r')
@@ -162,7 +187,8 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                             founddict[item] = True
                 for item in founddict:
                     if not founddict[item]:
-                        self.detailedresults += "Configuration option " + item + " is not configured correctly.\n"
+                        self.detailedresults += "Configuration option " + \
+                            item + " is not configured correctly.\n"
                         retval = False
 
             elif isinstance(checkfor, list):
@@ -177,11 +203,13 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
 
                 for item in founddict2:
                     if not founddict2[item]:
-                        self.detailedresults += "Required configuration option: " + item + "\nwas not found.\n"
+                        self.detailedresults += "Required configuration option: " + \
+                            item + "\nwas not found.\n"
                         retval = False
 
             else:
-                self.logger.log(LogPriority.DEBUG, "Argument checkfor needs to be of type: dict, or list")
+                self.logger.log(LogPriority.DEBUG,
+                                "Argument checkfor needs to be of type: dict, or list")
 
         except Exception:
             raise
@@ -195,6 +223,7 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         @rtype: bool
         @author: Breen Malmberg
         '''
+        self.localize()
 
         # defaults
         self.compliant = True
@@ -259,7 +288,8 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                 contents.append("## THE FOLLOWING ADDED BY STONIX\n\n")
                 for item in DHCPDict:
                     if DHCPDict[item] == "supersede":
-                        contents.append("supersede " + item + " " + str(DHCPSup[item]) + ";\n")
+                        contents.append("supersede " + item + " " +
+                                        str(DHCPSup[item]) + ";\n")
                     if DHCPDict[item] == "request":
                         contents.append("request " + item + ";\n")
                         contents.append("require " + item + ";\n")
@@ -287,7 +317,8 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
 
             else:
                 self.detailedresults += "The CI was not enabled for this rule. Nothing will be fixed, until the CI is enabled and then fix is run again."
-                self.logger.log(LogPriority.DEBUG, "The CI wasn't enabled. Nothing from fix() was run.")
+                self.logger.log(LogPriority.DEBUG,
+                                "The CI wasn't enabled. Nothing from fix() was run.")
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -295,6 +326,7 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
             self.rulesuccess = False
             self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
