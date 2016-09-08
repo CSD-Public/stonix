@@ -28,6 +28,7 @@ This rule will set the global policy for inactive accounts so that any account
 not accessed/used within 35 days will be automatically disabled.
 
 @author: Breen Malmberg
+@change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
 '''
 
 from __future__ import absolute_import
@@ -106,11 +107,12 @@ automatically disabled.'
         self.detailedresults = ''
         getuserscmd = '/usr/bin/dscl . -ls /Users'
         # do not check any accounts with these regex terms found in them
-        # these are accounts which would not have the passwordlastsettime key in their accountpolicydata
-        # and also accounts which we do not want to disable, ever
+        # these are accounts which would not have the passwordlastsettime key
+        # in their accountpolicydata, and accounts which we do not want to
+        # disable
         accexcludere = ['_', 'nobody', 'daemon', 'root']
-        if EXCLUDEACCOUNTS:
-            accexcludere.append(EXCLUDEACCOUNTS)
+        for account in EXCLUDEACCOUNTS:
+            accexcludere.append(account)
         self.inactiveaccounts = []
 
         try:
@@ -196,8 +198,8 @@ automatically disabled.'
                                 "of the correct type (int)!")
                 return inactivedays
 
-            self.cmdhelper.executeCommand('/usr/bin/dscl . readpl /Users/' + user +
-                                          ' accountPolicyData ' +
+            self.cmdhelper.executeCommand('/usr/bin/dscl . readpl /Users/' +
+                                          user + ' accountPolicyData ' +
                                           'passwordLastSetTime')
             epochchangetimestr = self.cmdhelper.getOutputString()
             if self.cmdhelper.getReturnCode() != 0:
