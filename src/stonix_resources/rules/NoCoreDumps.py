@@ -324,6 +324,8 @@ class NoCoreDumps(Rule):
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(path, tmpfile, myid)
             os.rename(tmpfile, path)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
             setPerms(path, [0, 0, 0o644], self.logger, self.statechglogger,
                      myid)
         resetsecon(path)
@@ -361,10 +363,13 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-            elif not setPerms(path, [0, 0, 0o644], self.logger,
-                              self.statechglogger, myid):
-                self.rulesuccess = False
-                return False
+            elif not checkPerms(path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.rulesuccess = False
+                    return False
         resetsecon(path)
         return success
 
@@ -401,10 +406,13 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-            elif not setPerms(path, perms, self.logger,
-                              self.statechglogger, myid):
-                self.rulesuccess = False
-                return False
+            elif not checkPerms(path, perms, self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path, perms, self.logger,
+                                self.statechglogger, myid):
+                    self.rulesuccess = False
+                    return False
         resetsecon(path)
         if self.environ.getostype() != "Mac OS X":
             cmd = "/sbin/sysctl"
@@ -443,10 +451,13 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-            elif not setPerms(path, [0, 0, 0o644], self.logger,
-                              self.statechglogger, myid):
-                self.rulesuccess = False
-                return False
+            elif not checkPerms(path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.rulesuccess = False
+                    return False
         resetsecon(path)
         retval = call(["/usr/bin/coreadm", "-u"], stdout=None, stderr=None,
                       shell=False)
