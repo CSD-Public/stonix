@@ -82,7 +82,7 @@ class KVEditorStonix(KVEditor):
             self.logger.log(LogPriority.DEBUG, debug)
             return True
         else:
-            debug = "KVEditorStonix report is returing False\n"
+            debug = "KVEditorStonix report is returning False\n"
             return False
 ###############################################################################
     def fix(self):
