@@ -22,10 +22,12 @@
 ###############################################################################
 """
 @note: This test is not set up to use proxies.
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+@change: 2016/02/10 rsn Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
-@change: 2016/02/10 roy Added functionality to testInstallPkg test
+@change: 2016/02/10 rsn Added functionality to testInstallPkg test
 @change: 2016/08/30 eball Added conditional to SkipTest for Python < 2.7
+@change: 2016/09/12 rsn Added setUpClass functionality that should be applicable
+                        to RHEL 6
 
 @author: Roy Nielsen
 """
@@ -34,6 +36,7 @@ import re
 import sys
 import ctypes
 import shutil
+import inspect
 import unittest
 
 sys.path.append("../../../..")
@@ -43,6 +46,13 @@ from src.stonix_resources.environment import Environment
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.Connectivity import Connectivity
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
+
+
+class data(object):
+    def __init__(self):
+        pass
+
+_setupclass = data()
 
 
 class NotApplicableToThisOS(Exception):
@@ -57,13 +67,38 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     """
     Class for testing the macpkgr.
     """
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         """
         """
+        global _setupclass
+        ########################################################################
+        # Section of code to replace the functionality of setUpClass
+        #####
+        # This try block will only throw an exception once, therefore,
+        # the except and later code will act as setUpClass would in python
+        # 2.7 and greater.  First time compared, it doesn't exist yet - 
+        # should toss an exception
+        try:
+            if _setupclass.complete:
+                return
+        except:
+            _setupclass.totalTests = 0 
+            members = inspect.getmembers(self, inspect.ismethod)
+            #####
+            # Count the number of tests
+            for member in members:
+                if re.match("^test", member[0]):
+                    print member[0]
+                    _setupclass.totalTests = _setupclass.totalTests + 1 
+        ########################################################################
+        ##### setUpClass functionality
+        # Only reach this point the first time the class is called.
         self.environ = Environment()
         self.logger = LogDispatcher(self.environ)
 
+        msg = "Number of tests in this class: " + str(_setupclass.totalTests)
+        print msg
+        self.logger.log(LogPriority.WARNING, msg)
         self.osfamily = self.environ.getosfamily()
 
         self.logger.log(LogPriority.DEBUG, "##################################")
@@ -71,12 +106,10 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.logger.log(LogPriority.DEBUG, "##################################")
 
         if not re.match("^darwin$", self.osfamily.strip()):
-            raise unittest.SkipTest("RamDisk does not support this OS" + \
+            raise unittest.SkipTest("MacPkgr does not support this OS" + \
                                     " family: " + str(self.osfamily))
         else:
             self.libc = ctypes.CDLL("/usr/lib/libc.dylib")
-
-        self.logger = LogDispatcher(self.environ)
 
         self.macPackageName = "testStonixMacPkgr-0.0.3.pkg"
         self.reporoot = MACREPOROOT
@@ -120,27 +153,34 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.ch = CommandHelper(self.logger)
         self.connection = Connectivity(self.logger)
         self.testDomain = "gov.lanl.testStonixMacPkgr.0.0.3.testStonixMacPkgr"
+        _setupclass.complete = True
 
     ############################################################################
     
-        """
-        def setUp(self):
-
-        self.osfamily = self.environ.getosfamily()
-        if re.match("^macosx$", self.osfamily.strip()):
-            myos = self.environ.getosfamiliy()
-            raise unittest.SkipTest("RamDisk does not support this OS" + \
-                                " family: " + str(myos))
-        """
-        
-    ############################################################################
-    
-    @classmethod
-    def tearDownClass(self):
+    def tearDown(self):
         """
         Make sure the appropriate files are removed..
         """
-        pass
+        #####
+        # Use the totalTests calculated in the SetUpClass to determine when
+        # to run tearDownClass
+        if _setupclass.totalTests > 1:
+            #####
+            # tearDown
+            ''' ... do work here ... '''
+            print ' ... tearDown ... '
+            _setupclass.totalTests = _setupclass.totalTests - 1 
+            return 
+        elif _setupclass.totalTests == 1:
+            ''' ... do work here ... '''
+            print ' ... tearDown ... '
+            _setupclass.totalTests = _setupclass.totalTests - 1 
+    
+        #####
+        # tearDownClass functionality
+        ''' ... tearDownClass functionality ... '''
+        print ' . . . tearDownClass . . . '
+        print "done..."
         
     ############################################################################
     
