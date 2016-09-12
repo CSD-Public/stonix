@@ -27,7 +27,9 @@ Package signing should always be enabled. On yum-based systems,
 this can be checked by ensuring that all repos have gpgcheck=1 set.
 
 @author: Breen Malmberg
-@change: 2016/09/12 eball PEP8 cleanup
+@change: 2016/09/12 eball PEP8 cleanup, changed isapplicable from blacklist
+    to whitelist, removed redundant CentOS setup, changed KVEditor from
+    openeq to closedeq
 '''
 
 from __future__ import absolute_import
@@ -82,19 +84,13 @@ class LinuxPackageSigning(RuleKVEditor):
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
+        @change: 2016/09/12 eball Changed from blacklist to whitelist
         '''
-
-        retval = True
-
-        ostype = self.environ.getostype()
+        retval = False
         osfamily = self.environ.getosfamily()
 
-        if re.search('darwin', osfamily, re.IGNORECASE):
-            retval = False
-        if re.search('debian', ostype, re.IGNORECASE):
-            retval = False
-        if re.search('ubuntu', ostype, re.IGNORECASE):
-            retval = False
+        if re.search('centos|fedora|red hat|suse', osfamily, re.IGNORECASE):
+            retval = True
 
         return retval
 
@@ -113,26 +109,22 @@ class LinuxPackageSigning(RuleKVEditor):
         self.conftype = ""
         self.temppath = ""
         self.rhel = False
-        self.centos = False
         self.fedora = False
         self.suse = False
 
         os = self.environ.getostype()
 
         # rhel, fedora, centos, opensuse
-        if re.search('red hat', os, re.IGNORECASE):
+        if re.search('red hat|centos', os, re.IGNORECASE):
             self.setRhel()
         elif re.search('fedora', os, re.IGNORECASE):
             self.setFedora()
-        elif re.search('centos', os, re.IGNORECASE):
-            self.setCentos()
         elif re.search('suse', os, re.IGNORECASE):
             self.setOpensuse()
         else:
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
         if not self.suse:
-
             if not self.data:
                 self.logger.log(LogPriority.DEBUG,
                                 "KV config dictionary not set")
@@ -180,17 +172,6 @@ class LinuxPackageSigning(RuleKVEditor):
         self.data = {"main": {"gpgcheck": "1"}}
         if not os.path.exists(self.path):
             self.path = "/etc/yum.conf"
-        self.conftype = "closedeq"
-
-    def setCentos(self):
-        '''
-        '''
-
-        self.centos = True
-        self.logger.log(LogPriority.DEBUG, "Detected OS as: CentOS")
-
-        self.data = {"main": {"gpgcheck": "1"}}
-        self.path = "/etc/yum.conf"
         self.conftype = "closedeq"
 
     def setOpensuse(self):
