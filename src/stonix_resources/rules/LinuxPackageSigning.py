@@ -167,7 +167,7 @@ class LinuxPackageSigning(RuleKVEditor):
 
         self.data = {"main": {"gpgcheck": "1"}}
         self.path = "/etc/yum.conf"
-        self.conftype = "openeq"
+        self.conftype = "closedeq"
 
     def setFedora(self):
         '''
@@ -180,7 +180,7 @@ class LinuxPackageSigning(RuleKVEditor):
         self.data = {"main": {"gpgcheck": "1"}}
         if not os.path.exists(self.path):
             self.path = "/etc/yum.conf"
-        self.conftype = "openeq"
+        self.conftype = "closedeq"
 
     def setCentos(self):
         '''
@@ -191,7 +191,7 @@ class LinuxPackageSigning(RuleKVEditor):
 
         self.data = {"main": {"gpgcheck": "1"}}
         self.path = "/etc/yum.conf"
-        self.conftype = "openeq"
+        self.conftype = "closedeq"
 
     def setOpensuse(self):
         '''
