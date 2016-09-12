@@ -88,7 +88,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             # Count the number of tests
             for member in members:
                 if re.match("^test", member[0]):
-                    print member[0]
+                    #print member[0]
                     _setupclass.totalTests = _setupclass.totalTests + 1 
         ########################################################################
         ##### setUpClass functionality
@@ -105,7 +105,10 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.logger.log(LogPriority.DEBUG, "### OS Family: " + str(self.osfamily))
         self.logger.log(LogPriority.DEBUG, "##################################")
 
-        if not re.match("^darwin$", self.osfamily.strip()):
+        if sys.version_info < (2, 7):
+            sys.exit(255)
+
+        elif not re.match("^darwin$", self.osfamily.strip()):
             raise unittest.SkipTest("MacPkgr does not support this OS" + \
                                     " family: " + str(self.osfamily))
         else:
