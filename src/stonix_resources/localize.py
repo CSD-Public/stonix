@@ -114,7 +114,7 @@ ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE co
 "DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY\\n" + \
 "ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\\n" + \
 "AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\\n" + \
-"DISCLOSURE OF COMPUTER ACTIVITY."
+"DISCLOSURE OF COMPUTER ACTIVITY.\n\n"
 
 # Warning Banners abbreviated for OS X login Screen
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
