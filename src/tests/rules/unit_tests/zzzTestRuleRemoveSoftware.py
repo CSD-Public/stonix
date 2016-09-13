@@ -77,8 +77,6 @@ class zzzTestRuleRemoveSoftware(RuleTest):
                    "talk",
                    "talk-server",
                    "talkd",
-                   "libpam-ccreds",
-                   "pam_ccreds",
                    "tftp-server",
                    "tftp",
                    "tftpd"]

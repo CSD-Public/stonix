@@ -89,8 +89,8 @@ class SymlinkDangerFiles(Rule):
                               "SymlinkDangerFiles",
                               "Execute Symlink Danger Files fix.",
                               True)
-        self.dangerfiles = ['/root/.rhosts', '/root/.shosts',
-                            '/etc/hosts.equiv', '/etc/shosts.equiv']
+        self.symlinkfiles = ['/root/.rhosts', '/root/.shosts', '/etc/shosts.equiv']
+        self.blankfiles = ['/private/etc/hosts.equiv', '/etc/hosts.equiv']
 
     def fix(self):
         '''
@@ -110,10 +110,9 @@ class SymlinkDangerFiles(Rule):
 
             if self.ci.getcurrvalue():
 
-                if os.path.exists('/private/etc/hosts.equiv'):
-                    self.makeHostsBlank()
+                self.makeHostsBlank()
 
-                for item in self.dangerfiles:
+                for item in self.symlinkfiles:
                     if os.path.exists(item):
                         os.remove(item)
                         os.symlink('/dev/null', item)
@@ -148,26 +147,21 @@ class SymlinkDangerFiles(Rule):
         @author: Breen Malmberg
         '''
 
-        newcontentlines = []
-        hostsfile = '/private/etc/hosts.equiv'
-        tempfile = hostsfile + '.stonixtmp'
+        stonixline = "# This file enforced to be blank, by STONIX"
 
         try:
 
-            f = open('/private/etc/hosts.equiv', 'r')
-            contentlines = f.readlines()
-            f.close()
+            for f in self.blankfiles:
+                if os.path.exists(f):
 
-            for line in contentlines:
-                if line != '' and not re.search('^#', line):
-                    newcontentlines = ['#This file enforced to be blank, except for this line, by STONIX']
+                    tempfile = f + '.stonixtmp'
 
-            if newcontentlines:
-                tf = open(tempfile, 'w')
-                tf.writelines(newcontentlines)
-                tf.close()
+                    tf = open(f, 'w')
+                    tf.write(stonixline)
+                    tf.close()
 
-                os.rename(tempfile, hostsfile)
+                    os.rename(tempfile, f)
+                    os.chmod(f, 0644)
 
         except Exception:
             raise
@@ -187,11 +181,10 @@ class SymlinkDangerFiles(Rule):
 
         try:
 
-            if os.path.exists('/private/etc/hosts.equiv'):
-                if not self.checkHostsBlank():
-                    self.compliant = False
+            if not self.checkHostsBlank():
+                self.compliant = False
 
-            for item in self.dangerfiles:
+            for item in self.symlinkfiles:
                 message = ""
                 if os.path.exists(item):
 
@@ -210,16 +203,11 @@ class SymlinkDangerFiles(Rule):
                         self.detailedresults = self.detailedresults + "\n" + \
                         message
 
-        except OSError:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -241,17 +229,22 @@ class SymlinkDangerFiles(Rule):
         '''
 
         retval = True
-        hostsfile = '/private/etc/hosts.equiv'
 
         try:
 
-            f = open(hostsfile, 'r')
-            contentlines = f.readlines()
-            f.close()
-            for line in contentlines:
-                if line != '' and not re.search('^#', line):
-                    retval = False
-                    self.detailedresults += "non-blank, non-comment line found in hosts.equiv. This file needs to remain blank."
+            for f in self.blankfiles:
+                if os.path.exists(f):
+                    blank = True
+                    fh = open(f, 'r')
+                    contentlines = fh.readlines()
+                    fh.close()
+                    for line in contentlines:
+                        if not re.search("^#", line):
+                            if line.strip() != '':
+                                blank = False
+                    if not blank:
+                        retval = False
+                        self.detailedresults += "\nThe file: " + str(f) + " should be blank, but is not."
 
         except Exception:
             raise
@@ -265,6 +258,4 @@ class SymlinkDangerFiles(Rule):
         @author Breen Malmberg
         '''
 
-        self.detailedresults = "No undo operations are permitted for this rule\
-        due to security reasons"
-        self.logger.log(LogPriority.INFO, self.detailedresults)
+        self.formatDetailedResults('undo', None, self.detailedresults)
