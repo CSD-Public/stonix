@@ -37,9 +37,7 @@ from ..KVEditorStonix import KVEditorStonix
 
 class STIGConfigureProfileManagement(Rule):
     '''
-    Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
-    & OS Yosemite 10.10. Profile files are installed using the following
-    OS X command.
+    Deploy Passcode Policy configuration profiles for OS X Yosemite 10.10
     '''
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''

@@ -74,6 +74,8 @@ class zzzTestRuleRootMailAlias(RuleTest):
         self.rule.ci2.updatecurrvalue("foo@bar.com")
 
         aliasfile = "/etc/aliases"
+        if os.path.exists(aliasfile) and os.path.islink(aliasfile):
+            aliasfile = os.path.realpath(aliasfile)
         if os.path.exists(aliasfile):
             contents = readFile(aliasfile, self.logdispatch)
             tempstring = ""
