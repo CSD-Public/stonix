@@ -128,13 +128,17 @@ class RootMailAlias(Rule):
 
         try:
 
-            self.logger.log(LogPriority.DEBUG, "Configuring class variables for Linux systems...")
+            self.logger.log(LogPriority.DEBUG,
+                            "Configuring class variables for Linux systems...")
             self.aliasfile = ''
             aliasfilelocs = ['/etc/mail/aliases', '/etc/aliases']
             aliasfiledefault = '/etc/aliases'
             for loc in aliasfilelocs:
                 if os.path.exists(loc):
-                    self.aliasfile = loc
+                    if os.path.islink(loc):
+                        self.aliasfile = os.path.realpath(loc)
+                    else:
+                        self.aliasfile = loc
             if not self.aliasfile:
                 self.aliasfile = aliasfiledefault
 
@@ -148,13 +152,18 @@ class RootMailAlias(Rule):
 
         try:
 
-            self.logger.log(LogPriority.DEBUG, "Configuring class variables for Mac OS X systems...")
+            self.logger.log(LogPriority.DEBUG, "Configuring class " +
+                            "variables for Mac OS X systems...")
             self.aliasfile = ''
             aliasfiledefault = '/private/etc/aliases'
-            aliasfilelocs = ['/private/etc/aliases', '/private/etc/postfix/aliases']
+            aliasfilelocs = ['/private/etc/aliases',
+                             '/private/etc/postfix/aliases']
             for loc in aliasfilelocs:
                 if os.path.exists(loc):
-                    self.aliasfile = loc
+                    if os.path.islink(loc):
+                        self.aliasfile = os.path.realpath(loc)
+                    else:
+                        self.aliasfile = loc
             if not self.aliasfile:
                 self.aliasfile = aliasfiledefault
 
