@@ -30,6 +30,7 @@ this can be checked by ensuring that all repos have gpgcheck=1 set.
 @change: 2016/09/12 eball PEP8 cleanup, changed isapplicable from blacklist
     to whitelist, removed redundant CentOS setup, changed KVEditor from
     openeq to closedeq
+@change: 2016/09/13 eball Added undo event to KVEditor, and clearing old events
 '''
 
 from __future__ import absolute_import
@@ -42,6 +43,7 @@ from ..ruleKVEditor import RuleKVEditor
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import iterate
 
 
 class LinuxPackageSigning(RuleKVEditor):
@@ -288,6 +290,13 @@ class LinuxPackageSigning(RuleKVEditor):
 
         self.detailedresults = ""
         success = True
+        self.iditerator = 0
+
+        # Clear event history
+        self.iditerator = 0
+        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+        for event in eventlist:
+            self.statechglogger.deleteentry(event)
 
         try:
 
@@ -301,6 +310,9 @@ class LinuxPackageSigning(RuleKVEditor):
                         "STONIX will only audit the status of the GPG " + \
                         "check for each repo."
                 elif self.kve.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.kve.setEventID(myid)
                     if not self.kve.commit():
                         success = False
                         self.logger.log(LogPriority.DEBUG, "There was a " +
