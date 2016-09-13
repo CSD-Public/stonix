@@ -1308,7 +1308,7 @@ class InstallBanners(RuleKVEditor):
             if not self.fixcommon():
                 retval = False
             for item in self.bannerfiles:
-                if not self.setFileContents(item, WARNINGBANNER, 'w'):
+                if not self.setFileContents(item, self.bannertext, 'w'):
                     retval = False
         except Exception:
             raise
