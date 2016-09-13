@@ -66,7 +66,7 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.ph = Pkghelper(self.logdispatch, self.environ)
         # The checkPackages list can be expanded if important packages are
         # found to be removed by REMOVEX fix
-        checkPackages = ["dbus-x11", "gdm"]
+        checkPackages = ["dbus-x11", "gdm", "gdm3"]
         self.reinstall = []
         for pkg in checkPackages:
             if self.ph.check(pkg):

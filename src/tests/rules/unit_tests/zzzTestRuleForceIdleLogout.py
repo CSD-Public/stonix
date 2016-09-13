@@ -22,12 +22,10 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule InstallBanners
+This is a Unit Test for Rule ForceIdleLogout
 
-@author: ekkehard j. koch
-@change: 02/27/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Eric Ball
+@change: 2016/08/25 Original Implementation
 '''
 from __future__ import absolute_import
 import unittest
@@ -35,23 +33,21 @@ import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.InstallBanners import InstallBanners
+from src.stonix_resources.rules.ForceIdleLogout import ForceIdleLogout
 
 
-class zzzTestRuleInstallBanners(RuleTest):
+class zzzTestRuleForceIdleLogout(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = InstallBanners(self.config,
-                                   self.environ,
-                                   self.logdispatch,
-                                   self.statechglogger)
+        self.rule = ForceIdleLogout(self.config,
+                                    self.environ,
+                                    self.logdispatch,
+                                    self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
-        self.dc = "/usr/bin/defaults"
+        self.rule.filci.updatecurrvalue(True)
         self.checkUndo = True
 
     def tearDown(self):
@@ -62,38 +58,20 @@ class zzzTestRuleInstallBanners(RuleTest):
 
     def setConditionsForRule(self):
         '''
-        This makes sure the intial report fails by executing the following
-        commands:
-        defaults -currentHost delete /Library/Preferences/com.apple.AppleFileServer loginGreeting
-        defaults -currentHost delete /Library/Preferences/com.apple.loginwindow LoginWindowText
+        Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
         success = True
-        if self.environ.getosfamily() == "darwin":
-            if success:
-                command = [self.dc, "-currentHost", "delete",
-                           "/Library/Preferences/com.apple.AppleFileServer",
-                           "loginGreeting"]
-                self.logdispatch.log(LogPriority.DEBUG, str(command))
-                success = self.ch.executeCommand(command)
-            if success:
-                command = [self.dc, "-currentHost", "delete",
-                           "/Library/Preferences/com.apple.loginwindow",
-                           "LoginWindowText"]
-                self.logdispatch.log(LogPriority.DEBUG, str(command))
-                success = self.ch.executeCommand(command)
-        if success:
-            success = self.checkReportForRule(False, True)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
-        To see what happended run these commans:
-        defaults -currentHost read /Library/Preferences/com.apple.AppleFileServer loginGreeting
-        defaults -currentHost read /Library/Preferences/com.apple.loginwindow LoginWindowText
+        check on whether report was correct
         @param self: essential if you override this definition
+        @param pCompliance: the self.iscompliant value of rule
+        @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
@@ -102,31 +80,32 @@ class zzzTestRuleInstallBanners(RuleTest):
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
-        if self.environ.getosfamily() == "darwin":
-            if success:
-                command = [self.dc, "-currentHost", "read",
-                           "/Library/Preferences/com.apple.AppleFileServer",
-                           "loginGreeting"]
-                self.logdispatch.log(LogPriority.DEBUG, str(command))
-                success = self.ch.executeCommand(command)
-            if success:
-                command = [self.dc, "-currentHost", "read",
-                           "/Library/Preferences/com.apple.loginwindow",
-                           "LoginWindowText"]
-                self.logdispatch.log(LogPriority.DEBUG, str(command))
-                success = self.ch.executeCommand(command)
         return success
 
     def checkFixForRule(self, pRuleSuccess):
+        '''
+        check on whether fix was correct
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        success = self.checkReportForRule(True, pRuleSuccess)
+        success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
+        '''
+        check on whether undo was correct
+        @param self: essential if you override this definition
+        @param pRuleSuccess: did report run successfully
+        @return: boolean - If successful True; If failure False
+        @author: ekkehard j. koch
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        success = self.checkReportForRule(False, pRuleSuccess)
+        success = True
         return success
 
 if __name__ == "__main__":

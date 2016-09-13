@@ -25,7 +25,9 @@
 This is a Unit Test for Rule LinuxPackageSigning
 
 @author: Breen Malmberg
-@change: 04/11/2016 original implementation
+@change: 2016/04/11 original implementation
+@change: 2016/09/12 eball Added else statement in init to ensure self.backup
+    always exists, plus debug statements to test methods, added checkUndo
 '''
 
 from __future__ import absolute_import
@@ -51,6 +53,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
                                         self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
+        self.checkUndo = True
 
         self.rule.localize()
 
@@ -58,6 +61,8 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
         if os.path.exists(self.confpath):
             self.backup = self.confpath + ".stonixtesttemp"
             copyfile(self.confpath, self.backup)
+        else:
+            self.backup = ""
 
     def tearDown(self):
         if os.path.exists(self.backup):
@@ -84,7 +89,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
     def test_gpgoff(self):
         '''
         '''
-
+        self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgoff")
         found = 0
 
         if not self.rule.suse:
@@ -110,6 +115,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
     def test_gpgmissing(self):
         '''
         '''
+        self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgmissing")
 
         if not self.rule.suse:
 
@@ -130,6 +136,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
     def test_gpgon(self):
         '''
         '''
+        self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgon")
 
         found = 0
 
@@ -156,6 +163,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
     def test_gpggarbage(self):
         '''
         '''
+        self.logdispatch.log(LogPriority.DEBUG, "Running test_gpggarbage")
 
         found = 0
 
