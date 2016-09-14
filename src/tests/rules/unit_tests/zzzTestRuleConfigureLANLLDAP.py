@@ -189,11 +189,7 @@ aliases:    files nisplus
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        success = False
-        cmd = ["getent", "passwd", "eball"]
-        self.ch.executeCommand(cmd)
-        if re.search("26446", self.ch.getOutputString()):
-            success = True
+        success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
