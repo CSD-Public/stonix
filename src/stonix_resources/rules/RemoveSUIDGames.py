@@ -24,7 +24,8 @@
 This rule removes all detected games.
 
 @author: Eric Ball
-@change: 2015-08-20 eball - Original implementation
+@change: 2015/08/20 eball Original implementation
+@change: 2016/09/14 eball Added autoremove command to apt-get systems fix
 '''
 from __future__ import absolute_import
 import os
@@ -141,7 +142,7 @@ directory.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-    def __cleandir(self, directory):
+    def __cleandir(self, directory, depth=0):
         '''Recursively finds the package name for each file in a directory,
         and all child directories, and uninstalls the package. Ignores links.
         This is best-effort; no error checking is done for the uninstall
@@ -179,7 +180,15 @@ directory.'''
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
             elif os.path.isdir(path):
-                success &= self.__cleandir(path)
+                if depth < 6:
+                    success &= self.__cleandir(path, depth+1)
+        dirlist = os.listdir(directory)
+        if dirlist:
+            # There is a possibility that removing some packages will result in
+            # other packages being installed. We will attempt to remove these
+            # additional packages, but limit this to avoid infinite loops.
+            if depth < 6:
+                success &= self.__cleandir(directory, depth+1)
         return success
 
     def fix(self):
