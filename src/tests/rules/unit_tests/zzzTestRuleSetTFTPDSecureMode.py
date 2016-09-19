@@ -99,7 +99,7 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
                 if os.path.exists(self.tftpfile):
                     i = 0
                     contents = readFile(self.tftpfile, self.logger)
-                    if checkPerms(self.tftpFile, [0, 0, 420], self.logger):
+                    if checkPerms(self.tftpfile, [0, 0, 420], self.logger):
                         setPerms(self.tftpfile, [0, 0, 400], self.logger)  
                     try:
                         for line in contents:

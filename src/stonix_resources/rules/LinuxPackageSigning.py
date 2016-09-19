@@ -27,6 +27,10 @@ Package signing should always be enabled. On yum-based systems,
 this can be checked by ensuring that all repos have gpgcheck=1 set.
 
 @author: Breen Malmberg
+@change: 2016/09/12 eball PEP8 cleanup, changed isapplicable from blacklist
+    to whitelist, removed redundant CentOS setup, changed KVEditor from
+    openeq to closedeq
+@change: 2016/09/13 eball Added undo event to KVEditor, and clearing old events
 '''
 
 from __future__ import absolute_import
@@ -39,6 +43,7 @@ from ..ruleKVEditor import RuleKVEditor
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import iterate
 
 
 class LinuxPackageSigning(RuleKVEditor):
@@ -58,14 +63,16 @@ class LinuxPackageSigning(RuleKVEditor):
         self.mandatory = True
         self.rulename = 'LinuxPackageSigning'
         self.formatDetailedResults("initialize")
-        self.helptext = 'Package signing should always be enabled. On yum-based systems, this can be checked by ensuring \
-that all repos have gpgcheck=1 set.'
+        self.helptext = 'Package signing should always be enabled. On ' + \
+            'yum-based systems, this can be checked by ensuring that all ' + \
+            'repos have gpgcheck=1 set.'
         self.guidance = ['CNSSI 1253: cm-5(3)']
 
         # init CIs
         datatype = 'bool'
         key = 'LinuxPackageSigning'
-        instructions = 'If you wish to disable this rule, set the value of LinuxPackageSigning to False.'
+        instructions = 'If you wish to disable this rule, set the value ' + \
+            'of LinuxPackageSigning to False.'
         default = True
         self.applicable = self.isapplicable()
         self.ci = self.initCi(datatype, key, instructions, default)
@@ -79,19 +86,13 @@ that all repos have gpgcheck=1 set.'
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
+        @change: 2016/09/12 eball Changed from blacklist to whitelist
         '''
-
-        retval = True
-
-        ostype = self.environ.getostype()
+        retval = False
         osfamily = self.environ.getosfamily()
 
-        if re.search('darwin', osfamily, re.IGNORECASE):
-            retval = False
-        if re.search('debian', ostype, re.IGNORECASE):
-            retval = False
-        if re.search('ubuntu', ostype, re.IGNORECASE):
-            retval = False
+        if re.search('centos|fedora|red hat|suse', osfamily, re.IGNORECASE):
+            retval = True
 
         return retval
 
@@ -99,7 +100,8 @@ that all repos have gpgcheck=1 set.'
         '''
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Running localize() method for LinuxPackageSigning ...")
+        self.logger.log(LogPriority.DEBUG, "Running localize() method for " +
+                        "LinuxPackageSigning ...")
 
         self.ch = CommandHelper(self.logger)
         self.data = {}
@@ -109,28 +111,25 @@ that all repos have gpgcheck=1 set.'
         self.conftype = ""
         self.temppath = ""
         self.rhel = False
-        self.centos = False
         self.fedora = False
         self.suse = False
 
         os = self.environ.getostype()
 
         # rhel, fedora, centos, opensuse
-        if re.search('red hat', os, re.IGNORECASE):
+        if re.search('red hat|centos', os, re.IGNORECASE):
             self.setRhel()
         elif re.search('fedora', os, re.IGNORECASE):
             self.setFedora()
-        elif re.search('centos', os, re.IGNORECASE):
-            self.setCentos()
         elif re.search('suse', os, re.IGNORECASE):
             self.setOpensuse()
         else:
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
         if not self.suse:
-
             if not self.data:
-                self.logger.log(LogPriority.DEBUG, "KV config dictionary not set")
+                self.logger.log(LogPriority.DEBUG,
+                                "KV config dictionary not set")
             if not self.path:
                 self.logger.log(LogPriority.DEBUG, "KV config path not set")
             if not self.intent:
@@ -162,7 +161,7 @@ that all repos have gpgcheck=1 set.'
 
         self.data = {"main": {"gpgcheck": "1"}}
         self.path = "/etc/yum.conf"
-        self.conftype = "openeq"
+        self.conftype = "closedeq"
 
     def setFedora(self):
         '''
@@ -175,18 +174,7 @@ that all repos have gpgcheck=1 set.'
         self.data = {"main": {"gpgcheck": "1"}}
         if not os.path.exists(self.path):
             self.path = "/etc/yum.conf"
-        self.conftype = "openeq"
-
-    def setCentos(self):
-        '''
-        '''
-
-        self.centos = True
-        self.logger.log(LogPriority.DEBUG, "Detected OS as: CentOS")
-
-        self.data = {"main": {"gpgcheck": "1"}}
-        self.path = "/etc/yum.conf"
-        self.conftype = "openeq"
+        self.conftype = "closedeq"
 
     def setOpensuse(self):
         '''
@@ -194,21 +182,28 @@ that all repos have gpgcheck=1 set.'
 
         self.suse = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: OpenSuSE")
-        self.logger.log(LogPriority.DEBUG, "GPG Check is enabled by default on SuSE and there is no specific ability to enable it.")
-        self.logger.log(LogPriority.DEBUG, "As a result of this, STONIX will only audit the status of the GPG check for each repo.")
+        self.logger.log(LogPriority.DEBUG, "GPG Check is enabled by default " +
+                        "on SuSE and there is no specific ability to " +
+                        "enable it.")
+        self.logger.log(LogPriority.DEBUG, "As a result of this, STONIX " +
+                        "will only audit the status of the GPG check for " +
+                        "each repo.")
 
         self.repolist = []
         cmd1 = "/usr/bin/zypper lr -d"
 
         self.ch.executeCommand(cmd1)
         excode = self.ch.getReturnCode()
-        if not excode: # if excode == 0 which means everything went fine..
+        if not excode:  # if excode == 0 which means everything went fine..
             output = self.ch.getOutput()
             for line in output:
                 sline = line.split("|")
                 if len(sline) >= 4:
-                    if re.search("^\s*[0-9]+", sline[0]) and re.search("yes", sline[3], re.IGNORECASE):
-                        self.logger.log(LogPriority.DEBUG, "\n\nFound active repo. Tracking repo number: " + sline[0].strip())
+                    if re.search("^\s*[0-9]+", sline[0]) and \
+                       re.search("yes", sline[3], re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG,
+                                        "\n\nFound active repo. Tracking " +
+                                        "repo number: " + sline[0].strip())
                         self.repolist.append(sline[0].strip())
 
     def report(self):
@@ -223,24 +218,27 @@ that all repos have gpgcheck=1 set.'
             if self.suse:
                 if not self.reportSUSE():
                     self.compliant = False
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.formatDetailedResults("report", self.compliant,
+                                               self.detailedresults)
                     return self.compliant
             else:
                 if not self.kve.report():
                     self.compliant = False
-                    self.detailedresults += 'The following required options ' + \
-                            'are missing (or incorrect) from ' + \
-                            str(self.path) + ':\n' + \
-                            '\n'.join(str(f) for f in self.kve.fixables) + '\n'
+                    self.detailedresults += 'The following required ' + \
+                        'options are missing (or incorrect) from ' + \
+                        str(self.path) + ':\n' + \
+                        '\n'.join(str(f) for f in self.kve.fixables) + '\n'
                 else:
-                    self.detailedresults += "\nAll repositories have GPG checks enabled."
+                    self.detailedresults += "\nAll repositories have GPG " + \
+                        "checks enabled."
 
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
         return self.compliant
 
     def reportSUSE(self):
@@ -255,26 +253,32 @@ that all repos have gpgcheck=1 set.'
         try:
 
             if self.repolist:
-                self.logger.log(LogPriority.DEBUG, "Found: " + str(len(self.repolist)) + " active repositories on this system.")
+                self.logger.log(LogPriority.DEBUG, "Found: " +
+                                str(len(self.repolist)) +
+                                " active repositories on this system.")
                 for num in self.repolist:
                     self.ch.executeCommand(cmd2 + " " + str(num))
                     excode = self.ch.getReturnCode()
                     if not excode:
                         outputlines = self.ch.getOutput()
                         for line in outputlines:
-                            if re.search("GPG\s*Check\s*\:.*(On|Yes)", line, re.IGNORECASE):
+                            if re.search("GPG\s*Check\s*\:.*(On|Yes)", line,
+                                         re.IGNORECASE):
                                 gpgenabled = True
                             if re.search("Name\s*\:\s*", line, re.IGNORECASE):
                                 sline = line.split(":")
                                 reponame = str(sline[1]).strip()
                         if not gpgenabled:
                             retval = False
-                            self.detailedresults += "GPG check is disabled for repo: " + reponame
+                            self.detailedresults += "GPG check is disabled " + \
+                                "for repo: " + reponame
             else:
-                self.detailedresults += "\nUnable to locate any repositories on this system!"
+                self.detailedresults += "\nUnable to locate any " + \
+                    "repositories on this system!"
 
             if retval:
-                self.detailedresults += "\nAll currently enabled repositories have GPG checks enabled."
+                self.detailedresults += "\nAll currently enabled " + \
+                    "repositories have GPG checks enabled."
 
         except Exception:
             raise
@@ -286,22 +290,40 @@ that all repos have gpgcheck=1 set.'
 
         self.detailedresults = ""
         success = True
+        self.iditerator = 0
+
+        # Clear event history
+        self.iditerator = 0
+        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+        for event in eventlist:
+            self.statechglogger.deleteentry(event)
 
         try:
 
             if self.ci.getcurrvalue():
 
                 if self.suse:
-                    self.detailedresults += "\nGPG Check is enabled by default on SuSE and there is no specific ability to enable it."
-                    self.detailedresults += "\nAs a result of this, STONIX will only audit the status of the GPG check for each repo."
+                    self.detailedresults += "\nGPG Check is enabled by " + \
+                        "default on SuSE and there is no specific ability " + \
+                        "to enable it."
+                    self.detailedresults += "\nAs a result of this, " + \
+                        "STONIX will only audit the status of the GPG " + \
+                        "check for each repo."
                 elif self.kve.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.kve.setEventID(myid)
                     if not self.kve.commit():
                         success = False
-                        self.logger.log(LogPriority.DEBUG, "There was a problem with kveditor commit()")
-                        self.detailedresults += "There was a problem attempting to commit the file changes."
+                        self.logger.log(LogPriority.DEBUG, "There was a " +
+                                        "problem with kveditor commit()")
+                        self.detailedresults += "There was a problem " + \
+                            "attempting to commit the file changes."
                 else:
-                    self.detailedresults += "There was a problem attempting to make file changes."
-                    self.logger.log(LogPriority.DEBUG, "There was a problem with kveditor fix()")
+                    self.detailedresults += "There was a problem " + \
+                        "attempting to make file changes."
+                    self.logger.log(LogPriority.DEBUG,
+                                    "There was a problem with kveditor fix()")
                     success = False
 
         except (SystemExit, KeyboardInterrupt):
