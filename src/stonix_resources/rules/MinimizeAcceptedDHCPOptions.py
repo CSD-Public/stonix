@@ -96,25 +96,27 @@ which can be done by a rogue DHCP server"""
 
         try:
 
-            # these are known canonical locations for the dhclient.conf file
-            filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf',
-                         '/var/lib/NetworkManager/dhclient.conf']
+            if self.environ.getosfamily() != "darwin":
 
-            for fp in filepaths:
-                if os.path.exists(fp):
-                    self.filepaths.append(fp)
-
-            basedir = '/var/lib/NetworkManager/'
-            if os.path.exists(basedir):
-                fileslist = os.listdir(basedir)
-                for f in fileslist:
-                    if os.path.isfile(basedir + f):
-                        if re.search('dhclient\-.*\.conf', f, re.IGNORECASE):
-                            self.filepaths.append(basedir + f)
-
-            if not self.filepaths:
-                self.logger.log(LogPriority.DEBUG,
-                                "Unable to locate required configuration file: dhclient.conf")
+                # these are known canonical locations for the dhclient.conf file
+                filepaths = ['/etc/dhcp/dhclient.conf', '/etc/dhclient.conf',
+                             '/var/lib/NetworkManager/dhclient.conf']
+    
+                for fp in filepaths:
+                    if os.path.exists(fp):
+                        self.filepaths.append(fp)
+    
+                basedir = '/var/lib/NetworkManager/'
+                if os.path.exists(basedir):
+                    fileslist = os.listdir(basedir)
+                    for f in fileslist:
+                        if os.path.isfile(basedir + f):
+                            if re.search('dhclient\-.*\.conf', f, re.IGNORECASE):
+                                self.filepaths.append(basedir + f)
+    
+                if not self.filepaths:
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Unable to locate required configuration file: dhclient.conf")
 
         except Exception:
             raise
