@@ -21,28 +21,18 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Sep 5, 2013
+Created on Aug 31, 2016
 
 With this rule, you can:
         Disable the CUPS service
-        Disable firewall access to CUPS service
-        Configure CUPS service
+        Secure the CUPS service
         Disable Printer Browsing
         Limit Printer Browsing
         Disable Print Server Capabilities
         Set the Default Auth Type
         Setup default set of policy blocks for CUPS
 
-@author: bemalmbe
-@change: 02/16/2014 ekkehard Implemented self.detailedresults flow
-@change: 02/16/2014 ekkehard Implemented isapplicable
-@change: 04/21/2014 dkennel Updated CI invocation, fixed bug where master CI
-not referenced before fix.
-@change: 2015/04/17 dkennel updated for new isApplicable
-@change: 2015/10/08 eball Help text cleanup
-@change: 2015/10/13 eball PEP8 cleanup
-@change: 2015/10/13 eball Added feedback for report methods, and improved logic
-so that a system without CUPS is compliant
+@author: Breen Malmberg
 '''
 
 from __future__ import absolute_import
@@ -55,25 +45,24 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
+from ..CommandHelper import CommandHelper
 from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
 from ..localize import PRINTBROWSESUBNET
+from ..stonixutilityfunctions import iterate
 
 
 class SecureCUPS(Rule):
     '''
     With this rule, you can:
         Disable the CUPS service
-        Disable firewall access to CUPS service
         Configure CUPS service
         Disable Printer Browsing
         Limit Printer Browsing
         Disable Print Server Capabilities
         Set the Default Auth Type
         Setup default set of policy blocks for CUPS
-
-    @author bemalmbe
     '''
+
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -87,79 +76,248 @@ class SecureCUPS(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 128
         self.rulename = 'SecureCUPS'
+        self.rulesuccess = True
         self.formatDetailedResults("initialize")
-        self.compliant = False
         self.mandatory = True
         self.helptext = '''With this rule, you can:
-Disable the CUPS service
-Disable firewall access to CUPS service
-Configure CUPS service
-Disable Printer Browsing
-Limit Printer Browsing
-Disable Print Server Capabilities
-Set the Default Auth Type
-Setup default set of policy blocks for CUPS'''
+* Disable the CUPS service
+* Configure CUPS service
+* Disable Printer Browsing
+* Limit Printer Browsing
+* Disable Print Server Capabilities
+* Set the Default Auth Type
+* Setup default set of policy blocks for CUPS'''
         self.rootrequired = True
         self.guidance = ['CCE 4420-6', 'CCE 4407-3']
-        self.isApplicableWhiteList = []
-        self.isApplicableBlackList = ["darwin"]
-        self.applicable = {'type': 'black',
-                           'family': ['darwin']}
-        self.iditerator = 0
+        self.applicable = {'type': 'white',
+                           'family': ['darwin', 'linux']}
 
         # init CIs
-        self.SecureCUPS = self.__initializeSecureCUPS()
-        self.DisableCUPS = self.__initializeDisableCUPS()
-        self.DisablePrintBrowsing = self.__initializeDisablePrintBrowsing()
-        self.PrintBrowseSubnet = self.__initializePrintBrowseSubnet()
-        self.DisableGenericPort = self.__initializeDisableGenericPort()
-        self.SetDefaultAuthType = self.__initializeSetDefaultAuthType()
-        self.SetupDefaultPolicyBlocks = \
-            self.__initializeSetupDefaultPolicyBlocks()
+        datatype1 = 'bool'
+        key1 = 'SecureCUPS'
+        instructions1 = 'To prevent to STONIX from securing the CUPS service, set the value of ' + \
+        'SecureCUPS to False.'
+        default1 = True
+        self.SecureCUPS = self.initCi(datatype1, key1, instructions1, default1)
 
-        # class variables
-        self.defaultpolicyblocks = """# Restrict access to the server...
+        datatype2 = 'bool'
+        key2 = 'DisableCUPS'
+        instructions2 = 'To have STONIX completely disable the CUPS service on this system, set ' + \
+        'the value of DisableCUPS to True.'
+        default2 = False
+        self.DisableCUPS = self.initCi(datatype2, key2, instructions2, default2)
+
+        datatype3 = 'bool'
+        key3 = 'DisablePrintBrowsing'
+        instructions3 = 'To prevent STONIX from disabling print browsing, set the value of ' + \
+        'DisablePrintBrowsing to False.'
+        default3 = True
+        self.DisablePrintBrowsing = self.initCi(datatype3, key3, instructions3, default3)
+
+        datatype4 = 'bool'
+        key4 = 'PrintBrowseSubnet'
+        instructions4 = 'To allow printer browsing on a specific subnet, set ' + \
+        'the value of PrintBrowseSubnet to True. The subnet to allow printer ' + \
+        'browsing for is specified in localize by setting the value of ' + \
+        'PRINTBROWSESUBNET. If PRINTBROWSESUBNET is set to an empty string, ' + \
+        'nothing will be written.'
+        default4 = False
+        self.PrintBrowseSubnet = self.initCi(datatype4, key4, instructions4, default4)
+
+        datatype5 = 'bool'
+        key5 = 'DisableGenericPort'
+        instructions5 = 'To prevent remote users from potentially connecting ' + \
+        'to and using locally configured printers by disabling the CUPS print ' + \
+        'server sharing capabilities, set the value of DisableGenericPort to ' + \
+        'True.'
+        default5 = True
+        self.DisableGenericPort = self.initCi(datatype5, key5, instructions5, default5)
+
+        datatype6 = 'bool'
+        key6 = 'SetDefaultAuthType'
+        instructions6 = 'To prevent the defaultauthtype for cups from being ' + \
+        'set to Digest, set the value of SetDefaultAuthType to False.'
+        default6 = True
+        self.SetDefaultAuthType = self.initCi(datatype6, key6, instructions6, default6)
+
+        datatype7 = 'bool'
+        key7 = 'SetupDefaultPolicyBlocks'
+        instructions7 = "To prevent default policy blocks for cups from " + \
+        "being defined in the cups config file, set the value of " + \
+        "SetupDefaultPolicyBlocks to False. Note that if you choose to setup " + \
+        "the default set of policy blocks you can (and probably should) edit " + \
+        "them in the cups config file afterward to customize these policies to " + \
+        "your site's particular needs."
+        default7 = False
+        self.SetupDefaultPolicyBlocks = self.initCi(datatype7, key7, instructions7, default7)
+
+        self.localize()
+
+    def localize(self):
+        '''
+        set various settings and variables and objects based on
+        which OS is currently running
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.linux = False
+        self.darwin = False
+
+        if self.environ.getosfamily() == 'darwin':
+            self.darwin = True
+        if self.environ.getosfamily() == 'linux':
+            self.linux = True
+
+        self.initObjs()
+        self.setVars()
+
+    def initObjs(self):
+        '''
+        initialize all required class objects
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        if self.linux:
+            self.ph = Pkghelper(self.logger, self.environ)
+        if self.darwin:
+            pass
+        self.sh = ServiceHelper(self.environ, self.logger)
+        self.ch = CommandHelper(self.logger)
+
+    def setVars(self):
+        '''
+        set all class variables depending on which
+        OS is currently running
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        try:
+
+# linux config
+            if self.linux:
+                self.configfileperms = '0640'
+                errorlog = "/var/log/cups/error_log"
+                logfileperms = '0644'
+                self.pkgname = "cups"
+                self.svcname = "cups"
+                accesslog = "/var/log/cups/access_log"
+
+            self.cupsfilesopts = {}
+            self.cupsfilesconf = ""
+            self.cupsdconf = ""
+
+# darwin config
+            if self.darwin:
+                accesslog = "/private/var/log/cups/access_log"
+                sandboxing = "strict"
+                self.cupsfilesopts["Sandboxing"] = sandboxing
+                self.configfileperms = '0644'
+                logfileperms = '0644'
+                errorlog = "/var/log/cups/error_log"
+                self.pkgname = "cups"
+                self.svclongname = "/System/Library/LaunchDaemons/org.cups.cupsd.plist"
+                self.svcname = "org.cups.cupsd"
+
+# common config
+            cupsdconflocs = ['/etc/cups/cupsd.conf',
+                               '/private/etc/cups/cupsd.conf']
+            for loc in cupsdconflocs:
+                if os.path.exists(loc):
+                    self.cupsdconf = loc
+            self.tmpcupsdconf = self.cupsdconf + ".stonixtmp"
+    
+            cupsfileslocs = ['/etc/cups/cups-files.conf',
+                             '/private/etc/cups/cups-files.conf']
+            for loc in cupsfileslocs:
+                if os.path.exists(loc):
+                    self.cupsfilesconf = loc
+            self.tmpcupsfilesconf = self.cupsfilesconf + ".stonixtmp"
+
+            # options for cups-files.conf
+            self.cupsfilesopts["AccessLog"] = accesslog
+            self.cupsfilesopts["ConfigFilePerm"] = self.configfileperms
+            self.cupsfilesopts["ErrorLog"] = errorlog
+            self.cupsfilesopts["FatalErrors"] = "config"
+            self.cupsfilesopts["LogFilePerm"] = logfileperms
+    
+            # cupsd conf default configuration options
+            loglevel = "warn"
+            self.listensock = "0.0.0.0:631"
+    
+            # options for cupsd.conf
+            self.cupsdconfopts = {"LogLevel": loglevel}
+
+            self.cupsdconfremopts = {"Port": "631"}
+
+            # kveditor objects
+            kvtype1 = "conf"
+            path1 = self.cupsfilesconf
+            tmpPath1 = path1 + ".stonixtmp"
+            data1 = self.cupsfilesopts
+            intent1 = "present"
+            configType1 = "space"
+            self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
+                                              data1, intent1, configType1)
+    
+            kvtype2 = "conf"
+            path2 = self.cupsdconf
+            tmpPath2 = path2 + ".stonixtmp"
+            data2 = self.cupsdconf
+            intent2 = "present"
+            configType2 = "space"
+            self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
+                                          data2, intent2, configType2)
+
+            kvtype3 = "conf"
+            path3 = self.cupsdconf
+            tmpPath3 = path3 + ".stonixtmp"
+            data3 = self.cupsdconfremopts
+            intent3 = "notpresent"
+            configType3 = "space"
+            self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
+                                          data3, intent3, configType3)
+
+            # policy blocks
+            self.serveraccess = """# Restrict access to the server...
 <Location />
+  Encryption Required
   Order allow,deny
-</Location>
-
-# Restrict access to the admin pages...
+</Location>"""
+            self.adminpagesaccess = """# Restrict access to the admin pages...
 <Location /admin>
+  Encryption Required
   Order allow,deny
-</Location>
-
-# Restrict access to configuration files...
+</Location>"""
+            self.configfilesaccess = """# Restrict access to configuration files...
 <Location /admin/conf>
   AuthType Default
+  Encryption IfRequested
   Require user @SYSTEM
   Order allow,deny
-</Location>
-
-# Set the default printer/job policies...
+</Location>"""
+            self.defaultprinterpolicies = """# Set the default printer/job policies...
 <Policy default>
   # Job-related operations must be done by the owner or an administrator...
-  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs \
-Set-Job-Attributes Create-Job-Subscription Renew-Subscription \
-Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job \
-Suspend-Current-Job Resume-Job CUPS-Move-Job CUPS-Get-Document>
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job CUPS-Move-Job>
     Require user @OWNER @SYSTEM
     Order deny,allow
   </Limit>
 
   # All administration operations require an administrator to authenticate...
-  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class \
-CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default>
     AuthType Default
     Require user @SYSTEM
     Order deny,allow
   </Limit>
 
   # All printer operations require a printer operator to authenticate...
-  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer \
-Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs \
-Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer \
-Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs \
-CUPS-Reject-Jobs>
+  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs CUPS-Reject-Jobs>
     AuthType Default
     Require user @SYSTEM
     Order deny,allow
@@ -167,54 +325,6 @@ CUPS-Reject-Jobs>
 
   # Only the owner or an administrator can cancel or authenticate a job...
   <Limit Cancel-Job CUPS-Authenticate-Job>
-    Require user @OWNER @SYSTEM
-    Order deny,allow
-  </Limit>
-
-  <Limit All>
-    Order deny,allow
-  </Limit>
-</Policy>
-
-# Set the authenticated printer/job policies...
-<Policy authenticated>
-  # Job-related operations must be done by the owner or an administrator...
-  <Limit Create-Job Print-Job Print-URI>
-    AuthType Default
-    Order deny,allow
-  </Limit>
-
-  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs \
-Set-Job-Attributes Create-Job-Subscription Renew-Subscription \
-Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job \
-Suspend-Current-Job Resume-Job CUPS-Move-Job CUPS-Get-Document>
-    AuthType Default
-    Require user @OWNER @SYSTEM
-    Order deny,allow
-  </Limit>
-
-  # All administration operations require an administrator to authenticate...
-  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class \
-CUPS-Delete-Class CUPS-Set-Default>
-    AuthType Default
-    Require user @SYSTEM
-    Order deny,allow
-  </Limit>
-
-  # All printer operations require a printer operator to authenticate...
-  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer \
-Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs \
-Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer \
-Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs \
-CUPS-Reject-Jobs>
-    AuthType Default
-    Require user @SYSTEM
-    Order deny,allow
-  </Limit>
-
-  # Only the owner or an administrator can cancel or authenticate a job...
-  <Limit Cancel-Job CUPS-Authenticate-Job>
-    AuthType Default
     Require user @OWNER @SYSTEM
     Order deny,allow
   </Limit>
@@ -224,866 +334,491 @@ CUPS-Reject-Jobs>
   </Limit>
 </Policy>"""
 
-        self.defaultauthtype = """# Default authentication type, when \
-authentication is required...
-DefaultAuthType Basic"""
+        except Exception:
+            raise
 
-        self.cupsdconflocations = ['/etc/cups/cupsd.conf',
-                                   '/private/etc/cups/cupsd.conf',
-                                   '/usr/local/etc/cupsd.conf',
-                                   '/usr/local/etc/cups/cupsd.conf']
-
-###############################################################################
-
-    def __initializeSetDefaultAuthType(self):
+    def sanityCheck(self):
         '''
-        Private method to initialize the configurationitem object for the
-        SetDefaultAuthType bool.
+        perform sanity check on the cups configuration files
 
-        @return configurationitem object instance
-        @author bemalmbe
+        @return: sane
+        @rtype: bool
+        @author: Breen Malmberg
         '''
-        datatype = 'bool'
-        key = 'SetDefaultAuthType'
-        instructions = 'To prevent the defaultauthtype for cups from being \
-        set to Basic, set the value of SetDefaultAuthType to False.'
-        default = True
-        setdefaultauthtype = self.initCi(datatype, key, instructions, default)
-        return setdefaultauthtype
 
-###############################################################################
+        sane = True
 
-    def __initializeSetupDefaultPolicyBlocks(self):
+        sanitycheck = "/usr/sbin/cupsd -t"
+
+        try:
+
+            self.ch.executeCommand(sanitycheck)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                ermsg = self.ch.getErrorString()
+                sane = False
+                self.detailedresults += "\nThere was an error while checking the syntax of the configuration files."
+                self.logger.log(LogPriority.DEBUG, "Non-zero exit code from command: " + str(sanitycheck) + ":\n" + str(ermsg))
+            output = self.ch.getOutput()
+            for line in output:
+                sline = line.split()
+                if not re.search("OK", line, re.IGNORECASE):
+                    sane = False
+                    if re.search("\.conf", sline[0], re.IGNORECASE):
+                        self.detailedresults += "\nCUPS configuration file: " + str(sline[0]) + " has syntax errors."
+        except Exception:
+            raise
+        return sane
+
+    def updateOpts(self):
         '''
-        Private method to initialize the configurationitem object for the
-        SetupDefaultPolicyBlocks bool.
+        update the kveditor values for the different CIs
+        based on their current user-specified values
 
-        @return configurationitem object instance
-        @author bemalmbe
+        @return: void
+        @author: Breen Malmberg
         '''
-        datatype = 'bool'
-        key = 'SetupDefaultPolicyBlocks'
-        instructions = "To prevent default policy blocks for cups from \
-        being defined in the cups config file, set the value of \
-        SetupDefaultPolicyBlocks to False. Note that if you choose to setup \
-        the default set of policy blocks you can (and probably should) edit \
-        them in the cups config file afterward to customize these policies to \
-        your site's particular needs."
-        default = True
-        setupdefaultpolicyblocks = self.initCi(datatype, key, instructions,
-                                               default)
-        return setupdefaultpolicyblocks
 
-###############################################################################
+        try:
 
-    def __initializeSecureCUPS(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        SecureCUPS bool.
+            if self.DisablePrintBrowsing.getcurrvalue():
+                self.cupsdconfopts["Browsing"] = "Off"
+            else:
+                self.cupsdconfopts["Browsing"] = "On"
+            if self.PrintBrowseSubnet.getcurrvalue():
+                self.cupsdconfopts["BrowseOrder"] = "allow,deny"
+                self.cupsdconfopts["BrowseDeny"] = "all"
+                self.cupsdconfopts["BrowseAllow"] = PRINTBROWSESUBNET
+            if self.DisableGenericPort.getcurrvalue():
+                self.cupsdconfopts["Listen"] = self.listensock
+            if self.SetDefaultAuthType.getcurrvalue():
+                self.cupsdconfopts["DefaultAuthType"] = "Digest"
+    
+            kvtype1 = "conf"
+            path1 = self.cupsfilesconf
+            tmpPath1 = path1 + ".stonixtmp"
+            data1 = self.cupsfilesopts
+            intent1 = "present"
+            configType1 = "space"
+            self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
+                                              data1, intent1, configType1)
+    
+            kvtype2 = "conf"
+            path2 = self.cupsdconf
+            tmpPath2 = path2 + ".stonixtmp"
+            data2 = self.cupsdconf
+            intent2 = "present"
+            configType2 = "space"
+            self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
+                                          data2, intent2, configType2)
+    
+            if not self.cupsdconf:
+                self.logger.log(LogPriority.DEBUG, "Location of required configuraiton file cupsd.conf could not be determined!")
+            if not self.cupsfilesconf:
+                self.logger.log(LogPriority.DEBUG, "Location of required configuration file cups-files.conf could not be determined!")
 
-        @return configurationitem object instance
-        @author bemalmbe
-        '''
-        datatype = 'bool'
-        key = 'SecureCUPS'
-        instructions = 'To prevent the secure configuration of CUPS, set the \
-value of SecureCUPS to False.'
-        default = True
-        securecups = self.initCi(datatype, key, instructions, default)
-        return securecups
-
-###############################################################################
-
-    def __initializeDisableCUPS(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        DisableCUPS bool.
-
-        @return configurationobject item instance
-        @author bemalmbe
-        '''
-        datatype = 'bool'
-        key = 'DisableCUPS'
-        instructions = 'To disable CUPS, set the value of DisableCUPS to True.'
-        default = False
-        disablecups = self.initCi(datatype, key, instructions, default)
-        return disablecups
-
-###############################################################################
-
-    def __initializeDisablePrintBrowsing(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        DisablePrintBrowsing bool.
-
-        @return configurationitem object instance
-        @author bemalmbe
-        '''
-        datatype = 'bool'
-        key = 'DisablePrintBrowsing'
-        instructions = 'To disable printer browsing, set the value of \
-DisablePrintBrowsing to True.'
-        default = True
-        disableprintbrowsing = self.initCi(datatype, key, instructions,
-                                           default)
-        return disableprintbrowsing
-
-###############################################################################
-
-    def __initializePrintBrowseSubnet(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        PrintBrowseSubnet bool.
-
-        @return configurationitem object instance
-        @author bemalmbe
-        '''
-        datatype = 'bool'
-        key = 'PrintBrowseSubnet'
-        instructions = 'To allow printer browsing on a specific subnet, set \
-        the value of PrintBrowseSubnet to True. The subnet to allow printer \
-        browsing for is specified in localize by setting the value of \
-        PRINTBROWSESUBNET. If PRINTBROWSESUBNET is set to an empty string, \
-        nothing will be written.'
-        default = False
-        printbrowsesubnet = self.initCi(datatype, key, instructions, default)
-        return printbrowsesubnet
-
-###############################################################################
-
-    def __initializeDisableGenericPort(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        GenericPort bool.
-
-        @return configurationitem object instance
-        @author bemalmbe
-        '''
-        datatype = 'bool'
-        key = 'DisableGenericPort'
-        instructions = 'To prevent remote users from potentially connecting \
-        to and using locally configured printers by disabling the CUPS print \
-        server sharing capabilities, set the value of DisableGenericPort to \
-        True.'
-        default = True
-        disablegenericport = self.initCi(datatype, key, instructions, default)
-        return disablegenericport
-
-###############################################################################
+        except Exception:
+            raise
 
     def report(self):
         '''
-        Reporting control logic to determine which report methods to run and \
-        run them.
+        run report methods/actions appropriate for the current
+        OS and return compliancy status
 
-        @return bool
-        @author bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
-        # defaults
-        secure = True
-        self.detailedresults = ""
+        self.logger.log(LogPriority.DEBUG, "\n\nREPORT()\n\n")
 
-        # init helper objects
-        self.svchelper = ServiceHelper(self.environ, self.logger)
-        self.pkghelper = Pkghelper(self.logger, self.environ)
+        # DEFAULTS
+        self.detailedresults = ""
+        self.compliant = True
 
         try:
 
-            if self.DisableCUPS.getcurrvalue():
-                retval = self.reportDisableCUPS()
-                if not retval:
-                    secure = False
+            self.updateOpts()
 
-            if self.DisablePrintBrowsing.getcurrvalue():
-                retval = self.reportDisablePrintBrowsing()
-                if not retval:
-                    secure = False
-
-            if self.PrintBrowseSubnet.getcurrvalue() and \
-               PRINTBROWSESUBNET != '':
-                retval = self.reportPrintBrowseSubnet()
-                if not retval:
-                    secure = False
-            elif self.PrintBrowseSubnet.getcurrvalue() and \
-                 PRINTBROWSESUBNET == '':
-                self.detailedresults += '\nThe constant PRINTBROWSESUBNET ' + \
-                    'was blank. This needs to be set. This can be done in ' + \
-                    'localize.py'
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                secure = False
-
-            if self.DisableGenericPort.getcurrvalue():
-                retval = self.reportDisableGenericPort()
-                if not retval:
-                    secure = False
-
-            if self.SetDefaultAuthType.getcurrvalue():
-                retval = self.reportDefaultAuthType()
-                if not retval:
-                    secure = False
-
-            if self.SetupDefaultPolicyBlocks.getcurrvalue():
-                retval = self.reportSetupDefaultPolicyBlocks()
-                if not retval:
-                    secure = False
-
-            if secure:
-                self.compliant = True
-            else:
+            # check common
+            if not self.reportCommon():
                 self.compliant = False
 
+            # check linux
+            if self.linux:
+                if not self.reportLinux():
+                    self.compliant = False
+
+            # check darwin
+            if self.darwin:
+                if not self.reportDarwin():
+                    self.compliant = False
+
+            if self.SecureCUPS.getcurrvalue() and not \
+            self.DisableCUPS.getcurrvalue():
+                # make sure config syntax is correct
+                if not self.sanityCheck():
+                    self.compliant = False
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            self.detailedresults += traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults('report', self.compliant, self.detailedresults)
         return self.compliant
 
-###############################################################################
-
-    def reportDefaultAuthType(self):
+    def checkPolicyBlocks(self):
         '''
-        Look for a default authentication type specification in the cups config
-        file.
+        report on whether default policy blocks are currently set up
+        in cups configuration. Note that if these already exist, we
+        do not want to overwrite them as the local admin may have
+        them customised to their specific environment.
 
-        @return bool
-        @author bemalmbe
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
-        # defaults
-        secure = True
+        self.logger.log(LogPriority.DEBUG, "\n\nCHECKPOLICYBLOCKS()\n\n")
+
+        retval = True
+        rootfound = False
+        adminfound = False
+        adminconffound = False
+        defpolicyfound = False
 
         try:
 
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-                    f = open(location, 'r')
-                    content = f.read()
-                    f.close()
+            if os.path.exists(self.cupsdconf):
+                self.logger.log(LogPriority.DEBUG, "\n\nCUPSD CONF EXISTS. OPENING FILE AND READING CONTENTS...\n\n")
+                f = open(self.cupsdconf, 'r')
+                contentlines = f.readlines()
+                f.close()
 
-                    if not re.search(self.defaultauthtype, content):
-                        secure = False
-                        self.detailedresults += "\nDefaultAuthType not found"
-
-            return secure
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
-
-###############################################################################
-
-    def reportSetupDefaultPolicyBlocks(self):
-        '''
-        Check for the existence of default policy blocks
-
-        @return bool
-        @author bemalmbe
-        '''
-
-        # defaults
-        secure = True
-
-        try:
-
-            # Note that this checks for a DEFAULT secure configuration
-            # Admin must customize after running the fix
-
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-                    f = open(location, 'r')
-                    content = f.read()
-                    f.close()
-
-                    if not re.search('<Policy default>', content):
-                        secure = False
-                        self.detailedresults += "\n<Policy default> block " + \
-                            "not found"
-
-            return secure
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
-
-###############################################################################
-
-    def reportDisableCUPS(self):
-        '''
-        Check whether or not the cups service is currently configured to run.
-
-        @return bool
-        @author bemalmbe
-        '''
-
-        # defaults
-        svcstatus = True
-        secure = True
-        retval = False
-
-        try:
-
-            if self.environ.getosfamily() == 'darwin':
-                svcstatus = \
-                    self.svchelper.auditservice('/System/Library/LaunchDaemons/org.cups.cupsd.plist',
-                                                'org.cups.cupsd')
-                if not svcstatus:
-                    retval = True
+                self.logger.log(LogPriority.DEBUG, "\n\nCONTENTS READ. CHECKING FOR POLICY BLOCKS...\n\n")
+                for line in contentlines:
+                    if re.search('\<Location \/\>', line, re.IGNORECASE):
+                        rootfound = True
+                    if re.search('\<Location \/admin\>', line, re.IGNORECASE):
+                        adminfound = True
+                    if re.search('\<Location \/admin\/conf\>', line, re.IGNORECASE):
+                        adminconffound = True
+                    if re.search('\<Policy default\>', line, re.IGNORECASE):
+                        defpolicyfound = True
             else:
-                svcstatus = self.svchelper.auditservice('cups')
+                self.logger.log(LogPriority.DEBUG, "\n\ncupsd.conf file does not exist. Nothing to check...\n\n")
+                return retval
+    
+            if not rootfound:
+                retval = False
+                self.detailedresults += "\nCUPS Root location policy not defined"
+            if not adminfound:
+                retval = False
+                self.detailedresults += "\nCUPS admin location policy not defined"
+            if not adminconffound:
+                retval = False
+                self.detailedresults += "\nCUPS admin/conf location policy not defined"
+            if not defpolicyfound:
+                retval = False
+                self.detailedresults += "\nCUPS Default Policy block not defined"
 
-                configfilelist = ['/etc/sysconfig/iptables',
-                                  '/etc/sysconfig/ip6tables']
+            if retval:
+                self.logger.log(LogPriority.DEBUG, "\n\nALL POLICY BLOCKS OK\n\n")
 
-                # search the config file(s) for the firewall exception entries
-                line1 = '^-A RH-Firewall-1-INPUT -p udp -m udp --dport ' + \
-                    '631 -j ACCEPT'
-                line2 = '^-A RH-Firewall-1-INPUT -p tcp -m tcp --dport ' + \
-                    '631 -j ACCEPT'
-                for item in configfilelist:
-                    if os.path.exists(item):
-                        f = open(item, 'r')
-                        contentlines = f.readlines()
-                        f.close()
-
-                        for line in contentlines:
-                            if re.search(line1, line):
-                                secure = False
-                                self.detailedresults += "\n" + item + \
-                                    " contains unwanted entry: " + line1
-                            elif re.search(line2, line):
-                                secure = False
-                                self.detailedresults += "\n" + item + \
-                                    " contains unwanted entry: " + line2
-
-                if secure and not svcstatus:
-                    retval = True
-
-            return retval
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
-
-###############################################################################
-
-    def reportDisablePrintBrowsing(self):
-        '''
-        Check if the directives which disable printer browsing are found in
-        the cups config file. If found, return True, else return False.
-
-        @return bool
-        @author bemalmbe
-        '''
-
-        # defaults
-        directives = ['Browsing Off', 'BrowseAllow none']
-        secure = True
-
-        try:
-
-            for location in self.cupsdconflocations:
-                dfound = 0
-                if os.path.exists(location):
-                    f = open(location, 'r')
-                    contentlines = f.readlines()
-                    f.close()
-
-                    for line in contentlines:
-                        for directive in directives:
-                            if re.search('^' + directive, line):
-                                dfound += 1
-
-                    if dfound < 2:
-                        secure = False
-                        self.detailedresults += "\nPrinter browsing not " + \
-                            "disabled, " + location + " does not contain " + \
-                            "both the necessary directives: " + str(directives)
-
-            return secure
-
-        except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
+        return retval
 
-###############################################################################
-
-    def reportPrintBrowseSubnet(self):
+    def reportCommon(self):
         '''
-        Check the cups config file for the existence of the user-inputted
-        Printer Browsing Subnet string value on the BrowseAddress config line,
-        return True if found, False if not found.
+        run report actions common to all platforms
 
-        @return bool
-        @author bemalmbe
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
-        # defaults
-        printbrowsesubnetstring = self.PrintBrowseSubnet.getcurrvalue()
-        directives = ['BrowseDeny all', 'BrowseAllow ' +
-                      printbrowsesubnetstring]
-        secure = True
+        self.logger.log(LogPriority.DEBUG, "\n\nREPORTCOMMON()\n\n")
 
-        try:
-
-            if printbrowsesubnetstring != '':
-                for location in self.cupsdconflocations:
-                    dfound = 0
-                    if os.path.exists(location):
-                        f = open(location, 'r')
-                        contentlines = f.readlines()
-                        f.close()
-
-                        for line in contentlines:
-                            for directive in directives:
-                                if re.search('^' + directive, line):
-                                    dfound += 1
-                        if dfound < 2:
-                            secure = False
-                            self.detailedresults += "\nPrinter browsing " + \
-                                "subnet settings incorrect, " + location + \
-                                " does not contain both the necessary " + \
-                                "directives: " + str(directives)
-            else:
-                self.detailedresults += '\nNo value entered for print browse \
-                subnet'
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
-
-            if dfound == 2:
-                secure = True
-            else:
-                secure = False
-
-            return secure
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
-
-###############################################################################
-
-    def reportDisableGenericPort(self):
-        '''
-        To prevent remote users from potentially connecting to and using
-        locally configured printers, disable the CUPS print server sharing
-        capabilities. To do so, limit how the server will listen for print
-        jobs by removing the more generic port directive from cups config file
-        and replacing it with the listen directive.
-
-        @return bool
-        @author bemalmbe
-        '''
-
-        # defaults
-        port = 'Port 631'
-        newport = 'Listen localhost:631'
-        secure = True
-
-        try:
-
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-                    found = 0
-                    f = open(location, 'r')
-                    contentlines = f.readlines()
-                    f.close()
-
-                    for line in contentlines:
-                        if re.search('^' + port, line):
-                            secure = False
-                            self.detailedresults += "\nInsecure setting '" + \
-                                port + "' found in " + location
-
-                    for line in contentlines:
-                        if re.search('^' + newport, line):
-                            found += 1
-
-                    if found < 1:
-                        secure = False
-                        self.detailedresults += "\nSecure port setting '" + \
-                            newport + "' not found in " + location
-
-            return secure
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
-
-###############################################################################
-
-    def fix(self):
-        '''
-        Control logic to determine which fix methods to run and then run them.
-
-        @author bemalmbe
-        '''
-
-        # defaults
-        self.detailedresults = ""
-        self.id = 1
+        retval = True
 
         try:
 
             if self.SecureCUPS.getcurrvalue():
 
-                if self.DisablePrintBrowsing.getcurrvalue():
-                    retval = self.reportDisablePrintBrowsing()
-                    if not retval:
-                        self.fixDisablePrintBrowsing()
+                self.KVcupsd.report()
+                if self.KVcupsd.fixables:
+                    retval = False
+                    self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsd.fixables)
 
-                if self.PrintBrowseSubnet.getcurrvalue() and \
-                   PRINTBROWSESUBNET != '':
-                    retval = self.reportPrintBrowseSubnet()
-                    if not retval:
-                        self.fixPrintBrowseSubnet()
+                self.KVcupsfiles.report()
+                if self.KVcupsfiles.fixables:
+                    retval = False
+                    self.detailedresults += "\nThe following configuration options, in " + str(self.cupsfilesconf) + ", are incorrect:\n" + "\n".join(self.KVcupsfiles.fixables)
 
-                if self.DisableGenericPort.getcurrvalue():
-                    retval = self.reportDisableGenericPort()
-                    if not retval:
-                        self.fixDisableGenericPort()
+                self.KVcupsdrem.report()
+                if self.KVcupsdrem.removeables:
+                    retval = False
+                    self.detailedresults += "\nThe following unsecure option was found in " + str(self.cupsdconf) + ":\n" + "\n".join(self.KVcupsdrem.removeables)
 
-                if self.SetDefaultAuthType.getcurrvalue():
-                    retval = self.reportDefaultAuthType()
-                    if not retval:
-                        self.fixDefaultAuthType()
+                if not self.checkPolicyBlocks():
+                    retval = False
 
+            elif self.DisableCUPS.getcurrvalue():
+                if self.linux and not self.reportLinux():
+                    retval = False
+                if self.darwin and not self.reportDarwin():
+                    retval = False
+
+            else:
+                self.detailedresults += "\nNeither SecureCUPS nor DisableCUPS CI's was enabled. Nothing was done."
+      
+        except Exception:
+            raise
+        return retval
+
+    def reportLinux(self):
+        '''
+        run report actions specific to Linux
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if self.DisableCUPS.getcurrvalue():
+                if self.sh.auditservice(self.svcname):
+                    retval = False
+                    self.detailedresults += "\nThe service: " + str(self.svcname) + " is still configured to run"
+
+        except Exception:
+            raise
+        return retval
+
+    def reportDarwin(self):
+        '''
+        run report actions specific to Darwin
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        try:
+
+            if self.DisableCUPS.getcurrvalue():
+                if self.sh.auditservice(self.svclongname, self.svcname):
+                    retval = False
+                    self.detailedresults += "\nThe service: " + str(self.svcname) + " is still configured to run"
+
+        except Exception:
+            raise
+        return retval
+
+    def fix(self):
+        '''
+        run fix methods/actions appropriate for the current
+        OS and return success status of fix
+
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        # DEFAULTS
+        self.detailedresults = ""
+        success = True
+        self.iditerator = 0
+
+        try:
+
+            # Are any of the CIs enabled?
+            # If not, then exit, returning True
+            if not self.SecureCUPS.getcurrvalue() and \
+            not self.DisableCUPS.getcurrvalue():
+                self.detailedresults += "\nNo CI was enabled, so nothing was done."
+                self.logger.log(LogPriority.DEBUG, "SecureCUPS rule was run, but neither SecureCUPS, nor DisableCUPS CI's were enabled so nothing was done!")
+                self.formatDetailedResults('fix', success, self.detailedresults)
+                return success
+
+            if self.linux and not self.ph.check("cups"):
+                self.detailedresults += "\nCUPS is not installed. Nothing to do."
+                self.formatDetailedResults('fix', success, self.detailedresults)
+                return success
+
+            if not self.fixCommon():
+                success = False
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults('fix', success, self.detailedresults)
+        return success
+
+    def fixCommon(self):
+        '''
+        run fix actions common to all platforms
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        pdefaultfound = False
+        serveraccessfound = False
+        adminaccessfound = False
+        configaccessfound = False
+
+        try:
+
+            if self.SecureCUPS.getcurrvalue():
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.KVcupsd.setEventID(myid)
+                if self.KVcupsd.fix():
+                    if not self.KVcupsd.commit():
+                        self.detailedresults += "\nCommit failed for cupsd.conf"
+                        self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsd")
+                        retval = False
+    
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.KVcupsfiles.setEventID(myid)
+                if self.KVcupsfiles.fix():
+                    if not self.KVcupsfiles.commit():
+                        self.detailedresults += "\nCommit failed for cups-files.conf"
+                        self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsfiles")
+                        retval = False
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.KVcupsdrem.setEventID(myid)
+                if self.KVcupsdrem.fix():
+                    if not self.KVcupsdrem.commit():
+                        self.detailedresults += "\nCommit failed for cupsd.conf"
+                        self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsdrem")
+                        retval = False
+    
                 if self.SetupDefaultPolicyBlocks.getcurrvalue():
-                    retval = self.reportSetupDefaultPolicyBlocks()
-                    if not retval:
-                        self.fixPolicyBlocks()
-
-            else:
-                if self.DisableCUPS.getcurrvalue():
-                        retval = self.reportDisableCUPS()
-                        if not retval:
-                            self.fixDisableCUPS()
-
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception as err:
-            self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + \
-                str(err) + " - " + str(traceback.format_exc())
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
-
-###############################################################################
-
-    def fixDefaultAuthType(self):
-        '''
-        Set the defaultauthtype to basic
-
-        @author bemalmbe
-        '''
-
-        try:
-
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-
-                    templocation = location + '.stonixtmp'
-
-                    f = open(location, 'r')
+                    f = open(self.cupsdconf, 'r')
                     contentlines = f.readlines()
                     f.close()
-
-                    contentlines.append('\n' + str(self.defaultauthtype) +
-                                        '\n')
-
-                    tf = open(location + '.stonixtmp', 'w')
-                    tf.writelines(contentlines)
-                    tf.close()
-
-                    self.id += 1
-
-                    myid = '012800' + str(self.id)
-                    event = {'eventtype': 'conf',
-                             'filename': location}
-
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(location,
-                                                         templocation, myid)
-
-                    os.rename(location + '.stonixtmp', location)
-
-                    os.chmod(location, 0644)
-                    os.chown(location, 0, 0)
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-
-###############################################################################
-
-    def fixPolicyBlocks(self):
-        '''
-        Setup the default location access restriction and limit policy blocks
-
-        @author bemalmbe
-        '''
-
-        try:
-
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-
-                    templocation = location + '.stonixtmp'
-
-                    f = open(location, 'r')
-                    content = f.read()
-                    f.close()
-
-                    # check if default policy block already exists
-                    # #if it does, do nothing
-                    if not re.search('<Policy default>', content):
-
-                        content += '\n' + str(self.defaultpolicyblocks)
-
-                        tf = open(location + '.stonixtmp', 'w')
-                        tf.write(content)
-                        tf.close()
-
-                    self.id += 1
-
-                    myid = '012800' + str(self.id)
-                    event = {'eventtype': 'conf',
-                             'filename': location}
-
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(location,
-                                                         templocation, myid)
-
-                    os.rename(templocation, location)
-
-                    os.chmod(location, 0644)
-                    os.chown(location, 0, 0)
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-
-###############################################################################
-
-    def fixDisableCUPS(self):
-        '''
-        Disable the CUPS service.
-
-        @author bemalmbe
-        '''
-
-        try:
-
-            if self.environ.getosfamily() == 'darwin':
-                self.svchelper.disableservice('/System/Library/LaunchDaemons/org.cups.cupsd.plist',
-                                              'org.cups.cupsd')
-            else:
-                self.svchelper.disableservice('cups')
-
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-
-                    templocation = location + '.stonixtmp'
-
-                    f = open(location, 'r')
-                    contentlines = f.readlines()
-                    f.close()
-
                     for line in contentlines:
-                        if re.search('^-A RH-Firewall-1-INPUT -p udp -m udp ' +
-                                     '--dport 631 -j ACCEPT', line):
-                            contentlines = [c.replace(line, '')
-                                            for c in contentlines]
-                        elif re.search('^-A RH-Firewall-1-INPUT -p tcp -m ' +
-                                       'tcp --dport 631 -j ACCEPT', line):
-                            contentlines = [c.replace(line, '')
-                                            for c in contentlines]
-
-                    tf = open(location + '.stonixtmp', 'w')
+                        if re.search("\<Location \/\>", line, re.IGNORECASE):
+                            serveraccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Location \/admin\>", line, re.IGNORECASE):
+                            adminaccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Location \/admin\/conf\>", line, re.IGNORECASE):
+                            configaccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Policy default\>", line, re.IGNORECASE):
+                            pdefaultfound = True
+    
+                    if not serveraccessfound:
+                        contentlines.append("\n\n" + self.serveraccess)
+                        self.logger.log(LogPriority.DEBUG, "\n\nroot access policy block not found. adding it...\n\n")
+    
+                    if not adminaccessfound:
+                        contentlines.append("\n\n" + self.adminpagesaccess)
+                        self.logger.log(LogPriority.DEBUG, "\n\nadmin access policy block not found. adding it...\n\n")
+    
+                    if not configaccessfound:
+                        contentlines.append("\n\n" + self.configfilesaccess)
+                        self.logger.log(LogPriority.DEBUG, "\n\nconfig access policy block not found. adding it...\n\n")
+    
+                    if not pdefaultfound:
+                        contentlines.append("\n\n" + self.defaultprinterpolicies)
+                        self.logger.log(LogPriority.DEBUG, "\n\ndefault policy block not found. adding it...\n\n")
+    
+                    tf = open(self.tmpcupsdconf, 'w')
                     tf.writelines(contentlines)
                     tf.close()
 
-                    self.id += 1
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filename": self.cupsdconf}
 
-                    myid = '012800' + str(self.id)
-                    event = {'eventtype': 'conf',
-                             'filename': location}
-
+                    self.statechglogger.recordfilechange(self.cupsdconf, self.tmpcupsdconf, myid)
                     self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(location,
-                                                         templocation, myid)
+                    self.logger.log(LogPriority.DEBUG, "\n\nwriting changes to " + str(self.cupsdconf) + " file...\n\n")
+                    os.rename(self.tmpcupsdconf, self.cupsdconf)
+                    self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
+                    os.chown(self.cupsdconf, 0, 0)
+                    if self.linux:
+                        os.chmod(self.cupsdconf, 0640)
+                    elif self.darwin:
+                        os.chmod(self.cupsdconf, 0644)
 
-                    os.rename(templocation, location)
+                if not self.reloadCUPS():
+                    retval = False
 
-                    os.chmod(location, 0644)
-                    os.chown(location, 0, 0)
+            elif self.DisableCUPS.getcurrvalue():
+                if not self.disableCUPS():
+                    retval = False
+            else:
+                self.logger.log(LogPriority.DEBUG, "SecureCUPS CI was not enabled and DisableCUPS CI was not enabled. Nothing was done.")
 
-        except (KeyboardInterrupt, SystemExit):
-            raise
+
+
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise
+        return retval
 
-###############################################################################
-
-    def fixDisablePrintBrowsing(self):
+    def reloadCUPS(self):
         '''
-        Disable Printer Browsing completely.
-
-        @author bemalmbe
         '''
+
+        retval = True
 
         try:
 
-            # defaults
-            kvpath = ''
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-                    kvpath = location
-            kvtype = 'conf'
-            kvtmppath = kvpath + '.stonixtmp'
-            directives = {'Browsing': 'Off',
-                          'BrowseAllow': 'none'}
-            kvintent = 'present'
-            kvconftype = 'space'
+            if self.linux:
+                if not self.sh.reloadservice(self.svcname):
+                    retval = False
+                    self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
+            elif self.darwin:
+                if not self.sh.reloadservice(self.svclongname, self.svcname):
+                    retval = False
+                    self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
 
-            self.kvodpb = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, kvpath, kvtmppath, directives,
-                                         kvintent, kvconftype)
-            self.kvodpb.report()
-            self.kvodpb.fix()
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.kvodpb.setEventID(myid)
-            self.kvodpb.commit()
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
+            raise
+        return retval
 
-###############################################################################
-
-    def fixPrintBrowseSubnet(self):
+    def disableCUPS(self):
         '''
-        Limit Printer Browsing to a specific subnet.
-
-        @author bemalmbe
         '''
+
+        retval = True
 
         try:
 
-            # defaults
-            kvpath = ''
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-                    kvpath = location
-            kvtype = 'conf'
-            kvtmppath = kvpath + '.stonixtmp'
-            printbrowsesubnetstring = self.PrintBrowseSubnet.getcurrvalue()
-            directives = {'BrowseDeny': 'all',
-                          'BrowseAllow': printbrowsesubnetstring}
-            kvintent = 'present'
-            kvconftype = 'space'
+            if self.linux:
 
-            self.kvopbs = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, kvpath, kvtmppath, directives,
-                                         kvintent, kvconftype)
-            self.kvopbs.report()
-            self.kvopbs.fix()
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.kvopbs.setEventID(myid)
-            self.kvopbs.commit()
+                if not self.sh.disableservice(self.svcname):
+                    retval = False
+                    self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 
-        except (KeyboardInterrupt, SystemExit):
-            raise
+            elif self.darwin:
+
+                if not self.sh.disableservice(self.svclongname, self.svcname):
+                    retval = False
+                    self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
+
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-
-###############################################################################
-
-    def fixDisableGenericPort(self):
-        '''
-        Remove the more generic port directive in the cupsd.conf file and
-        replace it with the Listen directive.
-
-        @author bemalmbe
-        '''
-
-        try:
-
-            # defaults
-            kvpath = ''
-            for location in self.cupsdconflocations:
-                if os.path.exists(location):
-                    kvpath = location
-            kvtype = 'conf'
-            kvtmppath = kvpath + '.stonixtmp'
-            directives = {'Port': '631',
-                          'Listen': 'localhost:631'}
-            kvintent = 'present'
-            kvconftype = 'space'
-
-            self.kvodgp = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, kvpath, kvtmppath, directives,
-                                         kvintent, kvconftype)
-            self.kvodgp.report()
-            self.kvodgp.fix()
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.kvodgp.setEventID(myid)
-            self.kvodgp.commit()
-
-        except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        return retval
