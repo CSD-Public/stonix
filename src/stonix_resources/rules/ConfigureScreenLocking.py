@@ -50,6 +50,7 @@ from ..CommandHelper import CommandHelper
 import os
 import traceback
 import re
+from glob import glob
 from pwd import getpwnam
 
 
@@ -305,6 +306,8 @@ class ConfigureScreenLocking(RuleKVEditor):
                         compliant = False
                         self.fixes[cmd] = getcmds[cmd]
                 elif error:
+                    if re.search("No such key", error[0]):
+                        continue
                     self.detailedresults += "There is no value set for:" + \
                         cmd2 + "\n"
                     compliant = False
@@ -325,7 +328,12 @@ class ConfigureScreenLocking(RuleKVEditor):
         compliant = True
         self.kdefix = []
         debug = ""
-        if self.environ.geteuid() == 0:
+        bindir = glob("/usr/bin/kde*")
+        kdefound = False
+        for kdefile in bindir:
+            if re.search("^kde\d$", kdefile):
+                kdefound = True
+        if kdefound and self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
             if not contents:
                 debug = "You have some serious issues, /etc/passwd is blank\n"
@@ -412,7 +420,7 @@ directory, invalid form of /etc/passwd"
                                         "have kde configured:\n"
                 for user in self.kdefix:
                     self.detailedresults += user + "\n"
-        else:
+        elif kdefound:
             if self.environ.getosfamily() == "solaris":
                 who = "/usr/bin/who"
             else:

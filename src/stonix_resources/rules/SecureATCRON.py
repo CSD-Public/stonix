@@ -517,6 +517,7 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                         "not found in: " + str(self.atallow)
 
             # check if cron logging is enabled
+            cronlogopt = False
             if os.path.exists(self.cronconf):
                 f = open(self.cronconf, 'r')
                 contentlines = f.readlines()

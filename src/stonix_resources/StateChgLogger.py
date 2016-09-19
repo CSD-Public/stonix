@@ -399,6 +399,8 @@ are an end user please report a bug.''')
 If you are a rule developer you should guard against this. If you
 are an end user please report a bug.''')
         self.eventlog[eventcode] = eventdict
+        debug = "Recorded new change event with event code " + eventcode
+        self.logger.log(LogPriority.DEBUG, debug)
         self.eventlog.sync()
 
     def getchgevent(self, eventcode):
