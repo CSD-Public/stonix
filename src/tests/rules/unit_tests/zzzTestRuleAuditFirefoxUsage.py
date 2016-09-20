@@ -27,6 +27,8 @@ This is a Unit Test for Rule AuditFirefoxUsage
 @author: Eric Ball
 @change: 2016/05/06 eball Original implementation
 @change: 2016/08/01 eball Added conditional before running tests
+@change: 2016/09/15 eball Moved profiles.ini var to profilePath, made mozPath
+    the parent directory again
 '''
 from __future__ import absolute_import
 import os
@@ -54,7 +56,8 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
         self.ph = Pkghelper(self.logdispatch, self.environ)
         self.initMozDir = False
         self.moveMozDir = False
-        self.mozPath = "/root/.mozilla/firefox/profiles.ini"
+        self.mozPath = "/root/.mozilla/firefox"
+        self.profilePath = "/root/.mozilla/firefox/profiles.ini"
 
     def tearDown(self):
         mozPath = self.mozPath
@@ -67,13 +70,13 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
                 os.rename(mozPath + ".stonixtmp", mozPath)
 
     def runTest(self):
-        mozPath = self.mozPath
+        profilePath = self.profilePath
         if self.ph.check("firefox"):
             self.browser = "firefox"
             self.setConditionsForRule()
             # setConditionsForRule will not work on a remote terminal. If the
             # path doesn't exist, we will skip the test.
-            if os.path.exists(mozPath):
+            if os.path.exists(profilePath):
                 self.assertFalse(self.rule.report(), "Report was not false " +
                                  "after test conditions were set")
             else:
@@ -85,7 +88,7 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
             self.setConditionsForRule()
             # setConditionsForRule will not work on a remote terminal. If the
             # path doesn't exist, we will skip the test.
-            if os.path.exists(mozPath):
+            if os.path.exists(profilePath):
                 self.assertFalse(self.rule.report(), "Report was not false " +
                                  "after test conditions were set")
             else:
@@ -117,7 +120,7 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
             self.initMozDir = True
         else:
             self.ch.wait = False
-            os.rename(mozPath, "/root/.mozilla.stonixtmp")
+            os.rename(mozPath, mozPath + ".stonixtmp")
             command = [browser, "google.com"]
             self.ch.executeCommand(command)
             sleep(15)
