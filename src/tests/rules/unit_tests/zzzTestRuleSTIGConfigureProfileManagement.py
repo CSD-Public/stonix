@@ -28,7 +28,8 @@ Created on Aug 24, 2016
 '''
 from __future__ import absolute_import
 import unittest
-import sys, os
+import sys
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
@@ -38,13 +39,13 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
-class zzzTestRuleConfigureProfileManagementSTIG(RuleTest):
+class zzzTestRuleSTIGConfigureProfileManagement(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
         self.rule = STIGConfigureProfileManagement(self.config, self.environ,
-                                               self.logdispatch,
-                                               self.statechglogger)
+                                                   self.logdispatch,
+                                                   self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
