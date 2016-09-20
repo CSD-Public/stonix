@@ -429,6 +429,8 @@ class KVAConf():
             self.contents = contents
             contents = self.contents
         if fixables:
+            print "There are fixables\n"
+            print "Fixables: " + str(fixables) + "\n"
             contents.append(self.universal)
             for key, val in fixables.iteritems():
                 if isinstance(val, list):
@@ -438,18 +440,21 @@ class KVAConf():
                 else:
                     i = 0
                     for line in contents:
+                        #just a comment or blank line, continue
                         if re.search("^#", line) or re.match("^\s*$", line):
                             i += 1
-                        elif re.search(key, line):
-                            temp = line.strip()
-                            temp = re.sub("\s+", " ", temp)
+                        elif re.search(key, line): #we found the key in the file
+                            temp = line.strip() #remove all beginning and trailing whitespace
+                            temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
                             temp = line.split()
                             if len(temp) > 2:
                                 i += 1
                                 continue
                             #temp = line.strip().split()
                             elif re.match("^" + key + "$", temp[0].strip()):
-                                contents.pop(i)
+                                print "we found the key, but has wrong value so removing it\n"
+                                print "line: " + str(line) + "\n"
+                                print str(contents.pop(i))
                             else:
                                 i += 1
                         else:
@@ -460,6 +465,7 @@ class KVAConf():
                         contents.append(key + " " + key2 + "\n")
                 else:
                     contents.append(key + " " + val + "\n")
+        print "contents after fixing: " + str(contents) + "\n"
         self.contents = contents
 #             if listPresent:
 #                 self.contents = contents
