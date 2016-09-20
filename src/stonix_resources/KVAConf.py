@@ -433,6 +433,8 @@ class KVAConf():
             print "Fixables: " + str(fixables) + "\n"
             contents.append(self.universal)
             for key, val in fixables.iteritems():
+                print "The key and value we're searching for are: " + \
+                    str(key) + " " + str(val) +"\n"
                 if isinstance(val, list):
                     continue
                     for key2 in fixables[key]:
@@ -440,6 +442,7 @@ class KVAConf():
                 else:
                     i = 0
                     for line in contents:
+                        print "current line is: " + str(line) + "\n"
                         #just a comment or blank line, continue
                         if re.search("^#", line) or re.match("^\s*$", line):
                             i += 1
