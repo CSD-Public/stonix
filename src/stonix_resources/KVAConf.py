@@ -429,6 +429,7 @@ class KVAConf():
             self.contents = contents
             contents = self.contents
         if fixables:
+            poplist = []
             print "There are fixables\n"
             print "Fixables: " + str(fixables) + "\n"
             contents.append(self.universal)
@@ -457,11 +458,18 @@ class KVAConf():
                             elif re.match("^" + key + "$", temp[0].strip()):
                                 print "we found the key, but has wrong value so removing it\n"
                                 print "line: " + str(line) + "\n"
-                                print str(contents.pop(i))
+                                #print str(contents.pop(i))
+                                poplist.append(line)
                             else:
                                 i += 1
                         else:
                             i += 1
+            if poplist:
+                for item in poplist:
+                    try:
+                        contents.remove(item)
+                    except Exception:
+                        continue
             for key, val in fixables.iteritems():
                 if isinstance(val, list):
                     for key2 in fixables[key]:
