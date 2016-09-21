@@ -230,9 +230,7 @@ class KVAConf():
                                         elif temp[1] == item:  # value is correct
                                             foundalready = True
                                     except IndexError:
-                                        self.detailedresults += "Index error\n"
-                                        #maybe should continue instead of raising
-                                        raise(self.detailedresults)
+                                        raise
                         if not foundalready:
                             fixables.append(item)
                     if fixables:
