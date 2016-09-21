@@ -281,9 +281,7 @@ class KVAConf():
                                         elif temp[1] == item:  # the value is correct
                                             foundalready = True
                                     except IndexError:
-                                        self.detailedresults += "Index error\n"
-                                        #maybe continue instead of raising
-                                        raise(self.detailedresults)
+                                        raise
                         if foundalready:
                             removeables.append(item)
                     if removeables:
@@ -430,40 +428,25 @@ class KVAConf():
             contents = self.contents
         if fixables:
             poplist = []
-            print "There are fixables\n"
-            print "Fixables: " + str(fixables) + "\n"
             contents.append(self.universal)
             for key, val in fixables.iteritems():
-                print "The key and value we're searching for are: " + \
-                    str(key) + " " + str(val) +"\n"
                 if isinstance(val, list):
                     continue
                     for key2 in fixables[key]:
                         contents.append(key + " " + key2 + "\n")
                 else:
-                    i = 0
                     for line in contents:
-                        print "current line is: " + str(line) + "\n"
                         #just a comment or blank line, continue
                         if re.search("^#", line) or re.match("^\s*$", line):
-                            i += 1
+                            continue
                         elif re.search(key, line): #we found the key in the file
                             temp = line.strip() #remove all beginning and trailing whitespace
                             temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
                             temp = line.split()
                             if len(temp) > 2:
-                                i += 1
                                 continue
-                            #temp = line.strip().split()
                             elif re.match("^" + key + "$", temp[0].strip()):
-                                print "we found the key, but has wrong value so removing it\n"
-                                print "line: " + str(line) + "\n"
-                                #print str(contents.pop(i))
                                 poplist.append(line)
-                            else:
-                                i += 1
-                        else:
-                            i += 1
             if poplist:
                 for item in poplist:
                     try:
@@ -476,7 +459,6 @@ class KVAConf():
                         contents.append(key + " " + key2 + "\n")
                 else:
                     contents.append(key + " " + val + "\n")
-        print "contents after fixing: " + str(contents) + "\n"
         self.contents = contents
 #             if listPresent:
 #                 self.contents = contents
