@@ -51,7 +51,7 @@ class test_Connectivity_is_page_available(unittest.TestCase):
         self.environ = Environment()
         self.logdispatcher = LogDispatcher(self.environ)
         self.skip = False
-        if re.search("foo.bar", PROXY):
+        if self.environ.getosfamily() == "linux" or re.search("foo.bar", PROXY):
             # If we can do this the easy way with Python > 2.7, do that. If
             # not, set the skip flag
             if hasattr(unittest, "SkipTest"):
