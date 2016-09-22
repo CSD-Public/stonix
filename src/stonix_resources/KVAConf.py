@@ -230,7 +230,9 @@ class KVAConf():
                                         elif temp[1] == item:  # value is correct
                                             foundalready = True
                                     except IndexError:
-                                        raise
+                                        debug = "Index error in file\n"
+                                        self.logger.log(LogPriority.DEBUG, debug)
+                                        return False
                         if not foundalready:
                             fixables.append(item)
                     if fixables:
@@ -258,7 +260,8 @@ class KVAConf():
                                         break
                                 except IndexError:
                                     found = False
-                                    self.detailedresults += "Index error\n"
+                                    debug = "Index error\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
                                     break
                     return found
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
@@ -279,7 +282,9 @@ class KVAConf():
                                         elif temp[1] == item:  # the value is correct
                                             foundalready = True
                                     except IndexError:
-                                        raise
+                                        debug = "Index error\n"
+                                        self.logger.log(LogPriority.DEBUG, debug)
+                                        return False
                         if foundalready:
                             removeables.append(item)
                     if removeables:
