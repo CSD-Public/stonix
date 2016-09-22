@@ -38,6 +38,7 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.ServiceHelper import ServiceHelper
+from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
 
@@ -150,21 +151,6 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
 
         releasefilelocs = ['/etc/os-release', '/etc/redhat-release']
         for loc in releasefilelocs:
-            if os.path.exists(loc):
-                found = True
-        self.assertEqual(found, True)
-
-    def test_audit_rules_file_exists(self):
-        '''
-        does at least one of the audit rules file paths that the code relies on exist?
-        @author: Breen Malmberg
-        '''
-
-        found = False
-
-        auditruleslocs = ['/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules',
-                          '/etc/security/audit/control', '/etc/security/audit_control']
-        for loc in auditruleslocs:
             if os.path.exists(loc):
                 found = True
         self.assertEqual(found, True)

@@ -76,7 +76,8 @@ privileges so this setting can be easily undone.'''
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
-        self.pulsedefaults = '/etc/pulse/default.pa'
+
+        self.setPaths()
 
         self.rcorig = self.getOrigRCcontents()
 
@@ -96,6 +97,23 @@ valid exceptions.'''
         myci = self.initCi(datatype, key, instructions, default)
         return myci
 
+    def setPaths(self):
+        '''
+        '''
+
+        sysvinitscripts = ["/etc/rc.d/rc.local", "/etc/rc.local"]
+        self.sysvscriptname = ""
+        for loc in sysvinitscripts:
+            if os.path.exists(loc):
+                self.sysvscriptname = loc
+
+        self.pulsedefaults = '/etc/pulse/default.pa'
+        self.amixer = "/usr/bin/amixer"
+        self.systemctl = "/usr/bin/systemctl"
+        self.systemdbase = "/usr/lib/systemd/system/"
+        self.systemdscriptname = self.systemdbase + "stonix-mute-mic.service"
+        self.systemdscriptname = "/usr/lib/systemd/system/stonix-mute-mic.service"
+
     def getOrigRCcontents(self):
         '''
         retrieve the original contents of rc.local
@@ -110,8 +128,8 @@ valid exceptions.'''
 
         try:
 
-            if os.path.exists("/etc/rc.d/rc.local"):
-                f = open("/etc/rc.d/rc.local", "r")
+            if os.path.exists(self.sysvscriptname):
+                f = open(self.sysvscriptname, "r")
                 origcontents = f.readlines()
                 f.close()
 
@@ -222,8 +240,8 @@ valid exceptions.'''
         '''
 
         retval = True
-        getc0Controls = "/usr/bin/amixer -c 0 scontrols"
-        getgenCap = "/usr/bin/amixer sget 'Capture'"
+        getc0Controls = self.amixer + " -c 0 scontrols"
+        getgenCap = self.amixer + " sget 'Capture'"
         miccontrols = []
         micbcontrols = []
         c0Capcontrols = []
@@ -248,7 +266,7 @@ valid exceptions.'''
                     sline = line.split("'")
                     c0Capcontrols.append("'" + str(sline[1]) + "'")
             for mc in miccontrols:
-                getc0mic = "/usr/bin/amixer -c 0 sget " + mc
+                getc0mic = self.amixer + " -c 0 sget " + mc
                 self.ch.executeCommand(getc0mic)
                 output = self.ch.getOutput()
                 retcode = self.ch.getReturnCode()
@@ -262,7 +280,7 @@ valid exceptions.'''
                             retval = False
                             self.detailedresults += "The microphone labeled: " + str(mc) + " does not have its volume level set to 0"
             for mcb in micbcontrols:
-                getc0micb = "/usr/bin/amixer -c 0 sget " + mcb
+                getc0micb = self.amixer + " -c 0 sget " + mcb
                 self.ch.executeCommand(getc0micb)
                 output = self.ch.getOutput()
                 retcode = self.ch.getReturnCode()
@@ -281,7 +299,7 @@ valid exceptions.'''
                             self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off"
 
             for cap in c0Capcontrols:
-                getc0Cap = "/usr/bin/amixer -c 0 sget " + cap
+                getc0Cap = self.amixer + " -c 0 sget " + cap
                 self.ch.executeCommand(getc0Cap)
                 output = self.ch.getOutput()
                 retcode = self.ch.getReturnCode()
@@ -320,12 +338,12 @@ valid exceptions.'''
             systype = self.getSysType()
 
             if systype == "systemd":
-                if not os.path.exists("/usr/lib/systemd/system/stonix-mute-mic.service"):
+                if not os.path.exists(self.systemdscriptname):
                     retval = False
                     self.detailedresults += "\nThe startup script to mute mics was not found"
             if systype == "sysvinit":
-                if os.path.exists("/etc/rc.d/rc.local"):
-                    f = open("/etc/rc.d/rc.local", "r")
+                if os.path.exists(self.sysvscriptname):
+                    f = open(self.sysvscriptname, "r")
                     contentlines = f.readlines()
                     f.close()
                     found = False
@@ -389,7 +407,7 @@ valid exceptions.'''
             if self.environ.getosfamily() == 'darwin':
                 if not self.reportmac():
                     self.compliant = False
-            elif os.path.exists("/usr/bin/amixer"):
+            elif os.path.exists(self.amixer):
                 if not self.reportlinux():
                     self.compliant = False
             if os.path.exists(self.pulsedefaults):
@@ -506,7 +524,7 @@ valid exceptions.'''
 
         # defaults
         self.detailedresults = ""
-        self.rulesuccess = True
+        success = True
 
         try:
 
@@ -518,15 +536,15 @@ valid exceptions.'''
             self.logger.log(LogPriority.DEBUG, "Attempting to mute all mic's and capture sources...")
             if self.environ.getosfamily() == 'darwin':
                 if not self.fixmac():
-                    self.rulesuccess = False
+                    success = False
 
             if os.path.exists('/usr/bin/amixer'):
                 if not self.fixlinux():
-                    self.rulesuccess = False
+                    success = False
 
             if os.path.exists(self.pulsedefaults) and self.environ.geteuid() == 0:
                 if not self.fixPulseAudio():
-                    self.rulesuccess = False
+                    success = False
 
             self.logger.log(LogPriority.DEBUG, "Finished muting all mic's and capture sources")
 
@@ -537,9 +555,8 @@ valid exceptions.'''
             self.rulesuccess = False
             self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-
-        return self.rulesuccess
+        self.formatDetailedResults("fix", success, self.detailedresults)
+        return success
 
     def fixmac(self):
         '''
@@ -611,7 +628,7 @@ valid exceptions.'''
         '''
 
         mics = []
-        cmd = "/usr/bin/amixer -c " + index + " scontrols"
+        cmd = self.amixer + " -c " + index + " scontrols"
 
         try:
 
@@ -641,6 +658,7 @@ valid exceptions.'''
         '''
 
         script = []
+        exitcodefound = False
 
         try:
 
@@ -663,10 +681,17 @@ valid exceptions.'''
                 f.close()
 
                 for line in contentlines:
+                    if re.search("^exit \0", line, re.IGNORECASE):
+                        exitcodefound = True
+                        contentlines = [c.replace(line, "") for c in contentlines]
+
+                for line in contentlines:
                     script.append(line)
                 script.append("\n")
                 for line in self.sysvscriptcmds:
                     script.append(line)
+                if exitcodefound:
+                    script.append("\nexit 0")
 
         except Exception:
             raise
@@ -757,19 +782,18 @@ valid exceptions.'''
     
             if systype == "sysvinit":
     
-                sysvscriptname = "/etc/rc.d/rc.local"
-                tempsysvscriptname = sysvscriptname + ".stonixtmp"
+                tempsysvscriptname = self.sysvscriptname + ".stonixtmp"
     
                 # write the script to disk
                 tf = open(tempsysvscriptname, "w")
                 tf.writelines(script)
                 tf.close()
     
-                os.rename(tempsysvscriptname, sysvscriptname)
+                os.rename(tempsysvscriptname, self.sysvscriptname)
     
                 # make sure permissions are correct
-                os.chown(sysvscriptname, 0, 0)
-                os.chmod(sysvscriptname, 0755)
+                os.chown(self.sysvscriptname, 0, 0)
+                os.chmod(self.sysvscriptname, 0755)
 
         except Exception:
             raise
@@ -784,17 +808,13 @@ valid exceptions.'''
         '''
 
         retval = True
-        amixer = "/usr/bin/amixer"
-        self.systemctl = "/usr/bin/systemctl"
+
         self.systemdcomment = ["# Added by STONIX\n\n"]
         self.systemdunit = ["[Unit]\n", "Description=Mute Mic at system boot\n", "After=basic.target\n\n"]
         self.systemdservice = ["[Service]\n", "Type=oneshot\n"]
         self.systemdinstall = ["\n[Install]\n", "WantedBy=basic.target\n"]
-        self.systemdbase = "/usr/lib/systemd/system/"
-        self.systemdscriptname = self.systemdbase + "stonix-mute-mic.service"
         self.sysvscriptcmds = []
         self.systemdscript = []
-        self.sysvscriptname = "/etc/rc.d/rc.local"
 
         self.logger.log(LogPriority.DEBUG, "\n\n\nSystem detected as: linux. Running fixlinux()...\n\n\n")
 
@@ -806,11 +826,11 @@ valid exceptions.'''
             if not devices:
                 mics = self.getMics("0")
                 for m in mics:
-                    mutemiccmd = amixer + " -c 0 sset " + m + " 0% nocap mute off"
+                    mutemiccmd = self.amixer + " -c 0 sset " + m + " 0% nocap mute off"
                     self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
                     self.sysvscriptcmds.append(str(mutemiccmd) + "\n")
                     self.ch.executeCommand(mutemiccmd)
-                mutecapturecmd = amixer + " -c 0 sset 'Capture' 0% mute off"
+                mutecapturecmd = self.amixer + " -c 0 sset 'Capture' 0% mute off"
                 self.ch.executeCommand(mutecapturecmd)
                 self.systemdservice.append("ExecStart=" + str(mutecapturecmd) + "\n")
                 self.sysvscriptcmds.append(str(mutecapturecmd) + "\n")
@@ -820,44 +840,44 @@ valid exceptions.'''
                     mics = self.getMics(di)
                     self.logger.log(LogPriority.DEBUG, "\nNumber of mic's on device index " + str(di) + " is " + str(len(mics)))
                     for m in mics:
-                        mutemiccmd = amixer + " -c " + di + " sset " + m + " 0% nocap mute off"
+                        mutemiccmd = self.amixer + " -c " + di + " sset " + m + " 0% nocap mute off"
                         self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
                         self.sysvscriptcmds.append(str(mutemiccmd) + "\n")
                         self.ch.executeCommand(mutemiccmd)
-                    mutecapturecmd = amixer + " -c " + di + " sset 'Capture' 0% mute off"
+                    mutecapturecmd = self.amixer + " -c " + di + " sset 'Capture' 0% mute off"
                     self.ch.executeCommand(mutecapturecmd)
                     self.systemdservice.append("ExecStart=" + str(mutecapturecmd) + "\n")
                     self.sysvscriptcmds.append(str(mutecapturecmd) + "\n")
 
             # get card 0 Capture control info
             # this is separate from the general Capture
-            self.ch.executeCommand(amixer + " -c 0 sget Capture")
+            self.ch.executeCommand(self.amixer + " -c 0 sget Capture")
             output = self.ch.getOutput()
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(amixer + " -c 0 sget Capture")
+                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sget Capture")
             for line in output:
                 # toggle the c0 Capture control off (mute it)
                 if re.search("\[on\]", line, re.IGNORECASE):
-                    self.ch.executeCommand(amixer + " -c 0 sset Capture toggle")
+                    self.ch.executeCommand(self.amixer + " -c 0 sset Capture toggle")
                     retcodeB = self.ch.getReturnCode()
                     if retcodeB != 0:
                         retval = False
-                        self.detailedresults += "\nError while running command: " + str(amixer +  " -c 0 sset Capture toggle")
+                        self.detailedresults += "\nError while running command: " + str(self.amixer +  " -c 0 sset Capture toggle")
                     # again, we don't want to toggle more than once
                     break
 
             # set card 0 Capture volume to 0
-            self.ch.executeCommand(amixer + " -c 0 sset Capture 0")
-            self.systemdservice.append("ExecStart=" + amixer + " -c 0 sset Capture 0\n")
-            self.sysvscriptcmds.append(amixer + " -c 0 sset Capture 0\n")
+            self.ch.executeCommand(self.amixer + " -c 0 sset Capture 0")
+            self.systemdservice.append("ExecStart=" + self.amixer + " -c 0 sset Capture 0\n")
+            self.sysvscriptcmds.append(self.amixer + " -c 0 sset Capture 0\n")
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(amixer + " -c 0 sset Capture 0")
+                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sset Capture 0")
 
-            setGenCap = amixer + " sset 'Capture' 0% nocap off mute"
+            setGenCap = self.amixer + " sset 'Capture' 0% nocap off mute"
             self.systemdservice.append("ExecStart=" + str(setGenCap) + "\n")
             self.sysvscriptcmds.append(setGenCap)
             self.ch.executeCommand(setGenCap)
@@ -887,25 +907,24 @@ valid exceptions.'''
 
             if self.environ.getosfamily() == 'darwin':
                 setlevels = "/usr/bin/osascript -e 'set volume input volume 100'"
-            elif os.path.exists('/usr/bin/amixer'):
-                setlevels = '/usr/bin/amixer sset Capture Volume 65536,65536 unmute'
+            elif os.path.exists(self.amixer):
+                setlevels = self.amixer + ' sset Capture Volume 65536,65536 unmute'
 
             subprocess.call(setlevels, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True)
 
-            systemdscriptname = "/usr/lib/systemd/system/stonix-mute-mic.service"
-            disablesysdscript = "/usr/bin/systemctl disable " + systemdscriptname
-            if os.path.exists(systemdscriptname):
+            disablesysdscript = "/usr/bin/systemctl disable " + self.systemdscriptname
+            if os.path.exists(self.systemdscriptname):
                 self.ch.executeCommand(disablesysdscript)
-                os.remove(systemdscriptname)
-            if os.path.exists("/etc/rc.d/rc.local"):
-                f = open("/etc/rc.d/rc.local", "w")
+                os.remove(self.systemdscriptname)
+            if os.path.exists(self.sysvscriptname):
+                f = open(self.sysvscriptname, "w")
                 f.writelines(self.rcorig)
                 f.close()
 
-                os.chown("/etc/rc.d/rc.local", 0, 0)
-                os.chmod("/etc/rc.d/rc.local", 0755)
+                os.chown(self.sysvscriptname, 0, 0)
+                os.chmod(self.sysvscriptname, 0755)
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit

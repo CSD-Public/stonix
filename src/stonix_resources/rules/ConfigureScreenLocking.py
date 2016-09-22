@@ -272,9 +272,12 @@ class ConfigureScreenLocking(RuleKVEditor):
                        "idle-activation-enabled": "true",
                        " get org.gnome.desktop.screensaver lock-enabled":
                        "true",
+                       " get org.gnome.desktop.screensaver lock-delay":
+                       "0",
                        " get org.gnome.desktop.screensaver picture-opacity":
                        "100",
-                       " get org.gnome.desktop.session idle-delay": "900"}
+                       " get org.gnome.desktop.screensaver picture-uri": "",
+                       " get org.gnome.desktop.session idle-delay": "300"}
             self.fixes = {}
             for cmd in getcmds:
                 cmd2 = gsettings + cmd
@@ -289,10 +292,10 @@ class ConfigureScreenLocking(RuleKVEditor):
                                 num = splitOut[1]
                             else:
                                 num = splitOut[0]
-                            if int(num) > 900:
+                            if int(num) > 300:
                                 compliant = False
                                 self.detailedresults += "Idle delay value " + \
-                                    "is not 900 seconds or lower (value: " +\
+                                    "is not 300 seconds or lower (value: " +\
                                     num + ")\n"
                                 self.fixes[cmd] = getcmds[cmd]
                         except ValueError:
