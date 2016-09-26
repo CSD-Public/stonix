@@ -304,7 +304,7 @@ class KVAConf():
                     else:
                         return False
                 else:  # value must be a string, normal case
-                    found = False
+                    foundalready = False
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore is comment or blank line
                             continue
