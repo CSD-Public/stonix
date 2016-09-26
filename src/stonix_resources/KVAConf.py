@@ -212,33 +212,36 @@ class KVAConf():
         fixables = []
         removeables = []
         if self.contents:
+            print "The current key we're looking for is: " + str(key) + "\n"
             if self.intent == "present":  #self.data contains key val pairs we want in the file
+                print "we want to find this key in the file\n"
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
+                    print "this key can be repeatable"
                     for item in value:
                         foundalready = False
                         for line in self.contents:
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
-                            elif re.search(key, line):  # we found the key, which in this case can be repeatable
-                                if value != "":
+                            elif re.search("^" + key + " ", line):  # we found the key, which in this case can be repeatable
+                                if item != "":
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
                                     temp = line
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                                 temp = temp.split()  # separate contents into list separated by spaces
-                                if temp[0] == key:  # check to make sure key appears in beginning and has more than one item in the list
-                                    try:
-                                        if len(temp) > 2:  # this could indicate the file's format may be corrupted but that's not our issue
-                                            continue
-                                        elif temp[1] == item:  # value is correct
-                                            foundalready = True
-                                    except IndexError:
-                                        if item == "":
-                                            foundalready = True
-                                            continue
-                                        debug = "Index error in file\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        return False
+                                try:
+                                    if len(temp) > 2:  # this could indicate the file's format may be corrupted but that's not our issue
+                                        continue
+                                    elif temp[1] == item:  # value is correct
+                                        foundalready = True
+                                        continue
+                                except IndexError:
+                                    if item == "":
+                                        foundalready = True
+                                        continue
+                                    debug = "Index error in file\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    return False
                         if not foundalready:
                             fixables.append(item)
                     if fixables:
@@ -284,7 +287,7 @@ class KVAConf():
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
                             elif re.search(key, line):  # we found the key, which in this case can be repeatable
-                                if value != "":
+                                if item != "":
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
                                     temp = line
