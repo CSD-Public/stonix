@@ -222,6 +222,8 @@ class KVAConf():
                             elif re.search(key, line):  # we found the key, which in this case can be repeatable
                                 if value != "":
                                     temp = line.strip()  # strip off all trailing and leading whitespace
+                                else:
+                                    temp = line
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                                 temp = temp.split()  # separate contents into list separated by spaces
                                 if temp[0] == key:  # check to make sure key appears in beginning and has more than one item in the list
@@ -244,13 +246,15 @@ class KVAConf():
                     else:
                         return True
                 else:  # value must be a string, normal case
-                    found = False
+                    foundalready = False
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
                         elif re.search(key, line):  # the key is in this line
                             if value != "":
                                 temp = line.strip()  # strip off all trailing and leading whitespace
+                            else:
+                                temp = line
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
                             if temp[0] == key:  # check to make sure key appears in beginning and has more than one item in the list
@@ -258,20 +262,20 @@ class KVAConf():
                                     if len(temp) > 2:
                                         continue  # this could indicate the file's format may be corrupted but that's not our issue
                                     elif temp[1] == value:  # the value is correct
-                                        found = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
+                                        foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
                                         continue
                                     else:  # the value is wrong so we break out of the loop.  Unecessary to continue, it will be fixed in the update
-                                        found = False
+                                        foundalready = False
                                         break
                                 except IndexError:
                                     if value == "":
                                         foundalready = True
                                         continue
-                                    found = False
+                                    foundalready = False
                                     debug = "Index error\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     break
-                    return found
+                    return foundalready
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
                     for item in value:
@@ -282,6 +286,8 @@ class KVAConf():
                             elif re.search(key, line):  # we found the key, which in this case can be repeatable
                                 if value != "":
                                     temp = line.strip()  # strip off all trailing and leading whitespace
+                                else:
+                                    temp = line
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                                 temp = temp.split()  # separate contents into list separated by spaces
                                 if temp[0] == key:  # check to make sure key appears in beginning
@@ -311,6 +317,8 @@ class KVAConf():
                         elif re.match("^" + key, line):  # we found the key
                             if value != "":
                                 temp = line.strip()  # strip off all trailing and leading whitespace
+                            else:
+                                temp = line
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
                             if re.match("^" + key + "$", temp[0]):  # a more specific check of the key in case is shares a similar key name with another key up to a point
