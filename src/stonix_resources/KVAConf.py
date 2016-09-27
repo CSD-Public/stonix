@@ -212,17 +212,14 @@ class KVAConf():
         fixables = []
         removeables = []
         if self.contents:
-            print "The current key we're looking for is: " + str(key) + "\n"
             if self.intent == "present":  #self.data contains key val pairs we want in the file
-                print "we want to find this key in the file\n"
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
-                    print "this key can be repeatable"
                     for item in value:
                         foundalready = False
                         for line in self.contents:
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
-                            elif re.search("^" + key + " ", line):  # we found the key, which in this case can be repeatable
+                            elif re.search("^" + key + " ", line.strip()):  # we found the key, which in this case can be repeatable
                                 if item != "":
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
@@ -253,31 +250,30 @@ class KVAConf():
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
-                        elif re.search(key, line):  # the key is in this line
+                        elif re.search("^" + key, line.strip()):  # the key is in this line
                             if value != "":
                                 temp = line.strip()  # strip off all trailing and leading whitespace
                             else:
                                 temp = line
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
-                            if temp[0] == key:  # check to make sure key appears in beginning and has more than one item in the list
-                                try:
-                                    if len(temp) > 2:
-                                        continue  # this could indicate the file's format may be corrupted but that's not our issue
-                                    elif temp[1] == value:  # the value is correct
-                                        foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
-                                        continue
-                                    else:  # the value is wrong so we break out of the loop.  Unecessary to continue, it will be fixed in the update
-                                        foundalready = False
-                                        break
-                                except IndexError:
-                                    if value == "":
-                                        foundalready = True
-                                        continue
+                            try:
+                                if len(temp) > 2:
+                                    continue  # this could indicate the file's format may be corrupted but that's not our issue
+                                elif temp[1] == value:  # the value is correct
+                                    foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
+                                    continue
+                                else:  # the value is wrong so we break out of the loop.  Unecessary to continue, it will be fixed in the update
                                     foundalready = False
-                                    debug = "Index error\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
                                     break
+                            except IndexError:
+                                if value == "":
+                                    foundalready = True
+                                    continue
+                                foundalready = False
+                                debug = "Index error\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                break
                     return foundalready
             elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
