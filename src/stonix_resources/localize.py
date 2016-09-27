@@ -156,7 +156,7 @@ XINETDALLOW = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
-PRINTBROWSESUBNET = ''
+PRINTBROWSESUBNET = '192.168.0.1/24'
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
 NTPSERVERSINTERNAL = ["foo.bar.com", "foo.bar.com"]
