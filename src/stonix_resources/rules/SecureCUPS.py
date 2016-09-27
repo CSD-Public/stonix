@@ -110,7 +110,9 @@ class SecureCUPS(Rule):
         datatype3 = 'bool'
         key3 = 'DisablePrintBrowsing'
         instructions3 = 'To prevent STONIX from disabling print browsing, set the value of ' + \
-        'DisablePrintBrowsing to False.'
+        'DisablePrintBrowsing to False. ! This option is mutually exclusive with PrintBrowseSubnet ! ' + \
+        'If both PrintBrowseSubnet and DisablePrintBrowsing are checked/enabled, DisablePrintBrowsing ' + \
+        'will take priority!'
         default3 = True
         self.DisablePrintBrowsing = self.initCi(datatype3, key3, instructions3, default3)
 
@@ -120,7 +122,9 @@ class SecureCUPS(Rule):
         'the value of PrintBrowseSubnet to True. The subnet to allow printer ' + \
         'browsing for is specified in localize by setting the value of ' + \
         'PRINTBROWSESUBNET. If PRINTBROWSESUBNET is set to an empty string, ' + \
-        'nothing will be written.'
+        'nothing will be written. ! This option is mutually exclusive with DisablePrintBrowsing ! ' + \
+        'If both PrintBrowseSubnet and DisablePrintBrowsing are checked/enabled, DisablePrintBrowsing ' + \
+        'will take priority!'
         default4 = False
         self.PrintBrowseSubnet = self.initCi(datatype4, key4, instructions4, default4)
 
@@ -220,7 +224,6 @@ class SecureCUPS(Rule):
                 self.configfileperms = '0644'
                 logfileperms = '0644'
                 errorlog = "/var/log/cups/error_log"
-                self.pkgname = "cups"
                 self.svclongname = "/System/Library/LaunchDaemons/org.cups.cupsd.plist"
                 self.svcname = "org.cups.cupsd"
 
@@ -240,7 +243,6 @@ class SecureCUPS(Rule):
             self.tmpcupsfilesconf = self.cupsfilesconf + ".stonixtmp"
 
             # options for cups-files.conf
-            self.cupsfilesopts["AccessLog"] = accesslog
             self.cupsfilesopts["ConfigFilePerm"] = self.configfileperms
             self.cupsfilesopts["ErrorLog"] = errorlog
             self.cupsfilesopts["FatalErrors"] = "config"
@@ -248,40 +250,43 @@ class SecureCUPS(Rule):
     
             # cupsd conf default configuration options
             loglevel = "warn"
-            self.listensock = "0.0.0.0:631"
-    
-            # options for cupsd.conf
             self.cupsdconfopts = {"LogLevel": loglevel}
+            self.cupsdconfopts["HostNameLookups"] = "Double"
+            self.cupsdconfopts["AccessLog"] = accesslog
+            self.cupsdconfopts["AccessLogLevel"] = "config"
 
+            # cupsd conf remove these options
             self.cupsdconfremopts = {"Port": "631"}
 
-            # kveditor objects
-            kvtype1 = "conf"
-            path1 = self.cupsfilesconf
-            tmpPath1 = path1 + ".stonixtmp"
-            data1 = self.cupsfilesopts
-            intent1 = "present"
-            configType1 = "space"
-            self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
-                                              data1, intent1, configType1)
-    
-            kvtype2 = "conf"
-            path2 = self.cupsdconf
-            tmpPath2 = path2 + ".stonixtmp"
-            data2 = self.cupsdconf
-            intent2 = "present"
-            configType2 = "space"
-            self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
-                                          data2, intent2, configType2)
+            ## create kveditor objects
+            if os.path.exists(self.cupsfilesconf):
+                kvtype1 = "conf"
+                path1 = self.cupsfilesconf
+                tmpPath1 = path1 + ".stonixtmp"
+                data1 = self.cupsfilesopts
+                intent1 = "present"
+                configType1 = "space"
+                self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
+                                                  data1, intent1, configType1)
 
-            kvtype3 = "conf"
-            path3 = self.cupsdconf
-            tmpPath3 = path3 + ".stonixtmp"
-            data3 = self.cupsdconfremopts
-            intent3 = "notpresent"
-            configType3 = "space"
-            self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
-                                          data3, intent3, configType3)
+            if os.path.exists(self.cupsdconf):
+                kvtype2 = "conf"
+                path2 = self.cupsdconf
+                tmpPath2 = path2 + ".stonixtmp"
+                data2 = self.cupsdconf
+                intent2 = "present"
+                configType2 = "space"
+                self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
+                                              data2, intent2, configType2)
+
+                kvtype3 = "conf"
+                path3 = self.cupsdconf
+                tmpPath3 = path3 + ".stonixtmp"
+                data3 = self.cupsdconfremopts
+                intent3 = "notpresent"
+                configType3 = "space"
+                self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
+                                              data3, intent3, configType3)
 
             # policy blocks
             self.serveraccess = """# Restrict access to the server...
@@ -296,6 +301,13 @@ class SecureCUPS(Rule):
 </Location>"""
             self.configfilesaccess = """# Restrict access to configuration files...
 <Location /admin/conf>
+  AuthType Default
+  Encryption IfRequested
+  Require user @SYSTEM
+  Order allow,deny
+</Location>"""
+            self.logfileaccess = """# Restrict access to log files...
+<Location /admin/log>
   AuthType Default
   Encryption IfRequested
   Require user @SYSTEM
@@ -354,18 +366,15 @@ class SecureCUPS(Rule):
 
             self.ch.executeCommand(sanitycheck)
             retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                ermsg = self.ch.getErrorString()
-                sane = False
-                self.detailedresults += "\nThere was an error while checking the syntax of the configuration files."
-                self.logger.log(LogPriority.DEBUG, "Non-zero exit code from command: " + str(sanitycheck) + ":\n" + str(ermsg))
             output = self.ch.getOutput()
+            if retcode != 0:
+                sane = False
+                self.detailedresults += "\nError while running command: " + str(sanitycheck)
             for line in output:
-                sline = line.split()
-                if not re.search("OK", line, re.IGNORECASE):
+                if re.search("Bad|Missing|Incorrect|Error|Wrong", line, re.IGNORECASE):
                     sane = False
-                    if re.search("\.conf", sline[0], re.IGNORECASE):
-                        self.detailedresults += "\nCUPS configuration file: " + str(sline[0]) + " has syntax errors."
+                    self.detailedresults += "\n" + line
+
         except Exception:
             raise
         return sane
@@ -381,41 +390,56 @@ class SecureCUPS(Rule):
 
         try:
 
+            if self.DisableCUPS.getcurrvalue():
+                self.PrintBrowseSubnet.updatecurrvalue(False)
+
             if self.DisablePrintBrowsing.getcurrvalue():
                 self.cupsdconfopts["Browsing"] = "Off"
-            else:
-                self.cupsdconfopts["Browsing"] = "On"
+                self.cupsdconfopts["BrowseAllow"] = "none"
+                self.cupsdconfopts["BrowseWebIF"] = "No"
             if self.PrintBrowseSubnet.getcurrvalue():
+                self.cupsdconfopts["Browsing"] = "On"
                 self.cupsdconfopts["BrowseOrder"] = "allow,deny"
                 self.cupsdconfopts["BrowseDeny"] = "all"
                 self.cupsdconfopts["BrowseAllow"] = PRINTBROWSESUBNET
             if self.DisableGenericPort.getcurrvalue():
-                self.cupsdconfopts["Listen"] = self.listensock
+                self.cupsdconfremopts["Port"] = "631"
             if self.SetDefaultAuthType.getcurrvalue():
-                self.cupsdconfopts["DefaultAuthType"] = "Digest"
-    
-            kvtype1 = "conf"
-            path1 = self.cupsfilesconf
-            tmpPath1 = path1 + ".stonixtmp"
-            data1 = self.cupsfilesopts
-            intent1 = "present"
-            configType1 = "space"
-            self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
-                                              data1, intent1, configType1)
-    
-            kvtype2 = "conf"
-            path2 = self.cupsdconf
-            tmpPath2 = path2 + ".stonixtmp"
-            data2 = self.cupsdconf
-            intent2 = "present"
-            configType2 = "space"
-            self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
-                                          data2, intent2, configType2)
-    
-            if not self.cupsdconf:
-                self.logger.log(LogPriority.DEBUG, "Location of required configuraiton file cupsd.conf could not be determined!")
-            if not self.cupsfilesconf:
-                self.logger.log(LogPriority.DEBUG, "Location of required configuration file cups-files.conf could not be determined!")
+                self.cupsdconfopts["DefaultAuthType"] = "Negotiate"
+
+            # don't try to create, or update, the kv object,
+            # if the file it's based on doesn't exist.
+            # this would cause tracebacks in kveditor
+            if os.path.exists(self.cupsfilesconf):
+                kvtype1 = "conf"
+                path1 = self.cupsfilesconf
+                tmpPath1 = path1 + ".stonixtmp"
+                data1 = self.cupsfilesopts
+                intent1 = "present"
+                configType1 = "space"
+                self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
+                                                  data1, intent1, configType1)
+            else:
+                self.logger.log(LogPriority.DEBUG, "Location of required configuration file cups-files.conf could not be determined")
+            if os.path.exists(self.cupsdconf):
+                kvtype2 = "conf"
+                path2 = self.cupsdconf
+                tmpPath2 = path2 + ".stonixtmp"
+                data2 = self.cupsdconfopts
+                intent2 = "present"
+                configType2 = "space"
+                self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
+                                              data2, intent2, configType2)
+                kvtype3 = "conf"
+                path3 = self.cupsdconf
+                tmpPath3 = path3 + ".stonixtmp"
+                data3 = self.cupsdconfremopts
+                intent3 = "notpresent"
+                configType3 = "space"
+                self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
+                                              data3, intent3, configType3)
+            else:
+                self.logger.log(LogPriority.DEBUG, "Location of required configuration file cupsd.conf could not be determined")
 
         except Exception:
             raise
@@ -438,26 +462,27 @@ class SecureCUPS(Rule):
 
         try:
 
+            if self.linux:
+                if not self.ph.check(self.pkgname):
+                    self.detailedresults += "\nCUPS not installed on this system. Nothing to secure."
+                    self.formatDetailedResults('report', self.compliant, self.detailedresults)
+                    return self.compliant
+
+            # update kv objects with any new
+            # user-specified information
             self.updateOpts()
 
-            # check common
-            if not self.reportCommon():
-                self.compliant = False
-
-            # check linux
-            if self.linux:
-                if not self.reportLinux():
+            if self.SecureCUPS.getcurrvalue():
+                # is cups secured?
+                if not self.reportSecure():
                     self.compliant = False
-
-            # check darwin
-            if self.darwin:
-                if not self.reportDarwin():
-                    self.compliant = False
-
-            if self.SecureCUPS.getcurrvalue() and not \
-            self.DisableCUPS.getcurrvalue():
                 # make sure config syntax is correct
                 if not self.sanityCheck():
+                    self.compliant = False
+
+            if self.DisableCUPS.getcurrvalue():
+                # is cups disabled?
+                if not self.reportDisabled():
                     self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
@@ -468,6 +493,33 @@ class SecureCUPS(Rule):
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults('report', self.compliant, self.detailedresults)
         return self.compliant
+
+    def reportDisabled(self):
+        '''
+        return True if cups is disabled
+        return False if cups is enabled
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        try:
+
+            if self.linux:
+                if self.sh.auditservice(self.svcname):
+                    retval = False
+                    self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
+            elif self.darwin:
+                if self.sh.auditservice(self.svclongname, self.svcname):
+                    retval = False
+                    self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
+
+        except Exception:
+            raise
+        return retval
 
     def checkPolicyBlocks(self):
         '''
@@ -531,7 +583,7 @@ class SecureCUPS(Rule):
             raise
         return retval
 
-    def reportCommon(self):
+    def reportSecure(self):
         '''
         run report actions common to all platforms
 
@@ -540,7 +592,7 @@ class SecureCUPS(Rule):
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "\n\nREPORTCOMMON()\n\n")
+        self.logger.log(LogPriority.DEBUG, "\n\nREPORTSECURE()\n\n")
 
         retval = True
 
@@ -548,74 +600,30 @@ class SecureCUPS(Rule):
 
             if self.SecureCUPS.getcurrvalue():
 
-                self.KVcupsd.report()
-                if self.KVcupsd.fixables:
-                    retval = False
-                    self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsd.fixables)
+                if os.path.exists(self.cupsdconf):
+                    self.KVcupsd.report()
+                    if self.KVcupsd.fixables:
+                        retval = False
+                        self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsd.fixables)
+                    self.KVcupsdrem.report()
+                    if self.KVcupsdrem.removeables:
+                        retval = False
+                        self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsdrem.removeables)
+                    if not self.checkPolicyBlocks():
+                        retval = False
+                else:
+                    pass
 
-                self.KVcupsfiles.report()
-                if self.KVcupsfiles.fixables:
-                    retval = False
-                    self.detailedresults += "\nThe following configuration options, in " + str(self.cupsfilesconf) + ", are incorrect:\n" + "\n".join(self.KVcupsfiles.fixables)
-
-                self.KVcupsdrem.report()
-                if self.KVcupsdrem.removeables:
-                    retval = False
-                    self.detailedresults += "\nThe following unsecure option was found in " + str(self.cupsdconf) + ":\n" + "\n".join(self.KVcupsdrem.removeables)
-
-                if not self.checkPolicyBlocks():
-                    retval = False
-
-            elif self.DisableCUPS.getcurrvalue():
-                if self.linux and not self.reportLinux():
-                    retval = False
-                if self.darwin and not self.reportDarwin():
-                    retval = False
+                if os.path.exists(self.cupsfilesconf):
+                    self.KVcupsfiles.report()
+                    if self.KVcupsfiles.fixables:
+                        retval = False
+                        self.detailedresults += "\nThe following configuration options, in " + str(self.cupsfilesconf) + ", are incorrect:\n" + "\n".join(self.KVcupsfiles.fixables)
+                else:
+                    pass
 
             else:
                 self.detailedresults += "\nNeither SecureCUPS nor DisableCUPS CI's was enabled. Nothing was done."
-      
-        except Exception:
-            raise
-        return retval
-
-    def reportLinux(self):
-        '''
-        run report actions specific to Linux
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-
-        try:
-
-            if self.DisableCUPS.getcurrvalue():
-                if self.sh.auditservice(self.svcname):
-                    retval = False
-                    self.detailedresults += "\nThe service: " + str(self.svcname) + " is still configured to run"
-
-        except Exception:
-            raise
-        return retval
-
-    def reportDarwin(self):
-        '''
-        run report actions specific to Darwin
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        try:
-
-            if self.DisableCUPS.getcurrvalue():
-                if self.sh.auditservice(self.svclongname, self.svcname):
-                    retval = False
-                    self.detailedresults += "\nThe service: " + str(self.svcname) + " is still configured to run"
 
         except Exception:
             raise
@@ -652,8 +660,13 @@ class SecureCUPS(Rule):
                 self.formatDetailedResults('fix', success, self.detailedresults)
                 return success
 
-            if not self.fixCommon():
-                success = False
+            if self.SecureCUPS.getcurrvalue():
+                if not self.fixSecure():
+                    success = False
+
+            if self.DisableCUPS.getcurrvalue():
+                if not self.disableCUPS():
+                    success = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -664,7 +677,7 @@ class SecureCUPS(Rule):
         self.formatDetailedResults('fix', success, self.detailedresults)
         return success
 
-    def fixCommon(self):
+    def fixSecure(self):
         '''
         run fix actions common to all platforms
 
@@ -678,10 +691,11 @@ class SecureCUPS(Rule):
         serveraccessfound = False
         adminaccessfound = False
         configaccessfound = False
+        logfileaccessfound = False
 
         try:
 
-            if self.SecureCUPS.getcurrvalue():
+            if os.path.exists(self.cupsdconf):
 
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
@@ -691,7 +705,16 @@ class SecureCUPS(Rule):
                         self.detailedresults += "\nCommit failed for cupsd.conf"
                         self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsd")
                         retval = False
-    
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.KVcupsdrem.setEventID(myid)
+                if self.KVcupsdrem.fix():
+                    if not self.KVcupsdrem.commit():
+                        self.detailedresults += "\nCommit failed for cupsd.conf"
+                        self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsdrem")
+                        retval = False
+
+            if os.path.exists(self.cupsfilesconf):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.KVcupsfiles.setEventID(myid)
@@ -701,78 +724,68 @@ class SecureCUPS(Rule):
                         self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsfiles")
                         retval = False
 
+            if self.SetupDefaultPolicyBlocks.getcurrvalue():
+                f = open(self.cupsdconf, 'r')
+                contentlines = f.readlines()
+                f.close()
+                for line in contentlines:
+                    if re.search("\<Location \/\>", line, re.IGNORECASE):
+                        serveraccessfound = True
+                for line in contentlines:
+                    if re.search("\<Location \/admin\>", line, re.IGNORECASE):
+                        adminaccessfound = True
+                for line in contentlines:
+                    if re.search("\<Location \/admin\/conf\>", line, re.IGNORECASE):
+                        configaccessfound = True
+                for line in contentlines:
+                    if re.search("\<Location \/admin\/log\>", line, re.IGNORECASE):
+                        logfileaccessfound = True
+                for line in contentlines:
+                    if re.search("\<Policy default\>", line, re.IGNORECASE):
+                        pdefaultfound = True
+
+                if not serveraccessfound:
+                    contentlines.append("\n" + self.serveraccess + "\n")
+                    self.logger.log(LogPriority.DEBUG, "\n\nroot access policy block not found. adding it...\n\n")
+
+                if not adminaccessfound:
+                    contentlines.append("\n" + self.adminpagesaccess + "\n")
+                    self.logger.log(LogPriority.DEBUG, "\n\nadmin access policy block not found. adding it...\n\n")
+
+                if not configaccessfound:
+                    contentlines.append("\n" + self.configfilesaccess + "\n")
+                    self.logger.log(LogPriority.DEBUG, "\n\nconfig access policy block not found. adding it...\n\n")
+
+                if not logfileaccessfound:
+                    contentlines.append("\n" + self.logfileaccess + "\n")
+                    self.logger.log(LogPriority.DEBUG, "\n\nlog file access policy block not found. adding it...\n\n")
+
+                if not pdefaultfound:
+                    contentlines.append("\n" + self.defaultprinterpolicies + "\n")
+                    self.logger.log(LogPriority.DEBUG, "\n\ndefault policy block not found. adding it...\n\n")
+
+                tf = open(self.tmpcupsdconf, 'w')
+                tf.writelines(contentlines)
+                tf.close()
+
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                self.KVcupsdrem.setEventID(myid)
-                if self.KVcupsdrem.fix():
-                    if not self.KVcupsdrem.commit():
-                        self.detailedresults += "\nCommit failed for cupsd.conf"
-                        self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsdrem")
-                        retval = False
-    
-                if self.SetupDefaultPolicyBlocks.getcurrvalue():
-                    f = open(self.cupsdconf, 'r')
-                    contentlines = f.readlines()
-                    f.close()
-                    for line in contentlines:
-                        if re.search("\<Location \/\>", line, re.IGNORECASE):
-                            serveraccessfound = True
-                    for line in contentlines:
-                        if re.search("\<Location \/admin\>", line, re.IGNORECASE):
-                            adminaccessfound = True
-                    for line in contentlines:
-                        if re.search("\<Location \/admin\/conf\>", line, re.IGNORECASE):
-                            configaccessfound = True
-                    for line in contentlines:
-                        if re.search("\<Policy default\>", line, re.IGNORECASE):
-                            pdefaultfound = True
-    
-                    if not serveraccessfound:
-                        contentlines.append("\n\n" + self.serveraccess)
-                        self.logger.log(LogPriority.DEBUG, "\n\nroot access policy block not found. adding it...\n\n")
-    
-                    if not adminaccessfound:
-                        contentlines.append("\n\n" + self.adminpagesaccess)
-                        self.logger.log(LogPriority.DEBUG, "\n\nadmin access policy block not found. adding it...\n\n")
-    
-                    if not configaccessfound:
-                        contentlines.append("\n\n" + self.configfilesaccess)
-                        self.logger.log(LogPriority.DEBUG, "\n\nconfig access policy block not found. adding it...\n\n")
-    
-                    if not pdefaultfound:
-                        contentlines.append("\n\n" + self.defaultprinterpolicies)
-                        self.logger.log(LogPriority.DEBUG, "\n\ndefault policy block not found. adding it...\n\n")
-    
-                    tf = open(self.tmpcupsdconf, 'w')
-                    tf.writelines(contentlines)
-                    tf.close()
+                event = {"eventtype": "conf",
+                         "filename": self.cupsdconf}
 
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filename": self.cupsdconf}
+                self.statechglogger.recordfilechange(self.cupsdconf, self.tmpcupsdconf, myid)
+                self.statechglogger.recordchgevent(myid, event)
+                self.logger.log(LogPriority.DEBUG, "\n\nwriting changes to " + str(self.cupsdconf) + " file...\n\n")
+                os.rename(self.tmpcupsdconf, self.cupsdconf)
+                self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
+                os.chown(self.cupsdconf, 0, 0)
+                if self.linux:
+                    os.chmod(self.cupsdconf, 0640)
+                elif self.darwin:
+                    os.chmod(self.cupsdconf, 0644)
 
-                    self.statechglogger.recordfilechange(self.cupsdconf, self.tmpcupsdconf, myid)
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.logger.log(LogPriority.DEBUG, "\n\nwriting changes to " + str(self.cupsdconf) + " file...\n\n")
-                    os.rename(self.tmpcupsdconf, self.cupsdconf)
-                    self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
-                    os.chown(self.cupsdconf, 0, 0)
-                    if self.linux:
-                        os.chmod(self.cupsdconf, 0640)
-                    elif self.darwin:
-                        os.chmod(self.cupsdconf, 0644)
-
-                if not self.reloadCUPS():
-                    retval = False
-
-            elif self.DisableCUPS.getcurrvalue():
-                if not self.disableCUPS():
-                    retval = False
-            else:
-                self.logger.log(LogPriority.DEBUG, "SecureCUPS CI was not enabled and DisableCUPS CI was not enabled. Nothing was done.")
-
-
+            if not self.reloadCUPS():
+                retval = False
 
         except Exception:
             raise
@@ -780,11 +793,21 @@ class SecureCUPS(Rule):
 
     def reloadCUPS(self):
         '''
+        reload the cups service to read the new configurations
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         retval = True
 
         try:
+
+            # do not attempt to reload the service
+            # if the rule is set to disable it
+            if self.DisableCUPS.getcurrvalue():
+                return retval
 
             if self.linux:
                 if not self.sh.reloadservice(self.svcname):
@@ -801,6 +824,11 @@ class SecureCUPS(Rule):
 
     def disableCUPS(self):
         '''
+        disable the cups service
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         retval = True
