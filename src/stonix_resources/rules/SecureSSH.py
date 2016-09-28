@@ -111,8 +111,12 @@ appropriate contents in them whether installed or not.'''
             compliant = True
             debug = ""
             if self.environ.getostype() == "Mac OS X":
-                self.path1 = "/private/etc/sshd_config"  # server file
-                self.path2 = "/private/etc/ssh_config"  # client file
+                if re.search("10\.11\.*|10\.12\.*", self.environ.getosver()):
+                    self.path1 = '/private/etc/ssh/sshd_config'
+                    self.path2 = '/private/etc/ssh/ssh_config'
+                else:
+                    self.path1 = "/private/etc/sshd_config"  # server file
+                    self.path2 = "/private/etc/ssh_config"  # client file
             else:
                 self.path1 = "/etc/ssh/sshd_config"  # server file
                 self.path2 = "/etc/ssh/ssh_config"  # client file
