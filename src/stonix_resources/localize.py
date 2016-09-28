@@ -173,13 +173,15 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
-MACKRB5 = '''# Test Configuration
-# 2016-08-31
+MACKRB5 = '''# Updated Test Configuration
+# 2016-09-28
 # https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
-# + ticket_lifetime = 24h, renew_lifetime = 7d, clockslew = 300
+# + dns_lookup_kdc=false, dns_lookup_realm=false, Exchange & SharePoint realm mappings, capaths section
 [libdefaults]
   default_realm = lanl.gov
   forwardable = true
+  dns_lookup_kdc = false
+  dns_lookup_realm = false
   ticket_lifetime = 24h
   renew_lifetime = 7d
   clockslew = 300
@@ -197,14 +199,23 @@ MACKRB5 = '''# Test Configuration
   krb4_convert = false
 [domain_realm]
   win.lanl.gov = WIN.LANL.GOV
-.win.lanl.gov = WIN.LANL.GOV
+ .win.lanl.gov = WIN.LANL.GOV
   lanl.gov = lanl.gov
-.lanl.gov = lanl.gov
-  exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
-'''
+ .lanl.gov = lanl.gov
+ exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-ws01-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-ws02-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-106-ws02.lanl.gov = WIN.LANL.GOV
+ sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
+[capaths]
+  WIN.LANL.GOV = {
+	lanl.gov = .
+  }
+ '''
 
 LINUXKRB5 = '''# Test Configuration
-# 2016-08-31
+# 2016-09-28
 # https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
 # + logging
 # + ticket_lifetime = 24h, renew_lifetime = 7d, clockslew = 300
@@ -213,11 +224,13 @@ LINUXKRB5 = '''# Test Configuration
  kdc = FILE:/var/log/krb5kdc.log
  admin_server = FILE:/var/log/kadmind.log
 [libdefaults]
- default_realm = lanl.gov
- forwardable = true
- ticket_lifetime = 24h
- renew_lifetime = 7d
- clockslew = 300
+  default_realm = lanl.gov
+  forwardable = true
+  dns_lookup_kdc = false
+  dns_lookup_realm = false
+  ticket_lifetime = 24h
+  renew_lifetime = 7d
+  clockslew = 300
 [realms]
   lanl.gov = {
     kdc = kerberos-slaves.lanl.gov
@@ -232,11 +245,20 @@ LINUXKRB5 = '''# Test Configuration
   krb4_convert = false
 [domain_realm]
   win.lanl.gov = WIN.LANL.GOV
-.win.lanl.gov = WIN.LANL.GOV
+ .win.lanl.gov = WIN.LANL.GOV
   lanl.gov = lanl.gov
-.lanl.gov = lanl.gov
-  exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
-'''
+ .lanl.gov = lanl.gov
+ exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-ws01-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-ws02-f5.lanl.gov = WIN.LANL.GOV
+ sp2013-p-106-ws02.lanl.gov = WIN.LANL.GOV
+ sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
+[capaths]
+  WIN.LANL.GOV = {
+	lanl.gov = .
+  }
+ '''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
