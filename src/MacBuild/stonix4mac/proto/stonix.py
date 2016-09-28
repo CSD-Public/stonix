@@ -1,0 +1,1 @@
+/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
