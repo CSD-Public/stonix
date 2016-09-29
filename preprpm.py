@@ -85,7 +85,7 @@ def maketarball(srcpath, ver):
     pathelements = srcpath.split('/')
     upone = '/'.join(pathelements[:-1])
     versionedsrc = os.path.join(upone, 'stonix-' + ver)
-    shutil.copytree(srcpath, versionedsrc,
+    shutil.copytree(srcpath, versionedsrc, symlinks=True,
                     ignore=shutil.ignore_patterns('*.pyc', '*.ui', '.svn', 'zzz*.py'))
     tarballpath = 'stonix-' + ver + '.tgz'
     tarcmd = '/bin/tar -czvf ' + tarballpath + ' ' + versionedsrc
