@@ -54,10 +54,10 @@ from darwin_funcs import getResourcesDir, \
                          isUserOnLocalSystem
 
 from log_message import log_message
-from lib.run_commands import RunAs
+from lib.run_commands import RunWith
 from lib.loggers import CyLogger
 from lib.loggers import LogPriority as lp
-from lib.managem_user.manage_user import ManageUser
+from lib.manage_user.manage_user import ManageUser
 
 class AdministratorCredentials(QDialog) :
     """
@@ -78,7 +78,7 @@ class AdministratorCredentials(QDialog) :
         
         self.logger = CyLogger(debug_mode=True)
         self.mu = ManageUser(logger=self.logger)
-        self.ra = RunAs(self.logger)
+        self.rw = RunWith(self.logger)
         self.message_level = message_level
         self.username = ""
         self.password = ""
@@ -151,7 +151,7 @@ class AdministratorCredentials(QDialog) :
                 log_message("Authentication success...", "debug", self.message_level)
                 #####
                 # Got a valid user, with valid password, call stonix with
-                # self.ra.runAsWithSudo - stonixPath is a link to the stonix app
+                # self.rw.runAsWithSudo - stonixPath is a link to the stonix app
                 # that is in the resources directory
                 stonixPath = os.path.join(getResourcesDir(), "stonix")
 
@@ -176,8 +176,8 @@ class AdministratorCredentials(QDialog) :
                         command = ["\"" + stonixFullPath + "\"", "-G", "-dv"]
                     #####
                     # Run the command
-                    self.ra.setCommand(command)
-                    self.ra.runAsWithSudo(self.username, self.password)
+                    self.rw.setCommand(command)
+                    self.rw.runAsWithSudo(self.username, self.password)
                 else:
                     print "Exiting parent process: PID# %s" % os.getpid()
 
