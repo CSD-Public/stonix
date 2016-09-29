@@ -54,7 +54,10 @@ from darwin_funcs import getResourcesDir, \
                          isUserOnLocalSystem
 
 from log_message import log_message
-from run_commands import runAsWithSudo, authenticate
+from lib.run_commands import RunAs
+from lib.loggers import CyLogger
+from lib.loggers import LogPriority as lp
+from lib.managem_user.manage_user import ManageUser
 
 class AdministratorCredentials(QDialog) :
     """
@@ -73,6 +76,9 @@ class AdministratorCredentials(QDialog) :
         self.ui.setupUi(self)
         self.args = args
         
+        self.logger = CyLogger(debug_mode=True)
+        self.mu = ManageUser(logger=self.logger)
+        self.ra = RunAs(self.logger)
         self.message_level = message_level
         self.username = ""
         self.password = ""
@@ -133,67 +139,58 @@ class AdministratorCredentials(QDialog) :
         
         self.progress_bar.show()
         self.progress_bar.raise_()
-        if isUserOnLocalSystem(self.username, self.message_level) :
-            log_message("User: " + str(self.username) + " is a valid user...", "verbose", self.message_level)
-            if checkIfUserIsAdmin(self.username, self.message_level) :
-                log_message("User: " + str(self.username) + " is a valid admin...", "verbose", self.message_level)
-                result = False
 
-                result = authenticate(self.username, self.password, self.message_level)
+        if self.mu.isUserInGroup(self.username, "admin"):
         
-                self.progress_bar.hide()
-    
-                if result :
-                    log_message("Authentication success...", "debug", self.message_level)
-                    #####
-                    # Got a valid user, with valid password, call stonix with
-                    # runAsWithSudo - stonixPath is a link to the stonix app that is
-                    # in the resources directory
-                    stonixPath = os.path.join(getResourcesDir(), "stonix")
-    
-                    #####
-                    # Set up progress bar
-                    self.progress_bar.setLabelText("Running Stonix...")
-    
-                    stonixFullPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
-                    self.hide()
-                    
-                    #####
-                    # Attempt fork here, so we don't have the wrapper and stonix
-                    # running and in the Dock at the same time.
-                    child_pid = os.fork()
-                    if child_pid == 0 :
-                        print "Child Process: PID# %s" % os.getpid()
-                        if self.args:
-                            command = ["\"" + stonixFullPath + "\""] + self.args
-                        else:
-                            command = ["\"" + stonixFullPath + "\"", "-G", "-dv"]
-                            
-                        runAsWithSudo(self.username, self.password, command, self.message_level)
-                    else:
-                        print "Exiting parent process: PID# %s" % os.getpid()
+            result = self.mu.authenticate(self.username, self.password)
+            self.logger.log(lp.DEBUG, str(self.username) + " is an admin...")
+        
+            self.progress_bar.hide()
 
-                    self.progress_bar.hide()
-    
-                    QCoreApplication.quit()
-                else :
+            if result :
+                log_message("Authentication success...", "debug", self.message_level)
+                #####
+                # Got a valid user, with valid password, call stonix with
+                # self.ra.runAsWithSudo - stonixPath is a link to the stonix app
+                # that is in the resources directory
+                stonixPath = os.path.join(getResourcesDir(), "stonix")
+
+                #####
+                # Set up progress bar
+                self.progress_bar.setLabelText("Running Stonix...")
+
+                stonixFullPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
+                self.hide()
+
+                #####
+                # Attempt fork here, so we don't have the wrapper and stonix
+                # running and in the Dock at the same time.
+                child_pid = os.fork()
+                if child_pid == 0 :
+                    print "Child Process: PID# %s" % os.getpid()
                     #####
-                    # User is an admin, report invalid password and try again...
-                    self.progress_bar.hide()
-                    log_message("Authentication test FAILURE...", "normal", self.message_level)
-                    QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QMessageBox.Ok)                
-    
+                    # Set up the command
+                    if self.args:
+                        command = ["\"" + stonixFullPath + "\""] + self.args
+                    else:
+                        command = ["\"" + stonixFullPath + "\"", "-G", "-dv"]
+                    #####
+                    # Run the command
+                    self.ra.setCommand(command)
+                    self.ra.runAsWithSudo(self.username, self.password)
+                else:
+                    print "Exiting parent process: PID# %s" % os.getpid()
+
+                self.progress_bar.hide()
+
+                QCoreApplication.quit()
             else :
                 #####
-                # Report user is not an admin
+                # User is an admin, report invalid password and try again...
                 self.progress_bar.hide()
-                log_message("User: \"" + str(self.username) + "\" is not a " + \
-                            "valid admin on this system", "normal", \
-                            self.message_level)
-                QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
-                                          "\" is not a valid admin for this " + \
-                                          "system, please try again.", \
-                                          QMessageBox.Ok)
+                log_message("Authentication test FAILURE...", "normal", self.message_level)
+                QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QMessageBox.Ok)                
+    
         else :
             self.progress_bar.hide()
             log_message("User: \"" + str(self.username) + "\" is not a valid " + \
