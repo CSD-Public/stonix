@@ -214,6 +214,8 @@ class KVAConf():
         if self.contents:
             if self.intent == "present":  #self.data contains key val pairs we want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
+                    debug = "This key can be present multiple times: " + key + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     for item in value:
                         foundalready = False
                         for line in self.contents:
@@ -221,12 +223,13 @@ class KVAConf():
                                 continue
                             elif re.search("^" + key + " ", line.strip()):  # we found the key, which in this case can be repeatable
                                 debug = "found the key: " + key + "\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
-                                    debug = "the value we're looking for is blank\n"
+                                    debug = "the value we're looking for isn't blank\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
-                                    debug = "the value we're looking for isn't blank\n"
+                                    debug = "the value we're looking for is blank\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     temp = line
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
@@ -261,12 +264,14 @@ class KVAConf():
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
                         elif re.search("^" + key, line.strip()):  # the key is in this line
+                            debug = "found the key: " + key + "\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                             if value != "":
-                                debug = "the value we're looking for is blank\n"
+                                debug = "the value we're looking for isn't blank\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 temp = line.strip()  # strip off all trailing and leading whitespace
                             else:
-                                debug = "the value we're looking for isn't blank\n"
+                                debug = "the value we're looking for is blank\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 temp = line
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
@@ -303,9 +308,15 @@ class KVAConf():
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
                             elif re.search("^" + key, line):  # we found the key, which in this case can be repeatable
+                                debug = "found the key: " + key + "\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
+                                    debug = "the value we're looking for isn't blank\n"
+                                    self.logger.log(LogPriority.DEBUG, debug) 
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
+                                    debug = "the value we're looking for is blank\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
                                     temp = line
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                                 temp = temp.split()  # separate contents into list separated by spaces
@@ -316,6 +327,8 @@ class KVAConf():
                                         if len(temp) > 2:
                                             continue  # this could indicate the file's format may be corrupted but that's not our issue
                                         elif temp[1] == item:  # the value is correct
+                                            debug = "the value is correct, adding to removeables\n"
+                                            self.logger.log(LogPriority.DEBUG, debug)
                                             foundalready = True
                                     except IndexError:
                                         if item == "":
@@ -351,12 +364,12 @@ class KVAConf():
                                     if len(temp) > 2:
                                         continue
                                     elif temp[1] == value:
-                                        debug = "value is correct\n"
+                                        debug = "value is correct, adding to removeables\n"
                                         self.logger.log(LogPriority.DEBUG, debug)
                                         foundalready = True
                                 except IndexError:
                                     if value == "":
-                                        debug = "value in line is blank but we want it to be blank\n"
+                                        debug = "value in line is blank but we want it to be blank, adding to removeables\n"
                                         self.logger.log(LogPriority.DEBUG, debug)
                                         foundalready = True
                                         continue
