@@ -221,7 +221,7 @@ class KVAConf():
                         for line in self.contents:
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
-                            elif re.search("^" + key + " ", line.strip()):  # we found the key, which in this case can be repeatable
+                            elif re.search("^" + key + "\s+", line):  # we found the key, which in this case can be repeatable
                                 debug = "found the key: " + key + "\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
@@ -263,7 +263,7 @@ class KVAConf():
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
-                        elif re.search("^" + key, line.strip()):  # the key is in this line
+                        elif re.search("^" + key + "\s+", line):  # the key is in this line
                             debug = "found the key: " + key + "\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             if value != "":
@@ -307,7 +307,7 @@ class KVAConf():
                         for line in self.contents:
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
-                            elif re.search("^" + key, line):  # we found the key, which in this case can be repeatable
+                            elif re.search("^" + key + "\s+", line):  # we found the key, which in this case can be repeatable
                                 debug = "found the key: " + key + "\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
@@ -350,7 +350,7 @@ class KVAConf():
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore is comment or blank line
                             continue
-                        elif re.match("^" + key, line):  # we found the key
+                        elif re.match("^" + key + "\s+", line):  # we found the key
                             if value != "":
                                 temp = line.strip()  # strip off all trailing and leading whitespace
                             else:
@@ -501,7 +501,7 @@ class KVAConf():
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
-                        elif re.search("^" + key, line.strip()):
+                        elif re.search("^" + key + "\s+", line.strip()):
                             temp = line.strip()
                             temp = re.sub("\s+", " ", temp)
                             temp= temp.split()
@@ -524,7 +524,7 @@ class KVAConf():
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
-                        elif re.search("^" + key, line.strip()): #we found the key in the file
+                        elif re.search("^" + key + "\s+", line): #we found the key in the file
                             temp = line.strip() #remove all beginning and trailing whitespace
                             temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
                             temp = line.split()
