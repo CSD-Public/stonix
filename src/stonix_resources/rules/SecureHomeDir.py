@@ -141,7 +141,10 @@ False.'''
 
                 for user in users:
                     templist = []
-                    currpwd = pwd.getpwnam(user)
+                    try:
+                        currpwd = pwd.getpwnam(user)
+                    except KeyError:
+                        continue
 
                     try:
 
