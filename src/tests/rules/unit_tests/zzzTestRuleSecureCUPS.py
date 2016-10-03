@@ -111,8 +111,10 @@ class zzzTestRuleSecureCUPS(RuleTest):
         self.rule.DisablePrintBrowsing.updatecurrvalue(False)
         self.rule.PrintBrowseSubnet.updatecurrvalue(True)
         self.simpleRuleTest()
-        copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
-        copyfile(self.cupsdconfbak, self.cupsdconf)
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
+            if os.path.exists(self.cupsdconfbak):
+                copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def test_secure_print_browse_off(self):
         '''
@@ -127,8 +129,10 @@ class zzzTestRuleSecureCUPS(RuleTest):
         self.rule.PrintBrowseSubnet.updatecurrvalue(False)
         self.rule.DisablePrintBrowsing.updatecurrvalue(True)
         self.simpleRuleTest()
-        copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
-        copyfile(self.cupsdconfbak, self.cupsdconf)
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
+            if os.path.exists(self.cupsdconfbak):
+                copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def test_disable(self):
         '''
@@ -147,8 +151,10 @@ class zzzTestRuleSecureCUPS(RuleTest):
         self.rule.SetupDefaultPolicyBlocks.updatecurrvalue(False)
         self.rule.PrintBrowseSubnet.updatecurrvalue(False)
         self.simpleRuleTest()
-        copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
-        copyfile(self.cupsdconfbak, self.cupsdconf)
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
+            if os.path.exists(self.cupsdconfbak):
+                copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

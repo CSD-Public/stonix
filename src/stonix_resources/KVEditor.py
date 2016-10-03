@@ -51,13 +51,14 @@ class KVEditor(object):
         @param stchlgr: StateChgLogger object
         @param logger: logger object
         @param kvtype: Type of key-value file.
-                       Valid values: "tagconf", "conf", "defaults"
+                       Valid values: "tagconf", "conf", "defaults", "profiles"
         @param path: Path to key-value file
         @param tmpPath: Path to temp file for key-value list
         @param data: Dict of key-value data
         @param intent: "present" or "notpresent"
         @param configType: Specify how the config options are separated.
                            Valid values: "space", "openeq", "closedeq"
+        @param output: Output of profiler command, used only by KVAProfiles
         @return: True if kvtype is valid
         '''
         self.kvtype = kvtype
@@ -99,7 +100,7 @@ class KVEditor(object):
             self.logger.log(LogPriority.DEBUG,
                             ["KVEditor.__init__", self.detailedresults])
             return None
-        
+
     def setData(self, data):
         if data is None:
             return False
@@ -362,7 +363,7 @@ class KVEditor(object):
             return True
         else:
             return False
-    
+
     def validateProfiles(self):
         '''
         @since: 3/10/2016
@@ -393,7 +394,7 @@ class KVEditor(object):
         '''
         for k, v in self.data.iteritems():
             return self.editor.validate(self.output, k, v)
-    
+
     def commit(self):
         if self.kvtype == "defaults":
             retval = self.editor.commit()
