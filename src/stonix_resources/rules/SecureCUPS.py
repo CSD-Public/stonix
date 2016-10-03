@@ -724,65 +724,66 @@ class SecureCUPS(Rule):
                         self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsfiles")
                         retval = False
 
-            if self.SetupDefaultPolicyBlocks.getcurrvalue():
-                f = open(self.cupsdconf, 'r')
-                contentlines = f.readlines()
-                f.close()
-                for line in contentlines:
-                    if re.search("\<Location \/\>", line, re.IGNORECASE):
-                        serveraccessfound = True
-                for line in contentlines:
-                    if re.search("\<Location \/admin\>", line, re.IGNORECASE):
-                        adminaccessfound = True
-                for line in contentlines:
-                    if re.search("\<Location \/admin\/conf\>", line, re.IGNORECASE):
-                        configaccessfound = True
-                for line in contentlines:
-                    if re.search("\<Location \/admin\/log\>", line, re.IGNORECASE):
-                        logfileaccessfound = True
-                for line in contentlines:
-                    if re.search("\<Policy default\>", line, re.IGNORECASE):
-                        pdefaultfound = True
-
-                if not serveraccessfound:
-                    contentlines.append("\n" + self.serveraccess + "\n")
-                    self.logger.log(LogPriority.DEBUG, "\n\nroot access policy block not found. adding it...\n\n")
-
-                if not adminaccessfound:
-                    contentlines.append("\n" + self.adminpagesaccess + "\n")
-                    self.logger.log(LogPriority.DEBUG, "\n\nadmin access policy block not found. adding it...\n\n")
-
-                if not configaccessfound:
-                    contentlines.append("\n" + self.configfilesaccess + "\n")
-                    self.logger.log(LogPriority.DEBUG, "\n\nconfig access policy block not found. adding it...\n\n")
-
-                if not logfileaccessfound:
-                    contentlines.append("\n" + self.logfileaccess + "\n")
-                    self.logger.log(LogPriority.DEBUG, "\n\nlog file access policy block not found. adding it...\n\n")
-
-                if not pdefaultfound:
-                    contentlines.append("\n" + self.defaultprinterpolicies + "\n")
-                    self.logger.log(LogPriority.DEBUG, "\n\ndefault policy block not found. adding it...\n\n")
-
-                tf = open(self.tmpcupsdconf, 'w')
-                tf.writelines(contentlines)
-                tf.close()
-
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf",
-                         "filename": self.cupsdconf}
-
-                self.statechglogger.recordfilechange(self.cupsdconf, self.tmpcupsdconf, myid)
-                self.statechglogger.recordchgevent(myid, event)
-                self.logger.log(LogPriority.DEBUG, "\n\nwriting changes to " + str(self.cupsdconf) + " file...\n\n")
-                os.rename(self.tmpcupsdconf, self.cupsdconf)
-                self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
-                os.chown(self.cupsdconf, 0, 0)
-                if self.linux:
-                    os.chmod(self.cupsdconf, 0640)
-                elif self.darwin:
-                    os.chmod(self.cupsdconf, 0644)
+            if os.path.exists(self.cupsdconf):
+                if self.SetupDefaultPolicyBlocks.getcurrvalue():
+                    f = open(self.cupsdconf, 'r')
+                    contentlines = f.readlines()
+                    f.close()
+                    for line in contentlines:
+                        if re.search("\<Location \/\>", line, re.IGNORECASE):
+                            serveraccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Location \/admin\>", line, re.IGNORECASE):
+                            adminaccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Location \/admin\/conf\>", line, re.IGNORECASE):
+                            configaccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Location \/admin\/log\>", line, re.IGNORECASE):
+                            logfileaccessfound = True
+                    for line in contentlines:
+                        if re.search("\<Policy default\>", line, re.IGNORECASE):
+                            pdefaultfound = True
+    
+                    if not serveraccessfound:
+                        contentlines.append("\n" + self.serveraccess + "\n")
+                        self.logger.log(LogPriority.DEBUG, "\n\nroot access policy block not found. adding it...\n\n")
+    
+                    if not adminaccessfound:
+                        contentlines.append("\n" + self.adminpagesaccess + "\n")
+                        self.logger.log(LogPriority.DEBUG, "\n\nadmin access policy block not found. adding it...\n\n")
+    
+                    if not configaccessfound:
+                        contentlines.append("\n" + self.configfilesaccess + "\n")
+                        self.logger.log(LogPriority.DEBUG, "\n\nconfig access policy block not found. adding it...\n\n")
+    
+                    if not logfileaccessfound:
+                        contentlines.append("\n" + self.logfileaccess + "\n")
+                        self.logger.log(LogPriority.DEBUG, "\n\nlog file access policy block not found. adding it...\n\n")
+    
+                    if not pdefaultfound:
+                        contentlines.append("\n" + self.defaultprinterpolicies + "\n")
+                        self.logger.log(LogPriority.DEBUG, "\n\ndefault policy block not found. adding it...\n\n")
+    
+                    tf = open(self.tmpcupsdconf, 'w')
+                    tf.writelines(contentlines)
+                    tf.close()
+    
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filename": self.cupsdconf}
+    
+                    self.statechglogger.recordfilechange(self.cupsdconf, self.tmpcupsdconf, myid)
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.logger.log(LogPriority.DEBUG, "\n\nwriting changes to " + str(self.cupsdconf) + " file...\n\n")
+                    os.rename(self.tmpcupsdconf, self.cupsdconf)
+                    self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
+                    os.chown(self.cupsdconf, 0, 0)
+                    if self.linux:
+                        os.chmod(self.cupsdconf, 0640)
+                    elif self.darwin:
+                        os.chmod(self.cupsdconf, 0644)
 
             if not self.reloadCUPS():
                 retval = False
