@@ -69,7 +69,7 @@ if __name__ == "__main__" :
 
     Author: Roy Nielsen
     """
-    message_level = "normal"
+    message_level = "debug"
     prog_args = ProgramArguments()
     arguments = prog_args.getArgs()
     lowest_supported_version = "10.10"

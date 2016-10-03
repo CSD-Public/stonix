@@ -49,7 +49,7 @@ from PyQt4.QtGui import *
 # local app libraries
 from admin_credentials_ui import Ui_AdministratorCredentials
 
-from darwin_funcs import getResourcesDir, \
+from darwin_funcs import getMAcOSDir, \
                          checkIfUserIsAdmin, \
                          isUserOnLocalSystem
 
@@ -145,22 +145,13 @@ class AdministratorCredentials(QDialog) :
             result = self.mu.authenticate(self.username, self.password)
             self.logger.log(lp.DEBUG, str(self.username) + " is an admin...")
         
-            self.progress_bar.hide()
-
             if result :
                 log_message("Authentication success...", "debug", self.message_level)
                 #####
                 # Got a valid user, with valid password, call stonix with
                 # self.rw.runAsWithSudo - stonixPath is a link to the stonix app
                 # that is in the resources directory
-                stonixPath = os.path.join(getResourcesDir(), "stonix")
-
-                #####
-                # Set up progress bar
-                self.progress_bar.setLabelText("Running Stonix...")
-
-                stonixFullPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
-                self.hide()
+                stonix4macPath = os.path.join(getMacOSDir(), "stonix4mac")
 
                 #####
                 # Attempt fork here, so we don't have the wrapper and stonix
@@ -171,9 +162,10 @@ class AdministratorCredentials(QDialog) :
                     #####
                     # Set up the command
                     if self.args:
-                        command = ["\"" + stonixFullPath + "\""] + self.args
+                        command = ["\"" + stonix4macPath + "\""] + self.args
                     else:
-                        command = ["\"" + stonixFullPath + "\"", "-G", "-dv"]
+                        command = ["\"" + stonix4macPath + "\"", "-G", "-dv"]
+
                     #####
                     # Run the command
                     self.rw.setCommand(command)
