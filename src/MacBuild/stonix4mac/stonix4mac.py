@@ -59,6 +59,9 @@ from log_message import log_message
 from darwin_funcs import isUserOnSystem, getResourcesDir, getOsVers
 from run_commands import exec_subproc_stdout
 from program_arguments import ProgramArguments
+from lib.manage_user.manage_user import ManageUser 
+from lib.loggers import CyLogger
+from lib.loggers import LogPriority
 
 if __name__ == "__main__" :
     """
@@ -66,7 +69,7 @@ if __name__ == "__main__" :
 
     Author: Roy Nielsen
     """
-    message_level = "normal"
+    message_level = "debug"
     prog_args = ProgramArguments()
     arguments = prog_args.getArgs()
     lowest_supported_version = "10.10"
@@ -78,6 +81,12 @@ if __name__ == "__main__" :
     message_level = prog_args.get_msg_lvl()
     
     log_message("Message level is: " + message_level, "debug", message_level)
+
+
+    #####
+    # Manage User Info
+    logger = CyLogger(debug_mode=True)
+    mu = ManageUser(logger=logger)
 
     myuid = os.getuid()
     user = getpass.getuser()
