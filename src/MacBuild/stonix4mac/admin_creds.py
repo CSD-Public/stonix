@@ -49,7 +49,7 @@ from PyQt4.QtGui import *
 # local app libraries
 from admin_credentials_ui import Ui_AdministratorCredentials
 
-from darwin_funcs import getMAcOSDir, \
+from darwin_funcs import getMacOSDir, \
                          checkIfUserIsAdmin, \
                          isUserOnLocalSystem
 
