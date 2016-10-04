@@ -37,7 +37,7 @@ import pwd
 import zipfile
 import plistlib as pl
 from glob import glob
-from PyInstaller import makespec, build
+from PyInstaller.building import makespec, build_main
 
 
 class macbuildlib(object):
@@ -146,7 +146,7 @@ class macbuildlib(object):
         except Exception:
             raise
 
-        return build.main(None, specfile, noconfirm, **kwargs)
+        return build_main.main(None, specfile, noconfirm, **kwargs)
 
     def chownR(self, user, target):
         '''Recursively apply chown to a directory'''
