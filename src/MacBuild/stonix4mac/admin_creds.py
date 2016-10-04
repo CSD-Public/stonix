@@ -62,13 +62,13 @@ from lib.manage_user.manage_user import ManageUser
 class AdministratorCredentials(QDialog) :
     """
     Class to manage the dialog to get the property number
-    
+
     @author: Roy Nielsen
     """
     def __init__(self, args, message_level="debug", parent=None) :
         """
         Initialization method
-        
+
         @author: Roy Nielsen
         """
         super(AdministratorCredentials, self).__init__(parent)

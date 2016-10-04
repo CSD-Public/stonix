@@ -20,7 +20,7 @@ from subprocess import Popen, PIPE
 
 from lib.loggers import CyLogger
 from lib.loggers import LogPriority as lp
-from lib.get_libc import getLibc
+# from lib.get_libc import getLibc
 
 def OSNotValidForRunWith(Exception):
     """
@@ -58,7 +58,7 @@ class RunWith(object):
         self.myshell = None
         #####
         # setting up to call ctypes to do a filesystem sync
-        self.libc = getLibc()
+        # self.libc = getLibc()
 
     def setCommand(self, command, myshell=False):
         """
@@ -160,9 +160,9 @@ class RunWith(object):
         if self.command:
             try:
                 proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell)
-                self.libc.sync()
+                # self.libc.sync()
                 self.output, self.error = proc.communicate()
-                self.libc.sync()
+                # self.libc.sync()
             except Exception, err :
                 self.logger.log(lp.WARNING, "- Unexpected Exception: "  + \
                            str(err)  + " command: " + self.printcmd)
