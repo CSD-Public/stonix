@@ -386,7 +386,7 @@ class MacBuilder():
             print self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
                                           "../" + appIcon + ".icns",
                                           pathex=["stonix_resources/rules:" +
-                                                  "stonix_resources", "/usr/lib"],
+                                                  "stonix_resources"],
                                           specpath=os.getcwd())
 
             if appName == "stonix":
