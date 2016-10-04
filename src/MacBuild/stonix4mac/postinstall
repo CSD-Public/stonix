@@ -231,63 +231,6 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
 
     return success
 
-def verifyAndFixEtcConf(target="", message_level="normal"):
-    """
-    Check if the /etc/stonix file is a link and if it's ok or not.  If it's not
-    then we delete the link and touch an empty file..
-
-    @author: Roy Nielsen
-    """
-    if re.match("^\s*$", target):
-        log_message("Cannot link to an empty destination...", "normal",
-                    message_level)
-    else:
-        targetRootStonixConf = os.path.join(target, "/etc/stonix.conf")
-
-        #####
-        # test if /etc/stonix.conf exists
-        confPath = "/Applications/stonix4mac.app/Contents/Resources/" + \
-            "stonix.app/Contents/Resources/stonix.conf"
-        if os.path.islink(targetRootStonixConf):
-            if isvalidlink(targetRootStonixConf):
-                log_message("Link looks ok, checking link destination...")
-                dest = os.readlink(targetRootStonixConf)
-                if re.match(confPath, dest.strip()):
-                    os.unlink(targetRootStonixConf)
-                    touch(targetRootStonixConf)
-                else:
-                    log_message("link destination appears valid...")
-            else:
-                log_message("Deleting link and creating an empty " +
-                            "/etc/stonix.conf")
-                os.unlink(targetRootStonixConf)
-                touch(targetRootStonixConf)
-        elif not os.path.exists(targetRootStonixConf):
-            try:
-                touch(targetRootStonixConf)
-            except Exception, err:
-                log_message("Exception trying to touch /etc/stonix.conf: " +
-                            str(err))
-                sys.exit(253)
-        elif not os.path.isfile(targetRootStonixConf):
-            #####
-            # Get the date
-            myDate = time.strftime("%C%y%m%d", time.localtime())
-            myTime = time.strftime("%I%M%S%p", time.localtime())
-
-            #####
-            # append the bak.date to the filename
-            backup = targetRootStonixConf + "." + myDate + "." + myTime
-            try:
-                shutil.move(targetRootStonixConf, backup)
-            except Exception, err:
-                log_message("Exception trying to move file: " +
-                            str(targetRootStonixConf))
-                log_message("Associated exception: " + str(err))
-
-            else:
-                touch(targetRootStonixConf)
-
 
 def verifyAndFixAppConf(target="", message_level="normal"):
     """
@@ -344,7 +287,6 @@ def etcLink(targetDir="", message_level="normal"):
         log_message("Cannot link to an empty destination...", "normal",
                     message_level)
     else:
-        verifyAndFixEtcConf(targetDir, message_level)
         verifyAndFixAppConf(targetDir, message_level)
 
 
@@ -466,7 +408,6 @@ def main():
     """
     Main function...
     """
-    SOURCE_DIR = os.environ["INSTALLER_TEMP"]
     TARGET_DIR = sys.argv[3]
 
     message_level = "debug"
