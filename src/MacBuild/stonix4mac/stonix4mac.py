@@ -86,6 +86,7 @@ if __name__ == "__main__" :
     #####
     # Manage User Info
     logger = CyLogger(debug_mode=True)
+    logger.initializeLogs()
     mu = ManageUser(logger=logger)
 
     myuid = os.getuid()
