@@ -100,7 +100,7 @@ if __name__ == "__main__" :
     try:
         min_vers = os_vers.split('.')[1]
     except IndexError:
-        pass
+        self.logger.log(lp.INFO, "Index error attempting to get OS version...")
     # use the predefined OS lower limit 'minor' number
     try:
         min_version_supported = lowest_supported_version.split('.')[1]
@@ -118,7 +118,7 @@ if __name__ == "__main__" :
     # get the path to a link that links to the 
     # stonix.app/Contents/Resources/stonix binary blob compiled by 
     # pyinstaller
-    stonixFullPath = os.path.join(getResourcesDir().strip("\""), "stonix.app/Contents/MacOS/stonix")
+    stonixFullPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
 
     stonixfp = [stonixFullPath]
 
@@ -183,12 +183,12 @@ if __name__ == "__main__" :
                 "<br><br>Cannot run on: " + str(os_vers) + \
                 "<br><br>Exiting program.</center>"
                 
-                notMountainLion = GeneralWarning()
-                notMountainLion.setWarningMessage(warningMessage)
-                notMountainLion.setWindowTitle("Requires an IA supported operating system.")
-                notMountainLion.setOpenExternalLinks()
-                notMountainLion.show()
-                notMountainLion.raise_()
+                notSupportedOS = GeneralWarning()
+                notSupportedOS.setWarningMessage(warningMessage)
+                notSupportedOS.setWindowTitle("Requires an IA supported operating system.")
+                notSupportedOS.setOpenExternalLinks()
+                notSupportedOS.show()
+                notSupportedOS.raise_()
             
                 logger.log(lp.DEBUG, "Finished setting up Check for supported OS warning dialog...")
             app.exec_()    
@@ -198,7 +198,7 @@ if __name__ == "__main__" :
             if supported_os:
                 #####
                 # Set up the command
-                # cmd = stonixFullPath + " " + " ".join(arguments)
+                cmd = stonixFullPath + arguments
                 #####
                 # Make the call to run stonix
                 # exec_subproc_stdout(cmd, "", message_level)
@@ -207,7 +207,7 @@ if __name__ == "__main__" :
                 Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
             else:
                 logger.log(lp.DEBUG, "*************************************************")
-                logger.log(lp.DEBUG, "*** Cannot runn on this platform ****************")
+                logger.log(lp.DEBUG, "*** Cannot run on this platform ****************")
                 logger.log(lp.DEBUG, "*** Needs to run on supported OS ****************")
                 logger.log(lp.DEBUG, "*************************************************")
                     
