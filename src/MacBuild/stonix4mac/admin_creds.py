@@ -101,7 +101,7 @@ class AdministratorCredentials(QDialog) :
         #user = getpass.getuser()
         #self.ui.adminName.setText(user)
 
-        log_message("Finished initializing AdministratorCredentials Class...", "debug", self.message_level)
+        self.logger.log(lp.DEBUG, "Finished initializing AdministratorCredentials Class...")
 
 
     def rejectApp(self) :
@@ -120,7 +120,7 @@ class AdministratorCredentials(QDialog) :
         
         Author: Roy Nielsen
         """
-        log_message("Entering isPassValid in admin_creds...", "verbose", self.message_level)
+        self.logger.log(lp.DEBUG, "Entering isPassValid in admin_creds...")
         #####
         # Grab the QString out of the QLineEdit field
         myuser = self.ui.adminName.text()
@@ -146,7 +146,7 @@ class AdministratorCredentials(QDialog) :
             self.logger.log(lp.DEBUG, str(self.username) + " is an admin...")
         
             if result :
-                log_message("Authentication success...", "debug", self.message_level)
+                self.logger.log(lp.DEBUG, "Authentication success...")
                 #####
                 # Got a valid user, with valid password, call stonix with
                 # self.rw.runAsWithSudo - stonixPath is a link to the stonix app
@@ -157,7 +157,7 @@ class AdministratorCredentials(QDialog) :
                 # Attempt fork here, so we don't have the wrapper and stonix
                 # running and in the Dock at the same time.
                 child_pid = os.fork()
-                if child_pid == 0 :
+                if child_pid == 0:
                     print "Child Process: PID# %s" % os.getpid()
                     #####
                     # Set up the command
@@ -182,17 +182,18 @@ class AdministratorCredentials(QDialog) :
                 #####
                 # User is an admin, report invalid password and try again...
                 self.progress_bar.hide()
-                log_message("Authentication test FAILURE...", "normal", self.message_level)
+                self.logger.log(lp.INFO, "Authentication test FAILURE...")
                 QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QMessageBox.Ok)                
     
         else :
             self.progress_bar.hide()
-            log_message("User: \"" + str(self.username) + "\" is not a valid " + \
-                        "user on this system.", "normal", self.message_level)
+            self.logger.log(lp.INFO, "User: \"" + str(self.username) + \
+                                     "\" is not a valid " + \
+                                     "user on this system.")
             QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
                                       "\" is not a valid user on this " + \
                                       "system, please try again.", \
                                       QMessageBox.Ok)
 
-        log_message("Finished isPassValid...", "verbose", self.message_level)
+        self.logger.log(lp.DEBUG, "Finished isPassValid...")
 
