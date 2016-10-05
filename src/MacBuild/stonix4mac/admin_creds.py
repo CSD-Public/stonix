@@ -151,8 +151,8 @@ class AdministratorCredentials(QDialog) :
                 # Got a valid user, with valid password, call stonix with
                 # self.rw.runAsWithSudo - stonixPath is a link to the stonix app
                 # that is in the resources directory
-                stonix4macPath = os.path.join(getMacOSDir(), "stonix4mac")
-
+                stonixPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
+                self.logger.log(lp.DEBUG, "stonix path: " + str(stonixPath))
                 #####
                 # Attempt fork here, so we don't have the wrapper and stonix
                 # running and in the Dock at the same time.
@@ -162,9 +162,11 @@ class AdministratorCredentials(QDialog) :
                     #####
                     # Set up the command
                     if self.args:
-                        command = ["\"" + stonix4macPath + "\""] + self.args
+                        command = ["\"" + stonixPath + "\""] + self.args
                     else:
-                        command = ["\"" + stonix4macPath + "\"", "-G", "-dv"]
+                        command = ["\"" + stonixPath + "\"", "-G", "-dv"]
+
+                    self.logger.log(lp.DEBUG, "full stonix cmd: " + str(command))
 
                     #####
                     # Run the command

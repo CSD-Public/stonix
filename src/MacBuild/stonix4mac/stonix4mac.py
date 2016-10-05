@@ -60,6 +60,7 @@ from darwin_funcs import isUserOnSystem, getResourcesDir, getOsVers
 from run_commands import exec_subproc_stdout
 from program_arguments import ProgramArguments
 from lib.manage_user.manage_user import ManageUser 
+from lib.environment import Environment
 from lib.loggers import CyLogger
 from lib.loggers import LogPriority as lp
 
@@ -72,6 +73,7 @@ if __name__ == "__main__" :
     message_level = "debug"
     prog_args = ProgramArguments()
     arguments = prog_args.getArgs()
+    environ = Environment()
     lowest_supported_version = "10.10"
     #####
     # Put something like stonix.py's processargs() functionality here.
@@ -96,7 +98,7 @@ if __name__ == "__main__" :
     # Check the OS version to see if it meets minimum requirements
 
     # Get the current OS information
-    os_vers = getOsVers(message_level).rstrip()
+    os_vers = environ.getosver()
     try:
         min_vers = os_vers.split('.')[1]
     except IndexError:
@@ -123,7 +125,7 @@ if __name__ == "__main__" :
     stonixfp = [stonixFullPath]
 
     if not arguments:
-        cmd = stonixfp +["-G"]
+        cmd = stonixfp + ["-G"]
     else:
         cmd = stonixfp + arguments
 
@@ -132,8 +134,10 @@ if __name__ == "__main__" :
     logger.log(lp.DEBUG, "#==--- Initializing stonix4mac.app with UID %d ---==#"%myuid)
     
     logger.log(lp.DEBUG, "Message level is: " + str(message_level))
+    logger.log(lp.DEBUG, "OS is: " + str(os_vers))
+    logger.log(lp.DEBUG, "Supported OS: " + str(supported_os))
 
-    if myuid == 0 and supported_os :
+    if myuid == 0 and supported_os:
         #####
         # We are already root, just run stonix...
         logger.log(lp.DEBUG, "Already root, running stonix with root privilege...")
