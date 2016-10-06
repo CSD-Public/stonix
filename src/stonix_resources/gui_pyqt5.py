@@ -48,8 +48,11 @@ import sys
 import traceback
 import webbrowser
 from view import View
-import main_window
 from logdispatcher import LogPriority
+
+import main_window_pyqt5 as main_window
+
+
 
 #####
 # PyQt specific imports - Needs importing:

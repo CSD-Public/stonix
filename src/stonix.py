@@ -259,7 +259,7 @@ class Controller(Observable):
         if not(self.mode == 'test'):
             # This resets the UI to the command line if GUI was selected on the
             # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
+            if 'PyQt4' not in sys.modules and 'PyQt5' not in sys.modules and self.mode == 'gui':
                 self.mode = 'cli'
                 self.logger.log(LogPriority.ERROR,
                                 'GUI Selected but PyQt4 not available. ' +
