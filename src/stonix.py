@@ -132,12 +132,9 @@ from stonix_resources.environment import Environment
 from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
+from stonix_resources.CheckApplicable import CheckApplicable
+
 from stonix_resources.cli import Cli
-try:
-    from stonix_resources.gui import GUI
-    from PyQt4 import QtCore, QtGui
-except(ImportError):
-    pass
 
 
 class Controller(Observable):
@@ -188,24 +185,70 @@ class Controller(Observable):
         self.tryacquirelock()
 
         if self.mode == 'gui':
-            # This resets the UI to the command line if GUI was selected on the
-            # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
-                self.mode = 'cli'
-                self.logger.log(LogPriority.ERROR,
-                                'GUI Selected but PyQt4 not available. ' +
-                                'Please install PyQt4 and dependencies for ' +
-                                'GUI functionality.')
-            else:
-                app = QtGui.QApplication(sys.argv)
-                splashart = os.path.join(self.environ.get_icon_path(),
-                                         'StonixSplash.png')
-                splashimage = QtGui.QPixmap(splashart)
-                splash = QtGui.QSplashScreen(splashimage,
-                                             QtCore.Qt.WindowStaysOnTopHint)
-                splash.setMask(splashimage.mask())
-                splash.show()
-                app.processEvents()
+            applicable2PyQt5 = {'type': 'white',
+                               'os': {'Mac OS X': ['10.10', '+']}}
+            applicable2PyQt4 = {'type': 'black',
+                               'family': [darwin]}
+            self.chkapp = CheckApplicable(self.environ, self.logger)
+            
+            if self.chkapp.isapplicable(applicable2PyQt5):
+                #####
+                # Appropriate to OS that supports PyQt5
+                try:
+                    from PyQt5 import QtCore, QtWidgets, QtGui
+                    from stonix_resources.gui_pyqt5 import GUI
+                except ImportError:
+                    pass
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt5' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt5 not available. ' +
+                                    'Please install PyQt5 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt5' in sys.modules:
+                    app = QtWidgets.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtWidgets.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
+
+            if self.chkapp.isapplicable(applicable2PyQt4):
+                #####
+                # Appropriate to OS that supports PyQt4
+                try:
+                    from PyQt4 import QtCore, QtGui
+                    from stonix_resources.gui import GUI
+                except(ImportError):
+                    pass
+  
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt4' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt4 not available. ' +
+                                    'Please install PyQt4 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt4' in sys.modules:
+                    app = QtGui.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtGui.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
         self.statechglogger = StateChgLogger(self.logger, self.environ)
         # NB We don't have a main event loop at this point so we call
         # the app.processEvents() again to make the splash screen show
