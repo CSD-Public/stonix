@@ -33,11 +33,14 @@ RHEL 7
 @change: 2015/10/30 dwalker: added additional services to allowed list.
 @change: 2016/04/26 ekkehard Results Formatting
 @change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
+@change: 2016/10/06 dkennel Updates service lists and minor hacking to support
+ubuntu 16.04.
 '''
 from __future__ import absolute_import
 
 import os
 import traceback
+import re
 
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
@@ -245,7 +248,7 @@ administrators may want to disable this rule.
                                'brandbot.service',
                                'chronyd.service',
                                'colord.service',
-                               'cron',
+                               'cron', 'cron.service',
                                'crond.service', 'cups', 'cups.service',
                                'debian-fixup.service',
                                'dbus.service', 'dbus',
@@ -283,12 +286,14 @@ administrators may want to disable this rule.
                                'kmod-static-nodes.service',
                                'ksm.service', 'ksmtuned.service',
                                'ldconfig.service',
+                               'lightdm.service',
                                'lvm2-monitor.service',
                                'mcelog',
                                'mcelog.service', 'mdmonitor-takeover.service',
                                'mdmonitor.service',
                                'named-setup-rndc.service',
                                'netconsole.service', 'network.service',
+                               'networking.service',
                                'network', 'netcf-transaction.service',
                                'NetworkManager.service',
                                'nfs-blkmap.service', 'nfs-config.service',
@@ -296,6 +301,7 @@ administrators may want to disable this rule.
                                'nfs-utils.service',
                                'nfs-lock.service', 'nslcd.service',
                                'ntpd.service', 'ntpdate.service',
+                               'ondemand.service',
                                'pcscd', 'pcscd.service', 'postfix',
                                'polkit.service', 'purge-kernels.service',
                                'plymouth-quit-wait.service',
@@ -310,6 +316,7 @@ administrators may want to disable this rule.
                                'rc.local',
                                'reboot.service',
                                'remount-rootfs.service', 'rescue.service',
+                               'resolvconf.service',
                                'rhel-autorelabel',
                                'rhel-configure.service',
                                'rhel-import-state.service',
@@ -389,7 +396,9 @@ administrators may want to disable this rule.
                                'udev-trigger.service', 'udev.service',
                                'udev-finish.service',
                                'udev-finish',
-                               'udisks2.service', 'upower.service',
+                               'udisks2.service',
+                               'ufw.service',
+                               'upower.service',
                                'unbound-anchor.service',
                                'urandom.service',
                                'urandom',
@@ -471,8 +480,12 @@ elements should be space separated.'''
                             ['MinimizeServices.report',
                              "AllowedList: " + str(allowedlist)])
             for service in servicelist:
-                if service in allowedlist:
-                    if service not in corelist:
+                if service in allowedlist or re.search('user@[0-9]*.service',
+                                                       service):
+                        # user@foo.service are user managers started by PAM
+                        # on Linux. They are GRAS (generally regarded as safe)
+                    if service not in corelist and \
+                    not re.search('user@[0-9]*.service', service):
                         self.logger.log(LogPriority.WARNING,
                                         ['MinimizeServices',
                                          'Non-core service running: ' +
@@ -525,6 +538,10 @@ elements should be space separated.'''
                 allowedlist = self.svcslistci.getcurrvalue()
                 for service in servicelist:
                     if service in allowedlist:
+                        continue
+                    if re.search('user@[0-9]*.service', service):
+                        # these are systemd usermanagers started by PAM
+                        # they are OK.
                         continue
                     else:
                         running = self.servicehelper.auditservice(service)
