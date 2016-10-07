@@ -185,7 +185,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         self.toolbar.addAction(self.actionReport_All)
         self.toolbar.addAction(self.actionStop)
         self.toolbar.addAction(self.actionGuiHelp)
-        self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
         # Build rule list
         self.rule_data = self.controller.getallrulesdata()
         rnamelist = []
@@ -195,8 +195,8 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                                                 self.questionmark)),
                                                 QtGui.QIcon.Normal, QtGui.QIcon.Off)
             item = QtWidgets.QListWidgetItem(self.rule_list_widget)
-            brush = QtGui.QBrush(QColor(211, 211, 211, 255))
-            brush.setStyle(Qt.SolidPattern)
+            brush = QtGui.QBrush(QtGui.QColor(211, 211, 211, 255))
+            brush.setStyle(QtCore.Qt.SolidPattern)
             item.setBackground(brush)
             item.setIcon(icon)
             item.setText(self.rule_data[rnum][0])
@@ -287,13 +287,11 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             rule_num = self.controller.getrulenumbyname(rule_name)
             self.rule_instructions_text.setPlainText(QtWidgets.QApplication.translate("MainWindow",
                                                                             self.rule_data[rule_num][1],
-                                                                            None,
-                                                                            QtWidgets.QApplication.UnicodeUTF8))
+                                                                            None))
             detailedresults = self.controller.getruledetailedresults(rule_num)
             self.rule_results_text.setPlainText(QtWidgets.QApplication.translate("MainWindow",
                                                                        detailedresults,
-                                                                       None,
-                                                                       QtWidgets.QApplication.UnicodeUTF8))
+                                                                       None))
             for rulename in self.ruleci:
                 self.ruleci[rulename].hide()
             rulename = self.rule_list_widget.selectedItems()[0].text()
@@ -329,8 +327,8 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         """
 
         brush = QtGui.QBrush(qcolor_rgb)
-        brush.setStyle(Qt.SolidPattern)
-        items = self.rule_list_widget.findItems(item_text, Qt.MatchExactly)
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        items = self.rule_list_widget.findItems(item_text, QtCore.Qt.MatchExactly)
         for item in items:
             item.setBackground(brush)
 
@@ -354,7 +352,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             myicon = os.path.join(self.icon_path, self.warning)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(myicon), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        items = self.rule_list_widget.findItems(item_text, Qt.MatchExactly)
+        items = self.rule_list_widget.findItems(item_text, QtCore.Qt.MatchExactly)
         for item in items:
             item.setIcon(icon)
 
@@ -481,8 +479,8 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         # Converting pyqt4 signal/slot connect to pyqt5
         # self.connect(thread, SIGNAL('tupdate(QString)'), self.tupdate)
         # self.connect(thread, SIGNAL('supdate(QString)'), self.supdate)
-        self.thread.tupdate.connect(self.tupdate)
-        self.thread.supdate.connect(self.supdate)
+        thread.tupdate.connect(self.tupdate)
+        thread.supdate.connect(self.supdate)
         self.threads.append(thread)
         for waitingthread in self.threads:
             waitingthread.start()
@@ -839,7 +837,7 @@ class aboutStonix(QtWidgets.QDialog):
         self.languageChange()
 
         self.resize(QtCore.QSize(700, 550).expandedTo(self.minimumSizeHint()))
-        # self.clearWState(Qt.WState_Polished)
+        # self.clearWState(QtCore.QtCore.Qt.WState_Polished)
 
     def languageChange(self):
         self.setWindowTitle("About LANL-STONIX")
@@ -879,7 +877,7 @@ class Ui_logBrowser(QtWidgets.QDialog):
         # self.sizeGripEnabled(True)
         self.buttonBox = QtWidgets.QDialogButtonBox(self)
         # self.buttonBox.setGeometry(QRect(50, 260, 341, 32))
-        self.buttonBox.setOrientation(Qt.Horizontal)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Close)
         self.textBrowser = QtWidgets.QTextBrowser(self)
         # self.textBrowser.setGeometry(QRect(0, 0, 401, 261))
@@ -970,7 +968,7 @@ class runThread(QtCore.QThread):
             #####
             # Signal/slot change for PyQt5
             # self.emit(SIGNAL('supdate(QString)'), sstatus)
-            self.emit.supdate_signal(sstatus)
+            self.supdate.emit(sstatus)
             self.logger.log(LogPriority.DEBUG,
                             ['GUI.runThread.run',
                              'Sent supdate signal: ' + str(sstatus)])
@@ -982,7 +980,7 @@ class runThread(QtCore.QThread):
                 #####
                 # Signal/slot change for PyQt5
                 # self.emit(SIGNAL('tupdate(QString)'), status)
-                self.emit.tupdate_signal(status)
+                self.tupdate_signal.emit(status)
                 self.logger.log(LogPriority.DEBUG,
                                 ['GUI.runThread.run',
                                  'Sent tupdate signal for stop flag: ' + str(sstatus)])
@@ -1000,7 +998,7 @@ class runThread(QtCore.QThread):
             #####
             # Signal/slot change for PyQt5
             # self.emit(SIGNAL('tupdate(QString)'), status)
-            self.emit.tupdate_signal(status)
+            self.tupdate_signal.emit(status)
             self.logger.log(LogPriority.DEBUG,
                             ['GUI.runThread.run',
                              'Sent tupdate signal: ' + str(sstatus)])

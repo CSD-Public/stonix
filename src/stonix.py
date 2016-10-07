@@ -188,7 +188,7 @@ class Controller(Observable):
             applicable2PyQt5 = {'type': 'white',
                                'os': {'Mac OS X': ['10.10', '+']}}
             applicable2PyQt4 = {'type': 'black',
-                               'family': [darwin]}
+                               'family': ['darwin']}
             self.chkapp = CheckApplicable(self.environ, self.logger)
             
             if self.chkapp.isapplicable(applicable2PyQt5):
