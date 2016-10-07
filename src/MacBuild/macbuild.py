@@ -455,9 +455,9 @@ class MacBuilder():
                   "./" + appName + "/dist/" + appName +
                   ".app/Contents/Resources"])
 
-            # Create an empty stonix.conf file
-            open(appPath + "/" + appName + "/dist/" + appName +
-                 ".app/Contents/Resources/stonix.conf", "w")
+            # Copy the stonix.conf file
+            copy2(appPath + "/../etc/stonix.conf", appPath + "/" + appName +
+                  "/dist/" + appName + ".app/Contents/Resources/stonix.conf")
 
             copy2(appPath + "/stonix/dist/stonix.app/Contents/MacOS/" +
                   "stonix_resources/localize.py", appPath + "/" + appName +
