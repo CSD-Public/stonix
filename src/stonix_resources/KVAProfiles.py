@@ -4,6 +4,7 @@ Created on Mar 9, 2016
 @author: dwalker
 '''
 import re
+from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 class KVAProfiles():
@@ -99,3 +100,36 @@ class KVAProfiles():
                     "key value pairs\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
+    def validate2(self, output, key, val):
+        #in instance where the profile is installed with no payload
+        if not val:
+            for line in output:
+                if re.search("^" + key, line.strip()):
+                    return True
+            '''We never found the profile, return False'''
+            debug = "The profile sub-identifier:" + key + " was not found\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
+        else:
+            iterator1 = 0
+            keyoutput = []
+            for line in output:
+                if re.search("^" + key + ":$", line.strip()):
+                    iterator2 = 0
+                    temp = output[iterator1 + 1:]
+                    for line in temp:
+                        if re.search("^Payload Data:", line.strip()):
+                            temp = temp[iterator2 + 1:]
+                            keyoutput = temp
+                            break
+                        else:
+                            iterator2 += 1
+                    if keyoutput:
+                        break
+                else:
+                    iterator1 += 1
+            #keyoutput should just contain lines after Payload Data line
+            if keyoutput:
+                for line in keyoutput:
+                for item in val:
+                        if isinstance(item, dict):
