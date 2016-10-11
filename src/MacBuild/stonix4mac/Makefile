@@ -36,7 +36,6 @@ pack-stonix: l_Applications
 	@sudo chmod -R +rwx ${WORK_D}/Applications/${TITLE}.app
 	@-sudo /usr/bin/xattr -dr com.apple.quarantine ${WORK_D}/Applications/${TITLE}.app
 
-
 pack-stonix-manpage: l_usr_man_man8
 	@sudo ${INSTALL} -m 644  ${MANPG} ${MAN8PATH}/stonix.8
 
@@ -46,7 +45,7 @@ pack-stonix4mac-install :
 
 MYPWD=$(shell pwd)
 TITLE := stonix4mac
-PACKAGE_VERSION=0.9.4
+PACKAGE_VERSION=0.9.5
 REVERSE_DOMAIN=gov.lanl.${TITLE}.${PACKAGE_VERSION}
 PI=postinstall
 PRE=preinstall

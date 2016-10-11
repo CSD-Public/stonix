@@ -231,121 +231,52 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
 
     return success
 
-def verifyAndFixEtcConf(target="", message_level="normal"):
+
+def etcMove(targetDir="", message_level="normal"):
     """
-    Check if the /etc/stonix file is a link and if it's ok or not.  If it's not
-    then we delete the link and touch an empty file..
-
-    @author: Roy Nielsen
-    """
-    if re.match("^\s*$", target):
-        log_message("Cannot link to an empty destination...", "normal",
-                    message_level)
-    else:
-        targetRootStonixConf = os.path.join(target, "/etc/stonix.conf")
-
-        #####
-        # test if /etc/stonix.conf exists
-        confPath = "/Applications/stonix4mac.app/Contents/Resources/" + \
-            "stonix.app/Contents/Resources/stonix.conf"
-        if os.path.islink(targetRootStonixConf):
-            if isvalidlink(targetRootStonixConf):
-                log_message("Link looks ok, checking link destination...")
-                dest = os.readlink(targetRootStonixConf)
-                if re.match(confPath, dest.strip()):
-                    os.unlink(targetRootStonixConf)
-                    touch(targetRootStonixConf)
-                else:
-                    log_message("link destination appears valid...")
-            else:
-                log_message("Deleting link and creating an empty " +
-                            "/etc/stonix.conf")
-                os.unlink(targetRootStonixConf)
-                touch(targetRootStonixConf)
-        elif not os.path.exists(targetRootStonixConf):
-            try:
-                touch(targetRootStonixConf)
-            except Exception, err:
-                log_message("Exception trying to touch /etc/stonix.conf: " +
-                            str(err))
-                sys.exit(253)
-        elif not os.path.isfile(targetRootStonixConf):
-            #####
-            # Get the date
-            myDate = time.strftime("%C%y%m%d", time.localtime())
-            myTime = time.strftime("%I%M%S%p", time.localtime())
-
-            #####
-            # append the bak.date to the filename
-            backup = targetRootStonixConf + "." + myDate + "." + myTime
-            try:
-                shutil.move(targetRootStonixConf, backup)
-            except Exception, err:
-                log_message("Exception trying to move file: " +
-                            str(targetRootStonixConf))
-                log_message("Associated exception: " + str(err))
-
-            else:
-                touch(targetRootStonixConf)
-
-
-def verifyAndFixAppConf(target="", message_level="normal"):
-    """
-    Check to make sure the app conf file is a symlink pointing to
-    /etc/stonix.conf
-
-    @author: Roy Nielsen
-    """
-    appPath = "Applications/stonix4mac.app/Contents/Resources/" + \
-        "stonix.app/Contents/Resources/stonix.conf"
-    if re.match("^\s*$", target):
-        log_message("Cannot link to an empty destination...", "normal",
-                    message_level)
-    else:
-        targetAppStonixConf = os.path.join(target, appPath)
-
-        if os.path.islink(targetAppStonixConf):
-            if not isvalidlink(targetAppStonixConf):
-                log_message("Broken link, attempting to fix...")
-                os.unlink(targetAppStonixConf)
-                os.symlink("/etc/stonix.conf", targetAppStonixConf)
-            else:
-                log_message("Link looks good, continuing...")
-        elif not os.path.exists(targetAppStonixConf):
-            os.symlink("/etc/stonix.conf", targetAppStonixConf)
-        elif os.path.exists(targetAppStonixConf):
-            #####
-            # Get the date
-            myDate = time.strftime("%C%y%m%d", time.localtime())
-            myTime = time.strftime("%I%M%S%p", time.localtime())
-
-            #####
-            # append the bak.date to the filename
-            backup = targetAppStonixConf + "." + myDate + "." + myTime
-            try:
-                shutil.move(targetAppStonixConf, backup)
-            except Exception, err:
-                log_message("Exception trying to move file: " +
-                            str(targetAppStonixConf))
-                log_message("Associated exception: " + str(err))
-            else:
-                os.symlink("/etc/stonix.conf", targetAppStonixConf)
-
-
-def etcLink(targetDir="", message_level="normal"):
-    """
-    Create a link from
+    Move configuration from
     <path-to-stonix4mac.app>/stonix4mac.app/Contents/Resources/stonix.app/Contents/Resources/stonix.conf
     to /etc/stonix.conf
 
-    @author: Roy Nielsen
+    @author: Roy Nielsen, Eric Ball
     """
     if re.match("^\s*$", targetDir):
         log_message("Cannot link to an empty destination...", "normal",
                     message_level)
     else:
-        verifyAndFixEtcConf(targetDir, message_level)
-        verifyAndFixAppConf(targetDir, message_level)
+        confTarget = "/private/etc/stonix.conf"
+        if os.path.exists(confTarget):
+            confFile = open(confTarget, "r")
+            conf = confFile.read()
+            confFile.close()
+            if conf:  # stonix.conf is not empty
+                try:
+                    log_message("Moving " + targetDir + "/stonix.conf to " +
+                                confTarget + ".new", message_level)
+                    os.rename(targetDir + "/stonix.conf", confTarget + ".new")
+                except OSError:
+                    log_message("Error occurred: " + str(OSError),
+                                message_level)
+                    pass
+            else:
+                try:
+                    log_message("Moving " + targetDir + "/stonix.conf to " +
+                                confTarget, message_level)
+                    os.rename(targetDir + "/stonix.conf", confTarget)
+                except OSError:
+                    log_message("Error occurred: " + str(OSError),
+                                message_level)
+                    pass
+        else:
+            try:
+                log_message("Moving " + targetDir + "/stonix.conf to " +
+                            confTarget, message_level)
+                os.rename(targetDir + "/stonix.conf", confTarget)
+            except OSError:
+                log_message("Error occurred: " + str(OSError) +
+                            ", creating blank conf file at " + confTarget,
+                            message_level)
+                open(confTarget, "w")
 
 
 def install_launchd_job(source_path="", targetDir="/", message_level="normal"):
@@ -466,15 +397,12 @@ def main():
     """
     Main function...
     """
-    SOURCE_DIR = os.environ["INSTALLER_TEMP"]
-    TARGET_DIR = sys.argv[3]
-
     message_level = "debug"
 
     log_message("Starting stonix4mac package postflight...", "normal",
                 message_level)
 
-    etcLink(TARGET_DIR, message_level)
+    etcMove("/Applications/stonix4mac.app/Contents/Resources", message_level)
 
     #####
     # Decision to remove code not currently working on 9/28/2015
