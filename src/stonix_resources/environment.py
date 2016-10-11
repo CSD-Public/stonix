@@ -845,13 +845,15 @@ class Environment:
             script_path_one = ""
 
         self.test_mode = False
+
+        # Get environment.py path
+        self.resources_path = os.path.dirname(os.path.realpath(__file__))
+
         #####
         # Check which argv variable has the script name -- required to allow
         # for using the eclipse debugger.
         if re.search("stonix$|stonix.py$", script_path_zero):
             #####
-            # Get environment.py path
-            self.resources_path = os.path.dirname(os.path.realpath(__file__))
             # stonix path should be in the parent of stonix_resources
             self.script_path = os.path.dirname(self.resources_path)
         else:
