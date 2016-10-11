@@ -54,7 +54,7 @@ class STIGConfigureProfileManagement(Rule):
             "standards and practices."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10']}}
+                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
         datatype = "bool"
         key = "STIGPASSCODECONFIG"
         instructions = "To disable the installation of the password " + \
@@ -70,14 +70,22 @@ class STIGConfigureProfileManagement(Rule):
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         
-        self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+        self.yospwprofile = "/Applications/stonix4mac.app/Contents/" + \
                          "Resources/stonix.app/Contents/MacOS/" + \
                          "stonix_resources/files/" + \
-                         "stonix4macSTIGSettingsPasscodeForOSXYosemite10.10.mobileconfig"
-        self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
+                         "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
+        self.yossecprofile = "/Applications/stonix4mac.app/Contents/" + \
                           "Resources/stonix.app/Contents/MacOS/" + \
                           "stonix_resources/files/" + \
-                          "stonix4macSTIGSettingsSecurityAndPrivacyForOSXYosemite10.10.mobileconfig"
+                          "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
+        self.cappwprofile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
+        self.capsecprofile = "/Applications/stonix4mac.app/Contents/" + \
+                          "Resources/stonix.app/Contents/MacOS/" + \
+                          "stonix_resources/files/" + \
+                          "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
 
     def report(self):
         '''
