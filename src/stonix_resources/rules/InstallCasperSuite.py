@@ -55,7 +55,7 @@ from ..macpkgr import MacPkgr
 from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
-PACKAGENAME="stonix-quickadd.pkg"
+PACKAGENAME="stonix4mac.quickadd.pkg"
 
 
 class InstallCasperSuite(Rule):
