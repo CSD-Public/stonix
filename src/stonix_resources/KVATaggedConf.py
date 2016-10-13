@@ -167,7 +167,10 @@ class KVATaggedConf():
                             present[key] = dict1[key]
                     return present
         else:
-            return dict1
+            if self.intent == "present":
+                return dict1
+            else:
+                return True
 ###############################################################################
     def getSpaceValue(self, tag, dict1):
         if self.contents:
@@ -240,7 +243,10 @@ class KVATaggedConf():
                             present[key] = dict1[key]
                     return present
         else:
-            return dict1
+            if self.intent == "present":
+                return dict1
+            else:
+                return True
 ###############################################################################
     def setValue(self, fixables, removeables):
         if self.configType == "openeq":

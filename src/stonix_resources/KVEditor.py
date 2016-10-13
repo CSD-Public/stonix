@@ -31,6 +31,7 @@ import KVAConf
 import KVATaggedConf
 import KVAProfiles
 import os
+from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
@@ -392,8 +393,21 @@ class KVEditor(object):
         @return: Value returned from validate method in factory sub-class
         @rtype: bool
         '''
-        for k, v in self.data.iteritems():
-            return self.editor.validate(self.output, k, v)
+        cmd = ["/usr/sbin/system_profiler", "SPConfigurationProfileDataType"]
+        self.ch = CommandHelper(self.logger)
+        if self.ch.executeCommand(cmd):
+            self.output = self.ch.getOutput()
+            retval = True
+            if self.output:
+                for k, v in self.data.iteritems():
+                    retval = self.editor.validate(self.output, k, v)
+                    if not retval:
+                        return False
+            else:
+                debug = "There are no profiles installed"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+        return True
 
     def commit(self):
         if self.kvtype == "defaults":
