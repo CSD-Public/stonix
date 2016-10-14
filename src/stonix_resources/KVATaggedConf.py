@@ -124,10 +124,13 @@ class KVATaggedConf():
                             iter2 += 1
                 else:
                     iter1 += 1
-            if not foundtag:
-                return dict1
-            if contents2:
-                if self.intent == "present":
+#             if not foundtag:
+#                 return dict1
+#             if contents2:
+            if self.intent == "present":
+                if not foundtag:
+                    return dict1
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -147,7 +150,10 @@ class KVATaggedConf():
                         if not found:
                             missing[key] = dict1[key]
                     return missing
-                elif self.intent == "notpresent":
+            elif self.intent == "notpresent":
+                if not foundtag:
+                    return True
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -200,10 +206,13 @@ class KVATaggedConf():
                             iter2 += 1
                 else:
                     iter1 += 1
-            if not foundtag:
-                return dict1
-            if contents2:
-                if self.intent == "present":
+#             if not foundtag:
+#                 return dict1
+#             if contents2:
+            if self.intent == "present":
+                if not foundtag:
+                    return dict1
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -223,7 +232,10 @@ class KVATaggedConf():
                         if not found:
                             missing[key] = dict1[key]
                     return missing
-                elif self.intent == "notpresent":
+            elif self.intent == "notpresent":
+                if not foundtag:
+                    return True
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
