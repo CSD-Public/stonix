@@ -208,7 +208,7 @@ class KVATaggedConf():
                     iter1 += 1
 #             if not foundtag:
 #                 return dict1
-#             if contents2:
+#             if contents2
             if self.intent == "present":
                 if not foundtag:
                     return dict1
