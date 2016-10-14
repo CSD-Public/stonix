@@ -57,12 +57,12 @@ class AuditSSHKeys(Rule):
         self.rulename = 'AuditSSHKeys'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'SSH can be configured to use PKI keys for authentication, commonly referred to as SSH Keys. SSH keys are a good \
+        self.helptext = "SSH can be configured to use PKI keys for authentication, commonly referred to as SSH Keys. SSH keys are a good \
 authenticator and are very useful for denying brute force password guessing attacks. There is a potential weakness in \
 SSH keys in that it is possible to create the private key without a password. These passwordless, unencrypted keys can \
 then be used to move laterally by any user with read access to the key. To prevent this sort of exploitation all private \
 keys used for SSH should have a password and be protected by file permissions that limit read access to the owner.\
-*This rule does not have fix functionality and is audit-only.*'
+*This rule's fix only changes permissions on insecure keys. We cannot fix keys which were made without a password.*"
         self.rootrequired = True
         self.guidance = ['LANL CAP', 'OpenSSH Security Best Practices']
         self.applicable = {'type': 'white',
@@ -105,7 +105,7 @@ keys used for SSH should have a password and be protected by file permissions th
         searchterm = "Proc-Type:"
         searchdirs = []
         keylist = []
-        keydict = {}
+        self.keydict = {}
         self.compliant = True
         self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
@@ -120,23 +120,26 @@ keys used for SSH should have a password and be protected by file permissions th
             if keylist:
                 self.logger.log(LogPriority.DEBUG, "Searching list of ssh keys...")
                 for key in keylist:
-                    keydict[key] = False
+                    self.keydict[key] = False
                     f = open(key, "r")
                     contentlines = f.readlines()
                     f.close()
                     for line in contentlines:
                         if re.search(searchterm, line):
-                            keydict[key] = True
+                            self.keydict[key] = True
 
-                for key in keydict:
-                    if not keydict[key]:
+                for key in self.keydict:
+                    if not self.keydict[key]:
                         self.compliant = False
-                        self.detailedresults += "The SSH key: " + str(key) + " was made without a password!"
+                        self.detailedresults += "\nThe SSH key: " + str(key) + " was made without a password!"
                 if self.compliant:
-                    self.detailedresults += "All ssh keys on this system are encrypted"
+                    self.detailedresults += "\nAll SSH keys on this system are encrypted"
 
             else:
-                self.detailedresults += "No ssh keys were found on this system."
+                self.detailedresults += "\nNo SSH keys were found on this system."
+
+            if not self.compliant:
+                self.detailedresults += "\n\nThis rule's fix only changes permissions on insecure keys. We cannot fix keys which were made without a password."
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -166,8 +169,8 @@ keys used for SSH should have a password and be protected by file permissions th
         try:
 
             self.logger.log(LogPriority.DEBUG, "Building keylist...")
-            for dir in searchdirs:
-                files = glob(dir + "*")
+            for loc in searchdirs:
+                files = glob(loc + "*")
                 for f in files:
                     if os.path.isfile(f):
                         fh = open(f, "r")
@@ -176,7 +179,7 @@ keys used for SSH should have a password and be protected by file permissions th
                         for line in contentlines:
                             if re.search("BEGIN\s+\w+\s+PRIVATE KEY", line):
                                 keylist.append(f)
-                                self.logger.log(LogPriority.DEBUG, "Adding ssh key file: " + str(f) + " to keylist...")
+                                self.logger.log(LogPriority.DEBUG, "Adding SSH key file: " + str(f) + " to keylist...")
 
             self.logger.log(LogPriority.DEBUG, "Finished building keylist")
 
@@ -253,3 +256,25 @@ keys used for SSH should have a password and be protected by file permissions th
         except Exception:
             raise
         return searchdirs
+
+    def fix(self):
+        '''
+        set permissions on all insecure keys
+        to 600
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        fixedkeys = []
+
+        try:
+
+            for key in self.keydict:
+                if not self.keydict[key]:
+                    self.logger.log(LogPriority.DEBUG, "Setting permissions on: " + str(key) + " to 600...")
+                    os.chmod(key, 0600)
+                    fixedkeys.append(key)
+            self.detailedresults += '\nFixed permissions on ' + str(len(fixedkeys))
+        except Exception:
+            raise
