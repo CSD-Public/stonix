@@ -1,17 +1,39 @@
 '''
+###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
 Created on Mar 9, 2016
 
 @author: dwalker
 '''
 import re
-from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
+
 
 class KVAProfiles():
 
     def __init__(self, logger):
         self.logger = logger
-        
+
     def validate(self, output, key, val):
         '''if the user's installed profile has any values that are less
         stringent than our own we should apply our profile'''
@@ -73,7 +95,7 @@ class KVAProfiles():
                                             debug += "Key: " + key2 + " doesn't " + \
                                                 "contain the correct integer " + \
                                                 "value\n"
-                                            unsecure = True 
+                                            unsecure = True
                                     elif val2[2] == "less":
                                         if int(temp[1].strip()) > int(val2[0]):
                                             debug += "Key: " + key2 + " doesn't " + \
@@ -100,6 +122,7 @@ class KVAProfiles():
                     "key value pairs\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
+
     def validate2(self, output, key, val):
         #in instance where the profile is installed with no payload
         if not val:
@@ -131,5 +154,6 @@ class KVAProfiles():
             #keyoutput should just contain lines after Payload Data line
             if keyoutput:
                 for line in keyoutput:
-                for item in val:
+                    for item in val:
                         if isinstance(item, dict):
+                            pass
