@@ -28,8 +28,8 @@ Created on Aug 23, 2016
 from __future__ import absolute_import
 import traceback
 import os
+import re
 from ..rule import Rule
-from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
@@ -69,21 +69,36 @@ class STIGConfigureProfileManagement(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        
-        self.yospwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
-        self.yossecprofile = "/Applications/stonix4mac.app/Contents/" + \
-                          "Resources/stonix.app/Contents/MacOS/" + \
-                          "stonix_resources/files/" + \
-                          "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
-        self.cappwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
+        if re.search("10\.10.*", self.environ.getosver()):
+#         self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+#                          "Resources/stonix.app/Contents/MacOS/" + \
+#                          "stonix_resources/files/" + \
+#                          "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
+#         self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
+#                           "Resources/stonix.app/Contents/MacOS/" + \
+#                           "stonix_resources/files/" + \
+#                           "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
+            '''These directories for testing purposes only'''
+            self.pwprofile = "/home/dwalker/src/" + \
+                "stonix_resources/files/" + \
+                "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
+            self.secprofile = "/home/dwalker/src/" + \
+                "stonix_resources/files/" + \
+                "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
+        elif re.search("10\.11\.*", self.environ.getosver()):
+#             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+#                          "Resources/stonix.app/Contents/MacOS/" + \
+#                          "stonix_resources/files/" + \
+#                          "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
+#             self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
+#                           "Resources/stonix.app/Contents/MacOS/" + \
+#                           "stonix_resources/files/" + \
+#                           "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
+            '''These directories for testing purposes only'''
+            self.pwprofile = "/home/dwalker/src/" + \
                          "stonix_resources/files/" + \
                          "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
-        self.capsecprofile = "/Applications/stonix4mac.app/Contents/" + \
-                          "Resources/stonix.app/Contents/MacOS/" + \
+            self.secprofile = "/home/dwalker/src/" + \
                           "stonix_resources/files/" + \
                           "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
 
@@ -105,12 +120,7 @@ class STIGConfigureProfileManagement(Rule):
         try:
             compliant = True
             self.detailedresults = ""
-            cmd = ["/usr/sbin/system_profiler",
-                   "SPConfigurationProfileDataType"]
-            self.ch = CommandHelper(self.logger)
-            self.neededprofiles = []
-            self.profpaths = {}
-            '''form key = val;'''
+            self.pweditor, self.seceditor = "", ""
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                   {"allowSimple": ["0", "bool"],
                                    "forcePIN": ["1", "bool"],
@@ -130,31 +140,19 @@ class STIGConfigureProfileManagement(Rule):
                                   "com.apple.MCX": "",
                                   "com.apple.applicationaccess": "",
                                   "com.apple.systempolicy.control": ""}
-            if self.pwci.getcurrvalue():
-                self.profpaths[self.pwprofile] = self.pwprofiledict
-            if self.sci.getcurrvalue():
-                self.profpaths[self.secprofile] = self.spprofiledict
+
+            self.pweditor = KVEditorStonix(self.statechglogger, self.logger,
+                                               "profiles", self.pwprofile, "",
+                                               self.pwprofiledict, "", "")
+            self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "profiles", self.secprofile, "",
+                                             self.spprofiledict, "", "")
             '''Run the system_proflier command'''
-            if self.ch.executeCommand(cmd):
-                output = self.ch.getOutput()
-                if output:
-                    if self.profpaths:
-                        for profilepath, values in self.profpaths.iteritems():
-                            self.editor = KVEditorStonix(self.statechglogger,
-                                                         self.logger, "profiles",
-                                                         "", "", values, "", "",
-                                                         output)
-                            if not self.editor.report():
-                                self.neededprofiles.append(profilepath)
-                else:
-                    self.detailedresults += "There are no profiles installed\n"
-                    for profile in self.profpaths:
-                        self.neededprofiles.append(profile)
-            else:
-                self.detailedresults += "Unable to run the system_profile " + \
-                    "command\n"
+            if not self.pweditor.report():
+                self.detailedresults += "password profile is either uninstalled or weak\n"
                 compliant = False
-            if self.neededprofiles:
+            if not self.seceditor.report():
+                self.detailedresults += "security profile is either uninstalled or weak\n"
                 compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
