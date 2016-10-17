@@ -431,6 +431,7 @@ class PasswordExpiration(Rule):
             if not self.editor2.report():
                 self.detailedresults += self.libuserfile + " does not " + \
                     "contain the correct contents\n"
+                self.logger.log(LogPriority.DEBUG, self.libuserfile + " contains the following incorrect entries:\n" + "\n".join(self.editor2.removeables))
                 compliant = False
         else:
             self.detailedresults += self.libuserfile + " does not exist\n"
