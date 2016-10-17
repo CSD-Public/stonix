@@ -321,7 +321,7 @@ class KVEditor(object):
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
                     validate = "invalid"
-                elif keyvals:
+                elif isinstance(keyvals, dict):
                     self.fixables[tag] = keyvals
                     validate = False
         if self.intent == "notpresent":
@@ -329,7 +329,7 @@ class KVEditor(object):
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
                     validate = "invalid"
-                elif keyvals:
+                elif isinstance(keyvals, dict):
                     self.removeables[tag] = keyvals
                     validate = False
         if validate == "invalid":
@@ -401,6 +401,7 @@ class KVEditor(object):
             if self.output:
                 for k, v in self.data.iteritems():
                     retval = self.editor.validate(self.output, k, v)
+                    print "retval returned is: " + str(retval) + " inside kveditor\n\n"
                     if not retval:
                         return False
             else:
