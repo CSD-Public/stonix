@@ -39,6 +39,7 @@ from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import resetsecon, setPerms
+from ..pkghelper import Pkghelper
 
 
 class ForceIdleLogout(Rule):
@@ -84,14 +85,14 @@ managers will not save work in progress when the logout occurs.
         self.guidance = ['NIST 800-53 AC-2(5)']
         datatype = 'bool'
         key = 'forceidlelogout'
-        instructions = '''To disable this rule set the value of FORCEIDLELOGOUT to
-False.'''
+        instructions = '''To disable this rule set the value of \
+FORCEIDLELOGOUT to False.'''
         default = False
         self.filci = self.initCi(datatype, key, instructions, default)
         datatype2 = 'int'
         key2 = 'forceidlelogouttimeout'
-        instructions2 = '''To customize the timeout period set the FORCEIDLELOGOUTTIMEOUT
-to the desired duration in minutes.'''
+        instructions2 = '''To customize the timeout period set the \
+FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         default2 = 240
         self.timeoutci = self.initCi(datatype2, key2, instructions2, default2)
         self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
@@ -356,18 +357,58 @@ AutoLogoutTimeout=""" + str(seconds)
         self.detailedresults = ""
         try:
             if self.environ.osfamily == 'linux':
-                gnomecheck = self.chkgnome3()
-                kdecheck = self.chkkde4()
-                if kdecheck and gnomecheck:
-                    self.detailedresults = self.detailedresults + """
-Gnome and KDE GUI environments appear to be correctly configured for automatic \
-logout of idle sessions."""
+                ph = Pkghelper(self.logger, self.environ)
+                if ph.check("gdm") or ph.check("gdm3"):
+                    self.gnomeInstalled = True
                 else:
-                    self.detailedresults = self.detailedresults + """
-Gnome and KDE GUI environments do not appear to be correctly configured for \
-automatic logout of idle sessions. This guidance is optional in STONIX, check \
-local policy to see if it is required."""
-                    compliant = False
+                    self.gnomeInstalled = False
+                if self.gnomeInstalled:
+                    gnomecheck = self.chkgnome3()
+                if ph.check("kdm") or ph.check("kde-workspace"):
+                    self.kdeInstalled = True
+                else:
+                    self.kdeInstalled = False
+                if self.kdeInstalled:
+                    kdecheck = self.chkkde4()
+                if self.gnomeInstalled and self.kdeInstalled:
+                    if kdecheck and gnomecheck:
+                        self.detailedresults += "Gnome and KDE GUI " + \
+                            "environments appear to be correctly configured " + \
+                            "for automatic logout of idle sessions.\n"
+                    else:
+                        self.detailedresults += "Gnome and KDE GUI " + \
+                            "environments do not appear to be correctly " + \
+                            "configured for automatic logout of idle " + \
+                            "sessions. This guidance is optional in STONIX, " + \
+                            "check local policy to see if it is required.\n"
+                        compliant = False
+                elif self.gnomeInstalled:
+                    if gnomecheck:
+                        self.detailedresults += "Gnome GUI environment " + \
+                            "appears to be correctly configured for " + \
+                            "automatic logout of idle sessions.\n"
+                    else:
+                        self.detailedresults += "Gnome GUI environment " + \
+                            "does not appear to be correclty configured " + \
+                            "for automatic logout of idle sessions. This " + \
+                            "guidance is optional in STONIX, check local " + \
+                            "policy to see if it is required.\n"
+                        compliant = False
+                elif self.kdeInstalled:
+                    if kdecheck:
+                        self.detailedresults += "KDE GUI environment " + \
+                            "appears to be correctly configured for " + \
+                            "automatic logout of idle sessions.\n"
+                    else:
+                        self.detailedresults += "KDE GUI environment " + \
+                            "does not appear to be correclty configured " + \
+                            "for automatic logout of idle sessions. This " + \
+                            "guidance is optional in STONIX, check local " + \
+                            "policy to see if it is required.\n"
+                        compliant = False
+                else:
+                    self.detailedresults += "Gnome and KDE GUI environments " + \
+                        "not found on system.\n"
             elif self.environ.getosfamily() == 'darwin':
                 compliant = self.chkosx()
                 if not compliant:
@@ -405,8 +446,8 @@ local policy to see if it is required."""
             return
         if os.path.exists('/etc/dconf/db'):
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__fixgnome3',
-                                'Working GNOME with dconf'])
+                                 ['ForceIdleLogout.__fixgnome3',
+                                  'Working GNOME with dconf'])
             try:
                 seconds = self.timeoutci.getcurrvalue() * 60
             except(TypeError):
@@ -416,11 +457,10 @@ local policy to see if it is required."""
                 return False
             gdirectives = {"sleep-inactive-ac-type": "'logout'",
                            'sleep-inactive-ac-timeout': str(seconds)}
-            geditor = KVEditorStonix(self.statechglogger, self.logger,
-                                                  "conf", self.gnomesettingpath,
-                                                  self.gnomesettingpath + '.tmp',
-                                                  gdirectives, "present",
-                                                  "closedeq")
+            geditor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                     self.gnomesettingpath,
+                                     self.gnomesettingpath + '.tmp',
+                                     gdirectives, "present", "closedeq")
             geditor.report()
             if geditor.fixables:
                 if geditor.fix():
@@ -485,8 +525,8 @@ local policy to see if it is required."""
         fhandle.close()
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__fixkde4',
-                                          'Root context starting loop'])
+                                 ['ForceIdleLogout.__fixkde4',
+                                  'Root context starting loop'])
             for user in passwddata:
                 user = user.split(':')
                 try:
@@ -622,34 +662,37 @@ AutoLogoutTimeout=''' + str(seconds)
 
         @author: D. Kennel
         """
+        self.detailedresults = ""
         self.rulesuccess = True
         if self.filci.getcurrvalue() and self.environ.getosfamily() == "linux":
-            try:
-                self.fixgnome3()
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception:
-                self.rulesuccess = False
-                self.detailedresults = 'ForceIdleLogout: '
-                self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
-                self.rulesuccess = False
-                self.logger.log(LogPriority.ERROR,
-                                self.detailedresults)
-            try:
-                self.fixkde4()
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception:
-                self.rulesuccess = False
-                self.detailedresults = 'ForceIdleLogout: '
-                self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
-                self.rulesuccess = False
-                self.logger.log(LogPriority.ERROR,
-                                self.detailedresults)
+            if self.gnomeInstalled:
+                try:
+                    self.fixgnome3()
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except Exception:
+                    self.rulesuccess = False
+                    self.detailedresults = 'ForceIdleLogout: '
+                    self.detailedresults = self.detailedresults + \
+                        traceback.format_exc()
+                    self.rulesuccess = False
+                    self.logger.log(LogPriority.ERROR,
+                                    self.detailedresults)
+            if self.kdeInstalled:
+                try:
+                    self.fixkde4()
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except Exception:
+                    self.rulesuccess = False
+                    self.detailedresults = 'ForceIdleLogout: '
+                    self.detailedresults = self.detailedresults + \
+                        traceback.format_exc()
+                    self.rulesuccess = False
+                    self.logger.log(LogPriority.ERROR,
+                                    self.detailedresults)
         elif self.filci.getcurrvalue() and \
              self.environ.getosfamily() == "darwin":
             try:
