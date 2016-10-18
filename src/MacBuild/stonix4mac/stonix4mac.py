@@ -49,7 +49,7 @@ from subprocess import Popen, STDOUT, PIPE
 
 #####
 # import PyQt libraries
-from PyQt4.QtGui import QApplication
+from PyQt5 import QtGui, QtWidgets
 
 #####
 # Import class that manages the gui
@@ -86,6 +86,7 @@ if __name__ == "__main__" :
     #####
     # Manage User Info
     logger = CyLogger(debug_mode=True)
+    logger.initializeLogs()
     mu = ManageUser(logger=logger)
 
     myuid = os.getuid()
@@ -149,7 +150,7 @@ if __name__ == "__main__" :
     
             else:
                 print "Exiting parent process: PID# %s" % os.getpid()
-                sys.exit(254)
+                sys.exit(0)
         #####
         # sleep to make sure there aren't two versions of stonix running
         # time.sleep(4)
@@ -163,7 +164,7 @@ if __name__ == "__main__" :
         #####
         # Only spawn a process when using the GUI (no cli)
         if not prog_args.opts.cli:
-            app = QApplication(sys.argv)
+            app = QtWidgets.QApplication(sys.argv)
             
             if supported_os:
                     """

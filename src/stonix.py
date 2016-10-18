@@ -355,7 +355,7 @@ class Controller(Observable):
         classnames = []
         for module in modulenames:
             module = module.split("/")[-1]
-            # print module
+            #self.logger.log(LogPriority.DEBUG, "Listing module: " + str(module))
             classname = 'stonix_resources.rules.' + module + '.' + module
             classnames.append(classname)
 

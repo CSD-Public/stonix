@@ -46,6 +46,7 @@ with large amounts of original code and comments left intact.
     arguments from ramdisk calls.
 @change: 2016/04/04 rsn - changing logger to ramdisk's logger
 @change: 2016/04/04 rsn - changing ramdisk to public repo of ramdisk (without git history)
+@change: 2016/10/17 rsn - upgrading to pyinstaller 3.3 & PyQt5
 '''
 #--- Python specific libraries
 import os
@@ -59,14 +60,26 @@ from tempfile import mkdtemp
 from time import time
 from subprocess import call
 from shutil import rmtree, copy2
+from ConfigParser import SafeConfigParser
 
-#-- Internal libraries
-from macbuildlib import macbuildlib
+
 # For setupRamdisk() and detachRamdisk()
 sys.path.append("./ramdisk/")
 from ramdisk.macRamdisk import RamDisk, detach
 from ramdisk.lib.loggers import CyLogger
 from ramdisk.lib.loggers import LogPriority as lp
+
+
+class ConfusingConfigurationError(Exception):
+    """
+    Meant for being thrown when the MacBuilder can't determine configuration
+    information.
+
+    @author: Roy Nielsen
+    """
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
 
 class MacBuilder():
 
@@ -85,6 +98,7 @@ class MacBuilder():
             debug = 40
         self.logger = CyLogger(level=debug)
         self.logger.initializeLogs()
+        self.ramdisk_size = ramdisk_size
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
@@ -110,15 +124,10 @@ class MacBuilder():
 
         self.compileGui = options.compileGui
 
-        self.mbl = macbuildlib()
-        self.RSYNC = "/usr/bin/rsync"
-        self.PYUIC = self.mbl.getpyuicpath()
+        if not self.confParser():
+            raise ConfusionConfigurationError("Cannot determine the correct configuration...")
 
-        # This script should be run from [stonixroot]/src/MacBuild. We must
-        # record the [stonixroot] directory in a variable.
-        os.chdir("../..")
-        self.STONIX_ROOT = os.getcwd()
-        os.chdir("src/MacBuild")
+        self.RSYNC = "/usr/bin/rsync"
 
         print " "
         print " "
@@ -129,14 +138,6 @@ class MacBuilder():
         print "   ************************************************************"
         print " "
         print " "
-
-        self.ramdisk_size = ramdisk_size
-        self.STONIX = "stonix"
-        self.STONIXICON = "stonix_icon"
-        self.STONIXVERSION = self.APPVERSION
-        self.STONIX4MAC = "stonix4mac"
-        self.STONIX4MACICON = "stonix_icon"
-        self.STONIX4MACVERSION = self.APPVERSION
 
         if not options.test:
             self.driver()
@@ -376,19 +377,33 @@ class MacBuilder():
             returnDir = os.getcwd()
             os.chdir(appPath)
 
+            self.logger.log(lp.INFO, "...")
+            self.logger.log(lp.INFO, "...")
+            self.logger.log(lp.INFO, "...")
+            self.logger.log(lp.INFO, "\n\n\tPWD: " + appPath + " \n\n")
+            myfiles = os.listdir('.')
+            self.logger.log(lp.INFO, "\n\tDIRS: " + str(myfiles))
+            self.logger.log(lp.INFO, "...")
+            self.logger.log(lp.INFO, "...")
+            self.logger.log(lp.INFO, "...")
+
             if os.path.isdir("build"):
                 rmtree("build")
             if os.path.isdir("dist"):
                 rmtree("dist")
 
+            self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenimports))
+
+            hdnimports = self.hiddenimports + ['ctypes', '_ctypes', 'ctypes._endian', 'decimal', 'numbers']
+
             # to compile a pyinstaller spec file for app creation:
             print "Creating a pyinstaller spec file for the project..."
             print self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
                                           "../" + appIcon + ".icns",
-                                          pathex=["stonix_resources/rules:" +
-                                                  "stonix_resources", "/usr/lib"],
-                                          specpath=os.getcwd())
-
+                                          pathex=["stonix_resources/rules",
+                                                  "stonix_resources", "/usr/lib"] + self.PYPATHS,
+                                          specpath=os.getcwd(), hiddenimports=hdnimports)
+            '''
             if appName == "stonix":
                 fo = open(appName + ".spec", "r")
                 spectext = fo.read()
@@ -400,7 +415,7 @@ class MacBuilder():
                 fo = open(appName + ".spec", "w")
                 fo.write(spectext)
                 fo.close()
-
+            '''
             # to build:
             print "Building the app..."
             self.mbl.pyinstBuild(appName + ".spec", "private/tmp",
@@ -513,6 +528,78 @@ class MacBuilder():
         except Exception:
             raise
         print "buildStonix4MacAppPkg... Finished"
+
+    def configSectionMap(self, section):
+        dict1 = {}
+        options = self.parser.options(section)
+        for option in options:
+            try:
+                dict1[option] = self.parser.get(section, option)
+                if dict1[option] == -1:
+                    DebugPrint("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+        print dict1
+        return dict1
+
+    def confParser(self):
+        """
+        Parse a config file to find potential conf file settings.
+
+        @author: rsn
+        """
+        success = False
+        # This script should be run from [stonixroot]/src/MacBuild. We must
+        os.chdir("../..")
+        self.STONIX_ROOT = os.getcwd()
+        os.chdir("src/MacBuild")
+        macbuild_root = os.getcwd()
+        myconf = os.path.join(macbuild_root, 'macbuild.conf')
+        print myconf
+        if os.path.isfile(myconf):
+            self.parser = SafeConfigParser()
+            candidates =  [myconf, 'not_a_real_conf.conf']
+            found = self.parser.read(candidates)
+            missing = set(candidates) - set(found)
+
+            try:
+                dict1 = {}
+                for section in self.parser.sections():
+                    dict1[section] = self.configSectionMap(section)
+                print dict1
+            except:
+                self.STONIX = "stonix"
+                self.STONIXICON = "stonix_icon"
+                self.STONIXVERSION = self.APPVERSION
+                self.STONIX4MAC = "stonix4mac"
+                self.STONIX4MACICON = "stonix_icon"
+                self.STONIX4MACVERSION = self.APPVERSION                
+                #-- Internal libraries
+                from macbuildlib import macbuildlib
+                self.mbl = macbuildlib(self.logger)
+                self.PYUIC = self.mbl.getpyuicpath()
+            else:
+                self.STONIX = dict1['stonix']['app']
+                self.STONIXICON = dict1['stonix']['app_icon']
+                self.STONIXVERSION = dict1['stonix']['app_version']
+                self.STONIX4MAC = dict1['stonix']['wrapper']
+                self.STONIX4MACICON = dict1['stonix']['wrapper_icon']
+                self.STONIX4MACVERSION = dict1['stonix']['wrapper_version']
+                self.PYUIC = dict1['libpaths']['pyuic']
+                self.PYPATHS = dict1['libpaths']['pythonpath'].split(':')
+
+                for path in self.PYPATHS:
+                    sys.path.append(path)
+                #-- Internal libraries
+                from macbuildlib import macbuildlib
+                self.mbl = macbuildlib(self.logger, self.PYPATHS)
+            finally:
+                self.hiddenimports = self.mbl.getHiddenImports()
+                self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenimports))
+                success = True
+
+        return success
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()

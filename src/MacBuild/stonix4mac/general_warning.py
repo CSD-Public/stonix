@@ -28,15 +28,17 @@ Date originated: 4/26/2013
 Author: Roy Nielsen
 """
 # PyQt libraries
-from PyQt4.QtCore import SIGNAL
-from PyQt4.QtGui import QDialog
+#from PyQt4.QtCore import SIGNAL
+#from PyQt4.QtGui import QDialog
+
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 # local app libraries
 from general_warning_ui import Ui_GeneralWarning
 
 from log_message import log_message 
 
-class GeneralWarning(QDialog) :
+class GeneralWarning(QtWidgets.QDialog) :
     """
     Class to manage the dialog to get the property number
     
@@ -53,8 +55,8 @@ class GeneralWarning(QDialog) :
 
         self.message_level = "debug"
         self.ui.setupUi(self)
-
-        self.connect(self.ui.buttonBox, SIGNAL("accepted()"), self.accept)
+        self.ui.buttonBox.accepted(self.accept)
+        #self.connect(self.ui.buttonBox, SIGNAL("accepted()"), self.accept)
 
         log_message("Finished initializing NotOnCorrectDisk Class...", "debug", self.message_level)
 
