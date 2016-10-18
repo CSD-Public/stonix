@@ -42,8 +42,9 @@ import getpass
 # PyQt libraries
 #from PyQt4.QtGui import QDialog, QMessageBox
 #from PyQt4.QtCore import SIGNAL
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+#from PyQt4.QtCore import *
+#from PyQt4.QtGui import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 ##########
 # local app libraries
@@ -59,7 +60,7 @@ from lib.loggers import CyLogger
 from lib.loggers import LogPriority as lp
 from lib.manage_user.manage_user import ManageUser
 
-class AdministratorCredentials(QDialog) :
+class AdministratorCredentials(QtWidgets.QDialog) :
     """
     Class to manage the dialog to get the property number
     
@@ -85,15 +86,17 @@ class AdministratorCredentials(QDialog) :
         self.cmd = ""
         self.tmpDir = ""
 
-        self.progress_bar = QProgressDialog()
+        self.progress_bar = QtWidgets.QProgressDialog()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(0)
         self.progress_bar.setLabelText("Checking Password...")
 
         #####
         # Set up signals and slots
-        self.connect(self.ui.authUserButton, SIGNAL("clicked()"), self.isPassValid)
-        self.connect(self.ui.cancelButton, SIGNAL("clicked()"), self.rejectApp)
+        self.ui.authUserButton.clicked.connect(self.isPassValid)
+        self.ui.cancelButton.clicked.connect(self.rejectApp)
+        #self.connect(self.ui.authUserButton, SIGNAL("clicked()"), self.isPassValid)
+        #self.connect(self.ui.cancelButton, SIGNAL("clicked()"), self.rejectApp)
 
         #####
         # Commented out putting in the current logged in user as the default
@@ -110,7 +113,7 @@ class AdministratorCredentials(QDialog) :
         
         Author: Roy Nielsen
         """
-        QMessageBox.warning(self, "Warning", "You hit Cancel, exiting program.", QMessageBox.Ok)
+        QtWidgets.QMessageBox.warning(self, "Warning", "You hit Cancel, exiting program.", QMessageBox.Ok)
         self.reject()
 
 
@@ -175,22 +178,22 @@ class AdministratorCredentials(QDialog) :
 
                 self.progress_bar.hide()
 
-                QCoreApplication.quit()
+                self.close()
             else :
                 #####
                 # User is an admin, report invalid password and try again...
                 self.progress_bar.hide()
                 log_message("Authentication test FAILURE...", "normal", self.message_level)
-                QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QMessageBox.Ok)                
+                QtWidgets.QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QtWidgets.QMessageBox.Ok)
     
         else :
             self.progress_bar.hide()
             log_message("User: \"" + str(self.username) + "\" is not a valid " + \
                         "user on this system.", "normal", self.message_level)
-            QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
+            QtWidgets.QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
                                       "\" is not a valid user on this " + \
                                       "system, please try again.", \
-                                      QMessageBox.Ok)
+                                      QtWidgets.QMessageBox.Ok)
 
         log_message("Finished isPassValid...", "verbose", self.message_level)
 

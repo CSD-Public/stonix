@@ -37,10 +37,14 @@ import pwd
 import zipfile
 import plistlib as pl
 from glob import glob
-from PyInstaller import makespec, build
-
+from PyInstaller.building import makespec, build_main
+from ramdisk.lib.loggers import LogPriority as lp
 
 class macbuildlib(object):
+    def __init__(self, logger, pypaths=None):
+        self.pypaths = pypaths
+        self.logger = logger
+
     def regexReplace(self, filename, findPattern, replacePattern, outputFile="",
                      backupname=""):
         '''
@@ -91,7 +95,7 @@ class macbuildlib(object):
             raise
 
     def pyinstMakespec(self, scripts, noupx=False, strip=False, console=True,
-                       icon_file=None, pathex=[], specpath=None):
+                       icon_file=None, pathex=[], specpath=None, hiddenimports=None):
         '''
         An interface for direct access to PyInstaller's makespec function
 
@@ -115,11 +119,11 @@ class macbuildlib(object):
             if specpath:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
-                                     pathex=pathex, specpath=specpath)
+                                     pathex=pathex, specpath=specpath, hiddenimports=hiddenimports)
             else:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
-                                     pathex=pathex)
+                                     pathex=pathex, hiddenimports=hiddenimports)
         except Exception:
             raise
 
@@ -146,7 +150,7 @@ class macbuildlib(object):
         except Exception:
             raise
 
-        return build.main(None, specfile, noconfirm, **kwargs)
+        return build_main.main(None, specfile, noconfirm, **kwargs)
 
     def chownR(self, user, target):
         '''Recursively apply chown to a directory'''
@@ -240,6 +244,32 @@ class macbuildlib(object):
         except Exception:
             raise
 
+    def getHiddenImports(self):
+        '''
+        Acquire a list of all '*.py' files in the stonix_resources directory 
+
+        @author: Roy Nielsen
+        '''
+        try:
+            origdir = os.getcwd()
+            
+            os.chdir("..")
+            hiddenimports = []
+            for root, dirs, files in os.walk("stonix_resources"):
+                for myfile in files:
+                    if myfile.endswith(".py"):
+                         #print(os.path.join(root, file)) 
+                         myfile = re.sub(".py", "", myfile)
+                         hiddenimportfile = os.path.join("./" + root, myfile)
+                         hiddenimport = ".".join(hiddenimportfile.split('/')[1:])
+                         hiddenimports.append(hiddenimport)
+        except OSError:
+            self.logger.log(lp.DEBUG, "Error trying to acquire python files...")
+        finally:
+            os.chdir(origdir)
+        
+        return hiddenimports
+        
     def getpyuicpath(self):
         '''
         Attempt to find PyQt4

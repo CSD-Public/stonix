@@ -311,7 +311,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         """
         self.controller.releaselock()
         self.logger.postreport()
-        sys.exit()
+        self.close()
 
     def set_listview_item_bgcolor(self, item_text, qcolor_rgb):
         """
