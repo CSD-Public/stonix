@@ -44,12 +44,13 @@ import re
 import sys
 import time
 import getpass
+import signal
 from optparse import OptionParser
 from subprocess import Popen, STDOUT, PIPE
 
 #####
 # import PyQt libraries
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, QtCore
 
 #####
 # Import class that manages the gui
@@ -69,6 +70,7 @@ if __name__ == "__main__" :
 
     Author: Roy Nielsen
     """
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     message_level = "debug"
     prog_args = ProgramArguments()
     arguments = prog_args.getArgs()
@@ -167,14 +169,13 @@ if __name__ == "__main__" :
             app = QtWidgets.QApplication(sys.argv)
             
             if supported_os:
-                    """
-                    Log and go to the next check..
-                    """
-                    log_message("Valid operating system, continuing...", "normal", message_level)
-                    stonix_wrapper = StonixWrapper(arguments, message_level)
-                    stonix_wrapper.show()
-                    stonix_wrapper.raise_()
-    
+                """
+                Log and go to the next check..
+                """
+                log_message("Valid operating system, continuing...", "normal", message_level)
+                stonix_wrapper = StonixWrapper(arguments, message_level)
+                stonix_wrapper.show()
+                stonix_wrapper.raise_()
             else:
                 """
                 Warn that the app is not running on 10.10 or above
@@ -196,7 +197,8 @@ if __name__ == "__main__" :
             
                 log_message("Finished setting up Check for supported OS warning dialog...", \
                             "normal", message_level)
-            app.exec_()    
+            sys.exit(app.exec_())
+            #app.quit()
         else:
             #####
             # Run in CLI mode, pass in the command line arguments...
@@ -217,4 +219,6 @@ if __name__ == "__main__" :
                 log_message("*************************************************", "normal", message_level)
                     
     log_message("#==--- Exiting stonix4mac.app ---==#", "normal", message_level)
+    #app.quit()
+
 

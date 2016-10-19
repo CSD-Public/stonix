@@ -377,15 +377,15 @@ class MacBuilder():
             returnDir = os.getcwd()
             os.chdir(appPath)
 
-            self.logger.log(lp.INFO, "...")
-            self.logger.log(lp.INFO, "...")
-            self.logger.log(lp.INFO, "...")
-            self.logger.log(lp.INFO, "\n\n\tPWD: " + appPath + " \n\n")
+            self.logger.log(lp.DEBUG, "...")
+            self.logger.log(lp.DEBUG, "...")
+            self.logger.log(lp.DEBUG, "...")
+            self.logger.log(lp.DEBUG, "\n\n\tPWD: " + appPath + " \n\n")
             myfiles = os.listdir('.')
-            self.logger.log(lp.INFO, "\n\tDIRS: " + str(myfiles))
-            self.logger.log(lp.INFO, "...")
-            self.logger.log(lp.INFO, "...")
-            self.logger.log(lp.INFO, "...")
+            self.logger.log(lp.DEBUG, "\n\tDIRS: " + str(myfiles))
+            self.logger.log(lp.DEBUG, "...")
+            self.logger.log(lp.DEBUG, "...")
+            self.logger.log(lp.DEBUG, "...")
 
             if os.path.isdir("build"):
                 rmtree("build")
@@ -513,15 +513,15 @@ class MacBuilder():
 
             print "Creating a .dmg file with a .pkg file inside for " + \
                 "installation purposes..."
-            call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
-                  "USE_PKGBUILD=1"])
+            #call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
+            #      "USE_PKGBUILD=1"])
             call(["make", "pkg", "PACKAGE_VERSION=" + appVersion,
                   "USE_PKGBUILD=1"])
 
             print "Moving dmg and pkg to the dmgs directory."
-            dmgname = appName + "-" + appVersion + ".dmg"
+            #dmgname = appName + "-" + appVersion + ".dmg"
             pkgname = appName + "-" + appVersion + ".pkg"
-            os.rename(dmgname, appPath + "/dmgs/" + dmgname)
+            #os.rename(dmgname, appPath + "/dmgs/" + dmgname)
             os.rename(pkgname, appPath + "/dmgs/" + pkgname)
 
             os.chdir(returnDir)
