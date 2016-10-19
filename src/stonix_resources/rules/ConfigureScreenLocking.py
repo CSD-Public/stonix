@@ -37,6 +37,9 @@ Created on Jul 11, 2013
                              - askForPasswordDelay not set to 0
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2016/06/22 eball Added gsettings report and fix for RHEL 7 compat
+@change: 2016/10/18 eball Added lock-delay key to special check in reportGnome
+    for values that come back with "uint32 [int val]". Also added two single
+    quotes to picture-uri value, since a blank value cannot be "set".
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms
@@ -276,7 +279,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                        "0",
                        " get org.gnome.desktop.screensaver picture-opacity":
                        "100",
-                       " get org.gnome.desktop.screensaver picture-uri": "",
+                       " get org.gnome.desktop.screensaver picture-uri": "''",
                        " get org.gnome.desktop.session idle-delay": "300"}
             self.fixes = {}
             for cmd in getcmds:
@@ -285,7 +288,8 @@ class ConfigureScreenLocking(RuleKVEditor):
                 output = self.cmdhelper.getOutput()
                 error = self.cmdhelper.getError()
                 if output:
-                    if cmd == " get org.gnome.desktop.session idle-delay":
+                    if cmd == " get org.gnome.desktop.session idle-delay" or \
+                       cmd == " get org.gnome.desktop.screensaver lock-delay":
                         try:
                             splitOut = output[0].split()
                             if len(splitOut) > 1:

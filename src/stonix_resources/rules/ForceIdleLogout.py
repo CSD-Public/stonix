@@ -24,7 +24,8 @@
 Created on May 31, 2016
 
 @author: dkennel
-
+@change: 2016/10/18 eball Added conditionals so that Gnome and KDE checks will
+    only occur if Gnome/KDE are installed. Did PEP8 and detailedresults cleanup.
 '''
 from __future__ import absolute_import
 
@@ -39,6 +40,7 @@ from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import resetsecon, setPerms
+from ..pkghelper import Pkghelper
 
 
 class ForceIdleLogout(Rule):
@@ -84,14 +86,14 @@ managers will not save work in progress when the logout occurs.
         self.guidance = ['NIST 800-53 AC-2(5)']
         datatype = 'bool'
         key = 'forceidlelogout'
-        instructions = '''To disable this rule set the value of FORCEIDLELOGOUT to
-False.'''
+        instructions = '''To disable this rule set the value of \
+FORCEIDLELOGOUT to False.'''
         default = False
         self.filci = self.initCi(datatype, key, instructions, default)
         datatype2 = 'int'
         key2 = 'forceidlelogouttimeout'
-        instructions2 = '''To customize the timeout period set the FORCEIDLELOGOUTTIMEOUT
-to the desired duration in minutes.'''
+        instructions2 = '''To customize the timeout period set the \
+FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         default2 = 240
         self.timeoutci = self.initCi(datatype2, key2, instructions2, default2)
         self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
@@ -107,8 +109,8 @@ to the desired duration in minutes.'''
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
         except(TypeError):
-            self.detailedresults = self.detailedresults + """
-FORCEIDLELOGOUTTIMEOUT value is not valid!"""
+            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
+                "valid!\n"
             return False
         if not self.environ.geteuid() == 0:
             # Short circuit for user mode run
@@ -124,8 +126,8 @@ FORCEIDLELOGOUTTIMEOUT value is not valid!"""
             if os.path.exists(self.gnomesettingpath):
                 havedconffile = True
                 self.logdispatch.log(LogPriority.DEBUG,
-                                    ['ForceIdleLogout.__chkgnome3',
-                                     'Found Gnome settings file'])
+                                     ['ForceIdleLogout.__chkgnome3',
+                                      'Found Gnome settings file'])
                 rhandle = open(self.gnomesettingpath, 'r')
                 confdata = rhandle.readlines()
                 for line in confdata:
@@ -133,8 +135,8 @@ FORCEIDLELOGOUTTIMEOUT value is not valid!"""
                                  line):
                         havetimeout = True
                         self.logdispatch.log(LogPriority.DEBUG,
-                                            ['ForceIdleLogout.__chkgnome3',
-                                             'Found Gnome timeout'])
+                                             ['ForceIdleLogout.__chkgnome3',
+                                              'Found Gnome timeout'])
                     if re.search("sleep-inactive-ac-type='logout'", line):
                         havelogout = True
                         self.logdispatch.log(LogPriority.DEBUG,
@@ -144,66 +146,69 @@ FORCEIDLELOGOUTTIMEOUT value is not valid!"""
             if os.path.exists(self.gnomelockpath):
                 havelockfile = True
                 self.logdispatch.log(LogPriority.DEBUG,
-                                    ['ForceIdleLogout.__chkgnome3',
-                                     'Found Gnome lock file'])
+                                     ['ForceIdleLogout.__chkgnome3',
+                                      'Found Gnome lock file'])
                 lockhandle = open(self.gnomelockpath, 'r')
                 lockdata = lockhandle.readlines()
                 for line in lockdata:
                     if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout', line):
                         havetimeoutlock = True
                         self.logdispatch.log(LogPriority.DEBUG,
-                                        ['ForceIdleLogout.__chkgnome3',
-                                         'Found Gnome timeout lock'])
+                                             ['ForceIdleLogout.__chkgnome3',
+                                              'Found Gnome timeout lock'])
                     if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type", line):
                         havelogoutlock = True
                         self.logdispatch.log(LogPriority.DEBUG,
-                                        ['ForceIdleLogout.__chkgnome3',
-                                         'Found Gnome logout lock'])
+                                             ['ForceIdleLogout.__chkgnome3',
+                                              'Found Gnome logout lock'])
                 lockhandle.close()
             if havedconffile and havelockfile and havetimeout and \
-            havetimeoutlock and havelogout and havelogoutlock:
+               havetimeoutlock and havelogout and havelogoutlock:
                 return True
             else:
                 if not havedconffile:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout settings file not found at: /etc/dconf/db/local.d/00-autologout"""
+                    self.detailedresults += "GNOME 3 autologout settings " + \
+                        "file not found at: " + \
+                        "/etc/dconf/db/local.d/00-autologout\n"
                 if not havelockfile:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout lock file not found at: /etc/dconf/db/local.d/locks/autologout"""
+                    self.detailedresults += "GNOME 3 autologout lock " + \
+                        "file not found at: " + \
+                        "/etc/dconf/db/local.d/locks/autologout\n"
                 if not havetimeout:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout timeout not found  or does not match expected value. Set \
-sleep-inactive-ac-timeout=""" + str(seconds) + """ in \
-/etc/dconf/db/local.d/00-autologout"""
+                    self.detailedresults += "GNOME 3 autologout timeout " + \
+                        "not found or does not match expected value. Set " + \
+                        "sleep-inactive-ac-timeout=" + str(seconds) + \
+                        " in /etc/dconf/db/local.d/00-autologout\n"
                 if not havetimeoutlock:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout timeout lock not found. Set \
-/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout in \
-/etc/dconf/db/local.d/locks/autologout"""
+                    self.detailedresults += "GNOME 3 autologout timeout " + \
+                        "lock not found. Set /org/gnome/settings-daemon/" + \
+                        "plugins/power/sleep-inactive-ac-timeout in " + \
+                        "/etc/dconf/db/local.d/locks/autologout\n"
                 if not havelogout:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout logout not found. Set sleep-inactive-ac-type='logout' in \
-/etc/dconf/db/local.d/00-autologout"""
+                    self.detailedresults += "GNOME 3 autologout logout " + \
+                        "not found. Set sleep-inactive-ac-type='logout' in " + \
+                        "/etc/dconf/db/local.d/00-autologout\n"
                 if not havelogoutlock:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout lock not found. Set \
-/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type in \
-/etc/dconf/db/local.d/locks/autologout"""
+                    self.detailedresults += "GNOME 3 autologout lock not " + \
+                        "found. Set /org/gnome/settings-daemon/plugins/" + \
+                        "power/sleep-inactive-ac-type in " + \
+                        "/etc/dconf/db/local.d/locks/autologout\n"
                 return False
         else:
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__chkgnome3',
-                                'Checking GNOME with gconf'])
+                                 ['ForceIdleLogout.__chkgnome3',
+                                  'Checking GNOME with gconf'])
             gconftimeout = False
             gconfaction = False
-            prefix = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get '
+            prefix = '/usr/bin/gconftool-2 --direct --config-source ' + \
+                'xml:readwrite:/etc/gconf/gconf.xml.mandatory --get '
             idletimecmd = prefix + '/desktop/gnome/session/max_idle_time'
             idleactcmd = prefix + '/desktop/gnome/session/max_idle_action'
             self.cmdhelper.executeCommand(idletimecmd)
             output = self.cmdhelper.getOutput()
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__chkgnome3',
-                                'Value of idle time ' + str(output)])
+                                 ['ForceIdleLogout.__chkgnome3',
+                                  'Value of idle time ' + str(output)])
             if output:
                 try:
                     if int(output[0].strip()) == self.timeoutci.getcurrvalue():
@@ -214,8 +219,8 @@ GNOME 3 autologout lock not found. Set \
             self.cmdhelper.executeCommand(idleactcmd)
             output2 = self.cmdhelper.getOutput()
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__chkgnome3',
-                                'Value of idle action ' + str(output2)])
+                                 ['ForceIdleLogout.__chkgnome3',
+                                  'Value of idle action ' + str(output2)])
             if output2:
                 if re.search('forced-logout', output2[0]):
                     gconfaction = True
@@ -223,11 +228,11 @@ GNOME 3 autologout lock not found. Set \
                 return True
             else:
                 if not gconfaction:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout settings not found."""
+                    self.detailedresults += "GNOME 3 autologout settings " + \
+                        "not found.\n"
                 if not gconftimeout:
-                    self.detailedresults = self.detailedresults + """
-GNOME 3 autologout time not found or not correct."""
+                    self.detailedresults += "GNOME 3 autologout time not " + \
+                        "found or not correct.\n"
             return False
 
     def chkkde4(self):
@@ -244,13 +249,13 @@ GNOME 3 autologout time not found or not correct."""
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
         except(TypeError):
-            self.detailedresults = self.detailedresults + """
-FORCEIDLELOGOUTTIMEOUT value is not valid!"""
+            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
+                "valid!\n"
             return False
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__chkkde4',
-                                 'Root user context beginning passwd loop'])
+                                 ['ForceIdleLogout.__chkkde4',
+                                  'Root user context beginning passwd loop'])
             failed = []
             fhandle = open('/etc/passwd', 'r')
             passwddata = fhandle.readlines()
@@ -269,15 +274,18 @@ FORCEIDLELOGOUTTIMEOUT value is not valid!"""
                     # User does not use KDE
                     self.logdispatch.log(LogPriority.DEBUG,
                                          ['ForceIdleLogout.__chkkde4',
-                                          'No .kde directory found for ' + str(username)])
+                                          'No .kde directory found for ' +
+                                          str(username)])
                     continue
-                if not os.path.exists(os.path.join(homepath, '.kde/share/config/kscreensaverrc')):
+                if not os.path.exists(os.path.join(homepath,
+                                                   '.kde/share/config/kscreensaverrc')):
                     failed.append(username)
                     self.logdispatch.log(LogPriority.DEBUG,
-                                        ['ForceIdleLogout.__chkkde4',
-                                         'No kscreensaverrc for ' + str(username)])
+                                         ['ForceIdleLogout.__chkkde4',
+                                          'No kscreensaverrc for ' + str(username)])
                 else:
-                    khandle = open(os.path.join(homepath, '.kde/share/config/kscreensaverrc'))
+                    khandle = open(os.path.join(homepath,
+                                                '.kde/share/config/kscreensaverrc'))
                     rcdata = khandle.readlines()
                     khandle.close()
                     logout = False
@@ -296,22 +304,22 @@ FORCEIDLELOGOUTTIMEOUT value is not valid!"""
                 return True
             else:
                 userlist = ', '.join(failed)
-                self.detailedresults = self.detailedresults + """
-The following users have KDE preference files but are not configured for \
-automatic logout: """ + userlist
+                self.detailedresults += "The following users have KDE " + \
+                    "preference files but are not configured for automatic " + \
+                    "logout: " + userlist + "\n"
                 return False
         else:
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__chkkde4',
-                                 'Non root user context starting check'])
+                                 ['ForceIdleLogout.__chkkde4',
+                                  'Non root user context starting check'])
             if not os.path.exists(os.path.join(self.environ.geteuidhome(),
                                                '.kde')):
                 return True
             else:
                 if not os.path.exists(os.path.join(self.environ.geteuidhome(),
                                                    '.kde/share/config/kscreensaverrc')):
-                    self.detailedresults = self.detailedresults + """
-Your .kde/share/config/kscreensaverrc file does not exist."""
+                    self.detailedresults += "Your .kde/share/config/" + \
+                        "kscreensaverrc file does not exist.\n"
                     return False
                 else:
                     ihandle = open(os.path.join(self.environ.geteuidhome(),
@@ -328,10 +336,11 @@ Your .kde/share/config/kscreensaverrc file does not exist."""
                     if ilogout and itimeout:
                         return True
                     else:
-                        self.detailedresults = self.detailedresults + """
-Your .kde/share/config/kscreensaverrc file is not configured for automatic \
-logout. It should contain the lines: AutoLogout=true, and \
-AutoLogoutTimeout=""" + str(seconds)
+                        self.detailedresults += "Your .kde/share/config/" + \
+                            "kscreensaverrc file is not configured for " + \
+                            "automatic logout. It should contain the " + \
+                            "lines: AutoLogout=true, and AutoLogoutTimeout=" + \
+                            str(seconds) + "\n"
                         return False
 
     def chkosx(self):
@@ -356,18 +365,58 @@ AutoLogoutTimeout=""" + str(seconds)
         self.detailedresults = ""
         try:
             if self.environ.osfamily == 'linux':
-                gnomecheck = self.chkgnome3()
-                kdecheck = self.chkkde4()
-                if kdecheck and gnomecheck:
-                    self.detailedresults = self.detailedresults + """
-Gnome and KDE GUI environments appear to be correctly configured for automatic \
-logout of idle sessions."""
+                ph = Pkghelper(self.logger, self.environ)
+                if ph.check("gdm") or ph.check("gdm3"):
+                    self.gnomeInstalled = True
                 else:
-                    self.detailedresults = self.detailedresults + """
-Gnome and KDE GUI environments do not appear to be correctly configured for \
-automatic logout of idle sessions. This guidance is optional in STONIX, check \
-local policy to see if it is required."""
-                    compliant = False
+                    self.gnomeInstalled = False
+                if self.gnomeInstalled:
+                    gnomecheck = self.chkgnome3()
+                if ph.check("kdm") or ph.check("kde-workspace"):
+                    self.kdeInstalled = True
+                else:
+                    self.kdeInstalled = False
+                if self.kdeInstalled:
+                    kdecheck = self.chkkde4()
+                if self.gnomeInstalled and self.kdeInstalled:
+                    if kdecheck and gnomecheck:
+                        self.detailedresults += "Gnome and KDE GUI " + \
+                            "environments appear to be correctly configured " + \
+                            "for automatic logout of idle sessions.\n"
+                    else:
+                        self.detailedresults += "Gnome and KDE GUI " + \
+                            "environments do not appear to be correctly " + \
+                            "configured for automatic logout of idle " + \
+                            "sessions. This guidance is optional in STONIX, " + \
+                            "check local policy to see if it is required.\n"
+                        compliant = False
+                elif self.gnomeInstalled:
+                    if gnomecheck:
+                        self.detailedresults += "Gnome GUI environment " + \
+                            "appears to be correctly configured for " + \
+                            "automatic logout of idle sessions.\n"
+                    else:
+                        self.detailedresults += "Gnome GUI environment " + \
+                            "does not appear to be correclty configured " + \
+                            "for automatic logout of idle sessions. This " + \
+                            "guidance is optional in STONIX, check local " + \
+                            "policy to see if it is required.\n"
+                        compliant = False
+                elif self.kdeInstalled:
+                    if kdecheck:
+                        self.detailedresults += "KDE GUI environment " + \
+                            "appears to be correctly configured for " + \
+                            "automatic logout of idle sessions.\n"
+                    else:
+                        self.detailedresults += "KDE GUI environment " + \
+                            "does not appear to be correclty configured " + \
+                            "for automatic logout of idle sessions. This " + \
+                            "guidance is optional in STONIX, check local " + \
+                            "policy to see if it is required.\n"
+                        compliant = False
+                else:
+                    self.detailedresults += "Gnome and KDE GUI environments " + \
+                        "not found on system.\n"
             elif self.environ.getosfamily() == 'darwin':
                 compliant = self.chkosx()
                 if not compliant:
@@ -405,22 +454,21 @@ local policy to see if it is required."""
             return
         if os.path.exists('/etc/dconf/db'):
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__fixgnome3',
-                                'Working GNOME with dconf'])
+                                 ['ForceIdleLogout.__fixgnome3',
+                                  'Working GNOME with dconf'])
             try:
                 seconds = self.timeoutci.getcurrvalue() * 60
             except(TypeError):
-                self.detailedresults = self.detailedresults + """
-    FORCEIDLELOGOUTTIMEOUT value is not valid!"""
+                self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is " + \
+                    "not valid!\n"
                 self.rulesuccess = False
                 return False
             gdirectives = {"sleep-inactive-ac-type": "'logout'",
                            'sleep-inactive-ac-timeout': str(seconds)}
-            geditor = KVEditorStonix(self.statechglogger, self.logger,
-                                                  "conf", self.gnomesettingpath,
-                                                  self.gnomesettingpath + '.tmp',
-                                                  gdirectives, "present",
-                                                  "closedeq")
+            geditor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                     self.gnomesettingpath,
+                                     self.gnomesettingpath + '.tmp',
+                                     gdirectives, "present", "closedeq")
             geditor.report()
             if geditor.fixables:
                 if geditor.fix():
@@ -443,9 +491,11 @@ local policy to see if it is required."""
                 lockhandle = open(self.gnomelockpath, 'r')
                 lockdata = lockhandle.readlines()
                 for line in lockdata:
-                    if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout', line):
+                    if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout',
+                                 line):
                         havetimeoutlock = True
-                    if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type", line):
+                    if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
+                                 line):
                         havelogoutlock = True
             if not havetimeoutlock:
                 lockdata.append('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout\n')
@@ -466,11 +516,16 @@ local policy to see if it is required."""
                     "for " + self.gnomelockpath + "\n"
         else:
             self.logdispatch.log(LogPriority.DEBUG,
-                                ['ForceIdleLogout.__fixgnome3',
-                                'Working GNOME with gconf'])
-            setprefix = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --set '
-            settime = setprefix + '--type integer /desktop/gnome/session/max_idle_time ' + str(self.timeoutci.getcurrvalue())
-            setlogout = setprefix + '--type string /desktop/gnome/session/max_idle_action forced-logout'
+                                 ['ForceIdleLogout.__fixgnome3',
+                                  'Working GNOME with gconf'])
+            setprefix = '/usr/bin/gconftool-2 --direct --config-source ' + \
+                'xml:readwrite:/etc/gconf/gconf.xml.mandatory --set '
+            settime = setprefix + \
+                '--type integer /desktop/gnome/session/max_idle_time ' + \
+                str(self.timeoutci.getcurrvalue())
+            setlogout = setprefix + \
+                '--type string /desktop/gnome/session/' + \
+                'max_idle_action forced-logout'
             self.cmdhelper.executeCommand(settime)
             self.cmdhelper.executeCommand(setlogout)
 
@@ -485,8 +540,8 @@ local policy to see if it is required."""
         fhandle.close()
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__fixkde4',
-                                          'Root context starting loop'])
+                                 ['ForceIdleLogout.__fixkde4',
+                                  'Root context starting loop'])
             for user in passwddata:
                 user = user.split(':')
                 try:
@@ -499,8 +554,8 @@ local policy to see if it is required."""
                                           'IndexError processing ' + str(user)])
                     continue
                 self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__fixkde4',
-                                          'Calling rcfix on ' + str(user)])
+                                     ['ForceIdleLogout.__fixkde4',
+                                      'Calling rcfix on ' + str(user)])
                 self.kdercfix(uidnum, defgid, homepath)
         else:
             self.logdispatch.log(LogPriority.DEBUG,
@@ -536,8 +591,8 @@ local policy to see if it is required."""
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
         except(TypeError):
-            self.detailedresults = self.detailedresults + """
-FORCEIDLELOGOUTTIMEOUT value is not valid!"""
+            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
+                "valid!\n"
             return False
         if not os.path.exists(os.path.join(homepath, '.kde')):
             self.logdispatch.log(LogPriority.DEBUG,
@@ -548,8 +603,8 @@ FORCEIDLELOGOUTTIMEOUT value is not valid!"""
         rcpath = os.path.join(homepath,
                               '.kde/share/config/kscreensaverrc')
         self.logdispatch.log(LogPriority.DEBUG,
-                            ['ForceIdleLogout.__kdercfix',
-                            'rcpath is ' + str(rcpath)])
+                             ['ForceIdleLogout.__kdercfix',
+                              'rcpath is ' + str(rcpath)])
         if not os.path.exists(rcpath):
             rcstring = '''[ScreenSaver]
 AutoLogout=true
@@ -622,34 +677,37 @@ AutoLogoutTimeout=''' + str(seconds)
 
         @author: D. Kennel
         """
+        self.detailedresults = ""
         self.rulesuccess = True
         if self.filci.getcurrvalue() and self.environ.getosfamily() == "linux":
-            try:
-                self.fixgnome3()
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception:
-                self.rulesuccess = False
-                self.detailedresults = 'ForceIdleLogout: '
-                self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
-                self.rulesuccess = False
-                self.logger.log(LogPriority.ERROR,
-                                self.detailedresults)
-            try:
-                self.fixkde4()
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception:
-                self.rulesuccess = False
-                self.detailedresults = 'ForceIdleLogout: '
-                self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
-                self.rulesuccess = False
-                self.logger.log(LogPriority.ERROR,
-                                self.detailedresults)
+            if self.gnomeInstalled:
+                try:
+                    self.fixgnome3()
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except Exception:
+                    self.rulesuccess = False
+                    self.detailedresults = 'ForceIdleLogout: '
+                    self.detailedresults = self.detailedresults + \
+                        traceback.format_exc()
+                    self.rulesuccess = False
+                    self.logger.log(LogPriority.ERROR,
+                                    self.detailedresults)
+            if self.kdeInstalled:
+                try:
+                    self.fixkde4()
+                except (KeyboardInterrupt, SystemExit):
+                    # User initiated exit
+                    raise
+                except Exception:
+                    self.rulesuccess = False
+                    self.detailedresults = 'ForceIdleLogout: '
+                    self.detailedresults = self.detailedresults + \
+                        traceback.format_exc()
+                    self.rulesuccess = False
+                    self.logger.log(LogPriority.ERROR,
+                                    self.detailedresults)
         elif self.filci.getcurrvalue() and \
              self.environ.getosfamily() == "darwin":
             try:
@@ -687,7 +745,8 @@ AutoLogoutTimeout=''' + str(seconds)
                                                           '0023001')
             except(IndexError, KeyError):
                 self.logdispatch.log(LogPriority.DEBUG,
-                            ['ForceIdleLogout.undo', "EventID 0023001 not found"])
+                                     ['ForceIdleLogout.undo',
+                                      "EventID 0023001 not found"])
             try:
                 eventgnomemode = self.statechglogger.getchgevent('0023002')
                 if eventgnomemode['startstate'] != eventgnomemode['endstate']:
@@ -700,7 +759,8 @@ AutoLogoutTimeout=''' + str(seconds)
                         resetsecon(self.gnomesettingpath)
             except(IndexError, KeyError):
                 self.logdispatch.log(LogPriority.DEBUG,
-                            ['ForceIdleLogout.undo', "EventID 0023002 not found"])
+                                     ['ForceIdleLogout.undo',
+                                      "EventID 0023002 not found"])
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
@@ -708,7 +768,8 @@ AutoLogoutTimeout=''' + str(seconds)
                 self.detailedresults = traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR,
-                            ['ForceIdleLogout.undo', self.detailedresults])
+                                     ['ForceIdleLogout.undo',
+                                      self.detailedresults])
             try:
                 eventlockmode = self.statechglogger.getchgevent('0023003')
                 if eventlockmode['startstate'] != eventlockmode['endstate']:
@@ -721,7 +782,8 @@ AutoLogoutTimeout=''' + str(seconds)
                         resetsecon(self.gnomelockpath)
             except(IndexError, KeyError):
                 self.logdispatch.log(LogPriority.DEBUG,
-                            ['ForceIdleLogout.undo', "EventID 0023003 not found"])
+                                     ['ForceIdleLogout.undo',
+                                      "EventID 0023003 not found"])
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
@@ -729,10 +791,13 @@ AutoLogoutTimeout=''' + str(seconds)
                 self.detailedresults = traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR,
-                            ['ForceIdleLogout.undo', self.detailedresults])
+                                     ['ForceIdleLogout.undo',
+                                      self.detailedresults])
             if not os.path.exists('/etc/dconf/db'):
-                setprefix = '/usr/bin/gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --set '
-                setlogout = setprefix + '--type string /desktop/gnome/session/max_idle_action ""'
+                setprefix = '/usr/bin/gconftool-2 --direct --config-source ' + \
+                    'xml:readwrite:/etc/gconf/gconf.xml.mandatory --set '
+                setlogout = setprefix + '--type string ' + \
+                    '/desktop/gnome/session/max_idle_action ""'
                 self.cmdhelper.executeCommand(setlogout)
             fhandle = open('/etc/passwd', 'r')
             passwddata = fhandle.readlines()
@@ -746,14 +811,16 @@ AutoLogoutTimeout=''' + str(seconds)
                 rcpath = os.path.join(homepath,
                                       '.kde/share/config/kscreensaverrc')
                 if os.path.exists(rcpath):
-                    cmd = "/usr/bin/sed -i -e '/AutoLogout=/d' -e '/AutoLogoutTimeout=/d' " + rcpath
+                    cmd = "/usr/bin/sed -i -e '/AutoLogout=/d' -e " + \
+                        "'/AutoLogoutTimeout=/d' " + rcpath
                     subprocess.call(cmd, shell=True, close_fds=True)
             self.currstate = 'notconfigured'
         else:
             homepath = self.environ.geteuidhome()
             rcpath = os.path.join(homepath, '.kde/share/config/kscreensaverrc')
             if os.path.exists(rcpath):
-                cmd = "/usr/bin/sed -i -e '/AutoLogout=/d' -e '/AutoLogoutTimeout=/d' " + rcpath
+                cmd = "/usr/bin/sed -i -e '/AutoLogout=/d' -e " + \
+                    "'/AutoLogoutTimeout=/d' " + rcpath
                 subprocess.call(cmd, shell=True, close_fds=True)
                 self.currstate = 'notconfigured'
 

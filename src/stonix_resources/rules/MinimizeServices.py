@@ -35,6 +35,7 @@ RHEL 7
 @change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
 @change: 2016/10/06 dkennel Updates service lists and minor hacking to support
 ubuntu 16.04.
+@change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
 '''
 from __future__ import absolute_import
 
@@ -287,6 +288,7 @@ administrators may want to disable this rule.
                                'ksm.service', 'ksmtuned.service',
                                'ldconfig.service',
                                'lightdm.service',
+                               'lightdm',
                                'lvm2-monitor.service',
                                'mcelog',
                                'mcelog.service', 'mdmonitor-takeover.service',
@@ -294,6 +296,7 @@ administrators may want to disable this rule.
                                'named-setup-rndc.service',
                                'netconsole.service', 'network.service',
                                'networking.service',
+                               'networking',
                                'network', 'netcf-transaction.service',
                                'NetworkManager.service',
                                'nfs-blkmap.service', 'nfs-config.service',
@@ -332,6 +335,8 @@ administrators may want to disable this rule.
                                'rpc-statd.service', 'rpc-svcgssd.service',
                                'sendmail.service', 'sm-client.service',
                                'spice-vdagentd.service',
+                               'ssh',
+                               'ssh.service',
                                'sshd',
                                'sshd.service',
                                'sshd-keygen.service',
@@ -466,9 +471,13 @@ elements should be space separated.'''
         @return: bool
         @author: D.Kennel
         """
+
         compliant = True
         myresults = "Unauthorized running services detected: "
+        running = False # default init var
+
         try:
+
             self.detailedresults = ""
             servicelist = self.servicehelper.listservices()
             allowedlist = self.svcslistci.getcurrvalue()
@@ -480,8 +489,11 @@ elements should be space separated.'''
                             ['MinimizeServices.report',
                              "AllowedList: " + str(allowedlist)])
             for service in servicelist:
+                running = False # re-init var for new service
                 if service in allowedlist or re.search('user@[0-9]*.service',
                                                        service):
+                    if service in allowedlist:
+                        self.logger.log(LogPriority.INFO, """\nWhite-listed service found. Will not disable: """ + str(service) + """\n""")
                         # user@foo.service are user managers started by PAM
                         # on Linux. They are GRAS (generally regarded as safe)
                     if service not in corelist and \
@@ -491,7 +503,8 @@ elements should be space separated.'''
                                          'Non-core service running: ' +
                                          service])
                 else:
-                    running = self.servicehelper.auditservice(service)
+                    if self.servicehelper.auditservice(service):
+                        running = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['MinimizeServices.report',
                                      "Audit: " + service + str(running)])
