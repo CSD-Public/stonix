@@ -35,6 +35,7 @@ RHEL 7
 @change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
 @change: 2016/10/06 dkennel Updates service lists and minor hacking to support
 ubuntu 16.04.
+@change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
 '''
 from __future__ import absolute_import
 
@@ -334,6 +335,8 @@ administrators may want to disable this rule.
                                'rpc-statd.service', 'rpc-svcgssd.service',
                                'sendmail.service', 'sm-client.service',
                                'spice-vdagentd.service',
+                               'ssh',
+                               'ssh.service',
                                'sshd',
                                'sshd.service',
                                'sshd-keygen.service',
