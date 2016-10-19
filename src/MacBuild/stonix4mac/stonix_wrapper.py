@@ -40,6 +40,7 @@ from stonix_wrapper_ui import Ui_StonixWrapper
 # System Libraries
 import os
 import sys
+import time
 from subprocess import Popen, PIPE, call
 
 # PyQt libraries
@@ -98,8 +99,8 @@ class StonixWrapper(QtWidgets.QDialog) :
         
         Author: Roy Nielsen
         """
-        QtWidgets.QMessageBox.warning(self, "Warning", "You hit Quit, exiting program.", QMessageBox.Ok)
-        self.close()
+        QtWidgets.QMessageBox.warning(self, "Warning", "You hit Quit, exiting program.", QtWidgets.QMessageBox.Ok)
+        QtCore.QCoreApplication.instance().quit()
 
     def processCurrentLoggedInUser(self) :
         """
@@ -125,9 +126,11 @@ class StonixWrapper(QtWidgets.QDialog) :
 
         else:
             print "Exiting parent process: PID# %s" % os.getpid()
-            self.close()
-            
-        self.close()
+            QtCore.QCoreApplication.instance().quit()
+        time.sleep(2)
+        sys.exit()
+        #self.close()
+        #QtCore.QCoreApplication.instance().quit()
 
     def processAdminUser(self):
         """
@@ -142,6 +145,7 @@ class StonixWrapper(QtWidgets.QDialog) :
         self.admin_creds.raise_()
         
         if retval == 1 :
-            self.close()
+            QtCore.QCoreApplication.instance().quit()
+            #self.close()
 
         log_message("processAdminUser complete...", "verbose", self.message_level)

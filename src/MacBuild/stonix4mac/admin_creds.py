@@ -37,6 +37,7 @@
 
 import os
 import sys
+import time
 import getpass
 
 # PyQt libraries
@@ -86,10 +87,10 @@ class AdministratorCredentials(QtWidgets.QDialog) :
         self.cmd = ""
         self.tmpDir = ""
 
-        self.progress_bar = QtWidgets.QProgressDialog()
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(0)
-        self.progress_bar.setLabelText("Checking Password...")
+        #self.progress_bar = QtWidgets.QProgressDialog()
+        #self.progress_bar.setMinimum(0)
+        #self.progress_bar.setMaximum(0)
+        #self.progress_bar.setLabelText("Checking Password...")
 
         #####
         # Set up signals and slots
@@ -113,9 +114,9 @@ class AdministratorCredentials(QtWidgets.QDialog) :
         
         Author: Roy Nielsen
         """
-        QtWidgets.QMessageBox.warning(self, "Warning", "You hit Cancel, exiting program.", QMessageBox.Ok)
-        self.reject()
-
+        QtWidgets.QMessageBox.warning(self, "Warning", "You hit Cancel, exiting program.", QtWidgets.QMessageBox.Ok)
+        QtCore.QCoreApplication.instance().quit()
+        #self.close()
 
     def isPassValid(self) :
         """
@@ -140,8 +141,8 @@ class AdministratorCredentials(QtWidgets.QDialog) :
         # Convert mypass into a string
         self.password = "%s" % mypass
         
-        self.progress_bar.show()
-        self.progress_bar.raise_()
+        #self.progress_bar.show()
+        #self.progress_bar.raise_()
 
         if self.mu.isUserInGroup(self.username, "admin"):
         
@@ -175,19 +176,19 @@ class AdministratorCredentials(QtWidgets.QDialog) :
                     self.rw.runAsWithSudo(self.username, self.password)
                 else:
                     print "Exiting parent process: PID# %s" % os.getpid()
-
-                self.progress_bar.hide()
-
-                self.close()
+                time.sleep(2)
+                sys.exit()
+                #QtCore.QCoreApplication.instance().quit()
+                #self.close()
             else :
                 #####
                 # User is an admin, report invalid password and try again...
-                self.progress_bar.hide()
+                #self.progress_bar.hide()
                 log_message("Authentication test FAILURE...", "normal", self.message_level)
                 QtWidgets.QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QtWidgets.QMessageBox.Ok)
-    
+
         else :
-            self.progress_bar.hide()
+            #self.progress_bar.hide()
             log_message("User: \"" + str(self.username) + "\" is not a valid " + \
                         "user on this system.", "normal", self.message_level)
             QtWidgets.QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
