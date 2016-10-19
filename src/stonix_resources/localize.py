@@ -174,44 +174,29 @@ CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
 MACKRB5 = '''# Updated Test Configuration
-# 2016-09-28
-# https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
-# + dns_lookup_kdc=false, dns_lookup_realm=false, Exchange & SharePoint realm mappings, capaths section
+# 2016-10-19
+# Jason Allison Suggestion changed to allow_weak_crypto = false
 [libdefaults]
-  default_realm = lanl.gov
-  forwardable = true
-  dns_lookup_kdc = false
-  dns_lookup_realm = false
-  ticket_lifetime = 24h
-  renew_lifetime = 7d
-  clockslew = 300
+    default_realm = WIN.LANL.GOV
+    allow_weak_crypto = false
+    forwardable = true
 [realms]
-  lanl.gov = {
-    kdc = kerberos-slaves.lanl.gov
+    lanl.gov = {
     kdc = kerberos.lanl.gov
+    kdc = kerberos-slaves.lanl.gov
     admin_server = kerberos.lanl.gov
-  }
-  WIN.LANL.GOV = {
-    kdc = win.lanl.gov
-  }
+    }
+    WIN.LANL.GOV ={
+    kdc = WIN.LANL.GOV
+    admin_server = WIN.LANL.GOV
+    }
 [pam]
-  debug = false
-  krb4_convert = false
+    debug = false
+    krb4_convert = false
 [domain_realm]
-  win.lanl.gov = WIN.LANL.GOV
- .win.lanl.gov = WIN.LANL.GOV
-  lanl.gov = lanl.gov
- .lanl.gov = lanl.gov
- exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
- sp2013-p-f5.lanl.gov = WIN.LANL.GOV
- sp2013-p-ws01-f5.lanl.gov = WIN.LANL.GOV
- sp2013-p-ws02-f5.lanl.gov = WIN.LANL.GOV
- sp2013-p-106-ws02.lanl.gov = WIN.LANL.GOV
- sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
-[capaths]
-  WIN.LANL.GOV = {
-	lanl.gov = .
-  }
+    .lanl.gov = WIN.LANL.GOV
+    .lanl.gov = lanl.gov
+    .lanl.org = lanl.gov
  '''
 
 LINUXKRB5 = '''# Test Configuration
