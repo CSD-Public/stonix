@@ -23,15 +23,18 @@
 '''
 Created on Jan 30, 2013
 
-The ConfigureMACPolicy class enables and configures SELinux on support OS platforms.
+The ConfigureMACPolicy class enables and configures SELinux on support OS
+platforms.
 
 @author: Breen Malmberg
-@change: dwalker 3/10/2014
-@change: dkennel 04/18/2014 Replaced old style CI invocation
+@change: 2014/03/10 dwalker
+@change: 2014/04/18 dkennel Replaced old style CI invocation
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
-@change: dwalker 10/20/2015 Update report and fix methods for applicability
-@change: Breen Malmberg - 10/26/2015 - merged apparmor code with selinux code; added method doc strings
+@change: 2015/10/20 dwalker Update report and fix methods for applicability
+@change: 2015/10/26 Breen Malmberg - merged apparmor code with selinux code;
+    added method doc strings
+@change: 2016/10/20 eball Improve feedback, PEP8 fixes
 '''
 
 from __future__ import absolute_import
@@ -62,9 +65,9 @@ class ConfigureMACPolicy(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''The ConfigureMACPolicy rule configures either \
-selinux or apparmor, based on the os platform.  on supported platforms.  \
-These programs are called Mandatory Access Control programs and are essential \
-for enforcing what certain programs are allowed and not allowed to do.'''
+SELinux or AppArmor, based on the OS platform. These programs are called \
+Mandatory Access Control programs and are essential for enforcing what \
+certain programs are allowed and not allowed to do.'''
         self.guidance = ['NSA(2.1.1.6)(2.4.2)', 'CCE-3977-6', 'CCE-3999-0',
                          'CCE-3624-4', 'CIS 1.7']
         self.setype = "targeted"
@@ -78,26 +81,32 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         datatype = "bool"
         key = "CONFIGUREMAC"
         instructions = "To prevent the configuration of a mandatory " + \
-            "access control policy set the value of CONFIGUREMAC to " + \
-            "False. Note: The 'mandatory access control' is either SELinux or AppArmor, depending on your system type."
+            "access control policy, set the value of CONFIGUREMAC to " + \
+            "False. Note: The 'mandatory access control' is either SELinux " + \
+            "or AppArmor, depending on your system type."
         default = True
         self.ConfigureMAC = self.initCi(datatype, key, instructions, default)
 
         datatype2 = "string"
         key2 = "MODE"
         default2 = "permissive"
-        instructions2 = "Valid modes for SELinux are: permissive or enforcing. Valid modes for AppArmor are: complain or enforce"
+        instructions2 = "Valid modes for SELinux are: permissive or " + \
+            "enforcing. Valid modes for AppArmor are: complain or enforce"
         self.modeci = self.initCi(datatype2, key2, instructions2, default2)
 
         self.statuscfglist = ['SELinux status:(\s)+enabled',
                               'Current mode:(\s)+(permissive|enforcing)',
-                              'Mode from config file:(\s)+(permissive|enforcing)',
-                              'Policy from config file:(\s)+(targeted|default)|Loaded policy name:(\s)+(targeted|default)']
+                              'Mode from config file:(\s)+' +
+                              '(permissive|enforcing)',
+                              'Policy from config file:(\s)+' +
+                              '(targeted|default)|Loaded policy name:(\s)+' +
+                              '(targeted|default)']
         self.localization()
 
     def localization(self):
         '''
-        wrapper for setting up initial variables and helper objects based on which OS type you have
+        wrapper for setting up initial variables and helper objects based on
+        which OS type you have
 
         @return: void
         @author: Breen Malmberg
@@ -136,7 +145,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         self.redhat = False
         self.detailedresults = ""
 
-        # for generating a new profile, you need the command, plus the target profile name
+        # for generating a new profile, you need the command, plus the target
+        # profile name
         self.genprofcmd = '/usr/sbin/aa-genprof'
         self.aaprofiledir = '/etc/apparmor.d/'
         self.aastatuscmd = '/usr/sbin/apparmor_status'
@@ -166,7 +176,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "This system is using Red Hat operating system")
+        self.logger.log(LogPriority.DEBUG,
+                        "This system is using Red Hat operating system")
         self.redhat = True
         self.selinux = 'libselinux'
         self.setype = 'targeted'
@@ -178,35 +189,43 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
             if re.search('(7\.)|(^[7-9]$)', self.getOsVer()):
                 # set variables for redhat 7 or higher
-                self.logger.log(LogPriority.DEBUG, "This system is using version 7 or higher of the operating system")
+                self.logger.log(LogPriority.DEBUG,
+                                "This system is using version 7 or higher " +
+                                "of the operating system")
                 self.path2 = '/etc/default/grub'
                 self.perms2 = [0, 0, 384]
             elif re.search('(6\.)|(^[1-6]$)', self.getOsVer()):
                 # set variables for redhat 6 or lower
-                self.logger.log(LogPriority.DEBUG, "This system is using version 6 or lower of the operating system")
+                self.logger.log(LogPriority.DEBUG,
+                                "This system is using version 6 or lower " +
+                                "of the operating system")
                 self.path2 = '/etc/grub.conf'
                 self.perms2 = [0, 0, 420]
             else:
-                self.logger.log(LogPriority.DEBUG, "Unable to determine os version number")
+                self.logger.log(LogPriority.DEBUG,
+                                "Unable to determine os version number")
                 self.setRedHatBackupMethod()
 
         except Exception:
             raise
 
         if not self.path2:
-            self.logger.log(LogPriority.DEBUG, "Could not determine location of grub file")
+            self.logger.log(LogPriority.DEBUG,
+                            "Could not determine location of grub file")
 
         self.tpath2 = self.path2 + '.tmp'
 
     def setRedHatBackupMethod(self):
         '''
-        a backup method for attempting to determine, ad-hoc, which file names and directories apply to this system
+        a backup method for attempting to determine, ad-hoc, which file names
+        and directories apply to this system
 
         @return: void
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "This system is using Red Hat operating system")
+        self.logger.log(LogPriority.DEBUG,
+                        "This system is using Red Hat operating system")
         self.redhat = True
 
         try:
@@ -217,16 +236,18 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 if os.path.exists(loc):
                     self.path2 = loc
             if not self.path2:
-                self.logger.log(LogPriority.DEBUG, "Backup Method for determining grub conf location failed.")
+                self.logger.log(LogPriority.DEBUG,
+                                "Backup Method for determining grub conf " +
+                                "location failed.")
 
         except Exception:
             raise
 
         # attempt to set permissions
         if self.path2 == '/etc/default/grub':
-            self.perms2 = [0, 0, 384]
+            self.perms2 = [0, 0, 0o600]
         else:
-            self.perms2 = [0, 0, 420]
+            self.perms2 = [0, 0, 0o644]
 
     def getOsVer(self):
         '''
@@ -261,7 +282,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                     # parse os-release file
                     osver = self.parseRedhatRelease(contentlines)
             else:
-                self.logger.log(LogPriority.DEBUG, "Unable to locate release file")
+                self.logger.log(LogPriority.DEBUG,
+                                "Unable to locate release file")
 
         except Exception:
             raise
@@ -327,7 +349,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "This system is using Fedora operating system")
+        self.logger.log(LogPriority.DEBUG,
+                        "This system is using Fedora operating system")
         self.fedora = True
         self.selinux = 'libselinux'
         self.setype = 'targeted'
@@ -339,19 +362,25 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
             if re.search('([2][0-3]\.)|(^[2][0-3]$)', self.getOsVer()):
                 # set options for fedora 20 or higher
-                self.logger.log(LogPriority.DEBUG, "This system is using version 20 or higher of the operating system")
+                self.logger.log(LogPriority.DEBUG,
+                                "This system is using version 20 or higher " +
+                                "of the operating system")
                 self.path2 = '/etc/default/grub'
                 self.perms2 = [0, 0, 384]
             elif re.search('([1][0-9]\.)|(^[1][0-9]$)', self.getOsVer()):
                 # set options for fedora 19 or lower
-                self.logger.log(LogPriority.DEBUG, "This system is using version 19 or lower of the operating system")
+                self.logger.log(LogPriority.DEBUG,
+                                "This system is using version 19 or lower " +
+                                "of the operating system")
                 self.path2 = '/etc/grub.conf'
                 self.perms2 = [0, 0, 420]
             else:
-                self.logger.log(LogPriority.DEBUG, "Unable to determine os version number")
+                self.logger.log(LogPriority.DEBUG,
+                                "Unable to determine os version number")
 
             if not self.path2:
-                self.logger.log(LogPriority.DEBUG, "Could not determine location of grub file")
+                self.logger.log(LogPriority.DEBUG,
+                                "Could not determine location of grub file")
 
         except Exception:
             raise
@@ -368,7 +397,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "This system is using Debian operating system")
+        self.logger.log(LogPriority.DEBUG,
+                        "This system is using Debian operating system")
         self.debian = True
         self.selinux = "selinux-basics"
         self.setype = "default"
@@ -393,7 +423,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "This system is using OpenSUSE operating system")
+        self.logger.log(LogPriority.DEBUG,
+                        "This system is using OpenSUSE operating system")
         self.selinux = 'libselinux1'
         self.setype = "default"
         self.path2 = "/etc/default/grub"
@@ -419,7 +450,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "This system is using Ubuntu operating system")
+        self.logger.log(LogPriority.DEBUG,
+                        "This system is using Ubuntu operating system")
         self.selinux = 'selinux'
         self.setype = "default"
         self.path2 = "/etc/default/grub"
@@ -444,7 +476,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         @return: self.compliant
         @rtype: bool
         @author: Derek Walker
-        @change: Breen Malmberg - 10/26/2015 - filled in stub method; added method doc string
+        @change: Breen Malmberg - 10/26/2015 - filled in stub method; added
+            method doc string
         '''
 
         self.compliant = True
@@ -463,7 +496,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -489,7 +523,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                     retval = False
 
             if self.needsrestart:
-                self.detailedresults += '\nSystem needs to be restarted before apparmor module can be loaded.'
+                self.detailedresults += 'System needs to be restarted ' + \
+                    'before AppArmor module can be loaded.\n'
 
         except Exception:
             raise
@@ -497,7 +532,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
     def reportAApkg(self):
         '''
-        check whether the apparmor package is installed
+        check whether the AppArmor package is installed
 
         @return: retval
         @rtype: bool
@@ -513,7 +548,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         try:
 
             if not self.pkgdict:
-                self.logger.log(LogPriority.DEBUG, "The list of packages needed is blank")
+                self.logger.log(LogPriority.DEBUG,
+                                "The list of packages needed is blank")
 
             for pkg in self.pkgdict:
                 if not self.pkghelper.check(pkg):
@@ -521,7 +557,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             for pkg in self.pkgdict:
                 if not self.pkgdict[pkg]:
                     retval = False
-                    self.detailedresults += '\nPackage: ' + str(pkg) + ' is not installed'
+                    self.detailedresults += 'Package: ' + str(pkg) + \
+                        ' is not installed\n'
                     self.needsrestart = True
 
         except Exception:
@@ -530,7 +567,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
     def reportAAstatus(self):
         '''
-        check whether the apparmor module is loaded
+        check whether the AppArmor module is loaded
 
         @return: retval
         @rtype: bool
@@ -541,9 +578,11 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
         try:
 
-            # we cannot use the apparmor utilities to check the status, if they are not installed!
+            # we cannot use the AppArmor utilities to check the status, if they
+            # are not installed!
             if not self.pkgdict['apparmor-utils']:
-                self.detailedresults += '\nCannot check apparmor status without apparmor-utils installed'
+                self.detailedresults += 'Cannot check AppArmor status ' + \
+                    'without apparmor-utils installed\n'
                 retval = False
                 return retval
 
@@ -555,12 +594,14 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 retval = False
             if re.search('error|Traceback', errout):
                 retval = False
-                self.detailedresults += '\nThere was an error while attempting to run command: ' + str(self.aastatuscmd)
-                self.detailedresults += '\nThe error was: ' + str(errout)
+                self.detailedresults += 'There was an error while ' + \
+                    'attempting to run command: ' + str(self.aastatuscmd) + \
+                    '\n'
+                self.detailedresults += 'The error was: ' + str(errout) + '\n'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
             if not re.search('apparmor module is loaded', output):
                 retval = False
-                self.detailedresults += '\napparmor module is not loaded'
+                self.detailedresults += 'AppArmor module is not loaded\n'
 
         except Exception:
             raise
@@ -568,7 +609,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
     def reportAAprofs(self):
         '''
-        check whether or not there are any unconfined (by apparmor) services or applications
+        check whether or not there are any unconfined (by AppArmor) services or
+        applications
 
         @return: retval
         @rtype: bool
@@ -582,11 +624,13 @@ for enforcing what certain programs are allowed and not allowed to do.'''
         try:
 
             if not self.pkgdict['apparmor-utils']:
-                self.detailedresults += '\nCannot check apparmor profile status without apparmor-utils installed'
+                self.detailedresults += 'Cannot check AppArmor profile ' + \
+                    'status without apparmor-utils installed\n'
                 retval = False
                 return retval
             if not self.pkgdict['apparmor-profiles']:
-                self.detailedresults += '\nCannot accurately determine profile status without apparmor-profiles installed'
+                self.detailedresults += 'Cannot accurately determine ' + \
+                    'profile status without apparmor-profiles installed\n'
                 retval = False
                 return retval
 
@@ -596,17 +640,26 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             if re.search('error|Traceback', output):
                 retval = False
                 if re.search('codecs\.py', output):
-                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
-                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+                    self.detailedresults += 'There is a bug with ' + \
+                        'running a required command in this version of ' + \
+                        'Debian. This rule will remain NCAF until Debian ' + \
+                        'can fix this issue. This is not a STONIX bug.\n'
             if re.search('error|Traceback', errout):
                 retval = False
                 if re.search('codecs\.py', errout):
-                    self.detailedresults += '\nThere is a bug with running a required command in this version of Debian. \
-                    This rule will remain NCAF until Debian can fix this issue. This is not a STONIX bug.'
+                    self.detailedresults += 'There is a bug with running ' + \
+                        'a required command in this version of Debian. ' + \
+                        'This rule will remain NCAF until Debian can fix ' + \
+                        'this issue. This is not a STONIX bug.\n'
                 else:
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaunconf)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
-                    self.logger.log(LogPriority.DEBUG, "Error running command: " + str(self.aaunconf) + "\nError was: " + str(errout))
+                    self.detailedresults += 'There was an error running ' + \
+                        'command: ' + str(self.aaunconf) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Error running command: " +
+                                    str(self.aaunconf) + "\nError was: " +
+                                    str(errout))
             output = self.cmdhelper.getOutput()
             for line in output:
                 if re.search('not confined', line):
@@ -614,9 +667,13 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                     unconfined = True
                     sline = line.split()
                     self.unconflist.append(str(sline[1]))
-                    self.detailedresults += '\n' + str(sline[1]) + ' is not confined by apparmor'
+                    self.detailedresults += str(sline[1]) + \
+                        ' is not confined by AppArmor\n'
             if unconfined:
-                self.detailedresults += "\n\nIf you have services or applications which are unconfined by apparmor, this can only be corrected manually, by the administrator of your system. (See the man page for apparmor)."
+                self.detailedresults += "If you have services or " + \
+                    "applications which are unconfined by AppArmor, this " + \
+                    "can only be corrected manually, by the administrator " + \
+                    "of your system. (See the man page for apparmor).\n"
 
         except Exception:
             raise
@@ -624,7 +681,7 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
     def reportSELinux(self):
         '''
-        determine whether SELinux is already enabled and properly configured.
+        Determine whether SELinux is already enabled and properly configured.
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
@@ -636,9 +693,9 @@ for enforcing what certain programs are allowed and not allowed to do.'''
             especially.
         @change: Breen Malmberg 6/2/2016 moved all of the localization to the
         separate localization methods chain at the top of the class
-        @change: Breen Malmberg 6/10/2016 changed the commands to look for unconfined daemons and
-        unlabled device files so that they actually work and do not produce errors when
-        run on rhel7
+        @change: Breen Malmberg 6/10/2016 changed the commands to look for
+        unconfined daemons and unlabled device files so that they actually work
+        and do not produce errors when run on rhel7
         '''
 
         self.detailedresults = ""
@@ -647,15 +704,16 @@ for enforcing what certain programs are allowed and not allowed to do.'''
 
         if not self.pkghelper.check(self.selinux):
             compliant = False
-            self.detailedresults += "selinux is not even installed\n"
+            self.detailedresults += "SELinux is not installed\n"
             self.formatDetailedResults("report", self.compliant,
                                        self.detailedresults)
             self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         else:
-            cmd = "ps -eZ | egrep 'initrc' | egrep -vw 'tr | ps | egrep | bash | awk' | tr ':' ' ' | awk '{ print $NF }'"
+            cmd = "ps -eZ | egrep 'initrc' | egrep -vw 'tr | ps | egrep | " + \
+                "bash | awk' | tr ':' ' ' | awk '{ print $NF }'"
             if not self.cmdhelper.executeCommand(cmd):
                 self.detailedresults += "Unable to check for unconfined " + \
-                "daemons\n"
+                    "daemons\n"
                 compliant = False
             elif self.cmdhelper.getReturnCode() != 0:
                 self.detailedresults += "Unconfined daemons found running\n"
@@ -665,7 +723,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 self.detailedresults += "Unable to check for unlabled " + \
                     "device files\n"
                 compliant = False
-            # for whatever reason, the success exit code for the above command on rhel7 is 1 instead of 0...
+            # for whatever reason, the success exit code for the above command
+            # on rhel7 is 1 instead of 0...
             elif self.cmdhelper.getReturnCode() != 1:
                 self.detailedresults += "Unlabeled device files found\n"
                 compliant = False
@@ -753,7 +812,8 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                 output = self.cmdhelper.getOutput()
                 error = self.cmdhelper.getError()
                 if output:
-                    # self.statuscfglist is a list of regular expressions to match
+                    # self.statuscfglist is a list of regular expressions to
+                    # match
                     for item in self.statuscfglist:
                         found = False
                         for item2 in output:
@@ -764,17 +824,17 @@ for enforcing what certain programs are allowed and not allowed to do.'''
                             if self.pkghelper.manager == "apt-get":
                                 if self.seinstall:
                                     self.detailedresults += "Since stonix \
-just installed selinux, you will need to reboot your system before this rule \
-shows compliant.  After stonix is finished running, reboot system, run stonix \
+just installed SELinux, you will need to reboot your system before this rule \
+shows compliant. After stonix is finished running, reboot system, run stonix \
 and do a report run on EnableSELinux rule again to verify if fix was \
 completed successfully\n"
                             else:
-                                self.detailedresults += "contents of \
+                                self.detailedresults += "Contents of \
 sestatus output is not what it's supposed to be\n"
                                 compliant = False
                 elif error:
                     self.detailedresults += "There was an error running \
-the sestatus command to see if selinux is configured properly\n"
+the sestatus command to see if SELinux is configured properly\n"
                     compliant = False
         return compliant
 
@@ -786,8 +846,8 @@ the sestatus command to see if selinux is configured properly\n"
         @return: fixresult
         @rtype: bool
         @author: Derek Walker
-        @change: Breen Malmberg - 10/26/2015 - filled in stub method; added doc string; 
-                                                changed method to use correct return variable
+        @change: Breen Malmberg - 10/26/2015 - filled in stub method;
+            added doc string; changed method to use correct return variable
         '''
 
         fixresult = True
@@ -805,10 +865,12 @@ the sestatus command to see if selinux is configured properly\n"
                     if not self.fixAppArmor():
                         fixresult = False
                 else:
-                    self.detailedresults += 'Could not identify your OS type, or OS not supported for this rule.'
+                    self.detailedresults += 'Could not identify your OS ' + \
+                        'type, or OS not supported for this rule.\n'
 
             else:
-                self.detailedresults += 'The CI for this rule was not enabled. Nothing was done.'
+                self.detailedresults += 'The CI for this rule was not ' + \
+                    'enabled. Nothing was done.\n'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
@@ -823,7 +885,8 @@ the sestatus command to see if selinux is configured properly\n"
 
     def fixAppArmor(self):
         '''
-        wrapper to decide which fix actions to run and in what order, for apparmor
+        wrapper to decide which fix actions to run and in what order, for
+        apparmor
 
         @return: retval
         @rtype: bool
@@ -839,8 +902,11 @@ the sestatus command to see if selinux is configured properly\n"
             elif self.modeci.getcurrvalue() in ['enforce', 'enforcing']:
                 aamode = '/usr/sbin/aa-enforce'
             if not aamode:
-                self.detailedresults += '\nNo valid mode was specified for apparmor profiles. Valid modes include: enforce, or complain.'
-                self.detailedresults += '\nFix was not run to completion. Please enter a valid mode and try again.'
+                self.detailedresults += 'No valid mode was specified ' + \
+                    'for AppArmor profiles. Valid modes include: enforce, ' + \
+                    'or complain.\n'
+                self.detailedresults += 'Fix was not run to completion. ' + \
+                    'Please enter a valid mode and try again.\n'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 retval = False
                 return retval
@@ -849,7 +915,7 @@ the sestatus command to see if selinux is configured properly\n"
 
             if not self.fixAApkg():
                 retval = False
-            if retval: # should not continue unless apparmor package is installed
+            if retval:  # Should not continue unless apparmor pkg is installed
                 if not self.fixAAstatus():
                     retval = False
 
@@ -859,7 +925,8 @@ the sestatus command to see if selinux is configured properly\n"
 
     def fixAApkg(self):
         '''
-        install all packages which are required for apparmor to function properly
+        install all packages which are required for apparmor to function
+        properly
 
         @return: retval
         @rtype: bool
@@ -874,7 +941,8 @@ the sestatus command to see if selinux is configured properly\n"
                 if not self.pkgdict[pkg]:
                     if not self.pkghelper.install(pkg):
                         retval = False
-                        self.detailedresults += '\nFailed to install package: ' + str(pkg)
+                        self.detailedresults += 'Failed to install ' + \
+                            'package: ' + str(pkg) + '\n'
 
         except Exception:
             raise
@@ -897,35 +965,55 @@ the sestatus command to see if selinux is configured properly\n"
 
             if self.ubuntu:
 
-                self.logger.log(LogPriority.DEBUG, "Detected that this is an apt-get based system. Looking for grub configuration file...")
+                self.logger.log(LogPriority.DEBUG,
+                                "Detected that this is an apt-get based " +
+                                "system. Looking for grub configuration " +
+                                "file...")
 
                 if os.path.exists('/etc/default/grub'):
 
                     grubpath = '/etc/default/grub'
                     tmpgrubpath = grubpath + '.stonixtmp'
-                    self.logger.log(LogPriority.DEBUG, "Grub configuration file found at: " + str(grubpath))
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Grub configuration file found at: " +
+                                    str(grubpath))
 
-                    self.logger.log(LogPriority.DEBUG, "Reading grub configuration file...")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Reading grub configuration file...")
                     fr = open(grubpath, 'r')
                     contentlines = fr.readlines()
                     fr.close()
 
-                    self.logger.log(LogPriority.DEBUG, "Got grub configuration file contents. Looking for required apparmor kernel config line...")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Got grub configuration file contents. " +
+                                    "Looking for required AppArmor kernel " +
+                                    "config line...")
 
                     for line in contentlines:
                         if re.search('GRUB_CMDLINE_LINUX="', line):
-                            if not re.search('apparmor=1 security=apparmor', line):
-                                self.logger.log(LogPriority.DEBUG, "Required apparmor kernel line not found. Adding it...")
-                                contentlines = [c.replace(line, line[:-2] + ' apparmor=1 security=apparmor"\n') for c in contentlines]
+                            if not re.search('apparmor=1 security=apparmor',
+                                             line):
+                                self.logger.log(LogPriority.DEBUG,
+                                                "Required AppArmor kernel " +
+                                                "line not found. Adding it...")
+                                contentlines = [c.replace(line,
+                                                          line[:-2] +
+                                                          ' apparmor=1 ' +
+                                                          'security=apparmor"\n')
+                                                for c in contentlines]
                                 editedgrub = True
                             else:
                                 apparmorfound = True
                     if not editedgrub and not apparmorfound:
-                        contentlines.append('\nGRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"\n')
+                        contentlines.append('\nGRUB_CMDLINE_LINUX=' +
+                                            '"apparmor=1 security=apparmor"\n')
                         editedgrub = True
 
                     if editedgrub:
-                        self.logger.log(LogPriority.DEBUG, "Added apparmor kernel config line to contents. Writing contents to grub config file...")
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Added AppArmor kernel config line " +
+                                        "to contents. Writing contents to " +
+                                        "grub config file...")
                         tfw = open(tmpgrubpath, 'w')
                         tfw.writelines(contentlines)
                         tfw.close()
@@ -935,73 +1023,109 @@ the sestatus command to see if selinux is configured properly\n"
                         event = {'eventtype': 'conf',
                                  'filepath': grubpath}
                         self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(tmpgrubpath, grubpath, myid)
+                        self.statechglogger.recordfilechange(tmpgrubpath,
+                                                             grubpath, myid)
 
                         os.rename(tmpgrubpath, grubpath)
                         os.chmod(grubpath, 0644)
                         os.chown(grubpath, 0, 0)
-                        self.logger.log(LogPriority.DEBUG, "Finished writing apparmor kernel config line to grub config file")
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Finished writing AppArmor kernel " +
+                                        "config line to grub config file")
                         self.needsrestart = True
 
                         updategrub = 'update-grub'
 
-                        self.logger.log(LogPriority.DEBUG, "Running update-grub command to update grub kernel boot configuration...")
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Running update-grub command to " +
+                                        "update grub kernel boot " +
+                                        "configuration...")
                         self.cmdhelper.executeCommand(updategrub)
                         errout = self.cmdhelper.getErrorString()
                         if re.search('error|Traceback', errout):
                             retval = False
-                            self.detailedresults += '\nError updating grub configuration: ' + str(errout)
-                            self.logger.log(LogPriority.DEBUG, "Error executing " + str(updategrub) + "\nError was: " + str(errout))
+                            self.detailedresults += '\nError updating ' + \
+                                'grub configuration: ' + str(errout)
+                            self.logger.log(LogPriority.DEBUG,
+                                            "Error executing " +
+                                            str(updategrub) + "\nError was: " +
+                                            str(errout))
                             return retval
-                        self.logger.log(LogPriority.DEBUG, "Finished successfully updating grub kernel boot configuration...")
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Finished successfully updating " +
+                                        "grub kernel boot configuration...")
 
                 else:
-                    self.logger.log(LogPriority.DEBUG, "Unable to locate grub configuration file")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Unable to locate grub configuration file")
 
-                self.logger.log(LogPriority.DEBUG, "Checking if the system needs to be restarted first in order to continue...")
+                self.logger.log(LogPriority.DEBUG,
+                                "Checking if the system needs to be " +
+                                "restarted first in order to continue...")
 
                 if not self.needsrestart:
 
-                    self.logger.log(LogPriority.DEBUG, "System does not require restart to continue configuring apparmor. Proceeding...")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "System does not require restart to " +
+                                    "continue configuring AppArmor. " +
+                                    "Proceeding...")
 
                     self.cmdhelper.executeCommand(self.aadefscmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error running command: ' + str(self.aadefscmd)
-                        self.detailedresults += '\nThe error was: ' + str(errout)
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aadefscmd) + '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                     self.cmdhelper.executeCommand(self.aaprofcmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
-                        self.detailedresults += '\nThe error was: ' + str(errout)
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aaprofcmd) + '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                     self.cmdhelper.executeCommand(self.aareloadprofscmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
-                        self.detailedresults += '\nThe error was: ' + str(errout)
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aareloadprofscmd) + \
+                            '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                     self.cmdhelper.executeCommand(self.aaupdatecmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error running command: ' + str(self.aaupdatecmd)
-                        self.detailedresults += '\nThe error was: ' + str(errout)
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aaupdatecmd) + '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                         self.cmdhelper.executeCommand(self.aastartcmd)
                         errout2 = self.cmdhelper.getErrorString()
                         if re.search('error|Traceback', errout2):
                             retval = False
-                            self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
-                            self.detailedresults += '\nThe error was: ' + str(errout2)
+                            self.detailedresults += 'There was an error ' + \
+                                'running command: ' + str(self.aastartcmd) + \
+                                '\n'
+                            self.detailedresults += 'The error was: ' + \
+                                str(errout2) + '\n'
 
                 else:
-                    self.logger.log(LogPriority.DEBUG, "System requires a restart before continuing to configure apparmor. Will NOT restart automatically.")
-                    self.detailedresults += '\nApparmor was just installed and/or added to the kernel boot config. You will need to restart your system and run this rule in fix again before it can configure properly.'
+                    self.logger.log(LogPriority.DEBUG,
+                                    "System requires a restart before " +
+                                    "continuing to configure AppArmor. Will " +
+                                    "NOT restart automatically.")
+                    self.detailedresults += 'AppArmor was just installed ' + \
+                        'and/or added to the kernel boot config. You will ' + \
+                        'need to restart your system and run this rule in ' + \
+                        'fix again before it can configure properly.\n'
                     retval = False
                     return retval
 
@@ -1011,24 +1135,31 @@ the sestatus command to see if selinux is configured properly\n"
                 errout = self.cmdhelper.getErrorString()
                 if re.search('error|Traceback', errout):
                     retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aaprofcmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                    self.detailedresults += 'There was an error running ' + \
+                        'command: ' + str(self.aaprofcmd) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
 
                 self.cmdhelper.executeCommand(self.aareloadprofscmd)
                 errout = self.cmdhelper.getErrorString()
                 if re.search('error|Traceback', errout):
                     retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aareloadprofscmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                    self.detailedresults += 'There was an error ' + \
+                        'running command: ' + str(self.aareloadprofscmd) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
 
                 self.cmdhelper.executeCommand(self.aastartcmd)
                 errout = self.cmdhelper.getErrorString()
                 if re.search('error|Traceback', errout):
                     retval = False
-                    self.detailedresults += '\nThere was an error running command: ' + str(self.aastartcmd)
-                    self.detailedresults += '\nThe error was: ' + str(errout)
+                    self.detailedresults += 'There was an error running ' + \
+                        'command: ' + str(self.aastartcmd) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
             else:
-                self.detailedresults += "\nCould not identify your OS type, or OS not supported"
+                self.detailedresults += "Could not identify your OS type, " + \
+                    "or OS not supported\n"
                 retval = False
                 return retval
         except Exception:
@@ -1055,7 +1186,7 @@ the sestatus command to see if selinux is configured properly\n"
 
         try:
 
-            #clear out event history so only the latest fix is recorded
+            # clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
@@ -1064,17 +1195,17 @@ the sestatus command to see if selinux is configured properly\n"
                 if self.pkghelper.checkAvailable(self.selinux):
                     if not self.pkghelper.install(self.selinux):
                         fixresult = False
-                        self.detailedresults += "selinux was not able to be \
-    installed\n"
+                        self.detailedresults += "SELinux installation failed\n"
                         self.formatDetailedResults("fix", fixresult,
                                                    self.detailedresults)
-                        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                        self.logdispatch.log(LogPriority.INFO,
+                                             self.detailedresults)
                         return
                     else:
                         self.seinstall = True
                 else:
-                    self.detailedresults += "selinux package not available \
-    for install on this linux distribution\n"
+                    self.detailedresults += "SELinux package not available " + \
+                        "for installion on this Linux distribution\n"
                     fixresult = False
                     self.formatDetailedResults("fix", fixresult,
                                                self.detailedresults)
@@ -1087,8 +1218,8 @@ the sestatus command to see if selinux is configured properly\n"
                     myid = iterate(self.iditerator, self.rulenumber)
                     setPerms(self.path1, [0, 0, 420], self.logger,
                              self.statechglogger, myid)
-                    self.detailedresults += "Corrected permissions on file: \
-    " + self.path1 + "\n"
+                    self.detailedresults += "Corrected permissions on file: " + \
+                        self.path1 + "\n"
                 val1 = ""
                 tempstring = ""
                 for line in self.f1:
@@ -1098,7 +1229,8 @@ the sestatus command to see if selinux is configured properly\n"
                     if re.match("^SELINUX\s{0,1}=", line.strip()):
                         if re.search("=", line.strip()):
                             temp = line.split("=")
-                            if temp[1].strip() == "permissive" or temp[1].strip() == "enforcing":
+                            if temp[1].strip() == "permissive" or \
+                               temp[1].strip() == "enforcing":
                                 val1 = temp[1].strip()
                             if val1 != self.modeci.getcurrvalue():
                                 val1 = self.modeci.getcurrvalue()
@@ -1131,8 +1263,8 @@ the sestatus command to see if selinux is configured properly\n"
                 os.chown(self.path1, 0, 0)
                 os.chmod(self.path1, 420)
                 resetsecon(self.path1)
-                self.detailedresults += "Corrected the contents of the file: \
-    " + self.path1 + " to be compliant\n"
+                self.detailedresults += "Corrected the contents of the file: " + \
+                    self.path1 + " to be compliant\n"
             else:
                 fixresult = False
             if self.f2:
@@ -1141,14 +1273,17 @@ the sestatus command to see if selinux is configured properly\n"
                     myid = iterate(self.iditerator, self.rulenumber)
                     setPerms(self.path2, self.perms2, self.logger,
                              self.statechglogger, myid)
-                    self.detailedresults += "Corrected permissions on file: \
-    " + self.path2 + "\n"
+                    self.detailedresults += "Corrected permissions on file: " + \
+                        self.path2 + "\n"
                 if self.pkghelper.manager == "apt-get":
                     tempstring = ""
                     for line in self.f2:
-                        if re.match("^GRUB_CMDLINE_LINUX_DEFAULT", line.strip()):
-                            newstring = re.sub("security=[a-zA-Z0-9]+", "", line)
-                            newstring = re.sub("selinux=[a-zA-Z0-9]+", "", newstring)
+                        if re.match("^GRUB_CMDLINE_LINUX_DEFAULT",
+                                    line.strip()):
+                            newstring = re.sub("security=[a-zA-Z0-9]+", "",
+                                               line)
+                            newstring = re.sub("selinux=[a-zA-Z0-9]+", "",
+                                               newstring)
                             newstring = re.sub("\s+", " ", newstring)
                             tempstring += newstring + "\n"
                         else:
@@ -1189,11 +1324,12 @@ the sestatus command to see if selinux is configured properly\n"
                         os.chown(self.path2, self.perms2[0], self.perms2[1])
                         os.chmod(self.path2, self.perms2[2])
                         resetsecon(self.path2)
-                        self.detailedresults += "Corrected the contents of \
-    the file: " + self.path2 + " to be compliant\n"
+                        self.detailedresults += "Corrected the contents of " + \
+                            "the file: " + self.path2 + " to be compliant\n"
                     else:
                         fixresult = False
-                        self.detailedresults += "Failed to write configuration to file: " + str(self.tpath2)
+                        self.detailedresults += "Failed to write " + \
+                            "configuration to file: " + str(self.tpath2)
             if not self.seinstall:
                 if self.pkghelper.manager == "apt-get":
                     if re.search("Debian", self.environ.getostype()):
@@ -1204,7 +1340,8 @@ the sestatus command to see if selinux is configured properly\n"
                         if not self.cmdhelper.getReturnCode() == 0:
                             errout = self.cmdhelper.getErrorString()
                             fixresult = False
-                            self.detailedresults += "The command: " + str(cmd) + " returned an error"
+                            self.detailedresults += "The command: " + \
+                                str(cmd) + " returned an error"
                             self.logger.log(LogPriority.DEBUG, errout)
 
         except Exception:
