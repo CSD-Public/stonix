@@ -27,102 +27,16 @@ Created on Mar 9, 2016
 '''
 import re
 from logdispatcher import LogPriority
-#from Crypto.Util.RFC1751 import k2
+from CommandHelper import CommandHelper
 
 
 class KVAProfiles():
 
-    def __init__(self, logger):
+    def __init__(self, logger, path):
         self.logger = logger
-
-    def validate2(self, output, key, val):
-        '''if the user's installed profile has any values that are less
-        stringent than our own we should apply our profile'''
-        debug = ""
-        profileFound = False
-        iterator = 0
-        unsecure = False
-        output2 = ""
-        '''dont' care about the value, just the profile's existence'''
-        if not val:
-            for line in output:
-                if re.search("^" + key, line.strip()):
-                    return True
-            '''We never found the profile, return False'''
-            debug = "The profile sub-identifier:" + key + " was not found\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            return False
-        else:
-            '''we do care about the value along with the profile's existence'''
-            for line in output:
-                if re.search("^" + key + ":$", line.strip()):
-                    iterator2 = 0
-                    profileFound = True
-                    temp = output[iterator + 1:]
-                    length = len(temp) - 1
-                    for line2 in temp:
-                        if re.search("^\}$", line2.strip()):
-                            output2 = temp[:iterator2]
-                        elif iterator2 == length:
-                            output2 = temp[:iterator2 + 1]
-                        else:
-                            iterator2 += 1
-                else:
-                    iterator += 1
-            if not profileFound:
-                debug = "The profile sub-identifier: " + key + " was not found\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-            if output2:
-                '''key2 is the value of the original key
-                val2 is the datatype of it's value'''
-                for key2, val2 in val.iteritems():
-                    founditem = False
-                    for line in output2:
-                        if re.search("^" + key2 + " =", line.strip()):
-                            founditem = True
-                            temp = line.strip().split("=")
-                            if temp[1]:
-                                temp[1] = re.sub(";$", "", temp[1])
-                                if val2[1] == "bool":
-                                    if str(temp[1].strip()) != str(val2[0]):
-                                        debug += "Key: " + key2 + " doesn't " + \
-                                            "contain the correct boolean " + \
-                                            "value\n"
-                                        unsecure = True
-                                elif val2[1] == "int":
-                                    if val2[2] == "more":
-                                        if int(temp[1].strip()) < int(val2[0]):
-                                            debug += "Key: " + key2 + " doesn't " + \
-                                                "contain the correct integer " + \
-                                                "value\n"
-                                            unsecure = True
-                                    elif val2[2] == "less":
-                                        if int(temp[1].strip()) > int(val2[0]):
-                                            debug += "Key: " + key2 + " doesn't " + \
-                                                "contain the correct integer " + \
-                                                "value\n"
-                                            unsecure = True
-                            else:
-                                debug += "Key: " + key2 + " doesn't contain " + \
-                                    "a value at all\n"
-                                unsecure = True
-                    if not founditem:
-                        debug += "key: " + key2 + " not found.  There may " + \
-                            "be other keys that don't exist but we don't " + \
-                            "need to check for those due to the nature of " + \
-                            "installing secure profiles.\n"
-                        unsecure = True
-                    if debug:
-                        self.logger.log(LogPriority.DEBUG, debug)
-                    if unsecure:
-                        return False
-                return True
-            else:
-                debug = "Key: " + key + " doesn't contain any nested " + \
-                    "key value pairs\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
+        self.path = path
+        self.undocmd = ""
+        self.installcmd = ""
 
     def validate(self, output, key, val):
         #in instance where the profile is installed with no payload
@@ -139,21 +53,16 @@ class KVAProfiles():
             self.logger.log(LogPriority.DEBUG, debug)
             return False
         else:
-            print "\n\n\nTHE KEY WE'RE LOOKING FOR IS: \n\n"
-            print key + "\n\n"
             iterator1 = 0
             keyoutput = []
             keyfound = False
             for line in output:
                 if re.search("^" + key + ":$", line.strip()):
                     keyfound = True
-                    print "WE FOUND THE KEY: " + str(key) + "\n\n"
                     temp = output[iterator1 + 1:]
-                    print "temp value is :" + str(temp) + "\n"
                     iterator2 = 0
                     for line in temp:
                         if re.search("^Payload Data:", line.strip()):
-                            print "found the payload data line\n"
                             temp = temp[iterator2 + 1:]
                             keyoutput = temp
                             break
@@ -218,8 +127,6 @@ class KVAProfiles():
                     else:
                         payloadblock.append(payloadblocktemp[i])
                     i += 1
-                print "payloadblock is: " + str(payloadblock) + "\n\n\n"
-#                 for k, v in val.iteritems():
                 for k, v, in val.iteritems():
                     if isinstance(v, list):
                         retval = self.checkSimple(k, v, payloadblock)
@@ -239,16 +146,12 @@ class KVAProfiles():
         return retval    
 
     def checkSimple(self, k, v, keyoutput):
-        print "inside checkSimple method\n"
         founditem = False
         retval = True
         unsecure = False
         debug = ""
-        print "The key we're looking for is " + str(k) + "\n"
         for line in keyoutput:
-            print "current line: " + line + "\n"
             if re.search("^" + k + "=", line.strip()):
-                print "we found the key\n"
                 founditem = True
                 temp = line.strip().split("=")
                 try:
@@ -277,7 +180,7 @@ class KVAProfiles():
                                     unsecure = True
                                     break
                         elif v[1] == "string":
-                            if temp[1].strip() != v[1]:
+                            if temp[1].strip() != v[0]:
                                 debug += "Key: " + k + " doesn't " + \
                                     "contain the correct string value\n"
                                 unsecure = True
@@ -298,6 +201,7 @@ class KVAProfiles():
     def checkTuple(self, k, v, payloadblock):
         retval = True
         iterator = 0
+        temp, temp2 = [], []
         for line in payloadblock:
             if re.search("^" + k + "=", line):
                 if re.search("\(\)$", line):
@@ -305,20 +209,57 @@ class KVAProfiles():
                         return True
                     else:
                         return False
-                elif re.search("\{$", line):
+                elif re.search("\($", line):
                     temp = payloadblock[iterator + 1:]
                     break
             else:
                 iterator += 1
-        for k2, v2 in v.iteritems():
-            if isinstance(v2, list):
-                retval = self.checkSimple(k2, v2, temp)
-            elif isinstance(v2, tuple):
-                retval = self.checkTuple(k2, v2, temp)
-            elif isinstance(v2, dict):
-                retval = self.checkDict(k2, v2, temp)
-            if not retval:
-                return False
+        iterator = 0
+        for line in temp:
+            if re.search("\)\;", line):
+                temp2 = temp[:iterator]
+            else:
+                iterator += 1
+        if temp2:
+            temp = temp2
+        if temp:
+            replaceables = []
+            for line in temp:
+                if re.search("\,$", line):
+                    line = re.sub("\,$", "", line)
+                    replaceables.append(line)
+                else:
+                    replaceables.append(line)
+            
+            if replaceables:
+                temp = replaceables
+            removeables = []
+            for line in temp:
+                if line in v:
+                    removeables.append(line)
+            if removeables:
+                v = list(v)
+                for item in removeables:
+                    v.remove(item)
+                    temp.remove(item)
+                v = tuple(v)
+            if v:
+                '''There are still items left so we didn't find them all'''
+                debug = "The following tuple items weren't found for the key " + k + "\n"
+                debug +=  str(v) + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                retval = False
+            if temp:
+                debug = "The following items were in the output that shouldn't have been\n"
+                for item in temp:
+                    if not re.search("\)\;|\($", item):
+                        debug += str(temp) + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        retval = False
+        else:
+            debug = "key " + k + " wasn't found\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            retval = False
         return retval
      
     def checkDict(self, k, v, payloadblock):
@@ -346,3 +287,35 @@ class KVAProfiles():
             if not retval:
                 return False
         return retval
+    
+    def setUndoCmd(self, undocmd):
+        self.undocmd = undocmd
+    
+    def setInstallCmd(self, installcmd):    
+        self.installcmd = installcmd
+    
+    def getUndoCmd(self):
+        return self.undocmd
+    
+    def getInstallCmd(self):
+        return self.installcmd
+        
+    def update(self):
+        cmd = ["/usr/bin/profiles", "-I", "-F", self.path]
+        self.setInstallCmd(cmd)
+        cmd = ["/usr/bin/profiles", "-R", "-F", self.path]
+        self.setUndoCmd(cmd)
+        return True
+    
+    def commit(self):
+        self.ch = CommandHelper(self.logger)
+        if self.installcmd:
+            if not self.ch.executeCommand(self.installcmd):
+                return False
+            elif self.ch.getReturnCode() != 0:
+                return False
+            else:
+                return True
+        else:
+            return False
+        return True
