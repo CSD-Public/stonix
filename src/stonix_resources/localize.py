@@ -174,10 +174,10 @@ CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
 MACKRB5 = '''# Updated Test Configuration
-# 2016-10-19
-# Jason Allison Suggestion changed to allow_weak_crypto = false
+# 2016-10-25
+# 0.9.46 krb5.conf + realm win.lanl.gov + allow_weak_crypto = false
 [libdefaults]
-    default_realm = WIN.LANL.GOV
+    default_realm = lanl.gov
     allow_weak_crypto = false
     forwardable = true
 [realms]
@@ -186,15 +186,15 @@ MACKRB5 = '''# Updated Test Configuration
     kdc = kerberos-slaves.lanl.gov
     admin_server = kerberos.lanl.gov
     }
-    WIN.LANL.GOV ={
-    kdc = WIN.LANL.GOV
-    admin_server = WIN.LANL.GOV
+    win.lanl.gov = {
+    kdc = win.lanl.gov
+    admin_server = win.lanl.gov
     }
 [pam]
     debug = false
     krb4_convert = false
 [domain_realm]
-    .lanl.gov = WIN.LANL.GOV
+    .lanl.gov = win.lanl.gov
     .lanl.gov = lanl.gov
     .lanl.org = lanl.gov
  '''
