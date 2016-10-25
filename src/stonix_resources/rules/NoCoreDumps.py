@@ -34,6 +34,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
     from reports.
 '''
 from __future__ import absolute_import
+from ..CommandHelper import CommandHelper
 from ..stonixutilityfunctions import writeFile, readFile, setPerms, checkPerms
 from ..stonixutilityfunctions import iterate, resetsecon, createFile
 from ..rule import Rule
@@ -252,9 +253,10 @@ class NoCoreDumps(Rule):
             osfam = self.environ.getosfamily()
             if osfam == "linux":
                 if self.fixLinux1() and self.fixLinux2():
-                    retval = call(["/sbin/sysctl", "-p"],
-                                  stdout=None,
-                                  stderr=None, shell=False)
+                    ch = CommandHelper(self.logger)
+                    cmd = ["/sbin/sysctl", "-p"]
+                    ch.executeCommand(cmd)
+                    retval = int(ch.getReturnCode())
                     if retval != 0:
                         self.detailedresults += "Unable to restart sysctl"
                         self.logger.log(LogPriority.DEBUG,

@@ -94,8 +94,7 @@ class KVEditor(object):
             self.editor = KVADefault.KVADefault(self.path, self.logger,
                                                 self.data)
         elif self.kvtype == "profiles":
-            self.editor = KVAProfiles.KVAProfiles(self.logger)
-
+            self.editor = KVAProfiles.KVAProfiles(self.logger, self.path)
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
@@ -141,9 +140,8 @@ class KVEditor(object):
 
     def getPath(self):
         if not os.path.exists(self.path):
-            self.detailedresults = "File path does not exist"
-            self.logger.log(LogPriority.INFO,
-                            ["KVEditor", self.detailedresults])
+            debug = "File path does not exist\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
         else:
             return self.path
@@ -401,7 +399,6 @@ class KVEditor(object):
             if self.output:
                 for k, v in self.data.iteritems():
                     retval = self.editor.validate(self.output, k, v)
-                    print "retval returned is: " + str(retval) + " inside kveditor\n\n"
                     if not retval:
                         return False
             else:
@@ -410,8 +407,11 @@ class KVEditor(object):
                 return False
         return True
 
+    def updateProfiles(self):
+        retval = self.editor.update()
+        return retval
     def commit(self):
-        if self.kvtype == "defaults":
+        if self.kvtype == "defaults" or self.kvtype == "profiles":
             retval = self.editor.commit()
             return retval
         else:
