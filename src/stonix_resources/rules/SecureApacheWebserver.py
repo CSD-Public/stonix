@@ -76,7 +76,7 @@ this rule to ensure that it will not affect their deployed applications.'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.comment = re.compile('^#|^;')
         conflocations = ['/etc/httpd/conf/httpd.conf',
                          '/etc/apache2/apache2.conf',
@@ -141,6 +141,7 @@ this rule to ensure that it will not affect their deployed applications.'''
                         'proxy_connect_module modules/mod_proxy_connect.so',
                         'cache_module modules/mod_cache.so',
                         'cache_disk_module modules/mod_cache_disk.so',
+                        'cache_socache_module modules/mod_cache_socache.so',
                         'ext_filter_module modules/mod_ext_filter.so',
                         'expires_module modules/mod_expires.so',
                         'headers_module modules/mod_headers.so',

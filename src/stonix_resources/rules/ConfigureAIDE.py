@@ -128,10 +128,10 @@ class ConfigureAIDE(Rule):
                     # is this system a debian distro?
                     if self.ph.manager == 'apt-get':
 
-                        regex = self.aidetime.getcurrvalue() + " " + \
+                        regex = self.aidetime.getcurrvalue() + " root " + \
                             aidepath + " -c /etc/aide/aide.conf --check"
                     else:
-                        regex = self.aidetime.getcurrvalue() + " " + \
+                        regex = self.aidetime.getcurrvalue() + " root " + \
                             aidepath + " --check"
                     # is the aide cron job in the crontab?
                     found = False
@@ -250,10 +250,10 @@ executable, rule cannot continue\n"
                 tmppath = cronpath + '.stonixtmp'
                 contents = readFile(cronpath, self.logger)
                 if self.ph.manager == 'apt-get':
-                    regex = self.aidetime.getcurrvalue() + " " + \
+                    regex = self.aidetime.getcurrvalue() + " root " + \
                         aidepath + " -c /etc/aide/aide.conf --check"
                 else:
-                    regex = self.aidetime.getcurrvalue() + " " + \
+                    regex = self.aidetime.getcurrvalue() + " root " + \
                         aidepath + " --check"
                 found = False
                 for line in contents:

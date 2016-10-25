@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -23,13 +24,16 @@
 '''
 Created on Mar 4, 2015
 
-@author: bemalmbe
+@author: Breen Malmberg
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 
 import unittest
-import re
+import sys
 
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.VerifySysFilePerms import VerifySysFilePerms
@@ -64,7 +68,6 @@ class zzzTestVerifySysFilePerms(RuleTest):
         '''
 
         success = True
-
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

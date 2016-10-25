@@ -24,7 +24,7 @@
 TARGET_LOCATION=$2
 
 
-rm -rf ${TARGET_LOCATION}/stonix4mac.app
+rm -rf ${TARGET_LOCATION}/Applications/stonix4mac.app
 
 exit 0
 

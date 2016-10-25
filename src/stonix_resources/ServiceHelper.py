@@ -26,6 +26,8 @@ Created on Aug 9, 2012
 @author: dkennel
 @change: 2015/10/15 eball Added method names to debug output
 @change: 2015/10/15 eball disableservice now checks audit and isrunning
+@change: 2016/06/10 dkennel wrapped audit in try catch in case service is not
+installed.
 '''
 import os
 import types
@@ -130,17 +132,25 @@ class ServiceHelper(object):
                                                    self.logdispatcher)
             elif islaunchd:
                 self.svchelper = SHlaunchd.SHlaunchd(self.environ,
-                                                   self.logdispatcher)
+                                                     self.logdispatcher)
             else:
-                raise RuntimeError("Could not identify service management " + \
+                raise RuntimeError("Could not identify service management " +
                                    "programs")
         elif truecount > 1:
             self.ishybrid = True
             count = 0
-            if ischkconfig:
-                self.svchelper = SHchkconfig.SHchkconfig(self.environ,
+            if issystemctl:
+                self.svchelper = SHsystemctl.SHsystemctl(self.environ,
                                                          self.logdispatcher)
                 count = 1
+            if ischkconfig:
+                if count == 0:
+                    self.svchelper = SHchkconfig.SHchkconfig(self.environ,
+                                                             self.logdispatcher)
+                    count = 1
+                elif count == 1:
+                    self.secondary = SHchkconfig.SHchkconfig(self.environ,
+                                                             self.logdispatcher)
             if isrcupdate:
                 if count == 0:
                     self.svchelper = SHrcupdate.SHrcupdate(self.environ,
@@ -157,14 +167,6 @@ class ServiceHelper(object):
                 elif count == 1:
                     self.secondary = SHupdaterc.SHupdaterc(self.environ,
                                                            self.logdispatcher)
-            if issystemctl:
-                if count == 0:
-                    self.svchelper = SHsystemctl.SHsystemctl(self.environ,
-                                                             self.logdispatcher)
-                    count = 1
-                elif count == 1:
-                    self.secondary = SHsystemctl.SHsystemctl(self.environ,
-                                                             self.logdispatcher)
             if issvcadm:
                 if count == 0:
                     self.svchelper = SHsvcadm.SHsvcadm(self.environ,
@@ -183,7 +185,7 @@ class ServiceHelper(object):
                                                        self.logdispatcher)
             if islaunchd:
                 self.svchelper = SHlaunchd.SHlaunchd(self.environ,
-                                                   self.logdispatcher)
+                                                     self.logdispatcher)
                 count = 1
 
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -406,13 +408,20 @@ class ServiceHelper(object):
                 self.logdispatcher.log(LogPriority.DEBUG,
                                '--auditing dual parameter service ('
                                + service + ', ' + servicename + ')')
-                chksingle = self.svchelper.auditservice(self.getService(),
+                try:
+                    chksingle = self.svchelper.auditservice(self.getService(),
                                                         self.getServiceName())
+                except(OSError):
+                    # OS Error usually indicates program is not installed
+                    chksingle = False
                 if self.ishybrid:
                     self.logdispatcher.log(LogPriority.DEBUG,
                                '--Service is a hybrid')
-                    chksecond = self.secondary.auditservice(self.getService(),
+                    try:
+                        chksecond = self.secondary.auditservice(self.getService(),
                                                             self.getServiceName())
+                    except(OSError):
+                        chksecond = False
                 if chksingle or chksecond:
                     servicesuccess = True
                 else:
@@ -424,11 +433,17 @@ class ServiceHelper(object):
                 self.logdispatcher.log(LogPriority.DEBUG,
                                '--auditing single parameter service ('
                                + service + ')')
-                chksingle = self.svchelper.auditservice(self.getService())
+                try:
+                    chksingle = self.svchelper.auditservice(self.getService())
+                except(OSError):
+                    chksingle = False
                 if self.ishybrid:
                     self.logdispatcher.log(LogPriority.DEBUG,
                                '--Service is a hybrid')
-                    chksecond = self.secondary.auditservice(self.getService())
+                    try:
+                        chksecond = self.secondary.auditservice(self.getService())
+                    except(OSError):
+                        chksecond = False
                 if chksingle or chksecond:
                     servicesuccess = True
                 else:

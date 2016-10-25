@@ -24,11 +24,21 @@
 '''
 This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 
-@author: ekkehard j. koch
+@author: Breen Malmberg
 @change: 03/18/2013 Original Implementation
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
+@change: 2016/09/19 Breen Added individual configuration tests.
 '''
+
 from __future__ import absolute_import
 import unittest
+import sys
+import os
+
+from shutil import copyfile
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
@@ -46,22 +56,105 @@ class zzzTestRuleSecureCUPS(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.testnum = 0  
+        self.cupsdconf = ""
+        cupsdconflocs = ['/etc/cups/cupsd.conf',
+                         '/private/etc/cups/cupsd.conf']
+        self.cupsdconfbak = ""
+        for loc in cupsdconflocs:
+            if os.path.exists(loc):
+                self.cupsdconf = loc
+        self.cupsdconfbak = self.cupsdconf + ".bak"
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconfbak)
 
     def tearDown(self):
-        pass
+        '''
+        '''
 
-    def runTest(self):
-        self.simpleRuleTest()
+        pass
 
     def setConditionsForRule(self):
         '''
         Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
         '''
+
         success = True
+
+        try:
+
+            # turn on all CIs by default
+            self.rule.SecureCUPS.updatecurrvalue(True)
+            self.rule.DisableCUPS.updatecurrvalue(True)
+            self.rule.DisableGenericPort.updatecurrvalue(True)
+            self.rule.SetDefaultAuthType.updatecurrvalue(True)
+            self.rule.SetupDefaultPolicyBlocks.updatecurrvalue(True)
+
+        except Exception:
+            success = False
         return success
+
+    def test_secure_print_browse_on(self):
+        '''
+        disableprintbrowsing and printbrowsesubnet are mutually
+        exclusive CIs and must be tested in separate configurations
+
+        @author: Breen Malmberg
+        '''
+
+        self.setConditionsForRule
+        self.testnum += 1
+        self.rule.DisablePrintBrowsing.updatecurrvalue(False)
+        self.rule.PrintBrowseSubnet.updatecurrvalue(True)
+        self.simpleRuleTest()
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
+            if os.path.exists(self.cupsdconfbak):
+                copyfile(self.cupsdconfbak, self.cupsdconf)
+
+    def test_secure_print_browse_off(self):
+        '''
+        disableprintbrowsing and printbrowsesubnet are mutually
+        exclusive CIs and must be tested in separate configurations
+
+        @author: Breen Malmberg
+        '''
+
+        self.setConditionsForRule
+        self.testnum += 1
+        self.rule.PrintBrowseSubnet.updatecurrvalue(False)
+        self.rule.DisablePrintBrowsing.updatecurrvalue(True)
+        self.simpleRuleTest()
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
+            if os.path.exists(self.cupsdconfbak):
+                copyfile(self.cupsdconfbak, self.cupsdconf)
+
+    def test_disable(self):
+        '''
+        test rule with only disablecups CI enabled
+
+        @author: Breen Malmberg
+        '''
+
+        self.setConditionsForRule
+        self.testnum += 1
+        self.rule.SecureCUPS.updatecurrvalue(False)
+        self.rule.DisableCUPS.updatecurrvalue(True)
+        self.rule.DisablePrintBrowsing.updatecurrvalue(False)
+        self.rule.DisableGenericPort.updatecurrvalue(False)
+        self.rule.SetDefaultAuthType.updatecurrvalue(False)
+        self.rule.SetupDefaultPolicyBlocks.updatecurrvalue(False)
+        self.rule.PrintBrowseSubnet.updatecurrvalue(False)
+        self.simpleRuleTest()
+        if os.path.exists(self.cupsdconf):
+            copyfile(self.cupsdconf, self.cupsdconf + "_test" + str(self.testnum))
+            if os.path.exists(self.cupsdconfbak):
+                copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -69,7 +162,8 @@ class zzzTestRuleSecureCUPS(RuleTest):
         @param self: essential if you override this definition
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        @return: success
+        @rtype: bool
         @author: ekkehard j. koch
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
@@ -84,7 +178,8 @@ class zzzTestRuleSecureCUPS(RuleTest):
         check on whether fix was correct
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        @return: success
+        @rtype: bool
         @author: ekkehard j. koch
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
@@ -97,7 +192,8 @@ class zzzTestRuleSecureCUPS(RuleTest):
         check on whether undo was correct
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        @return: success
+        @rtype: bool
         @author: ekkehard j. koch
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \

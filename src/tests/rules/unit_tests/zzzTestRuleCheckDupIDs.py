@@ -22,17 +22,26 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule CheckDupIDs
 
 @author: ekkehard j. koch
 @change: 2013/03/18 Original Implementation
 @change: 2015/10/28 Update name
+@change: 2016/02/10 rsn Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
+@change: 2016/04/27 rsn Added use of ApplicableCheck class
+@change: 2016/04/27 rsn Added use of precursor to manage_user class
+@change: 2016/08/29 eball Added conditional to SkipTest for Python < v2.7
 '''
 from __future__ import absolute_import
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
-from src.tests.lib.logdispatcher_mock import LogPriority
+from src.tests.lib.manage_users.macos_users import MacOSUser
+from src.stonix_resources.CheckApplicable import CheckApplicable
+from src.tests.lib.logdispatcher_lite import LogPriority
 from src.stonix_resources.rules.CheckDupIDs import CheckDupIDs
 
 
@@ -46,12 +55,15 @@ class zzzTestRuleCheckDupIDs(RuleTest):
                                 self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
+        self.users = MacOSUser()
+        #####
+        # Set up an applicable check class
+        self.chkApp = CheckApplicable(self.environ, self.logdispatch)
 
     def tearDown(self):
         pass
 
-    def runTest(self):
+    def test_rule(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -73,9 +85,9 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -88,7 +100,7 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -101,11 +113,42 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
+    def test_checkForMacosDuplicateUser(self):
+        """
+        Tests the rule method that uses the /usr/bin/dscl command to
+        check for duplicate User IDs in the local directory service
+        """
+        applicable = {'type': 'white',
+                      'family': ['darwin']}
+
+        isTestApplicableHere = self.chkApp.isapplicable(applicable)
+
+        if not isTestApplicableHere:
+            if sys.version_info < (2, 7):
+                return
+            else:
+                raise unittest.SkipTest("CheckDupID's does not support this OS")
+
+        uid = "7000"
+
+        self.users.createBasicUser("AutoTestMacDuplicateUserOne")
+        self.users.createBasicUser("AutoTestMacDuplicateUserTwo")
+
+        successOne = self.users.setUserUid("AutoTestMacDuplicateUserOne",
+                                           str(uid))
+        successTwo = self.users.setUserUid("AutoTestMacDuplicateUserTwo",
+                                           str(uid))
+        self.assertTrue(successOne)
+        self.assertTrue(successTwo)
+        self.assertTrue(successOne == successTwo)
+
+        self.users.rmUser("AutoTestMacDuplicateUserOne")
+        self.users.rmUser("AutoTestMacDuplicateUserTwo")
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

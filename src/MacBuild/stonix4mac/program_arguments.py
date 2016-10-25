@@ -57,7 +57,7 @@ class ProgramArguments(object):
                           help="Print status messages")
 
         self.parser.add_option("-d", "--debug", action="store_true", dest="debug",
-                          default=False, help="Print debug messages")
+                          default=True, help="Print debug messages")
 
         self.parser.add_option("-X", "--rollback", action="store_true",
                           dest="rollback", default=False,

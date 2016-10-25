@@ -59,6 +59,10 @@ from log_message import log_message
 from darwin_funcs import isUserOnSystem, getResourcesDir, getOsVers
 from run_commands import exec_subproc_stdout
 from program_arguments import ProgramArguments
+from lib.manage_user.manage_user import ManageUser 
+from lib.environment import Environment
+from lib.loggers import CyLogger
+from lib.loggers import LogPriority as lp
 
 if __name__ == "__main__" :
     """
@@ -66,10 +70,11 @@ if __name__ == "__main__" :
 
     Author: Roy Nielsen
     """
-    message_level = "normal"
+    message_level = "debug"
     prog_args = ProgramArguments()
     arguments = prog_args.getArgs()
-
+    environ = Environment()
+    lowest_supported_version = "10.10"
     #####
     # Put something like stonix.py's processargs() functionality here.
     # Best possible thing is to put all the args stonix uses into
@@ -79,35 +84,63 @@ if __name__ == "__main__" :
     
     log_message("Message level is: " + message_level, "debug", message_level)
 
+
+    #####
+    # Manage User Info
+    logger = CyLogger(debug_mode=True)
+    logger.initializeLogs()
+    mu = ManageUser(logger=logger)
+
     myuid = os.getuid()
     user = getpass.getuser()
-    os_vers = getOsVers(message_level).rstrip()
+
+    #####
+    # Check the OS version to see if it meets minimum requirements
+
+    # Get the current OS information
+    os_vers = environ.getosver()
+    try:
+        min_vers = os_vers.split('.')[1]
+    except IndexError:
+        self.logger.log(lp.INFO, "Index error attempting to get OS version...")
+    # use the predefined OS lower limit 'minor' number
+    try:
+        min_version_supported = lowest_supported_version.split('.')[1]
+    except IndexError:
+        pass
+    # initialize supported_os to false
+    supported_os = False
+    # Do a check to see if the system meets the minimum standard OS.
+    if not min_vers >= min_version_supported:
+        logger.log(lp.VERBOSE, "This OS (" + str(os_vers) + ") is not supported.")
+    else:
+        supported_os = True
+
     #####
     # get the path to a link that links to the 
     # stonix.app/Contents/Resources/stonix binary blob compiled by 
     # pyinstaller
-    stonixFullPath = os.path.join(getResourcesDir().strip("\""), "stonix.app/Contents/MacOS/stonix")
+    stonixFullPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
 
     stonixfp = [stonixFullPath]
 
     if not arguments:
-        cmd = stonixfp +["-G"]
+        cmd = stonixfp + ["-G"]
     else:
         cmd = stonixfp + arguments
 
-    log_message("Command build: " + str(cmd))
+    logger.log(lp.DEBUG, "Command built: " + str(cmd))
 
-    log_message("#==--- Initializing stonix4mac.app with UID %d ---==#"%myuid, \
-                "normal", message_level)
+    logger.log(lp.DEBUG, "#==--- Initializing stonix4mac.app with UID %d ---==#"%myuid)
     
-    log_message("Message level is: " + str(message_level), "verbose", message_level)
+    logger.log(lp.DEBUG, "Message level is: " + str(message_level))
+    logger.log(lp.DEBUG, "OS is: " + str(os_vers))
+    logger.log(lp.DEBUG, "Supported OS: " + str(supported_os))
 
-    if myuid == 0 :
+    if myuid == 0 and supported_os:
         #####
         # We are already root, just run stonix...
-        log_message("Already root, running stonix with root privilege...", \
-                    "normal", message_level)
-        
+        logger.log(lp.DEBUG, "Already root, running stonix with root privilege...")
         
         #####
         # Only spawn a process when using the GUI (no cli)
@@ -115,10 +148,9 @@ if __name__ == "__main__" :
     
             child_pid = os.fork()
             if child_pid == 0 :
-                print "Child Process: PID# %s" % os.getpid()
-    
+                logger.log(lp.DEBUG, "Child Process: PID# %s" % os.getpid())
             else:
-                print "Exiting parent process: PID# %s" % os.getpid()
+                logger.log(lp.DEBUG, "Exiting parent process: PID# %s" % os.getpid())
                 sys.exit(254)
         #####
         # sleep to make sure there aren't two versions of stonix running
@@ -126,81 +158,62 @@ if __name__ == "__main__" :
         #####
         
         # Make the call to run stonix
-        log_message("Attempting to run command: " + str(cmd))
+        logger.log(lp.DEBUG, "Attempting to run command: " + str(cmd))
         Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
-            
-    else :
+
+    else:
         #####
         # Only spawn a process when using the GUI (no cli)
         if not prog_args.opts.cli:
             app = QApplication(sys.argv)
             
-            log_message("OS Version: \"" + str(os_vers).strip() + "\"")
-            
-            minver = re.search("^10\.(\d+)\.\d+$", str(os_vers))
-            try:
-               minor_version = int(minver.group(1).rstrip())
-            except Exception, err:
-               log_message("Error trying to get minor version: " + str(err))
-               log_message("Trying 2 number version...")
-               try:
-                    minver = re.search("^10\.(\d+).*", str(os_vers))
-                    minor_version = int(minver.group(1).rstrip())
-               except Exception, err:
-                   log_message("Having trouble acquiring minor version: " + str(err))
-                   raise err
-            
-            log_message("minor version: \"" + str(minor_version) + "\"")
-            
-            if int(minor_version) >= 8:
+            if supported_os:
                     """
                     Log and go to the next check..
                     """
-                    log_message("Valid operating system, continuing...", "normal", message_level)
+                    logger.log(lp.DEBUG, "Valid operating system, continuing...")
                     stonix_wrapper = StonixWrapper(arguments, message_level)
                     stonix_wrapper.show()
                     stonix_wrapper.raise_()
     
-            else :
+            else:
                 """
-                Warn that the app is not running on 10.8 or above
+                Warn that the app is not running on 10.10 or above
                 """
-                log_message("Setting up Check for 10.8 and below warning dialog...", \
-                            "normal", message_level)
+                logger.log(lp.DEBUG, "Setting up Check for unsupported OS warning dialog...")
                 
                 warningMessage = "<h2>Warning:</h2>" + \
-                "<center>Requires Mountain Lion (10.8) or above," + \
+                "<center>Requires an IA supported operating system," + \
                 "<br><br>Cannot run on: " + str(os_vers) + \
                 "<br><br>Exiting program.</center>"
                 
-                notMountainLion = GeneralWarning()
-                notMountainLion.setWarningMessage(warningMessage)
-                notMountainLion.setWindowTitle("Requires 10.8 or above")
-                notMountainLion.setOpenExternalLinks()
-                notMountainLion.show()
-                notMountainLion.raise_()
+                notSupportedOS = GeneralWarning()
+                notSupportedOS.setWarningMessage(warningMessage)
+                notSupportedOS.setWindowTitle("Requires an IA supported operating system.")
+                notSupportedOS.setOpenExternalLinks()
+                notSupportedOS.show()
+                notSupportedOS.raise_()
             
-                log_message("Finished setting up Check for 10.8 or above warning dialog...", \
-                            "normal", message_level)
+                logger.log(lp.DEBUG, "Finished setting up Check for supported OS warning dialog...")
             app.exec_()    
         else:
             #####
             # Run in CLI mode, pass in the command line arguments...
-            if re.match("10.9", str(os_vers)) or re.match("10.8", str(os_vers)):
+            if supported_os:
                 #####
                 # Set up the command
-                # cmd = stonixFullPath + " " + " ".join(arguments)
+                cmd = stonixFullPath + arguments
                 #####
                 # Make the call to run stonix
                 # exec_subproc_stdout(cmd, "", message_level)
                 # Make the call to run stonix
-                log_message("Attempting to run command: " + str(cmd))
+                logger.log(lp.DEBUG, "Attempting to run command: " + str(cmd))
                 Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
             else:
-                log_message("*************************************************", "normal", message_level)
-                log_message("*** Cannot runn on this platform ****************", "normal", message_level)
-                log_message("*** Needs to run on 10.8 or 10.9 ****************")
-                log_message("*************************************************", "normal", message_level)
+                logger.log(lp.DEBUG, "*************************************************")
+                logger.log(lp.DEBUG, "*** Cannot run on this platform ****************")
+                logger.log(lp.DEBUG, "*** Needs to run on supported OS ****************")
+                logger.log(lp.DEBUG, "*************************************************")
                     
-    log_message("#==--- Exiting stonix4mac.app ---==#", "normal", message_level)
+    logger.log(lp.DEBUG, "#==--- Exiting stonix4mac.app ---==#")
 

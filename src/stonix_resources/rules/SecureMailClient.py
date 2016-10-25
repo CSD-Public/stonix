@@ -24,9 +24,9 @@
 
 This method runs all the report methods for RuleKVEditors defined in the
 dictionary
-@copyright: 2014 Los Alamos National Security, LLC All rights reserved
+@copyright: 2014-2016 Los Alamos National Security, LLC All rights reserved
 @author: ekkehard j. koch
-@change: 03/25/2014 Original Implementation
+@change: 2014/03/25 Original Implementation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/14 eball Fixed paths, separated user and root functionality
@@ -60,7 +60,7 @@ Mail Client."""
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         mailplist = "/Library/Containers/com.apple.mail/Data/Library/" + \
             "Preferences/com.apple.mail.plist"

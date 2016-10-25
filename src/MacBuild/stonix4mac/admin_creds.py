@@ -49,23 +49,26 @@ from PyQt4.QtGui import *
 # local app libraries
 from admin_credentials_ui import Ui_AdministratorCredentials
 
-from darwin_funcs import getResourcesDir, \
+from darwin_funcs import getMacOSDir, \
                          checkIfUserIsAdmin, \
                          isUserOnLocalSystem
 
 from log_message import log_message
-from run_commands import runAsWithSudo, authenticate
+from lib.run_commands import RunWith
+from lib.loggers import CyLogger
+from lib.loggers import LogPriority as lp
+from lib.manage_user.manage_user import ManageUser
 
 class AdministratorCredentials(QDialog) :
     """
     Class to manage the dialog to get the property number
-    
+
     @author: Roy Nielsen
     """
     def __init__(self, args, message_level="debug", parent=None) :
         """
         Initialization method
-        
+
         @author: Roy Nielsen
         """
         super(AdministratorCredentials, self).__init__(parent)
@@ -73,6 +76,9 @@ class AdministratorCredentials(QDialog) :
         self.ui.setupUi(self)
         self.args = args
         
+        self.logger = CyLogger(debug_mode=True)
+        self.mu = ManageUser(logger=self.logger)
+        self.rw = RunWith(self.logger)
         self.message_level = message_level
         self.username = ""
         self.password = ""
@@ -95,7 +101,7 @@ class AdministratorCredentials(QDialog) :
         #user = getpass.getuser()
         #self.ui.adminName.setText(user)
 
-        log_message("Finished initializing AdministratorCredentials Class...", "debug", self.message_level)
+        self.logger.log(lp.DEBUG, "Finished initializing AdministratorCredentials Class...")
 
 
     def rejectApp(self) :
@@ -114,7 +120,7 @@ class AdministratorCredentials(QDialog) :
         
         Author: Roy Nielsen
         """
-        log_message("Entering isPassValid in admin_creds...", "verbose", self.message_level)
+        self.logger.log(lp.DEBUG, "Entering isPassValid in admin_creds...")
         #####
         # Grab the QString out of the QLineEdit field
         myuser = self.ui.adminName.text()
@@ -133,75 +139,61 @@ class AdministratorCredentials(QDialog) :
         
         self.progress_bar.show()
         self.progress_bar.raise_()
-        if isUserOnLocalSystem(self.username, self.message_level) :
-            log_message("User: " + str(self.username) + " is a valid user...", "verbose", self.message_level)
-            if checkIfUserIsAdmin(self.username, self.message_level) :
-                log_message("User: " + str(self.username) + " is a valid admin...", "verbose", self.message_level)
-                result = False
 
-                result = authenticate(self.username, self.password, self.message_level)
+        if self.mu.isUserInGroup(self.username, "admin"):
         
-                self.progress_bar.hide()
-    
-                if result :
-                    log_message("Authentication success...", "debug", self.message_level)
+            result = self.mu.authenticate(self.username, self.password)
+            self.logger.log(lp.DEBUG, str(self.username) + " is an admin...")
+        
+            if result :
+                self.logger.log(lp.DEBUG, "Authentication success...")
+                #####
+                # Got a valid user, with valid password, call stonix with
+                # self.rw.runAsWithSudo - stonixPath is a link to the stonix app
+                # that is in the resources directory
+                stonixPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
+                self.logger.log(lp.DEBUG, "stonix path: " + str(stonixPath))
+                #####
+                # Attempt fork here, so we don't have the wrapper and stonix
+                # running and in the Dock at the same time.
+                child_pid = os.fork()
+                if child_pid == 0:
+                    print "Child Process: PID# %s" % os.getpid()
                     #####
-                    # Got a valid user, with valid password, call stonix with
-                    # runAsWithSudo - stonixPath is a link to the stonix app that is
-                    # in the resources directory
-                    stonixPath = os.path.join(getResourcesDir(), "stonix")
-    
-                    #####
-                    # Set up progress bar
-                    self.progress_bar.setLabelText("Running Stonix...")
-    
-                    stonixFullPath = os.path.join(getResourcesDir(), "stonix.app/Contents/MacOS/stonix")
-                    self.hide()
-                    
-                    #####
-                    # Attempt fork here, so we don't have the wrapper and stonix
-                    # running and in the Dock at the same time.
-                    child_pid = os.fork()
-                    if child_pid == 0 :
-                        print "Child Process: PID# %s" % os.getpid()
-                        if self.args:
-                            command = ["\"" + stonixFullPath + "\""] + self.args
-                        else:
-                            command = ["\"" + stonixFullPath + "\"", "-G", "-dv"]
-                            
-                        runAsWithSudo(self.username, self.password, command, self.message_level)
+                    # Set up the command
+                    if self.args:
+                        command = ["\"" + stonixPath + "\""] + self.args
                     else:
-                        print "Exiting parent process: PID# %s" % os.getpid()
+                        command = ["\"" + stonixPath + "\"", "-G", "-dv"]
 
-                    self.progress_bar.hide()
-    
-                    QCoreApplication.quit()
-                else :
+                    self.logger.log(lp.DEBUG, "full stonix cmd: " + str(command))
+
                     #####
-                    # User is an admin, report invalid password and try again...
-                    self.progress_bar.hide()
-                    log_message("Authentication test FAILURE...", "normal", self.message_level)
-                    QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QMessageBox.Ok)                
-    
+                    # Run the command
+                    self.rw.setCommand(command)
+                    self.rw.runAsWithSudo(self.username, self.password)
+                else:
+                    print "Exiting parent process: PID# %s" % os.getpid()
+
+                self.progress_bar.hide()
+
+                QCoreApplication.quit()
             else :
                 #####
-                # Report user is not an admin
+                # User is an admin, report invalid password and try again...
                 self.progress_bar.hide()
-                log_message("User: \"" + str(self.username) + "\" is not a " + \
-                            "valid admin on this system", "normal", \
-                            self.message_level)
-                QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
-                                          "\" is not a valid admin for this " + \
-                                          "system, please try again.", \
-                                          QMessageBox.Ok)
+                self.logger.log(lp.INFO, "Authentication test FAILURE...")
+                QMessageBox.warning(self, "Warning", "...Incorrect Password, please try again.", QMessageBox.Ok)                
+    
         else :
             self.progress_bar.hide()
-            log_message("User: \"" + str(self.username) + "\" is not a valid " + \
-                        "user on this system.", "normal", self.message_level)
+            self.logger.log(lp.INFO, "User: \"" + str(self.username) + \
+                                     "\" is not a valid " + \
+                                     "user on this system.")
             QMessageBox.warning(self, "Warning", "\"" + str(self.username) + \
                                       "\" is not a valid user on this " + \
                                       "system, please try again.", \
                                       QMessageBox.Ok)
 
-        log_message("Finished isPassValid...", "verbose", self.message_level)
+        self.logger.log(lp.DEBUG, "Finished isPassValid...")
 

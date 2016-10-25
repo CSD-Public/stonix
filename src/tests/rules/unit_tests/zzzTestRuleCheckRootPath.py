@@ -22,16 +22,22 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule CheckRootPath
 
 @author: ekkehard j. koch
 @change: 03/18/2013 ekkehard Original Implementation
 @change: 04/21/2013 ekkehard Renamed from SecureRootPath to CheckRootPath
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
+import os
+import stat
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.CheckRootPath import CheckRootPath
 
@@ -46,12 +52,11 @@ class zzzTestRuleCheckRootPath(RuleTest):
                                   self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
 
-    def runTest(self):
+    def testRun(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -62,7 +67,30 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        path = os.environ['PATH']
+        path += ":/home"
+        os.environ['PATH'] = path
+
         return success
+
+    def testReportFindsWorldWritableFile(self):
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "Running testReportFindsWorldWritableFile")
+        fileName = "tempWorldWriteableFile"
+        filePath = "/usr/local/bin/" + fileName
+
+        open(filePath, "w").write("")
+        os.chmod(filePath, stat.S_IWOTH)
+
+        self.rule.report()
+        self.rule.fix()
+        self.assertFalse(self.rule.report(), "CheckRootPath report did not" +
+                         "detect world writable file in /usr/local/bin")
+
+        os.remove(filePath)
+
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "End testReportFindsWorldWritableFile")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
@@ -73,9 +101,9 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -88,7 +116,7 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -101,7 +129,7 @@ class zzzTestRuleCheckRootPath(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
