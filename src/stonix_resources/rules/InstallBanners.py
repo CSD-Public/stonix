@@ -538,7 +538,7 @@ class InstallBanners(RuleKVEditor):
         return filecontents
 
     def setFileContents(self, filepath, contents, mode='w',
-                        perms=[0644, 0, 0]):
+                        perms=[0, 0, 0644]):
         '''
         write (or append) specified contents to specified file
 
@@ -587,6 +587,14 @@ class InstallBanners(RuleKVEditor):
                     str(filepath)
                 retval = False
                 return retval
+
+            # attempt to prevent mixed parameters
+            if len(str(perms[0])) > 1:
+                perms=[0, 0, 0644]
+            if len(str(perms[1])) > 1:
+                perms=[0, 0, 0644]
+            if len(str(perms[2])) < 3:
+                perms=[0, 0, 0644]
 
             if not filepath:
                 self.logger.log(LogPriority.DEBUG,

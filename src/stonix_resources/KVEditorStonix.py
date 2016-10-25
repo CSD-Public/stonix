@@ -116,7 +116,7 @@ class KVEditorStonix(KVEditor):
             debug = "KVEditorStonix commit is returning True\n"
             self.logger.log(LogPriority.DEBUG, debug)
             return True
-        elif self.kvtyp == "profiles":
+        elif self.kvtype == "profiles":
             if not self.editor.commit():
                 debug = "KVEditorStonix commit is returning False\n"
                 self.logger.log(LogPriority.DEBUG, debug)

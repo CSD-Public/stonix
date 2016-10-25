@@ -137,9 +137,9 @@ class DisableBluetooth(Rule):
                     debug = "Permissions are incorrect on " + kvpath + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
-                if not self.kve.report():
-                    self.detailedresults += "Blacklist file exists but is not \
-correct\n"
+                self.kve.report()
+                if self.kve.fixables:
+                    self.detailedresults += "\nThe following configuration options are missing or incorrect in " + str(kvpath) + ":\n" + "\n".join(self.kve.fixables)
                     compliant = False
             else:
                 if os.path.exists('/etc/modprobe.d'):
