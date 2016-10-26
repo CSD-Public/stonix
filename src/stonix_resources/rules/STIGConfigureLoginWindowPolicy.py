@@ -95,7 +95,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
                             compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        elif search("mil.disa.STIG.loginwindow.alacarte$", line.strip()):
+                        elif search("mil\.disa\.STIG\.loginwindow\.alacarte$", line.strip()):
                             compliant = True
                             break
             self.compliant = compliant

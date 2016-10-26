@@ -49,9 +49,8 @@ class STIGConfigurePasswordPolicy(Rule):
         self.rulenumber = 361
         self.rulename = "STIGConfigurePasswordPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigurePasswordPolicy rule configures the " + \
-            "Mac OSX operating system's password policy according to LANL " + \
-            "standards and practices."
+        self.helptext = "STIGConfigurePasswordPolicy rule installs the " + \
+            "DISA STIG Password Policy profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
