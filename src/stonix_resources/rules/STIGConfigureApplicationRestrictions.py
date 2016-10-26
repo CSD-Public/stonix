@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Oct 20, 2016
+Created on Oct 26, 2016
 
 @author: dwalker
 '''
@@ -35,7 +35,7 @@ from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
 
-class STIGConfigureRestrictionsPolicy(Rule):
+class STIGConfigureApplicationRestrictionsPolicy(Rule):
 
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -44,39 +44,30 @@ class STIGConfigureRestrictionsPolicy(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
-        self.rulenumber = 363
-        self.rulename = "STIGConfigureRestrictionsPolicy"
+        self.rulenumber = 364
+        self.rulename = "STIGConfigureApplicationRestrictionsPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureRestrictionsPolicy rule installs the " +\
-            "DISA STIG Restrictions profile if not installed already."
+        self.helptext = "STIGConfigureApplicationRestrictionsPolicy rule " + \
+            "installs the DISA STIG Application Restrictions policy  " + \
+            "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
+                           'os': {'Mac OS X': ['10.11']}}
         datatype = "bool"
-        key = "RESTRICTIONS"
-        instructions = "To disable the installation of the restrictions " + \
-            "profile set the value of RESTRICTIONS to False"
+        key = "APPRESTRICTIONS"
+        instructions = "To disable the installation of the application " + \
+            "restrictions profile set the value of APPRESTRICTIONS to False"
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        if search("10\.10.*", self.environ.getosver()):
-            self.profile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Restrictions_Policy.mobileconfig"
-            '''These directories for testing purposes only'''
-#             self.profile = "/Users/username/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Restrictions_Policy.mobileconfig"
-        elif search("10\.11\.*", self.environ.getosver()):
-            self.profile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "U_Apple_OS_X_10-11_V1R1_STIG_Restrictions_Policy.mobileconfig"
-            '''These directories for testing purposes only'''
+        self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                     "Resources/stonix.app/Contents/MacOS/" + \
+                     "stonix_resources/files/" + \
+                     "U_Apple_OS_X_10-11_V1R1_STIG_Application_Restrictions_Policy.mobileconfig"
+        '''These directories for testing purposes only'''
 #             self.profile = "/Users/username/src/" + \
 #                          "stonix_resources/files/" + \
-#                          "U_Apple_OS_X_10-11_V1R1_STIG_Restrictions_Policy.mobileconfig"
+#                          "U_Apple_OS_X_10-11_V1R1_STIG_Application_Restrictions_Policy.mobileconfig"
     
     def report(self):
         try:
@@ -95,7 +86,7 @@ class STIGConfigureRestrictionsPolicy(Rule):
                             compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        elif search("mil\.disa\.STIG\.Restrictions\.alacarte$", line.strip()):
+                        elif search("mil\.disa\.STIG\.Application_Restrictions\.alacarte$", line.strip()):
                             compliant = True
                             break
             self.compliant = compliant
