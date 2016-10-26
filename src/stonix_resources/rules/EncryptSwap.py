@@ -48,7 +48,7 @@ class EncryptSwap(RuleKVEditor):
         "extracted from insecure virtual memory. This rule secures " + \
         "virtual memory."
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.addKVEditor("swapEncrypt",
                          "defaults",
                          "/Library/Preferences/com.apple.virtualMemory",

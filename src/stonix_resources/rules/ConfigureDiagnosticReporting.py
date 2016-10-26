@@ -46,7 +46,7 @@ class ConfigureDiagnosticReporting(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.addKVEditor("AutoSubmit",
                          "defaults",
                          "/Library/Application Support/CrashReporter/" +

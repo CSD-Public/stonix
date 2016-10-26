@@ -56,7 +56,7 @@ class PreventXListen(Rule):
         self.guidance = ["NSA 3.6.1.3.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         datatype = 'bool'
         key = 'PREVENTXLISTEN'
@@ -155,39 +155,39 @@ is non compliant\n"
             if not self.ci.getcurrvalue():
                 return
             self.iditerator = 0
-            
-            #clear out event history so only the latest fix is recorded
+
+            # clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
             success = True
-            index = {"/etc/X11/gdm/gdm.conf":"command = /usr/X11R6/bin/X -nolisten tcp",
-                     "/usr/share/gdm/defaults.conf":"DisallowTCP = true",
-                     "/etc/gdm/custom.conf":"DisallowTCP = true",
-                     "/etc/X11/xinit/xserverrc":"exec /usr/X11R6/bin/X -nolisten tcp",
-                     "/etc/kde/kdm/kdmrc":"ServerArgsLocal = -nolisten tcp",
-                     "/etc/kde4/kdm/kdmrc":"ServerArgsLocal = -nolisten tcp",
-                     "/usr/share/config/kdm/kdmrc":"ServerArgsLocal = -nolisten tcp",
-                     "/etc/sysconfig/displaymanager":'DISPLAYMANAGER_XSERVER_TCP_PORT_6000_OPEN=NO',
-                     "/etc/dt/config/Xservers":":0   Local local_uid@console root /usr/X11/bin/Xserver :0 -nobanner -nolisten tcp",
-                     "/usr/dt/config/Xservers":":0   Local local_uid@console root /usr/X11/bin/Xserver :0 -nobanner -nolisten tcp"}
+            index = {"/etc/X11/gdm/gdm.conf": "command = /usr/X11R6/bin/X -nolisten tcp",
+                     "/usr/share/gdm/defaults.conf": "DisallowTCP = true",
+                     "/etc/gdm/custom.conf": "DisallowTCP = true",
+                     "/etc/X11/xinit/xserverrc": "exec /usr/X11R6/bin/X -nolisten tcp",
+                     "/etc/kde/kdm/kdmrc": "ServerArgsLocal = -nolisten tcp",
+                     "/etc/kde4/kdm/kdmrc": "ServerArgsLocal = -nolisten tcp",
+                     "/usr/share/config/kdm/kdmrc": "ServerArgsLocal = -nolisten tcp",
+                     "/etc/sysconfig/displaymanager": 'DISPLAYMANAGER_XSERVER_TCP_PORT_6000_OPEN=NO',
+                     "/etc/dt/config/Xservers": ":0   Local local_uid@console root /usr/X11/bin/Xserver :0 -nobanner -nolisten tcp",
+                     "/usr/dt/config/Xservers": ":0   Local local_uid@console root /usr/X11/bin/Xserver :0 -nobanner -nolisten tcp"}
             for item in self.fp1:
                 if os.path.exists(item[1]):
-                    if item[1] == "/etc/X11/xdm/Xservers" or item[1] == \
-                                                 "/usr/X11R6/lib/X11/xdm/Xservers":
+                    if item[1] == "/etc/X11/xdm/Xservers" or \
+                       item[1] == "/usr/X11R6/lib/X11/xdm/Xservers":
                         if not checkPerms(item[1], [0, 0, 292], self.logger):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             if not setPerms(item[1], [0, 0, 292], self.logger,
-                                                    self.statechglogger, myid):
+                                            self.statechglogger, myid):
                                 success = False
                     else:
                         if not checkPerms(item[1], [0, 3, 292], self.logger):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             if not setPerms(item[1], [0, 3, 292], self.logger,
-                                                    self.statechglogger, myid):
+                                            self.statechglogger, myid):
                                 success = False
             for item in self.fp2:
                 if os.path.exists(item[1]):
@@ -196,19 +196,19 @@ is non compliant\n"
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             if not setPerms(item[1], [0, 0, 493], self.logger,
-                                                    self.statechglogger, myid):
+                                            self.statechglogger, myid):
                                 success = False
                     elif not checkPerms(item[1], [0, 0, 420], self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(item[1], [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
+                                        self.statechglogger, myid):
                             success = False
             for item in self.fixables1:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if self.writeConfig(item[1], myid, item[0], item[2]):
-                    os.chown(item[1], 0 , 0)
+                    os.chown(item[1], 0, 0)
                     os.chmod(item[1], 292)
                     resetsecon(item[1])
                 else:
@@ -235,6 +235,9 @@ is non compliant\n"
                     myid = iterate(self.iditerator, self.rulenumber)
                     self.editor.setEventID(myid)
                     if self.editor.fix():
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.editor.setEventID(myid)
                         if self.editor.commit():
                             self.detailedresults += "/etc/X11/gdm/gdm.conf \
 file has been fixed\n"

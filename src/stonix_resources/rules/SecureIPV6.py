@@ -27,6 +27,9 @@ Created on Jan 14, 2014
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2016/04/26 ekkehard Results Formatting
+@change: 2016/06/23 dwalker adding mac os x configuration
+@change: 2016/07/07 ekkehard added net.inet6.ip6.maxifdefrouters = 1
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -60,34 +63,20 @@ generation, and limiting network-transmitted configuration information.'''
 False.'''
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
-#may implement in the future to allow user to configure their ipv6 addr and gw
-#         datatype = "string"
-#         key = "IPV6ADDRESS"
-#         instructions = '''Enter the machine's ipv6 address here if applicable,\
-#  then enable the check box and click save'''
-#         default = "1:1:1:1"
-#         self.ipaddr = self.initCi(datatype, key, instructions, default)
-
-#         datatype = "string"
-#         key = "IPV6GATEWAY"
-#         instructions = '''Enter the machine's ipv6 gateway address here if \
-# applicable, then enable the check box and click save'''
-#         default = "1:1:1:1"
-#         self.gateway = self.initCi(datatype, key, instructions, default)
-
         self.guidance = ["NSA 2.5.3.2", "CCE 4269-7", "CCE 4291-1",
                          "CCE 4313-3", "CCE 4198-8", "CCE 3842-2",
                          "CCE 4221-8", "CCE 4137-6", "CCE 4159-0",
                          "CCE 3895-0", "CCE 4287-9", "CCE 4058-4",
                          "CCE 4128-5"]
         self.applicable = {'type': 'white',
-                           'family': ['linux']}
+                           'family': ['linux'],
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.iditerator = 0
         self.created = False
 
     def report(self):
         try:
+            self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
                 self.compliant = self.reportLinux()
             if self.environ.getosfamily() == "freebsd":
@@ -107,7 +96,59 @@ False.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 ###############################################################################
-
+    def reportMac(self):
+        compliant = True
+        self.editor = ""
+        self.path = "/private/etc/sysctl.conf"
+        self.tmpPath = self.path + ".tmp"
+        self.cmdhelper = CommandHelper(self.logger)
+        sysctl = "/usr/sbin/sysctl"
+        self.directives = {"net.inet6.ip6.forwarding": "0",
+                           "net.inet6.ip6.maxifprefixes": "1",
+                           "net.inet6.ip6.maxifdefrouters": "1",
+                           "net.inet6.ip6.maxfrags": "0",
+                           "net.inet6.ip6.maxfragpackets": "0",
+                           "net.inet6.ip6.neighborgcthresh": "1024",
+                           "net.inet6.ip6.use_deprecated": "0",
+                           "net.inet6.ip6.hdrnestlimit": "0",
+                           "net.inet6.ip6.only_allow_rfc4193_prefixes": "1",
+                           "net.inet6.ip6.dad_count": "0",
+                           "net.inet6.icmp6.nodeinfo": "0",
+                           "net.inet6.icmp6.rediraccept": "1",
+                           "net.inet6.ip6.maxdynroutes": "0"}
+        self.fixables = {}
+        for directive in self.directives:
+            cmd = [sysctl, "-n", directive]
+            if self.cmdhelper.executeCommand(cmd):
+                output = self.cmdhelper.getOutputString().strip()
+                if output != self.directives[directive]:
+                    self.detailedresults += "The value for " + directive + \
+                        " is not " + self.directives[directive] + ", it's " + \
+                        output + "\n"
+                    compliant = False
+                    self.fixables[directive] = self.directives[directive]
+            else:
+                error = self.cmdhelper.getErrorString()
+                self.detailedresults += "There was an error running the " + \
+                    "the command " + cmd + "\n"
+                self.logger.log(LogPriority.DEBUG, error)
+                self.fixables[directive] = self.directives[directive]
+                compliant = False
+        if not os.path.exists(self.path):
+            compliant = False
+        else:
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tmpPath,
+                                             self.directives, "present",
+                                             "closedeq")
+            if not self.editor.report():
+                compliant = False
+                self.detailedresults += "Didn't find the correct contents " + \
+                    "inside " + self.path + "\n"
+            if not checkPerms(self.path, [0, 0, 420], self.logger):
+                compliant = False
+        return compliant
+###############################################################################
     def reportLinux(self):
         netwrkfile = ""
         ifacefile = ""
@@ -267,7 +308,72 @@ the correct contents\n"
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 ###############################################################################
-
+    def fixMac(self):
+        success = True
+        created = False
+        if self.fixables:
+            sysctl = "/usr/sbin/sysctl"
+            for directive in self.fixables:
+                cmd = [sysctl, "-w", directive + "=" + self.fixables[directive]]
+                if not self.cmdhelper.executeCommand(cmd):
+                    error = self.cmdhelper.getErrorString()
+                    self.detailedresults += "There was an error running " + \
+                    "the command " + cmd + "\n"
+                    self.logger.log(LogPriority.DEBUG, error)
+                    success = False
+        if not os.path.exists(self.path):
+            if createFile(self.path, self.logger):
+                created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation", "filepath": self.path}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
+                return False
+        if not self.editor:
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tmpPath,
+                                             self.directives, "present",
+                                             "closedeq")
+            if not self.editor.report():
+                if self.editor.fix():
+                    if not self.editor.commit():
+                        success = False
+                        self.detailedresults += "KVEditor commit to " + \
+                            self.path + " was not successful\n"
+                else:
+                    success = False
+                    self.detailedresults += "KVEditor fix of " + self.path + \
+                        " was not successful\n"
+        else:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.editor.setEventID(myid)
+            if self.editor.fix():
+                if not self.editor.commit():
+                    success = False
+                    self.detailedresults += "KVEditor commit to " + \
+                        self.path + " was not successful\n"
+            else:
+                success = False
+                self.detailedresults += "KVEditor fix of " + self.path + \
+                    " was not successful\n"
+        if not checkPerms(self.path, [0, 0, 420], self.logger):
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.path, [0, 0, 420], self.logger,
+                            self.statechglogger, myid):
+                    self.detailedresults += "Could not set permissions" + \
+                        " on " + self.path + "\n"
+                    success = False
+            else:
+                if not setPerms(self.path, [0, 0, 420], self.logger):
+                    self.detailedresults += "Could not set permissions" + \
+                        " on " + self.path + "\n"
+                    success = False
+        return success
+###############################################################################
     def fixLinux(self):
         universal = "#The following lines were added by stonix\n"
         debug = ""

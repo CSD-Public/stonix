@@ -29,6 +29,8 @@ file system support from the kernel.
 @change: dkennel 04/18/2014 Replaced old style CI with new
 @change: 2015/04/15 dkennel updated for new style isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/05/26 ekkehard Results Formatting
+@change: 2016/10/20 eball Results Formatting
 '''
 from __future__ import absolute_import
 import os
@@ -58,6 +60,7 @@ class DisableUnusedFs(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 256
         self.rulename = 'DisableUnusedFs'
+        self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''This rule will remove \
 support for uncommon filesystems on this platform. Unused file system \
@@ -93,6 +96,7 @@ be space separated.'''
         uncommon filesystem support.'''
         compliant = True
         try:
+            self.detailedresults = ""
             if not os.path.exists(self.blacklistfile):
                 compliant = False
                 self.logger.log(LogPriority.DEBUG,
@@ -126,19 +130,23 @@ be space separated.'''
             self.rulesuccess = False
 
         if compliant:
-            self.detailedresults = """DisableUnusedFs: All unused filesystem
+            self.detailedresults = """DisableUnusedFs: All unused filesystem \
 support appears to be disabled."""
             self.currstate = 'configured'
             self.compliant = True
         else:
-            self.detailedresults = """DisableUnusedFs: One or more unused filesystem
-support modules are not disabled."""
+            self.detailedresults = """DisableUnusedFs: One or more unused \
+filesystem support modules are not disabled."""
             self.currstate = 'notconfigured'
             self.compliant = False
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def fix(self):
         '''Fssupport.fix() Public method to set the uncommon fs support.'''
+        self.detailedresults = ""
         if not self.disablefs.getcurrvalue():
             return True
         if not self.compliant:
@@ -224,6 +232,9 @@ followed by /bin/true: ''' + fsstring
                                 ['DisableUnusedFs.fix',
                                  self.detailedresults])
                 return False
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
         return self.report()
 

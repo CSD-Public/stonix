@@ -37,6 +37,8 @@
 Created on Aug 24, 2010
 
 @author: dkennel
+@change: 2016/07/18 eball Added smtplib.SMTPRecipientsRefused to try/except for
+    reporterr method, and added debug output for both exceptions.
 '''
 
 from observable import Observable
@@ -55,6 +57,15 @@ import xml.etree.ElementTree as ET
 from shutil import move
 
 
+def singleton_decorator(class_):
+  instances = {}
+  def getinstance(*args, **kwargs):
+    if class_ not in instances:
+        instances[class_] = class_(*args, **kwargs)
+    return instances[class_]
+  return getinstance
+
+@singleton_decorator
 class LogDispatcher (Observable):
 
     """
@@ -274,7 +285,11 @@ Subject: STONIX Error Report: ''' + prefix + '''
             server.sendmail(frm, to, message)
             server.quit()
         except socket.error:
-            pass
+            self.log(LogPriority.DEBUG, "Could not send error e-mail: " +
+                     "error contacting e-mail server")
+        except smtplib.SMTPRecipientsRefused:
+            self.log(LogPriority.DEBUG, "Could not send error e-mail: " +
+                     "bad e-mail address in localize.STONIXDEVS")
 
     def format_message_data(self, msg_data):
         """

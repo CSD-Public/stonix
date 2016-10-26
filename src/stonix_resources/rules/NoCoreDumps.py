@@ -30,11 +30,13 @@ Created on Nov 21, 2012
 @change: 2014/07/29 dkennel Rule was setting Linux permissions to mode 600
 which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2015/04/15 dkennel updated for new isApplicable
-@change: 2015/08/26 ekkehard [artf37775] : NoCoreDumps(49) - NCAF & Detailed Results not working correctly - OS X El Capitan 10.11
+@change: 2016/09/09 eball Refactored reports and fixes to remove file creation
+    from reports.
 '''
 from __future__ import absolute_import
+from ..CommandHelper import CommandHelper
 from ..stonixutilityfunctions import writeFile, readFile, setPerms, checkPerms
-from ..stonixutilityfunctions import iterate, resetsecon
+from ..stonixutilityfunctions import iterate, resetsecon, createFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
@@ -54,16 +56,17 @@ class NoCoreDumps(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule disables the ability of the system to " + \
-        "produce core dump images"
+            "produce core dump images.  A reboot is required or Mac OS X " + \
+            "for this rule to take effect."
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         datatype = 'bool'
         key = 'NOCOREDUMPS'
         instructions = "To disable this rule set the value of NOCOREDUMPS " + \
-        "to False."
+            "to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -115,28 +118,29 @@ class NoCoreDumps(Rule):
         if self.environ.getostype() == "Mac OS X":
             path = "/private/etc/sysctl.conf"
             tmpPath = "/private/etc/sysctl.conf.tmp"
-            perms = [0, 0, 384]
+            perms = [0, 0, 0o600]
         else:
             path = "/etc/sysctl.conf"
             tmpPath = "/etc/sysctl.conf.tmp"
-            perms = [0, 0, 420]
+            perms = [0, 0, 0o644]
         kvtype = "conf"
         intent = "present"
         compliant = True
         if not os.path.exists(path):
-            writeFile(path, "", self.logger)
-            setPerms(path, perms, self.logger)
-            self.created1 = True
-        elif not checkPerms(path, perms, self.logger):
-            self.detailedresults += "Permissions incorrect on " + path + "\n"
             compliant = False
-        self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-                                     path, tmpPath, lookfor, intent,
-                                     "closedeq")
-        if not self.editor.report():
-            self.detailedresults += "correct contents were not found in " + \
-                path + " file\n"
-            compliant = False
+            self.detailedresults += path + " does not exist\n"
+        else:
+            if not checkPerms(path, perms, self.logger):
+                self.detailedresults += "Permissions incorrect on " + path + \
+                    "\n"
+                compliant = False
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                         kvtype, path, tmpPath, lookfor,
+                                         intent, "closedeq")
+            if not self.editor.report():
+                self.detailedresults += "Correct contents were not found in " + \
+                    path + " file\n"
+                compliant = False
         return compliant
 
 ###############################################################################
@@ -151,18 +155,20 @@ class NoCoreDumps(Rule):
         path = "/etc/security/limits.conf"
         compliant = True
         if not os.path.exists(path):
-            writeFile(path, "", self.logger)
-            setPerms(path, [0, 0, 420], self.logger)
-            self.created1 = True
-        if not checkPerms(path, [0, 0, 420], self.logger):
             compliant = False
-        contents = readFile(path, self.logger)
-        if not contents:
-            return False
-        for line in contents:
-            if re.match(lookfor, line):
-                match = True
-                break
+            self.detailedresults += path + " does not exist\n"
+        else:
+            if not checkPerms(path, [0, 0, 0o644], self.logger):
+                compliant = False
+                self.detailedresults += "Permissions incorrect on " + path + \
+                    "\n"
+            contents = readFile(path, self.logger)
+            if not contents:
+                return False
+            for line in contents:
+                if re.match(lookfor, line):
+                    match = True
+                    break
         if match and compliant:
             return True
         else:
@@ -182,17 +188,21 @@ class NoCoreDumps(Rule):
         intent = "present"
         compliant = True
         if not os.path.exists(path):
-            writeFile(path, "", self.logger)
-            setPerms(path, [0, 0, 420], self.logger)
-            self.created2 = True
-        if not checkPerms(path, [0, 0, 420], self.logger):
             compliant = False
-        self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-        path, tmpPath, lookfor, intent, "openeq")
-        if not self.editor.report() or not compliant:
-            return False
+            self.detailedresults += path + " does not exist\n"
         else:
-            return True
+            if not checkPerms(path, [0, 0, 0o644], self.logger):
+                compliant = False
+                self.detailedresults += "Permissions incorrect on " + path + \
+                    "\n"
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                         kvtype, path, tmpPath, lookfor,
+                                         intent, "openeq")
+            if not self.editor.report():
+                compliant = False
+                self.detailedresults += "Correct contents were not found in " + \
+                    path + " file\n"
+        return compliant
 
 ###############################################################################
 
@@ -204,17 +214,21 @@ class NoCoreDumps(Rule):
         intent = "present"
         compliant = True
         if not os.path.exists(path):
-            writeFile(path, "", self.logger)
-            setPerms(path, [0, 0, 420], self.logger)
-            self.created1 = True
-        if not checkPerms(path, [0, 0, 420], self.logger):
             compliant = False
-        self.editor = KVEditorStonix(self.statechglogger, self.logger, kvtype,
-                                    path, tmpPath, lookfor, intent, "closedeq")
-        if not self.editor.report() or not compliant:
-            return False
+            self.detailedresults += path + " does not exist\n"
         else:
-            return True
+            if not checkPerms(path, [0, 0, 0o644], self.logger):
+                compliant = False
+                self.detailedresults += "Permissions incorrect on " + path + \
+                    "\n"
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                         kvtype, path, tmpPath, lookfor,
+                                         intent, "closedeq")
+            if not self.editor.report():
+                compliant = False
+                self.detailedresults += "Correct contents were not found in " + \
+                    path + " file\n"
+        return compliant
 
 ###############################################################################
 
@@ -239,9 +253,10 @@ class NoCoreDumps(Rule):
             osfam = self.environ.getosfamily()
             if osfam == "linux":
                 if self.fixLinux1() and self.fixLinux2():
-                    retval = call(["/sbin/sysctl", "-p"],
-                                  stdout=None,
-                                  stderr=None, shell=False)
+                    ch = CommandHelper(self.logger)
+                    cmd = ["/sbin/sysctl", "-p"]
+                    ch.executeCommand(cmd)
+                    retval = int(ch.getReturnCode())
                     if retval != 0:
                         self.detailedresults += "Unable to restart sysctl"
                         self.logger.log(LogPriority.DEBUG,
@@ -276,16 +291,13 @@ class NoCoreDumps(Rule):
         lookfor = "(^\*)(\s)* hard core 0?"
         tempstring = ""
         success, found = True, False
+
+        if not os.path.exists(path):
+            createFile(path, self.logger)
+            self.created1 = True
+            setPerms(path, [0, 0, 0o644], self.logger)
+
         contents = readFile(path, self.logger)
-        if not contents:
-            self.rulesuccess = False
-            return False
-        if not checkPerms(path, [0, 0, 420], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                success = False
         for line in contents:
             if re.match(lookfor, line):
                 found = True
@@ -303,18 +315,21 @@ class NoCoreDumps(Rule):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
-                     "filepath": self.kve.getPath()}
+                     "filepath": path}
             self.statechglogger.recordchgevent(myid, event)
-        elif self.editor.fixables or self.editor.removeables:
+            os.rename(tmpfile, path)
+        elif tempstring != "".join(contents):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {'eventtype': "conf",
                      'filepath': path}
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(path, tmpfile, myid)
-        os.rename(tmpfile, path)
-        os.chown(path, 0, 0)
-        os.chmod(path, 420)  # 644 oct
+            os.rename(tmpfile, path)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            setPerms(path, [0, 0, 0o644], self.logger, self.statechglogger,
+                     myid)
         resetsecon(path)
         return success
 
@@ -327,19 +342,20 @@ class NoCoreDumps(Rule):
         '''
         path = "/etc/sysctl.conf"
         success = True
-        if not checkPerms(path, [0, 0, 420], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                success = False
+
+        if not os.path.exists(path):
+            createFile(path, self.logger)
+            self.created2 = True
+            setPerms(path, [0, 0, 0o644], self.logger)
+            self.reportLinux2()  # Set up KVEditor
+
         if self.created2:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
-                     "filepath": self.kve.getPath()}
+                     "filepath": path}
             self.statechglogger.recordchgevent(myid, event)
-        elif self.editor.fixables or self.editor.removeables:
+        if self.editor.fixables or self.editor.removeables:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             self.editor.setEventID(myid)
@@ -349,8 +365,13 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-        os.chown(path, 0, 0)
-        os.chmod(path, 420)
+            elif not checkPerms(path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.rulesuccess = False
+                    return False
         resetsecon(path)
         return success
 
@@ -359,24 +380,25 @@ class NoCoreDumps(Rule):
     def fixFreebsdMac(self):
         if self.environ.getostype() == "Mac OS X":
             path = "/private/etc/sysctl.conf"
-            perms = [0, 0, 384]
+            perms = [0, 0, 0o600]
         else:
             path = "/etc/sysctl.conf"
-            perms = [0, 0, 420]
+            perms = [0, 0, 0o644]
         success = True
-        if not checkPerms(path, perms, self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, perms, self.logger,
-                                                    self.statechglogger, myid):
-                success = False
+
+        if not os.path.exists(path):
+            createFile(path, self.logger)
+            self.created1 = True
+            setPerms(path, perms, self.logger)
+            self.reportFreebsdMac()  # Set up KVEditor
+
         if self.created1:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
                      "filepath": path}
             self.statechglogger.recordchgevent(myid, event)
-        elif self.editor.fixables or self.editor.removeables:
+        if self.editor.fixables or self.editor.removeables:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             self.editor.setEventID(myid)
@@ -386,19 +408,21 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-        os.chown(path, perms[0], perms[1])
-        os.chmod(path, perms[2])
+            elif not checkPerms(path, perms, self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path, perms, self.logger,
+                                self.statechglogger, myid):
+                    self.rulesuccess = False
+                    return False
         resetsecon(path)
-        if self.environ.getostype() == "Mac OS X":
-            cmd = "/usr/sbin/sysctl"
-        else:
+        if self.environ.getostype() != "Mac OS X":
             cmd = "/sbin/sysctl"
-        retval = call([cmd, "-p"], stdout=None, stderr=None,
-                                                                   shell=False)
-        if retval != 0:
-            self.detailedresults = "Unable to restart sysctl"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            success = False
+            retval = call([cmd, "-p"], stdout=None, stderr=None, shell=False)
+            if retval != 0:
+                self.detailedresults = "Unable to restart sysctl"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                success = False
         return success
 
 ###############################################################################
@@ -406,19 +430,20 @@ class NoCoreDumps(Rule):
     def fixSolaris(self):
         path = "/etc/coreadm.conf"
         success = True
-        if not checkPerms(path, [0, 0, 420], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                success = False
+
+        if not os.path.exists(path):
+            createFile(path, self.logger)
+            self.created1 = True
+            setPerms(path, [0, 0, 0o644], self.logger)
+            self.reportSolaris()  # Set up KVEditor
+
         if self.created1:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
-                     "filepath": self.kve.getPath()}
+                     "filepath": path}
             self.statechglogger.recordchgevent(myid, event)
-        elif self.editor.fixables or self.editor.removeables:
+        if self.editor.fixables or self.editor.removeables:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             self.editor.setEventID(myid)
@@ -428,11 +453,16 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-        os.chown(path, 0, 0)
-        os.chmod(path, 420)
+            elif not checkPerms(path, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    self.rulesuccess = False
+                    return False
         resetsecon(path)
         retval = call(["/usr/bin/coreadm", "-u"], stdout=None, stderr=None,
-                                                                   shell=False)
+                      shell=False)
         if retval != 0:
             self.detailedresults = "Unable to restart coreadm"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
