@@ -22,14 +22,19 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SetDaemonUmask
 
 @author: ekkehard j. koch
 @change: 2013/03/18 - ekkehard - Original Implementation
 @change: 2014/08/26 - ekkehard - Enhanced Unit Test for darwin
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.filehelper import FileHelper
@@ -48,7 +53,7 @@ class zzzTestRuleSetDaemonUmask(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
 
     def tearDown(self):
         pass

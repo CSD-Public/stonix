@@ -37,7 +37,7 @@ dictionary
 from __future__ import absolute_import
 import os
 import traceback
-from ..ruleKVEditor import RuleKVEditor
+from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
@@ -47,7 +47,7 @@ from ..stonixutilityfunctions import iterate
 from ..localize import MACKRB5, LINUXKRB5
 
 
-class ConfigureKerberos(RuleKVEditor):
+class ConfigureKerberos(Rule):
     '''
     @author: ekkehard j. koch
     '''
@@ -55,7 +55,7 @@ class ConfigureKerberos(RuleKVEditor):
 ###############################################################################
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logdispatcher,
+        Rule.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 255
         self.rulename = 'ConfigureKerberos'
@@ -66,7 +66,7 @@ class ConfigureKerberos(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -78,7 +78,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
-                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
+                           "eventid": str(self.rulenumber).zfill(4) + "krb5"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": True,
@@ -131,7 +131,11 @@ class ConfigureKerberos(RuleKVEditor):
                 self.ph = Pkghelper(self.logdispatch, self.environ)
         self.filepathToConfigure = []
         for filelabel, fileinfo in sorted(self.files.items()):
-            self.filepathToConfigure.append(fileinfo["path"])
+            if fileinfo["remove"]:
+                msg = "Remove if present " + str(fileinfo["path"])
+            else:
+                msg = "Add or update if needed " + str(fileinfo["path"])
+            self.filepathToConfigure.append(msg)
             self.fh.addFile(filelabel,
                             fileinfo["path"],
                             fileinfo["remove"],
@@ -144,7 +148,7 @@ class ConfigureKerberos(RuleKVEditor):
         # Configuration item instantiation
         datatype = "bool"
         key = "CONFIGUREFILES"
-        instructions = "When Enabled Add/Remove/Update these files: " + \
+        instructions = "When Enabled will fix these files: " + \
             str(self.filepathToConfigure)
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
@@ -199,24 +203,27 @@ class ConfigureKerberos(RuleKVEditor):
                 self.statechglogger.deleteentry(event)
 
             if self.ci.getcurrvalue():
+                pkgsToInstall = []
                 if self.environ.getosfamily() == 'linux':
                     for package in self.packages:
                         if not self.ph.check(package):
                             if self.ph.checkAvailable(package):
-                                if self.ph.install(package):
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator,
-                                                   self.rulenumber)
-                                    event = {"eventtype": "pkghelper",
-                                             "pkgname": package,
-                                             "startstate": "removed",
-                                             "endstate": "installed"}
-                                    self.statechglogger.recordchgevent(myid,
-                                                                       event)
-                                else:
-                                    fixsuccess = False
-                                    self.detailedresults += "Installation of " + \
-                                        package + " did not succeed.\n"
+                                pkgsToInstall.append(package)
+                    for package in pkgsToInstall:
+                        if self.ph.install(package):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator,
+                                           self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": package,
+                                     "startstate": "removed",
+                                     "endstate": "installed"}
+                            self.statechglogger.recordchgevent(myid,
+                                                               event)
+                        else:
+                            fixsuccess = False
+                            self.detailedresults += "Installation of " + \
+                                package + " did not succeed.\n"
                 if not self.fh.fixFiles():
                     fixsuccess = False
                     self.detailedresults += self.fh.getFileMessage()

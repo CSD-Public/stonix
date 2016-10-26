@@ -53,7 +53,7 @@ class DisableRoot(Rule):
         self.helptext = "Disables the root user. Administrative " + \
             "escalations should be performed using sudo."
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # configuration item instantiation
         datatype = 'bool'

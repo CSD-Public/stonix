@@ -77,7 +77,7 @@ class ScheduleStonix(Rule):
         self.guidance = ['']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.svchelper = ServiceHelper(self.environ, self.logger)
 
         # possible locations where the root cron tab may be located
@@ -318,10 +318,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
                     # if config strings exist, system is configured
                     for line in contentlines:
-                        if re.search('nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cr', line):
+                        if re.search('root nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cr', line):
                             self.detailedresults += "found the correct report line in cron file\n"
                             cronreportstringfound = True
-                        if re.search('nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cf', line):
+                        if re.search('root nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cf', line):
                             self.detailedresults += "found the correct fix line in the cron file\n"
                             cronfixstringfound = True
 
@@ -468,9 +468,9 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             else:
 
                 reportstring = '\n' + str(self.genRandCronTime()) + \
-                ' nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cr'
+                ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cr'
                 fixstring = '\n' + str(self.genRandCronTime()) + \
-                ' nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cf\n'
+                ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cf\n'
 
                 if os.path.exists(self.cronfilelocation):
 

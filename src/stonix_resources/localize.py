@@ -40,6 +40,8 @@ that access the version variable to use this copy.
 @change: 2015/03/01 - ekkehard - incremented STONIXVERSION = '0.8.15'
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
+@change: 2016/02/03 - ekkehard - incremented STONIXVERSION = '0.9.5'
+@change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -48,7 +50,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.9.4'
+STONIXVERSION = '0.9.5'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -98,7 +100,7 @@ WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
 "ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\n" + \
 "AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\n" + \
 "DISCLOSURE OF COMPUTER ACTIVITY.\n\n" + \
-"**WARNING**WARNING**WARNING**WARNING**WARNING**"
+"**WARNING**WARNING**WARNING**WARNING**WARNING**\n"
 
 ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE computer\n" + \
 "systems are provided for the processing of official U.S. Government\n" + \
@@ -116,7 +118,10 @@ ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE co
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
 "system. Authorized use only. Users have no explicit/implicit expectation " + \
 "of privacy. By using this system the user consents to monitoring and " + \
-"disclosure. See http://foo.bar.com/copyright.shtml#disclaimers"
+"disclosure. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR UNAUTHORIZED, " + \
+"CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, " + \
+"COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. " + \
+"See http://foo.bar.com/copyright.shtml#disclaimers"
 
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
@@ -138,16 +143,20 @@ STONIXDEVS = 'stonix-dev@bar.com'
 # PROXY = None
 PROXY = 'http://foo.bar.com:8080'
 PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
+PROXYDOMAIN = "bar.com"
 
-# Specify a subnet to allow services access to in /etc/hosts.allow
-ALLOWNET = '192.168.0.1/24'
+# Domain Name Server (DNS) defaults
+DNS = "192.168.0.1 192.168.0.2"
+
+# (for redhat 7 and later) Specify a subnet to allow services access to in /etc/hosts.allow
+ALLOWNETS = ['192.168.0.1/24']
 
 # Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
 XINETDALLOW = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
-PRINTBROWSESUBNET = ''
+PRINTBROWSESUBNET = '192.168.0.1/24'
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
 NTPSERVERSINTERNAL = ["foo.bar.com", "foo.bar.com"]
@@ -303,3 +312,41 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
+
+# These are accounts to exclude from DisableInactiveAccounts rule
+EXCLUDEACCOUNTS = []
+
+# The following list is used by AuditFirefoxUsage(84). It lists domains that
+# are approved for browsing by the root user.
+LOCALDOMAINS = ["127.0.0.1", "localhost", "bar.com"]
+
+# these options will be set in /etc/dhcp/dhclient.conf
+# a value of 'request' will cause the client to request that
+# option's configuration from the dhcp server. a value of
+# 'supersede' will cause the client to use the locally-defined
+# value in the dhclient.conf configuration file
+DHCPDict = {'subnet-mask': 'request',
+            'broadcast-address': 'supersede',
+            'time-offset': 'supersede',
+            'routers': 'supersede',
+            'domain-name': 'supersede',
+            'domain-name-servers': 'supersede',
+            'host-name': 'supersede',
+            'nis-domain': 'supersede',
+            'nis-servers': 'supersede',
+            'ntp-servers': 'supersede'}
+
+# these options will be used whenever a value of
+# 'supersede' is specified for one of the options in
+# DCHPDict. Change these to reflect your organization's
+# actual servers/domains/settings
+DHCPSup = {'subnet-mask': '"example.com"',
+           'broadcast-address': '192.168.1.255',
+           'time-offset': '-18000',
+           'routers': '192.168.1.1',
+           'domain-name': '"example.com"',
+           'domain-name-servers': '192.168.1.2',
+           'host-name': '"localhost"',
+           'nis-domain': '""',
+           'nis-servers': '""',
+           'ntp-servers': '"ntp.example.com"'}

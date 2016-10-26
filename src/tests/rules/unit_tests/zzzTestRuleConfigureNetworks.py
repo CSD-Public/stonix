@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -22,13 +22,18 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigureNetworks
 
 @author: ekkehard j. koch
-@change: 03/13/2013 Original Implementation
+@change: 2013/03/13/ ekkeahrd Original Implementation
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority

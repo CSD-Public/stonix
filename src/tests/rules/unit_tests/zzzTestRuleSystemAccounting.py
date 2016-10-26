@@ -29,11 +29,16 @@ This is a Unit Test for Rule SystemAccounting
 @change: 2015/09/25 eball Added Debian/Ubuntu setup
 @change: 2015/10/09 eball Updated Deb setup to improve automated testing compat
 @change: 2015/10/26 eball Comment fix, added informative text for test failure
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
 import re
 import os
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.localize import PROXY
@@ -52,6 +57,7 @@ class zzzTestRuleSystemAccounting(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.rule.ci.updatecurrvalue(True)
 
     def tearDown(self):
         pass

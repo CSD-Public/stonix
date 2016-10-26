@@ -33,7 +33,6 @@ This is a rule to disable password hints, specifically started for the Mac.
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
-from ..stonixutilityfunctions import *
 
 
 class DisablePasswordHints(RuleKVEditor):
@@ -56,7 +55,7 @@ class DisablePasswordHints(RuleKVEditor):
                         "is 0, indicating password hints will never be " + \
                         "displayed."
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.addKVEditor("DisablePasswordHints",
                          "defaults",
                          "/Library/Preferences/com.apple.loginwindow",

@@ -30,13 +30,8 @@ Created on Jul 13, 2012
 @change: 2015/04/16 dkennel upate for new isApplicable
 '''
 from __future__ import absolute_import
-
 import pwd
-import os
-import traceback
-
 from ..rule import Rule
-from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import *
 
 
@@ -80,7 +75,7 @@ class RemoveBadDotFiles(Rule):
         self.guidance = ['NSA 2.3.4.5', 'cce-4578-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         self.homelist = ['/', '/root']
         try:
             mypwd = pwd.getpwall()
