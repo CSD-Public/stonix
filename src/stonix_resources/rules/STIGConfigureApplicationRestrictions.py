@@ -48,7 +48,7 @@ class STIGConfigureApplicationRestrictionsPolicy(Rule):
         self.rulename = "STIGConfigureApplicationRestrictionsPolicy"
         self.formatDetailedResults("initialize")
         self.helptext = "STIGConfigureApplicationRestrictionsPolicy rule " + \
-            "installs the DISA STIG Application Restrictions policy  " + \
+            "installs the DISA STIG Application Restrictions profile  " + \
             "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
