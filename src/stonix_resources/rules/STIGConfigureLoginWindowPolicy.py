@@ -49,8 +49,8 @@ class STIGConfigureLoginWindowPolicy(Rule):
         self.rulename = "STIGConfigureLoginWindowPolicy"
         self.formatDetailedResults("initialize")
         self.helptext = "STIGConfigureLoginWindow rule configures the " + \
-            "Mac OSX operating system's login window policy according to LANL " + \
-            "standards and practices."
+            "Mac OSX operating system's login window profile " + \
+            "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.10', 'r', '10.11']}}

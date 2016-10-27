@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Oct 26, 2016
+Created on Oct 27, 2016
 
 @author: dwalker
 '''
@@ -35,7 +35,7 @@ from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
 
-class STIGConfigureApplicationRestrictionsPolicy(Rule):
+class STIGDisableICloudPolicy(Rule):
 
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -44,30 +44,30 @@ class STIGConfigureApplicationRestrictionsPolicy(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
-        self.rulenumber = 365
-        self.rulename = "STIGConfigureBluetoothPolicy"
+        self.rulenumber = 366
+        self.rulename = "STIGDisableICloudPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureBluetoothPolicy rule " + \
-            "installs the DISA STIG Bluetooth profile  " + \
+        self.helptext = "STIGDisableICloudPolicy rule " + \
+            "installs the DISA STIG Disable iCloud profile  " + \
             "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11']}}
         datatype = "bool"
-        key = "BLUETOOTHPOLICY"
-        instructions = "To disable the installation of the bluetooth " + \
-            "profile set the value of BLUETOOTHPOLICY to False"
+        key = "DISABLEICLOUDPROMPT"
+        instructions = "To disable the installation of the Disable " + \
+            "iCloud profile set the value of DISABELICLOUDPROMPT to False"
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         self.profile = "/Applications/stonix4mac.app/Contents/" + \
                      "Resources/stonix.app/Contents/MacOS/" + \
                      "stonix_resources/files/" + \
-                     "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+                     "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
         '''These directories for testing purposes only'''
 #             self.profile = "/Users/username/src/" + \
 #                          "stonix_resources/files/" + \
-#                          "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+#                          "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
     
     def report(self):
         try:
@@ -86,7 +86,7 @@ class STIGConfigureApplicationRestrictionsPolicy(Rule):
                             compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        elif search("mil\.disa\.STIG\.Bluetooth\ Policy\.alacarte$", line.strip()):
+                        elif search("mil\.disa\.STIG\.Disable_iCloud_Prompt\.alacarte$", line.strip()):
                             compliant = True
                             break
             self.compliant = compliant
