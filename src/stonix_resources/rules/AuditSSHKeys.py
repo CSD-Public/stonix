@@ -67,7 +67,7 @@ keys used for SSH should have a password and be protected by file permissions th
         self.guidance = ['LANL CAP', 'OpenSSH Security Best Practices']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         self.localize()
 
