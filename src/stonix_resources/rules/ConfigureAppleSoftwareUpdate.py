@@ -35,6 +35,7 @@ dictionary
 @change: 2015/09/21 ekkehard OS X El Capitan 10.11 & Implement New Guidance
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/04/28 ekkehard test enhancements
+@change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
 '''
 from __future__ import absolute_import
 import re
@@ -61,6 +62,8 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate DisableCriticalUpdateInstall -bool no
     6. Disables ability to install PreReleases:
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate AllowPreReleaseInstallation -bool no
+    7. Disables automatic macOS (OS X) updates
+    defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool no
 
     1. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate CatalogURL
     2. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload
@@ -69,10 +72,10 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     5. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate DisableCriticalUpdateInstall
     6. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AllowPreReleaseInstallation
     7. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates
+    8. defaults -currentHost read /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired
 
     OS X Yosemite considerations:
     defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
-    defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool [TRUE|FALSE]
 
     @author: ekkehard j. koch
     '''
@@ -241,6 +244,17 @@ to our ASUS server."""
                              None,
                              True,
                              {})
+            self.addKVEditor("DisableAutomaticMacOSUpdates",
+                             "defaults",
+                             "/Library/Preferences/com.apple.commerce",
+                             "",
+                             {"AutoUpdateRestartRequired": ["0", "-bool no"]},
+                             "present",
+                             "",
+                             "Disable automatic installation of macOS (OS X) upgrades.",
+                             None,
+                             True,
+                             {"AutoUpdateRestartRequired": ["1", "-bool yes"]})
         self.ch = CommandHelper(self.logdispatch)
         self.softwareupdatehasnotrun = True
 
