@@ -35,7 +35,7 @@ from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
 
-class STIGConfigureApplicationRestrictionsPolicy(Rule):
+class STIGConfigureBluetoothPolicy(Rule):
 
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
