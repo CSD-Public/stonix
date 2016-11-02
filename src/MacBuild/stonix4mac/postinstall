@@ -378,7 +378,7 @@ def fix_app_perms(rootDir="/Applications/stonix4mac.app",
             log_message('\t%s' % fullFName, "normal", message_level)
             if os.path.isfile(fullFName):
                 os.chmod(fullFName, 0664)
-                os.chown(fullDirName, 0, 80)
+                os.chown(fullFName, 0, 80)
 
 
 def make_files_executable():
