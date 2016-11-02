@@ -28,6 +28,7 @@ Created on Jun 9, 2015
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 @change: 2016/04/06 eball Updated name to ConfigureProfileManagement
+@change: 2016/11/02 eball Updated name to ConfigurePasswordPolicy
 '''
 from __future__ import absolute_import
 import unittest
@@ -36,18 +37,18 @@ import sys, os
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.ConfigureProfileManagement import ConfigureProfileManagement
+from src.stonix_resources.rules.ConfigurePasswordPolicy import ConfigurePasswordPolicy
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
-class zzzTestRuleConfigureProfileManagement(RuleTest):
+class zzzTestRuleConfigurePasswordPolicy(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = ConfigureProfileManagement(self.config, self.environ,
-                                               self.logdispatch,
-                                               self.statechglogger)
+        self.rule = ConfigurePasswordPolicy(self.config, self.environ,
+                                            self.logdispatch,
+                                            self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)

@@ -74,7 +74,7 @@ $ sudo serveradmin settings afp:setting
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule disables AFP file sharing."
-        self.logdispatcher = logdispatcher
+        self.logger = logger
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.3']
 
