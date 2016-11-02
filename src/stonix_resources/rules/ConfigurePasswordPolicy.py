@@ -58,7 +58,7 @@ class ConfigurePasswordPolicy(Rule):
             "standards and practices."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
+                           'os': {'Mac OS X': ['10.11']}}
         datatype = "bool"
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
