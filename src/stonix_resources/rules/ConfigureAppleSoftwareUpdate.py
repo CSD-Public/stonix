@@ -253,7 +253,7 @@ to our ASUS server."""
                              "",
                              "Disable automatic installation of macOS (OS X) upgrades.",
                              None,
-                             True,
+                             False,
                              {"AutoUpdateRestartRequired": ["1", "-bool yes"]})
         self.ch = CommandHelper(self.logdispatch)
         self.softwareupdatehasnotrun = True
