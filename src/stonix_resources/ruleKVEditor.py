@@ -272,7 +272,8 @@ LANL-stonix."""
                     # alt conf to write or the CI is enabled, skip fix
                     elif (self.kvreportsuccessful and
                           (self.kvdatafixalternate == {} or
-                           self.configurationItem.getcurrvalue())):
+                           (self.configurationItem is not None and
+                            self.configurationItem.getcurrvalue()))):
                         self.logdispatch.log(LogPriority.DEBUG,
                                              [self.prefix(),
                                               "Compliant no action taken!"])
@@ -290,7 +291,8 @@ LANL-stonix."""
                                                   "kveditorinit() = " + \
                                                   str(success)])
                         if success and not (self.kvdatafixalternate == {}) \
-                        and not (self.configurationItem.getcurrvalue()):
+                           and not (self.configurationItem is not None and
+                                    self.configurationItem.getcurrvalue()):
                             success = self.kveditor.updatedata(self.kvdatafixalternate)
                         if (success):
                             success = self.kveditor.fix()
