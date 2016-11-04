@@ -169,10 +169,10 @@ certificate into Firefox, set the value of INSTALLROOTCERTBROWSER to False."""
             for ffDir in ffDirs:
                 try:
                     cmd = ["certutil", "-L", "-an", name, "-d", ffDir]
+                    self.ch.executeCommand(cmd)
                 except OSError:
                     browserFound = False
                 else:
-                    self.ch.executeCommand(cmd)
                     if re.search(rootcert, self.ch.getAllString()):
                         browserFound = True
             if not browserFound:
