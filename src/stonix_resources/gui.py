@@ -261,6 +261,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                 self.revert_button.setEnabled(True)
             else:
                 self.revert_button.setEnabled(False)
+                self.save_cancel_frame.hide()
             self.fix_button.setEnabled(True)
             self.report_button.setEnabled(True)
 
