@@ -281,7 +281,9 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             for rulename in self.ruleci:
                 self.ruleci[rulename].hide()
             rulename = self.rule_list_widget.selectedItems()[0].text()
-            self.ruleci[rulename].show()
+            # Only show CIs when running in root context
+            if self.environ.geteuid() == 0:
+                self.ruleci[rulename].show()
             self.frame_rule_details.show()
         else:
             self.frame_rule_details.hide()
