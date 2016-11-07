@@ -1,11 +1,13 @@
+from __future__ import absolute_import
+
 #--- Native python libraries
 import os
 import sys
 import ctypes
 
 #--- non-native python libraries in this source tree
-from lib.loggers import CyLogger
-from lib.loggers import LogPriority as lp
+from .loggers import CyLogger
+from .loggers import LogPriority as lp
 
 ##############################################################################
 
@@ -13,6 +15,9 @@ def getLibc(logger=False):
     """
     Acquire a reference to the system libc, initially to access the
     filesystem "sync" function.
+
+    @returns: python reference to the C libc object, or False, if it can't
+              find libc on the system.
 
     @author: Roy Nielsen
     """
@@ -25,6 +30,9 @@ def getLibc(logger=False):
         #####
         # For Mac
         try:
+            #temp_dir = sys._MEIPASS
+            #libc_path = os.path.join(temp_dir, "libc.dylib")
+            #libc = ctypes.CDLL("libSystem.dylib")
             libc = ctypes.CDLL("/usr/lib/libc.dylib")
         except:
             raise Exception("DAMN IT JIM!!!")

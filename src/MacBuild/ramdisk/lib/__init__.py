@@ -1,2 +1,3 @@
-from __future__ import absolute_import
+__package__ = 'lib'
+__all__ = ['managem_user', 'manage_keychain']
 

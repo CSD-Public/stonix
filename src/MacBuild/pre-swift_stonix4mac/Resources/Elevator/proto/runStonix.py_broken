@@ -1,0 +1,48 @@
+#!/usr/bin/python.
+
+'''
+su - dcsadmin -c 'export SUDO_ASKPASS=/tmp/askpass.py; /usr/bin/sudo -A /Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix'
+'''
+
+from subprocess import Popen, PIPE
+import os
+import re
+import sys
+import getpass
+import tempfile
+
+user = raw_input('wUsername: ')
+passwd = getpass.getpass('wPassword: ')
+my_env = {}
+
+my_env = os.environ.copy()
+my_env['SUDO_ASKPASS'] = '/tmp/askpass.py' 
+
+output = ''
+
+#myinput_fh, myinput_fname = tempfile.mkstemp() 
+#pipe = Popen(['/usr/bin/su', '-', user, '-c', '/usr/bin/id'], stdout=PIPE, stderr=PIPE, stdin=PIPE, env=my_env, shell=False, close_fds=True)
+pipe = Popen(['/usr/bin/su', '-', user, '-c', '/usr/bin/id'], stdout=PIPE, stderr=PIPE, stdin=PIPE)
+
+pipe.stdin.write('\n' + passwd + '\n')
+
+pipe.wait()
+output = pipe.stdout
+
+print "..."
+
+pipe = Popen(['/usr/bin/su', user, '-c', '/usr/bin/sudo -A /Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix'], stdout=PIPE, stderr=PIPE, stdin=PIPE, env=my_env)
+
+while pipe.poll() is None:
+    line = pipe.stdout.readline()
+    if re.match("^Password:", line):
+        sys.stdin.write(passwd + '\n')
+
+
+#myinput_fh.write(passwd + '\n')
+
+#myinput_fh.close()
+
+#os.unlink(myinput_fname)
+
+
