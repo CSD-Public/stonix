@@ -20,6 +20,8 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+from _ast import With
+from pip._vendor.lockfile import UnlockError
 '''
 Created 02/23/2015
 
@@ -32,18 +34,28 @@ Library of functions used to build Mac applications
 
 import re
 import os
+import sys
 import tarfile
 import pwd
 import zipfile
 import plistlib as pl
 from glob import glob
+from subprocess import Popen, STDOUT, PIPE
 from PyInstaller.building import makespec, build_main
+
+sys.path.append('./ramdisk')
+
 from ramdisk.lib.loggers import LogPriority as lp
+from ramdisk.lib.manage_user.manage_user import ManageUser
+from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
+
 
 class macbuildlib(object):
     def __init__(self, logger, pypaths=None):
         self.pypaths = pypaths
         self.logger = logger
+        self.manage_user = ManageUser(self.logger)
+        self.manage_keychain = ManageKeychain(self.logger)
 
     def regexReplace(self, filename, findPattern, replacePattern, outputFile="",
                      backupname=""):
@@ -348,3 +360,63 @@ class macbuildlib(object):
 
         print "checkBuildUser Finished..."
         return CURRENT_USER, RUNNING_ID
+
+    def codeSign(self, username, password, sig='', verbose='', deep='', appName=''):
+        '''
+        For codesigning on the Mac.
+        
+        @param: Signature to sign with (string)
+        @param: How verbose to be: 'v', 'vv', 'vvv' or 'vvvv' (string)
+        @param: Whether or not to do a 'deep' codesign or not. (bool)
+        @param: App name (ending in .app)
+
+        @returns: True for success, False otherwise.
+        '''
+        success = False
+        requirementMet = False
+        if sig:
+            #####
+            # Make sure the keychain is unlocked
+            userHome = self.manage_user.getUserHomeDir(username)
+            loginKeychain = userHome + "/Library/Keychains/login.keychain"
+            self.manage_keychain.setUser(username)
+            self.manage_keychain.unlockKeychain(password, loginKeychain)
+
+            if verbose:
+                if re.match('^v+$', verbose) and len(verbose) <= 4:
+                    verbose = '-' + verbose
+                    requirementMet = True
+                elif re.match('^-v+$', verbose) and len(verbose) <= 5:
+                    requriementMet = True
+                elif not verbose:
+                    requirementMet = True
+            cmd = []
+            if requirementMet and deep is True and verbose:
+                cmd = ['/usr/bin/codesign', verbose, '--deep', '-f', '-s', sig, "--keychain", loginKeychain, appName]
+            elif requirementMet and not deep and verbose:
+                cmd = ['/usr/bin/codesign', verbose, '-f', '-s', sig, "--keychain", loginKeychain,  appName]
+            elif requirementMet and deep and not verbose:
+                cmd = ['/usr/bin/codesign', '--deep', '-f', '-s', sig, "--keychain", loginKeychain,  appName]
+            elif requirementMet and not deep and not verbose:
+                cmd = ['/usr/bin/codesign', '-f', '-s', sig, "--keychain", loginKeychain,  appName]
+            if cmd:
+                output = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
+                self.logger.log(lp.INFO, "Output from trying to codesign: " + str(output))
+        return success
+
+    def unlockKeychain(self, username, password):
+        '''
+        Unlock the appropriate keychain for signing purposes
+        
+        @param: Username of the login.keychain to unlock
+        @param: Password for the user
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        userHome = self.manage_user.getUserHomeDir(username)
+        loginKeychain = userHome + "/Library/Keychains/login.keychain"
+        success = self.manage_keychain.setUser(username)
+        success = self.manage_keychain.unlockKeychain(password, loginKeychain)
+        self.logger.log(lp.DEBUG, "Unlock Keychain success: " + str(success))
+        return success

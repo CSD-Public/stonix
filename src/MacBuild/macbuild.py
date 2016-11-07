@@ -55,6 +55,7 @@ import sys
 import stat
 import optparse
 import traceback
+import getpass
 from glob import glob
 from tempfile import mkdtemp
 from time import time
@@ -68,6 +69,7 @@ sys.path.append("./ramdisk/")
 from ramdisk.macRamdisk import RamDisk, detach
 from ramdisk.lib.loggers import CyLogger
 from ramdisk.lib.loggers import LogPriority as lp
+from ramdisk.lib.get_libc import getLibc
 
 
 class ConfusingConfigurationError(Exception):
@@ -85,7 +87,7 @@ class MacBuilder():
 
     def __init__(self,
                  options=optparse.Values({"compileGui": False, "version": "0",
-                                          "clean": False, "test": False, "debug":False}),
+                                          "clean": False, "test": False, "debug":False, "sig":False}),
                  ramdisk_size=1024):
         '''
         Build .pkg and .dmg for stonix4mac
@@ -100,6 +102,12 @@ class MacBuilder():
         self.logger.initializeLogs()
         self.ramdisk_size = ramdisk_size
 
+        self.libc = getLibc()
+
+        if options.sig:
+            self.codesignSignature = options.sig
+
+        self.mbl = None
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
         cwd = os.getcwd()
@@ -125,7 +133,7 @@ class MacBuilder():
         self.compileGui = options.compileGui
 
         if not self.confParser():
-            raise ConfusionConfigurationError("Cannot determine the correct configuration...")
+            raise ConfusingConfigurationError("Cannot determine the correct configuration...")
 
         self.RSYNC = "/usr/bin/rsync"
 
@@ -138,6 +146,9 @@ class MacBuilder():
         print "   ************************************************************"
         print " "
         print " "
+
+        self.keyuser = raw_input("Keychain User: ")
+        self.keypass = getpass.getpass("Keychain Password: ") 
 
         if not options.test:
             self.driver()
@@ -437,8 +448,8 @@ class MacBuilder():
 
             # Change mode of Info.plist to 0755
             os.chmod(plist, 0755)
+            os.chdir('dist')
 
-            os.chdir(returnDir)
         except Exception:
             raise
 
@@ -477,6 +488,31 @@ class MacBuilder():
             copy2(appPath + "/stonix/dist/stonix.app/Contents/MacOS/" +
                   "stonix_resources/localize.py", appPath + "/" + appName +
                   "/dist/" + appName + ".app/Contents/MacOS")
+
+            #####
+            # Copy helper files to the resources directory
+            call([self.RSYNC, "-aqp", appPath + '/' + appName + '/Resources/',
+                              appPath + "/" + appName + "/dist/" + appName + \
+                              ".app/Contents/Resources"])
+
+            #####
+            # Need a disk checkpoint here to make sure all files are flushed
+            # to disk, ie perform a filesystem sync.
+            self.libc.sync()
+            self.libc.sync()
+            
+            self.mbl.codeSign(self.keyuser, self.keypass, 
+                              self.codesignSignature,
+                              self.codesignVerbose,
+                              self.codesignDeep,
+                              "./" + appName + "/dist/" + appName + ".app")
+
+            self.mbl.codeSign(self.keyuser, self.keypass, 
+                              self.codesignSignature,
+                              self.codesignVerbose,
+                              self.codesignDeep,
+                              "./" + appName + "/dist/" + appName +
+                              ".app/Contents/Resources/stonix.app")
 
             os.chdir(returnDir)
         except Exception:
@@ -536,7 +572,7 @@ class MacBuilder():
             try:
                 dict1[option] = self.parser.get(section, option)
                 if dict1[option] == -1:
-                    DebugPrint("skip: %s" % option)
+                    self.logger.log(lp.DEBUG, "skip: %s" % option)
             except:
                 print("exception on %s!" % option)
                 dict1[option] = None
@@ -579,6 +615,8 @@ class MacBuilder():
                 from macbuildlib import macbuildlib
                 self.mbl = macbuildlib(self.logger)
                 self.PYUIC = self.mbl.getpyuicpath()
+                self.codesignVerbose = 'vvvv'
+                self.codesignDeep = True
             else:
                 self.STONIX = dict1['stonix']['app']
                 self.STONIXICON = dict1['stonix']['app_icon']
@@ -588,12 +626,22 @@ class MacBuilder():
                 self.STONIX4MACVERSION = dict1['stonix']['wrapper_version']
                 self.PYUIC = dict1['libpaths']['pyuic']
                 self.PYPATHS = dict1['libpaths']['pythonpath'].split(':')
-
+                self.logger.log(lp.INFO, 'attempting to get codesigning information...')
+                self.codesignVerbose = dict1['codesign']['verbose']
+                if re.match('^True$', dict1['codesign']['deep']):
+                    self.codesignDeep = True
+                else:
+                    self.codesignDeep = False
+                self.logger.log(lp.INFO, "Grabbed codesign info...")
                 for path in self.PYPATHS:
                     sys.path.append(path)
                 #-- Internal libraries
-                from macbuildlib import macbuildlib
-                self.mbl = macbuildlib(self.logger, self.PYPATHS)
+                try:
+                    from macbuildlib import macbuildlib
+                    self.mbl = macbuildlib(self.logger, self.PYPATHS)
+                except Exception, err:
+                    raise
+                self.logger.log(lp.INFO, "... macbuildlib loaded ...")
             finally:
                 self.hiddenimports = self.mbl.getHiddenImports()
                 self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenimports))
@@ -620,5 +668,9 @@ if __name__ == '__main__':
                       "unit testing of functions")
     parser.add_option("-d", "--debug", action="store_true", dest="debug",
                       default=False, help="debug mode, on or off.  Default off.")
+    parser.add_option("-s", "--signature", action="store", dest="sig",
+                      type="string", default="",
+                      help="Codesign signature to sign with.",
+                      metavar="sig")
     options, __ = parser.parse_args()
     stonix4mac = MacBuilder(options)
