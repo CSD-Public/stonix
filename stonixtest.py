@@ -607,6 +607,9 @@ class RuleDictionary ():
                                     self.unittestprefix + str(rulefilename)):
                     class_prefix = "tests.rules.interactive_tests."
                     self.unittestpath = "src/tests/rules/interactive_tests/"
+                else:
+                    class_prefix = "src.tests.rules.unit_tests."
+                    self.unittestpath = "src/tests/rules/unit_tests/"
 
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
