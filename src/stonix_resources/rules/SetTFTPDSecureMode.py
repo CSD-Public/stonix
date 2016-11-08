@@ -65,7 +65,8 @@ mode.'''
         self.iditerator = 0
         self.editor = ""
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd']}
+                           'family': ['linux', 'solaris', 'freebsd'],
+                           'os': {'Mac OS X': ['10.10', '+']}}
         
     def report(self):
         try:
@@ -100,6 +101,7 @@ mode.'''
         return self.compliant
 
     def reportMac(self):
+        
         pass
     
     def reportDebianSys(self):
@@ -177,7 +179,6 @@ mode.'''
         try:
             for line in contents:
                 if re.search("service tftp", line.strip()):
-                    print "found service tftp line\n"
                     contents2 = contents[i+1:]
                 else:
                     i += 1
@@ -198,7 +199,7 @@ mode.'''
                                 if re.search("=", line):
                                     line = line.split("=")
                                     val = re.sub("\s+", " ", line[1].strip())
-                                    if not re.search("-s", val) and not re.search("--search", val):
+                                    if not re.search("\-s", val) and not re.search("\-\-search", val):
                                         compliant = False
                                         self.detailedresults += "server_args line " + \
                                             "doesn't contain the -s option\n"
@@ -300,10 +301,12 @@ mode.'''
                                 if re.search("=", line):
                                     tmp = line.split("=")
                                     val = re.sub("/s+", " ", tmp[1].strip())
-                                    if re.search("-s", val) or re.search("--secure", val):
-                                        if not re.search("-s /var/lib/tftpboot", val) and not re.search("--secure /var/lib/tftpboot", val):
+                                    if re.search("\-s", val) or re.search("\-\-secure", val):
+                                        if not re.search("\-s /var/lib/tftpboot", val) and not re.search("\-\-secure /var/lib/tftpboot", val):
                                             val = re.sub("-s\s{0,1}/{0,1}.*\s{0,1}", "-s /var/lib/tftpboot", tmp[1])
                                             tempstring += "\tserver_args \t\t= " + val + "\n"
+                                        else:
+                                            tempstring += line
                                     else:
                                         tempstring += line + " -s /var/lib/tftpboot\n" 
                                 else:
@@ -314,13 +317,16 @@ mode.'''
                                     tempstring += "}"
                                     break
                                 else:
-                                    tempstring += line
+                                    tempstring = ""
+                                    break
                             else:
                                 tempstring += line
         except IndexError:
             self.detailedresults += "The tftp file is in bad format\n " + \
                 "Will not attempt to correct this file.  Exiting\n"
             return False
+        if not tempstring:
+            return True
         tmpfile = self.tftpFile + ".tmp"
         if writeFile(tmpfile, tempstring, self.logger):
             self.iditerator += 1
