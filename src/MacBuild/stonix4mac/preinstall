@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -21,11 +21,32 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-TARGET_LOCATION=$2
+"""
+Preinstall script for stonix4mac.pkg
+
+Primary purpose is to remove the old stonix4mac.app directory
+
+@author: Eric Ball
+"""
+import sys
+from shutil import rmtree
+from time import sleep
 
 
-rm -rf ${TARGET_LOCATION}/Applications/stonix4mac.app
+def main():
+    targetDir = sys.argv[2]
+    while True:
+        try:
+            rmtree(targetDir + "Applications/stonix4mac.app")
+            break
+        except OSError as e:
+            if e.errno == 2:  # No such file or directory
+                break
+            else:
+                sleep(100)
+        except Exception:
+            raise
 
-exit 0
 
-
+if __name__ == "__main__":
+    sys.exit(main())
