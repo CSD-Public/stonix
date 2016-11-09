@@ -769,7 +769,7 @@ class RuleDictionary ():
             ruleinstanciatecommand = \
                 self.ruledictionary[key]["ruleinstanciatecommand"]
             try:
-                _ = __import__(ruleclassname, fromlist=[rulename])
+                mod = __import__(ruleclassname, fromlist=[rulename])
             except Exception:
                 trace = traceback.format_exc()
                 messagestring = "Error importing rule: " + rulename + " " + \
