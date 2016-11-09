@@ -256,7 +256,7 @@ MACKRB5 = '''# Updated Test Configuration
    xsamba03.lanl.gov = WIN.LANL.GOV
 
 # Web services
-   exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV   
+   exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
    sp2013-p-f5.lanl.gov = WIN.LANL.GOV
    sp2013-p-hns-f5.lanl.gov = WIN.LANL.GOV
    sp2013-p-ssf-f5.lanl.gov = WIN.LANL.GOV
@@ -295,6 +295,7 @@ MACKRB5 = '''# Updated Test Configuration
       debug = false
       krb4_convert = false
    }
+
 '''
 
 LINUXKRB5 = '''# Test Configuration
@@ -339,9 +340,10 @@ LINUXKRB5 = '''# Test Configuration
  sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
 [capaths]
   WIN.LANL.GOV = {
-	lanl.gov = .
+    lanl.gov = .
   }
- '''
+
+'''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
