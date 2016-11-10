@@ -276,7 +276,7 @@ class ServiceHelper(object):
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, *args, **kwargs):
+    def disableService(self, service, *args, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -296,7 +296,7 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def enableService(self, *args, **kwargs):
+    def enableService(self, service, *args, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -317,7 +317,7 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def auditService(self, *args, **kwargs):
+    def auditService(self, service, *args, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -338,7 +338,7 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def isRunning(self, *args, **kwargs):
+    def isRunning(self, service, *args, **kwargs):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -360,7 +360,7 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def reloadService(self, *args, **kwargs):
+    def reloadService(self, service, *args, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -400,3 +400,83 @@ class ServiceHelper(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END = ' + str(serviceList))
         return serviceList
+
+    #----------------------------------------------------------------------
+
+    def kill(self, process, *args, **kwargs):
+        '''
+        Kills a process with a unix signal.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '--START KILL(' + service + ', ' + servicename +
+                                ')')
+
+        serviceSuccess = False
+        serviceSuccess = self.svchelper.kill(*args, **kwargs)
+
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '-- END KILL(' + service + ', ' + servicename +
+                               ') = ' + str(servicesuccess))
+        return serviceSuccess
+
+    #----------------------------------------------------------------------
+
+    def start(self, service, *args, **kwargs):
+        '''
+        Start a service installed on the system.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '--START START(' + service + ', ' + servicename +
+                                ')')
+
+        serviceSuccess = False
+        serviceSuccess = self.svchelper.start(*args, **kwargs)
+
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '-- END START(' + service + ', ' + servicename +
+                               ') = ' + str(servicesuccess))
+        return serviceSuccess
+
+    #----------------------------------------------------------------------
+
+    def stop(self, service, *args, **kwargs):
+        '''
+        Stop a service installed on the system.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '--START STOP(' + service + ', ' + servicename +
+                                ')')
+
+        serviceSuccess = False
+        serviceSuccess = self.svchelper.stop(*args, **kwargs)
+
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '-- END STOP(' + service + ', ' + servicename +
+                               ') = ' + str(servicesuccess))
+        return serviceSuccess
+
+    #----------------------------------------------------------------------
+
+    def restart(self, service, *args, **kwargs):
+        '''
+        Restart a service installed on the system.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '--START RESTART(' + service + ', ' + servicename +
+                                ')')
+
+        serviceSuccess = False
+        serviceSuccess = self.svchelper.restart(*args, **kwargs)
+
+        self.logdispatcher.log(LogPriority.DEBUG,
+                               '-- END RESTART(' + service + ', ' + servicename +
+                               ') = ' + str(servicesuccess))
+        return serviceSuccess

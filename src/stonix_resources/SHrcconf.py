@@ -29,23 +29,23 @@ import os
 import re
 import subprocess
 from logdispatcher import LogPriority
+from ServiceHelperParent import ServiceHelperParent
 
-class SHrcconf(object):
+
+class SHrcconf(ServiceHelperParent):
     '''
     SHrcconf is the Service Helper for systems using /etc/rc.conf to
     configure services. (FreeBSD and some variants)
     '''
 
-
     def __init__(self, environment, logdispatcher):
         '''
         Constructor
         '''
-        self.environment = environment
-        self.logdispatcher = logdispatcher
+        super(SHrcconf, self).__init__(environment, logdispatcher)
         self.svc = '/etc/rc.d/'
         
-    def disableservice(self, service):
+    def disableService(self, service):
         '''
         Disables the service and terminates it if it is running.
         
@@ -78,7 +78,7 @@ class SHrcconf(object):
         else:
             return False        
     
-    def enableservice(self, service):
+    def enableService(self, service):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -98,7 +98,7 @@ class SHrcconf(object):
             raise
         except Exception:
             confsuccess = False
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret2 = subprocess.call(self.svc + service + ' start',
                                    shell=True, close_fds=True,
                                    stdout=subprocess.PIPE,
@@ -112,7 +112,7 @@ class SHrcconf(object):
         else:
             return False 
     
-    def auditservice(self, service):
+    def auditService(self, service):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -135,7 +135,7 @@ class SHrcconf(object):
                                'SHrcconf.audit ' + service + str(enabled))
         return enabled
     
-    def isrunning(self, service):
+    def isRunning(self, service):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -164,7 +164,7 @@ class SHrcconf(object):
                                'SHrcconf.isrunning ' + service + str(running))
         return running        
     
-    def reloadservice(self, service):
+    def reloadService(self, service):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -175,7 +175,7 @@ class SHrcconf(object):
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.reload ' + service)
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret = subprocess.call(self.svc + service + ' restart',
                                   shell=True, close_fds=True,
                                   stdout=subprocess.PIPE,
@@ -187,7 +187,7 @@ class SHrcconf(object):
             else:
                 return True
     
-    def listservices(self):
+    def listServices(self):
         '''
         Walk through the FreeBSD service control files in rc.d and gather
         the service names. We have to do this this way because some services
@@ -213,7 +213,7 @@ class SHrcconf(object):
                                'SHrcconf.listservices ' + str(servicelist))
         return servicelist
     
-    def editrcconf(self, service, enabled):
+    def editRcconf(self, service, enabled):
         '''
         This method assists the enable and disable methods in editing the
         /etc/rc.conf file. It expects to be passed a service name
