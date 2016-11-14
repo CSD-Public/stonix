@@ -60,7 +60,7 @@ class ConfigureSystemAuthentication(Rule):
 requirements and failed login attempts. It also ensures the system uses \
 SHA512 encryption.
 There are three configuration items. Two of these \
-configuration involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please \
+involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please \
 be advised, due to the complexity and sensitivity of PAM, portions of the PAM \
 files that these two CIs configure will be completely overwritten, therefore \
 if you have configured PAM with other modules, you may want to avoid enabling \
@@ -70,7 +70,7 @@ receive the same contents. Due to this, no undo events will be recorded for \
 the first two configuration items. However, backups will be made in the \
 /etc/pam.d directory to restore them back to the way before the rule was run. \
 Run these rules at your own risk. If your system uses portage for a package \
-manager (i.e. Gentoo), you will need to do fix manually for all files except \
+manager (e.g. Gentoo), you will need to do fix manually for all files except \
 for the login.defs file"""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
@@ -207,7 +207,7 @@ for the login.defs file"""
                 debug = "cracklib not installed but is available\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 self.detailedresults += "This system will use cracklib " + \
-                    "password checking program but is not installed.  " + \
+                    "password checking program but is not installed. " + \
                     "Will install and be configured when fix is run\n"
                 compliant = False
         # pwquality is not installed but available for install
@@ -215,8 +215,8 @@ for the login.defs file"""
             debug = "pwquality not installed but is available\n"
             self.logger.log(LogPriority.DEBUG, debug)
             self.detailedresults += "This system will use pwquality " + \
-                    "password checking program but is not installed.  " + \
-                    "Will install and be configured when fix is run\n"
+                "password checking program but is not installed. " + \
+                "Will install and be configured when fix is run\n"
             compliant = False
         #######################################################################
 
@@ -389,7 +389,7 @@ for the login.defs file"""
                     " authority\n"
                 success = False
         if self.ci3.getcurrvalue():
-            if self.ph.manager != "zypper": 
+            if self.ph.manager != "zypper":
                 if not self.chklockout():
                     if not self.setlockout():
                         self.detailedresults += "Unable to set the pam " + \
@@ -402,11 +402,11 @@ for the login.defs file"""
                         if self.ph.install("libuser"):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            comm  = self.ph.getRemove()
+                            comm = self.ph.getRemove()
                             event = {"eventtype": "commandstring",
                                      "command": comm}
                             self.statechglogger.recordchgevent(myid, event)
-                            
+
             elif not self.chklibuserhash():
                 if not self.setlibhash():
                     debug = "setlibhash() failed\n"
@@ -566,8 +566,8 @@ for the login.defs file"""
                 success = False
         return success
 
-###############################################################################       
-    
+###############################################################################
+
     def chkpassword(self, package):
         '''Private method to check for the presence of the correct
         pwquality/cracklib directives. In this method we want
@@ -595,7 +595,7 @@ for the login.defs file"""
         return compliant
 
 ###############################################################################
-    
+
     def chkpwquality(self):
         compliant = True
         pwqfile = "/etc/security/pwquality.conf"
@@ -603,7 +603,7 @@ for the login.defs file"""
             tmpfile = pwqfile + ".tmp"
             data = {"difok": "4",
                     "minlen": "14",
-                    "dcredit" : "-1",
+                    "dcredit": "-1",
                     "ucredit": "-1",
                     "lcredit": "-1",
                     "ocredit": "-1",
@@ -621,7 +621,7 @@ for the login.defs file"""
             self.detailedresults += "System is using pwquality and " + \
                 "crucial file /etc/security/pwquality doesn't exist\n"
         return compliant
-    
+
 ###############################################################################
 
     def chkPwCheck(self, regex1, regex2, package):
@@ -1203,7 +1203,7 @@ for the login.defs file"""
             tmpfile = pwqfile + ".tmp"
             data = {"difok": "4",
                     "minlen": "14",
-                    "dcredit" : "-1",
+                    "dcredit": "-1",
                     "ucredit": "-1",
                     "lcredit": "-1",
                     "ocredit": "-1",
@@ -1226,14 +1226,13 @@ for the login.defs file"""
                 success = False
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
-                        
+
     def setPwCheck(self, regex1, regex2, data1, data2, package):
         '''Private method to set the pwquality/cracklib directive in
-        password-auth or common-password. retval is a list of two items.
-        retval[0] will change from False to True, if anything in the file is
-        changed, but retval[1] will always be True for success of the method
+        password-auth or common-password. retval is a boolean indicating
+        success.
         @author: dwalker
-        @return: list'''
+        @return: bool'''
 
         pamfiles = []
         success = True
@@ -1448,7 +1447,8 @@ for the login.defs file"""
             ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
             ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
             ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
+            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail " + \
+            "audit deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
         data1 = """auth\trequired\tpam_env.so
