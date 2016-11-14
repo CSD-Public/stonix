@@ -31,6 +31,7 @@ from LANL-stor.
 @change: 2015/11/16 eball - Moving RHEL6 back to nslcd
 @change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG standards
 @change: 2016/01/28 eball - Improved handling for LDAPServer CI
+@change: 2016/11/14 eball - Moved PAM configurations to localize.py
 '''
 from __future__ import absolute_import
 import os
@@ -41,6 +42,11 @@ from ..stonixutilityfunctions import iterate, resetsecon, checkPerms, setPerms
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..KVEditorStonix import KVEditorStonix
+from ..localize import AUTH_APT, ACCOUNT_APT, PASSWORD_APT, SESSION_APT, \
+    SESSION_HOME_APT, AUTH_NSLCD, ACCOUNT_NSLCD, PASSWORD_NSLCD, \
+    SESSION_NSLCD, SESSION_HOME_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM, \
+    SESSION_YUM, SESSION_HOME_YUM, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
+    PASSWORD_ZYPPER, SESSION_ZYPPER, SESSION_HOME_ZYPPER
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
@@ -618,40 +624,13 @@ krb5_realm = lanl.gov
             acc = prefix + "account"
             passwd = prefix + "password"
             sess = prefix + "session"
-            pamconf[auth] = '''auth        required      pam_env.so
-auth        required      pam_tally2.so deny=5 unlock_time=600 onerr=fail
-auth        sufficient    pam_unix.so nullok try_first_pass
-auth        requisite     pam_succeed_if.so uid >= 500 quiet
-auth        sufficient    pam_krb5.so use_first_pass
-auth        required      pam_deny.so
-'''
-            pamconf[acc] = '''account     required      pam_tally2.so
-account     required      pam_access.so
-account     required      pam_unix.so broken_shadow
-account     sufficient    pam_localuser.so
-account     sufficient    pam_succeed_if.so uid < 500 quiet
-account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
-account     required      pam_permit.so
-'''
-            pamconf[passwd] = '''password    requisite     \
-pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-            pamconf[sess] = '''session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
-session     [success=1 default=ignore] pam_succeed_if.so service in crond \
-quiet use_uid
-session     required      pam_unix.so
-session     optional      pam_krb5.so
--session    optional      pam_systemd.so
-'''
+            pamconf[auth] = AUTH_APT
+            pamconf[acc] = ACCOUNT_APT
+            pamconf[passwd] = PASSWORD_APT
             if self.mkhomedirci.getcurrvalue():
-                pamconf[sess] += "session     required      " + \
-                    "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
+                pamconf[sess] = SESSION_HOME_APT
+            else:
+                pamconf[sess] = SESSION_APT
 
         elif self.ph.determineMgr() == "zypper":
             prefix = "/etc/pam.d/common-"
@@ -659,36 +638,13 @@ session     optional      pam_krb5.so
             acc = prefix + "account"
             passwd = prefix + "password"
             sess = prefix + "session"
-            pamconf[auth] = '''auth    required        pam_env.so
-auth    required        pam_tally2.so deny=5 unlock_time=600 onerr=fail
-auth    optional        pam_gnome_keyring.so
-auth    sufficient      pam_unix.so     try_first_pass
-auth    required        pam_sss.so      use_first_pass
-'''
-            pamconf[acc] = '''account requisite       pam_unix.so     try_first_pass
-account sufficient      pam_localuser.so
-account required        pam_sss.so      use_first_pass
-'''
-            pamconf[passwd] = '''password        requisite       \
-pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3
-password        sufficient      pam_unix.so sha512 shadow nullok \
-try_first_pass use_authtok remember=10
-password        optional        pam_gnome_keyring.so    use_authtok
-password        required        pam_sss.so      use_authtok
-'''
-            pamconf[sess] = '''session required        pam_limits.so
-session required        pam_unix.so     try_first_pass
-session optional        pam_sss.so
-session optional        pam_umask.so
-session optional        pam_systemd.so
-session optional        pam_gnome_keyring.so    auto_start \
-only_if=gdm,gdm-password,lxdm,lightdm
-session optional        pam_env.so
-'''
+            pamconf[auth] = AUTH_ZYPPER
+            pamconf[acc] = ACCOUNT_ZYPPER
+            pamconf[passwd] = PASSWORD_ZYPPER
             if self.mkhomedirci.getcurrvalue():
-                pamconf[sess] += "session     required      " + \
-                    "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
+                pamconf[sess] = SESSION_HOME_ZYPPER
+            else:
+                pamconf[sess] = SESSION_ZYPPER
 
         elif self.nslcd:
             sysauth = "/etc/pam.d/system-auth"
@@ -696,41 +652,15 @@ session optional        pam_env.so
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
-auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900
-auth        sufficient    pam_unix.so nullok try_first_pass
-auth        requisite     pam_succeed_if.so uid >= 500 quiet
-auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail audit deny=5
-auth        required      pam_deny.so
-
-account     required      pam_faillock.so
-account     required      pam_access.so
-account     required      pam_unix.so broken_shadow
-account     sufficient    pam_localuser.so
-account     sufficient    pam_succeed_if.so uid < 500 quiet
-account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
-account     required      pam_permit.so
-
-password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
-dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-
-session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
 '''
+            config += AUTH_NSLCD + "\n"
+            config += ACCOUNT_NSLCD + "\n"
+            config += PASSWORD_NSLCD + "\n"
             if self.mkhomedirci.getcurrvalue():
-                config += "session     optional      " + \
-                    "pam_mkhomedir.so umask=0077\n"
-            config += '''session     [success=1 default=ignore] \
-pam_succeed_if.so service in crond quiet use_uid
-session     required      pam_unix.so
-session     optional      pam_krb5.so
-'''
+                config += SESSION_HOME_NSLCD
+            else:
+                config += SESSION_NSLCD
+
             pamconf[sysauth] = config
             pamconf[passauth] = config
 
@@ -740,46 +670,15 @@ session     optional      pam_krb5.so
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
-auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900
-auth        sufficient    pam_unix.so nullok try_first_pass
-auth        requisite     pam_succeed_if.so uid >= 500 quiet
-auth        sufficient    pam_sss.so use_first_pass
-auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail audit deny=5
-auth        required      pam_deny.so
-
-account     required      pam_faillock.so
-account     required      pam_access.so
-account     required      pam_unix.so broken_shadow
-account     sufficient    pam_localuser.so
-account     sufficient    pam_succeed_if.so uid < 500 quiet
-account     [default=bad success=ok user_unknown=ignore] pam_sss.so
-account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
-account     required      pam_permit.so
-
-password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
-dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=10
-password    sufficient    pam_sss.so use_authtok
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-
-session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
--session    optional      pam_systemd.so
 '''
+            config += AUTH_YUM + "\n"
+            config += ACCOUNT_YUM + "\n"
+            config += PASSWORD_YUM + "\n"
             if self.mkhomedirci.getcurrvalue():
-                config += "session     optional      " + \
-                    "pam_mkhomedir.so umask=0077\n"
-            config += '''session     [success=1 default=ignore] \
-pam_succeed_if.so service in crond quiet use_uid
-session     required      pam_unix.so
-session     optional      pam_sss.so
-session     optional      pam_krb5.so
-'''
+                config += SESSION_HOME_YUM
+            else:
+                config += SESSION_YUM
+
             pamconf[sysauth] = config
             pamconf[passauth] = config
         return pamconf
