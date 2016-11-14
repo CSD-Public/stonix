@@ -30,8 +30,9 @@ Created on Sep 11, 2013
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/22 eball Rebased code in several spots for readability, and to
     correct logic errors (e.g. unreachable code, unused vars)
-@change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG and
+@change: 2016/01/25 eball Changed pw policies to meet RHEL 7 STIG and
     CNSSI standards
+@change: 2016/11/14 eball Updated for PAM configurations in localize.py
 '''
 from __future__ import absolute_import
 
@@ -601,14 +602,14 @@ for the login.defs file"""
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
             tmpfile = pwqfile + ".tmp"
-            data = {"difok": "4",
+            data = {"difok": "7",
                     "minlen": "14",
-                    "dcredit": "-1",
-                    "ucredit": "-1",
-                    "lcredit": "-1",
-                    "ocredit": "-1",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
                     "maxrepeat": "3",
-                    "minclass": "3"}
+                    "minclass": "4"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
@@ -1201,14 +1202,14 @@ for the login.defs file"""
                 self.statechglogger.recordchgevent(myid, event)
                 created = True
             tmpfile = pwqfile + ".tmp"
-            data = {"difok": "4",
+            data = {"difok": "7",
                     "minlen": "14",
-                    "dcredit": "-1",
-                    "ucredit": "-1",
-                    "lcredit": "-1",
-                    "ocredit": "-1",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
                     "maxrepeat": "3",
-                    "minclass": "3"}
+                    "minclass": "4"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
