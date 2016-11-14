@@ -505,7 +505,7 @@ i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 
 AUTH_APT = '''auth        required      pam_env.so
 auth        required      pam_tally2.so deny=5 unlock_time=600 onerr=fail
-auth        sufficient    pam_unix.so nullok try_first_pass
+auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
 auth        required      pam_deny.so
@@ -522,8 +522,8 @@ account     required      pam_permit.so
 
 PASSWORD_APT = '''password    requisite     \
 pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
+ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
@@ -562,8 +562,8 @@ account required        pam_sss.so      use_first_pass
 
 PASSWORD_ZYPPER = '''password        requisite       \
 pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3
-password        sufficient      pam_unix.so sha512 shadow nullok \
+ocredit=0 retry=3 maxrepeat=3
+password        sufficient      pam_unix.so sha512 shadow \
 try_first_pass use_authtok remember=10
 password        optional        pam_gnome_keyring.so    use_authtok
 password        required        pam_sss.so      use_authtok
@@ -593,7 +593,7 @@ session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 AUTH_NSLCD = '''auth        required      pam_env.so
 auth        required      pam_faillock.so preauth silent audit deny=5 \
 unlock_time=900
-auth        sufficient    pam_unix.so nullok try_first_pass
+auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
 auth        [default=die] pam_faillock.so authfail audit deny=5
@@ -610,9 +610,9 @@ account     required      pam_permit.so
 '''
 
 PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=14 \
-minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=10
+try_first_pass use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
@@ -637,7 +637,7 @@ session     optional      pam_krb5.so
 AUTH_YUM = '''auth        required      pam_env.so
 auth        required      pam_faillock.so preauth silent audit deny=5 \
 unlock_time=900
-auth        sufficient    pam_unix.so nullok try_first_pass
+auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_sss.so use_first_pass
 auth        sufficient    pam_krb5.so use_first_pass
@@ -656,8 +656,8 @@ account     required      pam_permit.so
 '''
 
 PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=14 \
-minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
 password    sufficient    pam_sss.so use_authtok
 password    sufficient    pam_krb5.so use_authtok
