@@ -17,39 +17,40 @@ class ManageKeychainTemplate(object):
         
         @author: Roy Nielsen
         """
-        pass
+        if 'logDispatcher' not in kwargs:
+            raise ValueError("Variable 'logger' a required parameter for " + str(self.__class__.__name__))
+        else:
+            self.logger = kwargs.get('logDispatcher')
     
-    def lockKeychain(self, *args, **kwargs):
-        """
-        Unlock the defined keychain
+    def listKeychains(self):
+        '''
+        Display or manipulate the keychain search list.
         
         @author: Roy Nielsen
-        """
-        pass
+        '''
+        success = False
+        self.logger.log("listKeychains method not yet implemented.")
+        return success
 
-    def unlockKeychain(self, *args, **kwargs):
-        """
-        Unlock the defined keychain
+    def defaultKeychain(self):
+        '''
+        Display or set the default keychain.
         
         @author: Roy Nielsen
-        """
-        pass
+        '''
+        success = False
+        self.logger.log("defaultKeychain method not yet implemented.")
+        return success
 
-    def changeKeychainPassword(self, *args, **kwargs):
-        """
-        Change a keychain password
+    def loginKeychain(self):
+        '''
+        Display or set the login keychain.
         
         @author: Roy Nielsen
-        """
-        pass
-
-    def deleteKeychain(self, *args, **kwargs):
-        """
-        Delete keychain
-        
-        @author: Roy Nielsen
-        """
-        pass
+        '''
+        success = False
+        self.logger.log("loginKeychain method not yet implemented.")
+        return success
 
     def createKeychain(self, *args, **kwargs):
         """
@@ -57,4 +58,96 @@ class ManageKeychainTemplate(object):
         
         @author: Roy Nielsen
         """
-        pass
+        success = False
+        self.logger.log("createKeychain method not yet implemented.")
+        return success
+
+    def deleteKeychain(self, *args, **kwargs):
+        """
+        Delete keychains and remove them from the search list.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        self.logger.log("deleteKeychain method not yet implemented.")
+        return success
+
+    def lockKeychain(self, *args, **kwargs):
+        """
+        Unlock the defined keychain
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        self.logger.log("lockKeychain method not yet implemented.")
+        return success
+
+    def unlockKeychain(self, *args, **kwargs):
+        """
+        Unlock the defined keychain
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        self.logger.log("unlockKeychain method not yet implemented.")
+        return success
+
+    def changeKeychainPassword(self, *args, **kwargs):
+        """
+        Change a keychain password
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        self.logger.log("changeKeychainPassword method not yet implemented.")
+        return success
+
+    def showKeychainInfo(self, keychain, *args, **kwargs):
+        '''
+        Show the settings for a keychain.
+
+        @author: Roy Nielsen
+        '''
+        success = False
+        self.logger.log("showKeychainInfo method not yet implemented.")
+        return success
+
+    def dumpKeychain(self, *args, **kwargs):
+        '''
+        Dump the contents of one or more keychains.
+
+        @author: Roy Nielsen
+        '''
+        success = False
+        self.logger.log("dumpKeychain method not yet implemented.")
+        return success
+
+    def findCertificate(self, *args, **kwargs):
+        '''
+        Find a certificate item.
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        self.logger.log("findCertificate method not yet implemented.")
+        return success
+
+    def findIdentity(self, *args, **kwargs):
+        '''
+        Find an identity (certificate + private key).
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        self.logger.log("findIdentity method not yet implemented.")
+        return success
+
+    def error(self, *args, **kwargs):
+        '''
+        Display descrip6tive message for the given error code(s).
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        self.logger.log("error method not yet implemented.")
+        return success
