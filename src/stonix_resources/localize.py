@@ -504,7 +504,7 @@ i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
 
 AUTH_APT = '''auth        required      pam_env.so
-auth        required      pam_tally2.so deny=5 unlock_time=600 onerr=fail
+auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
 auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
@@ -549,7 +549,7 @@ session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
 
 AUTH_ZYPPER = '''auth    required        pam_env.so
-auth    required        pam_tally2.so deny=5 unlock_time=600 onerr=fail
+auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail
 auth    optional        pam_gnome_keyring.so
 auth    sufficient      pam_unix.so     try_first_pass
 auth    required        pam_sss.so      use_first_pass
@@ -592,11 +592,12 @@ session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 
 AUTH_NSLCD = '''auth        required      pam_env.so
 auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900
+unlock_time=900 fail_interval=900
 auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail audit deny=5
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
 auth        required      pam_deny.so
 '''
 
@@ -636,12 +637,13 @@ session     optional      pam_krb5.so
 
 AUTH_YUM = '''auth        required      pam_env.so
 auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900
+unlock_time=900 fail_interval=900
 auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_sss.so use_first_pass
 auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail audit deny=5
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
 auth        required      pam_deny.so
 '''
 
