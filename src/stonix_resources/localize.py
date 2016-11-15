@@ -350,3 +350,187 @@ DHCPSup = {'subnet-mask': '"example.com"',
            'nis-domain': '""',
            'nis-servers': '""',
            'ntp-servers': '"ntp.example.com"'}
+
+AUTH_APT = '''auth        required      pam_env.so
+auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_APT = '''account     required      pam_tally2.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_APT = '''password    requisite     \
+pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
+use_authtok remember=10
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_APT = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
+'''
+
+SESSION_HOME_APT = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+'''
+
+AUTH_ZYPPER = '''auth    required        pam_env.so
+auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth    optional        pam_gnome_keyring.so
+auth    sufficient      pam_unix.so     try_first_pass
+auth    required        pam_sss.so      use_first_pass
+'''
+
+ACCOUNT_ZYPPER = '''account requisite       pam_unix.so     try_first_pass
+account sufficient      pam_localuser.so
+account required        pam_sss.so      use_first_pass
+'''
+
+PASSWORD_ZYPPER = '''password        requisite       \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3 maxrepeat=3
+password        sufficient      pam_unix.so sha512 shadow \
+try_first_pass use_authtok remember=10
+password        optional        pam_gnome_keyring.so    use_authtok
+password        required        pam_sss.so      use_authtok
+'''
+
+SESSION_ZYPPER = '''session required        pam_limits.so
+session required        pam_unix.so     try_first_pass
+session optional        pam_sss.so
+session optional        pam_umask.so
+session optional        pam_systemd.so
+session optional        pam_gnome_keyring.so    auto_start \
+only_if=gdm,gdm-password,lxdm,lightdm
+session optional        pam_env.so
+'''
+
+SESSION_HOME_ZYPPER = '''session required        pam_limits.so
+session required        pam_unix.so     try_first_pass
+session optional        pam_sss.so
+session optional        pam_umask.so
+session optional        pam_systemd.so
+session optional        pam_gnome_keyring.so    auto_start \
+only_if=gdm,gdm-password,lxdm,lightdm
+session optional        pam_env.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+'''
+
+AUTH_NSLCD = '''auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_NSLCD = '''account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow \
+try_first_pass use_authtok remember=10
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_NSLCD = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+
+SESSION_HOME_NSLCD = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     optional      pam_mkhomedir.so umask=0077
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+
+AUTH_YUM = '''auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_sss.so use_first_pass
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_YUM = '''account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_sss.so
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
+use_authtok remember=10
+password    sufficient    pam_sss.so use_authtok
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_YUM = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session    optional      pam_systemd.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_sss.so
+session     optional      pam_krb5.so
+'''
+
+SESSION_HOME_YUM = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session    optional      pam_systemd.so
+session     optional      pam_mkhomedir.so umask=0077
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_sss.so
+session     optional      pam_krb5.so
+'''
