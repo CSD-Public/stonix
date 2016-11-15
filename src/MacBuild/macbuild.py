@@ -566,6 +566,11 @@ class MacBuilder():
         print "buildStonix4MacAppPkg... Finished"
 
     def configSectionMap(self, section):
+        '''
+        Acquire values from the config file and store in a dictionary.
+
+        @author: rsn
+        '''
         dict1 = {}
         options = self.parser.options(section)
         for option in options:
@@ -605,6 +610,9 @@ class MacBuilder():
                     dict1[section] = self.configSectionMap(section)
                 print dict1
             except:
+                #####
+                # happens if there was a problem attempting to read the config
+                # file, Initializing class variables.
                 self.STONIX = "stonix"
                 self.STONIXICON = "stonix_icon"
                 self.STONIXVERSION = self.APPVERSION
@@ -618,6 +626,8 @@ class MacBuilder():
                 self.codesignVerbose = 'vvvv'
                 self.codesignDeep = True
             else:
+                #####
+                # Config file read, initializing class variables.
                 self.STONIX = dict1['stonix']['app']
                 self.STONIXICON = dict1['stonix']['app_icon']
                 self.STONIXVERSION = dict1['stonix']['app_version']

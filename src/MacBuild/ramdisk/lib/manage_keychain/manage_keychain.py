@@ -50,6 +50,7 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
     # helper Methods
     #----------------------------------------------------------------------
+
     def getSpecificManager(self):
         """
         Getter to acqure the specific keychain manager
@@ -100,6 +101,118 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
     # Defined Interface methods
     #----------------------------------------------------------------------
+
+    def listKeychain(self, *args, **kwargs):
+        """
+        Display or manipulate the keychain search list.
+
+        @author: Roy Nielsen
+        """
+        success = False
+
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.listKeychain(*args, **kwargs)
+
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+    #----------------------------------------------------------------------
+
+    def defaultKeychain(self, *args, **kwargs):
+        """
+        Display or set the default keychain.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.defaultKeychain(*args, **kwargs)
+
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+    #----------------------------------------------------------------------
+
+    def loginKeychain(self, *args, **kwargs):
+        '''
+        Display or set the login keychain.
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.loginKeychain(*args, **kwargs)
+
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+    #----------------------------------------------------------------------
+
+    def createKeychain(self, *args, **kwargs):
+        """
+        Create a keychain.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.logger.log(lp.DEBUG, "called by: " + inspect.stack()[1][1] + ": " + str(inspect.stack()[1][3]) + " (" + str(inspect.stack()[1][2]) + ")")
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.createKeychain(*args, **kwargs)
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+    #----------------------------------------------------------------------
+
+    def deleteKeychain(self, *args, **kwargs):
+        """
+        Delete keychain
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.deleteKeychain(*args, **kwargs)
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
 
     def lockKeychain(self, *args, **kwargs):
         """
@@ -163,13 +276,12 @@ class ManageKeychain(object):
         return success
 
     #----------------------------------------------------------------------
+    def showKeychainInfo(self, keychain, *args, **kwargs):
+        '''
+        Show the settings for a keychain.
 
-    def deleteKeychain(self, *args, **kwargs):
-        """
-        Delete keychain
-        
         @author: Roy Nielsen
-        """
+        '''
         success = False
         #####
         # Preprocess logging
@@ -177,28 +289,95 @@ class ManageKeychain(object):
         self.__calledBy()
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.deleteKeychain(*args, **kwargs)
+        success = self.keychainMgr.showKeychainInfo(*args, **kwargs)
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
         return success
 
+
     #----------------------------------------------------------------------
 
-    def createKeychain(self, *args, **kwargs):
-        """
-        Create a keychain.
-        
+    def dumpKeychain(self, *args, **kwargs):
+        '''
+        Dump the contents of one or more keychains.
+
         @author: Roy Nielsen
-        """
+        '''
         success = False
         #####
         # Preprocess logging
         self.logger.log(lp.DEBUG, "processing:" + "")
-        self.logger.log(lp.DEBUG, "called by: " + inspect.stack()[1][1] + ": " + str(inspect.stack()[1][3]) + " (" + str(inspect.stack()[1][2]) + ")")
+        self.__calledBy()
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.createKeychain(*args, **kwargs)
+        success = self.keychainMgr.dumpKeychain(*args, **kwargs)
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+
+    #----------------------------------------------------------------------
+
+    def findCertificate(self, *args, **kwargs):
+        '''
+        Find a certificate item.
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.findCertificate(*args, **kwargs)
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+
+    #----------------------------------------------------------------------
+
+    def findIdentity(self, *args, **kwargs):
+        '''
+        Find an identity (certificate + private key).
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.findIdentity(*args, **kwargs)
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success
+
+
+    #----------------------------------------------------------------------
+
+    def error(self, *args, **kwargs):
+        '''
+        Display descrip6tive message for the given error code(s).
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+        #####
+        # Call factory created object's mirror method
+        success = self.keychainMgr.error(*args, **kwargs)
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
