@@ -41,6 +41,9 @@ import re
 from subprocess import call
 import traceback
 from ..KVEditorStonix import KVEditorStonix
+from ..localize import AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD, \
+    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM, \
+    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..rule import Rule
@@ -111,6 +114,26 @@ for the login.defs file"""
         self.guidance = ["NSA 2.3.3.1,", "NSA 2.3.3.2"]
         self.iditerator = 0
         self.created = False
+        self.localize()
+
+    def localize(self):
+        myos = self.environ.getostype().lower()
+        if re.search("red hat.*?release 6", myos):
+            self.password = PASSWORD_NSLCD
+            self.auth = AUTH_NSLCD
+            self.acct = ACCOUNT_NSLCD
+        elif re.search("suse", myos):
+            self.password = PASSWORD_ZYPPER
+            self.auth = AUTH_ZYPPER
+            self.acct = ACCOUNT_ZYPPER
+        elif re.search("debian|ubuntu", myos):
+            self.password = PASSWORD_APT
+            self.auth = AUTH_APT
+            self.acct = ACCOUNT_APT
+        else:
+            self.password = PASSWORD_YUM
+            self.auth = AUTH_YUM
+            self.acct = ACCOUNT_YUM
 
     def report(self):
         '''
@@ -251,7 +274,7 @@ for the login.defs file"""
         self.pam = "/etc/pam.conf"
         self.config = readFile(self.pam, self.logger)
         if self.config:
-            if not checkPerms(self.pam, [0, 0, 420], self.logger):
+            if not checkPerms(self.pam, [0, 0, 0o644], self.logger):
                 compliant = False
             if os.path.exists("/usr/lib/security/pam_passwdqc.so"):
                 if not self.chkpasswdqcCracklib():
@@ -273,7 +296,7 @@ for the login.defs file"""
         self.pam = "/etc/pam.d/passwd"
         self.config = readFile(self.pam, self.logger)
         if self.config:
-            if not checkPerms(self.pam2, [0, 0, 420], self.logger):
+            if not checkPerms(self.pam2, [0, 0, 0o644], self.logger):
                 compliant = False
             if self.chkpasswdqcinstall():
                 if not self.chkpasswdqcCracklib():
@@ -294,6 +317,7 @@ for the login.defs file"""
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
         '''
+        self.detailedresults = ""
         try:
             if not self.ci1.getcurrvalue():
                 return
@@ -430,10 +454,10 @@ for the login.defs file"""
         changed = False
         success = True
         if self.config:
-            if not checkPerms(self.pam, [0, 0, 420], self.logger):
+            if not checkPerms(self.pam, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam, [0, 0, 420], self.logger,
+                if not setPerms(self.pam, [0, 0, 0o644], self.logger,
                                 self.statechglogger, myid):
                     return False
             if not self.chkpasswdqc():
@@ -455,17 +479,17 @@ for the login.defs file"""
                 self.statechglogger.recordfilechange(self.pam, tmpfile, myid)
                 os.rename(tmpfile, self.pam)
                 os.chown(self.pam, 0, 0)
-                os.chmod(self.pam, 420)
+                os.chmod(self.pam, 0o644)
                 resetsecon(self.pam)
             else:
                 success = False
 
         path = "/etc/default/login"
         if os.path.exists(path):
-            if not checkPerms(path, [0, 0, 292], self.logger):
+            if not checkPerms(path, [0, 0, 0o444], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, [0, 0, 292], self.logger,
+                if not setPerms(path, [0, 0, 0o444], self.logger,
                                 self.statechglogger, myid):
                     success = False
         if self.editor1.fixables:
@@ -477,7 +501,7 @@ for the login.defs file"""
             elif not self.editor1.commit():
                 success = False
             os.chown(path, 0, 0)
-            os.chmod(path, 292)
+            os.chmod(path, 0o444)
             resetsecon(path)
         if not self.fixPolicy():
             success = False
@@ -489,10 +513,10 @@ for the login.defs file"""
         changed = False
         success = True
         if self.config:
-            if not checkPerms(self.pam, [0, 0, 420], self.logger):
+            if not checkPerms(self.pam, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam, [0, 0, 420], self.logger,
+                if not setPerms(self.pam, [0, 0, 0o644], self.logger,
                                 self.statechglogger, myid):
                     success = False
             if not self.chklockout():
@@ -520,17 +544,17 @@ for the login.defs file"""
                                                          myid)
                     os.rename(tmpfile, self.pam)
                     os.chown(self.pam, 0, 0)
-                    os.chmod(self.pam, 420)
+                    os.chmod(self.pam, 0o644)
                     resetsecon(self.pam)
                 else:
                     success = False
         if self.config2:
             changed = False
             self.config = self.config2
-            if not checkPerms(self.pam2, [0, 0, 420], self.logger):
+            if not checkPerms(self.pam2, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam2, [0, 0, 420], self.logger,
+                if not setPerms(self.pam2, [0, 0, 0o644], self.logger,
                                 self.statechglogger, myid):
                     success = False
             if not self.chkpasswdqc():
@@ -558,7 +582,7 @@ for the login.defs file"""
                                                          myid)
                     os.rename(tmpfile, self.pam2)
                     os.chown(self.pam2, 0, 0)
-                    os.chmod(self.pam2, 420)
+                    os.chmod(self.pam2, 0o644)
                     resetsecon(self.pam2)
                 else:
                     success = False
@@ -579,19 +603,19 @@ for the login.defs file"""
         '''
         compliant = False
         regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=5"
+            "try_first_pass use_authtok remember=10"
         if package == "quality":
             compliant1 = self.chkpwquality()
             regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
-                "lcredit=0 ocredit=0 retry=3"
+                "lcredit=0 ocredit=0 retry=3 maxrepeat=3"
             compliant2 = self.chkPwCheck(regex1, regex2, package)
             if compliant1 and compliant2:
                 compliant = True
         elif package == "cracklib":
             regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
-                "lcredit=0 ocredit=0 retry=3"
+                "lcredit=0 ocredit=0 retry=3 maxrepeat=3"
             compliant = self.chkPwCheck(regex1, regex2, package)
         return compliant
 
@@ -635,7 +659,7 @@ for the login.defs file"""
             pamfiles.append(self.pam)
         for pam in pamfiles:
             if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+                if not checkPerms(pam, [0, 0, 0o644], self.logger):
                     self.detailedresults += "permissions aren't correct " + \
                         "on " + pam + "\n"
                     compliant = False
@@ -730,7 +754,7 @@ for the login.defs file"""
             compliant = True
             path = "/etc/default/login"
             if os.path.exists(path):
-                if not checkPerms(path, [0, 0, 292], self.logger):
+                if not checkPerms(path, [0, 0, 0o444], self.logger):
                     self.detailedresults += "permissions are incorrect " + \
                         "for " + path + " file\n"
                     compliant = False
@@ -774,7 +798,7 @@ for the login.defs file"""
             pamfiles.append(self.pam2)
         for pam in pamfiles:
             if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+                if not checkPerms(pam, [0, 0, 0o644], self.logger):
                     self.detailedresults += "permissions are incorrect " + \
                         "on " + pam + " file\n"
                     compliant = False
@@ -785,7 +809,7 @@ for the login.defs file"""
                 return False
         regex1 = r"^auth[ \t]+required[ \t]+pam_env.so"
         regex2 = r"^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-            "unlock_time=600 onerr=fail"
+            "unlock_time=900 onerr=fail"
         for pam in pamfiles:
             tmpconfig1, tmpconfig2 = [], []
             found = False
@@ -840,7 +864,7 @@ for the login.defs file"""
             pamfiles.append(self.pam2)
         for pam in pamfiles:
             if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+                if not checkPerms(pam, [0, 0, 0o644], self.logger):
                     compliant = False
             else:
                 self.detailedresults += pam + " does not exist.  Due to " + \
@@ -914,7 +938,7 @@ for the login.defs file"""
         compliant = True
         debug = ""
         if os.path.exists(self.logindefs):
-            if not checkPerms(self.logindefs, [0, 0, 420], self.logger):
+            if not checkPerms(self.logindefs, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions incorrect for " + \
                     self.logindefs + " file\n"
                 compliant = False
@@ -1005,7 +1029,7 @@ for the login.defs file"""
                     "contain the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
-            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+            if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.libuserfile + "\n"
                 compliant = False
@@ -1021,7 +1045,7 @@ for the login.defs file"""
                         if temp[1].strip() != "\"sha512\"":
                             compliant = False
                             break
-            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+            if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.libuserfile + "\n"
                 compliant = False
@@ -1041,7 +1065,7 @@ for the login.defs file"""
         self.editor2 = KVEditorStonix(self.statechglogger, self.logger, "conf",
                                       path, tmppath, data, "present",
                                       "closedeq")
-        if not checkPerms(path, [0, 0, 420], self.logger):
+        if not checkPerms(path, [0, 0, 0o644], self.logger):
             self.detailedresults += "permissions are incorrect on " + path + \
                 "\n"
             compliant = False
@@ -1055,10 +1079,10 @@ for the login.defs file"""
 
     def fixPolicy(self):
         path = "/etc/security/policy.conf"
-        if not checkPerms(path, [0, 0, 420], self.logger):
+        if not checkPerms(path, [0, 0, 0o644], self.logger):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 420], self.logger,
+            if not setPerms(path, [0, 0, 0o644], self.logger,
                             self.statechglogger, myid):
                 return False
         if self.editor2.fixables:
@@ -1070,7 +1094,7 @@ for the login.defs file"""
             elif not self.editor2.commit():
                 return False
             os.chown(path, 0, 0)
-            os.chmod(path, 420)
+            os.chmod(path, 0o644)
             resetsecon(path)
         return True
 
@@ -1080,10 +1104,10 @@ for the login.defs file"""
         # only for freebsd
         tempstring = ""
         if os.path.exists(self.logindefs):
-            if not checkPerms(self.logindefs, [0, 0, 416], self.logger):
+            if not checkPerms(self.logindefs, [0, 0, 0o640], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.logindefs, [0, 0, 416], self.logger,
+                if not setPerms(self.logindefs, [0, 0, 0o640], self.logger,
                                 self.statechglogger, myid):
                     return False
             contents = readFile(self.logindefs, self.logger)
@@ -1145,9 +1169,9 @@ for the login.defs file"""
             os.rename(tmpfile, self.logindefs)
             os.chown(self.logindefs, 0, 0)
             if self.ph.manager == "freebsd":
-                os.chmod(self.logindefs, 420)
+                os.chmod(self.logindefs, 0o644)
             else:
-                os.chmod(self.logindefs, 416)
+                os.chmod(self.logindefs, 0o640)
             resetsecon(self.logindefs)
             retval = call(["/usr/bin/cap_mkdb", "/etc/login.conf"],
                           stdout=None, shell=False)
@@ -1163,28 +1187,20 @@ for the login.defs file"""
     def setpassword(self, package):
         success = False
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=5"
-        data2 = "password\tsufficient\tpam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=5\n"
+            "try_first_pass use_authtok remember=10"
         if package == "quality":
             success1 = self.setpwquality()
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
-                + "ocredit=0 retry=3"
-            data1 = "password\trequisite\tpam_pwquality.so minlen=14 " + \
-                "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
-                "ocredit=0 retry=3\n"
-            success2 = self.setPwCheck(regex1, regex2, data1, data2, package)
+                + "ocredit=0 retry=3 maxrepeat=3"
+            success2 = self.setPwCheck(regex1, regex2, package)
             if success1 and success2:
                 success = True
         elif package == "cracklib":
             regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
                 "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
-                + "ocredit=0 retry=3"
-            data1 = "password\trequisite\tpam_cracklib.so minlen=14 " + \
-                "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
-                "ocredit=0 retry=3\n"
-            success = self.setPwCheck(regex1, regex2, data1, data2, package)
+                + "ocredit=0 retry=3 maxrepeat=3"
+            success = self.setPwCheck(regex1, regex2, package)
         return success
 ###############################################################################
 
@@ -1228,7 +1244,7 @@ for the login.defs file"""
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
 
-    def setPwCheck(self, regex1, regex2, data1, data2, package):
+    def setPwCheck(self, regex1, regex2, package):
         '''Private method to set the pwquality/cracklib directive in
         password-auth or common-password. retval is a boolean indicating
         success.
@@ -1243,13 +1259,14 @@ for the login.defs file"""
             pamfiles.append(self.pam2)
         else:
             pamfiles.append(self.pam)
+        # Set file permissions
         for pam in pamfiles:
             if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+                if not checkPerms(pam, [0, 0, 0o644], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(pam, [0, 0, 420], self.logger,
-                                    "", self.statechglogger, myid):
+                    if not setPerms(pam, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
                         self.detailedresults += "Unable to set " + \
                             "permissions on " + pam + " file\n"
                         success = False
@@ -1282,21 +1299,18 @@ for the login.defs file"""
                 else:
                     tmpconfig1.append(line)
             if not len(tmpconfig2) >= 2:
-                tmpconfig2 = []
-                tmpconfig2.append(data1)
-                tmpconfig2.append(data2)
+                tmpconfig2 = self.password.splitlines(True)
                 changed = True
             else:
-                if not re.search(regex1, tmpconfig2[0].strip()):
-                    tmpconfig2[0] = data1
-                    changed = True
-                if not re.search(regex2, tmpconfig2[1].strip()):
-                    tmpconfig2[1] = data2
+                if not re.search(regex1, tmpconfig2[0].strip()) or \
+                   not re.search(regex2, tmpconfig2[1].strip()):
+                    tmpconfig2 = self.password.splitlines(True)
                     changed = True
 
             if changed:
                 for item in tmpconfig1:
                     newconfig.append(item)
+                newconfig.append("\n")
                 for item in tmpconfig2:
                     newconfig.append(item)
                 tempstring = ""
@@ -1314,12 +1328,12 @@ for the login.defs file"""
                                                              myid)
                         os.rename(tmpfile, pam)
                         os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
+                        os.chmod(pam, 0o644)
                         resetsecon(pam)
                     else:
                         os.rename(tmpfile, pam)
                         os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
+                        os.chmod(pam, 0o644)
                         resetsecon(pam)
                 else:
                     self.detailedresults += "unable to write changes to: " + \
@@ -1348,7 +1362,7 @@ for the login.defs file"""
                             debug = "/etc/libuser.conf has been corrected\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             os.chown(self.libuserfile, 0, 0)
-                            os.chmod(self.libuserfile, 420)
+                            os.chmod(self.libuserfile, 0o644)
                             resetsecon(self.libuserfile)
                         else:
                             self.detailedresults += "/etc/libuser.conf " + \
@@ -1393,7 +1407,7 @@ for the login.defs file"""
                                                              tmpfile, myid)
                         os.rename(tmpfile, self.libuserfile)
                         os.chown(self.libuserfile, 0, 0)
-                        os.chmod(self.libuserfile, 420)
+                        os.chmod(self.libuserfile, 0o644)
                         resetsecon(self.libuserfile)
         return True
 ###############################################################################
@@ -1429,11 +1443,11 @@ for the login.defs file"""
             pamfiles.append(self.pam2)
         for pam in pamfiles:
             if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+                if not checkPerms(pam, [0, 0, 0o644], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(pam, [0, 0, 420], self.logger,
-                                    "", self.statechglogger, myid):
+                    if not setPerms(pam, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
                         self.detailedresults += "Unable to set permissions " + \
                             "on " + pam + "\n"
                         success = False
@@ -1452,14 +1466,7 @@ for the login.defs file"""
             "audit deny=5 unlock_time=900 fail_interval=900\n" + \
             ".*auth[ \t]+required[ \t]+pam_deny.so"
         regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
-        data1 = """auth\trequired\tpam_env.so
-auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900 fail_interval=900
-auth\tsufficient\tpam_unix.so try_first_pass
-auth\trequisite\tpam_succeed_if.so uid >= 500 quiet
-auth\tsufficient\tpam_krb5.so use_first_pass
-auth\t[default=die]\tpam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900
-auth\trequired\tpam_deny.so
-"""
+        data1 = self.auth
         data2 = "account\trequired\tpam_faillock.so\n"
         for pam in pamfiles:
             changed1, changed2 = False, False
@@ -1527,12 +1534,12 @@ auth\trequired\tpam_deny.so
                                                              myid)
                         os.rename(tmpfile, pam)
                         os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
+                        os.chmod(pam, 0o644)
                         resetsecon(pam)
                     else:
                         os.rename(tmpfile, pam)
                         os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
+                        os.chmod(pam, 0o644)
                         resetsecon(pam)
                 else:
                     self.detailedresults += "unable to write changes to: " + \
@@ -1548,9 +1555,9 @@ auth\trequired\tpam_deny.so
         success = True
         regex1 = "^auth[ \t]+required[ \t]+pam_env.so"
         regex2 = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-            "unlock_time=600 onerr=fail"
+            "unlock_time=900 onerr=fail"
         data1 = "auth\trequired\tpam_env.so\n"
-        data2 = "auth\trequired\tpam_tally2.so deny=5 unlock_time=600 " + \
+        data2 = "auth\trequired\tpam_tally2.so deny=5 unlock_time=900 " + \
             "onerr=fail\n"
         if self.ph.manager == "yum":
             pamfiles.append(self.pam)
@@ -1559,11 +1566,11 @@ auth\trequired\tpam_deny.so
             pamfiles.append(self.pam2)
         for pam in pamfiles:
             if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+                if not checkPerms(pam, [0, 0, 0o644], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(pam, [0, 0, 420], self.logger,
-                                    "", self.statechglogger, myid):
+                    if not setPerms(pam, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
                         self.detailedresults += "Unable to set permissions" + \
                             "on " + pam + " file\n"
                         success = False
@@ -1613,9 +1620,7 @@ auth\trequired\tpam_deny.so
                 # If there aren't at least two entries in tmpconfig2, we come
                 # to the except block where we just store the two correct lines
                 # in tmpconfig3
-                tmpconfig3 = []
-                tmpconfig3.append(data1)
-                tmpconfig3.append(data2)
+                tmpconfig3 = self.auth.splitlines(True)
                 changed = True
             if changed:
                 if tmpconfig2:
@@ -1640,12 +1645,12 @@ auth\trequired\tpam_deny.so
                                                              myid)
                         os.rename(tmpfile, pam)
                         os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
+                        os.chmod(pam, 0o644)
                         resetsecon(pam)
                     else:
                         os.rename(tmpfile, pam)
                         os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
+                        os.chmod(pam, 0o644)
                         resetsecon(pam)
                 else:
                     self.detailedresults += "unable to write changes to: " + \
@@ -1656,10 +1661,10 @@ auth\trequired\tpam_deny.so
 
     def setdefpasshash(self):
         success = True
-        if not checkPerms(self.logindefs, [0, 0, 420], self.logger):
+        if not checkPerms(self.logindefs, [0, 0, 0o644], self.logger):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.logindefs, [0, 0, 420], self.logger,
+            if not setPerms(self.logindefs, [0, 0, 0o644], self.logger,
                             self.statechglogger, myid):
                 self.detailedresults += "Unable to set permissions " + \
                     "on " + self.logindefs + " file\n"
@@ -1677,7 +1682,7 @@ auth\trequired\tpam_deny.so
                             debug = "/etc/login.defs file has been corrected\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             os.chown(self.logindefs, 0, 0)
-                            os.chmod(self.logindefs, 420)
+                            os.chmod(self.logindefs, 0o644)
                             resetsecon(self.logindefs)
                         else:
                             debug = "Unable to correct the " + \
