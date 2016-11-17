@@ -125,7 +125,7 @@ class ManageKeychainTemplate(object):
     def findCertificate(self, *args, **kwargs):
         '''
         Find a certificate item.
-        
+
         @author: Roy Nielsen
         '''
         success = False
@@ -135,7 +135,7 @@ class ManageKeychainTemplate(object):
     def findIdentity(self, *args, **kwargs):
         '''
         Find an identity (certificate + private key).
-        
+
         @author: Roy Nielsen
         '''
         success = False
@@ -145,7 +145,7 @@ class ManageKeychainTemplate(object):
     def error(self, *args, **kwargs):
         '''
         Display descrip6tive message for the given error code(s).
-        
+
         @author: Roy Nielsen
         '''
         success = False

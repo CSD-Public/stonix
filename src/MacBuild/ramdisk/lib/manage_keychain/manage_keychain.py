@@ -25,7 +25,11 @@ class ManageKeychain(object):
     
     @note: If the generic interface doesn't have enough functionality, the
            factory has a method to return the specific keychain manager.
-    
+
+    @note: Methods may return a bool, list or dictionary depending on the 
+           concrete implementation of the keychain manager for a specific
+           OS or application.
+
     @author: Roy Nielsen
     """
 
@@ -117,12 +121,12 @@ class ManageKeychain(object):
 
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.listKeychain(*args, **kwargs)
+        success, output = self.keychainMgr.listKeychain(*args, **kwargs)
 
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
-        return success
+        return success, output
 
     #----------------------------------------------------------------------
 
@@ -141,12 +145,12 @@ class ManageKeychain(object):
 
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.defaultKeychain(*args, **kwargs)
+        success, output = self.keychainMgr.defaultKeychain(*args, **kwargs)
 
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
-        return success
+        return success, output
 
     #----------------------------------------------------------------------
 
@@ -165,12 +169,12 @@ class ManageKeychain(object):
 
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.loginKeychain(*args, **kwargs)
+        success, output = self.keychainMgr.loginKeychain(*args, **kwargs)
 
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
-        return success
+        return success, output
 
     #----------------------------------------------------------------------
 
@@ -276,6 +280,7 @@ class ManageKeychain(object):
         return success
 
     #----------------------------------------------------------------------
+
     def showKeychainInfo(self, keychain, *args, **kwargs):
         '''
         Show the settings for a keychain.
@@ -294,7 +299,6 @@ class ManageKeychain(object):
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
         return success
-
 
     #----------------------------------------------------------------------
 
@@ -317,7 +321,6 @@ class ManageKeychain(object):
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
         return success
 
-
     #----------------------------------------------------------------------
 
     def findCertificate(self, *args, **kwargs):
@@ -339,7 +342,6 @@ class ManageKeychain(object):
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
         return success
 
-
     #----------------------------------------------------------------------
 
     def findIdentity(self, *args, **kwargs):
@@ -360,7 +362,6 @@ class ManageKeychain(object):
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
         return success
-
 
     #----------------------------------------------------------------------
 

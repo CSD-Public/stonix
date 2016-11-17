@@ -20,8 +20,6 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-from _ast import With
-from pip._vendor.lockfile import UnlockError
 '''
 Created 02/23/2015
 
@@ -429,29 +427,80 @@ class macBuildLib(object):
         @author: Roy Nielsen
         '''
         success = False
+        output = ''
+        loginKeychain = False
         if not username or not password:
             return success
         elif not keychain:
             userHome = self.manage_user.getUserHomeDir(username)
             keychain = userHome + "/Library/Keychains/login.keychain"
-        
-        #####
-        # Attempt to unlock the keychain
-        if os.path.isfile(keychain):
-            success = self.unlockKeychain(username, password, keychain)
-        else: 
-            return success
-        
-        #####
-        # Check keychain for vaild signatures
-        
-        
-        
-            
-            
-            
+            loginKeychain = True
 
-    def tearDownForSigning(self):
-        '''
-        '''
+        self.manage_keychain.setUser(username.strip())
+
+        #####
+        # Check open keychain search list first
+        success, output = self.manage_keychain.findIdentity(policy='codesigning')
         
+        if not success:
+            #####
+            # Check the specific keychain for the cert
+            success, output = self.manage_keychain.findIdentity(policy='codesigning', keychain=keychain)
+            
+            if not success:
+                #####
+                # Acquire the login keychain and look in there, if not already
+                # done.
+                success, output = self.manage_keychain.loginKeychain()
+                
+                if not re.match("^%s$"%output.strip(), keychain) or not success:
+                    #####
+                    # If the keychain we already processed is the keychain,
+                    # return a failure.
+                    return success
+                else:
+                    #####
+                    # Set the keychain to be the login keychain
+                    loginKeychain = True
+                    keychain = output.strip()
+                    #####
+                    # Check the login keychain for the cert
+                    success, output = self.manage_keychain.findIdentity(policy='codesigning', keychain=keychain)
+            
+            #####
+            # Set the keychain to be in the signing search list
+            success, output = self.manage_keychain.listKeychains(setList=True, keychain=keychain)
+            
+            if success:
+                #####
+                # Unlock the keychain so we can sign
+                success, output = self.manageKeychain.unlockKeychain(password, keychain)
+
+        return success
+
+    def buildWrapper(self, username, appName):
+        
+        #returnDir = os.getcwd()
+        #os.chdir(appName)
+        userHome = self.manage_user.getUserHomeDir(username)
+        keychain = userHome + "/Library/Keychains/login.keychain"                
+        
+        #####
+        # Make sure the keychain is unlocked
+        #self.setUpForSigning(self.keyuser, self.keypass)
+        #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
+        # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
+
+        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj', 'DEVELOPENT_TEAM=Los Alamos National Security, LLC', 'OTHER_CODE_SIGN_FLAGS=--keychain ' + keychain]
+        print '.'
+        print '.'
+        print '.'
+        print str(cmd)
+        print '.'
+        print '.'
+        print '.'
+        output = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=False).communicate()
+        #output = call(cmd)
+        print str(output)
+        print "Done building stonix4mac..."
+        #os.chdir(returnDir)

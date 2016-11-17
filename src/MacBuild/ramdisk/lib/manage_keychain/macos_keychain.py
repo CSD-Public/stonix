@@ -195,6 +195,8 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             success = True
         return success
 
+    #----------------------------------------------------------------------
+
     def catOne(self, subCommand="", prefDomain="", keychain="", setList=False, *args, **kwargs):
         '''
         Run a category one subcommand - a subcommand that has a options pattern of:
@@ -211,9 +213,13 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         
         '''
         success = False
+        stdout = False
+        stderr = False
+        retcode = 255
+
         keychain = keychain.strip()
         prefDomain = prefDomain.strip()
-        
+        options = []
         
         validSubcommands = ["list-keychains",
                             "default-keychain",
@@ -226,54 +232,22 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     
             #####
             # Input validation 
-            if setList:
-                
-                if domain in validDomains:
-                    #####
-                    # Command setup - note that the keychain deliberately has quotes
-                    # around it - there could be spaces in the path to the keychain,
-                    # so the quotes are required to fully resolve the file path.  
-                    # Note: this is done in the build of the command, rather than 
-                    # the build of the variable.
-                    if keychain and isinstance(keychain, basestring):
-                        cmd = { subCommand : ["-d", prefDomain, "-s", keychain] }
-                        self.logger.log(lp.DEBUG, "Setting domain: " + prefDomain + ", with keychain: " + keychain)
-                    else:
-                        cmd = { subCommand : ["-d", prefDomain, "-s"] }
-                        self.logger.log(lp.DEBUG, "Setting domain: " + prefDomain)
-                else:
-                    if keychain and isinstance(keychain, basestring):
-                        cmd = { subCommand : ["-s", keychain] }
-                        self.logger.log(lp.DEBUG, "Setting keychain: " + keychain + ", with no domain")
-                    else:
-                        cmd = { subCommand : ["-s"] }
-                        self.logger.log(lp.DEBUG, "No domain, no keychain...")
-            else:  
-                if domain in validDomains:
-                    #####
-                    # Command setup - note that the keychain deliberately has quotes
-                    # around it - there could be spaces in the path to the keychain,
-                    # so the quotes are required to fully resolve the file path.  
-                    # Note: this is done in the build of the command, rather than 
-                    # the build of the variable.
-                    if keychain and isinstance(keychain, basestring):
-                        cmd = { subCommand : ["-d", prefDomain, keychain] }
-                        self.logger.log(lp.DEBUG, "Checking domain: " + prefDomain + ", with keychain: " + keychain)
-                    else:
-                        cmd = { subCommand : ["-d", prefDomain] }
-                        self.logger.log(lp.DEBUG, "Checking domain: " + prefDomain)
-                else:
-                    if keychain and isinstance(keychain, basestring):
-                        cmd = { subCommand : [keychain] }
-                        self.logger.log(lp.DEBUG, "Checking keychain: " + keychain + ", with no domain")
-                    else:
-                        cmd = { subCommand : [] }
-                        self.logger.log(lp.DEBUG, "No domain, no keychain...")
-        
-                success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
+            if setList and self.isSaneFilePath(keychain) and os.path.exists(keychain):
+                options += ['-s', keychain]
+
+            if prefDomain in validDomains:
+                options += ['-d', prefDomain]
+
+            #####
+            # Command setup 
+            cmd = { subCommand : options }
+            self.logger.log(lp.DEBUG, "Sending: " + str(cmd))
+            
+            success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
 
         return success, stdout, stderr, retcode
 
+        
     #----------------------------------------------------------------------
     # Subcommands
     #----------------------------------------------------------------------
@@ -294,11 +268,11 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         
         success, output, error, retval = self.catOne("list-keychains", prefDomain, keychain, setList)
         
-        return success
+        return success, output
 
     #-------------------------------------------------------------------------
 
-    def defaultKeychain(self):
+    def defaultKeychain(self, keychain='', prefDomain='user', setList=False, *args, **kwargs):
         '''
         Display or set the default keychain.
         
@@ -313,11 +287,11 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         
         success, output, error, retval = self.catOne("default-keychain", prefDomain, keychain, setList)
         
-        return success
+        return success, output
 
     #-------------------------------------------------------------------------
 
-    def loginKeychain(self):
+    def loginKeychain(self, keychain='', prefDomain='user', setList=False, *args, **kwargs):
         '''
         Display or set the login keychain.
         
@@ -332,7 +306,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         
         success, output, error, retval = self.catOne("login-keychain", prefDomain, keychain, setList)
         
-        return success
+        return success, output
 
     #-------------------------------------------------------------------------
 
@@ -522,7 +496,9 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         success = False
         stdout = False
         keychain = keychain.strip()
-        if keychain and isinstance(keychain, basestring):
+        #####
+        # Input validation for the file keychain.
+        if self.isSaneFilePath(keychain) and os.path.exists(keychain):
             #####
             # Command setup - note that the keychain deliberately has quotes
             # around it - there could be spaces in the path to the keychain,
@@ -585,7 +561,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             # so the quotes are required to fully resolve the file path.  
             # Note: this is done in the build of the command, rather than 
             # the build of the variable.
-            if keychain and isinstance(keychain, basestring):
+            if self.isSaneFilePath(keychain) and os.path.exists(keychain):
                 cmd = { "find-certificate" : ["-a", "-c", name, "-p", keychain] }
             else:
                 cmd = { "find-certificate" : ["-a", "-c", name, "-p"] }
@@ -596,11 +572,11 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     #-------------------------------------------------------------------------
 
-    def findIdentity(self, policy='', sstring='', keychain='', *args, **kwargs):
+    def findIdentity(self, valid=True, policy='', sstring='', keychain='', *args, **kwargs):
         '''
         Find an identity (certificate + private key).  Only shows valid identities.
 
-        @param: policy - value in a list of validProperties in this method
+        @param: policy - value  in a list of validProperties in this method
         @param: sstring - search string
         @param: keychain - (optional) - keychain to search, otherwise the search list.
 
@@ -608,30 +584,44 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         '''
         success = False
         stdout = False
-        name = name.strip()
+        policy = policy.strip()
         keychain = keychain.strip()
-        
+        sstring = sstring.strip()
+        options = []
+
         validPolicies = ["basic", "ssl-client", "ssl-server", "smime", "eap",
                          "ipsec", "ichat", "codesigning", "sys-default", 
                          "sys-kerberos-kdc"]
         
-        if not policy or not isinstance(policy, basestring) or \
-           not sstring or not isinstance(sstring, basestring) or \
-           not policy in validPolicies:
-            return success, stdout
-        else:
+        if policy in validPolicies:
             #####
-            # Command setup - note that the keychain deliberately has quotes
-            # around it - there could be spaces in the path to the keychain,
-            # so the quotes are required to fully resolve the file path.  
-            # Note: this is done in the build of the command, rather than 
-            # the build of the variable.
-            if keychain and isinstance(keychain, basestring):
-                cmd = { "find-identity" : ["-p", policy, "-s", sstring, "-v", keychain] }
-            else:
-                cmd = { "find-identity" : ["-p", policy, "-s", sstring, "-v"] }
-            self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
-            success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
+            # Only add the policy option if it in the valid set
+            options += ['-p', policy]
+
+        if sstring and isinstance(sstring, basestring):
+            #####
+            # sstring stands for search string.
+            # Do not allow user input here, only known safe programmer input.
+            options += ['-s', sstring]
+
+        if valid:
+            #####
+            # Only valid entries in the kechain search list, add the '-v'
+            options += ['-v']
+
+        if self.isSaneFilePath(keychain) and os.path.exists(keychain):
+            #####
+            # If a keychain is given and passes validation, add it to the options.
+            options += [keychain]
+
+        #####
+        # Set up and log the command
+        cmd = ['find-identity'] + options
+        self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
+
+        #####
+        # Run the command.
+        success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
 
         return success, stdout
 
