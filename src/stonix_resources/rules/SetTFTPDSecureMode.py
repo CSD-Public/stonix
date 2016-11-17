@@ -515,6 +515,9 @@ mode.'''
         success = True
         debug = ""
         if not os.path.exists(self.plistpath):
+            debug = self.plistpath + " doesn't exist. " + \
+                "Stonix will not attempt to create this file\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return success
         uid, gid = "", ""
         statdata = os.stat(self.plistpath)
@@ -544,6 +547,8 @@ mode.'''
         if not re.search(self.plistregex, contentstring):
             tmpfile = self.plistpath + ".tmp"
             if not writeFile(tmpfile, self.plistcontents, self.logger):
+                debug = "Unable to write correct contents to " + \
+                    self.plistpath + "\n"
                 success = False
             else:
                 self.iditerator +=1 
