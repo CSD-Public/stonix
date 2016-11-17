@@ -225,8 +225,8 @@ class SoftwareBuilder():
                 self.STONIX4MACICON = "stonix_icon"
                 self.STONIX4MACVERSION = self.APPVERSION                
                 #-- Internal libraries
-                from macbuildlib import macbuildlib
-                self.mbl = macbuildlib(self.logger)
+                from buildlib import macBuildLib
+                self.mbl = macBuildLib(self.logger)
                 self.PYUIC = self.mbl.getpyuicpath()
                 self.codesignVerbose = 'vvvv'
                 self.codesignDeep = True
@@ -255,8 +255,8 @@ class SoftwareBuilder():
                     sys.path.append(path)
                 #-- Internal libraries
                 try:
-                    from macbuildlib import macbuildlib
-                    self.mbl = macbuildlib(self.logger, self.PYPATHS)
+                    from buildlib import macBuildLib
+                    self.mbl = macBuildLib(self.logger, self.PYPATHS)
                 except Exception, err:
                     raise
                 self.logger.log(lp.INFO, "... macbuildlib loaded ...")
@@ -451,26 +451,10 @@ class SoftwareBuilder():
             if appName == "stonix4mac":
                 #####
                 # Perform xcodebuild
-                os.chdir(appPath)
-                #####
-                # Make sure the keychain is unlocked
-                self.mbl.unlockKeychain(self.keyuser, self.keypass)
-                #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
-                # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
-                cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj']
-                print '.'
-                print '.'
-                print '.'
-                print str(cmd)
-                print '.'
-                print '.'
-                print '.'
+                self.mbl.buildWrapper(self.keyuser, appName)
+
                 #if self.doCodesign:
                 #    cmd = cmd + ['-configuration', 'Los Alamos National Security, LLC']
-                output = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=False).communicate()
-                #output = call(cmd)
-                print str(output)
-                print "Done building stonix4mac..."
             elif appName == "stonix":
                 #####
                 # Perform pyinstaller build
