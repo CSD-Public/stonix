@@ -45,13 +45,14 @@ from subprocess import Popen, STDOUT, PIPE, call
 from shutil import rmtree, copy2
 from ConfigParser import SafeConfigParser
 
-from buildlib import macBuildLib
 # For setupRamdisk() and detachRamdisk()
 sys.path.append("./ramdisk/")
 from ramdisk.macRamdisk import RamDisk, detach
 from ramdisk.lib.loggers import CyLogger
 from ramdisk.lib.loggers import LogPriority as lp
 from ramdisk.lib.get_libc import getLibc
+from ramdisk.lib.run_commands import RunWith
+
 
 #####
 # Exception for when the conf file can't be grokked.
@@ -94,6 +95,8 @@ class SoftwareBuilder():
             debug = 40
         self.logger = CyLogger(level=debug)
         self.logger.initializeLogs()
+        self.rw = RunWith(self.logger)
+        
         self.ramdisk_size = ramdisk_size
 
         self.libc = getLibc()
@@ -101,7 +104,6 @@ class SoftwareBuilder():
         if options.sig:
             self.codesignSignature = options.sig
 
-        self.mbl = macBuildLib(self.logger)
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
         cwd = os.getcwd()
@@ -225,8 +227,8 @@ class SoftwareBuilder():
                 self.STONIX4MACICON = "stonix_icon"
                 self.STONIX4MACVERSION = self.APPVERSION                
                 #-- Internal libraries
-                from buildlib import macBuildLib
-                self.mbl = macBuildLib(self.logger)
+                from buildlib import MacBuildLib
+                self.mbl = MacBuildLib(self.logger)
                 self.PYUIC = self.mbl.getpyuicpath()
                 self.codesignVerbose = 'vvvv'
                 self.codesignDeep = True
@@ -255,8 +257,8 @@ class SoftwareBuilder():
                     sys.path.append(path)
                 #-- Internal libraries
                 try:
-                    from buildlib import macBuildLib
-                    self.mbl = macBuildLib(self.logger, self.PYPATHS)
+                    from buildlib import MacBuildLib
+                    self.mbl = MacBuildLib(self.logger, self.PYPATHS)
                 except Exception, err:
                     raise
                 self.logger.log(lp.INFO, "... macbuildlib loaded ...")
@@ -266,6 +268,38 @@ class SoftwareBuilder():
                 success = True
 
         return success
+
+    def getOrdPass(self, passwd=''):
+        '''
+        Get the password translated to a direct ascii pattern of:
+        
+            "[\d+:]\d+"
+        
+        for use when in the need of passing it via self.rw.liftDown()
+        
+        #####
+        # Prepare for transport of the password to the xcodebuild.py
+        # builder.  This is not encryption, this is just encoding, using
+        # similar to UTF encoding of various languages.
+        # The standard python 'ord' function, to allow for special 
+        # characters to be passed, that may be consumed by a shell in
+        # the process of passing the password to the other python script.
+
+        @param: password to translate
+        
+        @returns: translated password
+        '''
+        i = 0
+        ordPass = ""
+        for char in self.keypass:
+            i += 1
+            if i == 1:
+                ordPass += str(ord(char))
+            else:
+                ordPass += ':' + str(ord(char))
+
+        self.logger.log(lp.INFO, str(ordPass))
+        return str(ordPass)
 
     #--------------------------------------------------------------------------
     # Main controller/driver for the class
@@ -322,6 +356,7 @@ class SoftwareBuilder():
             current_user, _ = self.mbl.checkBuildUser()
     
             # Create temp home directory for building with pyinstaller
+            self.buildHome = os.getcwd()
             self.directory = os.environ["HOME"]
             self.tmphome = mkdtemp(prefix=current_user + ".")
             os.environ["HOME"] = self.tmphome
@@ -437,24 +472,23 @@ class SoftwareBuilder():
             returnDir = os.getcwd()
             os.chdir(appPath)
 
-            self.logger.log(lp.DEBUG, "...")
-            self.logger.log(lp.DEBUG, "...")
-            self.logger.log(lp.DEBUG, "...")
-            self.logger.log(lp.DEBUG, "\n\n\tPWD: " + appPath + " \n\n")
-            myfiles = os.listdir('.')
-            self.logger.log(lp.DEBUG, "\n\tDIRS: " + str(myfiles))
-            self.logger.log(lp.DEBUG, "...")
-            self.logger.log(lp.DEBUG, "...")
-            self.logger.log(lp.DEBUG, "...")
             #####
             # Determine compile type - ie: xcodebuild vs pyinstaller
             if appName == "stonix4mac":
                 #####
-                # Perform xcodebuild
-                self.mbl.buildWrapper(self.keyuser, appName)
+                # Get a translated password
+                ordPass = self.getOrdPass(self.keypass)
 
-                #if self.doCodesign:
-                #    cmd = cmd + ['-configuration', 'Los Alamos National Security, LLC']
+                os.chdir('..')
+                buildDir = os.getcwd()
+                print buildDir
+                #####
+                # Run the xcodebuild script to build stonix4mac
+                cmd = [buildDir + '/xcodebuild.py', '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d', '--project_directory', buildDir]
+                workingDir = os.getcwd()
+                self.rw.setCommand(cmd)
+                self.rw.liftDown(self.keyuser, workingDir)
+
             elif appName == "stonix":
                 #####
                 # Perform pyinstaller build
@@ -578,20 +612,32 @@ class SoftwareBuilder():
             self.libc.sync()
             self.libc.sync()
             if self.doCodesign:
-                self.mbl.codeSign(self.keyuser, self.keypass, 
-                                  self.codesignSignature,
-                                  self.codesignVerbose,
-                                  self.codesignDeep,
-                                  "./" + appName + ".pkg")
+                os.chdir('..')
+                buildDir = os.getcwd()
+                print buildDir
+                #####
+                # Get a translated password
+                ordPass = self.getOrdPass(self.keypass)
+                cmd = [buildDir + '/xcodebuild.py', '-c', '-p', ordPass, '-u', 
+                       self.keyuser, '-a', appName, '-d',
+                       '-v', self.codesignVerbose,
+                       '-s', '"' + self.codesignSignature + '"']
+
+                workingDir = os.getcwd()
+
+                #####
+                # Run the xcodebuild script to codesign the mac installer package
+                self.rw.setCommand(cmd)
+                self.rw.liftDown(self.keyuser, workingDir)
 
                 self.libc.sync()
                 self.libc.sync()
 
             print "Moving dmg and pkg to the dmgs directory."
             #dmgname = appName + "-" + appVersion + ".dmg"
-            pkgname = appName + "-" + appVersion + ".pkg"
+            #pkgname = appName + "-" + appVersion + ".pkg"
             #os.rename(dmgname, appPath + "/dmgs/" + dmgname)
-            os.rename(pkgname, appPath + "/dmgs/" + pkgname)
+            #os.rename(pkgname, appPath + "/dmgs/" + pkgname)
 
             os.chdir(returnDir)
         except Exception:
@@ -607,16 +653,20 @@ class SoftwareBuilder():
         '''
         Disconnect ramdisk, unloading data to pre-build location.
         '''
-        # Copy back to pseudo-build directory
-        call([self.RSYNC, "-aqp", tmphome + "/src", self.STONIX_ROOT])
-
-        os.chdir(self.STONIX_ROOT)
-        self.mbl.chownR(current_user, "src")
+        self.mbl.chownR(self.keyuser, "src")
 
         # chmod so it's readable by everyone, writable by the group
         self.mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
                         stat.S_IWGRP, "src", "append")
-        self.exit(self.ramdisk, self.luggage, 0)
+        self.libc.sync()
+        self.libc.sync()
+        # Copy back to pseudo-build directory
+        call([self.RSYNC, "-aqp", self.tmphome + "/src", self.buildHome])
+        self.libc.sync()
+        self.libc.sync()
+
+        os.chdir(self.buildHome)
+        self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()

@@ -355,12 +355,13 @@ class RunWith(object):
 
     ############################################################################
 
-    def liftDown(self, user="") :
+    def liftDown(self, user="", target_dir="") :
         """
         Use the lift (elevator) to execute a command from privileged mode
         to a user's context with that user's uid.  Does not require a password.
 
-        Required parameters: user
+        @param: user - name of user to run as
+        @param: target_dir - directory to run the command from
 
         @author: Roy Nielsen
         """
@@ -368,7 +369,10 @@ class RunWith(object):
         self.output = ""
         self.error = ""
         self.returncode = 999
-        
+        if target_dir:
+            return_dir = os.getcwd()
+            os.chdir(target_dir)
+
         user = user.strip()
 
         if os.getuid() != 0:
@@ -402,10 +406,14 @@ class RunWith(object):
 
         if not error:
             success = True
-
-        self.logger.log(lp.DEBUG, "out: " + str(output))
-        self.logger.log(lp.DEBUG, "err: " + str(error))
+        for line in output.split('\n'):
+            self.logger.log(lp.DEBUG, "out: " + str(line))
+        for line in error.split('\n'):
+            self.logger.log(lp.DEBUG, "err: " + str(line))
         self.logger.log(lp.DEBUG, "out: " + str(returncode))
+
+        if target_dir:
+            os.chdir(return_dir)
 
         return output, error, returncode
 

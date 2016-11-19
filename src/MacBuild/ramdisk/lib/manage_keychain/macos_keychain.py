@@ -86,7 +86,12 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                                     "delete-keychain",
                                     "lock-keychain",
                                     "unlock-keychain",
-                                    "set-keychain-password"]
+                                    "set-keychain-password",
+                                    "show-keychain-info",
+                                    "dump-keychain",
+                                    "find-certificate",
+                                    "find-identity",
+                                    "error"]
                 if subCommand not in validSubcommands:
                     success = False
                     self.logger.log(lp.DEBUG, "subCommand: " + str(subCommand))
@@ -133,6 +138,20 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         error = ""
         returncode = ""
         uid = os.getuid()
+        euid = os.geteuid()
+        print '.'
+        print '.'
+        print '.'
+        print '.'
+        print '.'
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, 'uid: ' + str(uid))
+        self.logger.log(lp.DEBUG, 'euid: ' + str(euid))
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, '.')
         #####
         # Make sure the command dictionary was properly formed, as well as
         # returning the formatted subcommand list
@@ -616,12 +635,17 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
         #####
         # Set up and log the command
-        cmd = ['find-identity'] + options
+        cmd = {'find-identity' : options}
         self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
 
         #####
         # Run the command.
         success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
+        
+        self.logger.log(lp.DEBUG, str(success))
+        self.logger.log(lp.DEBUG, str(stdout))
+        self.logger.log(lp.DEBUG, str(stderr))
+        self.logger.log(lp.DEBUG, str(retcode))
 
         return success, stdout
 
