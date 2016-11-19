@@ -39,4 +39,5 @@ rm *.xml
 rm -rf dmgs/stonix4mac.*
 rm -rf /tmp/stonix
 rm -rf /tmp/stonix4mac
+find . -iname "*.pyc" -print -exec rm {} \;
 

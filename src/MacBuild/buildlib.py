@@ -46,12 +46,14 @@ sys.path.append('./ramdisk')
 from ramdisk.lib.loggers import LogPriority as lp
 from ramdisk.lib.manage_user.manage_user import ManageUser
 from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
+from ramdisk.lib.run_commands import RunWith
 
 
-class macBuildLib(object):
+class MacBuildLib(object):
     def __init__(self, logger, pypaths=None):
         self.pypaths = pypaths
         self.logger = logger
+        self.rw = RunWith(logger)
         self.manage_user = ManageUser(self.logger)
         self.manage_keychain = ManageKeychain(self.logger)
 
@@ -372,31 +374,34 @@ class macBuildLib(object):
         '''
         success = False
         requirementMet = False
+        returncode = ""
+
         if sig:
+            userHome = self.manage_user.getUserHomeDir(username)
+            keychain = userHome + "/Library/Keychains/login.keychain"
+
             #####
             # Make sure the keychain is unlocked
-            self.unlockKeychain(username, password)
+            #self.manage_keychain.setUser(username)
+            #self.manage_keychain.unlockKeychain(password, keychain)
 
+            #####
+            # Build the codesign command
+            cmd = ['/usr/bin/codesign']
+            options = []
             if verbose:
-                if re.match('^v+$', verbose) and len(verbose) <= 4:
-                    verbose = '-' + verbose
-                    requirementMet = True
-                elif re.match('^-v+$', verbose) and len(verbose) <= 5:
-                    requriementMet = True
-                elif not verbose:
-                    requirementMet = True
-            cmd = []
-            if requirementMet and deep is True and verbose:
-                cmd = ['/usr/bin/codesign', verbose, '--deep', '-f', '-s', sig, "--keychain", loginKeychain, appName]
-            elif requirementMet and not deep and verbose:
-                cmd = ['/usr/bin/codesign', verbose, '-f', '-s', sig, "--keychain", loginKeychain,  appName]
-            elif requirementMet and deep and not verbose:
-                cmd = ['/usr/bin/codesign', '--deep', '-f', '-s', sig, "--keychain", loginKeychain,  appName]
-            elif requirementMet and not deep and not verbose:
-                cmd = ['/usr/bin/codesign', '-f', '-s', sig, "--keychain", loginKeychain,  appName]
-            if cmd:
-                output = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
-                self.logger.log(lp.INFO, "Output from trying to codesign: " + str(output))
+                cmd += ['-' + verbose]
+            if deep:
+                cmd += ['--deep']
+            cmd += ['-f', '-s', sig, '--keychain', appName + '/build/Release/' + appName + '.app']
+            self.rw.setCommand(cmd)
+
+            #####
+            # Check the UID and run the command appropriately
+            output, error, retcode = self.rw.communicate()
+
+            self.logger.log(lp.INFO, "Output from trying to codesign: " + str(output))
+
         return success
 
     def unlockKeychain(self, username, password, keychain=''):
@@ -415,7 +420,7 @@ class macBuildLib(object):
             userHome = self.manage_user.getUserHomeDir(username)
             keychain = userHome + "/Library/Keychains/login.keychain"
         success = self.manage_keychain.setUser(username)
-        success = self.manage_keychain.unlockKeychain(password, loginKeychain)
+        success = self.manage_keychain.unlockKeychain(password, keychain)
         self.logger.log(lp.DEBUG, "Unlock Keychain success: " + str(success))
         return success
 
@@ -471,6 +476,10 @@ class macBuildLib(object):
             # Set the keychain to be in the signing search list
             success, output = self.manage_keychain.listKeychains(setList=True, keychain=keychain)
             
+            #####
+            # Set the keychain to be in the default keychain
+            success, output = self.manage_keychain.defaultKeychains(setList=True, keychain=keychain)
+            
             if success:
                 #####
                 # Unlock the keychain so we can sign
@@ -478,20 +487,21 @@ class macBuildLib(object):
 
         return success
 
-    def buildWrapper(self, username, appName):
+    def buildWrapper(self, username, appName, buildDir):
         
         #returnDir = os.getcwd()
         #os.chdir(appName)
         userHome = self.manage_user.getUserHomeDir(username)
-        keychain = userHome + "/Library/Keychains/login.keychain"                
+        keychain = userHome + "/Library/Keychains/login.keychain"
         
         #####
         # Make sure the keychain is unlocked
         #self.setUpForSigning(self.keyuser, self.keypass)
         #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
         # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
-
-        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj', 'DEVELOPENT_TEAM=Los Alamos National Security, LLC', 'OTHER_CODE_SIGN_FLAGS=--keychain ' + keychain]
+        #buildDir = os.getcwd()
+        #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', 'OTHER_CODE_SIGN_FLAGS="-keychain ' + keychain + '"']
+        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + "/" + appName + '.xcodeproj']
         print '.'
         print '.'
         print '.'
@@ -499,8 +509,12 @@ class macBuildLib(object):
         print '.'
         print '.'
         print '.'
-        output = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=False).communicate()
+        self.rw.setCommand(cmd)
+        output, error, retcode = self.rw.communicate()
+        
+        #output = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=False).communicate()
         #output = call(cmd)
-        print str(output)
+        for line in output.split("\n"):
+            self.logger.log(lp.DEBUG, str(line))
         print "Done building stonix4mac..."
         #os.chdir(returnDir)
