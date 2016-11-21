@@ -108,7 +108,7 @@ class KVATaggedConf():
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
                 elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
-                    print "FOUNDTAG: " + str(tag) + "\n"
+                    #print "FOUNDTAG: " + str(tag) + "\n"
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -155,7 +155,7 @@ class KVATaggedConf():
                 if not foundtag:
                     return True
                 if contents2:
-                    print "the contents under the tag: " + str(contents2) + "\n"
+                    #print "the contents under the tag: " + str(contents2) + "\n"
                     for key in dict1:
                         found = False
                         for line in contents2:
