@@ -75,7 +75,7 @@ class SoftwareBuilder():
     def __init__(self,
                  options=optparse.Values({"compileGui": False, "version": "0",
                                           "clean": False, "test": False, "debug":False, "sig":False}),
-                 ramdisk_size=1024):
+                 ramdisk_size=1600):
         '''
         Initialization routine.
         @param: compileGui - bool to determine if the gui should be compiled 
@@ -322,6 +322,7 @@ class SoftwareBuilder():
             # Compile the two apps...
             self.compile(self.STONIX, self.STONIXVERSION, self.STONIXICON,
                             self.tmphome + "/src/MacBuild/" + self.STONIX)
+
             self.postCompile(self.STONIX, self.tmphome + "/src/MacBuild/")
 
             #####
@@ -421,26 +422,28 @@ class SoftwareBuilder():
                 #####
                 # Make sure the "stonix" directory exists, so we can put
                 # together and create the stonix.app
-                if os.path.islink("stonix"):
-                    os.unlink("stonix")
-                if not os.path.isdir("stonix"):
-                    os.mkdir("stonix")
+                if os.path.islink(self.tmphome + "/src/MacBuild/stonix"):
+                    os.unlink(self.tmphome + "/src/MacBuild/stonix")
+                if not os.path.isdir(self.tmphome + "/src/MacBuild/stonix"):
+                    os.mkdir(self.tmphome + "/src/MacBuild/stonix")
                 else:
                     #####
                     # Cannot use mkdtmp here because it will make the directory on
                     # the root filesystem instead of the ramdisk, then it will try
                     # to link across filesystems which won't work
-                    tmpdir = "stonix." + str(time())
-                    os.rename("stonix", tmpdir)
-                    os.mkdir("stonix")
+                    tmpdir = self.tmphome + "/src/MacBuild/stonix." + str(time())
+                    os.rename(self.tmphome + "/src/MacBuild/stonix", tmpdir)
+                    os.mkdir(self.tmphome + "/src/MacBuild/stonix")
 
                 #####
                 # Set up stonix for a build
-                copy2("../stonix.py", "stonix")
+                copy2(self.tmphome + "/src/stonix.py", self.tmphome + "/src/MacBuild/stonix")
                 
                 rsync = [self.RSYNC, "-ap", "--exclude=\".svn\"",
                          "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-                         "--exclude=\".git*\"", "../stonix_resources", "./stonix"]
+                         "--exclude=\".git*\"",
+                         self.tmphome + "/src/stonix_resources",
+                         self.tmphome + "/src/MacBuild/stonix"]
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
                 print str(output)
             elif appName == 'stonix4mac':
@@ -482,9 +485,22 @@ class SoftwareBuilder():
                 os.chdir('..')
                 buildDir = os.getcwd()
                 print buildDir
+                os.chdir(appPath)
+                
+                
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, "TMPHOME: " + str(self.tmphome))
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, ".")
+                self.logger.log(lp.DEBUG, ".")
+                
                 #####
                 # Run the xcodebuild script to build stonix4mac
-                cmd = [buildDir + '/xcodebuild.py', '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d', '--project_directory', buildDir]
+                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d', '--project_directory', self.tmphome]
                 workingDir = os.getcwd()
                 self.rw.setCommand(cmd)
                 self.rw.liftDown(self.keyuser, workingDir)
@@ -492,10 +508,10 @@ class SoftwareBuilder():
             elif appName == "stonix":
                 #####
                 # Perform pyinstaller build
-                if os.path.isdir("build"):
-                    rmtree("build")
-                if os.path.isdir("dist"):
-                    rmtree("dist")
+                if os.path.isdir(self.tmphome + "/src/MacBuild/stonix/build"):
+                    rmtree(self.tmphome + "/src/MacBuild/stonix/build")
+                if os.path.isdir(self.tmphome + "/src/MacBuild/stonix/dist"):
+                    rmtree(self.tmphome + "/src/MacBuild/stonix/dist")
     
                 self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenimports))
     
@@ -513,7 +529,7 @@ class SoftwareBuilder():
                 self.mbl.pyinstBuild(appName + ".spec", "private/tmp",
                                      appPath + "/dist", True, True)
     
-                plist = appPath + "/dist/" + appName + ".app/Contents/Info.plist"
+                plist = self.tmphome + "/src/MacBuild/stonix" + "/dist/" + appName + ".app/Contents/Info.plist"
     
                 # Change version string of the app
                 print "Changing .app version string..."
@@ -552,8 +568,8 @@ class SoftwareBuilder():
                 # Copy stonix.app to the stonix4mac directory
                 rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
                          "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-                         "--exclude=\".git*\"", prepPath + \
-                         "/stonix/dist/stonix.app", "./stonix4mac"]
+                         "--exclude=\".git*\"", self.tmphome + \
+                         "/src/MacBuild/stonix/dist/stonix.app", "./stonix4mac"]
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
                 print output
                 self.libc.sync()
@@ -594,9 +610,9 @@ class SoftwareBuilder():
                 # Cannot use mkdtmp here because it will make the directory on
                 # the root filesystem instead of the ramdisk, then it will try
                 # to link across filesystems which won't work
-                tmpdir = appPath + "/dmgs." + str(time())
-                os.rename(appPath + "/dmgs", tmpdir)
-                os.mkdir(appPath + "/dmgs")
+                tmpdir = self.tmphome + "/src/MacBuild/dmgs." + str(time())
+                os.rename(self.tmphome + "/src/MacBuild/stonix/dmgs", tmpdir)
+                os.mkdir(self.tmphome + "/src/MacBuild/stonix/dmgs")
 
             print "Creating a .dmg file with a .pkg file inside for " + \
                 "installation purposes..."
@@ -618,8 +634,8 @@ class SoftwareBuilder():
                 #####
                 # Get a translated password
                 ordPass = self.getOrdPass(self.keypass)
-                cmd = [buildDir + '/xcodebuild.py', '-c', '-p', ordPass, '-u', 
-                       self.keyuser, '-a', appName, '-d',
+                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', '-c',
+                       '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d',
                        '-v', self.codesignVerbose,
                        '-s', '"' + self.codesignSignature + '"']
 
@@ -653,11 +669,11 @@ class SoftwareBuilder():
         '''
         Disconnect ramdisk, unloading data to pre-build location.
         '''
-        self.mbl.chownR(self.keyuser, "src")
+        self.mbl.chownR(self.keyuser, self.tmphome + "/src")
 
         # chmod so it's readable by everyone, writable by the group
         self.mbl.chmodR(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
-                        stat.S_IWGRP, "src", "append")
+                        stat.S_IWGRP, self.tmphome + "/src", "append")
         self.libc.sync()
         self.libc.sync()
         # Copy back to pseudo-build directory
@@ -666,7 +682,7 @@ class SoftwareBuilder():
         self.libc.sync()
 
         os.chdir(self.buildHome)
-        self._exit(self.ramdisk, self.luggage, 0)
+        #self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()

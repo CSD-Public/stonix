@@ -446,9 +446,12 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             # Note: this is done in the build of the command, rather than 
             # the build of the variable.
             cmd = { "unlock-keychain" : ["-p", passwd, keychain] }
-            success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
+            success, output, error, retcode = self.runSecurityCommand(cmd)
 
-        return success
+            self.logger.log(lp.DEBUG, "Output: " + str(output))
+            self.logger.log(lp.DEBUG, "Error: " + str(error))
+            self.logger.log(lp.DEBUG, "Return code: " + str(retcode))
+        return success, output
 
     #-------------------------------------------------------------------------
 
@@ -646,6 +649,38 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         self.logger.log(lp.DEBUG, str(stdout))
         self.logger.log(lp.DEBUG, str(stderr))
         self.logger.log(lp.DEBUG, str(retcode))
+
+        return success, stdout
+
+    #-------------------------------------------------------------------------
+
+    def authorize(self, ecode='', *args, **kwargs):
+        '''
+        Display descrip6tive message for the given error code(s).
+
+        @param: Error code to acquire information about.
+
+        @author: Roy Nielsen
+        '''
+        success = False
+        stdout = False
+        ecode = ecode.strip()
+
+        if not ecode or not isinstance(ecode, basestring):
+            return success, stdout
+        else:
+            #####
+            # Command setup - note that the keychain deliberately has quotes
+            # around it - there could be spaces in the path to the keychain,
+            # so the quotes are required to fully resolve the file path.  
+            # Note: this is done in the build of the command, rather than 
+            # the build of the variable.
+            if keychain and isinstance(keychain, basestring):
+                cmd = { "find-identity" : ["-p", policy, "-s", sstring, "-v", keychain] }
+            else:
+                cmd = { "find-identity" : ["-p", policy, "-s", sstring, "-v"] }
+            self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
+            success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
 
         return success, stdout
 
