@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import sys
 from optparse import OptionParser, SUPPRESS_HELP
 
@@ -69,6 +70,8 @@ if __name__ == '__main__':
     
     logger.initializeLogs()
 
+    os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
+
     #####
     # On the other end, each character was translated by 'ord' to a number,
     # and each number was separated by a colon.  Change the password from
@@ -86,3 +89,4 @@ if __name__ == '__main__':
         xb.buildApp(opts.appName, opts.project_directory, opts.userName, keychainPass)
 
     sys.exit(0)
+    

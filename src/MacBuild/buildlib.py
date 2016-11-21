@@ -436,7 +436,7 @@ class MacBuildLib(object):
         loginKeychain = False
         if not username or not password:
             return success
-        elif not keychain:
+        if not keychain:
             userHome = self.manage_user.getUserHomeDir(username)
             keychain = userHome + "/Library/Keychains/login.keychain"
             loginKeychain = True
@@ -478,12 +478,12 @@ class MacBuildLib(object):
             
             #####
             # Set the keychain to be in the default keychain
-            success, output = self.manage_keychain.defaultKeychains(setList=True, keychain=keychain)
+            success, output = self.manage_keychain.defaultKeychain(setList=True, keychain=keychain)
             
-            if success:
-                #####
-                # Unlock the keychain so we can sign
-                success, output = self.manageKeychain.unlockKeychain(password, keychain)
+        if success:
+            #####
+            # Unlock the keychain so we can sign
+            success, output = self.manage_keychain.unlockKeychain(password, keychain=keychain)
 
         return success
 
@@ -494,6 +494,15 @@ class MacBuildLib(object):
         userHome = self.manage_user.getUserHomeDir(username)
         keychain = userHome + "/Library/Keychains/login.keychain"
         
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, "buildDir: " + str(buildDir))
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, ".")
+        self.logger.log(lp.DEBUG, ".")
         #####
         # Make sure the keychain is unlocked
         #self.setUpForSigning(self.keyuser, self.keypass)
@@ -501,7 +510,10 @@ class MacBuildLib(object):
         # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
         #buildDir = os.getcwd()
         #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', 'OTHER_CODE_SIGN_FLAGS="-keychain ' + keychain + '"']
-        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + "/" + appName + '.xcodeproj']
+        os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
+        #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES='YES'"]
+        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', '-skipUnavailableActions']
+        #cmd = ['/usr/bin/xcodebuild', '-configuration', 'Release', 'clean']
         print '.'
         print '.'
         print '.'
@@ -509,6 +521,10 @@ class MacBuildLib(object):
         print '.'
         print '.'
         print '.'
+        toDir = buildDir + "/src/Macbuild/" + appName + "/"
+        os.chdir(toDir)
+        self.logger.log(lp.DEBUG, str(cmd))
+        self.logger.log(lp.DEBUG, str(toDir))
         self.rw.setCommand(cmd)
         output, error, retcode = self.rw.communicate()
         
@@ -516,5 +532,8 @@ class MacBuildLib(object):
         #output = call(cmd)
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
+        for line in error.split("\n"):
+            self.logger.log(lp.DEBUG, str(line))
+
         print "Done building stonix4mac..."
         #os.chdir(returnDir)

@@ -381,35 +381,35 @@ class CyLogger(object):
                                                  str(function_name), 
                                                  str(line_number))
 
-        
-        #####
-        # Process via logging level
-        if int(self.lvl) > 0 and int(self.lvl) < 10:
-            # Quiet, no prefix or formatting...
-            self.logr.log(validatedLvl, str(msg))
-
-        elif int(self.lvl) >= 10 and int(self.lvl) < 20:
+        for line in msg.split('\n'):
             #####
-            # Debug
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >= 20 and int(self.lvl) < 30:
-            #####
-            # Info
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >=30 and int(self.lvl) < 40:
-            #####
-            # Warning
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >= 40 and int(self.lvl) < 50:
-            #####
-            # Error
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >= 50 and int(self.lvl) < 60:
-            #####
-            # Critical
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        else:
-            raise IllegalLoggingLevelError("Not a valid value for a logging level.")
+            # Process via logging level
+            if int(self.lvl) > 0 and int(self.lvl) < 10:
+                # Quiet, no prefix or formatting...
+                self.logr.log(validatedLvl, str(line))
+    
+            elif int(self.lvl) >= 10 and int(self.lvl) < 20:
+                #####
+                # Debug
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >= 20 and int(self.lvl) < 30:
+                #####
+                # Info
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >=30 and int(self.lvl) < 40:
+                #####
+                # Warning
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >= 40 and int(self.lvl) < 50:
+                #####
+                # Error
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >= 50 and int(self.lvl) < 60:
+                #####
+                # Critical
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            else:
+                raise IllegalLoggingLevelError("Not a valid value for a logging level.")
 
 ###############################################################################
 # Helper class
