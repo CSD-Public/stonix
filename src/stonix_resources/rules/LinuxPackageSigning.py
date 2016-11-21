@@ -104,12 +104,6 @@ class LinuxPackageSigning(RuleKVEditor):
                         "LinuxPackageSigning ...")
 
         self.ch = CommandHelper(self.logger)
-        self.data = {}
-        self.path = ""
-        self.intent = ""
-        self.type = ""
-        self.conftype = ""
-        self.temppath = ""
         self.rhel = False
         self.fedora = False
         self.suse = False
@@ -126,44 +120,13 @@ class LinuxPackageSigning(RuleKVEditor):
         else:
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
-        if not self.suse:
-            if not self.data:
-                self.logger.log(LogPriority.DEBUG,
-                                "KV config dictionary not set")
-            if not self.path:
-                self.logger.log(LogPriority.DEBUG, "KV config path not set")
-            if not self.intent:
-                self.logger.log(LogPriority.DEBUG, "KV config intent not set")
-            if not self.type:
-                self.logger.log(LogPriority.DEBUG, "KV config type not set")
-            if not self.conftype:
-                self.logger.log(LogPriority.DEBUG, "KV operand sign not set")
-
-            if self.path:
-                self.temppath = self.path + '.stonixtmp'
-            else:
-                self.logger.log(LogPriority.DEBUG, "KV temporary path not set")
-
-            self.intent = "present"
-            self.type = "tagconf"
-
-            self.kve = KVEditorStonix(self.statechglogger,
-                                      self.logger, self.type,
-                                      self.path, self.temppath,
-                                      self.data, self.intent, self.conftype)
-
     def setRhel(self):
         '''
         '''
-
         self.rhel = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Red Hat")
 
-        self.data = {"main": {"gpgcheck": "1"}}
-        self.path = "/etc/yum.conf"
-        self.conftype = "closedeq"
-
-        self.repos = []
+        self.repos = ["/etc/yum.conf"]
         repos = os.listdir("/etc/yum.repos.d")
         for repo in repos:
             self.repos.append("/etc/yum.repos.d/" + repo)
@@ -171,17 +134,14 @@ class LinuxPackageSigning(RuleKVEditor):
     def setFedora(self):
         '''
         '''
-
         self.fedora = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Fedora")
 
-        self.path = "/etc/dnf/dnf.conf"
-        self.data = {"main": {"gpgcheck": "1"}}
-        if not os.path.exists(self.path):
-            self.path = "/etc/yum.conf"
-        self.conftype = "closedeq"
+        path = "/etc/dnf/dnf.conf"
+        if not os.path.exists(path):
+            path = "/etc/yum.conf"
 
-        self.repos = []
+        self.repos = [path]
         repos = os.listdir("/etc/yum.repos.d")
         for repo in repos:
             self.repos.append("/etc/yum.repos.d/" + repo)
@@ -227,12 +187,6 @@ class LinuxPackageSigning(RuleKVEditor):
                 if not self.reportSUSE():
                     self.compliant = False
             else:
-                if not self.kve.report():
-                    self.compliant = False
-                    self.detailedresults += 'The following required ' + \
-                        'options are missing (or incorrect) from ' + \
-                        str(self.path) + ':\n' + \
-                        '\n'.join(str(f) for f in self.kve.fixables) + '\n'
                 if not self.reportYumRepos():
                     self.compliant = False
                 if self.compliant:
@@ -327,25 +281,8 @@ class LinuxPackageSigning(RuleKVEditor):
                     self.detailedresults += "As a result of this, " + \
                         "STONIX will only audit the status of the GPG " + \
                         "check for each repo.\n"
-                else:
-                    if self.kve.fix():
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.kve.setEventID(myid)
-                        if not self.kve.commit():
-                            success = False
-                            self.logger.log(LogPriority.DEBUG, "There was a " +
-                                            "problem with kveditor commit()")
-                            self.detailedresults += "There was a problem " + \
-                                "attempting to commit the file changes.\n"
-                    else:
-                        self.detailedresults += "There was a problem " + \
-                            "attempting to make file changes.\n"
-                        self.logger.log(LogPriority.DEBUG, "There was a " +
-                                        "problem with kveditor fix()")
-                        success = False
-                    if not self.fixYumRepos():
-                        success = False
+                elif not self.fixYumRepos():
+                    success = False
             self.rulesuccess = success
 
         except (SystemExit, KeyboardInterrupt):
