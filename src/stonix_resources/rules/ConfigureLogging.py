@@ -38,7 +38,7 @@ Created on May 20, 2013
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
-from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
+from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms, checkUserGroupName
 from ..ruleKVEditor import RuleKVEditor
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
@@ -529,25 +529,23 @@ daemon config file: " + self.logpath
                     statdata = os.stat(item)
                     mode = stat.S_IMODE(statdata.st_mode)
                     ownergrp = getUserGroupName(item)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
-                    if grp.getgrnam("adm")[2] != "":
-                        gid = grp.getgrnam("adm")[2]
-                    if pwd.getpwnam("syslog")[2] != "":
-                        uid = pwd.getpwnam("syslog")[2]
-                    if mode != 384 or owner != "syslog" or group != "adm":
+                    retval = checkUserGroupName(ownergrp, "syslog", "adm", mode, 384, self.logger)
+                    if isinstance(retval, list):
                         origuid = statdata.st_uid
                         origgid = statdata.st_gid
-                        if gid and uid:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "perm",
-                                     "startstate": [origuid, origgid, mode],
-                                     "endstated": [uid, gid, 384],
-                                     "filepath": item}
-                            self.statechglogger.recordchgevent(myid, event)
-                            os.chown(item, uid, gid)
-                            os.chmod(item, 384)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "perm",
+                                 "startstate": [origuid, origgid, mode],
+                                 "endstated": [retval[0], retval[1], 384],
+                                 "filepath": item}
+                        self.statechglogger.recordchgevent(myid, event)
+                        os.chown(item, retval[0], retval[1])
+                        os.chmod(item, 384)
+                    elif not retval:
+                        self.detailedresults += "There was a problem getting permissions on " + \
+                            item + "\n"
+                        success = False
                 elif not checkPerms(item, [0, 0, 384], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
