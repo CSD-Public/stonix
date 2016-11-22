@@ -289,8 +289,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                 output = self.cmdhelper.getOutput()
                 error = self.cmdhelper.getError()
                 if output:
-                    if cmd == " get org.gnome.desktop.session idle-delay" or \
-                       cmd == " get org.gnome.desktop.screensaver lock-delay":
+                    if cmd == " get org.gnome.desktop.session idle-delay":
                         try:
                             splitOut = output[0].split()
                             if len(splitOut) > 1:
@@ -302,6 +301,28 @@ class ConfigureScreenLocking(RuleKVEditor):
                                 self.detailedresults += "Idle delay value " + \
                                     "is not 900 seconds or lower (value: " +\
                                     num + ")\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                            elif int(num) == 0:
+                                compliant = False
+                                self.detailedresults += "Idle delay set  " + \
+                                    "to 0, meaning it is disabled.\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                        except ValueError:
+                            self.detailedresults += "Unexpected result: " + \
+                                '"' + cmd2 + '" output was not a number\n'
+                            compliant = False
+                            self.fixes[cmd] = getcmds[cmd]
+                    elif cmd == " get org.gnome.desktop.screensaver lock-delay":
+                        try:
+                            splitOut = output[0].split()
+                            if len(splitOut) > 1:
+                                num = splitOut[1]
+                            else:
+                                num = splitOut[0]
+                            if int(num) != 0:
+                                compliant = False
+                                self.detailedresults += "Lock delay is not " + \
+                                    "set to 0\n"
                                 self.fixes[cmd] = getcmds[cmd]
                         except ValueError:
                             self.detailedresults += "Unexpected result: " + \
