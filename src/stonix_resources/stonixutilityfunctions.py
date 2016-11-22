@@ -48,6 +48,8 @@ Miscellaneous utility functions.
 import os
 from grp import getgrgid
 from pwd import getpwuid
+import grp
+import pwd
 import re
 import subprocess
 import traceback
@@ -1071,6 +1073,13 @@ def writeFile(tmpfile, contents, logger):
 ###############################################################################
 
 def getUserGroupName(filename):
+    '''This method gets the uid and gid string name of a file
+    and stores in a list where position 0 is the owner and 
+    position 1 is the group
+    @author: dwalker
+    @param filename: filename to get uid and gid name
+    @return: list of uid (0) and gid (1)
+    '''
     retval = []
     statdata = os.stat(filename)
     uid = statdata.st_uid
@@ -1081,6 +1090,46 @@ def getUserGroupName(filename):
     retval.append(group)
     return retval
 ###############################################################################
+
+def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
+    '''This method is usually used in conjuction with getUserGroupName.
+    Returned list from getUserGroupName is passed through this method along
+    with desired owner and group string name and checked to see if they match
+    @author: dwalker
+    @param ownergrp: list containing user/owner string name (0) and group string
+        name (1)
+    @param owner: Desired owner string name to check against
+    @param group: Desired group string name to check against
+    @param mode: Desired mode number to check against
+    @param logger: Logger object
+    @return: list | bool
+    '''
+    retval = []
+    if not ownergrp[0]:
+        debug = "There is no owner provided for checkUserGroupName method\n"
+        logger.log(LogPriority.DEBUG, debug)
+        return False
+    if not ownergrp[1]:
+        debug = "There is no group provided for checkUserGroupName method\n"
+        logger.log(LogPriority.DEBUG, debug)
+        return False
+    if grp.getgrnam(group)[2] != "":
+        gid = grp.getgrnam(group)[2]
+    if pwd.getpwnam(owner)[2] != "":
+        uid = pwd.getpwnam(owner)[2]
+    if uid and gid:
+        if actualmode != desiredmode or ownergrp[0] != owner or ownergrp[1] != group:
+            retval.append(uid)
+            retval.append(gid)
+            return retval
+        else:
+            return True
+    else:
+        debug = "There is no uid or gid associated with owner and group parameters\n"
+        logger.log(LogPriority.DEBUG, debug)
+        return False
+    
+#####################################################################################
 
 def checkPerms(path, perm, logger):
     '''Check the current file's permissions.
