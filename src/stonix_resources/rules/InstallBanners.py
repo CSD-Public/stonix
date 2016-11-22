@@ -175,9 +175,8 @@ class InstallBanners(RuleKVEditor):
         rep3 = gconfget + opt3
         val1 = 'true'
         val2 = 'true'
-        val3 = '\'' + ALTWARNINGBANNER + '\''
-        val3report = "This is a Department of Energy (DOE) computer " + \
-            "system. DOE computer"
+        val3 = "'" + WARNINGBANNER + "'"
+        val3report = WARNINGBANNER
         fix1 = gconfset + opt1type + opt1 + ' ' + val1
         fix2 = gconfset + opt2type + opt2 + ' ' + val2
         fix3 = gconfset + opt3type + opt3 + ' ' + val3
