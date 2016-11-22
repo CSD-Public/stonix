@@ -47,6 +47,7 @@ from ..CommandHelper import CommandHelper
 from ..localize import WINLOG, LANLLOGROTATE
 from subprocess import PIPE, Popen
 import os
+import pwd
 import traceback
 import re
 import grp
@@ -313,7 +314,33 @@ aren't present\n"
                 compliant = False
                 break
             else:
-                if not checkPerms(item, [0, 0, 384], self.logger):
+                if self.ph.manager == "apt-get":
+                    statdata = os.stat(item)
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    ownergrp = getUserGroupName(item)
+                    owner = ownergrp[0]
+                    group = ownergrp[1]
+                    if mode != 384:
+                        compliant = False
+                        self.detailedresults += "permissions on " + item + \
+                            "aren't 600\n"
+                        debug = "permissions on " + item + " aren't 600\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    if owner != "syslog":
+                        compliant = False
+                        self.detailedresults += "Owner of " + item + \
+                            " isn't syslog\n"
+                        debug = "Owner of " + item + \
+                            " isn't syslog\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    if group != "adm":
+                        compliant = False
+                        self.detailedresults += "Group of " + item + \
+                            " isn't adm\n"
+                        debug = "Group of " + item + \
+                            " isn't adm\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                elif not checkPerms(item, [0, 0, 384], self.logger):
                     self.detailedresults += "Permissions are not correct on \
 all required logging files"
                     compliant = False
@@ -326,7 +353,10 @@ all required logging files"
 bootlog file\n"
             compliant = False
         if self.logs["rsyslog"]:
-            self.logpath = "/etc/rsyslog.conf"
+            if self.ph.manager == "apt-get":
+                self.logpath = "/etc/rsyslog.d/50-default.conf"
+            else:
+                self.logpath = "/etc/rsyslog.conf"
         elif self.logs["syslog"]:
             self.logpath = "/etc/syslog.conf"
         else:
@@ -494,7 +524,31 @@ daemon config file: " + self.logpath
         # check if all necessary dirs are present and correct perms
         for item in self.directories:
             if os.path.exists(item):
-                if not checkPerms(item, [0, 0, 384], self.logger):
+                if self.ph.manager == "apt-get":
+                    uid, gid = "", ""
+                    statdata = os.stat(item)
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    ownergrp = getUserGroupName(item)
+                    owner = ownergrp[0]
+                    group = ownergrp[1]
+                    if grp.getgrnam("adm")[2] != "":
+                        gid = grp.getgrnam("adm")[2]
+                    if pwd.getpwnam("syslog")[2] != "":
+                        uid = pwd.getpwnam("syslog")[2]
+                    if mode != 384 or owner != "syslog" or group != "adm":
+                        origuid = statdata.st_uid
+                        origgid = statdata.st_gid
+                        if gid and uid:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "perm",
+                                     "startstate": [origuid, origgid, mode],
+                                     "endstated": [uid, gid, 384],
+                                     "filepath": item}
+                            self.statechglogger.recordchgevent(myid, event)
+                            os.chown(item, uid, gid)
+                            os.chmod(item, 384)
+                elif not checkPerms(item, [0, 0, 384], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(item, [0, 0, 384], self.logger,
@@ -511,8 +565,24 @@ daemon config file: " + self.logpath
                 else:
                     self.detailedresults += "Successfully created file: " + \
                         item + "\n"
-                    os.chown(item, 0, 0)
-                    os.chmod(item, 384)
+                    if self.ph.manager == "apt-get":
+                        uid, gid = "", ""
+                        statdata = os.stat(item)
+                        mode = stat.S_IMODE(statdata.st_mode)
+                        ownergrp = getUserGroupName(item)
+                        owner = ownergrp[0]
+                        group = ownergrp[1]
+                        if grp.getgrnam("adm")[2] != "":
+                            gid = grp.getgrnam("adm")[2]
+                        if pwd.getpwnam("syslog")[2] != "":
+                            uid = pwd.getpwnam("syslog")[2]
+                        if mode != 384 or owner != "syslog" or group != "adm":
+                            if gid and uid:
+                                os.chown(item, uid, gid)
+                                os.chmod(item, 384)
+                    else:
+                        os.chown(item, 0, 0)
+                        os.chmod(item, 384)
                     resetsecon(item)
         if os.path.exists(self.bootlog):
             if not checkPerms(self.bootlog, [0, 0, 420], self.logger):

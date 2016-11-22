@@ -43,7 +43,7 @@ from ..ruleKVEditor import RuleKVEditor
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate
+from ..stonixutilityfunctions import iterate, readFile, writeFile, resetsecon
 
 
 class LinuxPackageSigning(RuleKVEditor):
@@ -104,12 +104,6 @@ class LinuxPackageSigning(RuleKVEditor):
                         "LinuxPackageSigning ...")
 
         self.ch = CommandHelper(self.logger)
-        self.data = {}
-        self.path = ""
-        self.intent = ""
-        self.type = ""
-        self.conftype = ""
-        self.temppath = ""
         self.rhel = False
         self.fedora = False
         self.suse = False
@@ -126,55 +120,31 @@ class LinuxPackageSigning(RuleKVEditor):
         else:
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
-        if not self.suse:
-            if not self.data:
-                self.logger.log(LogPriority.DEBUG,
-                                "KV config dictionary not set")
-            if not self.path:
-                self.logger.log(LogPriority.DEBUG, "KV config path not set")
-            if not self.intent:
-                self.logger.log(LogPriority.DEBUG, "KV config intent not set")
-            if not self.type:
-                self.logger.log(LogPriority.DEBUG, "KV config type not set")
-            if not self.conftype:
-                self.logger.log(LogPriority.DEBUG, "KV operand sign not set")
-
-            if self.path:
-                self.temppath = self.path + '.stonixtmp'
-            else:
-                self.logger.log(LogPriority.DEBUG, "KV temporary path not set")
-
-            self.intent = "present"
-            self.type = "tagconf"
-
-            self.kve = KVEditorStonix(self.statechglogger,
-                                      self.logger, self.type,
-                                      self.path, self.temppath,
-                                      self.data, self.intent, self.conftype)
-
     def setRhel(self):
         '''
         '''
-
         self.rhel = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Red Hat")
 
-        self.data = {"main": {"gpgcheck": "1"}}
-        self.path = "/etc/yum.conf"
-        self.conftype = "closedeq"
+        self.repos = ["/etc/yum.conf"]
+        repos = os.listdir("/etc/yum.repos.d")
+        for repo in repos:
+            self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setFedora(self):
         '''
         '''
-
         self.fedora = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Fedora")
 
-        self.path = "/etc/dnf/dnf.conf"
-        self.data = {"main": {"gpgcheck": "1"}}
-        if not os.path.exists(self.path):
-            self.path = "/etc/yum.conf"
-        self.conftype = "closedeq"
+        path = "/etc/dnf/dnf.conf"
+        if not os.path.exists(path):
+            path = "/etc/yum.conf"
+
+        self.repos = [path]
+        repos = os.listdir("/etc/yum.repos.d")
+        for repo in repos:
+            self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setOpensuse(self):
         '''
@@ -209,28 +179,19 @@ class LinuxPackageSigning(RuleKVEditor):
     def report(self):
         '''
         '''
-
         self.detailedresults = ""
         self.compliant = True
 
         try:
-
             if self.suse:
                 if not self.reportSUSE():
                     self.compliant = False
-                    self.formatDetailedResults("report", self.compliant,
-                                               self.detailedresults)
-                    return self.compliant
             else:
-                if not self.kve.report():
+                if not self.reportYumRepos():
                     self.compliant = False
-                    self.detailedresults += 'The following required ' + \
-                        'options are missing (or incorrect) from ' + \
-                        str(self.path) + ':\n' + \
-                        '\n'.join(str(f) for f in self.kve.fixables) + '\n'
-                else:
-                    self.detailedresults += "\nAll repositories have GPG " + \
-                        "checks enabled."
+                if self.compliant:
+                    self.detailedresults += "All repositories have GPG " + \
+                        "checks enabled.\n"
 
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -239,6 +200,7 @@ class LinuxPackageSigning(RuleKVEditor):
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def reportSUSE(self):
@@ -271,18 +233,30 @@ class LinuxPackageSigning(RuleKVEditor):
                         if not gpgenabled:
                             retval = False
                             self.detailedresults += "GPG check is disabled " + \
-                                "for repo: " + reponame
+                                "for repo: " + reponame + "\n"
             else:
-                self.detailedresults += "\nUnable to locate any " + \
-                    "repositories on this system!"
+                self.detailedresults += "Unable to locate any " + \
+                    "repositories on this system!\n"
 
             if retval:
-                self.detailedresults += "\nAll currently enabled " + \
-                    "repositories have GPG checks enabled."
+                self.detailedresults += "All currently enabled " + \
+                    "repositories have GPG checks enabled.\n"
 
         except Exception:
             raise
         return retval
+
+    def reportYumRepos(self):
+        compliant = True
+        for repo in self.repos:
+            repoFile = readFile(repo, self.logger)
+            for line in repoFile:
+                if re.search("^gpgcheck=0", line):
+                    compliant = False
+                    self.detailedresults += "gpgcheck=0 found in repo file " + \
+                        repo + "\n"
+                    break
+        return compliant
 
     def fix(self):
         '''
@@ -299,32 +273,17 @@ class LinuxPackageSigning(RuleKVEditor):
             self.statechglogger.deleteentry(event)
 
         try:
-
             if self.ci.getcurrvalue():
-
                 if self.suse:
-                    self.detailedresults += "\nGPG Check is enabled by " + \
+                    self.detailedresults += "GPG Check is enabled by " + \
                         "default on SuSE and there is no specific ability " + \
-                        "to enable it."
-                    self.detailedresults += "\nAs a result of this, " + \
+                        "to enable it.\n"
+                    self.detailedresults += "As a result of this, " + \
                         "STONIX will only audit the status of the GPG " + \
-                        "check for each repo."
-                elif self.kve.fix():
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.kve.setEventID(myid)
-                    if not self.kve.commit():
-                        success = False
-                        self.logger.log(LogPriority.DEBUG, "There was a " +
-                                        "problem with kveditor commit()")
-                        self.detailedresults += "There was a problem " + \
-                            "attempting to commit the file changes."
-                else:
-                    self.detailedresults += "There was a problem " + \
-                        "attempting to make file changes."
-                    self.logger.log(LogPriority.DEBUG,
-                                    "There was a problem with kveditor fix()")
+                        "check for each repo.\n"
+                elif not self.fixYumRepos():
                     success = False
+            self.rulesuccess = success
 
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -332,4 +291,34 @@ class LinuxPackageSigning(RuleKVEditor):
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", success, self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
+
+    def fixYumRepos(self):
+        success = True
+        for repo in self.repos:
+            repoFile = readFile(repo, self.logger)
+            tmpFile = []
+            changed = False
+            for line in repoFile:
+                if re.search("^gpgcheck=0", line):
+                    gpgLine = re.sub("gpgcheck=0", "gpgcheck=1", line)
+                    tmpFile.append(gpgLine)
+                    changed = True
+                else:
+                    tmpFile.append(line)
+            if changed:
+                tmppath = repo + ".stonixtmp"
+                if not writeFile(tmppath, "".join(tmpFile), self.logger):
+                    success = False
+                    self.detailedresults += "Could not write to " + tmppath + \
+                        "\n"
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf", "filepath": repo}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(repo, tmppath, myid)
+                    os.rename(tmppath, repo)
+                    resetsecon(repo)
         return success
