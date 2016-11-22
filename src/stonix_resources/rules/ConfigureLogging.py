@@ -525,7 +525,6 @@ daemon config file: " + self.logpath
         for item in self.directories:
             if os.path.exists(item):
                 if self.ph.manager == "apt-get":
-                    uid, gid = "", ""
                     statdata = os.stat(item)
                     mode = stat.S_IMODE(statdata.st_mode)
                     ownergrp = getUserGroupName(item)
@@ -564,20 +563,13 @@ daemon config file: " + self.logpath
                     self.detailedresults += "Successfully created file: " + \
                         item + "\n"
                     if self.ph.manager == "apt-get":
-                        uid, gid = "", ""
                         statdata = os.stat(item)
                         mode = stat.S_IMODE(statdata.st_mode)
                         ownergrp = getUserGroupName(item)
-                        owner = ownergrp[0]
-                        group = ownergrp[1]
-                        if grp.getgrnam("adm")[2] != "":
-                            gid = grp.getgrnam("adm")[2]
-                        if pwd.getpwnam("syslog")[2] != "":
-                            uid = pwd.getpwnam("syslog")[2]
-                        if mode != 384 or owner != "syslog" or group != "adm":
-                            if gid and uid:
-                                os.chown(item, uid, gid)
-                                os.chmod(item, 384)
+                        retval = checkUserGroupName(ownergrp, "syslog", "adm", mode, 384, self.logger)
+                        if isinstance(retval, list):
+                            os.chown(item, retval[0], retval[1])
+                            os.chmod(item, 384)
                     else:
                         os.chown(item, 0, 0)
                         os.chmod(item, 384)
