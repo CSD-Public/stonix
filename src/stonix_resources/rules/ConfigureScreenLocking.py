@@ -40,6 +40,7 @@ Created on Jul 11, 2013
 @change: 2016/10/18 eball Added lock-delay key to special check in reportGnome
     for values that come back with "uint32 [int val]". Also added two single
     quotes to picture-uri value, since a blank value cannot be "set".
+@change: 2016/11/22 eball Changed gsettings times from 300 to 900.
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms
@@ -280,7 +281,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                        " get org.gnome.desktop.screensaver picture-opacity":
                        "100",
                        " get org.gnome.desktop.screensaver picture-uri": "''",
-                       " get org.gnome.desktop.session idle-delay": "300"}
+                       " get org.gnome.desktop.session idle-delay": "900"}
             self.fixes = {}
             for cmd in getcmds:
                 cmd2 = gsettings + cmd
@@ -288,19 +289,40 @@ class ConfigureScreenLocking(RuleKVEditor):
                 output = self.cmdhelper.getOutput()
                 error = self.cmdhelper.getError()
                 if output:
-                    if cmd == " get org.gnome.desktop.session idle-delay" or \
-                       cmd == " get org.gnome.desktop.screensaver lock-delay":
+                    if cmd == " get org.gnome.desktop.session idle-delay":
                         try:
                             splitOut = output[0].split()
                             if len(splitOut) > 1:
                                 num = splitOut[1]
                             else:
                                 num = splitOut[0]
-                            if int(num) > 300:
+                            if int(num) > 900:
                                 compliant = False
                                 self.detailedresults += "Idle delay value " + \
-                                    "is not 300 seconds or lower (value: " +\
+                                    "is not 900 seconds or lower (value: " +\
                                     num + ")\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                            elif int(num) == 0:
+                                compliant = False
+                                self.detailedresults += "Idle delay set  " + \
+                                    "to 0, meaning it is disabled.\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                        except ValueError:
+                            self.detailedresults += "Unexpected result: " + \
+                                '"' + cmd2 + '" output was not a number\n'
+                            compliant = False
+                            self.fixes[cmd] = getcmds[cmd]
+                    elif cmd == " get org.gnome.desktop.screensaver lock-delay":
+                        try:
+                            splitOut = output[0].split()
+                            if len(splitOut) > 1:
+                                num = splitOut[1]
+                            else:
+                                num = splitOut[0]
+                            if int(num) != 0:
+                                compliant = False
+                                self.detailedresults += "Lock delay is not " + \
+                                    "set to 0\n"
                                 self.fixes[cmd] = getcmds[cmd]
                         except ValueError:
                             self.detailedresults += "Unexpected result: " + \
