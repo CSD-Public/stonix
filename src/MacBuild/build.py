@@ -101,8 +101,7 @@ class SoftwareBuilder():
 
         self.libc = getLibc()
 
-        if options.sig:
-            self.codesignSignature = options.sig
+        self.signature = options.sig
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
@@ -643,7 +642,7 @@ class SoftwareBuilder():
             # Optional codesign
             self.libc.sync()
             self.libc.sync()
-            if self.doCodesign:
+            if self.doCodesign and self.signature:
 
                 os.chdir(self.tmphome + '/src/Macbuild/stonix4mac')
                 buildDir = os.getcwd()
@@ -654,7 +653,7 @@ class SoftwareBuilder():
                 cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', '-c',
                        '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d',
                        '-v', self.codesignVerbose,
-                       '-s', '"' + self.codesignSignature + '"']
+                       '-s', '"' + self.signature + '"']
 
                 workingDir = os.getcwd()
                 self.logger.log(lp.DEBUG, '.')
@@ -714,7 +713,7 @@ class SoftwareBuilder():
         self.libc.sync()
 
         os.chdir(self.buildHome)
-        #self._exit(self.ramdisk, self.luggage, 0)
+        self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
