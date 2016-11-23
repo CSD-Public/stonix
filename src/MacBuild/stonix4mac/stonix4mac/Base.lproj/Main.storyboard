@@ -745,6 +745,11 @@
                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ebz-lJ-QeC">
+                                <rect key="frame" x="382" y="85" width="48" height="48"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="stonixicon" id="DVG-da-ETE"/>
+                            </imageView>
                         </subviews>
                     </view>
                     <connections>
@@ -760,4 +765,7 @@
             <point key="canvasLocation" x="75" y="605"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="stonixicon" width="128" height="128"/>
+    </resources>
 </document>
