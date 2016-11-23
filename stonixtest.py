@@ -32,7 +32,8 @@ This is the test suite for stonix
                           functions instead of very deep nesting.
 @note: 2015-10-03 - roy - Adding "utils" category of tests, for testing
                           functions (stonixutils) rather than classes or
-                          class methods.  Also cutting down logdispatcher chatter
+                          class methods. Also cutting down logdispatcher chatter
+@note: 2016-11-08 - eball - PEP8 cleanup, added default UT path
 '''
 import os
 import re
@@ -50,6 +51,7 @@ from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 from src.stonix_resources.environment import Environment
 from src.stonix_resources.configuration import Configuration
 from src.stonix_resources.StateChgLogger import StateChgLogger
+
 
 class ConsoleAndFileWriter():
     '''
@@ -72,13 +74,15 @@ class ConsoleAndFileWriter():
         sys.stderr.flush()
         self.fo.flush()
 
+
 def name_test_template(*args):
-    """ 
+    """
     decorator for monkeypatching
     """
     def foo(self):
         self.assert_value(*args)
-    return foo 
+    return foo
+
 
 class test_ruleNtestConsistency(unittest.TestCase):
 
@@ -87,7 +91,6 @@ class test_ruleNtestConsistency(unittest.TestCase):
         self.logdispatcher = LogDispatcher(self.environ)
 
     def assert_value(self, match, name, reportstring):
-
         self.assertTrue(match, reportstring)
 
 
@@ -101,7 +104,6 @@ class test_rules_and_unit_test():
     '''
 
     def __init__(self):
-        success = True
         self.ruleDictionary = RuleDictionary()
         self.tests4rules = []
         self.rules4tests = []
@@ -109,12 +111,12 @@ class test_rules_and_unit_test():
 
         self.zzz_for_every_rule()
         self.rule_for_every_zzz()
-        
+
         self.tests["tests4rules"] = self.tests4rules
         self.tests["rules4tests"] = self.rules4tests
-        
+
         self.test_ruleNtestConsistency = test_ruleNtestConsistency
-        
+
         self.set_up_tests()
 
     def set_up_tests(self):
@@ -123,19 +125,20 @@ class test_rules_and_unit_test():
         """
         for behavior, test_cases in self.tests.items():
             for test_case_data in test_cases:
-                moduletestfound, name, messagestring = test_case_data
+                moduletestfound, name, _ = test_case_data
                 my_test_name = "test_{0}_{1}_{2}".format(str(behavior),
                                                          str(name),
                                                          str(moduletestfound))
                 my_test_case = name_test_template(*test_case_data)
-                setattr(self.test_ruleNtestConsistency, my_test_name, my_test_case)
+                setattr(self.test_ruleNtestConsistency, my_test_name,
+                        my_test_case)
 
     def getTest(self):
         return self.test_ruleNtestConsistency
 
     def zzz_for_every_rule(self):
         self.ruleDictionary.gotoFirstRule()
-        while not (self.ruleDictionary.getCurrentRuleItem() == None):
+        while not (self.ruleDictionary.getCurrentRuleItem() is None):
             moduletestfound = self.ruleDictionary.getHasUnitTest()
             name = self.ruleDictionary.getRuleName()
             messagestring = "No unit test available for rule " + str(name)
@@ -145,7 +148,7 @@ class test_rules_and_unit_test():
 
     def rule_for_every_zzz(self):
         self.ruleDictionary.gotoFirstRule()
-        while not (self.ruleDictionary.getCurrentRuleItem() == None):
+        while not (self.ruleDictionary.getCurrentRuleItem() is None):
             moduletestfound = self.ruleDictionary.getHasRule()
             name = self.ruleDictionary.getTestName()
             messagestring = "No rule available for unit test " + str(name)
@@ -166,7 +169,7 @@ class FrameworkDictionary():
         self.effectiveUserID = self.environ.geteuid()
         global SYSCONFIG
         self.config = SYSCONFIG
-        global LOGGER 
+        global LOGGER
         self.logdispatch = LOGGER
         global STATECHANGELOGGER
         self.statechglogger = STATECHANGELOGGER
@@ -237,33 +240,33 @@ class FrameworkDictionary():
         for mydir in testdirs:
             rulefiles = os.listdir(str(mydir))
             for rfile in rulefiles:
-                rule_class = None
                 if re.search(self.unittestprefix + ".*\.py$", rfile):
                     modulename = rfile.replace('.py', '')
                     if modulename.startswith(self.unittestprefix):
                         self.initializeDictoniaryItem(modulename)
-                        #self.dictinaryItem["name"] = ".".join(mydir.split("/")) + "." + modulename
                         self.dictinaryItem["name"] = modulename
-                        self.dictinaryItem['moduleclassname'] = ".".join(mydir.split("/")) + "." + modulename
-                        #self.dictinaryItem['moduleclassname'] = ".".join(mydir.split("/")[1:]) + "." + modulename
+                        self.dictinaryItem['moduleclassname'] = \
+                            ".".join(mydir.split("/")) + "." + modulename
                         self.dictinaryItem["modulename"] = modulename
-                        self.dictinaryItem["path"] = self.realpath + "/" + mydir + "/" + rfile
+                        self.dictinaryItem["path"] = self.realpath + "/" + \
+                            mydir + "/" + rfile
                         self.dictinaryItem["found"] = True
 
-                        self.logdispatch.log(LogPriority.DEBUG, "\n###==-   " +\
+                        self.logdispatch.log(LogPriority.DEBUG, "\n###==-   " +
                                                                 "  -==###")
-                        self.logdispatch.log(LogPriority.DEBUG, "\tmodule: " + \
+                        self.logdispatch.log(LogPriority.DEBUG, "\tmodule: " +
                                              "         " + str(modulename))
-                        self.logdispatch.log(LogPriority.DEBUG, "\tname:   " + \
-                                             "         " + \
+                        self.logdispatch.log(LogPriority.DEBUG, "\tname:   " +
+                                             "         " +
                                              str(self.dictinaryItem["name"]))
                         self.logdispatch.log(LogPriority.DEBUG,
-                                             "\tmoduleclassname: " + \
+                                             "\tmoduleclassname: " +
                                              str(self.dictinaryItem["moduleclassname"]))
                         self.logdispatch.log(LogPriority.DEBUG,
-                                             "\tpath:            " + \
+                                             "\tpath:            " +
                                              str(self.dictinaryItem["path"]))
-                        self.logdispatch.log(LogPriority.DEBUG, "###==-     -==###\n")
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             "###==-     -==###\n")
                 else:
                     continue
         return success
@@ -360,24 +363,27 @@ class UtilsDictionary():
         for mydir in testdirs:
             rulefiles = os.listdir(str(mydir))
             for rfile in rulefiles:
-                rule_class = None
                 if re.search(self.unittestprefix + ".*\.py$", rfile):
                     modulename = rfile.replace('.py', '')
                     if modulename.startswith(self.unittestprefix):
                         self.initializeDictoniaryItem(modulename)
-                        #self.dictinaryItem["name"] = ".".join(mydir.split("/")) + "." + modulename
                         self.dictinaryItem["name"] = modulename
-                        self.dictinaryItem['moduleclassname'] = ".".join(mydir.split("/")) + "." + modulename
-                        #self.dictinaryItem['moduleclassname'] = ".".join(mydir.split("/")[1:]) + "." + modulename
+                        self.dictinaryItem['moduleclassname'] = \
+                            ".".join(mydir.split("/")) + "." + modulename
                         self.dictinaryItem["modulename"] = modulename
-                        self.dictinaryItem["path"] = self.realpath + "/" + mydir + "/" + rfile
+                        self.dictinaryItem["path"] = self.realpath + "/" + \
+                            mydir + "/" + rfile
                         self.dictinaryItem["found"] = True
 
                         LOGGER.log(LogPriority.DEBUG, "\n###==-     -==###")
-                        LOGGER.log(LogPriority.DEBUG, "\tmodule:          " + str(modulename))
-                        LOGGER.log(LogPriority.DEBUG, "\tname:            " + str(self.dictinaryItem["name"]))
-                        LOGGER.log(LogPriority.DEBUG, "\tmoduleclassname: " + str(self.dictinaryItem["moduleclassname"]))
-                        LOGGER.log(LogPriority.DEBUG, "\tpath:            " + str(self.dictinaryItem["path"]))
+                        LOGGER.log(LogPriority.DEBUG,
+                                   "\tmodule:          " + str(modulename))
+                        LOGGER.log(LogPriority.DEBUG, "\tname:            " +
+                                   str(self.dictinaryItem["name"]))
+                        LOGGER.log(LogPriority.DEBUG, "\tmoduleclassname: " +
+                                   str(self.dictinaryItem["moduleclassname"]))
+                        LOGGER.log(LogPriority.DEBUG, "\tpath:            " +
+                                   str(self.dictinaryItem["path"]))
                         LOGGER.log(LogPriority.DEBUG, "###==-     -==###\n")
 
                 else:
@@ -516,7 +522,6 @@ class RuleDictionary ():
                 runit = os.listdir(testpath)
             except Exception, err:
                 print "Exception: " + str(err)
-                #raise err
 
         if self.rule and self.network:
             try:
@@ -524,7 +529,6 @@ class RuleDictionary ():
                 rnetwork = os.listdir(testpath)
             except Exception, err:
                 print "Exception: " + str(err)
-                #raise err
 
         if self.rule and self.interactive:
             try:
@@ -532,7 +536,6 @@ class RuleDictionary ():
                 rinteractive = os.listdir(testpath)
             except Exception, err:
                 print "Exception: " + str(err)
-                #raise err
 
         for test in runit:
             if re.search("zzz.*.py$", test):
@@ -561,52 +564,52 @@ class RuleDictionary ():
         self.classnames = []
         print "\n\t\t" + str(self.rulesPath) + "\n"
         rulefiles = os.listdir(str(self.rulesPath))
-        unittestfiles = self.getRuleFileNames()
         print "rulefiles: " + str(rulefiles)
         for rfile in rulefiles:
             rule_class = None
             if rfile in self.initlist or re.search(".+pyc$", rfile):
                 continue
             elif re.search(".+py$", rfile, re.IGNORECASE):
-                #rulename = rfile.replace('.py', '')
                 rulename = os.path.splitext(rfile)[0]
                 rulefilename = rfile
                 ruleclassname = 'src.stonix_resources.rules.' + rulename
                 ruleclasspath = self.rulesPath + rulefilename
-                parts = ruleclassname.split(".")
                 rulemoduleimportstring = ruleclassname
                 ruleinstanciatecommand = "rule_class = mod." + rulename
 
                 LOGGER.log(LogPriority.DEBUG, "------------")
-                LOGGER.log(LogPriority.DEBUG, "\n\trulename: " + \
+                LOGGER.log(LogPriority.DEBUG, "\n\trulename: " +
                                               str(rulename))
-                LOGGER.log(LogPriority.DEBUG, "\truleclassname: " + \
+                LOGGER.log(LogPriority.DEBUG, "\truleclassname: " +
                                               str(ruleclassname))
-                LOGGER.log(LogPriority.DEBUG, "\truleclasspath: " + \
+                LOGGER.log(LogPriority.DEBUG, "\truleclasspath: " +
                                               str(ruleclasspath))
-                LOGGER.log(LogPriority.DEBUG, "\trulemoduleimportstring: " + \
+                LOGGER.log(LogPriority.DEBUG, "\trulemoduleimportstring: " +
                                               str(rulemoduleimportstring))
-                LOGGER.log(LogPriority.DEBUG, "\trulefilename: " + \
+                LOGGER.log(LogPriority.DEBUG, "\trulefilename: " +
                                               str(rulefilename))
-                LOGGER.log(LogPriority.DEBUG, "\trulemoduleimportstring: " + \
+                LOGGER.log(LogPriority.DEBUG, "\trulemoduleimportstring: " +
                                               str(rulemoduleimportstring))
-                LOGGER.log(LogPriority.DEBUG, "ruleinstanciatecommand: " + \
+                LOGGER.log(LogPriority.DEBUG, "ruleinstanciatecommand: " +
                                               str(ruleinstanciatecommand))
                 LOGGER.log(LogPriority.DEBUG, "\tpwd: " + str(os.getcwd()))
                 LOGGER.log(LogPriority.DEBUG, "------------")
 
-                if os.path.isfile("src/tests/rules/unit_tests/" + \
+                if os.path.isfile("src/tests/rules/unit_tests/" +
                                   self.unittestprefix + str(rulefilename)):
                     class_prefix = "src.tests.rules.unit_tests."
                     self.unittestpath = "src/tests/rules/unit_tests/"
-                elif os.path.isfile("src/tests/rules/network_tests/" + \
+                elif os.path.isfile("src/tests/rules/network_tests/" +
                                     self.unittestprefix + str(rulefilename)):
                     class_prefix = "src.tests.rules.netowrk_tests."
                     self.unittestpath = "src/tests/rules/network_tests/"
-                elif os.path.isfile("src/tests/rules/interactive/" + \
+                elif os.path.isfile("src/tests/rules/interactive/" +
                                     self.unittestprefix + str(rulefilename)):
                     class_prefix = "tests.rules.interactive_tests."
                     self.unittestpath = "src/tests/rules/interactive_tests/"
+                else:
+                    class_prefix = "src.tests.rules.unit_tests."
+                    self.unittestpath = "src/tests/rules/unit_tests/"
 
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
@@ -615,15 +618,25 @@ class RuleDictionary ():
                 unittestclassname = class_prefix + unittestname
                 unittestmoduleimportstring = unittestclassname
                 unittestinstanciatecommand = "unittest_class = mod." + \
-                                              unittestname
+                                             unittestname
                 LOGGER.log(LogPriority.DEBUG, "------------")
-                LOGGER.log(LogPriority.DEBUG, "\n\tunittestname: " + str(unittestname))
-                LOGGER.log(LogPriority.DEBUG, "\tunittestclassname: " + str(unittestclassname))
-                LOGGER.log(LogPriority.DEBUG, "\tunittestclasspath: " + str(unittestclasspath))
-                LOGGER.log(LogPriority.DEBUG, "\tunittestmoduleimportstring: " + str(unittestmoduleimportstring))
-                LOGGER.log(LogPriority.DEBUG, "\tunittestfilename: " + str(unittestfilename))
-                LOGGER.log(LogPriority.DEBUG, "\tunittestmoduleimportstring: " + str(unittestmoduleimportstring))
-                LOGGER.log(LogPriority.DEBUG, "\tunittestinstanciatecommand: " + str(unittestinstanciatecommand))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\n\tunittestname: " + str(unittestname))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tunittestclassname: " + str(unittestclassname))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tunittestclasspath: " + str(unittestclasspath))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tunittestmoduleimportstring: " +
+                           str(unittestmoduleimportstring))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tunittestfilename: " + str(unittestfilename))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tunittestmoduleimportstring: " +
+                           str(unittestmoduleimportstring))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tunittestinstanciatecommand: " +
+                           str(unittestinstanciatecommand))
                 LOGGER.log(LogPriority.DEBUG, "\tpwd: " + str(os.getcwd()))
                 LOGGER.log(LogPriority.DEBUG, "------------")
 
@@ -632,19 +645,27 @@ class RuleDictionary ():
                 self.ruledictionary[rulename]["ruleclassname"] = ruleclassname
                 self.ruledictionary[rulename]["ruleclasspath"] = ruleclasspath
                 self.ruledictionary[rulename]["rulefilename"] = rulefilename
-                self.ruledictionary[rulename]["rulemoduleimportstring"] = rulemoduleimportstring
-                self.ruledictionary[rulename]["ruleinstanciatecommand"] = ruleinstanciatecommand
+                self.ruledictionary[rulename]["rulemoduleimportstring"] = \
+                    rulemoduleimportstring
+                self.ruledictionary[rulename]["ruleinstanciatecommand"] = \
+                    ruleinstanciatecommand
                 self.ruledictionary[rulename]["ruleobject"] = None
                 self.ruledictionary[rulename]["ruleisapplicable"] = True
-                self.ruledictionary[rulename]["rulecorrecteffectiveuserid"] = True
+                self.ruledictionary[rulename]["rulecorrecteffectiveuserid"] = \
+                    True
                 self.ruledictionary[rulename]["rulefound"] = True
 
                 self.ruledictionary[rulename]["unittestname"] = unittestname
-                self.ruledictionary[rulename]["unittestclassname"] = unittestclassname
-                self.ruledictionary[rulename]["unittestclasspath"] = unittestclasspath
-                self.ruledictionary[rulename]["unittestfilename"] = unittestfilename
-                self.ruledictionary[rulename]["unittestmoduleimportstring"] = unittestmoduleimportstring
-                self.ruledictionary[rulename]["unittestinstanciatecommand"] = unittestinstanciatecommand
+                self.ruledictionary[rulename]["unittestclassname"] = \
+                    unittestclassname
+                self.ruledictionary[rulename]["unittestclasspath"] = \
+                    unittestclasspath
+                self.ruledictionary[rulename]["unittestfilename"] = \
+                    unittestfilename
+                self.ruledictionary[rulename]["unittestmoduleimportstring"] = \
+                    unittestmoduleimportstring
+                self.ruledictionary[rulename]["unittestinstanciatecommand"] = \
+                    unittestinstanciatecommand
                 self.ruledictionary[rulename]["unittestobject"] = None
                 self.ruledictionary[rulename]["unittestfound"] = False
                 self.ruledictionary[rulename]["errormessage"] = []
@@ -659,36 +680,27 @@ class RuleDictionary ():
                 '''
 
                 try:
-                    #print "------------"
-                    #print "\n\trulename: " + str(rulename)
-                    #print "\truleclassname: " + str(ruleclassname)
-                    #####
                     # A = "dot" path to the library we want to import from
                     # B = Module inside library we want to import
                     # basically perform a "from A import B
                     mod = __import__(ruleclassname, fromlist=[rulename])
-                    #print "\n\truleToTest: " + str(mod)
-                    #print "------------"
-                    #####
                     # Add the import to a list, to later "map" to a test suite
                     self.ruleList.append(mod)
 
                 except Exception:
                     trace = traceback.format_exc()
                     messagestring = "Error importing rule: " + rulename + " " + \
-                                     rulemoduleimportstring + " - " + trace
+                                    rulemoduleimportstring + " - " + trace
                     self.ruledictionary[rulename]["errormessage"].append(messagestring)
                     self.logdispatch.log(LogPriority.ERROR, messagestring)
                     continue
 
                 try:
                     exec(ruleinstanciatecommand)
-                    #rule_class = getattr(mod, rulemoduleimportstring)
-                    #exec("rule_class = mod." + ruleclassname)
                 except Exception:
                     trace = traceback.format_exc()
                     messagestring = "Error importing rule: " + rulename + " " + \
-                                     rulemoduleimportstring + " - " + trace
+                                    rulemoduleimportstring + " - " + trace
                     self.logdispatch.log(LogPriority.ERROR,
                                          "Error finding rule class reference: "
                                          + trace)
@@ -702,7 +714,7 @@ class RuleDictionary ():
                 except Exception:
                     trace = traceback.format_exc()
                     messagestring = "Error initializing rule: " + rulename + \
-                    " - " + trace
+                        " - " + trace
                     self.ruledictionary[rulename]["errormessage"].append(messagestring)
                     self.logdispatch.log(LogPriority.ERROR, messagestring)
                     continue
@@ -750,22 +762,18 @@ class RuleDictionary ():
         keys = sorted(self.ruledictionary.keys())
         for key in keys:
             ruleclassname = self.ruledictionary[key]["ruleclassname"]
-            classimportname = "." + ruleclassname
             rulename = self.ruledictionary[key]["rulename"]
-            ruleclasspath = self.ruledictionary[key]["ruleclasspath"]
             rule_class = self.ruledictionary[key]["ruleobject"]
             rulemoduleimportstring = \
-            self.ruledictionary[key]["rulemoduleimportstring"]
-            ruleclasspath = \
-            self.ruledictionary[key]["ruleclasspath"]
+                self.ruledictionary[key]["rulemoduleimportstring"]
             ruleinstanciatecommand = \
-            self.ruledictionary[key]["ruleinstanciatecommand"]
+                self.ruledictionary[key]["ruleinstanciatecommand"]
             try:
                 mod = __import__(ruleclassname, fromlist=[rulename])
             except Exception:
                 trace = traceback.format_exc()
                 messagestring = "Error importing rule: " + rulename + " " + \
-                rulemoduleimportstring + " - " + trace
+                    rulemoduleimportstring + " - " + trace
                 self.ruledictionary[key]["errormessage"].append(messagestring)
                 self.logdispatch.log(LogPriority.ERROR, messagestring)
                 continue
@@ -776,7 +784,7 @@ class RuleDictionary ():
             except Exception:
                 trace = traceback.format_exc()
                 messagestring = "Error importing rule: " + rulename + " " + \
-                rulemoduleimportstring + " - " + trace
+                    rulemoduleimportstring + " - " + trace
                 self.logdispatch.log(LogPriority.ERROR,
                                      "Error finding rule class reference: "
                                      + trace)
@@ -788,7 +796,8 @@ class RuleDictionary ():
                                        self.statechglogger)
                 rulenumber = self.rule.getrulenum()
                 self.ruledictionary[key]["rulenumber"] = rulenumber
-                messagestring = str(key) + "(" + str(rulenumber) + ") initialized!"
+                messagestring = str(key) + "(" + str(rulenumber) + \
+                    ") initialized!"
                 isapplicable = self.rule.isapplicable()
                 isRootRequired = self.rule.getisrootrequired()
                 if not isapplicable:
@@ -798,22 +807,25 @@ class RuleDictionary ():
                     self.ruledictionary[key]["ruleisapplicable"] = True
                     messagestring = messagestring + " is applicable."
                 if self.effectiveUserID == 0 and isRootRequired:
-                    self.ruledictionary[key]["rulecorrecteffectiveuserid"] = True
+                    self.ruledictionary[key]["rulecorrecteffectiveuserid"] = \
+                        True
                     messagestring = messagestring + " is running in " + \
-                    "correct context."
+                        "correct context."
                 elif not self.effectiveUserID == 0 and not isRootRequired:
-                    self.ruledictionary[key]["rulecorrecteffectiveuserid"] = True
+                    self.ruledictionary[key]["rulecorrecteffectiveuserid"] = \
+                        True
                     messagestring = messagestring + " is running in " + \
-                    "correct context."
+                        "correct context."
                 else:
-                    self.ruledictionary[key]["rulecorrecteffectiveuserid"] = False
+                    self.ruledictionary[key]["rulecorrecteffectiveuserid"] = \
+                        False
                     messagestring = messagestring + " is not running in " + \
-                    "correct context."
+                        "correct context."
                 self.logdispatch.log(LogPriority.INFO, str(messagestring))
             except Exception:
                 trace = traceback.format_exc()
                 messagestring = "Error initializing rule: " + rulename + \
-                " - " + trace
+                    " - " + trace
                 self.ruledictionary[key]["errormessage"].append(messagestring)
                 self.logdispatch.log(LogPriority.ERROR, messagestring)
                 continue
@@ -821,7 +833,7 @@ class RuleDictionary ():
 
     def findDictonaryItem(self, rulename):
         self.dictinaryItem = self.ruledictionary[rulename]
-        if self.dictinaryItem == None:
+        if self.dictinaryItem is None:
             success = False
         else:
             success = True
@@ -862,7 +874,7 @@ class RuleDictionary ():
         messagestring = "stonixtest rule tested: " + \
                         "--------------------------------------------------"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        while not (self.getCurrentRuleItem() == None):
+        while self.getCurrentRuleItem() is not None:
             ruleName = self.getRuleName()
             ruleNumber = self.getRuleNumber()
             ruleTestName = self.getTestName()
@@ -870,16 +882,16 @@ class RuleDictionary ():
             ruleIsApplicable = self.getIsApplicable()
             if ruleIsApplicable and ruleCorrectEffectiveUserid:
                 messagestring = str(ruleName) + "(" + str(ruleNumber) + "):" + \
-                str(ruleTestName) + " - isApplicable=" + \
-                str(ruleIsApplicable) + " - CorrectEffectiveUserid=" + \
-                str(ruleCorrectEffectiveUserid) + ";"
+                    str(ruleTestName) + " - isApplicable=" + \
+                    str(ruleIsApplicable) + " - CorrectEffectiveUserid=" + \
+                    str(ruleCorrectEffectiveUserid) + ";"
                 self.logdispatch.log(LogPriority.INFO, str(messagestring))
             self.gotoNextRule()
         self.gotoFirstRule()
         messagestring = "stonixtest rule not tested: " + \
                         "--------------------------------------------------"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        while not (self.getCurrentRuleItem() == None):
+        while self.getCurrentRuleItem() is not None:
             ruleName = self.getRuleName()
             ruleNumber = self.getRuleNumber()
             ruleTestName = self.getTestName()
@@ -887,14 +899,15 @@ class RuleDictionary ():
             ruleIsApplicable = self.getIsApplicable()
             if not(ruleIsApplicable) or not(ruleCorrectEffectiveUserid):
                 messagestring = str(ruleName) + "(" + str(ruleNumber) + "):" + \
-                str(ruleTestName) + " - isApplicable=" + \
-                str(ruleIsApplicable) + " - CorrectEffectiveUserid=" + \
-                str(ruleCorrectEffectiveUserid) + ";"
+                    str(ruleTestName) + " - isApplicable=" + \
+                    str(ruleIsApplicable) + " - CorrectEffectiveUserid=" + \
+                    str(ruleCorrectEffectiveUserid) + ";"
                 self.logdispatch.log(LogPriority.INFO, str(messagestring))
             self.gotoNextRule()
         messagestring = "end --------------------------------------------"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
         return success
+
 
 def isCorrectEffectiveUserId(checkRootRequired=9999999):
     """
@@ -913,6 +926,7 @@ def isCorrectEffectiveUserId(checkRootRequired=9999999):
     LOGGER.log(LogPriority.DEBUG, "Correct user: " + str(success))
     return success
 
+
 def isRuleInBounds(fname=""):
     """
     Loads the rule passed in and checks if it "is applicable" and running
@@ -926,16 +940,17 @@ def isRuleInBounds(fname=""):
     LOGGER.log(LogPriority.DEBUG, "fname: " + str(fname))
     ruleIsInBounds = False
 
-    #print "\n\n\tFile: " + str(root + "/" + fname)
     toTestFileName = fname.split("/")[-1]
     # get the name of the test without the ".py"
     toTestName = ".".join(toTestFileName.split(".")[:-1])
     # Create a class path with the testName
     toTestClassName = ".".join(fname.split("/")[:-1]) + "." + toTestName
 
-    LOGGER.log(LogPriority.DEBUG, "\n\ttoTestFileName  : " + str(toTestFileName))
+    LOGGER.log(LogPriority.DEBUG,
+               "\n\ttoTestFileName  : " + str(toTestFileName))
     LOGGER.log(LogPriority.DEBUG, "  \ttoTestName      : " + str(toTestName))
-    LOGGER.log(LogPriority.DEBUG, "  \ttoTestClassName : " + str(toTestClassName) + "\n")
+    LOGGER.log(LogPriority.DEBUG,
+               "  \ttoTestClassName : " + str(toTestClassName) + "\n")
 
     # Make Sure this rule sould be testing
     try:
@@ -944,15 +959,16 @@ def isRuleInBounds(fname=""):
         # B = Module inside library we want to import
         # basically perform a "from A import B
         toTestToRunMod = __import__(toTestClassName, fromlist=[toTestName])
-        LOGGER.log(LogPriority.DEBUG, "toTestClassName: " + \
-                                      str(toTestClassName) + " " + \
+        LOGGER.log(LogPriority.DEBUG, "toTestClassName: " +
+                                      str(toTestClassName) + " " +
                                       "toTestName: " + str(toTestName))
 
-    except Exception, err: 
-        print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
+    except Exception, err:
+        print "stonixtest error: " + str(toTestName) + " Exception: " + \
+            str(err)
     else:
 
-        # Define a class/function or set of classes/functions to instantiate, 
+        # Define a class/function or set of classes/functions to instantiate,
         # must be in a list/array
         mod2import = [toTestName]
 
@@ -965,23 +981,28 @@ def isRuleInBounds(fname=""):
         try:
             exec(tmpex)
 
-            get_attrs = toTestClass(SYSCONFIG, ENVIRON, LOGGER, STATECHANGELOGGER)
+            get_attrs = toTestClass(SYSCONFIG, ENVIRON, LOGGER,
+                                    STATECHANGELOGGER)
 
-            # Acquire result of method            
+            # Acquire result of method
             is_root_required = get_attrs.getisrootrequired()
-            LOGGER.log(LogPriority.DEBUG, "is_root_required: " + \
+            LOGGER.log(LogPriority.DEBUG, "is_root_required: " +
                                           str(is_root_required))
         except Exception, err:
-            print "stonixtest error: " + str(toTestName) + " Exception: " + str(err)
+            print "stonixtest error: " + str(toTestName) + " Exception: " + \
+                str(err)
         else:
             # Does the running user match if root is required?
-            toTestCorrectEffectiveUserid = isCorrectEffectiveUserId(is_root_required)
+            toTestCorrectEffectiveUserid = \
+                isCorrectEffectiveUserId(is_root_required)
 
             # check if is applicable to this system
             toTestIsApplicable = get_attrs.isapplicable()
-    
-            LOGGER.log(LogPriority.DEBUG, "IsApplicable: " + str(toTestIsApplicable))
-            LOGGER.log(LogPriority.DEBUG, "UID works   : " + str(toTestCorrectEffectiveUserid))
+
+            LOGGER.log(LogPriority.DEBUG,
+                       "IsApplicable: " + str(toTestIsApplicable))
+            LOGGER.log(LogPriority.DEBUG,
+                       "UID works   : " + str(toTestCorrectEffectiveUserid))
 
             # Make Sure this rule sould be testing
             if toTestCorrectEffectiveUserid and toTestIsApplicable:
@@ -997,15 +1018,13 @@ def processRuleTest(filename=""):
 
     @param: a filename to match test with rule for validation and loading
     @return: a loaded module
-    
+
     @author: Roy Nielsen
     """
     LOGGER.log(LogPriority.DEBUG, "\n\n\tFile passed in: " + str(filename))
-    found = True
-    returnMod = None
     classToTest = None
     err = None
-    
+
     # Get the filename of the test, without the path
     testFileName = filename.split("/")[-1]
     # get the name of the test without the ".py"
@@ -1017,10 +1036,11 @@ def processRuleTest(filename=""):
         filename.strip("./")
         del testCaseNameList[0]
     testClassName = ".".join(testCaseNameList) + "." + testName
-    
+
     LOGGER.log(LogPriority.DEBUG, "\n\tTestFileName  : " + str(testFileName))
     LOGGER.log(LogPriority.DEBUG, "  \tTestName      : " + str(testName))
-    LOGGER.log(LogPriority.DEBUG, "  \tTestClassName : " + str(testClassName) + "\n")
+    LOGGER.log(LogPriority.DEBUG,
+               "  \tTestClassName : " + str(testClassName) + "\n")
 
     # Make Sure this rule sould be testing
     try:
@@ -1029,17 +1049,17 @@ def processRuleTest(filename=""):
         # B = Module inside library we want to import
         # basically perform a "from A import B
         testToRunMod = __import__(testClassName, fromlist=[testName])
-        
-    except Exception, err: 
+
+    except Exception, err:
         print "stonixtest error: " + str(testName) + " Exception: " + str(err)
     else:
-        # check if we're running in the correct context - get the 
+        # check if we're running in the correct context - get the
         # name associated with the test
         try:
             classToTestRegex = re.match("^zzzTestRule(.+)$", testName)
         except Exception, err:
-           print "Exception trying to match regex . . . \"" + str(err) + "\""
-           classToTest = None
+            print "Exception trying to match regex . . . \"" + str(err) + "\""
+            classToTest = None
         else:
             try:
                 classToTest = classToTestRegex.group(1) + ".py"
@@ -1048,32 +1068,32 @@ def processRuleTest(filename=""):
     if err:
         LOGGER.log(LogPriority.DEBUG, "Exception: " + str(err))
     else:
-        LOGGER.log(LogPriority.DEBUG, "Processed rule test: " + \
-                                       str(testFileName) + \
-                                       " ClassToTest: " + \
-                                       str(classToTest))
-    
+        LOGGER.log(LogPriority.DEBUG, "Processed rule test: " +
+                                      str(testFileName) +
+                                      " ClassToTest: " +
+                                      str(classToTest))
+
     LOGGER.log(LogPriority.DEBUG, "ClassToTest: " + str(classToTest))
-    #print "----------=====##        ##=====----------"
     returnMod = None
     if classToTest:
         # load the rule to make sure it is running in the right
         # context and it is applicable to the platform
-        for root, dirnames, filenames in os.walk("src/stonix_resources/rules"):
+        for root, _, filenames in os.walk("src/stonix_resources/rules"):
             LOGGER.log(LogPriority.DEBUG, "root: " + str(root))
             myfile = ""
             for myfile in filenames:
-                if re.match("^%s$"%classToTest, str(myfile).strip()):
-                    LOGGER.log(LogPriority.DEBUG,  "classToTest: " + \
-                                                   str(classToTest) + \
+                if re.match("^%s$" % classToTest, str(myfile).strip()):
+                    LOGGER.log(LogPriority.DEBUG,  "classToTest: " +
+                                                   str(classToTest) +
                                                    ", File: " + str(myfile))
 
                     if isRuleInBounds(root + "/" + classToTest):
                         returnMod = testToRunMod
                     else:
                         returnMod = None
-    LOGGER.log(LogPriority.DEBUG, "Return Mod: " + str(returnMod) )
+    LOGGER.log(LogPriority.DEBUG, "Return Mod: " + str(returnMod))
     return returnMod
+
 
 def processFrameworkNUtilsTest(filename=""):
     """
@@ -1088,8 +1108,6 @@ def processFrameworkNUtilsTest(filename=""):
     modToReturn = None
 
     if filename:
-
-        #print "\n\n\tFile: " + str(root + "/" + myfile)
         relpath = str(filename)
         # get the name of the test without the ".py"
         testName = filename.split("/")[-1].split(".py")[0]
@@ -1098,7 +1116,8 @@ def processFrameworkNUtilsTest(filename=""):
 
         LOGGER.log(LogPriority.DEBUG, "\n\tTestFileName  : " + str(filename))
         LOGGER.log(LogPriority.DEBUG, "  \tTestName      : " + str(testName))
-        LOGGER.log(LogPriority.DEBUG, "  \tTestClassName : " + str(testClassName) + "\n")
+        LOGGER.log(LogPriority.DEBUG,
+                   "  \tTestClassName : " + str(testClassName) + "\n")
 
         # Make Sure this rule sould be testing
         try:
@@ -1109,10 +1128,12 @@ def processFrameworkNUtilsTest(filename=""):
             modToReturn = __import__(testClassName, fromlist=[testName])
 
         except Exception, err:
-            print "stonixtest error: " + str(testName) + " Exception: " + str(err)
+            print "stonixtest error: " + str(testName) + " Exception: " + \
+                str(err)
             modToReturn = None
 
     return modToReturn
+
 
 class TestNotFound(Exception):
     def __init__(self, arg):
@@ -1120,14 +1141,15 @@ class TestNotFound(Exception):
         self.msg = arg
 
 
-def assemble_list_suite(modules = []):
+def assemble_list_suite(modules=[]):
     """
     Only process the list of passed in tests...
 
     Will only run <Rulename>, not the test name zzzTestRule<Rulename>.
 
-    NOTE: The framework/utilities and rules have different processing mechanisms
-         which is why they are processed separately in this function
+    NOTE: The framework/utilities and rules have different processing
+          mechanisms which is why they are processed separately in this
+          function
 
     @param: modules - a list of modules to test.
 
@@ -1135,18 +1157,10 @@ def assemble_list_suite(modules = []):
     """
     testList = []
 
-    #print str(modules)
-
     # - if modules list is passed in
-    if modules and isinstance(modules, list) :
-
-        suite = None
-
+    if modules and isinstance(modules, list):
         # loop through list
-        for module in modules :
-            #print "\n\n\tModule: " + str(module)
-            # import the test
-
+        for module in modules:
             # determine if it is a framework or rule test
             if re.search("amework", module):
                 prefix = "framework"
@@ -1162,10 +1176,10 @@ def assemble_list_suite(modules = []):
                 # Process a RULE test - different library loading
                 # mechanism
                 found = False
-                #Find the path to the test
-                LOGGER.log(LogPriority.DEBUG, "Current path: " + \
-                                                   os.path.abspath(os.curdir))
-                for root, dirnames, filenames in os.walk("./src/tests/" + prefix):
+                # Find the path to the test
+                LOGGER.log(LogPriority.DEBUG, "Current path: " +
+                           os.path.abspath(os.curdir))
+                for root, _, filenames in os.walk("./src/tests/" + prefix):
                     myfile = ""
                     LOGGER.log(LogPriority.DEBUG, "Fnames: " + str(filenames))
                     for myfile in filenames:
@@ -1173,89 +1187,93 @@ def assemble_list_suite(modules = []):
                             continue
                         regex = str(module) + ".*"
                         LOGGER.log(LogPriority.DEBUG, root + "/" + myfile)
-                        if re.search("%s"%regex, myfile):
-                            LOGGER.log(LogPriority.DEBUG, "myfile: " + str(myfile))
+                        if re.search("%s" % regex, myfile):
+                            LOGGER.log(LogPriority.DEBUG,
+                                       "myfile: " + str(myfile))
                             found = True
 
-                            LOGGER.log(LogPriority.DEBUG, "Found: " +\
-                                            str(myfile))
+                            LOGGER.log(LogPriority.DEBUG, "Found: " +
+                                       str(myfile))
                             try:
                                 #####
                                 # NOTE: Processing a RULE test here
-                                testToRunMod = processRuleTest(root + "/" + myfile)
-                                #print "******************************************"
-                                #print "Checking out " + str(module)
+                                testToRunMod = processRuleTest(root + "/" +
+                                                               myfile)
                                 # Make Sure this rule sould be running
                             except Exception, err:
-                                LOGGER.log(LogPriority.INFO, "stonixtest " + \
-                                           "error: " + str(testToRunMod) + \
+                                LOGGER.log(LogPriority.INFO, "stonixtest " +
+                                           "error: " + str(testToRunMod) +
                                            " Exception: " + str(err))
                             else:
                                 if testToRunMod:
                                     #####
-                                    # Add the import to a list, to later "map" to a test suite
+                                    # Add the import to a list, to later "map"
+                                    # to a test suite
                                     testList.append(testToRunMod)
                                     LOGGER.log(LogPriority.DEBUG,
                                                "Adding test to suite...")
                 if not found:
                     try:
-                        raise TestNotFound("\n\tRule test \"" + str(module) + "\" not found")
+                        raise TestNotFound("\n\tRule test \"" + str(module) +
+                                           "\" not found")
                     except TestNotFound, err:
                         print "\n\tException: " + str(err.msg)
-                        #sys.exit(253)
 
-                #print " *****************************************"
             elif re.match("^framework$", prefix):
                 #####
                 # Process a FRAMEWORK test - different library loading
                 # mechanism.
                 found = False
-                #Find the path to the test
-                for root, dirnames, filenames in os.walk("src/tests/" + prefix):
+                # Find the path to the test
+                for root, _, filenames in os.walk("src/tests/" + prefix):
                     myfile = ""
                     for myfile in filenames:
                         if re.match(".*\.pyc$", myfile):
                             continue
-                        LOGGER.log(LogPriority.DEBUG, "\n\n\tmodname: " + str(module))
-                        LOGGER.log(LogPriority.DEBUG, "\tFile   : " + str(myfile))
-                        LOGGER.log(LogPriority.DEBUG, "\tRelPath: " + str(root + "/" + myfile))
+                        LOGGER.log(LogPriority.DEBUG,
+                                   "\n\n\tmodname: " + str(module))
+                        LOGGER.log(LogPriority.DEBUG,
+                                   "\tFile   : " + str(myfile))
+                        LOGGER.log(LogPriority.DEBUG,
+                                   "\tRelPath: " + str(root + "/" + myfile))
                         regex = "^" + str(module) + ".*"
                         if re.match(regex, myfile):
                             found = True
-                            #print "******************************************"
-                            #print "Checking out " + str(myfile)
                             try:
                                 #####
                                 # NOTE: Processing a FRAMEWORK test here
-                                testToRunMod = processFrameworkNUtilsTest(root + "/" + myfile)
-                                
+                                testToRunMod = processFrameworkNUtilsTest(root
+                                                                          + "/"
+                                                                          + myfile)
+
                             except Exception, err:
-                                LOGGER.log(LogPriority.DEBUG, "stonixtest " + \
-                                           "error: " + str(testToRunMod) + \
+                                LOGGER.log(LogPriority.DEBUG, "stonixtest " +
+                                           "error: " + str(testToRunMod) +
                                            " Exception: " + str(err))
                             else:
                                 if testToRunMod:
                                     #####
-                                    # Add the import to a list, to later "map" to a test suite
-                                    testList.append(testToRunMod)     
-                                    LOGGER.log(LogPriority.DEBUG, "Adding test" \
-                                              " to suite...")
+                                    # Add the import to a list, to later "map"
+                                    # to a test suite
+                                    testList.append(testToRunMod)
+                                    LOGGER.log(LogPriority.DEBUG,
+                                               "Adding test to suite...")
                 if not found:
                     try:
-                        raise TestNotFound("\n\tFramework test \"" + str(myfile) + "\" not found")
+                        raise TestNotFound("\n\tFramework test \"" +
+                                           str(myfile) + "\" not found")
                     except TestNotFound, err:
-                        LOGGER.log(LogPriority.DEBUG, "\n\tException: " + str(err.msg))
-                        #sys.exit(254)
+                        LOGGER.log(LogPriority.DEBUG,
+                                   "\n\tException: " + str(err.msg))
 
-                #print " *****************************************"
-            
             else:
                 try:
-                    raise TestNotFound("Error attempting insert test (" + str(module) + ") into test list...\n")
+                    raise TestNotFound("Error attempting insert test (" +
+                                       str(module) + ") into test list...\n")
                 except TestNotFound, err:
-                    LOGGER.log(LogPriority.DEBUG, "\n\tException: " + str(err.msg))
-                    #sys.exit(255)
-            
+                    LOGGER.log(LogPriority.DEBUG,
+                               "\n\tException: " + str(err.msg))
+
     #####
     # Set up the test loader function
     load = unittest.defaultTestLoader.loadTestsFromModule
@@ -1265,9 +1283,10 @@ def assemble_list_suite(modules = []):
     suite = unittest.TestSuite(map(load, testList))
 
     return suite
-    
-    
-def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=True, interactive=False):
+
+
+def assemble_suite(framework=True, rule=True, utils=True, unit=True,
+                   network=True, interactive=False):
     '''
     This sets up the test suite
     @author: ekkehard j. koch
@@ -1283,16 +1302,16 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
         # Iterate through rules
         ruleDictionary.gotoFirstRule()
 
-        #print "\n\n\n\n\n\t\tTrying to import rule tests\n\n"
-        while not (ruleDictionary.getCurrentRuleItem() == None):
+        while ruleDictionary.getCurrentRuleItem() is not None:
             # Get Rule Information
             ruleName = ruleDictionary.getRuleName()
             ruleTestClassName = ruleDictionary.getTestClassName()
             ruleNumber = ruleDictionary.getRuleNumber()
             ruleTestName = ruleDictionary.getTestName()
-            ruleCorrectEffectiveUserid = ruleDictionary.getCorrectEffectiveUserid()
+            ruleCorrectEffectiveUserid = \
+                ruleDictionary.getCorrectEffectiveUserid()
             ruleIsApplicable = ruleDictionary.getIsApplicable()
-            
+
             # Make Sure this rule sould be testing
             if ruleCorrectEffectiveUserid and ruleIsApplicable:
                 try:
@@ -1300,50 +1319,50 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
                     # A = "dot" path to the library we want to import from
                     # B = Module inside library we want to import
                     # basically perform a "from A import B
-                    ruleTestToRun = __import__(ruleTestClassName, fromlist=[ruleTestName])
+                    ruleTestToRun = __import__(ruleTestClassName,
+                                               fromlist=[ruleTestName])
 
                     #####
                     # Add the import to a list, to later "map" to a test suite
                     testList.append(ruleTestToRun)
-                
-                except Exception, err: 
-                    LOGGER.log(LogPriority.DEBUG, "stonixtest error: " + \
-                               str(ruleName) + "(" + str(ruleNumber) + \
+
+                except Exception, err:
+                    LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
+                               str(ruleName) + "(" + str(ruleNumber) +
                                ") Exception: " + str(err))
                 finally:
                     ruleDictionary.gotoNextRule()
             else:
                 ruleDictionary.gotoNextRule()
-    
-        #print "\n\t\t Imported rule tests\n\n\n\n\n"
+
     else:
         LOGGER.log(LogPriority.DEBUG, "\n Not running rule tests\n")
-
 
     if framework:
 
         # Build the framework dictionary
         frameworkDictionary = FrameworkDictionary()
-        
+
         # Iterate through framework Unit Tests
         frameworkDictionary.gotoFirstItem()
-        frameworkList = []
-        modules = []
-        while not (frameworkDictionary.getCurrentItem() == None):
+        while frameworkDictionary.getCurrentItem() is not None:
             frameworkTestName = frameworkDictionary.getTestName()
             frameworkTestPath = frameworkDictionary.getTestPath()
             frameworkTestClassName = frameworkDictionary.getTestClassName()
             frameworkTestModuleName = frameworkDictionary.getModuleName()
-            #frameworkCompleteTestPath = frameworkTestPath + frameworkTestName
             frameworkCompleteTestPath = frameworkTestPath
-            frameworkCompleteTestName = frameworkTestName + "." + frameworkTestModuleName
+            frameworkCompleteTestName = frameworkTestName + "." + \
+                frameworkTestModuleName
 
             LOGGER.log(LogPriority.DEBUG, "----------------------------")
             LOGGER.log(LogPriority.DEBUG, "\tFTN:  " + str(frameworkTestName))
-            LOGGER.log(LogPriority.DEBUG, "\tFTCN: " + str(frameworkTestClassName))
+            LOGGER.log(LogPriority.DEBUG,
+                       "\tFTCN: " + str(frameworkTestClassName))
             LOGGER.log(LogPriority.DEBUG, "\tFTP:  " + str(frameworkTestPath))
-            LOGGER.log(LogPriority.DEBUG, "\tFCTP: " + str(frameworkCompleteTestPath))
-            LOGGER.log(LogPriority.DEBUG, "\tFTCN: " + str(frameworkCompleteTestName))
+            LOGGER.log(LogPriority.DEBUG,
+                       "\tFCTP: " + str(frameworkCompleteTestPath))
+            LOGGER.log(LogPriority.DEBUG,
+                       "\tFTCN: " + str(frameworkCompleteTestName))
             LOGGER.log(LogPriority.DEBUG, "----------------------------")
 
             try:
@@ -1358,9 +1377,9 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
                 # Add the import to a list, to later "map" to a test suite
                 testList.append(fameworkTestToRun)
 
-            except Exception, err: 
-                LOGGER.log(LogPriority.DEBUG, "stonixtest error: " + \
-                                              str(frameworkTestClassName) + \
+            except Exception, err:
+                LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
+                                              str(frameworkTestClassName) +
                                               " Exception: " + str(err) + "\n")
             frameworkDictionary.gotoNextItem()
     else:
@@ -1373,14 +1392,11 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
 
         # Iterate through framework Unit Tests
         utilsDictionary.gotoFirstItem()
-        utilsList = []
-        modules = []
-        while not (utilsDictionary.getCurrentItem() == None):
+        while utilsDictionary.getCurrentItem() is not None:
             utilsTestName = utilsDictionary.getTestName()
             utilsTestPath = utilsDictionary.getTestPath()
             utilsTestClassName = utilsDictionary.getTestClassName()
             utilsTestModuleName = utilsDictionary.getModuleName()
-            #frameworkCompleteTestPath = frameworkTestPath + frameworkTestName
             utilsCompleteTestPath = utilsTestPath
             utilsCompleteTestName = utilsTestName + "." + utilsTestModuleName
 
@@ -1388,8 +1404,10 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
             LOGGER.log(LogPriority.DEBUG, "\tFTN:  " + str(utilsTestName))
             LOGGER.log(LogPriority.DEBUG, "\tFTCN: " + str(utilsTestClassName))
             LOGGER.log(LogPriority.DEBUG, "\tFTP:  " + str(utilsTestPath))
-            LOGGER.log(LogPriority.DEBUG, "\tFCTP: " + str(utilsCompleteTestPath))
-            LOGGER.log(LogPriority.DEBUG, "\tFTCN: " + str(utilsCompleteTestName))
+            LOGGER.log(LogPriority.DEBUG,
+                       "\tFCTP: " + str(utilsCompleteTestPath))
+            LOGGER.log(LogPriority.DEBUG,
+                       "\tFTCN: " + str(utilsCompleteTestName))
             LOGGER.log(LogPriority.DEBUG, "----------------------------")
 
             try:
@@ -1397,17 +1415,17 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
                 # A = "dot" path to the library we want to import from
                 # B = Module inside library we want to import
                 # basically perform a "from A import B
-                utilsTestToRun = __import__(utilsTestClassName, fromlist=[utilsTestName])
+                utilsTestToRun = __import__(utilsTestClassName,
+                                            fromlist=[utilsTestName])
 
                 #####
                 # Add the import to a list, to later "map" to a test suite
                 testList.append(utilsTestToRun)
 
-            except Exception, err: 
-                LOGGER.log(LogPriority.DEBUG, "stonixtest error: " + \
-                                              str(utilsTestClassName) + \
+            except Exception, err:
+                LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
+                                              str(utilsTestClassName) +
                                               " Exception: " + str(err) + "\n")
-                #raise(err)
             utilsDictionary.gotoNextItem()
     else:
         LOGGER.log(LogPriority.DEBUG, "\n Not running utils tests.\n")
@@ -1420,7 +1438,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
     # Define a test suite based on the testList.
     suite = unittest.TestSuite(map(load, testList))
 
-    if  rule:
+    if rule:
         # Add the test for every rule and rule for every test... test.
         anotherTest = test_rules_and_unit_test()
         suite.addTests(unittest.makeSuite(anotherTest.getTest()))
@@ -1428,6 +1446,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True, network=Tru
     if rule:
         ruleDictionary.ruleReport()
     return suite
+
 
 # Get all of the possible options passed in to OptionParser that are passed
 # in with the -m or --modules flag
@@ -1445,14 +1464,13 @@ class ModulesOption(Option):
         else:
             Option.take_action(
                 self, action, dest, opt, value, values, parser)
-            
-            
-VERSION="0.8.20"
+
+VERSION = "0.9.5"
 description = "Test framework for Stonix."
 parser = optparse.OptionParser(option_class=ModulesOption,
-                      usage='usage: %prog [OPTIONS]',
-                      version='%s' % (VERSION),
-                      description=description)
+                               usage='usage: %prog [OPTIONS]',
+                               version='%s' % (VERSION),
+                               description=description)
 
 parser.add_option("-l", "--log", action="store_true", dest="logauto",
                   default=False, help="Log failures using default log"
@@ -1463,18 +1481,18 @@ parser.add_option("-n", "--namelog", action="store", dest="ttrlog",
                   metavar="LOGNAME")
 
 parser.add_option("-r", "--rule", action="store_true", dest="rule",
-                  default=False, help="Run the Rule tests.  Will not" + \
+                  default=False, help="Run the Rule tests.  Will not" +
                                       " work when combined with -f and -u.")
 
 parser.add_option("-u", "--utils", action="store_true", dest="utils",
-                  default=False, help="Run the function tests.  Will not" + \
+                  default=False, help="Run the function tests.  Will not" +
                                       " work when combined with -f and -r.")
 
 parser.add_option("-s", "--skip", action="store_true",
                   dest="skip_syslog", default=False,
-                  help="Skip syslog logging so we don't fill up the logs." + \
-                       "This will leave an incremental log by default in " + \
-                       "/tmp/<uid>.stonixtest.<log number>, where log number" +\
+                  help="Skip syslog logging so we don't fill up the logs." +
+                       "This will leave an incremental log by default in " +
+                       "/tmp/<uid>.stonixtest.<log number>, where log number" +
                        " is the order of the last ten stonixtest runs.")
 
 parser.add_option("--network", action="store_true", dest="network",
@@ -1488,27 +1506,27 @@ parser.add_option("-i", "--interactive", action="store_true",
                   help="Log failures using default log")
 
 parser.add_option("-f", "--framework", action="store_true", dest="framework",
-                  default=False, help="Run the Framework tests.  Will not" + \
+                  default=False, help="Run the Framework tests.  Will not" +
                                       " work when combined with -r and -u.")
 
 parser.add_option("-a", "--all-automatable", action="store_true", dest="all",
-                  default=False, help="Run all unit and network tests - " + \
+                  default=False, help="Run all unit and network tests - " +
                   "interactive tests not included")
 
 parser.add_option("--rule-test-consistency", action="store_true",
                   dest="consistency", default=False,
-                  help="Check to make sure there is a " + \
+                  help="Check to make sure there is a " +
                   "test for every rule and a rule for every rule test")
 
 parser.add_option("-v", "--verbose", action="store_true",
-                  dest="verbose", default=False, \
+                  dest="verbose", default=False,
                   help="Print status messages")
 
 parser.add_option("-d", "--debug", action="store_true", dest="debug",
                   default=False, help="Print debug messages")
 
 parser.add_option('-m', '--modules', action="extend", type="string",
-                  dest='modules', help="Use to run a single or " + \
+                  dest='modules', help="Use to run a single or " +
                   "multiple unit tests at once.  Use the test name.")
 
 if len(sys.argv) == 1:
@@ -1521,14 +1539,14 @@ if options.logauto:
 elif options.ttrlog:
     ttrlog = options.ttrlog
 
-network=options.network
+network = options.network
 
 unit = options.unit
 
 interactive = options.interactive
 
 if options.rule and not options.framework and not options.utils:
-    rule=options.rule
+    rule = options.rule
     framework = False
     utils = False
     options.all = False
@@ -1548,7 +1566,7 @@ elif not options.framework and not options.rule and options.utils:
 if not options.framework and not options.rule and not options.utils:
     rule = True
     framework = True
-    utils=True
+    utils = True
 
 if options.framework and options.rule and not options.utils or \
    options.framework and not options.rule and options.utils or \
@@ -1558,22 +1576,23 @@ if options.framework and options.rule and not options.utils or \
     sys.exit(255)
 
 if options.all:
-    unit      = True
-    network   = True
+    unit = True
+    network = True
     framework = True
-    utils     = True
-    rule      = True
+    utils = True
+    rule = True
     consistency = True
 
 debug_mode = options.debug
 verbose_mode = options.verbose
- 
+
 ENVIRON = Environment()
 ENVIRON.setdebugmode(debug_mode)
 ENVIRON.setverbosemode(verbose_mode)
 LOGGER = LogDispatcher(ENVIRON)
 SYSCONFIG = Configuration(ENVIRON)
 STATECHANGELOGGER = StateChgLogger(LOGGER, ENVIRON)
+
 
 def setUpModule():
     """
@@ -1586,10 +1605,6 @@ def setUpModule():
     global LOGGER
     global SYSCONFIG
     global STATECHANGELOGGER
-    testenvironment = ENVIRON
-    logdispatch = LOGGER
-    config = SYSCONFIG
-    statechglogger = STATECHANGELOGGER
 
 
 # Make sure this works from the command line as well as in debbug mode
@@ -1643,4 +1658,3 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
 
     # Exit code is equal to number of test failures
     exit(len(result.failures))
-

@@ -89,9 +89,9 @@ class LinuxPackageSigning(RuleKVEditor):
         @change: 2016/09/12 eball Changed from blacklist to whitelist
         '''
         retval = False
-        osfamily = self.environ.getosfamily()
+        ostype = self.environ.getostype()
 
-        if re.search('centos|fedora|red hat|suse', osfamily, re.IGNORECASE):
+        if re.search('centos|fedora|red hat|suse', ostype, re.IGNORECASE):
             retval = True
 
         return retval

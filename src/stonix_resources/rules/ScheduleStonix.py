@@ -77,7 +77,7 @@ class ScheduleStonix(Rule):
         self.guidance = ['']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', '+']}}
         self.svchelper = ServiceHelper(self.environ, self.logger)
 
         # possible locations where the root cron tab may be located

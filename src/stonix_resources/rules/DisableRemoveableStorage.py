@@ -848,6 +848,7 @@ if __name__ == '__main__':
                                                     origgid, mode],
                                      "endstate": [uid, gid, 509],
                                      "filepath": self.daemonpath}
+                            self.statechglogger.recordchgevent(myid, event)
             contents = readFile(self.daemonpath, self.logger)
             contentstring = ""
             for line in contents:

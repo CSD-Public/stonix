@@ -31,6 +31,7 @@ import KVAConf
 import KVATaggedConf
 import KVAProfiles
 import os
+from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
@@ -93,8 +94,7 @@ class KVEditor(object):
             self.editor = KVADefault.KVADefault(self.path, self.logger,
                                                 self.data)
         elif self.kvtype == "profiles":
-            self.editor = KVAProfiles.KVAProfiles(self.logger)
-
+            self.editor = KVAProfiles.KVAProfiles(self.logger, self.path)
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
@@ -140,9 +140,8 @@ class KVEditor(object):
 
     def getPath(self):
         if not os.path.exists(self.path):
-            self.detailedresults = "File path does not exist"
-            self.logger.log(LogPriority.INFO,
-                            ["KVEditor", self.detailedresults])
+            debug = "File path does not exist\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
         else:
             return self.path
@@ -320,7 +319,7 @@ class KVEditor(object):
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
                     validate = "invalid"
-                elif keyvals:
+                elif isinstance(keyvals, dict):
                     self.fixables[tag] = keyvals
                     validate = False
         if self.intent == "notpresent":
@@ -328,7 +327,7 @@ class KVEditor(object):
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
                     validate = "invalid"
-                elif keyvals:
+                elif isinstance(keyvals, dict):
                     self.removeables[tag] = keyvals
                     validate = False
         if validate == "invalid":
@@ -392,11 +391,27 @@ class KVEditor(object):
         @return: Value returned from validate method in factory sub-class
         @rtype: bool
         '''
-        for k, v in self.data.iteritems():
-            return self.editor.validate(self.output, k, v)
+        cmd = ["/usr/sbin/system_profiler", "SPConfigurationProfileDataType"]
+        self.ch = CommandHelper(self.logger)
+        if self.ch.executeCommand(cmd):
+            self.output = self.ch.getOutput()
+            retval = True
+            if self.output:
+                for k, v in self.data.iteritems():
+                    retval = self.editor.validate(self.output, k, v)
+                    if not retval:
+                        return False
+            else:
+                debug = "There are no profiles installed"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+        return True
 
+    def updateProfiles(self):
+        retval = self.editor.update()
+        return retval
     def commit(self):
-        if self.kvtype == "defaults":
+        if self.kvtype == "defaults" or self.kvtype == "profiles":
             retval = self.editor.commit()
             return retval
         else:

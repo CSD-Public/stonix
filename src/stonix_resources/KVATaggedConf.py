@@ -91,9 +91,9 @@ class KVATaggedConf():
         if self.configType == "closedeq":
             return self.getOpenClosedValue(tag, dict1)
         if self.configType == "space":
-            return self.getSpaceValue(tag, dict1, "space")
+            return self.getSpaceValue(tag, dict1)
         if self.configType == "spaceeq":
-            return self.getSpaceEqValue(tag, dict1,)
+            return self.getSpaceEqValue(tag, dict1)
 ###############################################################################
     def getOpenClosedValue(self, tag, dict1):
         if self.contents:
@@ -108,6 +108,7 @@ class KVATaggedConf():
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
                 elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
+                    print "FOUNDTAG: " + str(tag) + "\n"
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -124,10 +125,10 @@ class KVATaggedConf():
                             iter2 += 1
                 else:
                     iter1 += 1
-            if not foundtag:
-                return dict1
-            if contents2:
-                if self.intent == "present":
+            if self.intent == "present":
+                if not foundtag:
+                    return dict1
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -146,8 +147,15 @@ class KVATaggedConf():
                                         break
                         if not found:
                             missing[key] = dict1[key]
+                if not missing:
+                    return True
+                else:
                     return missing
-                elif self.intent == "notpresent":
+            elif self.intent == "notpresent":
+                if not foundtag:
+                    return True
+                if contents2:
+                    print "the contents under the tag: " + str(contents2) + "\n"
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -165,9 +173,15 @@ class KVATaggedConf():
                                     continue
                         if found:
                             present[key] = dict1[key]
+                if not present:
+                    return True
+                else:
                     return present
         else:
-            return dict1
+            if self.intent == "present":
+                return dict1
+            else:
+                return True
 ###############################################################################
     def getSpaceValue(self, tag, dict1):
         if self.contents:
@@ -197,10 +211,10 @@ class KVATaggedConf():
                             iter2 += 1
                 else:
                     iter1 += 1
-            if not foundtag:
-                return dict1
-            if contents2:
-                if self.intent == "present":
+            if self.intent == "present":
+                if not foundtag:
+                    return dict1
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -219,8 +233,14 @@ class KVATaggedConf():
                                         break
                         if not found:
                             missing[key] = dict1[key]
+                if not missing:
+                    return True
+                else:
                     return missing
-                elif self.intent == "notpresent":
+            elif self.intent == "notpresent":
+                if not foundtag:
+                    return True
+                if contents2:
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -238,9 +258,15 @@ class KVATaggedConf():
                                     continue
                         if found:
                             present[key] = dict1[key]
+                if not present:
+                    return True
+                else:
                     return present
         else:
-            return dict1
+            if self.intent == "present":
+                return dict1
+            else:
+                return True
 ###############################################################################
     def setValue(self, fixables, removeables):
         if self.configType == "openeq":
