@@ -122,7 +122,7 @@ class SoftwareBuilder():
         # If version was not included at command line, use hardcoded version
         # number
         if options.version == "0":
-            self.APPVERSION = "0.9.5.0"
+            self.APPVERSION = "0.9.5.1"
         else:
             self.APPVERSION = options.version
 
@@ -545,6 +545,18 @@ class SoftwareBuilder():
     
                 # Change mode of Info.plist to 0755
                 os.chmod(plist, 0o755)
+
+                #####
+                # Copy the stonix_resources directory into the 
+                # stonix.app/Contents/MacOS directory
+                rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
+                         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                         "--exclude=\".git*\"", "stonix_resources", 
+                         "dist/stonix.app/Contents/MacOS"]
+                output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
+                print output
+                self.libc.sync()
+                self.libc.sync()
         except Exception:
             raise
 
@@ -564,7 +576,7 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, "Starting stonix postCompile.")
                 returnDir = os.getcwd()
                 os.chdir(prepPath)
-               #####
+                #####
                 # Copy stonix.app to the stonix4mac directory
                 rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
                          "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
@@ -604,31 +616,36 @@ class SoftwareBuilder():
             self.mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
                                   "PACKAGE_VERSION=" + appVersion)
 
-            if not os.path.isdir(appPath + "/dmgs"):
-                os.mkdir(appPath + "/dmgs")
-            else:
+
+            dmgsPath = self.tmphome + "/src/MacBuild/dmgs"
+
+            if not os.path.isdir(dmgsPath) and os.path.exists(dmgsPath):
                 # Cannot use mkdtmp here because it will make the directory on
                 # the root filesystem instead of the ramdisk, then it will try
                 # to link across filesystems which won't work
                 tmpdir = self.tmphome + "/src/MacBuild/dmgs." + str(time())
-                os.rename(self.tmphome + "/src/MacBuild/stonix/dmgs", tmpdir)
-                os.mkdir(self.tmphome + "/src/MacBuild/stonix/dmgs")
+                os.rename(dmgsPath, tmpdir)
+                os.mkdir(dmgsPath)
+            if not os.path.exists(dmgsPath):
+                os.mkdir(dmgsPath)
 
             print "Creating a .dmg file with a .pkg file inside for " + \
                 "installation purposes..."
             #call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
             #      "USE_PKGBUILD=1"])
-            makepkg = ["make", "pkg", "PACKAGE_VERSION=" + appVersion,
+            makepkg = ["/usr/bin/make", "pkg", "PACKAGE_VERSION=" + appVersion,
                   "USE_PKGBUILD=1"]
             output = Popen(makepkg, stdout=PIPE, stderr=STDOUT).communicate()[0]
-            print output
+            for line in output.split('\n'):
+                self.logger.log(lp.DEBUG, line)
 
             #####
             # Optional codesign
             self.libc.sync()
             self.libc.sync()
             if self.doCodesign:
-                os.chdir('..')
+
+                os.chdir(self.tmphome + '/src/Macbuild/stonix4mac')
                 buildDir = os.getcwd()
                 print buildDir
                 #####
@@ -640,20 +657,35 @@ class SoftwareBuilder():
                        '-s', '"' + self.codesignSignature + '"']
 
                 workingDir = os.getcwd()
-
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, "Working dir: " + buildDir)
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
+                self.logger.log(lp.DEBUG, '.')
                 #####
                 # Run the xcodebuild script to codesign the mac installer package
                 self.rw.setCommand(cmd)
-                self.rw.liftDown(self.keyuser, workingDir)
+                output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
+
+                for line in output.split('\n'):
+                    self.logger.log(lp.DEBUG, line)
+                for line in error.split('\n'):
+                    self.logger.log(lp.DEBUG, line)
 
                 self.libc.sync()
                 self.libc.sync()
 
             print "Moving dmg and pkg to the dmgs directory."
-            #dmgname = appName + "-" + appVersion + ".dmg"
-            #pkgname = appName + "-" + appVersion + ".pkg"
-            #os.rename(dmgname, appPath + "/dmgs/" + dmgname)
-            #os.rename(pkgname, appPath + "/dmgs/" + pkgname)
+            dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"
+            pkgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".pkg"
+            #os.rename(dmgname, dmgsPath + "/" + dmgname)
+            os.rename(pkgname, dmgsPath + "/" + pkgname)
 
             os.chdir(returnDir)
         except Exception:
