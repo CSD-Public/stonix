@@ -256,7 +256,7 @@ class MacBuildLib(object):
         except Exception:
             raise
 
-    def getHiddenImports(self):
+    def getHiddenImports(self, appRoot):
         '''
         Acquire a list of all '*.py' files in the stonix_resources directory,
         replace '/' with '.' for a module name that can be imported. 
@@ -266,7 +266,7 @@ class MacBuildLib(object):
         try:
             origdir = os.getcwd()
             
-            os.chdir("..")
+            os.chdir(appRoot)
             hiddenimports = []
             for root, dirs, files in os.walk("stonix_resources"):
                 for myfile in files:
@@ -283,6 +283,7 @@ class MacBuildLib(object):
                          # hiddenimports list.
                          hiddenimport = ".".join(hiddenimportlist)
                          hiddenimports.append(hiddenimport)
+                
         except OSError:
             self.logger.log(lp.DEBUG, "Error trying to acquire python files...")
         finally:

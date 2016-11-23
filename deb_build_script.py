@@ -43,7 +43,7 @@ if curruserid != 0:
     print "This script must be run as root or with sudo"
     exit
 
-#defaults
+# Defaults
 stonixversion = STONIXVERSION
 
 controltext = '''Package: stonix
@@ -89,9 +89,9 @@ debiandir = builddir + '/DEBIAN/'
 bindir = os.path.join(builddir, 'usr/bin/')
 etcdir = os.path.join(builddir, 'etc/')
 
-filesneeded =  {debiandir + 'control': controltext,
-                debiandir + 'changelog': changelogtext,
-                debiandir + 'copyright': copyrighttext}
+filesneeded = {debiandir + 'control': controltext,
+               debiandir + 'changelog': changelogtext,
+               debiandir + 'copyright': copyrighttext}
 
 try:
 
@@ -108,48 +108,49 @@ try:
             for line in contentlines:
                 line = line.strip()
                 if line in listoffiles:
-                    os.system('rm -f ' + '/stonix/src/stonix_resources/rules/' + line)
+                    os.system('rm -f ' +
+                              '/stonix/src/stonix_resources/rules/' + line)
         else:
             exit
     else:
         exit
 
     if not os.path.exists(bindir):
-        os.makedirs(bindir,0755)
-        os.chown(os.path.join(builddir, '/usr'),0,0)
-        os.chown(bindir,0,0)
+        os.makedirs(bindir, 0o755)
+        os.chown(os.path.join(builddir, '/usr'), 0, 0)
+        os.chown(bindir, 0, 0)
     if not os.path.exists(debiandir):
-        os.makedirs(debiandir,0755)
-        os.chown(debiandir,0,0)
+        os.makedirs(debiandir, 0o755)
+        os.chown(debiandir, 0, 0)
     if not os.path.exists(etcdir):
-        os.makedirs(etcdir,0755)
-        os.chown(etcdir,0,0)
-        
+        os.makedirs(etcdir, 0o755)
+        os.chown(etcdir, 0, 0)
+
     if not os.path.exists(sourcedir):
         print "Source directory not found (/stonix/src/)"
         exit
-        
+
     for item in filesneeded:
         if not os.path.exists(item):
-            f = open(item,'w')
+            f = open(item, 'w')
             f.write(filesneeded[item])
             f.close()
-            os.chmod(item,0644)
+            os.chmod(item, 0o644)
         else:
-            f = open(item,'r')
+            f = open(item, 'r')
             contents = f.read()
             f.close()
-            if not re.search(filesneeded[item],contents):
-                f = open(item,'w')
+            if not re.search(filesneeded[item], contents):
+                f = open(item, 'w')
                 f.write(filesneeded[item])
                 f.close()
-                os.chmod(item,0644)
-                
-    f = open(etcdir + 'stonix.conf','w')
+                os.chmod(item, 0o644)
+
+    f = open(etcdir + 'stonix.conf', 'w')
     f.write('')
     f.close()
-    #os.chmod(etcdir+'stonix.conf',0644)
-    os.chown(etcdir + 'stonix.conf',0,0)
+    os.chmod(etcdir+'stonix.conf', 0o644)
+    os.chown(etcdir + 'stonix.conf', 0, 0)
 
     if not os.path.exists(bindir + 'stonix_resources'):
         shutil.copytree(sourcedir + 'stonix_resources',
@@ -158,20 +159,14 @@ try:
     if not os.path.exists(builddir + 'usr/share/man/man8/stonix.8'):
         shutil.copytree(sourcedir + 'usr/share', builddir + '/usr/share')
 
-    #os.chmod(bindir + 'stonix_resources',0755)
+    os.chmod(bindir + 'stonix_resources', 0o755)
     if not os.path.exists(bindir + 'stonix.py'):
         shutil.copy2(sourcedir + 'stonix.py', bindir + 'stonix.py')
-    #os.chmod(bindir + 'stonix.py',0700)
+    os.chmod(bindir + 'stonix.py', 0o755)
 
     os.system('ln -s /usr/bin/stonix.py ' + bindir + 'stonix')
 
     os.system('dpkg-deb -b ' + builddir)
-    #if os.path.exists('/' + pkgname):
-        #os.chmod('/' + pkgname, 0550)
-        #os.system('dpkg -i /' + pkgname)
-    #else:
-    #    print "Could not find target .deb package to install " + pkgname
-    #    exit
 
 except OSError as err:
     print str(err.strerror)

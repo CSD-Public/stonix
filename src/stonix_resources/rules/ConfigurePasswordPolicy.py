@@ -21,23 +21,27 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Aug 23, 2016
+Created on Feb 10, 2015
 
 @author: dwalker
+@change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2016/04/06 eball Changed rule name to ConfigureProfileManagement
 '''
 from __future__ import absolute_import
 import traceback
 import os
 from ..rule import Rule
-from ..CommandHelper import CommandHelper
+from re import search
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
 
 
-class STIGConfigureProfileManagement(Rule):
+class ConfigurePasswordPolicy(Rule):
     '''
-    Deploy Passcode Policy configuration profiles for OS X Yosemite 10.10
+    Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
+    & OS Yosemite 10.10. Profile files are installed using the following
+    OS X command.
     '''
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -46,38 +50,41 @@ class STIGConfigureProfileManagement(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
-        self.rulenumber = 361
-        self.rulename = "STIGConfigureProfileManagement"
+        self.rulenumber = 106
+        self.rulename = "ConfigurePasswordPolicy"
         self.formatDetailedResults("initialize")
         self.helptext = "STIGConfigureProfileManagement rule configures the " + \
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10']}}
+                           'os': {'Mac OS X': ['10.11']}}
         datatype = "bool"
-        key = "STIGPASSCODECONFIG"
+        key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
-            "profile set the value of STIGPASSCODECONFIG to False"
+            "profile set the value of PWPOLICY to False"
         default = True
         self.pwci = self.initCi(datatype, key, instructions, default)
         
         datatype = "bool"
-        key = "STIGSECURITYCONFIG"
+        key = "SECPOLICY"
         instructions = "To disable the installation of the security " + \
-            "profile set the value of SECURITYCONFIG to False"
+            "profile set the value of SECPOLICY to False"
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        
-        self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "stonix4macSTIGSettingsPasscodeForOSXYosemite10.10.mobileconfig"
-        self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
-                          "Resources/stonix.app/Contents/MacOS/" + \
-                          "stonix_resources/files/" + \
-                          "stonix4macSTIGSettingsSecurityAndPrivacyForOSXYosemite10.10.mobileconfig"
+        self.pwreport = True
+        self.secreport = True
+        if search("10\.11\.*", self.environ.getosver()):
+            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+                             "Resources/stonix.app/Contents/MacOS/" + \
+                             "stonix_resources/files/" + \
+                             "stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig"
+            self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
+                              "Resources/stonix.app/Contents/MacOS/" + \
+                              "stonix_resources/files/" + \
+                              "stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig"
+################################################################################################
 
     def report(self):
         '''
@@ -97,12 +104,7 @@ class STIGConfigureProfileManagement(Rule):
         try:
             compliant = True
             self.detailedresults = ""
-            cmd = ["/usr/sbin/system_profiler",
-                   "SPConfigurationProfileDataType"]
-            self.ch = CommandHelper(self.logger)
-            self.neededprofiles = []
-            self.profpaths = {}
-            '''form key = val;'''
+            self.pweditor, self.seceditor = "", ""
             self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                   {"allowSimple": ["0", "bool"],
                                    "forcePIN": ["1", "bool"],
@@ -122,31 +124,21 @@ class STIGConfigureProfileManagement(Rule):
                                   "com.apple.MCX": "",
                                   "com.apple.applicationaccess": "",
                                   "com.apple.systempolicy.control": ""}
-            if self.pwci.getcurrvalue():
-                self.profpaths[self.pwprofile] = self.pwprofiledict
-            if self.sci.getcurrvalue():
-                self.profpaths[self.secprofile] = self.spprofiledict
+
+            self.pweditor = KVEditorStonix(self.statechglogger, self.logger,
+                                               "profiles", self.pwprofile, "",
+                                               self.pwprofiledict, "", "")
+            self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "profiles", self.secprofile, "",
+                                             self.spprofiledict, "", "")
             '''Run the system_proflier command'''
-            if self.ch.executeCommand(cmd):
-                output = self.ch.getOutput()
-                if output:
-                    if self.profpaths:
-                        for profilepath, values in self.profpaths.iteritems():
-                            self.editor = KVEditorStonix(self.statechglogger,
-                                                         self.logger, "profiles",
-                                                         "", "", values, "", "",
-                                                         output)
-                            if not self.editor.report():
-                                self.neededprofiles.append(profilepath)
-                else:
-                    self.detailedresults += "There are no profiles installed\n"
-                    for profile in self.profpaths:
-                        self.neededprofiles.append(profile)
-            else:
-                self.detailedresults += "Unable to run the system_profile " + \
-                    "command\n"
+            if not self.pweditor.report():
+                self.pwreport = False
+                self.detailedresults += "password profile is either uninstalled or weak\n"
                 compliant = False
-            if self.neededprofiles:
+            if not self.seceditor.report():
+                self.secreport = False
+                self.detailedresults += "security profile is either uninstalled or weak\n"
                 compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -167,36 +159,46 @@ class STIGConfigureProfileManagement(Rule):
         try:
             if not self.pwci.getcurrvalue() and not self.sci.getcurrvalue():
                 return
-            self.detailedresults = ""
-
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-            success = True
-            profileexist = True
-            if self.neededprofiles:
-                for profilepath in self.profpaths:
-                    if not os.path.exists(profilepath):
-                        profileexist = False
-                        break
-                if not profileexist:
-                    self.detailedresults += "You need profiles installed " + \
-                        "but you don't have all the necessary profiles\n"
-                    success = False
-                else:
-                    for profile in self.neededprofiles:
-                        cmd = ["/usr/bin/profiles", "-I", "-F", profile]
-                        if self.ch.executeCommand(cmd):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = ["/usr/bin/profiles", "-R", "-F",
-                                       profile]
-                            event = {"eventtype": "comm",
-                                     "command": undocmd}
-                            self.statechglogger.recordchgevent(myid, event)
-                        else:
+            if self.pwci.getcurrvalue() or self.sci.getcurrvalue():
+                success = True
+                self.detailedresults = ""
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+            if self.pwci.getcurrvalue() and not os.path.exists(self.pwprofile):
+                self.detail
+                return False
+            if self.sci.getcurrvalue() and not os.path.exists(self.secprofile):
+                return False
+            if self.pwci.getcurrvalue():
+                if not self.pwreport:
+                    if os.path.exists(self.pwprofile):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.pweditor.setEventID(myid)
+                        if not self.pweditor.fix():
                             success = False
+                        elif not self.pweditor.commit():
+                            success = False
+                    else:
+                        self.detailedresults += "You don't have password " + \
+                            "profile needed to be installed\n"
+                        success = False
+            if self.sci.getcurrvalue():
+                if not self.secreport:
+                    if os.path.exists(self.secprofile):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.pweditor.setEventID(myid)
+                        if not self.pweditor.fix():
+                            success = False
+                        elif not self.pweditor.commit():
+                            success = False
+                    else:
+                        self.detailedresults += "You don't have security " + \
+                            "profile needed to be installed\n"
+                        success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise

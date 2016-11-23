@@ -411,7 +411,7 @@ class MacBuilder():
             print "Creating a pyinstaller spec file for the project..."
             print self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
                                           "../" + appIcon + ".icns",
-                                          pathex=["stonix_resources/rules",
+                                         pathex=["stonix_resources/rules",
                                                   "stonix_resources", "/usr/lib"] + self.PYPATHS,
                                           specpath=os.getcwd(), hiddenimports=hdnimports)
             '''
@@ -481,9 +481,9 @@ class MacBuilder():
                   "./" + appName + "/dist/" + appName +
                   ".app/Contents/Resources"])
 
-            # Create an empty stonix.conf file
-            open(appPath + "/" + appName + "/dist/" + appName +
-                 ".app/Contents/Resources/stonix.conf", "w")
+            # Copy the stonix.conf file
+            copy2(appPath + "/../etc/stonix.conf", appPath + "/" + appName +
+                  "/dist/" + appName + ".app/Contents/Resources/stonix.conf")
 
             copy2(appPath + "/stonix/dist/stonix.app/Contents/MacOS/" +
                   "stonix_resources/localize.py", appPath + "/" + appName +

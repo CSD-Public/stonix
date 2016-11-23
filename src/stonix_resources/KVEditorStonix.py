@@ -112,7 +112,19 @@ class KVEditorStonix(KVEditor):
                      "endstate": "configured",
                      "command": self.editor.getundoCmd()}
             if self.getEventID():
-                self.stchlgr.recordchgevent(self.getEventID(),event)
+                self.stchlgr.recordchgevent(self.getEventID(), event)
+            debug = "KVEditorStonix commit is returning True\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return True
+        elif self.kvtype == "profiles":
+            if not self.editor.commit():
+                debug = "KVEditorStonix commit is returning False\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+            event = {"eventtype": "comm",
+                     "command": self.editor.getundoCmd()}
+            if self.getEventID():
+                self.stchlgr.recordchgevent(self.getEventID(), event)
             debug = "KVEditorStonix commit is returning True\n"
             self.logger.log(LogPriority.DEBUG, debug)
             return True

@@ -55,6 +55,7 @@ class DisableInteractiveStartup(Rule):
         self.rulenumber = 119
         self.rulename = 'DisableInteractiveStartup'
         self.mandatory = True
+        self.formatDetailedResults("initialize")
         self.helptext = "The DisableInteractiveStartup rule disables " + \
             "interactive startup/boot mode. This may also be known as " + \
             "recovery mode."
