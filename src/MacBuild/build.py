@@ -100,7 +100,7 @@ class SoftwareBuilder():
         self.ramdisk_size = ramdisk_size
 
         self.libc = getLibc()
-
+        self.mbl = None
         self.signature = options.sig
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
@@ -142,8 +142,12 @@ class SoftwareBuilder():
         print " "
         print " "
 
-        self.keyuser = raw_input("Keychain User: ")
-        self.keypass = getpass.getpass("Keychain Password: ") 
+        if self.signature:
+            self.keyuser = raw_input("Keychain User: ")
+            self.keypass = getpass.getpass("Keychain Password: ") 
+        else:
+            self.keyuser = getpass.getuser()
+            self.keypass = False
 
         if not options.test:
             self.driver()
@@ -207,64 +211,66 @@ class SoftwareBuilder():
         macbuild_root = os.getcwd()
         myconf = os.path.join(macbuild_root, 'build.conf')
         print myconf
-        if os.path.isfile(myconf):
+        self.logger.log(lp.INFO, "... macbuildlib loaded ...")
+        self.PYPATHS = []
+
+        try:
+            if not os.path.isfile(myconf):
+                raise ConfusingConfigurationError("Configuration File Does Not Exist...")
             self.parser = SafeConfigParser()
             candidates =  [myconf, 'not_a_real_conf.conf']
             found = self.parser.read(candidates)
             missing = set(candidates) - set(found)
 
-            try:
-                dict1 = {}
-                for section in self.parser.sections():
-                    dict1[section] = self._configSectionMap(section)
-                print dict1
-            except:
-                self.STONIX = "stonix"
-                self.STONIXICON = "stonix_icon"
-                self.STONIXVERSION = self.APPVERSION
-                self.STONIX4MAC = "stonix4mac"
-                self.STONIX4MACICON = "stonix_icon"
-                self.STONIX4MACVERSION = self.APPVERSION                
-                #-- Internal libraries
-                from buildlib import MacBuildLib
-                self.mbl = MacBuildLib(self.logger)
-                self.PYUIC = self.mbl.getpyuicpath()
-                self.codesignVerbose = 'vvvv'
-                self.codesignDeep = True
-                self.doCodesign = False
+            dict1 = {}
+            for section in self.parser.sections():
+                dict1[section] = self._configSectionMap(section)
+            print dict1
+        except:
+            self.STONIX = "stonix"
+            self.STONIXICON = "stonix_icon"
+            self.STONIXVERSION = self.APPVERSION
+            self.STONIX4MAC = "stonix4mac"
+            self.STONIX4MACICON = "stonix_icon"
+            self.STONIX4MACVERSION = self.APPVERSION                
+            from buildlib import MacBuildLib
+            self.mbl = MacBuildLib(self.logger)
+            self.PYUIC = self.mbl.getpyuicpath()
+            self.codesignVerbose = 'vvvv'
+            self.codesignDeep = True
+            self.doCodesign = False
+        else:
+            self.STONIX = dict1['stonix']['app']
+            self.STONIXICON = dict1['stonix']['app_icon']
+            self.STONIXVERSION = dict1['stonix']['app_version']
+            self.STONIX4MAC = dict1['stonix']['wrapper']
+            self.STONIX4MACICON = dict1['stonix']['wrapper_icon']
+            self.STONIX4MACVERSION = dict1['stonix']['wrapper_version']
+            self.PYUIC = dict1['libpaths']['pyuic']
+            self.PYPATHS = dict1['libpaths']['pythonpath'].split(':')
+            from buildlib import MacBuildLib
+            if self.PYPATHS:
+                self.mbl = MacBuildLib(self.logger, self.PYPATHS)
             else:
-                self.STONIX = dict1['stonix']['app']
-                self.STONIXICON = dict1['stonix']['app_icon']
-                self.STONIXVERSION = dict1['stonix']['app_version']
-                self.STONIX4MAC = dict1['stonix']['wrapper']
-                self.STONIX4MACICON = dict1['stonix']['wrapper_icon']
-                self.STONIX4MACVERSION = dict1['stonix']['wrapper_version']
-                self.PYUIC = dict1['libpaths']['pyuic']
-                self.PYPATHS = dict1['libpaths']['pythonpath'].split(':')
-                self.logger.log(lp.INFO, 'attempting to get codesigning information...')
-                self.codesignVerbose = dict1['codesign']['verbose']
-                if re.match('^True$', dict1['codesign']['ask']):
-                    self.doCodesign = True
-                else:
-                    self.doCodesign = False
-                if re.match('^True$', dict1['codesign']['deep']):
-                    self.codesignDeep = True
-                else:
-                    self.codesignDeep = False
-                self.logger.log(lp.INFO, "Grabbed codesign info...")
-                for path in self.PYPATHS:
-                    sys.path.append(path)
-                #-- Internal libraries
-                try:
-                    from buildlib import MacBuildLib
-                    self.mbl = MacBuildLib(self.logger, self.PYPATHS)
-                except Exception, err:
-                    raise
-                self.logger.log(lp.INFO, "... macbuildlib loaded ...")
-            finally:
-                self.hiddenimports = self.mbl.getHiddenImports()
-                self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenimports))
-                success = True
+                self.mbl = MacBuildLib(self.logger)
+            self.logger.log(lp.INFO, 'attempting to get codesigning information...')
+            self.codesignVerbose = dict1['codesign']['verbose']
+            if re.match('^True$', dict1['codesign']['ask']):
+                self.doCodesign = True
+            else:
+                self.doCodesign = False
+            if re.match('^True$', dict1['codesign']['deep']):
+                self.codesignDeep = True
+            else:
+                self.codesignDeep = False
+            self.logger.log(lp.INFO, "Grabbed codesign info...")
+            for path in self.PYPATHS:
+                sys.path.append(path)
+            #-- Internal libraries
+        finally:
+            self.hiddenimports = self.mbl.getHiddenImports()
+            self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenimports))
+            success = True
 
         return success
 
@@ -477,10 +483,7 @@ class SoftwareBuilder():
             #####
             # Determine compile type - ie: xcodebuild vs pyinstaller
             if appName == "stonix4mac":
-                #####
-                # Get a translated password
-                ordPass = self.getOrdPass(self.keypass)
-
+                
                 os.chdir('..')
                 buildDir = os.getcwd()
                 print buildDir
@@ -497,12 +500,23 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
                 
-                #####
-                # Run the xcodebuild script to build stonix4mac
-                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d', '--project_directory', self.tmphome]
-                workingDir = os.getcwd()
-                self.rw.setCommand(cmd)
-                self.rw.liftDown(self.keyuser, workingDir)
+                if self.keypass:
+                    #####
+                    # Get a translated password
+                    ordPass = self.getOrdPass(self.keypass)
+
+                    #####
+                    # Run the xcodebuild script to build stonix4mac
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', '-p', ordPass, '-u', self.keyuser, '-a', appName, '-d', '--project_directory', self.tmphome]
+                    workingDir = os.getcwd()
+                    self.rw.setCommand(cmd)
+                    self.rw.liftDown(self.keyuser, workingDir)
+                else:
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', '-u', self.keyuser, '-a', appName, '-d', '--project_directory', self.tmphome]
+                    self.rw.setCommand(cmd)
+                    workingDir = os.getcwd()
+                    self.rw.liftDown(self.keyuser, workingDir)
+                    
 
             elif appName == "stonix":
                 #####
