@@ -72,16 +72,19 @@ if __name__ == '__main__':
 
     os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
 
-    #####
-    # On the other end, each character was translated by 'ord' to a number,
-    # and each number was separated by a colon.  Change the password from
-    # letters that have been converted to a number via the 'ord' function
-    # back to the origional character
-    passArray = opts.password.split(':')
-    keychainPass = ""
-    for orded in passArray:
-        keychainPass = keychainPass + chr(int(orded)) 
-
+    if opts.password:
+        #####
+        # On the other end, each character was translated by 'ord' to a number,
+        # and each number was separated by a colon.  Change the password from
+        # letters that have been converted to a number via the 'ord' function
+        # back to the origional character
+        passArray = opts.password.split(':')
+        keychainPass = ""
+        for orded in passArray:
+            keychainPass = keychainPass + chr(int(orded)) 
+    else:
+        keychainPass = False
+    
     xb = Xcodebuild(logger)
     if opts.codesign:
         xb.sign(opts.appName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)

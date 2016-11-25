@@ -39,6 +39,9 @@ import zipfile
 import plistlib as pl
 from glob import glob
 from subprocess import Popen, STDOUT, PIPE
+
+sys.path.append("/usr/local/lib/python2.7/site-packages/PyInstaller.egg")
+
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
@@ -256,7 +259,7 @@ class MacBuildLib(object):
         except Exception:
             raise
 
-    def getHiddenImports(self, appRoot):
+    def getHiddenImports(self):
         '''
         Acquire a list of all '*.py' files in the stonix_resources directory,
         replace '/' with '.' for a module name that can be imported. 
@@ -264,9 +267,9 @@ class MacBuildLib(object):
         @author: Roy Nielsen
         '''
         try:
-            origdir = os.getcwd()
+            #origdir = os.getcwd()
             
-            os.chdir(appRoot)
+            #os.chdir(buildRoot)
             hiddenimports = []
             for root, dirs, files in os.walk("stonix_resources"):
                 for myfile in files:
@@ -286,22 +289,24 @@ class MacBuildLib(object):
                 
         except OSError:
             self.logger.log(lp.DEBUG, "Error trying to acquire python files...")
-        finally:
-            os.chdir(origdir)
+        #finally:
+        #    #os.chdir(origdir)
         
         return hiddenimports
         
     def getpyuicpath(self):
         '''
-        Attempt to find PyQt4
+        Attempt to find PyQt5
 
         @author: Eric Ball
-        @return: Path to PyQt4 executable pyuic4
+        @return: Path to PyQt5 executable pyuic5
+        '''
+        return "/opt/tools/bin/pyuic5"
         '''
         # This method is called before ramdisk creation, so it does not use the
         # try/except block that most methods do
         fwpath = "/Users/Shared/Frameworks/"
-        pathend1 = "/pyuic/pyuic4"
+        pathend1 = "/pyuic/pyuic5"
         pathend2 = "/pyuic4"
         if os.path.exists(fwpath):
             cwd = os.getcwd()
@@ -331,6 +336,7 @@ class MacBuildLib(object):
                             return fullpath
         print "PyQt4 path not found. Exiting."
         exit(1)
+        '''
 
     def checkBuildUser(self):
         '''

@@ -61,6 +61,19 @@ python ./configure.py --confirm-license --bindir=/opt/tools/bin --destdir=/opt/t
 make -j 4 &> ../logs/pyqt-make.log
 sudo make install &> ../logs/pyqt-make-install.log
 
+cd ..
+
+#####
+# Install Luggage
+
+git clone https://github.com/unixorn/luggage.git
+
+cd luggage
+
+sudo make bootstrap_files
+
+cd ..
+
 
 #####
 # The following needs to be setup up before installing pyinstaller, 
