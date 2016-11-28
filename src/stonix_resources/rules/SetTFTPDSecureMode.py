@@ -106,7 +106,7 @@ mode.'''
     def reportMac(self):
         compliant = True
         self.detailedresults = ""
-        self.plistfile = "/System/Library/LaunchDaemons/tftp.plist"
+        self.plistpath = "/System/Library/LaunchDaemons/tftp.plist"
         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -149,7 +149,7 @@ mode.'''
             "<key>Wait</key><true/></dict><key>InitGroups</key><true/><key>Sockets</key><dict>" + \
             "<key>Listeners</key><dict><key>SockServiceName</key><string>tftp</string><key>SockType</key>" + \
             "<string>dgram</string></dict></dict></dict></plist>"
-        if os.path.exists(self.tftpFile):
+        if os.path.exists(self.plistpath):
             statdata = os.stat(self.plistpath)
             mode = stat.S_IMODE(statdata.st_mode)
             ownergrp = getUserGroupName(self.plistpath)
@@ -175,7 +175,7 @@ mode.'''
                 debug = "Group of " + self.plistpath + \
                     " isn't wheel\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-            contents = readFile(self.tftpFile, self.logger)
+            contents = readFile(self.plistpath, self.logger)
             contentstring = ""
             for line in contents:
                 contentstring += line.strip()
@@ -514,12 +514,15 @@ mode.'''
     def fixMac(self):
         success = True
         debug = ""
-        if not os.path.exists(self.tftpFile):
+        if not os.path.exists(self.plistpath):
+            debug = self.plistpath + " doesn't exist. " + \
+                "Stonix will not attempt to create this file\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return success
         uid, gid = "", ""
-        statdata = os.stat(self.daemonpath)
+        statdata = os.stat(self.plistpath)
         mode = stat.S_IMODE(statdata.st_mode)
-        ownergrp = getUserGroupName(self.daemonpath)
+        ownergrp = getUserGroupName(self.plistpath)
         owner = ownergrp[0]
         group = ownergrp[1]
         if grp.getgrnam("wheel")[2] != "":
@@ -535,25 +538,27 @@ mode.'''
                 event = {"eventtype": "perm",
                          "startstate": [origuid, origgid, mode],
                          "endstated": [uid, gid, 420],
-                         "filepath": self.plistfile}
+                         "filepath": self.plistpath}
                 self.statechglogger.recordchgevent(myid, event)
-        contents = readFile(self.tftpFile, self.logger)
+        contents = readFile(self.plistpath, self.logger)
         contentstring = ""
         for line in contents:
             contentstring += line.strip()
         if not re.search(self.plistregex, contentstring):
-            tmpfile = self.plistfile + ".tmp"
+            tmpfile = self.plistpath + ".tmp"
             if not writeFile(tmpfile, self.plistcontents, self.logger):
+                debug = "Unable to write correct contents to " + \
+                    self.plistpath + "\n"
                 success = False
             else:
                 self.iditerator +=1 
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "conf",
-                         "filepath": self.plistfile}
+                         "filepath": self.plistpath}
                 self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.plistfile, tmpfile, myid)
-                os.rename(tmpfile, self.plistfile)
+                self.statechglogger.recordfilechange(self.plistpath, tmpfile, myid)
+                os.rename(tmpfile, self.plistpath)
                 if uid and gid:
-                    os.chown(self.plistfile, uid, gid)
-                os.chmod(self.plistfile, 420)
+                    os.chown(self.plistpath, uid, gid)
+                os.chmod(self.plistpath, 420)
         return success
