@@ -238,7 +238,10 @@ class SoftwareBuilder():
             self.PYUIC = self.mbl.getpyuicpath()
             self.codesignVerbose = 'vvvv'
             self.codesignDeep = True
-            self.doCodesign = False
+            if self.signature:
+                self.doCodesign = True
+            else:
+                self.doCodesign = False
         else:
             self.STONIX = dict1['stonix']['app']
             self.STONIXICON = dict1['stonix']['app_icon']
@@ -255,7 +258,7 @@ class SoftwareBuilder():
                 self.mbl = MacBuildLib(self.logger)
             self.logger.log(lp.INFO, 'attempting to get codesigning information...')
             self.codesignVerbose = dict1['codesign']['verbose']
-            if re.match('^True$', dict1['codesign']['ask']):
+            if re.match('^True$', dict1['codesign']['ask']) or self.signature:
                 self.doCodesign = True
             else:
                 self.doCodesign = False
