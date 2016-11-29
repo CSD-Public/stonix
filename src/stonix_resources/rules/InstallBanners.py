@@ -990,21 +990,27 @@ class InstallBanners(RuleKVEditor):
         '''
 
         retval = True
+        foundbannerenable = False
+        foundbannermessage = False
+        founddisableuserlist = False
 
         try:
 
             if os.path.exists('/etc/gdm3/greeter.gsettings'):
-                foundbannerenable = False
-                foundbannermessage = False
+
                 f = open('/etc/gdm3/greeter.gsettings', 'r')
                 contentlines = f.readlines()
                 f.close()
+
                 for line in contentlines:
-                    if re.search('^banner\-message\-enable\=true', line):
+                    if re.search('^banner\-message\-enable\=true', line, re.IGNORECASE):
                         foundbannerenable = True
                     if re.search('^banner\-message\-text\=\"' +
-                                 OSXSHORTWARNINGBANNER, line):
+                                 OSXSHORTWARNINGBANNER, line, re.IGNORECASE):
                         foundbannermessage = True
+                    if re.search('^disable-user-list\=true', line, re.IGNORECASE):
+                        founddisableuserlist = True
+
                 if not foundbannerenable:
                     self.compliant = False
                     self.detailedresults += '\nBanner-message-enable=true ' + \
@@ -1014,6 +1020,9 @@ class InstallBanners(RuleKVEditor):
                     self.detailedresults += '\nBanner-message-text was ' + \
                         'not set to the correct value in ' + \
                         '/etc/gdm3/greeter.gsettings'
+                if not founddisableuserlist:
+                    self.compliant = False
+                    self.detailedresults += '\nDisable-user-list=true was missing from /etc/gdm3/greeter.gsettings'
             else:
                 for opt in self.gnome3optdict:
                     if not self.checkCommand(self.gsettingsget + opt,
@@ -1394,29 +1403,36 @@ class InstallBanners(RuleKVEditor):
         try:
             # this is special, for debian 7 only
             if os.path.exists('/etc/gdm3/greeter.gsettings'):
+
                 f = open('/etc/gdm3/greeter.gsettings', 'r')
                 contentlines = f.readlines()
                 f.close()
-                replacementline = 'banner-message-enable=true\n' + \
-                    'banner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+
+                orgoptsreplace = 'banner-message-enable=true\nbanner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+                bannermsgreplace = 'banner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+                bannerenablereplace = 'banner-message-enable=true\n'
+                disableulistreplace = 'disable-user-list=true\n'
 
                 for line in contentlines:
                     if re.search('^banner-message-enable', line):
-                        contentlines = [c.replace(line, '')
-                                        for c in contentlines]
+                        contentlines = [c.replace(line, bannerenablereplace) for c in contentlines]
                     if re.search('^banner-message-text', line):
-                        contentlines = [c.replace(line, '')
-                                        for c in contentlines]
+                        contentlines = [c.replace(line, bannermsgreplace) for c in contentlines]
+                    if re.search('disable-user-list', line):
+                        contentlines = [c.replace(line, disableulistreplace) for c in contentlines]
+
                 foundorglogin = False
+
                 for line in contentlines:
                     if re.search('^\[org\.gnome\.login\-screen\]', line):
                         foundorglogin = True
-                        contentlines = [c.replace(line, line + replacementline)
+                        contentlines = [c.replace(line, line + orgoptsreplace)
                                         for c in contentlines]
+
                 if not foundorglogin:
-                    replacementline = '[org.gnome.login-screen]\n' + \
-                        replacementline
-                    contentlines.append('\n' + replacementline)
+                    orgoptsreplace = '[org.gnome.login-screen]\n' + \
+                        orgoptsreplace
+                    contentlines.append('\n' + orgoptsreplace)
                 tf = open('/etc/gdm3/greeter.gsettings.stonixtmp', 'w')
                 tf.writelines(contentlines)
                 tf.close()
