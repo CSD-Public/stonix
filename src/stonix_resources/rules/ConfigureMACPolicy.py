@@ -91,7 +91,7 @@ certain programs are allowed and not allowed to do.'''
         key2 = "MODE"
         default2 = "permissive"
         instructions2 = "Valid modes for SELinux are: permissive or " + \
-            "enforcing. Valid modes for AppArmor are: complain or enforce"
+            "enforcing\nValid modes for AppArmor are: complain or enforce"
         self.modeci = self.initCi(datatype2, key2, instructions2, default2)
 
         self.statuscfglist = ['SELinux status:(\s)+enabled',
@@ -143,7 +143,7 @@ certain programs are allowed and not allowed to do.'''
         self.fedora = False
         self.debian = False
         self.redhat = False
-        self.detailedresults = ""
+        self.editedgrub = False
 
         # for generating a new profile, you need the command, plus the target
         # profile name
@@ -399,6 +399,7 @@ certain programs are allowed and not allowed to do.'''
 
         self.logger.log(LogPriority.DEBUG,
                         "This system is using Debian operating system")
+        self.modeci.updatecurrvalue("complain")
         self.debian = True
         self.selinux = "selinux-basics"
         self.setype = "default"
@@ -406,6 +407,7 @@ certain programs are allowed and not allowed to do.'''
         self.tpath2 = self.path2 + ".tmp"
         self.perms2 = [0, 0, 420]
         self.pkgdict = {'apparmor': True,
+                        'apparmor-notify': True,
                         'apparmor-utils': True,
                         'apparmor-profiles': True}
 
@@ -414,6 +416,7 @@ certain programs are allowed and not allowed to do.'''
         self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
         self.aadefscmd = 'update-rc.d apparmor defaults'
         self.aastatuscmd = '/usr/sbin/aa-status'
+        self.updategrubcmd = '/usr/sbin/update-grub'
 
     def setopensuse(self):
         '''
@@ -452,6 +455,7 @@ certain programs are allowed and not allowed to do.'''
 
         self.logger.log(LogPriority.DEBUG,
                         "This system is using Ubuntu operating system")
+        self.modeci.updatecurrvalue("complain")
         self.selinux = 'selinux'
         self.setype = "default"
         self.path2 = "/etc/default/grub"
@@ -484,10 +488,10 @@ certain programs are allowed and not allowed to do.'''
         self.detailedresults = ''
 
         try:
-            if self.pkghelper.manager in ("yum", "portage", "dnf"):
+            if str(self.pkghelper.manager).strip() in ("yum", "portage", "dnf"):
                 if not self.reportSELinux():
                     self.compliant = False
-            elif self.pkghelper.manager in ("zypper", "apt-get"):
+            elif str(self.pkghelper.manager).strip() in ("zypper", "apt-get"):
                 if not self.reportAppArmor():
                     self.compliant = False
         except (KeyboardInterrupt, SystemExit):
@@ -522,7 +526,7 @@ certain programs are allowed and not allowed to do.'''
                 if not self.reportAAprofs():
                     retval = False
 
-            if self.needsrestart:
+            if self.needsrestart and self.editedgrub:
                 self.detailedresults += 'System needs to be restarted ' + \
                     'before AppArmor module can be loaded.\n'
 
@@ -575,6 +579,7 @@ certain programs are allowed and not allowed to do.'''
         '''
 
         retval = True
+        notloadedterms = ['AppArmor not enabled', 'AppArmor filesystem is not mounted']
 
         try:
 
@@ -588,20 +593,41 @@ certain programs are allowed and not allowed to do.'''
 
             self.cmdhelper.executeCommand(self.aastatuscmd)
             output = self.cmdhelper.getOutputString()
-            errout = self.cmdhelper.getErrorString()
-            if re.search('AppArmor not enabled', output):
-                self.needsrestart = True
+            retcode = self.cmdhelper.getReturnCode()
+
+            if retcode == 1|127:
+                errmsg = self.cmdhelper.getErrorString()
+                self.detailedresults += "\nThere was a problem determining the status of apparmor"
+                self.logger.log(LogPriority.DEBUG, errmsg)
                 retval = False
-            if re.search('error|Traceback', errout):
+
+            for term in notloadedterms:
+                if re.search(term, output, re.IGNORECASE):
+                    self.needsrestart = True
+                    retval = False
+                    self.detailedresults += '\n' + str(term)
+
+            f = open(self.path2, 'r')
+            contentlines = f.readlines()
+            f.close()
+
+            defgrubline = "GRUB_CMDLINE_LINUX_DEFAULT"
+            apparmorfound = False
+            securityfound = False
+            securityopt = "security=apparmor"
+            apparmoropt = "apparmor=1"
+            for line in contentlines:
+                if re.search(defgrubline, line, re.IGNORECASE):
+                    if re.search(securityopt, line, re.IGNORECASE):
+                        securityfound = True
+                    if re.search(apparmoropt, line, re.IGNORECASE):
+                        apparmorfound = True
+            if not apparmorfound:
                 retval = False
-                self.detailedresults += 'There was an error while ' + \
-                    'attempting to run command: ' + str(self.aastatuscmd) + \
-                    '\n'
-                self.detailedresults += 'The error was: ' + str(errout) + '\n'
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            if not re.search('apparmor module is loaded', output):
+                self.detailedresults += '\napparmor=1 not found in default grub config'
+            if not securityfound:
                 retval = False
-                self.detailedresults += 'AppArmor module is not loaded\n'
+                self.detailedresults += '\nsecurity=apparmor not found in default grub config'
 
         except Exception:
             raise
@@ -670,8 +696,8 @@ certain programs are allowed and not allowed to do.'''
                     self.detailedresults += str(sline[1]) + \
                         ' is not confined by AppArmor\n'
             if unconfined:
-                self.detailedresults += "If you have services or " + \
-                    "applications which are unconfined by AppArmor, this " + \
+                self.detailedresults += "\nIf you have services or " + \
+                    "applications which are not confined by AppArmor, this " + \
                     "can only be corrected manually, by the administrator " + \
                     "of your system. (See the man page for apparmor).\n"
 
@@ -858,15 +884,16 @@ the sestatus command to see if SELinux is configured properly\n"
 
             if self.ConfigureMAC.getcurrvalue():
 
-                if self.pkghelper.manager in ("yum", "portage"):
+                if str(self.pkghelper.manager).strip() in ["yum", "portage"]:
                     if not self.fixSELinux():
                         fixresult = False
-                elif self.pkghelper.manager in ("zypper", "apt-get"):
+                elif str(self.pkghelper.manager).strip() in ["zypper", "apt-get"]:
                     if not self.fixAppArmor():
                         fixresult = False
-                else:
+                if str(self.pkghelper.manager).strip() not in ["zypper", "apt-get", "yum", "portage"]:
                     self.detailedresults += 'Could not identify your OS ' + \
                         'type, or OS not supported for this rule.\n'
+                    fixresult = False
 
             else:
                 self.detailedresults += 'The CI for this rule was not ' + \
@@ -958,12 +985,12 @@ the sestatus command to see if SELinux is configured properly\n"
         '''
 
         retval = True
-        editedgrub = False
+        self.editedgrub = False
         apparmorfound = False
 
         try:
 
-            if self.ubuntu:
+            if self.ubuntu or self.debian:
 
                 self.logger.log(LogPriority.DEBUG,
                                 "Detected that this is an apt-get based " +
@@ -990,7 +1017,7 @@ the sestatus command to see if SELinux is configured properly\n"
                                     "config line...")
 
                     for line in contentlines:
-                        if re.search('GRUB_CMDLINE_LINUX="', line):
+                        if re.search('GRUB_CMDLINE_LINUX_DEFAULT="', line):
                             if not re.search('apparmor=1 security=apparmor',
                                              line):
                                 self.logger.log(LogPriority.DEBUG,
@@ -1001,15 +1028,15 @@ the sestatus command to see if SELinux is configured properly\n"
                                                           ' apparmor=1 ' +
                                                           'security=apparmor"\n')
                                                 for c in contentlines]
-                                editedgrub = True
+                                self.editedgrub = True
                             else:
                                 apparmorfound = True
-                    if not editedgrub and not apparmorfound:
-                        contentlines.append('\nGRUB_CMDLINE_LINUX=' +
+                    if not self.editedgrub and not apparmorfound:
+                        contentlines.append('\nGRUB_CMDLINE_LINUX_DEFAULT=' +
                                             '"apparmor=1 security=apparmor"\n')
-                        editedgrub = True
+                        self.editedgrub = True
 
-                    if editedgrub:
+                    if self.editedgrub:
                         self.logger.log(LogPriority.DEBUG,
                                         "Added AppArmor kernel config line " +
                                         "to contents. Writing contents to " +
@@ -1034,21 +1061,20 @@ the sestatus command to see if SELinux is configured properly\n"
                                         "config line to grub config file")
                         self.needsrestart = True
 
-                        updategrub = 'update-grub'
-
                         self.logger.log(LogPriority.DEBUG,
                                         "Running update-grub command to " +
                                         "update grub kernel boot " +
                                         "configuration...")
-                        self.cmdhelper.executeCommand(updategrub)
-                        errout = self.cmdhelper.getErrorString()
-                        if re.search('error|Traceback', errout):
+                        self.cmdhelper.executeCommand(self.updategrubcmd)
+                        retcode = self.cmdhelper.getReturnCode()
+                        if retcode != 0:
+                            errout = self.cmdhelper.getErrorString()
                             retval = False
                             self.detailedresults += '\nError updating ' + \
                                 'grub configuration: ' + str(errout)
                             self.logger.log(LogPriority.DEBUG,
                                             "Error executing " +
-                                            str(updategrub) + "\nError was: " +
+                                            str(self.updategrubcmd) + "\nError was: " +
                                             str(errout))
                             return retval
                         self.logger.log(LogPriority.DEBUG,
