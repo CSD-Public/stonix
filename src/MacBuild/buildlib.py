@@ -112,7 +112,8 @@ class MacBuildLib(object):
 
     def pyinstMakespec(self, scripts, noupx=False, strip=False, console=True,
                        icon_file=None, pathex=[], specpath=None,
-                       hiddenImports=[], bundle_identifier='gov.lanl.stonix'):
+                       hiddenImports=[], hookspath='', runtime_hooks=[],
+                       bundle_identifier='gov.lanl.stonix'):
         '''
         An interface for direct access to PyInstaller's makespec function
 
@@ -149,11 +150,13 @@ class MacBuildLib(object):
                                      console=console, icon_file=icon_file,
                                      pathex=pathex, specpath=specpath, 
                                      hiddenmports=hiddenImports,
+                                     runtime_hooks=runtime_hooks,
                                      bundle_identifier=bundle_identifier)
             else:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
                                      pathex=pathex, hiddenimports=hiddenImports,
+                                     runtime_hooks=runtime_hooks,
                                      bundle_identifier=bundle_identifier)
         except Exception:
             raise
@@ -176,13 +179,15 @@ class MacBuildLib(object):
 
         '''
         try:
-            kwargs = {'workpath': workpath, 'loglevel': 'INFO', 'distpath':
-                      distpath, 'upx_dir': None, 'ascii': None, 'clean_build':
-                      clean_build}
+            kwargs = {'workpath': workpath, 
+                      'loglevel': 'INFO', 
+                      'distpath': distpath,
+                      'upx_dir': None,
+                      'clean_build': clean_build}
         except Exception:
             raise
 
-        return build_main.main(None, specfile, noconfirm, **kwargs)
+        return build_main.main(None, specfile, noconfirm, False, **kwargs)
 
     def chownR(self, user, target):
         '''Recursively apply chown to a directory'''
