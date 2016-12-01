@@ -133,6 +133,7 @@ from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
 from stonix_resources.CheckApplicable import CheckApplicable
+import stonix_resources.fixFrozen
 
 from stonix_resources.cli import Cli
 
@@ -317,6 +318,7 @@ class Controller(Observable):
         validrulefiles = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
+        scriptPath = self.environ.get_script_path()
         stonixPath = self.environ.get_resources_path()
         self.logger.log(LogPriority.DEBUG,
                         ['STONIX Path:', str(stonixPath)])
@@ -324,6 +326,7 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
+        sys.path.append(scriptPath)
         sys.path.append(stonixPath)
         sys.path.append(rulesPath)
 

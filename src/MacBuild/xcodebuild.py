@@ -2,6 +2,7 @@
 
 import os
 import sys
+import traceback
 from optparse import OptionParser, SUPPRESS_HELP
 
 from buildlib import MacBuildLib
@@ -16,27 +17,36 @@ class Xcodebuild(MacBuildLib):
         super(Xcodebuild, self).__init__(logger, pypaths=None)
 
     def buildApp(self, appName, buildDir, username, password, keychain=""):
-        self.setUpForSigning(username, password, keychain)
-        self.buildWrapper(username, appName, buildDir)
+        if self.setUpForSigning(username, password, keychain):
+            if self.buildWrapper(username, appName, buildDir, keychain):
+                self.logger.log(lp.DEBUG, "Signing completed...")
+            else:
+                self.logger.log(lp.DEBUG, "buildWrapper failed...")
+                raise Exception(traceback.format_exc())
+        else:
+            self.logger.log(lp.DEBUG, "setUpForSigning failed...")
+            raise Exception(traceback.format_exc())
 
-    def sign(self, appName, username, password, signature, verbose, keychain):
+    def sign(self, psd, itemName, username, password, signature, verbose, keychain):
         self.setUpForSigning(username, password, keychain)
-        self.codeSign(username, password, signature, verbose, appName)
-        
+        self.codeSign(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)
 
 if __name__ == '__main__':
 
     parser = OptionParser(usage="\n\n%prog [options]\n\n", version="0.7.2")
 
-    parser.add_option("-a", "--app-name", dest="appName",
+    parser.add_option("-i", "--item-name", dest="itemName",
                       default='',
-                      help="Name of the application to be processed")
+                      help="Name of the item to be processed")
     parser.add_option("-u", "--user-name", dest="userName",
                       default="",
                       help="Name oName of the mountpoint you want to mount to")
     parser.add_option("-p", dest="password",
                       default="",
                       help=SUPPRESS_HELP)
+    parser.add_option("--psd", dest="parentOfItemToBeProcessed",
+                      default="",
+                      help="Parent directory of the item to be signed.")
     parser.add_option("-k", "--keychain", dest="keychain",
                       default="",
                       help="Full path to the keychain to use.  Default is empty.")
@@ -82,14 +92,15 @@ if __name__ == '__main__':
         keychainPass = ""
         for orded in passArray:
             keychainPass = keychainPass + chr(int(orded)) 
+        kechainPass = keychainPass.strip()
     else:
         keychainPass = False
     
     xb = Xcodebuild(logger)
     if opts.codesign:
-        xb.sign(opts.appName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+        xb.sign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
     else:
-        xb.buildApp(opts.appName, opts.project_directory, opts.userName, keychainPass)
+        xb.buildApp(opts.itemName, opts.parentOfItemToBeProcessed, opts.userName, keychainPass, opts.keychain)
 
     sys.exit(0)
     

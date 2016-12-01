@@ -160,7 +160,7 @@ class RunWith(object):
         """
         self.output = ''
         self.error = ''
-        self.returncode = 0
+        self.returncode = 999
         if self.command:
             try:
                 proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell)
@@ -174,10 +174,10 @@ class RunWith(object):
                 raise err
             else :
                 #self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                self.returncode = str(proc.returncode)
                 proc.stdout.close()
             finally:
-                #self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
-                self.returncode = str(proc.returncode)
+                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
         else :
             self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
             self.output = None
