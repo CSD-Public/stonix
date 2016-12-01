@@ -133,7 +133,7 @@ from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
 from stonix_resources.CheckApplicable import CheckApplicable
-import stonix_resources.fixFrozen
+#import stonix_resources.fixFrozen
 
 from stonix_resources.cli import Cli
 
@@ -318,7 +318,6 @@ class Controller(Observable):
         validrulefiles = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
-        scriptPath = self.environ.get_script_path()
         stonixPath = self.environ.get_resources_path()
         self.logger.log(LogPriority.DEBUG,
                         ['STONIX Path:', str(stonixPath)])
@@ -326,7 +325,6 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
-        sys.path.append(scriptPath)
         sys.path.append(stonixPath)
         sys.path.append(rulesPath)
 
@@ -370,11 +368,14 @@ class Controller(Observable):
             parts = cls.split(".")
             # the module is the class less the last element
             module = ".".join(parts[:-1])
+            file2load = parts[-1]
+
             # Using the __import__ built in function to import the module
             # since our names are only known at runtime.
             self.logger.log(LogPriority.DEBUG,
-                            'Attempting to load: ' + module)
+                            'Attempting to load: ' + module + ": " + file2load)
             try:
+#                mod = __import__(module, fromlist=[file2load], level=1)
                 mod = __import__(module)
             except Exception:
                 trace = traceback.format_exc()

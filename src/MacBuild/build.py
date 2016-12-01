@@ -475,11 +475,20 @@ class SoftwareBuilder():
                 # Set up stonix for a build
                 copy2(self.tmphome + "/src/stonix.py", self.tmphome + "/src/MacBuild/stonix")
                 copy2(self.tmphome + "/src/__init__.py", self.tmphome + "/src/MacBuild/stonix")
+                #copy2(self.tmphome + "/src/MacBuild/pyi_rth_stonix_resources.py", self.tmphome + "/src/MacBuild/stonix")
                 
                 rsync = [self.RSYNC, "-ap", "--exclude=\".svn\"",
                          "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
                          "--exclude=\".git*\"",
                          self.tmphome + "/src/stonix_resources",
+                         self.tmphome + "/src/MacBuild/stonix"]
+                #####
+                # Now required for stonix to find the rules via frozen pyinstaller
+                # blob
+                rsync = [self.RSYNC, "-ap", "--exclude=\".svn\"",
+                         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                         "--exclude=\".git*\"",
+                         self.tmphome + "/src/MacBuild/additional_hooks",
                          self.tmphome + "/src/MacBuild/stonix"]
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
                 print str(output)
@@ -562,16 +571,31 @@ class SoftwareBuilder():
     
                 self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenImports))
     
+                #hdnimports = self.hiddenImports + ['ctypes', '_ctypes', 'ctypes._endian', 'decimal', 'numbers']
                 hdnimports = self.hiddenImports + ['ctypes', '_ctypes', 'ctypes._endian', 'decimal', 'numbers']
     
                 # to compile a pyinstaller spec file for app creation:
                 print "Creating a pyinstaller spec file for the project..."
-                print self.mbl.pyinstMakespec([appName + ".py"], True, False, False,
+
+
+                stonix_hooks_path = "./additional_hooks/runtime_hooks"
+                stonix_runtime_hooks = stonix_hooks_path + '/stonix_resrouces.py'
+
+                output =  self.mbl.pyinstMakespec([appName + ".py"], True, False, False,
+                                              "../" + appIcon + ".icns",
+                                              pathex=["/usr/lib"] + self.PYPATHS,
+                                              specpath=os.getcwd(),
+                                              hiddenImports=hdnimports)
+                '''
+                output =  self.mbl.pyinstMakespec([appName + ".py"], True, False, False,
                                               "../" + appIcon + ".icns",
                                               pathex=["/usr/lib", 
                                                       "stonix_resources/rules:",
                                                       "stonix_resources"] + self.PYPATHS,
-                                              specpath=os.getcwd(), hiddenImports=['stonix_resources'] + hdnimports)
+                                              specpath=os.getcwd())
+                
+                '''
+                print output
                 # to build:
                 print "Building the app..."
                 self.mbl.pyinstBuild(appName + ".spec", 
