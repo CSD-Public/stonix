@@ -182,7 +182,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                 #####
                 # Run the command
                 output, error, retcode = self.runWith.communicate()
-                self.logger.log(lp.INFO, "DSCL cmd ran in current context..")
+                self.logger.log(lp.INFO, "security cmd ran in current context..")
                 
                 if not str(error).strip():
                     success = True
@@ -193,12 +193,12 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                     passfound = True
                     break
 
-            if not '-p' in cmd and not passfound:
-                self.logger.log(lp.DEBUG, "Output: " + str(output))
-                self.logger.log(lp.DEBUG, "Error: " + str(error))
-                self.logger.log(lp.DEBUG, "Return code: " + str(returncode))
+            #if not '-p' in cmd and not passfound:
+            self.logger.log(lp.DEBUG, "Output: " + str(output))
+            self.logger.log(lp.DEBUG, "Error: " + str(error))
+            self.logger.log(lp.DEBUG, "Return code: " + str(returncode))
 
-        return success, str(output), str(error), str(returncode)
+        return success, str(output).strip(), str(error).strip(), str(returncode).strip()
 
     #----------------------------------------------------------------------
 
@@ -713,5 +713,146 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                 cmd = { "find-identity" : ["-p", policy, "-s", sstring, "-v"] }
             self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
             success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
+
+        return success, stdout
+
+    #-------------------------------------------------------------------------
+
+    def setKeyPartitionList(self, options=False,
+                                  keyPass='',
+                                  keychain='',
+                                  creator = '',
+                                  description = '',
+                                  comment = '',
+                                  label = '',
+                                  keyType = '',
+                                  partIDs="apple-tool:,apple:,codesign:",
+                                  *args, **kwargs):
+        '''
+        Not known what exactly this subcommand does, it is required
+        on MacOS Sierra to allow for signing with xcodebuild or codesign.
+
+        Usage: set-key-partition-list [options...] [keychain]
+            -a  Match "application label" string
+            -c  Match "creator" (four-character code)
+            -d  Match keys that can decrypt
+            -D  Match "description" string
+            -e  Match keys that can encrypt
+            -j  Match "comment" string
+            -l  Match "label" string
+            -r  Match keys that can derive
+            -s  Match keys that can sign
+            -t  Type of key to find: one of "symmetric", "public", or "private"
+            -u  Match keys that can unwrap
+            -v  Match keys that can verify
+            -w  Match keys that can wrap
+            -S  Comma-separated list of allowed partition IDs
+            -k  password for keychain (required)
+        If no keychains are specified to search, the default search list is used.
+
+        @param: options = string of characters indicated by the switches above 
+                          that determine a the type of match to make
+        @param: keyPass = keychain password to use
+        @param: keychain = the keychain to act on
+        @param: partIDs = String to pass as the partition IDs for the -S parameter
+        @param: keyType = type of key to find - must be one of:
+                          ["symmetric", "public", "private"]
+
+        @author: Roy Nielsen
+        '''
+        success = False
+        stdout = False
+        name = name.strip()
+        keychain = keychain.strip()
+        if not options:
+            options = []
+
+        if not keyPass or not isinstance(keyPass, basestring):
+            return success, stdout
+
+        #####
+        # -a  Match "application label" string
+        if 'a' in options: options = options + ['-a']
+
+        #####
+        # -d  Match keys that can decrypt
+        if 'd' in options: options = options + ['-d']
+
+        #####
+        # -e  Match keys that can encrypt
+        if 'e' in options: options = options + ['-e']
+
+        #####
+        # -r  Match keys that can derive
+        if 'r' in options: options = options + ['-r']
+
+        #####
+        # -s  Match keys that can sign
+        if 's' in options: options = options + ['-s']
+
+        #####
+        # -u  Match keys that can unwrap
+        if 'u' in options: options = options + ['-u']
+
+        #####
+        # -v  Match keys that can verify
+        if 'v' in options: options = options + ['-v']
+
+        #####
+        # -w  Match keys that can wrap
+        if 'w' in options: options = options + ['-w']
+
+        #####
+        #  -c  Match "creator" (four-character code)
+        if isinstance(creator, basestring) and len(creator) == 4:
+            options = options + ['-c', creator]
+
+        #####
+        #  -D  Match "description" string
+        if isinstance(description, basestring):
+            options = options + ['-D', description]
+
+        #####
+        # -j  Match "comment" string
+        if isinstance(comment, basestring):
+            options = options + ['-j', comment]
+
+        #####
+        # -l  Match "label" string
+        if isinstance(label, basestring):
+            options = options + ['-l', label]
+
+        #####
+        # -t  Type of key to find: one of "symmetric", "public", or "private"
+        if keyType in ["symmetric", "public", "private"]:
+            options = options + ['-t', keyType]
+
+        #####
+        # -S  Comma-separated list of allowed partition IDs
+        if partIDs and isinstance(partIDs, basestring):
+            options = options + ['-S', partIDs]
+
+        #####
+        # -k  password for keychain (required)
+        if keyPass:
+            options = options + ['-k', keyPass]
+
+        #####
+        # Note: that the keychain deliberately has quotes
+        # around it - there could be spaces in the path to the keychain,
+        # so the quotes are required to fully resolve the file path.  
+        # Note: this is done in the build of the command, rather than 
+        # the build of the variable.
+        if self.isSaneFilePath(keychain) and os.path.exists(keychain):
+            options = options + [keychain]
+
+        #####
+        # Command setup
+        cmd = { "set-key-partition-list" : options }
+        self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
+
+        #####
+        # Spawn the command via private method
+        success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
 
         return success, stdout

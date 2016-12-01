@@ -862,7 +862,7 @@ See the GNU General Public License for more details.'''
         self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">" + copyrightText + "</p>"))
 
     def __tr(self, s, c=None):
-        return qApp.translate("aboutStonix", s, c)
+        return QtWidgets.qApp.translate("aboutStonix", s, c)
 
 
 class Ui_logBrowser(QtWidgets.QDialog):

@@ -8,7 +8,9 @@ from __future__ import absolute_import
 import re
 import os
 import sys
+import time
 import ctypes
+import termios
 from subprocess import Popen, STDOUT, PIPE
 
 #--- non-native python libraries in this source tree
@@ -253,3 +255,65 @@ def removeFdeUser(myusername=""):
     if not run.getStderr():
         success = True
     return success
+
+############################################################################
+
+def touch(filename=""):
+    """
+    Python implementation of the touch command..
+    
+    """
+    if re.match("^\s*$", filename) :
+        logger.log(lp.INFO, "Cannot touch a file without a filename....")
+    else :
+        try:
+            os.utime(filename, None)
+        except:
+            try :
+                open(filename, 'a').close()
+            except Exception, err :
+                logger.log(lp.INFO, "Cannot open to touch: " + str(filename))
+
+###########################################################################
+
+def getecho (fileDescriptor):
+    """This returns the terminal echo mode. This returns True if echo is
+    on or False if echo is off. Child applications that are expecting you
+    to enter a password often set ECHO False. See waitnoecho().
+
+    Borrowed from pexpect - acceptable to license
+    """
+    attr = termios.tcgetattr(fileDescriptor)
+    if attr[3] & termios.ECHO:
+        return True
+    return False
+
+############################################################################
+
+def waitnoecho (fileDescriptor, timeout=3):
+    """This waits until the terminal ECHO flag is set False. This returns
+    True if the echo mode is off. This returns False if the ECHO flag was
+    not set False before the timeout. This can be used to detect when the
+    child is waiting for a password. Usually a child application will turn
+    off echo mode when it is waiting for the user to enter a password. For
+    example, instead of expecting the "password:" prompt you can wait for
+    the child to set ECHO off::
+
+        see below in runAsWithSudo
+
+    If timeout is None or negative, then this method to block forever until
+    ECHO flag is False.
+
+    Borrowed from pexpect - acceptable to license
+    """
+    if timeout is not None and timeout > 0:
+        end_time = time.time() + timeout
+    while True:
+        if not getecho(fileDescriptor):
+            return True
+        if timeout < 0 and timeout is not None:
+            return False
+        if timeout is not None:
+            timeout = end_time - time.time()
+        time.sleep(0.1)
+

@@ -33,9 +33,10 @@ Library of functions used to build Mac applications
 import re
 import os
 import sys
-import tarfile
 import pwd
+import tarfile
 import zipfile
+import traceback
 import plistlib as pl
 from glob import glob
 from subprocess import Popen, STDOUT, PIPE
@@ -110,7 +111,8 @@ class MacBuildLib(object):
             raise
 
     def pyinstMakespec(self, scripts, noupx=False, strip=False, console=True,
-                       icon_file=None, pathex=[], specpath=None, hiddenimports=None):
+                       icon_file=None, pathex=[], specpath=None,
+                       hiddenImports=[], bundle_identifier='gov.lanl.stonix'):
         '''
         An interface for direct access to PyInstaller's makespec function
 
@@ -125,6 +127,17 @@ class MacBuildLib(object):
         @return: Output of PyInstaller.makespec
         @note: PyInstaller.makespec accepts further options,
                which may need to be added in future versions
+
+            makespec.main(scripts, name=None, onefile=None,
+                         console=True, debug=False, strip=False, noupx=False,
+                         pathex=None, version_file=None, specpath=None,
+                         datas=None, binaries=None, icon_file=None, manifest=None,
+                         resources=None, bundle_identifier=None,
+                         hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
+                         excludes=None, uac_admin=False, uac_uiaccess=False,
+                         win_no_prefer_redirects=False, win_private_assemblies=False,
+                         **kwargs):
+
         '''
         # specpath default cannot be reliably set here; os.getcwd() will return dir
         # of macbuildlib, not necessarily the current working dir of the calling
@@ -134,11 +147,14 @@ class MacBuildLib(object):
             if specpath:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
-                                     pathex=pathex, specpath=specpath, hiddenimports=hiddenimports)
+                                     pathex=pathex, specpath=specpath, 
+                                     hiddenmports=hiddenImports,
+                                     bundle_identifier=bundle_identifier)
             else:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
-                                     pathex=pathex, hiddenimports=hiddenimports)
+                                     pathex=pathex, hiddenimports=hiddenImports,
+                                     bundle_identifier=bundle_identifier)
         except Exception:
             raise
 
@@ -157,6 +173,7 @@ class MacBuildLib(object):
         @return: Output of PyInstaller.build
         @note: PyInstaller.build accepts further options,
                which may need to be added in future versions
+
         '''
         try:
             kwargs = {'workpath': workpath, 'loglevel': 'INFO', 'distpath':
@@ -259,19 +276,21 @@ class MacBuildLib(object):
         except Exception:
             raise
 
-    def getHiddenImports(self):
+    def getHiddenImports(self, buildRoot='', treeRoot=''):
         '''
         Acquire a list of all '*.py' files in the stonix_resources directory,
         replace '/' with '.' for a module name that can be imported. 
 
+        @param: buildroot
+
         @author: Roy Nielsen
         '''
         try:
-            #origdir = os.getcwd()
-            
-            #os.chdir(buildRoot)
+
+            returnDir = os.getcwd()
+            os.chdir(buildRoot)
             hiddenimports = []
-            for root, dirs, files in os.walk("stonix_resources"):
+            for root, dirs, files in os.walk(treeRoot):
                 for myfile in files:
                     if myfile.endswith(".py"):
                          #print(os.path.join(root, file)) 
@@ -289,8 +308,8 @@ class MacBuildLib(object):
                 
         except OSError:
             self.logger.log(lp.DEBUG, "Error trying to acquire python files...")
-        #finally:
-        #    #os.chdir(origdir)
+        finally:
+            os.chdir(returnDir)
         
         return hiddenimports
         
@@ -368,7 +387,7 @@ class MacBuildLib(object):
         print "checkBuildUser Finished..."
         return CURRENT_USER, RUNNING_ID
 
-    def codeSign(self, username, password, sig='', verbose='', deep='', appName=''):
+    def codeSign(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
         '''
         For codesigning on the Mac.
         
@@ -383,9 +402,22 @@ class MacBuildLib(object):
         requirementMet = False
         returncode = ""
 
-        if sig:
-            userHome = self.manage_user.getUserHomeDir(username)
-            keychain = userHome + "/Library/Keychains/login.keychain"
+        if os.path.isdir(parentDirOfItemToSign) and sig:
+            #####
+            # Get the directory we need to return to after signing is complete
+            returnDir = os.getcwd()
+            #####
+            # Change to directory where the item to sign resides
+            os.chdir(parentDirOfItemToSign)
+            
+            #####
+            # if the keychain to sign with is empty, default to the login
+            # keychain of the username passed in.
+            if not keychain:
+                userHome = self.manage_user.getUserHomeDir(username)
+                signingKeychain = userHome + "/Library/Keychains/login.keychain"
+            else:
+                signingKeychain = keychain
 
             #####
             # Make sure the keychain is unlocked
@@ -400,12 +432,16 @@ class MacBuildLib(object):
                 cmd += ['-' + verbose]
             if deep:
                 cmd += ['--deep']
-            cmd += ['-f', '-s', sig, '--keychain', appName + '/build/Release/' + appName + '.app']
+            cmd += ['-f', '-s', "'" + sig + "'", '--keychain', signingKeychain, itemName]
             self.rw.setCommand(cmd)
 
             #####
             # Check the UID and run the command appropriately
             output, error, retcode = self.rw.communicate()
+
+            #####
+            # Return to the working directory
+            os.chdir(returnDir)
 
             self.logger.log(lp.INFO, "Output from trying to codesign: " + str(output))
 
@@ -431,7 +467,7 @@ class MacBuildLib(object):
         self.logger.log(lp.DEBUG, "Unlock Keychain success: " + str(success))
         return success
 
-    def setUpForSigning(self, username='', password='', keychain=""):
+    def setUpForSigning(self, username='', password='', keychain=''):
         '''
         Make sure there signing is set up such that xcodebuild can find the
         cert required for signing.
@@ -448,8 +484,18 @@ class MacBuildLib(object):
             keychain = userHome + "/Library/Keychains/login.keychain"
             loginKeychain = True
 
-        self.manage_keychain.setUser(username.strip())
+        self.logger.log(lp.DEBUG, keychain)
 
+        self.manage_keychain.setUser(username.strip())
+        try:
+            #####
+            # Unlock the keychain so we can sign
+            success, output = self.manage_keychain.unlockKeychain(password, keychain=keychain)
+        except Exception, err:
+            self.logger.log(lp.DEBUG, traceback.format_exc())
+            raise err
+        return success
+        '''
         #####
         # Check open keychain search list first
         success, output = self.manage_keychain.findIdentity(policy='codesigning')
@@ -490,16 +536,30 @@ class MacBuildLib(object):
         if success:
             #####
             # Unlock the keychain so we can sign
-            success, output = self.manage_keychain.unlockKeychain(password, keychain=keychain)
+            success, output = self.manage_keychain.unlockKeychain(keychainPass, keychain=keychain)
 
         return success
-
-    def buildWrapper(self, username, appName, buildDir):
+        '''
+    def buildWrapper(self, username, appName, buildDir, keychain):
+        success = False
+        error = ""
+        
+        if not os.path.isdir(buildDir):
+            return success
+        #####
+        # Get the directory we need to return to after signing is complete
+        returnDir = os.getcwd()
+        #####
+        # Change to directory where the item to sign resides
+        os.chdir(buildDir)
         
         #returnDir = os.getcwd()
         #os.chdir(appName)
-        userHome = self.manage_user.getUserHomeDir(username)
-        keychain = userHome + "/Library/Keychains/login.keychain"
+        if not keychain:
+            userHome = self.manage_user.getUserHomeDir(username)
+            targetKeychain = userHome + "/Library/Keychains/login.keychain"
+        else:
+            targetKeychain = keychain
         
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
@@ -519,7 +579,8 @@ class MacBuildLib(object):
         #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', 'OTHER_CODE_SIGN_FLAGS="-keychain ' + keychain + '"']
         os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
         #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES='YES'"]
-        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', '-skipUnavailableActions']
+        #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj', '-skipUnavailableActions']
+        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
         #cmd = ['/usr/bin/xcodebuild', '-configuration', 'Release', 'clean']
         print '.'
         print '.'
@@ -528,12 +589,14 @@ class MacBuildLib(object):
         print '.'
         print '.'
         print '.'
-        toDir = buildDir + "/src/Macbuild/" + appName + "/"
-        os.chdir(toDir)
+        os.chdir(buildDir)
         self.logger.log(lp.DEBUG, str(cmd))
-        self.logger.log(lp.DEBUG, str(toDir))
+        
         self.rw.setCommand(cmd)
         output, error, retcode = self.rw.communicate()
+        
+        if not error:
+            success = True
         
         #output = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=False).communicate()
         #output = call(cmd)
@@ -543,4 +606,9 @@ class MacBuildLib(object):
             self.logger.log(lp.DEBUG, str(line))
 
         print "Done building stonix4mac..."
-        #os.chdir(returnDir)
+
+        #####
+        # Return to the working directory
+        os.chdir(returnDir)
+
+        return success
