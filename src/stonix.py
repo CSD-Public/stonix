@@ -123,9 +123,11 @@ import re
 import traceback
 import time
 import subprocess
+import imp
 
 # Local imports
-
+import stonix_resources
+import stonix_resources.rules
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
 from stonix_resources.environment import Environment
@@ -318,6 +320,9 @@ class Controller(Observable):
         validrulefiles = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
+        scriptPath = self.environ.get_script_path()
+        self.logger.log(LogPriority.DEBUG,
+                        ['Script Path:', str(scriptPath)])
         stonixPath = self.environ.get_resources_path()
         self.logger.log(LogPriority.DEBUG,
                         ['STONIX Path:', str(stonixPath)])
@@ -325,12 +330,12 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
-        sys.path.append(stonixPath)
-        sys.path.append(rulesPath)
+        #sys.path.append(stonixPath)
+        #sys.path.append(rulesPath)
 
-        for path in sys.path:
-            self.logger.log(LogPriority.DEBUG,
-                            ['Sys Path Element:', str(path)])
+        #for path in sys.path:
+        #    self.logger.log(LogPriority.DEBUG,
+        #                    ['Sys Path Element:', str(path)])
 
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
@@ -373,15 +378,23 @@ class Controller(Observable):
             # Using the __import__ built in function to import the module
             # since our names are only known at runtime.
             self.logger.log(LogPriority.DEBUG,
-                            'Attempting to load: ' + module + ": " + file2load)
+                            'Attempting to load: ' + module)
+            rule_file = None
             try:
 #                mod = __import__(module, fromlist=[file2load], level=1)
-                mod = __import__(module)
-            except Exception:
+                #mod = __import__(module)
+                 #rule_file, rule_pathname, rule_description = imp.find_module(module)
+                 #mod = imp.load_module(module, rule_file, rule_pathname, rule_description)
+                 mod = imp.load_source(module, scriptPath + "/" + "/".join(module.split(".")) + ".py")
+            except ImportError:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,
                                 "Error importing rule: " + trace)
                 continue
+            finally:
+                if rule_file:
+                    rule_file.close()
+            
             # Recurse down the class name until we get a reference to the class
             # itself. Then we instantiate using the reference.
             for component in parts[1:]:
