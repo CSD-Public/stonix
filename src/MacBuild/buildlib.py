@@ -309,7 +309,9 @@ class MacBuildLib(object):
                          # Concatinating the list with '.'s to add to the 
                          # hiddenimports list.
                          hiddenimport = ".".join(hiddenimportlist)
-                         hiddenimports.append(hiddenimport)
+                         self.logger.log(lp.DEBUG, "Attepting import of: " + \
+                                         hiddenimportfile)
+                         hiddenimports.append(hiddenimportfile)
                 
         except OSError:
             self.logger.log(lp.DEBUG, "Error trying to acquire python files...")

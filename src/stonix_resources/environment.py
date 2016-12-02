@@ -918,7 +918,8 @@ class Environment:
         print "Script Path: " + self.script_path
         print "Resources: " + self.resources_path
         print "Rules Path: " + self.rules_path
-        print "MEIPATH: " + sys._MEIPASS
+        if hasattr(sys, '_MEIPASS'):
+            print "MEIPATH: " + sys._MEIPASS
 
     def get_test_mode(self):
         """
