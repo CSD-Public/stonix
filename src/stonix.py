@@ -330,13 +330,6 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
-        #sys.path.append(stonixPath)
-        #sys.path.append(rulesPath)
-
-        #for path in sys.path:
-        #    self.logger.log(LogPriority.DEBUG,
-        #                    ['Sys Path Element:', str(path)])
-
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
 
@@ -381,11 +374,13 @@ class Controller(Observable):
                             'Attempting to load: ' + module)
             rule_file = None
             try:
-#                mod = __import__(module, fromlist=[file2load], level=1)
-                #mod = __import__(module)
-                 #rule_file, rule_pathname, rule_description = imp.find_module(module)
-                 #mod = imp.load_module(module, rule_file, rule_pathname, rule_description)
-                 mod = imp.load_source(module, scriptPath + "/" + "/".join(module.split(".")) + ".py")
+                #####
+                # NOTE: the use of the imp library should be changed to us
+                # importlib functionality when migrating to python 3.3 or highe
+                # this method of import will load the module off the filesystem
+                # whether or not the app is frozen with pyinstaller or friends..
+                 mod = imp.load_source(module, scriptPath + 
+                                       "/" + "/".join(module.split(".")) + ".py")
             except ImportError:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,
