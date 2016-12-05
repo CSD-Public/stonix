@@ -1640,12 +1640,10 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
         # Define a test suite based on the testList.
         testsuite = unittest.TestSuite()
 
+        # Add the test for every rule and rule for every test... test.
         test2run = test_rules_and_unit_test()
-        # Add all the tests for rules
-        testsuite.addTest(test2run)
-
+        testsuite.addTests(unittest.makeSuite(test2run.getTest()))
     else:
-
         testsuite = assemble_suite(framework, rule, utils,
                                    unit, network, interactive)
 
