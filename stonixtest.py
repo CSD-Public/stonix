@@ -433,6 +433,7 @@ class RuleDictionary ():
         self.stonixPath = self.environ.get_resources_path()
         self.rulesPath = self.environ.get_rules_path()
         self.unittestpath = self.scriptPath + "/"
+        self.unittestpaths = []
         self.ruledictionary = {}
         self.ruleList = []
         self.keys = None
@@ -601,7 +602,7 @@ class RuleDictionary ():
                     self.unittestpath = "src/tests/rules/unit_tests/"
                 elif os.path.isfile("src/tests/rules/network_tests/" +
                                     self.unittestprefix + str(rulefilename)):
-                    class_prefix = "src.tests.rules.netowrk_tests."
+                    class_prefix = "src.tests.rules.network_tests."
                     self.unittestpath = "src/tests/rules/network_tests/"
                 elif os.path.isfile("src/tests/rules/interactive/" +
                                     self.unittestprefix + str(rulefilename)):
@@ -610,6 +611,9 @@ class RuleDictionary ():
                 else:
                     class_prefix = "src.tests.rules.unit_tests."
                     self.unittestpath = "src/tests/rules/unit_tests/"
+
+                if self.unittestpath not in self.unittestpaths:
+                    self.unittestpaths.append(self.unittestpath)
 
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
@@ -731,7 +735,9 @@ class RuleDictionary ():
         success = True
         messagestring = "--------------------------------- start"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        ruletestfiles = os.listdir(str(self.unittestpath))
+        ruletestfiles = []
+        for unittestpath in self.unittestpaths:
+            ruletestfiles += os.listdir(str(unittestpath))
         for rtfile in ruletestfiles:
             if rtfile in self.initlist:
                 continue
