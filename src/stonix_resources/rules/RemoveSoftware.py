@@ -107,7 +107,12 @@ class RemoveSoftware(Rule):
                    "irda-utils",
                    "slapd",
                    "openldap-servers"
-                   "openldap2"]
+                   "openldap2",
+                   "bind9",
+                   "bind9.i386",
+                   "bind",
+                   "dnsutils",
+                   "bind-utils"]
         self.pkgci = self.initCi(datatype, key, instructions, default)
 
     def report(self):

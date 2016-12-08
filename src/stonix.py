@@ -123,8 +123,13 @@ import re
 import traceback
 import time
 import subprocess
+import imp
+from pkgutil import extend_path
 
 # Local imports
+__path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
+import stonix_resources
+import stonix_resources.rules
 
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
@@ -132,12 +137,10 @@ from stonix_resources.environment import Environment
 from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
+from stonix_resources.CheckApplicable import CheckApplicable
+#import stonix_resources.fixFrozen
+
 from stonix_resources.cli import Cli
-try:
-    from stonix_resources.gui import GUI
-    from PyQt4 import QtCore, QtGui
-except(ImportError):
-    pass
 
 
 class Controller(Observable):
@@ -188,24 +191,71 @@ class Controller(Observable):
         self.tryacquirelock()
 
         if self.mode == 'gui':
-            # This resets the UI to the command line if GUI was selected on the
-            # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
-                self.mode = 'cli'
-                self.logger.log(LogPriority.ERROR,
-                                'GUI Selected but PyQt4 not available. ' +
-                                'Please install PyQt4 and dependencies for ' +
-                                'GUI functionality.')
-            else:
-                app = QtGui.QApplication(sys.argv)
-                splashart = os.path.join(self.environ.get_icon_path(),
-                                         'StonixSplash.png')
-                splashimage = QtGui.QPixmap(splashart)
-                splash = QtGui.QSplashScreen(splashimage,
-                                             QtCore.Qt.WindowStaysOnTopHint)
-                splash.setMask(splashimage.mask())
-                splash.show()
-                app.processEvents()
+            applicable2PyQt5 = {'type': 'white',
+                                'family' : [],
+                               'os': {'Mac OS X': ['10.10', '+']}}
+            applicable2PyQt4 = {'type': 'black',
+                               'family': ['darwin']}
+            self.chkapp = CheckApplicable(self.environ, self.logger)
+            
+            if self.chkapp.isapplicable(applicable2PyQt5):
+                #####
+                # Appropriate to OS that supports PyQt5
+                try:
+                    from PyQt5 import QtCore, QtWidgets, QtGui
+                    from stonix_resources.gui_pyqt5 import GUI
+                except ImportError:
+                    pass
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt5' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt5 not available. ' +
+                                    'Please install PyQt5 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt5' in sys.modules:
+                    app = QtWidgets.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtWidgets.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
+
+            if self.chkapp.isapplicable(applicable2PyQt4):
+                #####
+                # Appropriate to OS that supports PyQt4
+                try:
+                    from PyQt4 import QtCore, QtGui
+                    from stonix_resources.gui import GUI
+                except(ImportError):
+                    pass
+  
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt4' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt4 not available. ' +
+                                    'Please install PyQt4 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt4' in sys.modules:
+                    app = QtGui.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtGui.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
         self.statechglogger = StateChgLogger(self.logger, self.environ)
         # NB We don't have a main event loop at this point so we call
         # the app.processEvents() again to make the splash screen show
@@ -216,7 +266,7 @@ class Controller(Observable):
         if not(self.mode == 'test'):
             # This resets the UI to the command line if GUI was selected on the
             # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
+            if 'PyQt4' not in sys.modules and 'PyQt5' not in sys.modules and self.mode == 'gui':
                 self.mode = 'cli'
                 self.logger.log(LogPriority.ERROR,
                                 'GUI Selected but PyQt4 not available. ' +
@@ -274,6 +324,9 @@ class Controller(Observable):
         validrulefiles = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
+        scriptPath = self.environ.get_script_path()
+        self.logger.log(LogPriority.DEBUG,
+                        ['Script Path:', str(scriptPath)])
         stonixPath = self.environ.get_resources_path()
         self.logger.log(LogPriority.DEBUG,
                         ['STONIX Path:', str(stonixPath)])
@@ -281,12 +334,11 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
+        sys.path.append('./stonix4mac')
+        sys.path.append('./stonix4mac/rules')
+        sys.path.append(scriptPath)
         sys.path.append(stonixPath)
         sys.path.append(rulesPath)
-
-        for path in sys.path:
-            self.logger.log(LogPriority.DEBUG,
-                            ['Sys Path Element:', str(path)])
 
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
@@ -312,7 +364,7 @@ class Controller(Observable):
         classnames = []
         for module in modulenames:
             module = module.split("/")[-1]
-            # print module
+            #self.logger.log(LogPriority.DEBUG, "Listing module: " + str(module))
             classname = 'stonix_resources.rules.' + module + '.' + module
             classnames.append(classname)
 
@@ -324,17 +376,36 @@ class Controller(Observable):
             parts = cls.split(".")
             # the module is the class less the last element
             module = ".".join(parts[:-1])
+            file2load = parts[-1]
+
             # Using the __import__ built in function to import the module
             # since our names are only known at runtime.
             self.logger.log(LogPriority.DEBUG,
                             'Attempting to load: ' + module)
+            rule_file = None
             try:
-                mod = __import__(module)
-            except Exception:
+                #####
+                # NOTE: the use of the imp library should be changed to us
+                # importlib functionality when migrating to python 3.3 or highe
+                # this method of import will load the module off the filesystem
+                # whether or not the app is frozen with pyinstaller or friends..
+                mod = imp.load_source(module, scriptPath + 
+                                      "/" + "/".join(module.split(".")) + ".py")
+                #
+                #fp, pathname, description = imp.find_module(module)
+                #mod = imp.load_module(module, fp, pathname, description)
+            except ImportError:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,
                                 "Error importing rule: " + trace)
                 continue
+            except Exception, err:
+                self.logger.log(LogPriority, traceback.format_exc())
+                raise err
+            finally:
+                if rule_file:
+                    rule_file.close()
+            
             # Recurse down the class name until we get a reference to the class
             # itself. Then we instantiate using the reference.
             for component in parts[1:]:

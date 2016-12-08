@@ -12,6 +12,8 @@ https://docs.python.org/2/library/multiprocessing.html?highlight=logging#logging
 
 @author: Roy Nielsen
 """
+from __future__ import absolute_import
+import os
 import re
 import sys
 import time
@@ -21,8 +23,8 @@ import calendar
 import datetime
 import logging
 import logging.handlers
-from logging.handlers import RotatingFileHandler
-
+#from logging.handlers import RotatingFileHandler
+#sys.path.append("..")
 ###############################################################################
 # Exception setup
 
@@ -41,11 +43,11 @@ def IllegalLoggingLevelError(Exception):
         Exception.__init__(self,*args,**kwargs)
 
 ###############################################################################
-# Setting up a funciton for a singleton
+# Setting up a function for a singleton
 
 def singleton_decorator(cls):
     """
-    Adapted from: https://www.python.org/dev/peps/pep-0318/ Example #2
+    Adapted from: https://www.python.org/dev/peps/pep-0318/ Example #2 and:
     """
     instances = {}
     def getinstance(*args, **kwargs):
@@ -54,14 +56,35 @@ def singleton_decorator(cls):
         return instances[cls]
     return getinstance
 
+
+class SingletonCyLogger(type):
+    """
+    This class was retrieved from: http://stackoverflow.com/questions/33364070/python-implementing-singleton-as-metaclass-but-for-abstract-classes
+    Modified class origionally authored by: Martijn Pieters(http://stackoverflow.com/users/100297/martijn-pieters)
+    with license: https://creativecommons.org/licenses/by-sa/3.0/
+    """
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(SingletonCyLogger, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+    
+    
 ###############################################################################
 # Main class
 
-@singleton_decorator
 class CyLogger(object):
+    __metaclass__ = SingletonCyLogger
     """
+    Class to set up logging, with easy string referencing loggers and their
+    handlers.
+    
+    @author: Roy Nielsen
     """
-    def __init__(self, environ=False, debug_mode=False, verbose_mode=False, level=30):
+    
+    instanciatedLoggers = {}
+
+    def __init__(self, environ=False, debug_mode=False, verbose_mode=False, level=30, *args, **kwargs):
         """
         """
         print ".............Level: " + str(level)
@@ -87,10 +110,10 @@ class CyLogger(object):
             self.validateLevel(self.lvl)
         else:
             self.lvl = 30
+        self.lvl = 5
 
         self.filename = ""
-        self.levels = {"NOTSET" : 0, "DEBUG" : 10, "INFO" : 20, "WARNING" : 30,
-                       "ERROR" : 40, "CRITICAL" : 50}
+        self.syslog = False
         self.logr = None
         self.logrs = {"root" : ""}
 
@@ -126,7 +149,7 @@ class CyLogger(object):
 
     def doRollover(self, rothandler):
         """
-        If there is a RotatingFileHandler attaced to the active logger,
+        If there is a RotatingFileHandler attached to the active logger,
         rotate the log.
         
         @author: Roy Nielsen
@@ -139,15 +162,18 @@ class CyLogger(object):
 
     #############################################
 
-    def initializeLogs(self,  filename = "",
-                       extension_type="time",
+    def initializeLogs(self,  logdir = "/tmp", 
+                       filename = "",
+                       extension_type="inc",
                        logCount=10,
                        size=10000000,
-                       syslog=False,
+                       syslog=True,
                        myconsole=True):
         """
         Sets up some basic logging.  For more configurable logging, use the
         setUpLogger & setUpHandler methods.
+
+        @param: logdir: Directory to place the logs
 
         @param: filename: Name of the file you would like to log to. String
 
@@ -208,6 +234,11 @@ class CyLogger(object):
                                             "configuration: " + \
                                             str(extension_type))
         #####
+        # Concatinate the logdir with the self.filename to give the
+        # self.filename the intended full path
+        self.filename = os.path.join(logdir, self.filename)
+
+        #####
         # Initialize the root logger
         self.logr = logging.getLogger("")
 
@@ -241,7 +272,7 @@ class CyLogger(object):
         elif self.rotate:
             self.logr.addHandler(rotHandler)
             self.logr.log(LogPriority.DEBUG,"Added RotatingFileHandler")
-            self.doRollover(rotHandler)
+            #self.doRollover(rotHandler)
 
         if myconsole:
             self.logr.addHandler(conHandler)
@@ -311,7 +342,7 @@ class CyLogger(object):
         prog = sys.argv[0].split("/")[-1]
 
         #####
-        # Get the filename of the code calling CyLogger.log()
+        # Get the filename of the code calling CrazyLogger.log()
         # members = inspect.getmembers(inspect.stack(), inspect.iscode)
         # print "Members: " + str(members)
         # co_filename = members[1][3]
@@ -350,35 +381,35 @@ class CyLogger(object):
                                                  str(function_name), 
                                                  str(line_number))
 
-        
-        #####
-        # Process via logging level
-        if int(self.lvl) > 0 and int(self.lvl) < 10:
-            # Quiet, no prefix or formatting...
-            self.logr.log(validatedLvl, str(msg))
-
-        elif int(self.lvl) >= 10 and int(self.lvl) < 20:
+        for line in msg.split('\n'):
             #####
-            # Debug
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >= 20 and int(self.lvl) < 30:
-            #####
-            # Info
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >=30 and int(self.lvl) < 40:
-            #####
-            # Warning
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >= 40 and int(self.lvl) < 50:
-            #####
-            # Error
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        elif int(self.lvl) >= 50 and int(self.lvl) < 60:
-            #####
-            # Critical
-            self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(msg))
-        else:
-            raise IllegalLoggingLevelError("Not a valid value for a logging level.")
+            # Process via logging level
+            if int(self.lvl) > 0 and int(self.lvl) < 10:
+                # Quiet, no prefix or formatting...
+                self.logr.log(validatedLvl, str(line))
+    
+            elif int(self.lvl) >= 10 and int(self.lvl) < 20:
+                #####
+                # Debug
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >= 20 and int(self.lvl) < 30:
+                #####
+                # Info
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >=30 and int(self.lvl) < 40:
+                #####
+                # Warning
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >= 40 and int(self.lvl) < 50:
+                #####
+                # Error
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            elif int(self.lvl) >= 50 and int(self.lvl) < 60:
+                #####
+                # Critical
+                self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + pri + ") " + str(line))
+            else:
+                raise IllegalLoggingLevelError("Not a valid value for a logging level.")
 
 ###############################################################################
 # Helper class
@@ -392,6 +423,7 @@ class LogPriority(object):
     """
     DEBUG = int(10)
     INFO = int(20)
+    VERBOSE = int(20)
     WARNING = int(30)
     ERROR = int(40)
     CRITICAL = int(50)
