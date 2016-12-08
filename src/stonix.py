@@ -124,10 +124,13 @@ import traceback
 import time
 import subprocess
 import imp
+from pkgutil import extend_path
 
 # Local imports
+__path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
 import stonix_resources
 import stonix_resources.rules
+
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
 from stonix_resources.environment import Environment
@@ -189,6 +192,7 @@ class Controller(Observable):
 
         if self.mode == 'gui':
             applicable2PyQt5 = {'type': 'white',
+                                'family' : [],
                                'os': {'Mac OS X': ['10.10', '+']}}
             applicable2PyQt4 = {'type': 'black',
                                'family': ['darwin']}
@@ -330,6 +334,12 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
+        sys.path.append('./stonix4mac')
+        sys.path.append('./stonix4mac/rules')
+        sys.path.append(scriptPath)
+        sys.path.append(stonixPath)
+        sys.path.append(rulesPath)
+
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
 
@@ -379,13 +389,19 @@ class Controller(Observable):
                 # importlib functionality when migrating to python 3.3 or highe
                 # this method of import will load the module off the filesystem
                 # whether or not the app is frozen with pyinstaller or friends..
-                 mod = imp.load_source(module, scriptPath + 
-                                       "/" + "/".join(module.split(".")) + ".py")
+                mod = imp.load_source(module, scriptPath + 
+                                      "/" + "/".join(module.split(".")) + ".py")
+                #
+                #fp, pathname, description = imp.find_module(module)
+                #mod = imp.load_module(module, fp, pathname, description)
             except ImportError:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,
                                 "Error importing rule: " + trace)
                 continue
+            except Exception, err:
+                self.logger.log(LogPriority, traceback.format_exc())
+                raise err
             finally:
                 if rule_file:
                     rule_file.close()

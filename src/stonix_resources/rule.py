@@ -59,9 +59,9 @@ from CommandHelper import CommandHelper
 from pkghelper import Pkghelper
 from ServiceHelper import ServiceHelper
 import traceback
+from CheckApplicable import CheckApplicable
 
-
-class Rule (Observable):
+class Rule (Observable, CheckApplicable):
 
     """
     Abstract class for all Rule objects.
@@ -368,9 +368,9 @@ LANL-stonix."""
         @author D. Kennel
         """
         return self.databaserule
+        """
 
     def isapplicable(self):
-        """
         This method returns true if the rule applies to the platform on which
         stonix is currently running. The method in this template class will
         return true by default. The class property applicable will be
@@ -439,7 +439,6 @@ LANL-stonix."""
         @return bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
-        """
         # return True
         # Shortcut if we are defaulting to true
         self.logdispatch.log(LogPriority.DEBUG,
@@ -555,6 +554,7 @@ LANL-stonix."""
                     applies = False
 
         return applies
+        """
 
     def addresses(self):
         """
