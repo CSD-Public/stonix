@@ -627,8 +627,9 @@ class MacPkgr(object):
                             # take data out of the url stream and put it in the file
                             # a chunk at a time - more sane for large files
                             chunk = 16 * 1024 * 1024
-                            try:
-                                while 1 :
+                            counter = 0
+                            while 1:
+                                try:
                                     if urlfile:
                                         data = urlfile.read(chunk)
                                         if not data :
