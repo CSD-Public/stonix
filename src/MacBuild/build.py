@@ -195,8 +195,8 @@ class SoftwareBuilder():
 
     def _exit(self, ramdisk, luggage, exitcode=0):
         os.chdir(self.STONIX_ROOT)
-        self._detachRamdisk(ramdisk)
-        self._detachRamdisk(luggage)
+        #self._detachRamdisk(ramdisk)
+        #self._detachRamdisk(luggage)
         print traceback.format_exc()
         exit(exitcode)
 
@@ -271,6 +271,7 @@ class SoftwareBuilder():
             self.STONIX4MAC = dict1['stonix']['wrapper']
             self.STONIX4MACICON = dict1['stonix']['wrapper_icon']
             self.STONIX4MACVERSION = dict1['stonix']['wrapper_version']
+            self.APPVERSION = self.STONIXVERSION
             self.PYUIC = dict1['libpaths']['pyuic']
             self.PYPATHS = dict1['libpaths']['pythonpath'].split(':')
             if self.PYPATHS:
@@ -575,7 +576,7 @@ class SoftwareBuilder():
 
                 output =  self.mbl.pyinstMakespec([appName + ".py"], True, False, False,
                                               "../" + appIcon + ".icns",
-                                              pathex=["/usr/lib"] + self.PYPATHS,
+                                              pathex=["/usr/lib", "./stonix_resources/rules", "stonix_resources"] + self.PYPATHS,
                                               specpath=os.getcwd(),
                                               hiddenImports=hdnimports)
 #                                              runtime_hooks=["pyi_rth_stonix_resources.py"])
@@ -732,7 +733,7 @@ class SoftwareBuilder():
             self.logger.log(lp.DEBUG, "Putting new version into Makefile...")
 
             self.mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
-                                  "PACKAGE_VERSION=" + appVersion)
+                                  "PACKAGE_VERSION=" + self.APPVERSION)
 
 
             dmgsPath = self.tmphome + "/src/MacBuild/dmgs"
@@ -751,7 +752,7 @@ class SoftwareBuilder():
                 "installation purposes..."
             #call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
             #      "USE_PKGBUILD=1"])
-            makepkg = ["/usr/bin/make", "pkg", "PACKAGE_VERSION=" + appVersion,
+            makepkg = ["/usr/bin/make", "pkg", "PACKAGE_VERSION=" + self.APPVERSION,
                   "USE_PKGBUILD=1"]
             output = Popen(makepkg, stdout=PIPE, stderr=STDOUT).communicate()[0]
             for line in output.split('\n'):
@@ -759,7 +760,7 @@ class SoftwareBuilder():
 
             print "Moving dmg and pkg to the dmgs directory."
             #dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"
-            pkgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".pkg"
+            pkgname = self.STONIX4MAC + "-" + self.APPVERSION + ".pkg"
             #os.rename(dmgname, dmgsPath + "/" + dmgname)
             os.rename(pkgname, dmgsPath + "/" + pkgname)
 
@@ -791,7 +792,7 @@ class SoftwareBuilder():
         self.libc.sync()
 
         os.chdir(self.buildHome)
-        self._exit(self.ramdisk, self.luggage, 0)
+        #self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
