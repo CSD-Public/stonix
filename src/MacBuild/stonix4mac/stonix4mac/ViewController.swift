@@ -27,6 +27,7 @@ class ViewController: NSViewController {
         let arguments = ["-d"]
         sender.isEnabled = false
         let task = Process.launchedProcess(launchPath: path, arguments: arguments)
+        NSApplication.shared().terminate(self)
         task.waitUntilExit()
         sender.isEnabled = true
     }
@@ -34,6 +35,7 @@ class ViewController: NSViewController {
     @IBAction func adminAction(_ sender: NSButton) {
         sender.isEnabled = false
         NSAppleScript(source: "do shell script \"/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix\" with administrator privileges")!.executeAndReturnError(nil)
+        NSApplication.shared().terminate(self)
         sender.isEnabled = true
     }
     
