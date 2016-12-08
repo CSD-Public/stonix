@@ -102,7 +102,7 @@ class PasswordExpiration(Rule):
             if self.environ.getosfamily() == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
                 self.specs = {"PASS_MAX_DAYS": "180",
-                              "PASS_MIN_DAYS": "7",
+                              "PASS_MIN_DAYS": "1",
                               "PASS_MIN_LEN": "8",
                               "PASS_WARN_AGE": "28"}
                 if self.ph.manager == "apt-get":
@@ -279,10 +279,10 @@ class PasswordExpiration(Rule):
                                         field[i] = 99
                                     else:
                                         field[i] = 0
-                                if field[3] < 7 or field[3] == "":
+                                if field[3] != 1 or field[3] == "":
                                     compliant = False
                                     self.detailedresults += "Shadow file: " + \
-                                        "Minimum age is not equal to 7\n"
+                                        "Minimum age is not equal to 1\n"
                                     badacct = True
                                 if field[4] > 180 or field[4] == "":
                                     compliant = False
@@ -340,10 +340,10 @@ class PasswordExpiration(Rule):
                                     self.shadow = False
                                     compliant = False
                                     debug += "expiration is not 180 or less"
-                                if int(field[6]) > 7 or field[6] == "":
+                                if int(field[6]) != 1 or field[6] == "":
                                     self.shadow = False
                                     compliant = False
-                                    debug += "Account lock is not set to 7"
+                                    debug += "Account lock is not set to 1"
                         except IndexError:
                             self.shadow = False
                             compliant = False
@@ -640,7 +640,7 @@ Will not perform fix on shadow file\n"
             date = tmpdate[0] + tmpdate[1] + tmpdate[2] + tmpdate[3] + "-" + \
                 tmpdate[4] + tmpdate[5] + "-" + tmpdate[6] + tmpdate[7]
             for user in self.fixusers:
-                cmd = ["chage", "-d", date, "-m", "7", "-M", "180", "-W", "28",
+                cmd = ["chage", "-d", date, "-m", "1", "-M", "180", "-W", "28",
                        "-I", "35", user]
                 self.ch.executeCommand(cmd)
 
