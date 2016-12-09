@@ -458,14 +458,14 @@ class RuleDictionary ():
 
     def gotoFirstRule(self):
         self.keyIndexNumber = 0
-        self.keys = sorted(self.ruledictionary.keys())
+        self.keys = sorted(self.ruledictionary.keys(), reverse=True)
         self.keysNumberOf = len(self.keys)
         self.key = self.keys[self.keyIndexNumber]
         self.dictinaryItem = self.ruledictionary[self.key]
 
     def gotoNextRule(self):
         self.keyIndexNumber = self.keyIndexNumber + 1
-        self.keys = sorted(self.ruledictionary.keys())
+        self.keys = sorted(self.ruledictionary.keys(), reverse=True)
         self.keysNumberOf = len(self.keys)
         if (self.keysNumberOf - 1) < self.keyIndexNumber:
             self.keyIndexNumber = 0
@@ -765,7 +765,7 @@ class RuleDictionary ():
         success = True
         messagestring = "--------------------------------- start"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        keys = sorted(self.ruledictionary.keys())
+        keys = sorted(self.ruledictionary.keys(), reverse=True)
         for key in keys:
             ruleclassname = self.ruledictionary[key]["ruleclassname"]
             rulename = self.ruledictionary[key]["rulename"]
