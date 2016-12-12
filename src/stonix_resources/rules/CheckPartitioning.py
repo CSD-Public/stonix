@@ -77,6 +77,9 @@ on their own partitions: /home, /tmp, ,/var, /var/tmp, /var/log, \
 
         @author: D. Kennel
         '''
+
+        self.detailedresults = ""
+
         if self.hasrunalready:
             return True
         tempcompliant = False
