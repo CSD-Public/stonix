@@ -376,7 +376,7 @@ class Controller(Observable):
             parts = cls.split(".")
             # the module is the class less the last element
             module = ".".join(parts[:-1])
-            file2load = parts[-1]
+            cls2load = parts[-1]
 
             # Using the __import__ built in function to import the module
             # since our names are only known at runtime.
@@ -395,28 +395,27 @@ class Controller(Observable):
                 #fp, pathname, description = imp.find_module(module)
                 #mod = imp.load_module(module, fp, pathname, description)
             except ImportError:
-                trace = traceback.format_exc()
-                self.logger.log(LogPriority.ERROR,
-                                "Error importing rule: " + trace)
+                #trace = traceback.format_exc()
+                #self.logger.log(LogPriority.ERROR,
+                #                "Error importing rule: " + trace)
                 continue
             except Exception, err:
-                self.logger.log(LogPriority, traceback.format_exc())
+                #self.logger.log(LogPriority, traceback.format_exc())
                 raise err
             finally:
                 if rule_file:
                     rule_file.close()
             
-            # Recurse down the class name until we get a reference to the class
-            # itself. Then we instantiate using the reference.
-            for component in parts[1:]:
-                try:
-                    mod = getattr(mod, component)
-                except Exception:
-                    trace = traceback.format_exc()
-                    self.logger.log(LogPriority.ERROR,
-                                    "Error finding rule class reference: "
-                                    + trace)
-                    continue
+            # 
+            #  instantiate using the reference.
+            try:
+                mod = getattr(mod, cls2load)
+            except Exception:
+                #trace = traceback.format_exc()
+                #self.logger.log(LogPriority.ERROR,
+                #                "Error finding rule class reference: "
+                #                + trace)
+                continue
             try:
                 clinst = mod(config, environ, self.logger, self.statechglogger)
                 instruleclasses.append(clinst)
@@ -427,11 +426,10 @@ class Controller(Observable):
             # User initiated exit
                 raise
             except Exception:
-                trace = traceback.format_exc()
-                self.logger.log(LogPriority.ERROR,
-                                "Error instantiating rule: " + trace)
+                #trace = traceback.format_exc()
+                #self.logger.log(LogPriority.ERROR,
                 continue
-        # print instruleclasses
+        print instruleclasses
         return instruleclasses
 
     def findapplicable(self, rules):
