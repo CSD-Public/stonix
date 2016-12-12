@@ -33,6 +33,7 @@ import os
 import re
 import glob
 import shutil
+import traceback
 
 from src.stonix_resources.localize import STONIXVERSION
 
@@ -82,7 +83,7 @@ copyrighttext = '''#############################################################
 ###############################################################################
 '''
 
-sourcedir = '/stonix/src/'
+sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
 builddir = '/stonix-' + str(stonixversion) + '-1.noarch'
 pkgname = 'stonix-' + str(stonixversion) + '-1.noarch.deb'
 debiandir = builddir + '/DEBIAN/'
@@ -95,8 +96,8 @@ filesneeded = {debiandir + 'control': controltext,
 
 try:
 
-    if os.path.exists('/stonix/src/stonix_resources/rules'):
-        listofdirs = glob.glob('/stonix/src/stonix_resources/rules/*.py')
+    if os.path.exists(sourcedir + 'stonix_resources/rules'):
+        listofdirs = glob.glob(sourcedir + 'stonix_resources/rules/*.py')
         listoffiles = []
         for item in listofdirs:
             listoffiles.append(os.path.basename(item))
@@ -108,8 +109,8 @@ try:
             for line in contentlines:
                 line = line.strip()
                 if line in listoffiles:
-                    os.system('rm -f ' +
-                              '/stonix/src/stonix_resources/rules/' + line)
+                    os.system('rm -f ' + sourcedir +
+                              'stonix_resources/rules/' + line)
         else:
             exit
     else:
@@ -127,7 +128,7 @@ try:
         os.chown(etcdir, 0, 0)
 
     if not os.path.exists(sourcedir):
-        print "Source directory not found (/stonix/src/)"
+        print "Directory " + sourcedir + " not found"
         exit
 
     for item in filesneeded:
@@ -149,7 +150,7 @@ try:
     f = open(etcdir + 'stonix.conf', 'w')
     f.write('')
     f.close()
-    os.chmod(etcdir+'stonix.conf', 0o644)
+    os.chmod(etcdir + 'stonix.conf', 0o644)
     os.chown(etcdir + 'stonix.conf', 0, 0)
 
     if not os.path.exists(bindir + 'stonix_resources'):
@@ -158,8 +159,18 @@ try:
 
     if not os.path.exists(builddir + 'usr/share/man/man8/stonix.8'):
         shutil.copytree(sourcedir + 'usr/share', builddir + '/usr/share')
+        os.chmod(builddir + '/usr/share', 0o644)
 
-    os.chmod(bindir + 'stonix_resources', 0o755)
+    for dirName, _, fileList in os.walk(bindir):
+        fullDirName = os.path.join(os.path.abspath(bindir), dirName)
+        os.chmod(fullDirName, 0o755)
+        os.chown(fullDirName, 0, 0)
+        for fname in fileList:
+            fullFName = os.path.join(os.path.abspath(bindir), dirName, fname)
+            if os.path.isfile(fullFName):
+                os.chmod(fullFName, 0o644)
+                os.chown(fullFName, 0, 0)
+
     if not os.path.exists(bindir + 'stonix.py'):
         shutil.copy2(sourcedir + 'stonix.py', bindir + 'stonix.py')
     os.chmod(bindir + 'stonix.py', 0o755)
@@ -169,4 +180,4 @@ try:
     os.system('dpkg-deb -b ' + builddir)
 
 except OSError as err:
-    print str(err.strerror)
+    print traceback.format_exc()
