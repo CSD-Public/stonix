@@ -433,6 +433,7 @@ class RuleDictionary ():
         self.stonixPath = self.environ.get_resources_path()
         self.rulesPath = self.environ.get_rules_path()
         self.unittestpath = self.scriptPath + "/"
+        self.unittestpaths = []
         self.ruledictionary = {}
         self.ruleList = []
         self.keys = None
@@ -457,14 +458,14 @@ class RuleDictionary ():
 
     def gotoFirstRule(self):
         self.keyIndexNumber = 0
-        self.keys = sorted(self.ruledictionary.keys())
+        self.keys = sorted(self.ruledictionary.keys(), reverse=True)
         self.keysNumberOf = len(self.keys)
         self.key = self.keys[self.keyIndexNumber]
         self.dictinaryItem = self.ruledictionary[self.key]
 
     def gotoNextRule(self):
         self.keyIndexNumber = self.keyIndexNumber + 1
-        self.keys = sorted(self.ruledictionary.keys())
+        self.keys = sorted(self.ruledictionary.keys(), reverse=True)
         self.keysNumberOf = len(self.keys)
         if (self.keysNumberOf - 1) < self.keyIndexNumber:
             self.keyIndexNumber = 0
@@ -601,7 +602,7 @@ class RuleDictionary ():
                     self.unittestpath = "src/tests/rules/unit_tests/"
                 elif os.path.isfile("src/tests/rules/network_tests/" +
                                     self.unittestprefix + str(rulefilename)):
-                    class_prefix = "src.tests.rules.netowrk_tests."
+                    class_prefix = "src.tests.rules.network_tests."
                     self.unittestpath = "src/tests/rules/network_tests/"
                 elif os.path.isfile("src/tests/rules/interactive/" +
                                     self.unittestprefix + str(rulefilename)):
@@ -610,6 +611,9 @@ class RuleDictionary ():
                 else:
                     class_prefix = "src.tests.rules.unit_tests."
                     self.unittestpath = "src/tests/rules/unit_tests/"
+
+                if self.unittestpath not in self.unittestpaths:
+                    self.unittestpaths.append(self.unittestpath)
 
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
@@ -731,7 +735,9 @@ class RuleDictionary ():
         success = True
         messagestring = "--------------------------------- start"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        ruletestfiles = os.listdir(str(self.unittestpath))
+        ruletestfiles = []
+        for unittestpath in self.unittestpaths:
+            ruletestfiles += os.listdir(str(unittestpath))
         for rtfile in ruletestfiles:
             if rtfile in self.initlist:
                 continue
@@ -759,7 +765,7 @@ class RuleDictionary ():
         success = True
         messagestring = "--------------------------------- start"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        keys = sorted(self.ruledictionary.keys())
+        keys = sorted(self.ruledictionary.keys(), reverse=True)
         for key in keys:
             ruleclassname = self.ruledictionary[key]["ruleclassname"]
             rulename = self.ruledictionary[key]["rulename"]
@@ -1640,12 +1646,10 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
         # Define a test suite based on the testList.
         testsuite = unittest.TestSuite()
 
+        # Add the test for every rule and rule for every test... test.
         test2run = test_rules_and_unit_test()
-        # Add all the tests for rules
-        testsuite.addTest(test2run)
-
+        testsuite.addTests(unittest.makeSuite(test2run.getTest()))
     else:
-
         testsuite = assemble_suite(framework, rule, utils,
                                    unit, network, interactive)
 

@@ -60,7 +60,6 @@ class KVEditor(object):
         @param configType: Specify how the config options are separated.
                            Valid values: "space", "openeq", "closedeq"
         @param output: Output of profiler command, used only by KVAProfiles
-        @return: True if kvtype is valid
         '''
         self.kvtype = kvtype
         self.path = path
