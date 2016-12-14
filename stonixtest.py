@@ -1091,9 +1091,7 @@ class TestNotFound(Exception):
 
 def assemble_list_suite(modules=[]):
     """
-    Only process the list of passed in tests...
-
-    Will only run <Rulename>, not the test name zzzTestRule<Rulename>.
+    Only process the list of passed in tests.
 
     NOTE: The framework/utilities and rules have different processing
           mechanisms which is why they are processed separately in this
