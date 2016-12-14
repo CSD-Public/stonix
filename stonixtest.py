@@ -743,45 +743,12 @@ class RuleDictionary ():
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
         keys = sorted(self.ruledictionary.keys(), reverse=True)
         for key in keys:
-            ruleclassname = self.ruledictionary[key]["ruleclassname"]
             rulename = self.ruledictionary[key]["rulename"]
-            rule_class = self.ruledictionary[key]["ruleobject"]
-            rulemoduleimportstring = \
-                self.ruledictionary[key]["rulemoduleimportstring"]
-            ruleinstanciatecommand = \
-                self.ruledictionary[key]["ruleinstanciatecommand"]
             try:
-                mod = __import__(ruleclassname, fromlist=[rulename])
-            except Exception:
-                trace = traceback.format_exc()
-                messagestring = "Error importing rule: " + rulename + " " + \
-                    rulemoduleimportstring + " - " + trace
-                self.ruledictionary[key]["errormessage"].append(messagestring)
-                self.logdispatch.log(LogPriority.ERROR, messagestring)
-                continue
-            try:
-                exec(ruleinstanciatecommand)
-#                rule_class = getattr(mod, classimportname)
-#                exec("rule_class = mod.rules." + rulename + "." + rulename)
-            except Exception:
-                trace = traceback.format_exc()
-                messagestring = "Error importing rule: " + rulename + " " + \
-                    rulemoduleimportstring + " - " + trace
-                self.logdispatch.log(LogPriority.ERROR,
-                                     "Error finding rule class reference: "
-                                     + trace)
-                continue
-            try:
-                self.rule = rule_class(self.config,
-                                       self.environ,
-                                       self.logdispatch,
-                                       self.statechglogger)
-                rulenumber = self.rule.getrulenum()
-                self.ruledictionary[key]["rulenumber"] = rulenumber
-                messagestring = str(key) + "(" + str(rulenumber) + \
-                    ") initialized!"
-                isapplicable = self.rule.isapplicable()
-                isRootRequired = self.rule.getisrootrequired()
+                rule = self.ruledictionary[key]["ruleobject"]
+                self.ruledictionary[key]["rulenumber"] = rule.getrulenum()
+                isapplicable = rule.isapplicable()
+                isRootRequired = rule.getisrootrequired()
                 if not isapplicable:
                     self.ruledictionary[key]["ruleisapplicable"] = False
                     messagestring = messagestring + " is not applicable."
