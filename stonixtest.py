@@ -755,7 +755,7 @@ class RuleDictionary ():
                 else:
                     self.ruledictionary[key]["ruleisapplicable"] = True
                     messagestring = messagestring + " is applicable."
-                if self.effectiveUserID == 0 and isRootRequired:
+                if self.effectiveUserID == 0:
                     self.ruledictionary[key]["rulecorrecteffectiveuserid"] = \
                         True
                     messagestring = messagestring + " is running in " + \
@@ -797,7 +797,6 @@ class RuleDictionary ():
                 "rulefilename": "",
                 "ruleclassname": "",
                 "rulemoduleimportstring": "",
-                "ruleinstanciatecommand": "",
                 "ruleobject": "",
                 "ruleisapplicable": False,
                 "rulecorrecteffectiveuserid": False,
