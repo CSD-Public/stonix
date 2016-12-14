@@ -560,9 +560,10 @@ class RuleDictionary ():
         self.validrulefiles = []
         self.modulenames = []
         self.classnames = []
-        print "\n\t\t" + str(self.rulesPath) + "\n"
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "\n\t\t" + str(self.rulesPath) + "\n")
         rulefiles = os.listdir(str(self.rulesPath))
-        print "rulefiles: " + str(rulefiles)
+        self.logdispatch.log(LogPriority.DEBUG, "rulefiles: " + str(rulefiles))
         for rfile in rulefiles:
             rule_class = None
             if rfile in self.initlist or re.search(".+pyc$", rfile):
@@ -573,7 +574,6 @@ class RuleDictionary ():
                 ruleclassname = 'src.stonix_resources.rules.' + rulename
                 ruleclasspath = self.rulesPath + rulefilename
                 rulemoduleimportstring = ruleclassname
-                ruleinstanciatecommand = "rule_class = mod." + rulename
 
                 LOGGER.log(LogPriority.DEBUG, "------------")
                 LOGGER.log(LogPriority.DEBUG, "\n\trulename: " +
@@ -588,8 +588,6 @@ class RuleDictionary ():
                                               str(rulefilename))
                 LOGGER.log(LogPriority.DEBUG, "\trulemoduleimportstring: " +
                                               str(rulemoduleimportstring))
-                LOGGER.log(LogPriority.DEBUG, "ruleinstanciatecommand: " +
-                                              str(ruleinstanciatecommand))
                 LOGGER.log(LogPriority.DEBUG, "\tpwd: " + str(os.getcwd()))
                 LOGGER.log(LogPriority.DEBUG, "------------")
 
@@ -635,9 +633,6 @@ class RuleDictionary ():
                 LOGGER.log(LogPriority.DEBUG,
                            "\tunittestmoduleimportstring: " +
                            str(unittestmoduleimportstring))
-                LOGGER.log(LogPriority.DEBUG,
-                           "\tunittestinstanciatecommand: " +
-                           str(unittestinstanciatecommand))
                 LOGGER.log(LogPriority.DEBUG, "\tpwd: " + str(os.getcwd()))
                 LOGGER.log(LogPriority.DEBUG, "------------")
 
@@ -648,8 +643,6 @@ class RuleDictionary ():
                 self.ruledictionary[rulename]["rulefilename"] = rulefilename
                 self.ruledictionary[rulename]["rulemoduleimportstring"] = \
                     rulemoduleimportstring
-                self.ruledictionary[rulename]["ruleinstanciatecommand"] = \
-                    ruleinstanciatecommand
                 self.ruledictionary[rulename]["ruleobject"] = None
                 self.ruledictionary[rulename]["ruleisapplicable"] = True
                 self.ruledictionary[rulename]["rulecorrecteffectiveuserid"] = \
@@ -670,24 +663,11 @@ class RuleDictionary ():
                 self.ruledictionary[rulename]["unittestobject"] = None
                 self.ruledictionary[rulename]["unittestfound"] = False
                 self.ruledictionary[rulename]["errormessage"] = []
-                '''
-                print "\ntest: " + str(self.ruledictionary[rulename]) + "\n"
-
-                print "\n\n\t" + os.getcwd()
-
-                for key in self.ruledictionary[rulename]:
-                    print "\t" + str(key) + " => " + str(self.ruledictionary[rulename][key])
-                print "\n\n"
-                '''
 
                 try:
-                    # A = "dot" path to the library we want to import from
-                    # B = Module inside library we want to import
-                    # basically perform a "from A import B
+                    # "from ruleclassname import rulename"
                     mod = __import__(ruleclassname, fromlist=[rulename])
-                    # Add the import to a list, to later "map" to a test suite
                     self.ruleList.append(mod)
-
                 except Exception:
                     trace = traceback.format_exc()
                     messagestring = "Error importing rule: " + rulename + " " + \
@@ -695,9 +675,8 @@ class RuleDictionary ():
                     self.ruledictionary[rulename]["errormessage"].append(messagestring)
                     self.logdispatch.log(LogPriority.ERROR, messagestring)
                     continue
-
                 try:
-                    exec(ruleinstanciatecommand)
+                    exec("rule_class = mod." + rulename)
                 except Exception:
                     trace = traceback.format_exc()
                     messagestring = "Error importing rule: " + rulename + " " + \
