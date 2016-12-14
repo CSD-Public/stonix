@@ -513,40 +513,39 @@ class RuleDictionary ():
         runit = []
         rnetwork = []
         rinteractive = []
-        test = ""
 
         if self.rule and self.unit:
             try:
                 testpath = self.realpath + "/src/tests/rules/unit_tests"
                 runit = os.listdir(testpath)
             except Exception, err:
-                print "Exception: " + str(err)
+                self.logdispatch.log(LogPriority.ERROR,
+                                     "Exception: " + str(err))
 
         if self.rule and self.network:
             try:
                 testpath = self.realpath + "/src/tests/rules/network_tests"
                 rnetwork = os.listdir(testpath)
             except Exception, err:
-                print "Exception: " + str(err)
+                self.logdispatch.log(LogPriority.ERROR,
+                                     "Exception: " + str(err))
 
         if self.rule and self.interactive:
             try:
                 testpath = self.realpath + "/src/tests/rules/interactive_tests"
                 rinteractive = os.listdir(testpath)
             except Exception, err:
-                print "Exception: " + str(err)
+                self.logdispatch.log(LogPriority.ERROR,
+                                     "Exception: " + str(err))
 
-        for test in runit:
-            if re.search("zzz.*.py$", test):
-                applicable_tests.append(test)
-        for test in rnetwork:
-            if re.search("zzz.*.py$", test):
-                applicable_tests.append(test)
-        for test in rinteractive:
+        allTests = runit + rnetwork + rinteractive
+        for test in allTests:
             if re.search("zzz.*.py$", test):
                 applicable_tests.append(test)
 
-        print "leaving conglomeration of tests: " + str(applicable_tests)
+        self.logdispatch.log(LogPriority.DEBUG,
+                             "RuleDictionary.getRuleFileNames " +
+                             "returning tests: " + str(applicable_tests))
         return applicable_tests
 
     def initializeRuleInfo(self):
