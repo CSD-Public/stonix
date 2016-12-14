@@ -278,7 +278,13 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         'Running in ' + self.mode)
         starttime = time.time()
-        allrules = self.getrules(self.config, self.environ)
+        #####
+        # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
+        # process rules accordingly
+        if hasattr(sys, 'frozen'):
+            allrules = self.getRulesFrozen()
+        else:
+            allrules = self.getrules(self.config, self.environ)
         etime = time.time() - starttime
         self.logger.log(LogPriority.DEBUG,
                         'Rules Processed in ' + str(etime))
@@ -324,9 +330,6 @@ class Controller(Observable):
         validrulefiles = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
-        scriptPath = self.environ.get_script_path()
-        self.logger.log(LogPriority.DEBUG,
-                        ['Script Path:', str(scriptPath)])
         stonixPath = self.environ.get_resources_path()
         self.logger.log(LogPriority.DEBUG,
                         ['STONIX Path:', str(stonixPath)])
@@ -334,11 +337,12 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         ['Rules Path:', str(rulesPath)])
 
-        sys.path.append('./stonix4mac')
-        sys.path.append('./stonix4mac/rules')
-        sys.path.append(scriptPath)
         sys.path.append(stonixPath)
         sys.path.append(rulesPath)
+
+        for path in sys.path:
+            self.logger.log(LogPriority.DEBUG,
+                            ['Sys Path Element:', str(path)])
 
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
@@ -364,7 +368,7 @@ class Controller(Observable):
         classnames = []
         for module in modulenames:
             module = module.split("/")[-1]
-            #self.logger.log(LogPriority.DEBUG, "Listing module: " + str(module))
+            # print module
             classname = 'stonix_resources.rules.' + module + '.' + module
             classnames.append(classname)
 
@@ -376,46 +380,28 @@ class Controller(Observable):
             parts = cls.split(".")
             # the module is the class less the last element
             module = ".".join(parts[:-1])
-            cls2load = parts[-1]
-
             # Using the __import__ built in function to import the module
             # since our names are only known at runtime.
             self.logger.log(LogPriority.DEBUG,
                             'Attempting to load: ' + module)
-            rule_file = None
             try:
-                #####
-                # NOTE: the use of the imp library should be changed to us
-                # importlib functionality when migrating to python 3.3 or highe
-                # this method of import will load the module off the filesystem
-                # whether or not the app is frozen with pyinstaller or friends..
-                mod = imp.load_source(module, scriptPath + 
-                                      "/" + "/".join(module.split(".")) + ".py")
-                #
-                #fp, pathname, description = imp.find_module(module)
-                #mod = imp.load_module(module, fp, pathname, description)
-            except ImportError:
-                #trace = traceback.format_exc()
-                #self.logger.log(LogPriority.ERROR,
-                #                "Error importing rule: " + trace)
-                continue
-            except Exception, err:
-                #self.logger.log(LogPriority, traceback.format_exc())
-                raise err
-            finally:
-                if rule_file:
-                    rule_file.close()
-            
-            # 
-            #  instantiate using the reference.
-            try:
-                mod = getattr(mod, cls2load)
+                mod = __import__(module)
             except Exception:
-                #trace = traceback.format_exc()
-                #self.logger.log(LogPriority.ERROR,
-                #                "Error finding rule class reference: "
-                #                + trace)
+                trace = traceback.format_exc()
+                self.logger.log(LogPriority.ERROR,
+                                "Error importing rule: " + trace)
                 continue
+            # Recurse down the class name until we get a reference to the class
+            # itself. Then we instantiate using the reference.
+            for component in parts[1:]:
+                try:
+                    mod = getattr(mod, component)
+                except Exception:
+                    trace = traceback.format_exc()
+                    self.logger.log(LogPriority.ERROR,
+                                    "Error finding rule class reference: "
+                                    + trace)
+                    continue
             try:
                 clinst = mod(config, environ, self.logger, self.statechglogger)
                 instruleclasses.append(clinst)
@@ -426,10 +412,47 @@ class Controller(Observable):
             # User initiated exit
                 raise
             except Exception:
-                #trace = traceback.format_exc()
-                #self.logger.log(LogPriority.ERROR,
+                trace = traceback.format_exc()
+                self.logger.log(LogPriority.ERROR,
+                                "Error instantiating rule: " + trace)
                 continue
-        print instruleclasses
+        # print instruleclasses
+        return instruleclasses
+
+    def getRulesFrozen(self):
+        """
+        Acquire rules from a frozen python application, such as one created
+        with PyInstaller.  A stonix_resources.rules.__init__ must be generated
+        with import statements importing all of the current rules prior to 
+        packaging with pyinstaller or other 'freezing' mechanism.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        #allRules = []
+        instruleclasses = []
+
+        #####
+        # Search through the already imported libraries for stonix rules
+        for item in sys.modules.keys():
+            if re.match("stonix_resources\.rules\.", item):
+                #allRules.append(item)
+                #####
+                # Get just the rule name
+                ruleClass = item.split('.')[2]
+                #####
+                # Acquire the rule class module 
+                ruleClassMod = getattr(sys.modules[item], ruleClass)
+                #####
+                # Create an instance of a rule class
+                ruleClassInst = ruleClassMod(self.config,
+                                             self.environ,
+                                             self.logger,
+                                             self.statechglogger)
+                #####
+                # Append the instance to the list
+                instruleclasses.append(ruleClassInst)
+
         return instruleclasses
 
     def findapplicable(self, rules):
