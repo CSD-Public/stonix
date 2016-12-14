@@ -410,7 +410,6 @@ class RuleDictionary ():
     @change: 2015-02-25 - ekkehard - Original Implementation
     '''
     def __init__(self, rule=True, unit=True, network=True, interactive=True):
-        self.framework = framework
         self.rule = rule
         self.unit = unit
         self.network = network
@@ -449,7 +448,6 @@ class RuleDictionary ():
 
     def print_inputs(self):
         print "\n###==-     -==###"
-        print "framework: " + str(self.framework)
         print "rule     : " + str(self.rule)
         print "unit     : " + str(self.unit)
         print "network  : " + str(self.network)
