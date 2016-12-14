@@ -12,7 +12,7 @@ class ViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        self.view.window!.title = "stonix4mac"
         // Do any additional setup after loading the view.
     }
 
@@ -22,6 +22,11 @@ class ViewController: NSViewController {
         }
     }
 
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        self.view.window!.title = "stonix4mac"
+    }
+    
     @IBAction func userAction(_ sender: NSButton) {
         let path = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix"
         let arguments = ["-d"]
