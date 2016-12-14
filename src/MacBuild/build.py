@@ -353,11 +353,14 @@ class SoftwareBuilder():
 
             self.postCompile(self.STONIX, self.tmphome + "/src/MacBuild/")
 
+            self.preCompile(self.STONIX4MAC, self.tmphome + "/src/MacBuild/")
+
             #####
             # Process stonix4mac
             self.compile(self.STONIX4MAC, self.STONIX4MACVERSION,
                             self.STONIX4MACICON, self.tmphome + "/src/MacBuild/" + \
                             self.STONIX4MAC)
+
             #####
             # Create the installer
             self.makeInstaller(self.STONIX4MAC, self.STONIXVERSION, self.tmphome + \
@@ -487,8 +490,12 @@ class SoftwareBuilder():
                 print str(output)
             elif appName == 'stonix4mac':
                 #####
-                # No precompile currently needed
-                pass
+                # Change the Info.plist with the new version string
+                plist = self.tmphome + "/src/MacBuild/" + appName + "/" + appName + "/Info.plist"
+    
+                # Change version string of the app
+                print "Changing .app version string..."
+                self.mbl.modplist(plist, "CFBundleShortVersionString", self.APPVERSION)
             os.chdir(returnDir)
         except:
             print traceback.format_exc()
@@ -517,7 +524,7 @@ class SoftwareBuilder():
             #####
             # Determine compile type - ie: xcodebuild vs pyinstaller
             if appName == "stonix4mac":
- 
+
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
@@ -527,7 +534,7 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
-                
+
                 if self.keypass:
                     #####
                     # Get a translated password
@@ -552,7 +559,6 @@ class SoftwareBuilder():
                     self.rw.setCommand(cmd)
                     workingDir = os.getcwd()
                     self.rw.liftDown(self.keyuser, appPath)
-                    
 
             elif appName == "stonix":
                 #####
@@ -570,7 +576,6 @@ class SoftwareBuilder():
                 # to compile a pyinstaller spec file for app creation:
                 print "Creating a pyinstaller spec file for the project..."
 
-
                 stonix_hooks_path = "./additional_hooks/runtime_hooks"
                 stonix_runtime_hooks = stonix_hooks_path + '/stonix_resrouces.py'
 
@@ -579,16 +584,7 @@ class SoftwareBuilder():
                                               pathex=["/usr/lib", "./stonix_resources/rules", "stonix_resources"] + self.PYPATHS,
                                               specpath=os.getcwd(),
                                               hiddenImports=hdnimports)
-#                                              runtime_hooks=["pyi_rth_stonix_resources.py"])
-                '''
-                output =  self.mbl.pyinstMakespec([appName + ".py"], True, False, False,
-                                              "../" + appIcon + ".icns",
-                                              pathex=["/usr/lib", 
-                                                      "stonix_resources/rules:",
-                                                      "stonix_resources"] + self.PYPATHS,
-                                              specpath=os.getcwd())
-                
-                '''
+
                 print output
                 # to build:
                 print "Building the app..."
@@ -597,35 +593,7 @@ class SoftwareBuilder():
                                      appPath + "/dist", 
                                      True, 
                                      True)
-    
-                plist = self.tmphome + "/src/MacBuild/stonix" + "/dist/" + appName + ".app/Contents/Info.plist"
-    
-                # Change version string of the app
-                print "Changing .app version string..."
-                self.mbl.modplist(plist, "CFBundleShortVersionString", appVersion)
-    
-                # Change icon name in the app
-                print "Changing .app icon..."
-                self.mbl.modplist(plist, "CFBundleIconFile", appIcon + ".icns")
-    
-                # Copy icons to the resources directory
-                copy2("../" + appIcon + ".icns",
-                      "./dist/" + appName + ".app/Contents/Resources")
-    
-                # Change mode of Info.plist to 0755
-                os.chmod(plist, 0o755)
 
-                #####
-                # Copy the stonix_resources directory into the 
-                # stonix.app/Contents/MacOS directory
-                rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
-                         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-                         "--exclude=\".git*\"", "stonix_resources", 
-                         "dist/stonix.app/Contents/MacOS"]
-                output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
-                print output
-                self.libc.sync()
-                self.libc.sync()
         except Exception:
             raise
         finally:
@@ -636,7 +604,7 @@ class SoftwareBuilder():
     def postCompile(self, appName, prepPath):
         '''
         Perform post-compile processing.
-        
+
         @author: Eric Ball, Roy Nielsen
         '''
         print "Started postCompile..."
@@ -647,6 +615,36 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, "Starting stonix postCompile.")
                 returnDir = os.getcwd()
                 os.chdir(prepPath)
+                plist = self.tmphome + "/src/MacBuild/stonix" + "/dist/" + appName + ".app/Contents/Info.plist"
+    
+                # Change version string of the app
+                print "Changing .app version string..."
+                self.mbl.modplist(plist, "CFBundleShortVersionString", self.APPVERSION)
+    
+                # Change icon name in the app
+                print "Changing .app icon..."
+                self.mbl.modplist(plist, "CFBundleIconFile", self.STONIXICON + ".icns")
+    
+                # Copy icons to the resources directory
+                copy2(self.tmphome + "/src/MacBuild/" + self.STONIXICON + ".icns",
+                      self.tmphome + "/src/MacBuild/stonix/dist/" + appName + ".app/Contents/Resources")
+    
+                # Change mode of Info.plist to 0o664
+                os.chmod(plist, 0o664)
+
+                #####
+                # Copy the stonix_resources directory into the 
+                # stonix.app/Contents/MacOS directory
+                rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
+                         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                         "--exclude=\".git*\"", self.tmphome + \
+                         "/src/stonix_resources", 
+                         self.tmphome + "/src/MacBuild/stonix" + "/dist/" + \
+                         appName + ".app/Contents/MacOS"]
+                output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
+                print output
+                self.libc.sync()
+                self.libc.sync()
                 #####
                 # Copy stonix.app to the stonix4mac directory
                 rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
