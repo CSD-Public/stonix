@@ -12,7 +12,6 @@ class ViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.window!.title = "stonix4mac"
         // Do any additional setup after loading the view.
     }
 
