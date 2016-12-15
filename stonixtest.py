@@ -409,8 +409,7 @@ class RuleDictionary ():
     @note: None
     @change: 2015-02-25 - ekkehard - Original Implementation
     '''
-    def __init__(self, rule=True, unit=True, network=True, interactive=True):
-        self.rule = rule
+    def __init__(self, unit=True, network=True, interactive=True):
         self.unit = unit
         self.network = network
         self.interactive = interactive
@@ -448,7 +447,6 @@ class RuleDictionary ():
 
     def print_inputs(self):
         print "\n###==-     -==###"
-        print "rule     : " + str(self.rule)
         print "unit     : " + str(self.unit)
         print "network  : " + str(self.network)
         print "interactive: " + str(self.interactive)
@@ -514,7 +512,7 @@ class RuleDictionary ():
         rnetwork = []
         rinteractive = []
 
-        if self.rule and self.unit:
+        if self.unit:
             try:
                 testpath = self.realpath + "/src/tests/rules/unit_tests"
                 runit = os.listdir(testpath)
@@ -522,7 +520,7 @@ class RuleDictionary ():
                 self.logdispatch.log(LogPriority.ERROR,
                                      "Exception: " + str(err))
 
-        if self.rule and self.network:
+        if self.network:
             try:
                 testpath = self.realpath + "/src/tests/rules/network_tests"
                 rnetwork = os.listdir(testpath)
@@ -530,7 +528,7 @@ class RuleDictionary ():
                 self.logdispatch.log(LogPriority.ERROR,
                                      "Exception: " + str(err))
 
-        if self.rule and self.interactive:
+        if self.interactive:
             try:
                 testpath = self.realpath + "/src/tests/rules/interactive_tests"
                 rinteractive = os.listdir(testpath)
@@ -686,11 +684,11 @@ class RuleDictionary ():
                                          + trace)
                     continue
                 try:
-                    self.rule = rule_class(self.config,
-                                           self.environ,
-                                           self.logdispatch,
-                                           self.statechglogger)
-                    self.ruledictionary[rulename]["ruleobject"] = self.rule
+                    self.ruledictionary[rulename]["ruleobject"] = \
+                        rule_class(self.config,
+                                   self.environ,
+                                   self.logdispatch,
+                                   self.statechglogger)
                 except Exception:
                     trace = traceback.format_exc()
                     messagestring = "Error initializing rule: " + rulename + \
@@ -1102,7 +1100,6 @@ def assemble_list_suite(modules=[]):
     @author: Roy Nielsen
     """
     testList = []
-
     # - if modules list is passed in
     if modules and isinstance(modules, list):
         # loop through list
@@ -1243,7 +1240,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     if rule:
 
         # Build the full rule dictionary
-        ruleDictionary = RuleDictionary(rule, unit, network, interactive)
+        ruleDictionary = RuleDictionary(unit, network, interactive)
 
         # Iterate through rules
         ruleDictionary.gotoFirstRule()
