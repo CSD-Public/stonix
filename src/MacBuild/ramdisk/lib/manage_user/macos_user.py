@@ -12,6 +12,7 @@ import re
 import os
 import pty
 import sys
+import time
 import shutil
 from subprocess import Popen
 
@@ -321,6 +322,120 @@ class MacOSUser(ParentManageUser):
 
     #----------------------------------------------------------------------
 
+    def accountCreationTime(self, userName=""):
+        """
+        """
+        userInfo = False
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "creationTime")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+            else:
+                epochtime = userInfo
+                timestring = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(epochtime))
+                userInfo = [epochtime, timestring]
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def failedLoginCount(self, userName=""):
+        """
+        """
+        userInfo = False
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "failedLoginCount")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def failedLoginTimestamp(self, userName=""):
+        """
+        """
+        userInfo = False
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "failedLoginTimestamp")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+            else:
+                epochtime = userInfo
+                timestring = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(epochtime))
+                userInfo = [epochtime, timestring]
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def passwordLastSetTime(self, userName=""):
+        """
+        """
+        userInfo = False
+        
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "passwordLastSetTime")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+            else:
+                epochtime = userInfo
+                timestring = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                           time.localtime(epochtime))
+                userInfo = [epochtime, timestring]
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def isAuthenticationAllowed(self, userName=""):
+        """
+        """
+        userInfo = False
+        
+        if self.isSaneUserName(userName):
+            self.runWith.setCommand(["/usr/bin/pwpolicy", "-u", str(username),
+                                     "-authentication-allowed"])
+            output, error, retcode = self.runWith.communicate()
+            
+            self.logger.log(lp.DEBUG, "Output: " + str(output.strip()))
+            
+            userInfo = output
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+            
+        return userInfo
+
+    #----------------------------------------------------------------------
+
     def validateUser(self, userName=False, userShell=False, userComment=False,
                      userUid=False, userPriGid=False, userHomeDir=False):
         """
@@ -375,6 +490,8 @@ class MacOSUser(ParentManageUser):
             sane = False
 
         return sane
+
+    #----------------------------------------------------------------------
 
     def authenticate(self, user="", password=""):
         """
