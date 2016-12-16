@@ -409,7 +409,7 @@ class RuleDictionary ():
     @note: None
     @change: 2015-02-25 - ekkehard - Original Implementation
     '''
-    def __init__(self, unit=True, network=True, interactive=True):
+    def __init__(self, unit=True, network=True, interactive=True, modules=[]):
         self.unit = unit
         self.network = network
         self.interactive = interactive
@@ -441,8 +441,8 @@ class RuleDictionary ():
         self.dictinaryItem = None
         self.realpath = os.path.dirname(os.path.realpath(__file__))
         self.rulesPath = self.realpath + "/src/stonix_resources/rules/"
-        self.initializeRuleInfo()
-        self.initializeRuleUnitTestData()
+        self.initializeRuleInfo(modules)
+        #self.initializeRuleUnitTestData()
         self.initializeRuleContextData()
 
     def print_inputs(self):
@@ -546,7 +546,7 @@ class RuleDictionary ():
                              "returning tests: " + str(applicable_tests))
         return applicable_tests
 
-    def initializeRuleInfo(self):
+    def initializeRuleInfo(self, modules):
         '''
         Fill in all the rule information
         @author: ekkehard j. koch
@@ -561,6 +561,24 @@ class RuleDictionary ():
         self.logdispatch.log(LogPriority.DEBUG,
                              "\n\t\t" + str(self.rulesPath) + "\n")
         rulefiles = os.listdir(str(self.rulesPath))
+        if modules:
+            modRules = {}
+            rfilesTemp = []
+            for mod in modules:
+                if re.search("zzzTestRule", mod):
+                    try:
+                        modRules[mod] = mod[11:]
+                    except IndexError:
+                        self.logdispatch.log(LogPriority.ERROR,
+                                             "IndexError during rule init")
+                        continue
+                    rfilename = modRules[mod] + ".py"
+                    if rfilename in modules:
+                        rfilesTemp.append(rfilename)
+                    else:
+                        self.logdispatch.log(LogPriority.WARNING, rfilename +
+                                             " not found in rule files")
+            rulefiles = rfilesTemp
         self.logdispatch.log(LogPriority.DEBUG, "rulefiles: " + str(rulefiles))
         for rfile in rulefiles:
             rule_class = None
@@ -589,6 +607,19 @@ class RuleDictionary ():
                 LOGGER.log(LogPriority.DEBUG, "\tpwd: " + str(os.getcwd()))
                 LOGGER.log(LogPriority.DEBUG, "------------")
 
+                self.initializeDictoniaryItem(rulename)
+                self.ruledictionary[rulename]["rulename"] = rulename
+                self.ruledictionary[rulename]["ruleclassname"] = ruleclassname
+                self.ruledictionary[rulename]["ruleclasspath"] = ruleclasspath
+                self.ruledictionary[rulename]["rulefilename"] = rulefilename
+                self.ruledictionary[rulename]["rulemoduleimportstring"] = \
+                    rulemoduleimportstring
+                self.ruledictionary[rulename]["ruleobject"] = None
+                self.ruledictionary[rulename]["ruleisapplicable"] = True
+                self.ruledictionary[rulename]["rulecorrecteffectiveuserid"] = \
+                    True
+                self.ruledictionary[rulename]["rulefound"] = True
+
                 if os.path.isfile("src/tests/rules/unit_tests/" +
                                   self.unittestprefix + str(rulefilename)):
                     class_prefix = "src.tests.rules.unit_tests."
@@ -611,6 +642,10 @@ class RuleDictionary ():
                 unittestname = self.unittestprefix + rulename
                 unittestfilename = self.unittestprefix + rfile
                 unittestclasspath = self.unittestpath + unittestfilename
+                if os.path.exists(unittestclasspath):
+                    self.ruledictionary[rulename]["unittestfound"] = True
+                else:
+                    self.ruledictionary[rulename]["unittestfound"] = False
 
                 unittestclassname = class_prefix + unittestname
                 unittestmoduleimportstring = unittestclassname
@@ -634,19 +669,6 @@ class RuleDictionary ():
                 LOGGER.log(LogPriority.DEBUG, "\tpwd: " + str(os.getcwd()))
                 LOGGER.log(LogPriority.DEBUG, "------------")
 
-                self.initializeDictoniaryItem(rulename)
-                self.ruledictionary[rulename]["rulename"] = rulename
-                self.ruledictionary[rulename]["ruleclassname"] = ruleclassname
-                self.ruledictionary[rulename]["ruleclasspath"] = ruleclasspath
-                self.ruledictionary[rulename]["rulefilename"] = rulefilename
-                self.ruledictionary[rulename]["rulemoduleimportstring"] = \
-                    rulemoduleimportstring
-                self.ruledictionary[rulename]["ruleobject"] = None
-                self.ruledictionary[rulename]["ruleisapplicable"] = True
-                self.ruledictionary[rulename]["rulecorrecteffectiveuserid"] = \
-                    True
-                self.ruledictionary[rulename]["rulefound"] = True
-
                 self.ruledictionary[rulename]["unittestname"] = unittestname
                 self.ruledictionary[rulename]["unittestclassname"] = \
                     unittestclassname
@@ -659,7 +681,6 @@ class RuleDictionary ():
                 self.ruledictionary[rulename]["unittestinstanciatecommand"] = \
                     unittestinstanciatecommand
                 self.ruledictionary[rulename]["unittestobject"] = None
-                self.ruledictionary[rulename]["unittestfound"] = False
                 self.ruledictionary[rulename]["errormessage"] = []
 
                 try:
@@ -674,6 +695,11 @@ class RuleDictionary ():
                     self.logdispatch.log(LogPriority.ERROR, messagestring)
                     continue
                 try:
+                    # To dynamically instantiate rules without having their
+                    # class names, we use exec to instantiate based on a string
+                    # E.g. rule_class = mod.AuditFirefoxUsage
+                    # In this way, instantiating rule_class(...) is equivalent
+                    # to AuditFirefoxUsage(...)
                     exec("rule_class = mod." + rulename)
                 except Exception:
                     trace = traceback.format_exc()
@@ -1100,6 +1126,7 @@ def assemble_list_suite(modules=[]):
     @author: Roy Nielsen
     """
     testList = []
+    ruleDictionary = RuleDictionary(unit, network, interactive)
     # - if modules list is passed in
     if modules and isinstance(modules, list):
         # loop through list
@@ -1229,7 +1256,7 @@ def assemble_list_suite(modules=[]):
 
 
 def assemble_suite(framework=True, rule=True, utils=True, unit=True,
-                   network=True, interactive=False):
+                   network=True, interactive=False, modules=[]):
     '''
     This sets up the test suite
     @author: ekkehard j. koch
@@ -1238,9 +1265,8 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     testList = []
 
     if rule:
-
         # Build the full rule dictionary
-        ruleDictionary = RuleDictionary(unit, network, interactive)
+        ruleDictionary = RuleDictionary(unit, network, interactive, modules)
 
         # Iterate through rules
         ruleDictionary.gotoFirstRule()
