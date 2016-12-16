@@ -36,6 +36,7 @@ RHEL 7
 @change: 2016/10/06 dkennel Updates service lists and minor hacking to support
 ubuntu 16.04.
 @change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
+@change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
 '''
 from __future__ import absolute_import
 
@@ -289,6 +290,8 @@ administrators may want to disable this rule.
                                'ldconfig.service',
                                'lightdm.service',
                                'lightdm',
+                               'lvm2-activation.service',
+                               'lvm2-activation-early.service',
                                'lvm2-monitor.service',
                                'mcelog',
                                'mcelog.service', 'mdmonitor-takeover.service',
