@@ -619,3 +619,20 @@ class MacBuildLib(object):
         os.chdir(returnDir)
 
         return success
+
+    def buildPackageInit(self, builderScpt="", pkgLocation=''):
+        '''
+        Create an init for a package that contains basic imports for all of the
+        files in the package.  Written to support including normally dynamically
+        loaded modules in a frozen python module.
+        
+        @author: Roy Nielsen
+        '''
+        try:
+            cmd = [builderScpt, "-d", "-p", pkgLocation]
+            stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
+        except Exception, err:
+            trace = traceback.format_exc()
+            print str(trace)
+            raise err
+
