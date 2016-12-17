@@ -308,8 +308,7 @@ class MacOSUser(ParentManageUser):
         """
         self.logger.log(lp.DEBUG, "U: " + str(userName))
         self.logger.log(lp.DEBUG, "G: " + str(groupName))
-        
-        
+
         success = False
         if self.isSaneUserName(userName) and self.isSaneGroupName(groupName):
             output = self.getDscl(".", "-read", "/Groups/" + groupName, "users")
@@ -422,7 +421,7 @@ class MacOSUser(ParentManageUser):
         userInfo = False
         
         if self.isSaneUserName(userName):
-            self.runWith.setCommand(["/usr/bin/pwpolicy", "-u", str(username),
+            self.runWith.setCommand(["/usr/bin/pwpolicy", "-u", str(userName),
                                      "-authentication-allowed"])
             output, error, retcode = self.runWith.communicate()
             
@@ -918,7 +917,7 @@ class MacOSUser(ParentManageUser):
 
     #----------------------------------------------------------------------
 
-    def getDscl(self, directory="", action="", dirobj="", dirprop=""):
+    def getDscl(self, directory="", action="", dirobj="", dirprop="", subprop=""):
         """
         Using dscl to retrieve a value from the directory
 
@@ -950,7 +949,10 @@ class MacOSUser(ParentManageUser):
         #####
         # Now do the directory lookup.
         if success:
-            cmd = [self.dscl, directory, action, dirobj, dirprop]
+            if directory and action and dirobj and dirprop and subprop:
+                cmd = [self.dscl, directory, action, dirobj, dirprop, subprop]
+            else:
+                cmd = [self.dscl, directory, action, dirobj, dirprop]
 
             self.runWith.setCommand(cmd)
             self.runWith.communicate()
