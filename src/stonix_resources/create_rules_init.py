@@ -112,15 +112,21 @@ if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-d", "--debug", action="store_true", dest="debug",
                       default=False, help="debug mode, on or off.  Default off.")
+    parser.add_option("-p", "--pkg-path", action="store_true", dest="pkgPath",
+                      default=False, help="debug mode, on or off.  Default off.")
     options, __ = parser.parse_args()
     #####
     # Instanciate and initialize a logger
     logger = CyLogger(debug_mode=options.debug)
     logger.initializeLogs()
+    
     #####
     # Get the path to the rules directory
-    pathToRules = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
-    #print pathToRules
+    if not pkgPath:
+        pkgPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
+    else:
+        pathToRules = options.pkgPath
+    
     #####
     # Run the controller for this script
     writeInit(pathToRules, logger)

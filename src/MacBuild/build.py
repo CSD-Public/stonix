@@ -481,12 +481,24 @@ class SoftwareBuilder():
                 #copy2(self.tmphome + "/src/__init__.py", self.tmphome + "/src/MacBuild/stonix")
                 #copy2(self.tmphome + "/src/MacBuild/pyi_rth_stonix_resources.py", self.tmphome + "/src/MacBuild/stonix")
                 
+                #####
+                # Sync the stonix_resources directory, ready for the build.
                 rsync = [self.RSYNC, "-ap", "--exclude=\".svn\"",
                          "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
                          "--exclude=\".git*\"",
                          self.tmphome + "/src/stonix_resources",
                          self.tmphome + "/src/MacBuild/stonix"]
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
+                
+                #####
+                # Build an __init__.py for the rules directory with all of the
+                # rules imported, so they get included in the python frozen
+                # package
+                self.mbl.buildPackageInit(self.tmphome + \
+                                          "/src/Macbuild/stonix/stonix_resources/create_rules_init.py",
+                                          self.tmphome + \
+                                          "/src/MacBuild/stonix/stonix_resrouces/rules")
+
                 print str(output)
             elif appName == 'stonix4mac':
                 #####
@@ -616,11 +628,11 @@ class SoftwareBuilder():
                 returnDir = os.getcwd()
                 os.chdir(prepPath)
                 plist = self.tmphome + "/src/MacBuild/stonix" + "/dist/" + appName + ".app/Contents/Info.plist"
-    
+
                 # Change version string of the app
                 print "Changing .app version string..."
                 self.mbl.modplist(plist, "CFBundleShortVersionString", self.APPVERSION)
-    
+
                 # Change icon name in the app
                 print "Changing .app icon..."
                 self.mbl.modplist(plist, "CFBundleIconFile", self.STONIXICON + ".icns")
