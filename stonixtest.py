@@ -159,7 +159,7 @@ class test_rules_and_unit_test():
 
 class FrameworkDictionary():
 
-    def __init__(self):
+    def __init__(self, modules=[]):
         self.unittestprefix = 'zzzTestFramework'
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
         # logger & environ - a global variable that has applicable verbose and
@@ -184,7 +184,7 @@ class FrameworkDictionary():
         self.keyIndexNumber = 0
         self.keysNumberOf = 0
         self.dictinaryItem = None
-        self.initializeDictionary()
+        self.initializeDictionary(modules)
 
     def gotoFirstItem(self):
         self.keyIndexNumber = 0
@@ -222,7 +222,7 @@ class FrameworkDictionary():
     def getFrameworkList(self):
         return self.frameworkdictionary
 
-    def initializeDictionary(self):
+    def initializeDictionary(self, modules):
         '''
         Fill in all the rule information
         @author: ekkehard j. koch
@@ -240,7 +240,8 @@ class FrameworkDictionary():
         for mydir in testdirs:
             rulefiles = os.listdir(str(mydir))
             for rfile in rulefiles:
-                if re.search(self.unittestprefix + ".*\.py$", rfile):
+                if (modules and rfile[:-3] in modules) or (not modules and
+                   re.search(self.unittestprefix + ".*\.py$", rfile)):
                     modulename = rfile.replace('.py', '')
                     if modulename.startswith(self.unittestprefix):
                         self.initializeDictoniaryItem(modulename)
@@ -284,7 +285,7 @@ class FrameworkDictionary():
 
 class UtilsDictionary():
 
-    def __init__(self):
+    def __init__(self, modules=[]):
         self.unittestprefix = 'zzzTestUtils'
         self.initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
         # logger & environ - a global variable that has applicable verbose and
@@ -307,7 +308,7 @@ class UtilsDictionary():
         self.keyIndexNumber = 0
         self.keysNumberOf = 0
         self.dictinaryItem = None
-        self.initializeDictionary()
+        self.initializeDictionary(modules)
 
     def gotoFirstItem(self):
         self.keyIndexNumber = 0
@@ -345,7 +346,7 @@ class UtilsDictionary():
     def getFrameworkList(self):
         return self.utilsDictionary
 
-    def initializeDictionary(self):
+    def initializeDictionary(self, modules):
         '''
         Fill in all the rule information
         @author: ekkehard j. koch
@@ -363,7 +364,8 @@ class UtilsDictionary():
         for mydir in testdirs:
             rulefiles = os.listdir(str(mydir))
             for rfile in rulefiles:
-                if re.search(self.unittestprefix + ".*\.py$", rfile):
+                if (modules and rfile[:-3] in modules) or (not modules and
+                   re.search(self.unittestprefix + ".*\.py$", rfile)):
                     modulename = rfile.replace('.py', '')
                     if modulename.startswith(self.unittestprefix):
                         self.initializeDictoniaryItem(modulename)
@@ -1232,7 +1234,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     @note: Make sure it can handle entire rule scenario
     '''
     testList = []
-    # If using modules, using module names to set test types
+    # If using modules, use module names to set test types
     if modules:
         framework = False
         rule = False
@@ -1294,7 +1296,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     if framework:
 
         # Build the framework dictionary
-        frameworkDictionary = FrameworkDictionary()
+        frameworkDictionary = FrameworkDictionary(modules)
 
         # Iterate through framework Unit Tests
         frameworkDictionary.gotoFirstItem()
@@ -1341,7 +1343,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     if utils:
 
         # Build the framework dictionary
-        utilsDictionary = UtilsDictionary()
+        utilsDictionary = UtilsDictionary(modules)
 
         # Iterate through framework Unit Tests
         utilsDictionary.gotoFirstItem()
