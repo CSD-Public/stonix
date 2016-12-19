@@ -573,7 +573,7 @@ class RuleDictionary ():
                                              "IndexError during rule init")
                         continue
                     rfilename = modRules[mod] + ".py"
-                    if rfilename in modules:
+                    if rfilename in rulefiles:
                         rfilesTemp.append(rfilename)
                     else:
                         self.logdispatch.log(LogPriority.WARNING, rfilename +
@@ -892,7 +892,7 @@ def isCorrectEffectiveUserId(checkRootRequired=9999999):
     if currentId and not checkRootRequired:
         # Matching user mode
         success = True
-    elif not currentId and checkRootRequired:
+    elif not currentId:
         # Matching root mode
         success = True
     LOGGER.log(LogPriority.DEBUG, "Correct user: " + str(success))
@@ -1263,6 +1263,21 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     @note: Make sure it can handle entire rule scenario
     '''
     testList = []
+    # If using modules, using module names to set test types
+    if modules:
+        framework = False
+        rule = False
+        utils = False
+        unit = True
+        network = True
+        interactive = True
+        for module in modules:
+            if re.search("^zzzTestRule", module):
+                rule = True
+            elif re.search("^zzzTestFramework", module):
+                framework = True
+            elif re.search("^zzzTestUtils", module):
+                utils = True
 
     if rule:
         # Build the full rule dictionary
@@ -1281,7 +1296,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
                 ruleDictionary.getCorrectEffectiveUserid()
             ruleIsApplicable = ruleDictionary.getIsApplicable()
 
-            # Make Sure this rule sould be testing
+            # Make Sure this rule should be testing
             if ruleCorrectEffectiveUserid and ruleIsApplicable:
                 try:
                     #####
@@ -1407,7 +1422,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
     # Define a test suite based on the testList.
     suite = unittest.TestSuite(map(load, testList))
 
-    if rule:
+    if rule and not modules:
         # Add the test for every rule and rule for every test... test.
         anotherTest = test_rules_and_unit_test()
         suite.addTests(unittest.makeSuite(anotherTest.getTest()))
@@ -1603,7 +1618,7 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
     # Set Up test suite
     if modules:
         # only process tests passed in via the -m flag
-        testsuite = assemble_list_suite(modules)
+        testsuite = assemble_suite(modules=modules)
     elif consistency:
         #####
         # Define a test suite based on the testList.
