@@ -442,7 +442,6 @@ class RuleDictionary ():
         self.realpath = os.path.dirname(os.path.realpath(__file__))
         self.rulesPath = self.realpath + "/src/stonix_resources/rules/"
         self.initializeRuleInfo(modules)
-        #self.initializeRuleUnitTestData()
         self.initializeRuleContextData()
 
     def print_inputs(self):
@@ -724,36 +723,6 @@ class RuleDictionary ():
                     continue
             else:
                 continue
-        return success
-
-    def initializeRuleUnitTestData(self):
-        '''
-        Fill in all the unit test data
-        @author: ekkehard j. koch
-        @note: None
-        '''
-        success = True
-        messagestring = "--------------------------------- start"
-        self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        ruletestfiles = []
-        for unittestpath in self.unittestpaths:
-            ruletestfiles += os.listdir(str(unittestpath))
-        for rtfile in ruletestfiles:
-            if rtfile in self.initlist:
-                continue
-            elif re.search("\.py$", rtfile):
-                if rtfile.startswith(self.unittestprefix):
-                    unittestmodule = rtfile.replace('.py', '')
-                    module = unittestmodule.replace(self.unittestprefix, "")
-                    if self.findDictonaryItem(module):
-                        self.dictinaryItem["unittestfound"] = True
-                    else:
-                        self.dictinaryItem["rulename"] = module
-                        self.dictinaryItem["rulefound"] = False
-                        self.dictinaryItem["unittestname"] = unittestmodule
-                        self.dictinaryItem["unittestfound"] = True
-                else:
-                    continue
         return success
 
     def initializeRuleContextData(self):
