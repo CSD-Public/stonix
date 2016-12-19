@@ -1255,40 +1255,45 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
         ruleDictionary = RuleDictionary(unit, network, interactive, modules)
 
         # Iterate through rules
-        ruleDictionary.gotoFirstRule()
+        try:
+            ruleDictionary.gotoFirstRule()
+        except IndexError:
+            # IndexErrors will only occur here if the dictionary is empty
+            LOGGER.log(LogPriority.ERROR, "RuleDictionary is empty")
+            rule = False
+        else:
+            while ruleDictionary.getCurrentRuleItem() is not None:
+                # Get Rule Information
+                ruleName = ruleDictionary.getRuleName()
+                ruleTestClassName = ruleDictionary.getTestClassName()
+                ruleNumber = ruleDictionary.getRuleNumber()
+                ruleTestName = ruleDictionary.getTestName()
+                ruleCorrectEffectiveUserid = \
+                    ruleDictionary.getCorrectEffectiveUserid()
+                ruleIsApplicable = ruleDictionary.getIsApplicable()
 
-        while ruleDictionary.getCurrentRuleItem() is not None:
-            # Get Rule Information
-            ruleName = ruleDictionary.getRuleName()
-            ruleTestClassName = ruleDictionary.getTestClassName()
-            ruleNumber = ruleDictionary.getRuleNumber()
-            ruleTestName = ruleDictionary.getTestName()
-            ruleCorrectEffectiveUserid = \
-                ruleDictionary.getCorrectEffectiveUserid()
-            ruleIsApplicable = ruleDictionary.getIsApplicable()
+                # Make Sure this rule should be testing
+                if ruleCorrectEffectiveUserid and ruleIsApplicable:
+                    try:
+                        #####
+                        # A = "dot" path to the library we want to import from
+                        # B = Module inside library we want to import
+                        # basically perform a "from A import B
+                        ruleTestToRun = __import__(ruleTestClassName,
+                                                   fromlist=[ruleTestName])
 
-            # Make Sure this rule should be testing
-            if ruleCorrectEffectiveUserid and ruleIsApplicable:
-                try:
-                    #####
-                    # A = "dot" path to the library we want to import from
-                    # B = Module inside library we want to import
-                    # basically perform a "from A import B
-                    ruleTestToRun = __import__(ruleTestClassName,
-                                               fromlist=[ruleTestName])
+                        #####
+                        # Add the import to a list, to later "map" to a test suite
+                        testList.append(ruleTestToRun)
 
-                    #####
-                    # Add the import to a list, to later "map" to a test suite
-                    testList.append(ruleTestToRun)
-
-                except Exception, err:
-                    LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
-                               str(ruleName) + "(" + str(ruleNumber) +
-                               ") Exception: " + str(err))
-                finally:
+                    except Exception, err:
+                        LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
+                                   str(ruleName) + "(" + str(ruleNumber) +
+                                   ") Exception: " + str(err))
+                    finally:
+                        ruleDictionary.gotoNextRule()
+                else:
                     ruleDictionary.gotoNextRule()
-            else:
-                ruleDictionary.gotoNextRule()
 
     else:
         LOGGER.log(LogPriority.DEBUG, "\n Not running rule tests\n")
@@ -1299,44 +1304,54 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
         frameworkDictionary = FrameworkDictionary(modules)
 
         # Iterate through framework Unit Tests
-        frameworkDictionary.gotoFirstItem()
-        while frameworkDictionary.getCurrentItem() is not None:
-            frameworkTestName = frameworkDictionary.getTestName()
-            frameworkTestPath = frameworkDictionary.getTestPath()
-            frameworkTestClassName = frameworkDictionary.getTestClassName()
-            frameworkTestModuleName = frameworkDictionary.getModuleName()
-            frameworkCompleteTestPath = frameworkTestPath
-            frameworkCompleteTestName = frameworkTestName + "." + \
-                frameworkTestModuleName
+        try:
+            frameworkDictionary.gotoFirstItem()
+        except:
+            # IndexErrors will only occur here if the dictionary is empty
+            LOGGER.log(LogPriority.ERROR,
+                       "FrameworkDictionary is empty")
+            framework = False
+        else:
+            while frameworkDictionary.getCurrentItem() is not None:
+                frameworkTestName = frameworkDictionary.getTestName()
+                frameworkTestPath = frameworkDictionary.getTestPath()
+                frameworkTestClassName = frameworkDictionary.getTestClassName()
+                frameworkTestModuleName = frameworkDictionary.getModuleName()
+                frameworkCompleteTestPath = frameworkTestPath
+                frameworkCompleteTestName = frameworkTestName + "." + \
+                    frameworkTestModuleName
 
-            LOGGER.log(LogPriority.DEBUG, "----------------------------")
-            LOGGER.log(LogPriority.DEBUG, "\tFTN:  " + str(frameworkTestName))
-            LOGGER.log(LogPriority.DEBUG,
-                       "\tFTCN: " + str(frameworkTestClassName))
-            LOGGER.log(LogPriority.DEBUG, "\tFTP:  " + str(frameworkTestPath))
-            LOGGER.log(LogPriority.DEBUG,
-                       "\tFCTP: " + str(frameworkCompleteTestPath))
-            LOGGER.log(LogPriority.DEBUG,
-                       "\tFTCN: " + str(frameworkCompleteTestName))
-            LOGGER.log(LogPriority.DEBUG, "----------------------------")
+                LOGGER.log(LogPriority.DEBUG, "----------------------------")
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFTN:  " + str(frameworkTestName))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFTCN: " + str(frameworkTestClassName))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFTP:  " + str(frameworkTestPath))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFCTP: " + str(frameworkCompleteTestPath))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFTCN: " + str(frameworkCompleteTestName))
+                LOGGER.log(LogPriority.DEBUG, "----------------------------")
 
-            try:
-                #####
-                # A = "dot" path to the library we want to import from
-                # B = Module inside library we want to import
-                # basically perform a "from A import B
-                fameworkTestToRun = __import__(frameworkTestClassName,
-                                               fromlist=[frameworkTestName])
+                try:
+                    #####
+                    # A = "dot" path to the library we want to import from
+                    # B = Module inside library we want to import
+                    # basically perform a "from A import B
+                    fameworkTestToRun = __import__(frameworkTestClassName,
+                                                   fromlist=[frameworkTestName])
 
-                #####
-                # Add the import to a list, to later "map" to a test suite
-                testList.append(fameworkTestToRun)
+                    #####
+                    # Add the import to a list, to later "map" to a test suite
+                    testList.append(fameworkTestToRun)
 
-            except Exception, err:
-                LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
-                                              str(frameworkTestClassName) +
-                                              " Exception: " + str(err) + "\n")
-            frameworkDictionary.gotoNextItem()
+                except Exception, err:
+                    debug = "stonixtest error: " + \
+                        str(frameworkTestClassName) + " Exception: " + \
+                        str(err) + "\n"
+                    LOGGER.log(LogPriority.DEBUG, debug)
+                frameworkDictionary.gotoNextItem()
     else:
         LOGGER.log(LogPriority.DEBUG, "\n Not running framework tests.\n")
 
@@ -1346,42 +1361,52 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
         utilsDictionary = UtilsDictionary(modules)
 
         # Iterate through framework Unit Tests
-        utilsDictionary.gotoFirstItem()
-        while utilsDictionary.getCurrentItem() is not None:
-            utilsTestName = utilsDictionary.getTestName()
-            utilsTestPath = utilsDictionary.getTestPath()
-            utilsTestClassName = utilsDictionary.getTestClassName()
-            utilsTestModuleName = utilsDictionary.getModuleName()
-            utilsCompleteTestPath = utilsTestPath
-            utilsCompleteTestName = utilsTestName + "." + utilsTestModuleName
+        try:
+            utilsDictionary.gotoFirstItem()
+        except:
+            # IndexErrors will only occur here if the dictionary is empty
+            LOGGER.log(LogPriority.ERROR,
+                       "UtilsDictionary is empty")
+            utils = False
+        else:
+            while utilsDictionary.getCurrentItem() is not None:
+                utilsTestName = utilsDictionary.getTestName()
+                utilsTestPath = utilsDictionary.getTestPath()
+                utilsTestClassName = utilsDictionary.getTestClassName()
+                utilsTestModuleName = utilsDictionary.getModuleName()
+                utilsCompleteTestPath = utilsTestPath
+                utilsCompleteTestName = utilsTestName + "." + \
+                    utilsTestModuleName
 
-            LOGGER.log(LogPriority.DEBUG, "----------------------------")
-            LOGGER.log(LogPriority.DEBUG, "\tFTN:  " + str(utilsTestName))
-            LOGGER.log(LogPriority.DEBUG, "\tFTCN: " + str(utilsTestClassName))
-            LOGGER.log(LogPriority.DEBUG, "\tFTP:  " + str(utilsTestPath))
-            LOGGER.log(LogPriority.DEBUG,
-                       "\tFCTP: " + str(utilsCompleteTestPath))
-            LOGGER.log(LogPriority.DEBUG,
-                       "\tFTCN: " + str(utilsCompleteTestName))
-            LOGGER.log(LogPriority.DEBUG, "----------------------------")
+                LOGGER.log(LogPriority.DEBUG, "----------------------------")
+                LOGGER.log(LogPriority.DEBUG, "\tFTN:  " + str(utilsTestName))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFTCN: " + str(utilsTestClassName))
+                LOGGER.log(LogPriority.DEBUG, "\tFTP:  " + str(utilsTestPath))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFCTP: " + str(utilsCompleteTestPath))
+                LOGGER.log(LogPriority.DEBUG,
+                           "\tFTCN: " + str(utilsCompleteTestName))
+                LOGGER.log(LogPriority.DEBUG, "----------------------------")
 
-            try:
-                #####
-                # A = "dot" path to the library we want to import from
-                # B = Module inside library we want to import
-                # basically perform a "from A import B
-                utilsTestToRun = __import__(utilsTestClassName,
-                                            fromlist=[utilsTestName])
+                try:
+                    #####
+                    # A = "dot" path to the library we want to import from
+                    # B = Module inside library we want to import
+                    # basically perform a "from A import B
+                    utilsTestToRun = __import__(utilsTestClassName,
+                                                fromlist=[utilsTestName])
 
-                #####
-                # Add the import to a list, to later "map" to a test suite
-                testList.append(utilsTestToRun)
+                    #####
+                    # Add the import to a list, to later "map" to a test suite
+                    testList.append(utilsTestToRun)
 
-            except Exception, err:
-                LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
-                                              str(utilsTestClassName) +
-                                              " Exception: " + str(err) + "\n")
-            utilsDictionary.gotoNextItem()
+                except Exception, err:
+                    debug = "stonixtest error: " + \
+                        str(frameworkTestClassName) + " Exception: " + \
+                        str(err) + "\n"
+                    LOGGER.log(LogPriority.DEBUG, debug)
+                utilsDictionary.gotoNextItem()
     else:
         LOGGER.log(LogPriority.DEBUG, "\n Not running utils tests.\n")
 
