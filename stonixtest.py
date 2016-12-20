@@ -34,6 +34,7 @@ This is the test suite for stonix
                           functions (stonixutils) rather than classes or
                           class methods. Also cutting down logdispatcher chatter
 @note: 2016-11-08 - eball - PEP8 cleanup, added default UT path
+@change: 2016/12/19 eball Refactored large portions of stonixtest
 '''
 import os
 import re
@@ -75,13 +76,19 @@ class ConsoleAndFileWriter():
         self.fo.flush()
 
 
-def name_test_template(*args):
+def name_test_template(moduletestfound, reportstring):
     """
-    decorator for monkeypatching
+    The name_test_template provides a method that can be used, via monkey
+    patching, to add test cases to the test_ruleNtestConsistency class
+    dynamically from within the ConsistencyCheck class.
+    @author: Roy Nielsen, Eric Ball
+    @param moduletestfound: boolean indicating if a test was found for a given
+        module
+    @param reportstring: string to print if the test assertion fails
     """
-    def foo(self):
-        self.assert_value(*args)
-    return foo
+    def checkConsistency(self):
+        self.assert_value(moduletestfound, reportstring)
+    return checkConsistency
 
 
 class test_ruleNtestConsistency(unittest.TestCase):
@@ -90,11 +97,11 @@ class test_ruleNtestConsistency(unittest.TestCase):
         self.environ = Environment()
         self.logdispatcher = LogDispatcher(self.environ)
 
-    def assert_value(self, match, name, reportstring):
-        self.assertTrue(match, reportstring)
+    def assert_value(self, moduletestfound, reportstring):
+        self.assertTrue(moduletestfound, reportstring)
 
 
-class test_rules_and_unit_test():
+class ConsistencyCheck():
     '''
     This class is designed to make sure there is a unit test
     for every rule and a rule for every unit test
@@ -129,7 +136,8 @@ class test_rules_and_unit_test():
                 my_test_name = "test_{0}_{1}_{2}".format(str(behavior),
                                                          str(name),
                                                          str(moduletestfound))
-                my_test_case = name_test_template(*test_case_data)
+                my_test_case = name_test_template(test_case_data[0],
+                                                  test_case_data[2])
                 setattr(self.test_ruleNtestConsistency, my_test_name,
                         my_test_case)
 
@@ -1046,7 +1054,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
 
     if rule and not modules:
         # Add the test for every rule and rule for every test... test.
-        anotherTest = test_rules_and_unit_test()
+        anotherTest = ConsistencyCheck()
         suite.addTests(unittest.makeSuite(anotherTest.getTest()))
 
     if rule:
@@ -1247,7 +1255,7 @@ if __name__ == '__main__' or __name__ == 'stonixtest':
         testsuite = unittest.TestSuite()
 
         # Add the test for every rule and rule for every test... test.
-        test2run = test_rules_and_unit_test()
+        test2run = ConsistencyCheck()
         testsuite.addTests(unittest.makeSuite(test2run.getTest()))
     else:
         testsuite = assemble_suite(framework, rule, utils,
