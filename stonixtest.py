@@ -23,17 +23,17 @@
 ###############################################################################
 '''
 This is the test suite for stonix
-@author: ekkehard j. koch, roy s. nielsen
-@note: 2015-02-15 - ekkehard - original implementation
-@note: 2015-05-26 - roy - changing for new test directory structure
-@note: 2015-09-04 - roy - Adding method for running single, or just a few
+@author: ekkehard j. koch, roy s. nielsen, Eric Ball
+@change: 2015/02/15 ekkehard - original implementation
+@change: 2015/05/26 roy - changing for new test directory structure
+@change: 2015/09/04 roy - Adding method for running single, or just a few
                           tests at the command line.
-@note: 2015-09-06 - roy - Added flexibility for finding tests to run, created
+@change: 2015/09/06 roy - Added flexibility for finding tests to run, created
                           functions instead of very deep nesting.
-@note: 2015-10-03 - roy - Adding "utils" category of tests, for testing
-                          functions (stonixutils) rather than classes or
-                          class methods. Also cutting down logdispatcher chatter
-@note: 2016-11-08 - eball - PEP8 cleanup, added default UT path
+@change: 2015/10/03 roy - Adding "utils" category of tests, for testing
+                          functions (stonixutils) rather than classes or class
+                          methods. Also cutting down logdispatcher chatter
+@change: 2016/11/08 eball PEP8 cleanup, added default UT path
 @change: 2016/12/19 eball Refactored large portions of stonixtest
 '''
 import os
@@ -917,7 +917,8 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
                                                    fromlist=[ruleTestName])
 
                         #####
-                        # Add the import to a list, to later "map" to a test suite
+                        # Add the import to a list, to later "map" to a test
+                        # suite
                         testList.append(ruleTestToRun)
 
                     except Exception, err:
