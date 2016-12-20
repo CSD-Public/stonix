@@ -17,7 +17,13 @@ class Xcodebuild(MacBuildLib):
         super(Xcodebuild, self).__init__(logger, pypaths=None)
 
     def buildApp(self, appName, buildDir, username, password, keychain=""):
-        if self.setUpForSigning(username, password, keychain):
+        if not password:
+            if self.buildWrapper(username, appName, buildDir):
+                self.logger.log(lp.DEBUG, "Built package without signing...")
+            else:
+                self.logger.log(lp.DEBUG, "Error attempting to build package without signing...")
+                raise Exception(traceback.format_exc())
+        elif self.setUpForSigning(username, password, keychain):
             if self.buildWrapper(username, appName, buildDir, keychain):
                 self.logger.log(lp.DEBUG, "Signing completed...")
             else:

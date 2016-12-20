@@ -547,7 +547,7 @@ class MacBuildLib(object):
 
         return success
         '''
-    def buildWrapper(self, username, appName, buildDir, keychain):
+    def buildWrapper(self, username, appName, buildDir, keychain=False):
         success = False
         error = ""
         
@@ -559,15 +559,26 @@ class MacBuildLib(object):
         #####
         # Change to directory where the item to sign resides
         os.chdir(buildDir)
-        
-        #returnDir = os.getcwd()
-        #os.chdir(appName)
+        cfds = False
+        os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
         if not keychain:
-            userHome = self.manage_user.getUserHomeDir(username)
-            targetKeychain = userHome + "/Library/Keychains/login.keychain"
+            cmd = ['/usr/bin/xcodebuild', 'clean', 'build', 'CODE_SIGN_IDENTITY=""',
+                   'CODE_SIGNING_REQUIRED=NO', 'CODE_SIGN_ENTITLEMENTS=""', 'CODE_SIGNING_ALLOWED="NO"',
+                   '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+            cfds = True
         else:
             targetKeychain = keychain
-        
+            cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+
+            #####
+            # Alternate commands for building with xcodebuild and signing
+            #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
+            # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
+            #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', 'OTHER_CODE_SIGN_FLAGS="-keychain ' + keychain + '"']
+            #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES='YES'"]
+            #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj', '-skipUnavailableActions']
+            #cmd = ['/usr/bin/xcodebuild', '-configuration', 'Release', 'clean']
+
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
@@ -577,18 +588,7 @@ class MacBuildLib(object):
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
-        #####
-        # Make sure the keychain is unlocked
-        #self.setUpForSigning(self.keyuser, self.keypass)
-        #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
-        # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
-        #buildDir = os.getcwd()
-        #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', 'OTHER_CODE_SIGN_FLAGS="-keychain ' + keychain + '"']
-        os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
-        #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES='YES'"]
-        #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj', '-skipUnavailableActions']
-        cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
-        #cmd = ['/usr/bin/xcodebuild', '-configuration', 'Release', 'clean']
+
         print '.'
         print '.'
         print '.'
@@ -596,17 +596,16 @@ class MacBuildLib(object):
         print '.'
         print '.'
         print '.'
+        
         os.chdir(buildDir)
         self.logger.log(lp.DEBUG, str(cmd))
         
-        self.rw.setCommand(cmd)
+        self.rw.setCommand(cmd, close_fds=cfds)
         output, error, retcode = self.rw.communicate()
         
         if not error:
             success = True
         
-        #output = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=False).communicate()
-        #output = call(cmd)
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
         for line in error.split("\n"):
