@@ -24,6 +24,7 @@
 import os
 import re
 import sys
+import optparse
 import traceback
 from loggers import CyLogger
 from loggers import LogPriority as lp
@@ -88,9 +89,10 @@ def writeInit(pathToRules, logger):
         for rule in getRulesList(pathToRules):
             fp.write("import " + rule + "\n")
         fp.write("\n")
-    except Exception:
+    except Exception, err:
         trace = traceback.format_exc() 
         logger.log(lp.DEBUG, "Traceback: " + trace)
+        raise err
     else:
         success = True
         logger.log(lp.DEBUG, "Done writing init.")
@@ -107,6 +109,7 @@ if __name__ == "__main__":
 
     @author: Roy Nielsen
     '''
+    pkgPath=''
     #####
     # Parse command line options
     parser = optparse.OptionParser()
@@ -123,7 +126,7 @@ if __name__ == "__main__":
     #####
     # Get the path to the rules directory
     if not pkgPath:
-        pkgPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
+        pathToRules = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
     else:
         pathToRules = options.pkgPath
     

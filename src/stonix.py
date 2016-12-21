@@ -129,7 +129,6 @@ from pkgutil import extend_path
 # Local imports
 __path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
 import stonix_resources
-import stonix_resources.rules
 
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
@@ -431,12 +430,16 @@ class Controller(Observable):
         success = False
         #allRules = []
         instruleclasses = []
-
+        for item in sys.modules.keys():
+            self.logger.log(LogPriority.DEBUG, str(item))
         #####
         # Search through the already imported libraries for stonix rules
         for item in sys.modules.keys():
-            if re.match("stonix_resources\.rules\.", item):
+            #####
+            # Make sure rules start with a letter...
+            if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
                 #allRules.append(item)
+                self.logger.log(LogPriority.DEBUG, "Loading rule: " + str(item))
                 #####
                 # Get just the rule name
                 ruleClass = item.split('.')[2]
