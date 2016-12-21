@@ -24,6 +24,7 @@
 import os
 import re
 import sys
+import optparse
 import traceback
 from loggers import CyLogger
 from loggers import LogPriority as lp
@@ -71,6 +72,7 @@ def getHeader(initFp=None):
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+# from __future__ import absolute_import
 '''
     return header
 
@@ -88,9 +90,10 @@ def writeInit(pathToRules, logger):
         for rule in getRulesList(pathToRules):
             fp.write("import " + rule + "\n")
         fp.write("\n")
-    except Exception:
+    except Exception, err:
         trace = traceback.format_exc() 
         logger.log(lp.DEBUG, "Traceback: " + trace)
+        raise err
     else:
         success = True
         logger.log(lp.DEBUG, "Done writing init.")
@@ -99,6 +102,19 @@ def writeInit(pathToRules, logger):
             fp.close()
         except:
             pass
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "Attempted init creation....."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
+    print "\t\t."
     return success
 
 if __name__ == "__main__":
@@ -107,6 +123,7 @@ if __name__ == "__main__":
 
     @author: Roy Nielsen
     '''
+    pkgPath=''
     #####
     # Parse command line options
     parser = optparse.OptionParser()
@@ -123,7 +140,7 @@ if __name__ == "__main__":
     #####
     # Get the path to the rules directory
     if not pkgPath:
-        pkgPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
+        pathToRules = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
     else:
         pathToRules = options.pkgPath
     

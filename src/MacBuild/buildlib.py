@@ -632,6 +632,10 @@ class MacBuildLib(object):
             stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         except Exception, err:
             trace = traceback.format_exc()
-            print str(trace)
+            self.logger.log(lp.DEBUG, str(trace))
             raise err
+        self.logger.log(lp.DEBUG, "\\\\\\\\\"")
+        self.logger.log(lp.DEBUG, "stdout: " + str(stdout))
+        self.logger.log(lp.DEBUG, "stderr: " + str(stderr))
+        self.logger.log(lp.DEBUG, "///////")
 
