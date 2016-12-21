@@ -890,7 +890,7 @@ class Ui_logBrowser(QtWidgets.QDialog):
         # Converting signal/slot connect to PyQt5
         # QtCore.QObject.connect(self.buttonBox, SIGNAL("clicked(QAbstractButton*)"),
         #                self.close)
-        self.buttonBox.close.clicked.connect(self.close)
+        self.buttonBox.clicked.connect(self.close)
         QtCore.QMetaObject.connectSlotsByName(self)
         self.resize(QtCore.QSize(800, 600).expandedTo(self.minimumSizeHint()))
 
