@@ -195,8 +195,8 @@ class SoftwareBuilder():
 
     def _exit(self, ramdisk, luggage, exitcode=0):
         os.chdir(self.STONIX_ROOT)
-        #self._detachRamdisk(ramdisk)
-        #self._detachRamdisk(luggage)
+        self._detachRamdisk(ramdisk)
+        self._detachRamdisk(luggage)
         print traceback.format_exc()
         exit(exitcode)
 
@@ -802,7 +802,7 @@ class SoftwareBuilder():
         self.libc.sync()
 
         os.chdir(self.buildHome)
-        #self._exit(self.ramdisk, self.luggage, 0)
+        self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
