@@ -848,9 +848,6 @@ class Environment:
         except:
             script_path_one = ""
 
-        print "Path one: " + script_path_zero
-        print "Path two: " + script_path_one
-
         self.test_mode = False
         #####
         # Check which argv variable has the script name -- required to allow
@@ -912,14 +909,6 @@ class Environment:
         #####
         # Set the configuration file path
         self.conf_path = "/etc/stonix.conf"
-
-        print "Path one: " + script_path_zero
-        print "Path two: " + script_path_one
-        print "Script Path: " + self.script_path
-        print "Resources: " + self.resources_path
-        print "Rules Path: " + self.rules_path
-        if hasattr(sys, '_MEIPASS'):
-            print "MEIPATH: " + sys._MEIPASS
 
     def get_test_mode(self):
         """
