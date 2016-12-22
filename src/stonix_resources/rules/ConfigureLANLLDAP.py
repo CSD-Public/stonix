@@ -128,12 +128,10 @@ effect."""
                     compliant = False
                     results += package + " is not installed\n"
 
-            pamconf = self.__getpamconf()
-            self.pamconf = pamconf
-            for conffile in pamconf:
+            reqpamconf = self.__getreqpamconf()
+            for conffile in reqpamconf:
                 currentConf = readFile(conffile, self.logger)
-                if not self.__checkconf(currentConf,
-                                        pamconf[conffile].split("\n")):
+                if not self.__checkconf(currentConf, reqpamconf[conffile]):
                     compliant = False
                     results += "Settings in " + conffile + " are incorrect\n"
 
@@ -409,7 +407,8 @@ effect."""
                 results += "Problem writing new contents to " + \
                     self.nsswitchpath + "\n"
 
-            if not self.__fixpam(self.pamconf):
+            pamconf = self.__getpamconf()
+            if not self.__fixpam(pamconf):
                 success = False
                 results += "An error occurred while trying to write " + \
                     "the PAM files\n"
@@ -639,6 +638,26 @@ krb5_realm = lanl.gov
             return True
         else:
             return self.__writeFile(sssdconfpath, sssdconf, [0, 0, 0600])
+
+    def __getreqpamconf(self):
+        '''
+        Get only the sections of the pam configuration that are required.
+        @author: Eric Ball
+        @return reqpamconf: dictionary of the required lines for each pam
+            configuration file. Note that, unlike getpamconf(), this returns
+            the lines as separate items in a list, rather than a single string.
+        '''
+        pamconf = self.__getpamconf()
+        reqpamconf = {}
+        searchstring = "pam_tally2|faillock|pam_unix|pwquality|cracklib" + \
+            "|krb5|sss"
+        for conf in pamconf:
+            tempconf = []
+            for line in pamconf[conf].splitlines(True):
+                if re.search(searchstring, line):
+                    tempconf.append(line)
+            reqpamconf[conf] = tempconf
+        return reqpamconf
 
     def __getpamconf(self):
         pamconf = {}
