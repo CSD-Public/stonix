@@ -32,6 +32,8 @@ from LANL-stor.
 @change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG standards
 @change: 2016/01/28 eball - Improved handling for LDAPServer CI
 @change: 2016/11/14 eball - Moved PAM configurations to localize.py
+@change: 2016/12/21 eball - Separated required packages for report, put package
+    localization into individual methods
 '''
 from __future__ import absolute_import
 import os
@@ -119,30 +121,8 @@ effect."""
             else:
                 self.nslcd = False
 
-            packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
-                           "krb5-workstation", "oddjob-mkhomedir",
-                           "libpwquality"]
-            packagesRhel6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                             "oddjob-mkhomedir", "libpwquality"]
-            packagesUbu = ["libpam-ldapd", "libpam-cracklib",
-                           "libpam-krb5"]
-            packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
-                           "libpam-cracklib", "libpam-krb5"]
-            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
-                            "pam_pwquality", "sssd", "krb5"]
-            if self.ph.determineMgr() == "apt-get":
-                if re.search("ubuntu", self.myos):
-                    packages = packagesUbu
-                else:
-                    packages = packagesDeb
-            elif self.ph.determineMgr() == "zypper":
-                packages = packagesSuse
-            elif re.search("red hat", self.myos) and self.majorVer < 7:
-                packages = packagesRhel6
-            else:
-                packages = packagesRpm
-            self.packages = packages
-            for package in packages:
+            reqPackages = self.__localizeReqPkgs()
+            for package in reqPackages:
                 if not self.ph.check(package) and \
                    self.ph.checkAvailable(package):
                     compliant = False
@@ -320,6 +300,50 @@ effect."""
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
+    def __localizeReqPkgs(self):
+        packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
+                       "krb5-workstation"]
+        packagesRh6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients"]
+        packagesUbu = ["libpam-ldapd", "libpam-krb5"]
+        packagesDeb = ["sssd", "libnss-sss", "libpam-sss", "libpam-krb5"]
+        packagesSus = ["yast2-auth-client", "sssd-krb5", "pam_ldap", "sssd",
+                       "krb5"]
+        if self.ph.determineMgr() == "apt-get":
+            if re.search("ubuntu", self.myos):
+                return packagesUbu
+            else:
+                return packagesDeb
+        elif self.ph.determineMgr() == "zypper":
+            return packagesSus
+        elif re.search("red hat", self.myos) and self.majorVer < 7:
+            return packagesRh6
+        else:
+            return packagesRpm
+
+    def __localizeAllPkgs(self):
+        packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
+                       "krb5-workstation", "oddjob-mkhomedir",
+                       "libpwquality"]
+        packagesRh6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
+                       "oddjob-mkhomedir", "libpwquality"]
+        packagesUbu = ["libpam-ldapd", "libpam-cracklib",
+                       "libpam-krb5"]
+        packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
+                       "libpam-cracklib", "libpam-krb5"]
+        packagesSus = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
+                       "pam_pwquality", "sssd", "krb5"]
+        if self.ph.determineMgr() == "apt-get":
+            if re.search("ubuntu", self.myos):
+                return packagesUbu
+            else:
+                return packagesDeb
+        elif self.ph.determineMgr() == "zypper":
+            return packagesSus
+        elif re.search("red hat", self.myos) and self.majorVer < 7:
+            return packagesRh6
+        else:
+            return packagesRpm
+
     def __checkconf(self, contents, settings):
         '''Private method to audit a conf file to ensure that it contains all
         of the required directives.
@@ -364,7 +388,7 @@ effect."""
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            packages = self.packages
+            packages = self.__localizeAllPkgs()
             for package in packages:
                 if not self.ph.check(package):
                     if self.ph.checkAvailable(package):
