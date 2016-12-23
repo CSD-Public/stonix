@@ -112,7 +112,7 @@ effect."""
             self.myos = self.environ.getostype().lower()
             self.majorVer = self.environ.getosver().split(".")[0]
             self.majorVer = int(self.majorVer)
-            self.fixOkay = True
+            self.validLdap = True
 
             # All systems except RHEL 6 and Ubuntu use sssd
             if (re.search("red hat", self.myos) and self.majorVer < 7) or \
@@ -212,7 +212,7 @@ effect."""
                     serversplit = server.split(".")
                     if len(serversplit) != 3:
                         compliant = False
-                        self.fixOkay = False
+                        self.validLdap = False
                         error = "Custom LDAPServer does not follow " + \
                             "convention of \"[server].[domain].[tld]\". " + \
                             "ConfigureLANLLDAP cannot automate your LDAP " + \
@@ -376,9 +376,9 @@ effect."""
         return True
 
     def fix(self):
+        self.detailedresults = ""
         try:
-            if not self.ci.getcurrvalue() or not self.fixOkay:
-                return
+            assert self.ci.getcurrvalue() and self.validLdap
             success = True
             results = ""
             self.iditerator = 0
@@ -542,6 +542,12 @@ effect."""
 
             self.detailedresults = results
             self.rulesuccess = success
+        except AssertionError:
+            if not self.ci.getcurrvalue():
+                self.detailedresults = "Primary CI for this rule is not " + \
+                    "enabled"
+            elif not self.validLdap:
+                self.detailedresults = "Invalid LDAP server address"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
