@@ -12,6 +12,7 @@ import re
 import os
 import pty
 import sys
+import time
 import shutil
 from subprocess import Popen
 
@@ -307,8 +308,7 @@ class MacOSUser(ParentManageUser):
         """
         self.logger.log(lp.DEBUG, "U: " + str(userName))
         self.logger.log(lp.DEBUG, "G: " + str(groupName))
-        
-        
+
         success = False
         if self.isSaneUserName(userName) and self.isSaneGroupName(groupName):
             output = self.getDscl(".", "-read", "/Groups/" + groupName, "users")
@@ -318,6 +318,120 @@ class MacOSUser(ParentManageUser):
             if userName in users:
                 success = True
         return success
+
+    #----------------------------------------------------------------------
+
+    def accountCreationTime(self, userName=""):
+        """
+        """
+        userInfo = False
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "creationTime")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+            else:
+                epochtime = userInfo
+                timestring = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(epochtime))
+                userInfo = [epochtime, timestring]
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def failedLoginCount(self, userName=""):
+        """
+        """
+        userInfo = False
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "failedLoginCount")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def failedLoginTimestamp(self, userName=""):
+        """
+        """
+        userInfo = False
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "failedLoginTimestamp")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+            else:
+                epochtime = userInfo
+                timestring = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(epochtime))
+                userInfo = [epochtime, timestring]
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def passwordLastSetTime(self, userName=""):
+        """
+        """
+        userInfo = False
+        
+        if self.isSaneUserName(userName):
+            output = self.getDscl(".", "-readpl", "/Users/" + str(userName), 
+                                  "accountPolicyData", "passwordLastSetTime")
+            try:
+                userInfo = output.split()[1]
+            except (KeyError, IndexError), err:
+                self.logger.log(lp.INFO, "Error attempting to find user" + \
+                                         str(userName) + " in the " + \
+                                         "directory service.")
+            else:
+                epochtime = userInfo
+                timestring = time.strftime('%Y-%m-%d %H:%M:%S', 
+                                           time.localtime(epochtime))
+                userInfo = [epochtime, timestring]
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+
+        return userInfo
+
+    #----------------------------------------------------------------------
+
+    def isAuthenticationAllowed(self, userName=""):
+        """
+        """
+        userInfo = False
+        
+        if self.isSaneUserName(userName):
+            self.runWith.setCommand(["/usr/bin/pwpolicy", "-u", str(userName),
+                                     "-authentication-allowed"])
+            output, error, retcode = self.runWith.communicate()
+            
+            self.logger.log(lp.DEBUG, "Output: " + str(output.strip()))
+            
+            userInfo = output
+        else:
+            raise BadUserInfoError("Need a valid user name...")
+            
+        return userInfo
 
     #----------------------------------------------------------------------
 
@@ -375,6 +489,8 @@ class MacOSUser(ParentManageUser):
             sane = False
 
         return sane
+
+    #----------------------------------------------------------------------
 
     def authenticate(self, user="", password=""):
         """
@@ -801,7 +917,7 @@ class MacOSUser(ParentManageUser):
 
     #----------------------------------------------------------------------
 
-    def getDscl(self, directory="", action="", dirobj="", dirprop=""):
+    def getDscl(self, directory="", action="", dirobj="", dirprop="", subprop=""):
         """
         Using dscl to retrieve a value from the directory
 
@@ -833,7 +949,10 @@ class MacOSUser(ParentManageUser):
         #####
         # Now do the directory lookup.
         if success:
-            cmd = [self.dscl, directory, action, dirobj, dirprop]
+            if directory and action and dirobj and dirprop and subprop:
+                cmd = [self.dscl, directory, action, dirobj, dirprop, subprop]
+            else:
+                cmd = [self.dscl, directory, action, dirobj, dirprop]
 
             self.runWith.setCommand(cmd)
             self.runWith.communicate()
