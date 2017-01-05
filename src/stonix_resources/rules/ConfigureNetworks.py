@@ -43,6 +43,7 @@ class ConfigureNetworks(RuleKVEditor):
     '''
 
     @author: ekkehard j. koch
+    @change: Breen Malmberg - 12/20/2016 - (see method doc strings)
     '''
 
 ###############################################################################
@@ -92,12 +93,26 @@ class ConfigureNetworks(RuleKVEditor):
                          {})
 
     def report(self):
+        '''
+        determine the compliance status of ConfigureNetworks
+        on the current system
+
+        @return: self.compliant
+        @rtype: bool
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/20/2016 - added doc string; 
+        '''
+
+        self.detailedresults = ""
+        self.compliant = True
+        compliant = True
+
         try:
-            self.detailedresults = ""
+
             kvcompliant = RuleKVEditor.report(self, True)
-            compliant = True
-            if compliant:
-                compliant = self.nsobject.getLocation()
+
+            compliant = self.nsobject.getLocation()
+
             if compliant:
                 compliant = self.nsobject.updateCurrentNetworkConfigurationDictionary()
             if compliant:
@@ -120,11 +135,24 @@ class ConfigureNetworks(RuleKVEditor):
 ###############################################################################
 
     def fix(self):
+        '''
+        run fix actions for ConfigureNetworks
+        return True if all succeed
+
+        @return: fixed
+        @rtype: bool
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/20/2016 - added doc string; detailedresults
+                and fixed var's moved to before try; 
+        '''
+
+        self.detailedresults = ""
+        fixed = True
+
         try:
-            fixed = True
-            self.detailedresults = ""
-            if fixed:
-                fixed = self.nsobject.getLocation()
+
+            fixed = self.nsobject.getLocation()
+
             if fixed:
                 fixed = self.nsobject.updateCurrentNetworkConfigurationDictionary()
             if fixed:
@@ -149,8 +177,20 @@ class ConfigureNetworks(RuleKVEditor):
 ###############################################################################
 
     def afterfix(self):
+        '''
+        restart the service after fix
+
+        @return: afterfixsuccessful
+        @rtype: bool
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/20/2016 - added doc string; var init before
+                try
+        '''
+
+        afterfixsuccessful = True
+
         try:
-            afterfixsuccessful = True
+
             service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
             servicename = "com.apple.blued"
             if afterfixsuccessful:
@@ -161,7 +201,7 @@ class ConfigureNetworks(RuleKVEditor):
                 afterfixsuccessful = self.sh.enableservice(service, servicename)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             afterfixsuccessful = False
             messagestring = str(err) + " - " + str(traceback.format_exc())
