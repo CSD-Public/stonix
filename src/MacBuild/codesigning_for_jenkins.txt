@@ -37,7 +37,7 @@ sudo ./build.py -d -s "stonix-test" --keychain /Users/<username>/Library/Keychai
  
 #####
  
-To use on Mac systems other than the build machine, as long as the User is the same, you should just be able to copy the ~/Library/Keychains/stonix-test.keychain on the build machine to the same user folder, same location, then you should be able to run stonix on that machine.
+To use on Mac systems other than the build machine, as long as the User is the same, you should just be able to copy the ~/Library/Keychains/stonix-test.keychain on the build machine to the same user folder, same location, then you should be able to run stonix on that machine.  Keychain might need to be unlocked for that to work.  rTthe ./ramdisk/lib/manage_keychain library might be useful for unlocking the keychain..
  
 References:
  
