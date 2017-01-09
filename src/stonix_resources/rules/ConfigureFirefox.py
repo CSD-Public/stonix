@@ -108,8 +108,8 @@ CONFIGUREFIREFOX to False.'''
             # This is MacOS
             if os.path.exists('/Applications/Firefox.app/Contents/Resources/defaults/pref'):
                 prefpath = '/Applications/Firefox.app/Contents/Resources/defaults/pref'
-            if os.path.exists('/Applications/Firefox.app/Contents/MacOS'):
-                binpath = '/Applications/Firefox.app/Contents/MacOS'
+            if os.path.exists('/Applications/Firefox.app/Contents/Resources'):
+                binpath = '/Applications/Firefox.app/Contents/Resources'
         elif os.path.exists('/usr/lib64'):
             # Linux with lib64
             if os.path.exists('/usr/lib64/firefox'):
