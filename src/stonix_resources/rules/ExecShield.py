@@ -66,6 +66,7 @@ ExecShield, which prevents execution of memory locations that should only \
 hold data, and va_randomize, which randomizes the locations of various memory \
 regions.'''
         self.rootrequired = True
+        self.rulesuccess = True
         self.comment = re.compile('^#|^;')
         self.sysctlconf = '/etc/sysctl.conf'
         self.tmpPath = '/etc/sysctl.conf.tmp'
@@ -136,9 +137,17 @@ regions.'''
         compliant/not-compliant decision.
 
         @author dkennel
+        @return: self.compliant
+        @rtype: bool
+        @change: Breen Malmberg - 1/10/2017 - minor doc string edit; return var init
         '''
+
         self.detailedresults = ''
+        self.compliant = False
+        va_path = '/proc/sys/kernel/randomize_va_space'
+
         try:
+
             if self.execshieldapplies:
                 execval = int(self.checkproc(self.shieldprocpath))
                 if execval == 1:
@@ -148,20 +157,23 @@ regions.'''
                 else:
                     self.detailedresults += 'Exec-Shield present but not ' + \
                         'compliant. Current value: ' + str(execval) + '\n'
-            va_path = '/proc/sys/kernel/randomize_va_space'
+
             vaval = int(self.checkproc(va_path))
+
             if vaval == 2:
                 self.varandomcompliant = True
                 self.detailedresults += 'Randomize_va_space compliant\n'
             else:
                 self.detailedresults += 'Randomize_va_space not compliant. ' + \
                     'Current value: ' + str(vaval) + '\n'
+
             if self.execshieldapplies:
                 if self.execshieldcompliant and self.varandomcompliant:
                     self.compliant = True
             else:
                 if self.varandomcompliant:
                     self.compliant = True
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -174,6 +186,7 @@ regions.'''
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
@@ -184,11 +197,21 @@ regions.'''
         in sysctl.conf.
 
         @author: dkennel
+        @return: self.rulesuccess
+        @rtype: bool
+        @change: Breen Malmberg - 1/10/2017 - minor doc string edit; self.rulesuccess
+                now default init to True (only being set to False in the method);
+                method now returns self.rulesuccess; fixed perms on file sysctl.conf
+                (should be 0o600; was 420)
         '''
+
         self.detailedresults = ""
-        self.rulesuccess = False
+        self.rulesuccess = True
+
         if self.ExecCI.getcurrvalue():
+
             try:
+
                 kvtype = "conf"
                 intent = "present"
                 self.editor = KVEditorStonix(self.statechglogger, self.logdispatch,
@@ -205,12 +228,13 @@ regions.'''
                         myid = '0063001'
                         self.editor.setEventID(myid)
                         if not self.editor.fix():
-                            return False
+                            self.rulesuccess = False
                         elif not self.editor.commit():
-                            return False
-                        os.chown(self.sysctlconf, 0, 0)
-                        os.chmod(self.sysctlconf, 420)
-                        resetsecon(self.sysctlconf)
+                            self.rulesuccess = False
+                        if self.rulesuccess:
+                            os.chown(self.sysctlconf, 0, 0)
+                            os.chmod(self.sysctlconf, 0o600)
+                            resetsecon(self.sysctlconf)
     
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
@@ -224,3 +248,5 @@ regions.'''
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
+        return self.rulesuccess
