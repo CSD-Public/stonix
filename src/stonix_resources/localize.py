@@ -369,7 +369,7 @@ account     required      pam_permit.so
 '''
 
 PASSWORD_APT = '''password    requisite     \
-pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10

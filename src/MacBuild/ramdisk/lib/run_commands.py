@@ -60,7 +60,7 @@ class RunWith(object):
         # setting up to call ctypes to do a filesystem sync
         self.libc = getLibc()
 
-    def setCommand(self, command, env=False, myshell=False):
+    def setCommand(self, command, env=False, myshell=False, close_fds=False):
         """
         initialize a command to run
 
@@ -78,6 +78,7 @@ class RunWith(object):
             self.printcommand = command
         self.myshell = myshell
         self.environ = env
+        self.cfds = close_fds
 
     ############################################################################
 
@@ -163,7 +164,7 @@ class RunWith(object):
         self.returncode = 999
         if self.command:
             try:
-                proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell)
+                proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell, close_fds=self.cfds)
                 self.libc.sync()
                 self.output, self.error = proc.communicate()
                 self.libc.sync()

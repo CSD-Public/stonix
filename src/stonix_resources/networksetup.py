@@ -75,44 +75,56 @@ class networksetup():
     def report(self):
         '''
         report is designed to implement the report portion of the stonix rule
-        
-        @author: ekkehard j. koch
+
+        @return: compliant
+        @rtype: bool
         @param self:essential if you override this definition
-        @return: boolean - true
-        @note: None
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/21/2016 - doc string revision; minor refactor;
+                try/except
         '''
+
         compliant = True
         self.initialize()
-        if self.locationIsValidWiFiLocation:
-            self.resultAppend("WiFi Network Setup for " + \
-                              "services for location named " + \
-                              str(self.location))
-        else:
-            self.resultAppend("Non-WiFi Network Setup for " + \
-                              "services for location named " + \
-                              str(self.location))
-        for key in sorted(self.nso):
-            network = self.nso[key]
-            networkvalues = self.ns[network]
-            networkname = networkvalues["name"]
-            networktype = networkvalues["type"]
-            networkenabled = networkvalues["enabled"]
-            if networktype == "bluetooth" and networkenabled:
-                compliant = False
-                networkvalues["compliant"] = False
-            elif networktype == "wi-fi" and networkenabled and \
-            not self.locationIsValidWiFiLocation:
-                compliant = False
-                networkvalues["compliant"] = False
+
+        try:
+
+            if self.locationIsValidWiFiLocation:
+                self.resultAppend("WiFi Network Setup for " + \
+                                  "services for location named " + \
+                                  str(self.location))
             else:
-                networkvalues["compliant"] = True
-            if networkvalues["compliant"]:
-                messagestring = str(networkname) + " is compliant " + \
-                ": " + str(networkvalues)
-            else:
-                messagestring = str(networkname) + " is NOT " + \
-                "compliant : " + str(networkvalues)
-            self.resultAppend(str(key) + " - " + messagestring)
+                self.resultAppend("Non-WiFi Network Setup for " + \
+                                  "services for location named " + \
+                                  str(self.location))
+            
+            for key in sorted(self.nso):
+                network = self.nso[key]
+                networkvalues = self.ns[network]
+                
+                networkname = networkvalues["name"]
+                networktype = networkvalues["type"]
+                networkenabled = networkvalues["enabled"]
+                if networktype == "bluetooth" and networkenabled:
+                    compliant = False
+                    networkvalues["compliant"] = False
+                elif networktype == "wi-fi" and networkenabled and \
+                not self.locationIsValidWiFiLocation:
+                    compliant = False
+                    networkvalues["compliant"] = False
+                else:
+                    networkvalues["compliant"] = True
+                if networkvalues["compliant"]:
+                    messagestring = str(networkname) + " is compliant " + \
+                    ": " + str(networkvalues)
+                else:
+                    messagestring = str(networkname) + " is NOT " + \
+                    "compliant : " + str(networkvalues)
+                self.resultAppend(str(key) + " - " + messagestring)
+            
+
+        except Exception:
+            raise
         return compliant
 
 ###############################################################################
@@ -368,7 +380,7 @@ class networksetup():
         @return: boolean - true
         @note: None
         @change: Breen Malmberg - 3/23/2016 - added code to find and disable
-            wi-fi on el capitan, via hardware ports instead of just service
+                wi-fi on el capitan, via hardware ports instead of just service
         '''
 
         try:
@@ -470,9 +482,13 @@ class networksetup():
                     nameonnextline = False
                 if re.search("Wi-Fi", line):
                     nameonnextline = True
+            
             for sn in self.ns:
+                
+                
                 if self.ns[sn]["type"] == "wi-fi":
                     foundwifi = True
+            
 
             getdevicestatuscommand = [self.nsc, "-getairportpower", self.nameofdevice]
 
@@ -487,7 +503,10 @@ class networksetup():
 # if a wi-fi device was found in the hardware ports, but not in the service list,
 # then add it to the self.ns dict and add an entry for it in the self.nso dict as well
             self.notinservicelist = False
+            
+            
             if self.nameofdevice and not foundwifi:
+                
                 self.notinservicelist = True
                 self.ns["Wi-Fi"] = {"name": self.nameofdevice,
                                     "enabled": deviceenabled,
@@ -495,6 +514,8 @@ class networksetup():
                 order += 1
                 orderkey = str(order).zfill(4)
                 self.nso[orderkey] = "Wi-Fi"
+                self.updateNetworkConfigurationDictionaryEntry("Wi-Fi")
+            
 
 # set ns init and nso init status
             self.nsInitialized = True
@@ -599,35 +620,57 @@ class networksetup():
         @return: boolean - true
         @note: None
         @change: Breen Malmberg - 3/23/2016 - wifi will now be disabled via
-            setairportpower if not found in the service list.
+                setairportpower if not found in the service list.
+        @change: Breen Malmberg - 12/20/2016 - minor refactor; parameter validation
+                ;logging
         '''
+
+        self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.disableNetworkService()...")
+
+        success = True
+        networkName = pNetworkName
 
         try:
 
-            success = True
-            networkName = pNetworkName
+            if not isinstance(pNetworkName, basestring):
+                self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName must be of type: string. Got: " + str(type(pNetworkName)))
+                success = False
 
-            if networkName == self.nameofdevice and self.notinservicelist:
+            if not pNetworkName:
+                self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName is blank or None!")
+                success = False
+
+            
+            
+            
+
+            if str(networkName).strip().lower() == str(self.nameofdevice).strip().lower():
+                
                 disablecommand = [self.nsc, "-setairportpower", networkName, "off"]
+                
                 self.ch.executeCommand(disablecommand)
+                
                 if self.ch.getReturnCode() != 0:
                     success = False
+                    self.logdispatch.log(LogPriority.DEBUG, "Execution of command failed: " + str(disablecommand))
+                else:
+                    self.logdispatch.log(LogPriority.DEBUG, "Command executed successfully: " + str(disablecommand))
             else:
-                if networkName == "":
-                    success = False
                 if success:
-                    command = [self.nsc,
-                               "-setnetworkserviceenabled",
-                               networkName, "off"]
+                    command = [self.nsc, "-setnetworkserviceenabled", networkName, "off"]
                     self.ch.executeCommand(command)
                     if self.ch.getReturnCode() != 0:
                         success = False
+                        self.logdispatch.log(LogPriority.DEBUG, "Execution of command failed: " + str(command))
 
-        except (KeyboardInterrupt, SystemExit):
-# User initiated exit
-            raise
+            if not success:
+                self.logdispatch.log(LogPriority.DEBUG, "networksetup.disableNetworkService() Failed")
+            else:
+                self.logdispatch.log(LogPriority.DEBUG, "networksetup.disableNetworkService() was Successful")
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.disableNetworkService()")
+
         except Exception:
-            success = False
             raise
         return success
 
@@ -644,34 +687,48 @@ class networksetup():
         @note: None
         @change: Breen Malmberg - 3/23/2016 - wifi will now be enabled via
             setairportpower if not found in the service list.
+        @change: Breen Malmberg - 12/20/2016 - minor refactor; parameter validation
+                ;logging
         '''
+
+        self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.enableNetwork()...")
+
+        success = True
+        networkName = pNetworkName
 
         try:
 
-            success = True
-            networkName = pNetworkName
+            if not isinstance(pNetworkName, basestring):
+                self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName must be of type: string. Got: " + str(type(pNetworkName)))
+                success = False
 
-            if networkName == self.nameofdevice and self.notinservicelist:
-                enablecommand = [self.nsc, "-setairportpower", networkName, "on"]
-                self.ch.executeCommand(enablecommand)
-                if self.ch.getReturnCode() != 0:
-                    success = False
+            if not pNetworkName:
+                self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName is blank or None!")
+                success = False
+
+            if str(networkName).strip().lower() == str(self.nameofdevice).strip().lower():
+                if self.notinservicelist:
+                    enablecommand = [self.nsc, "-setairportpower", networkName, "on"]
+                    self.ch.executeCommand(enablecommand)
+                    if self.ch.getReturnCode() != 0:
+                        success = False
+                        self.logdispatch.log(LogPriority.DEBUG, "Execution of command failed: " + str(enablecommand))
             else:
-                if networkName == "":
-                    success = False
                 if success:
-                    command = [self.nsc,
-                               "-setnetworkserviceenabled",
-                               networkName, "on"]
+                    command = [self.nsc, "-setnetworkserviceenabled", networkName, "on"]
                     self.ch.executeCommand(command)
                     if self.ch.getReturnCode() != 0:
                         success = False
+                        self.logdispatch.log(LogPriority.DEBUG, "Execution of command failed: " + str(command))
 
-        except (KeyboardInterrupt, SystemExit):
-# User initiated exit
-            raise
+            if not success:
+                self.logdispatch.log(LogPriority.DEBUG, "networksetup.enableNetwork() Failed")
+            else:
+                self.logdispatch.log(LogPriority.DEBUG, "networksetup.enableNetwork() was Successful")
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.enableNetwork()")
+
         except Exception:
-            success = False
             raise
         return success
 
