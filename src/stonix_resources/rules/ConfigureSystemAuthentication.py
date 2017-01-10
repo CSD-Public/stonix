@@ -375,6 +375,7 @@ for the login.defs file"""
         if self.pwqinstalled:
             '''If it's not, since it is already installed we want to
             configure pwquality and not cracklib since it's better'''
+            print "pwquality is installed!!!!!!!\n\n\n"
             if not self.checkpasswordsetup("pwquality"):
                 self.usingpwquality = True
                 self.detailedresults += "System is using pwquality but " + \
@@ -429,6 +430,7 @@ for the login.defs file"""
         '''
         compliant = True
         if package == "pwquality":
+            print "package is pwquality\n"
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
                     "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
@@ -466,7 +468,8 @@ for the login.defs file"""
                         if re.search(regex2, line.strip()):
                             found2 = True
                     if not found1 or not found2:
-                        self.detailedresults += ""
+                        self.detailedresults += "Didn't find the correct " + \
+                            "contents in " + pamfile + "\n"
                         compliant = False
         return compliant
 
@@ -477,6 +480,7 @@ for the login.defs file"""
         pamfiles = []
         installed = False
         if pkglist:
+            print "passed in a package list!!!!!!\n\n"
             for pkg in pkglist:
                 if self.ph.check(pkg):
                     installed = True
@@ -484,6 +488,7 @@ for the login.defs file"""
         else:
             installed = True
         if not installed:
+            print "inside setpasswordsetup and pw checking not installed\n\n\n"
             for pkg in pkglist:
                 if self.ph.checkAvailable(pkg):
                     if not self.ph.install(pkg):
@@ -497,6 +502,7 @@ for the login.defs file"""
             return False
         if self.usingpwquality:
             if not self.setpwquality():
+                print "unable to correct contents of /etc/security/pwquailty.conf\n"
                 success = False
         elif self.usingcracklib:
             self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
@@ -550,7 +556,7 @@ for the login.defs file"""
                     self.detailedresults += "Unable to write to " + pamfile + "\n"
                     success = False
         return success
-        ''''section of code commented out is can be uncommented if we
+        ''''section of code commented out can be uncommented if we
         decide that we will create the pam files if they don't exist.
         Currently, if the pam file(s) don't exist, we don't do 
         anything.'''
@@ -676,16 +682,18 @@ for the login.defs file"""
         for pamfile in pamfiles:
             print "The current pam file we're looking at is: " + pamfile + "\n"
             if not os.path.exists(pamfile):
-                self.detailedresults += ""
+                self.detailedresults += "Critical pam file " + pamfile + \
+                    "doesn't exist\n"
                 compliant = False
             else:
                 if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
-                    self.detailedresults += ""
+                    self.detailedresults += "Permissions aren't correct " + \
+                        "on " + pamfile + "\n"
                     self.ci3comp = False
                     compliant = False
                 contents = readFile(pamfile, self.logger)
                 if not contents:
-                    self.detailedresults += ""
+                    self.detailedresults += pamfile + " is blank\n"
                     self.ci3comp = False
                     compliant = False
                 else:
@@ -695,7 +703,8 @@ for the login.defs file"""
                             found = True
                             break
                     if not found:
-                        self.detailedresults += ""
+                        self.detailedresults += "Didn't find the correct " + \
+                            "contents in " + pamfile + "\n"
                         self.ci3comp = False
                         compliant = False
         return compliant
@@ -704,11 +713,17 @@ for the login.defs file"""
         print "INSIDE SETACCOUNTLOCKOUT\n\n\n\n"
         success = True
         pamfiles = []
+        if self.usingpamtally2:
+            self.auth = re.sub("auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail\n", self.auth)
         if self.ph.manager == "yum":
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
+            writecontents = self.auth + "\n" + self.acct + "\n" + \
+                        self.password + "\n" + self.session
         else:
             pamfiles.append(self.pamauthfile)
+            writecontents = self.auth
         for pamfile in pamfiles:
             if not os.path.exists(pamfile):
                 self.detailedresults += pamfile + " doesn't exist.\n" + \
@@ -731,12 +746,6 @@ for the login.defs file"""
                     found1 = True
             if not found1:
                 tmpfile = pamfile + ".tmp"
-                if self.ph.manager == "yum":
-                    writecontents = self.auth + "\n" + self.acct + "\n" + \
-                        self.password + "\n" + self.session
-                else:
-                    writecontents = self.auth
-                
                 if writeFile(tmpfile, writecontents, self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -754,6 +763,7 @@ for the login.defs file"""
         return success
 
     def chkpwquality(self):
+        print "inside chkpwquality!!!!!\n\n"
         compliant = True
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
@@ -936,66 +946,6 @@ for the login.defs file"""
                 compliant = False
         return compliant
 
-
-###############################################################################
-
-    def fixSolaris(self):
-        changed = False
-        success = True
-        if self.config:
-            if not checkPerms(self.pam, [0, 0, 0o644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    return False
-            if not self.chkpasswdqc():
-                if self.setpasswdqc():
-                    changed = True
-                else:
-                    success = False
-        if changed:
-            tempstring = ""
-            for line in self.config:
-                tempstring += line
-            tmpfile = self.pam + ".tmp"
-            if writeFile(tmpfile, tempstring, self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.pam}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.pam, tmpfile, myid)
-                os.rename(tmpfile, self.pam)
-                os.chown(self.pam, 0, 0)
-                os.chmod(self.pam, 0o644)
-                resetsecon(self.pam)
-            else:
-                success = False
-
-        path = "/etc/default/login"
-        if os.path.exists(path):
-            if not checkPerms(path, [0, 0, 0o444], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, [0, 0, 0o444], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-        if self.editor1.fixables:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.editor1.setEventID(myid)
-            if not self.editor1.fix():
-                success = False
-            elif not self.editor1.commit():
-                success = False
-            os.chown(path, 0, 0)
-            os.chmod(path, 0o444)
-            resetsecon(path)
-        if not self.fixPolicy():
-            success = False
-        return success
-
 ###############################################################################
 
     def fixFreebsd(self):
@@ -1079,9 +1029,6 @@ for the login.defs file"""
             if not self.fixLogin():
                 success = False
         return success
-
-###############################################################################
-
 
 ###############################################################################
 
@@ -1217,18 +1164,18 @@ for the login.defs file"""
 ###############################################################################
 
     def setpwquality(self):
+        print "inside setpwquality\n\n"
         success = True
         created = False
-        if not self.pwqeditor:
-            pwqfile = "/etc/security/pwquality.conf"
-            if not os.path.exists(pwqfile):
-                createFile(pwqfile, self.logger)
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'creation',
-                         'filepath': pwqfile}
-                self.statechglogger.recordchgevent(myid, event)
-                created = True
+        pwqfile = "/etc/security/pwquality.conf"
+        if not os.path.exists(pwqfile):
+            createFile(pwqfile, self.logger)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'creation',
+                     'filepath': pwqfile}
+            self.statechglogger.recordchgevent(myid, event)
+            created = True
             tmpfile = pwqfile + ".tmp"
             data = {"difok": "7",
                     "minlen": "14",
@@ -1243,6 +1190,7 @@ for the login.defs file"""
                                             "present", "openeq")
             self.pwqeditor.report()
         if self.pwqeditor.fixables:
+            print "There are fixables\n"
             if self.pwqeditor.fix():
                 if not created:
                     self.iditerator += 1
@@ -1265,7 +1213,9 @@ for the login.defs file"""
         @author: dwalker
         @return: bool
         '''
+        print "inside setlibuser\n\n"
         created = False
+        success = True
         if not self.ph.check("libuser"):
             if self.ph.checkAvailable("libuser"):
                 if not self.ph.install("libuser"):
