@@ -77,21 +77,6 @@ CONFIGUREFIREFOX to False.'''
         default = True
         self.cffci = self.initCi(datatype, key, instructions, default)
 
-        self.defprefpath, self.binpath = self.discoverPaths()
-        self.stonixpref = "astonix-v1.js"
-        self.stonixautoconf = 'stonixfirefox.cfg'
-
-        try:
-            self.stonixprefpath = os.path.join(self.defprefpath,
-                                               self.stonixpref)
-        except(AttributeError):
-            self.stonixprefpath = None
-        try:
-            self.stonixautoconfpath = os.path.join(self.binpath,
-                                               self.stonixautoconf)
-        except(AttributeError):
-            self.stonixautoconfpath = None
-
     def discoverPaths(self):
         ''' The discoverPath methods will attempt to locate the path
         to the Firefox preferences folder and the location of the Firefox
@@ -133,6 +118,22 @@ CONFIGUREFIREFOX to False.'''
         @return: bool
         @author: D.Kennel
         """
+        # Populate path data
+        self.defprefpath, self.binpath = self.discoverPaths()
+        self.stonixpref = "astonix-v1.js"
+        self.stonixautoconf = 'stonixfirefox.cfg'
+
+        try:
+            self.stonixprefpath = os.path.join(self.defprefpath,
+                                               self.stonixpref)
+        except(AttributeError):
+            self.stonixprefpath = None
+        try:
+            self.stonixautoconfpath = os.path.join(self.binpath,
+                                               self.stonixautoconf)
+        except(AttributeError):
+            self.stonixautoconfpath = None
+
         compliant = False
         self.detailedresults = ""
         oldcount = 0
