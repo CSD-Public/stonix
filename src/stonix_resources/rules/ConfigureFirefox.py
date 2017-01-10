@@ -76,6 +76,13 @@ Disable telemetry and crash reports
 CONFIGUREFIREFOX to False.'''
         default = True
         self.cffci = self.initCi(datatype, key, instructions, default)
+        self.defprefpath = None
+        self.binpath = None
+        self.stonixprefpath = None
+        self.stonixautoconfpath = None
+        self.stonixpref = "astonix-v1.js"
+        self.stonixautoconf = 'stonixfirefox.cfg'
+        self.discoverPaths()
 
     def discoverPaths(self):
         ''' The discoverPath methods will attempt to locate the path
@@ -109,20 +116,8 @@ CONFIGUREFIREFOX to False.'''
                 prefpath = '/usr/lib/firefox/defaults/preferences'
             elif os.path.exists('/usr/lib/firefox/defaults/pref'):
                 prefpath = '/usr/lib/firefox/defaults/pref'
-        return prefpath, binpath
-
-    def report(self):
-        """
-        Report on whether the Firefox configuration meets expectations.
-
-        @return: bool
-        @author: D.Kennel
-        """
-        # Populate path data
-        self.defprefpath, self.binpath = self.discoverPaths()
-        self.stonixpref = "astonix-v1.js"
-        self.stonixautoconf = 'stonixfirefox.cfg'
-
+        self.defprefpath = prefpath
+        self.binpath = binpath
         try:
             self.stonixprefpath = os.path.join(self.defprefpath,
                                                self.stonixpref)
@@ -133,10 +128,21 @@ CONFIGUREFIREFOX to False.'''
                                                self.stonixautoconf)
         except(AttributeError):
             self.stonixautoconfpath = None
+        return True
+
+    def report(self):
+        """
+        Report on whether the Firefox configuration meets expectations.
+
+        @return: bool
+        @author: D.Kennel
+        """
+        self.discoverPaths()
 
         compliant = False
         self.detailedresults = ""
         oldcount = 0
+
         try:
             if not self.defprefpath:
                 compliant = True
