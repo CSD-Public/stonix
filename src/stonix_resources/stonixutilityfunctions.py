@@ -1132,59 +1132,115 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
 #####################################################################################
 
 def checkPerms(path, perm, logger):
-    '''Check the current file's permissions.
+    '''
+    Check the given file's permissions.
+
+    @return: retval
+    @rtype: bool
+    @param path: string; file path whose perm's to check
+    @param perm: list; list of ownership and permissions information
+    @param logger: LogDispatch object
     @author: dwalker
-    @param path: string
-    @param perm: list
-    @param param: logger object
-    @return: bool  '''
-    debug = ""
+    @change: Breen Malmberg - 1/10/2017 - doc string edit; return val init;
+            minor refactor; parameter validation; logging
+    '''
+
+    retval = True
+
     try:
+
+        if not isinstance(path, basestring):
+            logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
+        if not isinstance(perm, list):
+            logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
+        if not isinstance(logger, object):
+            logger.log(LogPriority.DEBUG, "Specified parameter: logger must be of type: object. Got: " + str(type(logger)) + "\n")
+
+        for v in locals():
+            if not v:
+                logger.log(LogPriority.DEBUG, "Specified parameter: " + str(v) + " was blank or None!\n")
+
         statdata = os.stat(path)
         owner = statdata.st_uid
         group = statdata.st_gid
         mode = stat.S_IMODE(statdata.st_mode)
-        if owner != perm[0] or group != perm[1] or mode != perm[2]:
-            debug += "The following file has incorrect permissions:" + path + "\n"
-            logger.log(LogPriority.DEBUG, debug)
-            return False
-        else:
-            return True
+
+        if owner != perm[0]:
+            logger.log(LogPriority.DEBUG, "File: " + str(path) + " has incorrect owner.\n")
+            retval = False
+        if group != perm[1]:
+            logger.log(LogPriority.DEBUG, "File: " + str(path) + " has incorrect group.\n")
+            retval = False
+        if mode != perm[2]:
+            logger.log(LogPriority.DEBUG, "File: " + str(path) + " has incorrect permissions.\n")
+            logger.log(LogPriority.DEBUG, "File perm's = " + str(mode) + "; Desired perm's = " + str(perm[2]) + "\n")
+            retval = False
+
     except OSError:
-        debug = "unable to check permissions on: " + path + "\n"
-        logger.log(LogPriority.DEBUG, debug)
-        return False
+        logger.log(LogPriority.DEBUG, "Unable to check permissions on: " + path + "\n")
+        retval = False
+    except Exception:
+        raise
+
+    return retval
+
 ###############################################################################
 
 
 def setPerms(path, perm, logger, stchlogger="", myid=""):
-    '''Set the current file's permissions.
+    '''
+    Set the given file's permissions.
+
+    @return: retval
+    @rtype: bool
+    @param path: string; full path to the file whose perms to set
+    @param perm: list; integer list of permissions and ownership information
+    @param logger: object; logger object
+    @param stchlogger: object; statechangelogger object
+    @param myid: string; indicates a unique id to assign to the action of changing perms
     @author: dwalker
-    @param path: string
-    @param perm: list
-    @param logger: logger object
-    @param stchlogger: state change logger object
-    @param myid: string
-    @return: bool  '''
-    debug = ""
+    @change: Breen Malmberg - 1/10/2017 - doc string edit; minor refactor; logging;
+            return var init; parameter validation
+    '''
+
+    retval = True
+
     try:
+
+        if not isinstance(path, basestring):
+            logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
+        if not isinstance(perm, list):
+            logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
+        if not isinstance(logger, object):
+            logger.log(LogPriority.DEBUG, "Specified parameter: logger must be of type: object. Got: " + str(type(logger)) + "\n")
+
+        for v in locals():
+            if not v:
+                logger.log(LogPriority.DEBUG, "Specified parameter: " + str(v) + " was blank or None!\n")
+
         statdata = os.stat(path)
         owner = statdata.st_uid
         group = statdata.st_gid
         mode = stat.S_IMODE(statdata.st_mode)
+
         if stchlogger:
             event = {'eventtype': 'perm',
                      'startstate': [owner, group, mode],
                      'endstate': perm,
                      'filepath': path}
             stchlogger.recordchgevent(myid, event)
+
         os.chown(path, perm[0], perm[1])
         os.chmod(path, perm[2])
-        return True
+
     except OSError:
-        debug += "couldn't set the permissions on: " + path + "\n"
-        logger.log(LogPriority.DEBUG, debug)
-        return False
+        logger.log(LogPriority.DEBUG, "Failed to set permissions on: " + str(path) + "\n")
+        retval = False
+    except Exception:
+        raise
+
+    return retval
+
 ###############################################################################
 
 
