@@ -298,20 +298,20 @@ class MacBuildLib(object):
             for root, dirs, files in os.walk(treeRoot):
                 for myfile in files:
                     if myfile.endswith(".py"):
-                         #print(os.path.join(root, file)) 
-                         #####
-                         # Create an 'import' name based on the file found.
-                         myfile = re.sub(".py", "", myfile)
-                         hiddenimportfile = os.path.join(root, myfile)
-                         # Create a list out of the name, removing '/''s to
-                         # set up for concatinating with '.'s
-                         hiddenimportlist = hiddenimportfile.split('/')
-                         # Concatinating the list with '.'s to add to the 
-                         # hiddenimports list.
-                         hiddenimport = ".".join(hiddenimportlist)
-                         self.logger.log(lp.DEBUG, "Attepting import of: " + \
-                                         hiddenimportfile)
-                         hiddenimports.append(hiddenimportfile)
+                        #print(os.path.join(root, file)) 
+                        #####
+                        # Create an 'import' name based on the file found.
+                        myfile = re.sub(".py", "", myfile)
+                        hiddenimportfile = os.path.join(root, myfile)
+                        # Create a list out of the name, removing '/''s to
+                        # set up for concatinating with '.'s
+                        hiddenimportlist = hiddenimportfile.split('/')
+                        # Concatinating the list with '.'s to add to the 
+                        # hiddenimports list.
+                        hiddenimport = ".".join(hiddenimportlist)
+                        self.logger.log(lp.DEBUG, "Attepting import of: " + \
+                                        hiddenimportfile)
+                        hiddenimports.append(hiddenimportfile)
                 
         except OSError:
             self.logger.log(lp.DEBUG, "Error trying to acquire python files...")
@@ -568,8 +568,8 @@ class MacBuildLib(object):
             cfds = True
         else:
             targetKeychain = keychain
-            cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
-
+            cmd = ['/usr/bin/xcodebuild', 'CODE_SIGNING_ALLOWED="Yes"', 'CODE_SIGNING_REQUIRED=YES', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+            cfds = False
             #####
             # Alternate commands for building with xcodebuild and signing
             #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
@@ -632,6 +632,10 @@ class MacBuildLib(object):
             stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         except Exception, err:
             trace = traceback.format_exc()
-            print str(trace)
+            self.logger.log(lp.DEBUG, str(trace))
             raise err
+        self.logger.log(lp.DEBUG, "\\\\\\\\\"")
+        self.logger.log(lp.DEBUG, "stdout: " + str(stdout))
+        self.logger.log(lp.DEBUG, "stderr: " + str(stderr))
+        self.logger.log(lp.DEBUG, "///////")
 
