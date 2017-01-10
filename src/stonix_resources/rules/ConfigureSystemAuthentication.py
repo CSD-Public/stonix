@@ -498,6 +498,14 @@ for the login.defs file"""
         if self.usingpwquality:
             if not self.setpwquality():
                 success = False
+        elif self.usingcracklib:
+            self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
+                                   self.password)
+        if self.ph.manager == "yum":
+            writecontents = self.auth + "\n" + self.acct + "\n" + \
+                self.password + "\n" + self.session
+        else:
+            writecontents = self.password
         if self.ph.manager == "yum":
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
@@ -527,12 +535,6 @@ for the login.defs file"""
                     found2 = True
             if not found1 or not found2:
                 tmpfile = pamfile + ".tmp"
-                if self.ph.manager == "yum":
-                    writecontents = self.auth + "\n" + self.acct + "\n" + \
-                        self.password + "\n" + self.session
-                else:
-                    writecontents = self.password
-                
                 if writeFile(tmpfile, writecontents, self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
