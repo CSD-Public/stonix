@@ -504,14 +504,15 @@ i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
 
 AUTH_APT = '''auth        required      pam_env.so
-auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
 auth        sufficient    pam_unix.so try_first_pass
 auth        requisite     pam_succeed_if.so uid >= 500 quiet
 auth        sufficient    pam_krb5.so use_first_pass
 auth        required      pam_deny.so
 '''
 
-ACCOUNT_APT = '''account     required      pam_tally2.so
+ACCOUNT_APT = '''account     required      pam_faillock.so
 account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
@@ -521,7 +522,7 @@ account     required      pam_permit.so
 '''
 
 PASSWORD_APT = '''password    requisite     \
-pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
@@ -549,7 +550,8 @@ session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
 
 AUTH_ZYPPER = '''auth    required        pam_env.so
-auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
 auth    optional        pam_gnome_keyring.so
 auth    sufficient      pam_unix.so     try_first_pass
 auth    required        pam_sss.so      use_first_pass

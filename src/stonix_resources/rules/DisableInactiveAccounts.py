@@ -202,11 +202,19 @@ automatically disabled.'
                                           user + ' accountPolicyData ' +
                                           'passwordLastSetTime')
             epochchangetimestr = self.cmdhelper.getOutputString()
-            if self.cmdhelper.getReturnCode() != 0:
-                self.detailedresults += '\nThere was an issue reading ' + \
-                    user + '\'s accountPolicyData passwordLastSetTime'
-                self.compliant = False
-                return inactivedays
+            retcode = self.cmdhelper.getReturnCode()
+            outstr = self.cmdhelper.getOutputString()
+            if retcode != 0:
+                if retcode == 181: # this is the mac os x error code when a plist path does not exist
+                    if re.search("No such plist path: passwordLastSetTime", outstr, re.IGNORECASE):
+                        self.detailedresults += "The local account: " + str(user) + " has never had a password set for it! We will now disable this local account on this machine."
+                        self.logger.log(LogPriority.DEBUG, "The local user account: " + str(user) + " had no password for it. STONIX will disable it now.")
+                        inactivedays = 9999 # this will ensure it gets added to the list of accounts to disable
+                else:
+                    self.detailedresults += '\nThere was an issue reading ' + \
+                        user + '\'s accountPolicyData passwordLastSetTime'
+                    self.compliant = False
+                    return inactivedays
 
             epochchangetimelist = epochchangetimestr.split(':')
             epochchangetimestropr = epochchangetimelist[1].strip()
