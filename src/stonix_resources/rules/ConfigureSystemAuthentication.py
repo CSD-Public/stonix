@@ -220,7 +220,6 @@ for the login.defs file"""
         self.usingpamtally2, self.usingpamfail = False, False
         self.created1, self.created2 = False, False
         self.ph = Pkghelper(self.logger, self.environ)
-        self.pamsha512present = True
         self.cracklibpkgs = ["libpam-cracklib",
                              "cracklib"]
         self.pwqualitypkgs = ["libpam-pwquality",
@@ -341,7 +340,7 @@ for the login.defs file"""
             if not self.ci4comp:
                 if not self.checklibuser():
                     if not self.setlibuser():
-                        debug = "setlibhash() failed\n"
+                        debug = "setlibuser() failed\n"
                         self.detailedresults += "Unable to configure " + \
                             "/etc/libuser.conf\n"
                         self.logger.log(LogPriority.DEBUG, debug)
@@ -497,6 +496,7 @@ for the login.defs file"""
                         return False
                     else:
                         installed = True
+                        break
         if not installed:
             self.detailedresults += "No password checking program available\n"
             return False
@@ -903,30 +903,40 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
         @author: dwalker
         @return: bool'''
         compliant = True
+        '''check if libuser is intalled'''
         if not self.ph.check("libuser"):
+            '''if not, check if available'''
             if self.ph.checkAvailable("libuser"):
                 self.detailedresults += "libuser available but not installed\n"
                 return False
             else:
+                '''not available, not a problem'''
                 return True
         if self.ph.manager in ["yum", "apt-get"]:
-            data = {"defaults": {"crypt_style": "sha512"}}
-            datatype = "tagconf"
-            intent = "present"
-            tmppath = self.libuserfile + ".tmp"
-            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                          datatype, self.libuserfile,
-                                          tmppath, data, intent, "openeq")
-            if not self.editor1.report():
-                debug = "/etc/libuser.conf doesn't contain the correct " + \
-                    "contents\n"
-                self.detailedresults += "/etc/libuser.conf doesn't " + \
-                    "contain the correct contents\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
-            if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
-                self.detailedresults += "Permissions are incorrect on " + \
-                    self.libuserfile + "\n"
+            '''create a kveditor for file if it exists, if not, we do it in
+            the setlibuser method inside the fix'''
+            if os.path.exists(self.libuserfile):
+                data = {"defaults": {"crypt_style": "sha512"}}
+                datatype = "tagconf"
+                intent = "present"
+                tmppath = self.libuserfile + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              datatype, self.libuserfile,
+                                              tmppath, data, intent, "openeq")
+                if not self.editor1.report():
+                    debug = "/etc/libuser.conf doesn't contain the correct " + \
+                        "contents\n"
+                    self.detailedresults += "/etc/libuser.conf doesn't " + \
+                        "contain the correct contents\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    compliant = False
+                if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+                    self.detailedresults += "Permissions are incorrect on " + \
+                        self.libuserfile + "\n"
+                    compliant = False
+            else:
+                self.detailedresults += "Libuser installed but libuser " + \
+                    "file doesn't exist\n"
                 compliant = False
         elif self.ph.manager == "zypper":
             contents = readFile(self.libuserfile, self.logger)
@@ -1216,11 +1226,16 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
         print "inside setlibuser\n\n"
         created = False
         success = True
+        '''check if installed'''
         if not self.ph.check("libuser"):
+            '''if not installed, check if available'''
             if self.ph.checkAvailable("libuser"):
+                '''if available, install it'''
                 if not self.ph.install("libuser"):
                     return False
                 else:
+                    '''since we're just now installing it we know we now
+                    need to create the kveditor'''
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     comm = self.ph.getRemove()
