@@ -34,6 +34,8 @@ from LANL-stor.
 @change: 2016/11/14 eball - Moved PAM configurations to localize.py
 @change: 2016/12/21 eball - Separated required packages for report, put package
     localization into individual methods
+@change: 2017/01/12 eball - Modified __checkconf to read file contents within
+    the method. This allows for more specific feedback on file content issues.
 '''
 from __future__ import absolute_import
 import os
@@ -106,6 +108,7 @@ effect."""
     def report(self):
         try:
             compliant = True
+            self.detailedresults = ""
             results = ""
             server = self.ldapci.getcurrvalue()
             self.ldapsettings = ""
@@ -130,10 +133,8 @@ effect."""
 
             reqpamconf = self.__getreqpamconf()
             for conffile in reqpamconf:
-                currentConf = readFile(conffile, self.logger)
-                if not self.__checkconf(currentConf, reqpamconf[conffile]):
+                if not self.__checkconf(conffile, reqpamconf[conffile]):
                     compliant = False
-                    results += "Settings in " + conffile + " are incorrect\n"
 
             if not self.nslcd:
                 sssdconfpath = "/etc/sssd/sssd.conf"
@@ -174,11 +175,8 @@ effect."""
                                     'group:     compat sss']
                 self.nsswitchsettings = nsswitchsettings
                 if os.path.exists(nsswitchpath):
-                    nsconf = readFile(nsswitchpath, self.logger)
-                    if not self.__checkconf(nsconf, nsswitchsettings):
+                    if not self.__checkconf(nsswitchpath, nsswitchsettings):
                         compliant = False
-                        results += "Settings in " + nsswitchpath + \
-                            " are not correct.\n"
                     elif not checkPerms(nsswitchpath, [0, 0, 0644],
                                         self.logger):
                         compliant = False
@@ -229,11 +227,8 @@ effect."""
                                              'nss_initgroups_ignoreusers root']
                 ldapsettings = self.ldapsettings
                 if os.path.exists(ldapfile):
-                    ldapconf = readFile(ldapfile, self.logger)
-                    if not self.__checkconf(ldapconf, ldapsettings):
+                    if not self.__checkconf(ldapfile, ldapsettings):
                         compliant = False
-                        results += "Settings in " + ldapfile + \
-                            " are not correct.\n"
                     elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
                         compliant = False
                         results += "Settings in " + ldapfile + " are " + \
@@ -253,11 +248,8 @@ effect."""
                                     'group:     files ldap']
                 self.nsswitchsettings = nsswitchsettings
                 if os.path.exists(nsswitchpath):
-                    nsconf = readFile(nsswitchpath, self.logger)
-                    if not self.__checkconf(nsconf, nsswitchsettings):
+                    if not self.__checkconf(nsswitchpath, nsswitchsettings):
                         compliant = False
-                        results += "Settings in " + nsswitchpath + \
-                            " are not correct.\n"
                     elif not checkPerms(nsswitchpath, [0, 0, 0644],
                                         self.logger):
                         compliant = False
@@ -286,7 +278,7 @@ effect."""
                             "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
-            self.detailedresults = results
+            self.detailedresults += results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -342,17 +334,23 @@ effect."""
         else:
             return packagesRpm
 
-    def __checkconf(self, contents, settings):
+    def __checkconf(self, filepath, settings):
         '''Private method to audit a conf file to ensure that it contains all
         of the required directives.
 
-        @param contents: contents of the configfile as returned by readFile
+        @param file: configuration file to load current settings from
         @param settings: list of settings that should be present in the conf
         @return: Bool Returns True if all settings are present.
         @author: Eric Ball
         '''
+        if os.path.exists(filepath):
+            contents = readFile(filepath, self.logger)
+        else:
+            debug = "File passed to __checkconf does not exist"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
         if len(contents) == 0:
-            debug = "File contents passed to __checkconf is empty"
+            debug = "File passed to __checkconf is empty"
             self.logger.log(LogPriority.DEBUG, debug)
             return False
         if len(settings) == 0:
@@ -362,18 +360,28 @@ effect."""
 
         contentsSplit = []
         comment = re.compile('^#')
+        results = ""
+        foundAll = True
         for line in contents:
             if not comment.match(line):
                 contentsSplit.append(line.split())
         for setting in settings:
-            if setting == "":
+            if setting == "" or comment.match(setting):
                 continue
-            if not comment.match(setting) and \
-               setting.split() not in contentsSplit:
-                debug = str(setting.split()) + " not in " + str(contentsSplit)
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-        return True
+            settingOpts = setting.split("|")
+            found = False
+            for opt in settingOpts:
+                if opt.split() in contentsSplit:
+                    found = True
+            if not found:
+                results += 'Could not find line "' + settingOpts[0].strip() + \
+                    '"'
+                for opt in settingOpts[1:]:
+                    results += ' or line "' + opt + '"'
+                results += " in file " + filepath + "\n"
+                foundAll = False
+        self.detailedresults += results
+        return foundAll
 
     def fix(self):
         self.detailedresults = ""
@@ -491,9 +499,13 @@ effect."""
                             success = False
 
                     ldapconf = readFile(ldapfile, self.logger)
+                    # Back up detailedresults, so that we can ignore the
+                    # report-focused output from checkconf()
+                    results = self.detailedresults
                     for setting in nonkv:
-                        if not self.__checkconf(ldapconf, [setting]):
+                        if not self.__checkconf(ldapfile, [setting]):
                             ldapconf.append(setting + "\n")
+                    self.detailedresults = results
 
                     if not self.__writeFile(ldapfile, "".join(ldapconf),
                                             [0, 0, 0600]):
@@ -656,11 +668,24 @@ krb5_realm = lanl.gov
         pamconf = self.__getpamconf()
         reqpamconf = {}
         searchstring = "pam_tally2|faillock|pam_unix|pwquality|cracklib" + \
-            "|krb5|sss"
+            "|krb5|sss|mkhomedir"
+        tally = "auth required pam_tally2.so deny=5 unlock_time=900 onerr=fail"
+        faillock = "auth required pam_faillock.so preauth silent " + \
+            "audit deny=5 unlock_time=900 fail_interval=900"
+        pwquality = "password requisite pam_pwquality.so minlen=14 " + \
+            "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
+            "retry=3 maxrepeat=3"
+        cracklib = "password requisite pam_cracklib.so minlen=14 " + \
+            "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
+            "retry=3 maxrepeat=3"
         for conf in pamconf:
             tempconf = []
             for line in pamconf[conf].splitlines(True):
                 if re.search(searchstring, line):
+                    if re.search("account pam_tally2|account faillock", line):
+                        line = tally + "|" + faillock
+                    elif re.search("pwquality|cracklib", line):
+                        line = pwquality + "|" + cracklib
                     tempconf.append(line)
             reqpamconf[conf] = tempconf
         return reqpamconf
