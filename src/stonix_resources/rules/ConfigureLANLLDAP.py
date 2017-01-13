@@ -598,8 +598,6 @@ effect."""
                             # flag is not supported. Hence the use of newlines
                             nsConf = re.sub(confLine, settings[ind],
                                             nsConf)
-                        else:
-                            nsConf += "\n" + settings[ind] + "\n"
                     else:
                         nsConf += "\n" + settings[ind] + "\n"
                 return self.__writeFile(path, nsConf, [0, 0, 0644])
