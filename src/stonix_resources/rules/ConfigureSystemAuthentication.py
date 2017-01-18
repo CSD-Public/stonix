@@ -823,8 +823,8 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
 ###############################################################################
 
     def checklogindefs(self):
-        '''Method to check the password
-        hash algorithm settings in login.defs.'''
+        '''Method to check the password hash algorithm settings in 
+        login.defs.'''
         compliant = True
         debug = ""
         if os.path.exists(self.logindefs):
@@ -882,12 +882,10 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
                     "PASS_MAX_DAYS": "180",
                     "PASS_MIN_DAYS": "1",
                     "PASS_WARN_AGE": "7"}
-            datatype = "conf"
-            intent = "present"
             tmppath = self.logindefs + ".tmp"
             self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                          datatype, self.logindefs, tmppath,
-                                          data, intent, "space")
+                                          "conf", self.logindefs, tmppath,
+                                          data, "present", "space")
             if not self.editor2.report():
                 debug = self.logindefs + " doesn't contain the correct " + \
                     "contents\n"
@@ -899,8 +897,8 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
 ###############################################################################
 
     def checklibuser(self):
-        '''Systemauth.__chklibuserhash() Private method to check the password
-        hash algorithm settings in libuser.conf.
+        '''Private method to check the password hash algorithm settings in 
+        libuser.conf.
         @author: dwalker
         @return: bool'''
         compliant = True
@@ -913,7 +911,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
             else:
                 '''not available, not a problem'''
                 return True
-#         if self.ph.manager in ["yum", "apt-get"]:
         '''create a kveditor for file if it exists, if not, we do it in
         the setlibuser method inside the fix'''
         if os.path.exists(self.libuserfile):
@@ -939,22 +936,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
             self.detailedresults += "Libuser installed but libuser " + \
                 "file doesn't exist\n"
             compliant = False
-#         elif self.ph.manager == "zypper":
-#             contents = readFile(self.libuserfile, self.logger)
-#             if not contents:
-#                 self.detailedresults += self.libuserfile + " is blank\n"
-#                 return False
-#             for line in contents:
-#                 if re.match("^\"encryption_method\"", line.strip()):
-#                     if re.search(":", line):
-#                         temp = line.split(":")
-#                         if temp[1].strip() != "\"sha512\"":
-#                             compliant = False
-#                             break
-#             if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
-#                 self.detailedresults += "Permissions are incorrect on " + \
-#                     self.libuserfile + "\n"
-#                 compliant = False
         return compliant
 
 ###############################################################################
@@ -1224,12 +1205,14 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
         '''
         created = False
         success = True
+        data = {"defaults": {"crypt_style": "sha512"}}
         '''check if installed'''
         if not self.ph.check("libuser"):
             '''if not installed, check if available'''
             if self.ph.checkAvailable("libuser"):
                 '''if available, install it'''
                 if not self.ph.install("libuser"):
+                    self.detailedresults += "Unable to install libuser\n"
                     return False
                 else:
                     '''since we're just now installing it we know we now
@@ -1240,7 +1223,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
                     event = {"eventtype": "commandstring",
                              "command": comm}
                     self.statechglogger.recordchgevent(myid, event)
-                    data = {"defaults": {"crypt_style": "sha512"}}
                     datatype = "tagconf"
                     intent = "present"
                     tmppath = self.libuserfile + ".tmp"
@@ -1252,16 +1234,22 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
                 return True
 #         if self.ph.manager in ["apt-get", "yum"]:      
         if not os.path.exists(self.libuserfile):
-            if createFile(self.libuserfile, self.logger):
-                created = True
-                data = {"defaults": {"crypt_style": "sha512"}}
-                datatype = "tagconf"
-                intent = "present"
-                tmppath = self.libuserfile + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              datatype, self.libuserfile,
-                                              tmppath, data, intent, "openeq")
-                self.editor1.report()
+            if not createFile(self.libuserfile, self.logger):
+                self.detailedresults += "Unable to create libuser file\n"
+                debug = "Unable to create the libuser file\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+            created = True
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.libuserfile}
+            self.statechglogger.recordchgevent(myid, event)
+            tmppath = self.libuserfile + ".tmp"
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          "tagconf", self.libuserfile,
+                                          tmppath, data, "present", "openeq")
+            self.editor1.report()
         if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
             if not created:
                 self.iditerator += 1
