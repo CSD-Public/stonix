@@ -291,11 +291,9 @@ for the login.defs file"""
                         "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                         "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
                     if self.pwqinstalled:
-                        print "PWQUALITY IS INSTALLED\n\n"
                         if not self.setpasswordsetup(regex):
                             success = False
                     else:
-                        print "PWQUALITY ISN'T INSTALLED\n\n"
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
                 elif self.usingcracklib:
@@ -315,9 +313,7 @@ for the login.defs file"""
                     self.detailedresults += error + "\n"
                     return False
         if self.ci3.getcurrvalue():
-            print "lockout ci is checked\n"
             if not self.ci3comp:
-                print "lockout portion failed in previous report\n"
                 if self.usingpamfail:
                     regex = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
                         "deny=5 unlock_time=900 fail_interval=900"
@@ -374,7 +370,6 @@ for the login.defs file"""
         if self.pwqinstalled:
             '''If it's not, since it is already installed we want to
             configure pwquality and not cracklib since it's better'''
-            print "pwquality is installed!!!!!!!\n\n\n"
             if not self.checkpasswordsetup("pwquality"):
                 self.usingpwquality = True
                 self.detailedresults += "System is using pwquality but " + \
@@ -397,6 +392,9 @@ for the login.defs file"""
                             "installed but is not configured properly with " + \
                             "PAM, will install and configure pwquality\n"
                         return False
+                    self.detailedresults += "cracklib installed but not " + \
+                        "configured properly\n"
+                    self.usingcracklib = True
             else:
                 '''cracklib is installed and configured'''
                 return True
@@ -429,7 +427,6 @@ for the login.defs file"""
         '''
         compliant = True
         if package == "pwquality":
-            print "package is pwquality\n"
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
                     "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
@@ -479,7 +476,6 @@ for the login.defs file"""
         pamfiles = []
         installed = False
         if pkglist:
-            print "passed in a package list!!!!!!\n\n"
             for pkg in pkglist:
                 if self.ph.check(pkg):
                     installed = True
@@ -487,7 +483,6 @@ for the login.defs file"""
         else:
             installed = True
         if not installed:
-            print "inside setpasswordsetup and pw checking not installed\n\n\n"
             for pkg in pkglist:
                 if self.ph.checkAvailable(pkg):
                     if not self.ph.install(pkg):
@@ -496,13 +491,27 @@ for the login.defs file"""
                         return False
                     else:
                         installed = True
+                        pwqfile = "/etc/security/pwquality.conf"
+                        tmpfile = pwqfile + ".tmp"
+                        data = {"difok": "7",
+                                "minlen": "14",
+                                "dcredit": "0",
+                                "ucredit": "0",
+                                "lcredit": "0",
+                                "ocredit": "0",
+                                "maxrepeat": "3",
+                                "minclass": "4"}
+                        self.pwqeditor = KVEditorStonix(self.statechglogger,
+                                                        self.logger, "conf",
+                                                        pwqfile, tmpfile, data,
+                                                        "present", "openeq")
+                        self.pwqeditor.report()
                         break
         if not installed:
             self.detailedresults += "No password checking program available\n"
             return False
         if self.usingpwquality:
             if not self.setpwquality():
-                print "unable to correct contents of /etc/security/pwquailty.conf\n"
                 success = False
         elif self.usingcracklib:
             self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
@@ -640,14 +649,10 @@ for the login.defs file"""
         pamfiles = []
         compliant = True
         if ch.executeCommand(cmd1):
-            print "executed " + cmd1 + " successfully\n"
             if ch.getReturnCode() == 0:
                 self.usingpamfail = True
             elif ch.executeCommand(cmd2):
-                print "Not using faillock, checking pam_tally2\n"
-                print "executed " + cmd2 + " successfully\n"
                 if ch.getReturnCode() == 0:
-                    print "system is using pam_tally2\n"
                     self.usingpamtally2 = True
             else:
                 self.detailedresults += "There is no account " + \
@@ -673,14 +678,12 @@ for the login.defs file"""
         elif self.usingpamtally2:
             regex = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
                 "unlock_time=900 onerr=fail"
-            print "The regex we are using is: " + str(regex) + "\n"
         if self.ph.manager == "yum":
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
         else:
             pamfiles.append(self.pamauthfile)
         for pamfile in pamfiles:
-            print "The current pam file we're looking at is: " + pamfile + "\n"
             if not os.path.exists(pamfile):
                 self.detailedresults += "Critical pam file " + pamfile + \
                     "doesn't exist\n"
@@ -710,7 +713,6 @@ for the login.defs file"""
         return compliant
 
     def setaccountlockout(self, regex):
-        print "INSIDE SETACCOUNTLOCKOUT\n\n\n\n"
         success = True
         pamfiles = []
         if self.usingpamtally2:
@@ -763,7 +765,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
         return success
 
     def chkpwquality(self):
-        print "inside chkpwquality!!!!!\n\n"
         compliant = True
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
@@ -912,48 +913,48 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
             else:
                 '''not available, not a problem'''
                 return True
-        if self.ph.manager in ["yum", "apt-get"]:
-            '''create a kveditor for file if it exists, if not, we do it in
-            the setlibuser method inside the fix'''
-            if os.path.exists(self.libuserfile):
-                data = {"defaults": {"crypt_style": "sha512"}}
-                datatype = "tagconf"
-                intent = "present"
-                tmppath = self.libuserfile + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              datatype, self.libuserfile,
-                                              tmppath, data, intent, "openeq")
-                if not self.editor1.report():
-                    debug = "/etc/libuser.conf doesn't contain the correct " + \
-                        "contents\n"
-                    self.detailedresults += "/etc/libuser.conf doesn't " + \
-                        "contain the correct contents\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
-                if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
-                    self.detailedresults += "Permissions are incorrect on " + \
-                        self.libuserfile + "\n"
-                    compliant = False
-            else:
-                self.detailedresults += "Libuser installed but libuser " + \
-                    "file doesn't exist\n"
+#         if self.ph.manager in ["yum", "apt-get"]:
+        '''create a kveditor for file if it exists, if not, we do it in
+        the setlibuser method inside the fix'''
+        if os.path.exists(self.libuserfile):
+            data = {"defaults": {"crypt_style": "sha512"}}
+            datatype = "tagconf"
+            intent = "present"
+            tmppath = self.libuserfile + ".tmp"
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          datatype, self.libuserfile,
+                                          tmppath, data, intent, "openeq")
+            if not self.editor1.report():
+                debug = "/etc/libuser.conf doesn't contain the correct " + \
+                    "contents\n"
+                self.detailedresults += "/etc/libuser.conf doesn't " + \
+                    "contain the correct contents\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
-        elif self.ph.manager == "zypper":
-            contents = readFile(self.libuserfile, self.logger)
-            if not contents:
-                self.detailedresults += self.libuserfile + " is blank\n"
-                return False
-            for line in contents:
-                if re.match("^\"encryption_method\"", line.strip()):
-                    if re.search(":", line):
-                        temp = line.split(":")
-                        if temp[1].strip() != "\"sha512\"":
-                            compliant = False
-                            break
             if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.libuserfile + "\n"
                 compliant = False
+        else:
+            self.detailedresults += "Libuser installed but libuser " + \
+                "file doesn't exist\n"
+            compliant = False
+#         elif self.ph.manager == "zypper":
+#             contents = readFile(self.libuserfile, self.logger)
+#             if not contents:
+#                 self.detailedresults += self.libuserfile + " is blank\n"
+#                 return False
+#             for line in contents:
+#                 if re.match("^\"encryption_method\"", line.strip()):
+#                     if re.search(":", line):
+#                         temp = line.split(":")
+#                         if temp[1].strip() != "\"sha512\"":
+#                             compliant = False
+#                             break
+#             if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+#                 self.detailedresults += "Permissions are incorrect on " + \
+#                     self.libuserfile + "\n"
+#                 compliant = False
         return compliant
 
 ###############################################################################
@@ -1174,7 +1175,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
 ###############################################################################
 
     def setpwquality(self):
-        print "inside setpwquality\n\n"
         success = True
         created = False
         pwqfile = "/etc/security/pwquality.conf"
@@ -1200,7 +1200,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
                                             "present", "openeq")
             self.pwqeditor.report()
         if self.pwqeditor.fixables:
-            print "There are fixables\n"
             if self.pwqeditor.fix():
                 if not created:
                     self.iditerator += 1
@@ -1223,7 +1222,6 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
         @author: dwalker
         @return: bool
         '''
-        print "inside setlibuser\n\n"
         created = False
         success = True
         '''check if installed'''
@@ -1252,89 +1250,89 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
                     self.editor1.report()
             else:
                 return True
-        if self.ph.manager in ["apt-get", "yum"]:      
-            if not os.path.exists(self.libuserfile):
-                if createFile(self.libuserfile, self.logger):
-                    created = True
-                    data = {"defaults": {"crypt_style": "sha512"}}
-                    datatype = "tagconf"
-                    intent = "present"
-                    tmppath = self.libuserfile + ".tmp"
-                    self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                                  datatype, self.libuserfile,
-                                                  tmppath, data, intent, "openeq")
-                    self.editor1.report()
-            if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
-                if not created:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.libuserfile, [0, 0, 0o644], self.logger,
-                                    self.statechglogger, myid):
-                        success = False
-                        self.detailedresults += "Unable to set the " + \
-                            "permissions on " + self.libuserfile + "\n"
-                elif not setPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+#         if self.ph.manager in ["apt-get", "yum"]:      
+        if not os.path.exists(self.libuserfile):
+            if createFile(self.libuserfile, self.logger):
+                created = True
+                data = {"defaults": {"crypt_style": "sha512"}}
+                datatype = "tagconf"
+                intent = "present"
+                tmppath = self.libuserfile + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              datatype, self.libuserfile,
+                                              tmppath, data, intent, "openeq")
+                self.editor1.report()
+        if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.libuserfile, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
                     success = False
                     self.detailedresults += "Unable to set the " + \
-                            "permissions on " + self.libuserfile + "\n"
-            if self.editor1.fixables:
-                if not created:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.editor1.setEventID(myid)
-                if self.editor1.fix():
-                    if self.editor1.commit():
-                        debug = "/etc/libuser.conf has been corrected\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        os.chown(self.libuserfile, 0, 0)
-                        os.chmod(self.libuserfile, 0o644)
-                        resetsecon(self.libuserfile)
-                    else:
-                        self.detailedresults += "/etc/libuser.conf " + \
-                            "couldn't be corrected\n"
-                        success = False
+                        "permissions on " + self.libuserfile + "\n"
+            elif not setPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+                success = False
+                self.detailedresults += "Unable to set the " + \
+                        "permissions on " + self.libuserfile + "\n"
+        if self.editor1.fixables:
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.editor1.setEventID(myid)
+            if self.editor1.fix():
+                if self.editor1.commit():
+                    debug = "/etc/libuser.conf has been corrected\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    os.chown(self.libuserfile, 0, 0)
+                    os.chmod(self.libuserfile, 0o644)
+                    resetsecon(self.libuserfile)
                 else:
-                    self.detailedresults += "/etc/libuser.conf couldn't " + \
-                        "be corrected\n"
+                    self.detailedresults += "/etc/libuser.conf " + \
+                        "couldn't be corrected\n"
                     success = False
-            return success
-        else:
-            if self.ph.manager == "zypper":
-                if os.path.exists(self.libuserfile):
-                    contents = readFile(self.libuserfile, self.logger)
-                    tempstring = ""
-                    found = False
-                    for line in contents:
-                        if re.search("^#", line) or re.match('^\s*$', line):
-                            tempstring += line
-                        elif re.search("^\"encryption_method\"", line.strip()):
-                            if re.search(":", line):
-                                temp = line.split(":")
-                                if temp[1] == "sha512":
-                                    found = True
-                                    tempstring += line
-                                else:
-                                    found = False
-                            else:
-                                continue
-                        else:
-                            tempstring += line
-                    if not found:
-                        line = "\"encryption_method\" : \"sha512\"\n"
-                        tempstring += line
-                    tmpfile = self.libuserfile + ".tmp"
-                    if writeFile(tmpfile, tempstring, self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {'eventtype': 'conf',
-                                 'filepath': self.libuserfile}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.libuserfile,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, self.libuserfile)
-                        os.chown(self.libuserfile, 0, 0)
-                        os.chmod(self.libuserfile, 0o644)
-                        resetsecon(self.libuserfile)
+            else:
+                self.detailedresults += "/etc/libuser.conf couldn't " + \
+                    "be corrected\n"
+                success = False
+        return success
+#         else:
+#             if self.ph.manager == "zypper":
+#                 if os.path.exists(self.libuserfile):
+#                     contents = readFile(self.libuserfile, self.logger)
+#                     tempstring = ""
+#                     found = False
+#                     for line in contents:
+#                         if re.search("^#", line) or re.match('^\s*$', line):
+#                             tempstring += line
+#                         elif re.search("^\"encryption_method\"", line.strip()):
+#                             if re.search(":", line):
+#                                 temp = line.split(":")
+#                                 if temp[1] == "sha512":
+#                                     found = True
+#                                     tempstring += line
+#                                 else:
+#                                     found = False
+#                             else:
+#                                 continue
+#                         else:
+#                             tempstring += line
+#                     if not found:
+#                         line = "\"encryption_method\" : \"sha512\"\n"
+#                         tempstring += line
+#                     tmpfile = self.libuserfile + ".tmp"
+#                     if writeFile(tmpfile, tempstring, self.logger):
+#                         self.iditerator += 1
+#                         myid = iterate(self.iditerator, self.rulenumber)
+#                         event = {'eventtype': 'conf',
+#                                  'filepath': self.libuserfile}
+#                         self.statechglogger.recordchgevent(myid, event)
+#                         self.statechglogger.recordfilechange(self.libuserfile,
+#                                                              tmpfile, myid)
+#                         os.rename(tmpfile, self.libuserfile)
+#                         os.chown(self.libuserfile, 0, 0)
+#                         os.chmod(self.libuserfile, 0o644)
+#                         resetsecon(self.libuserfile)
         return True
 ###############################################################################
 
