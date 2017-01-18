@@ -225,20 +225,16 @@ for the login.defs file"""
         self.pwqualitypkgs = ["libpam-pwquality",
                               "pam_pwquality",
                               "libpwquality"]
-        self.libuserfiles = ["/etc/libuser.conf",
-                             "/var/lib/YaST2/users_"]
+        self.libuserfile = "/etc/libuser.conf"
         if self.ph.manager == "apt-get":
             self.pampassfile = "/etc/pam.d/common-password"
             self.pamauthfile = "/etc/pam.d/common-auth"
-            self.libuserfile = "/etc/libuser.conf"
         elif self.ph.manager == "zypper":
             self.pampassfile = "/etc/pam.d/common-password-pc"
             self.pamauthfile = "/etc/pam.d/common-auth-pc"
-            self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
         else:
             self.pampassfile = "/etc/pam.d/password-auth-ac"
             self.pamauthfile = "/etc/pam.d/system-auth-ac"
-            self.libuserfile = "/etc/libuser.conf"
 
         if not self.checkpasswordreqs():
             self.ci2comp = False
