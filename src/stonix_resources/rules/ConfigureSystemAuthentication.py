@@ -486,6 +486,12 @@ for the login.defs file"""
                             pkg + "\n" 
                         return False
                     else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        comm = self.ph.getRemove() + pkg
+                        event = {"eventtype": "commandstring",
+                                 "command": comm}
+                        self.statechglogger.recordchgevent(myid, event)
                         installed = True
                         pwqfile = "/etc/security/pwquality.conf"
                         tmpfile = pwqfile + ".tmp"
@@ -711,9 +717,6 @@ for the login.defs file"""
     def setaccountlockout(self, regex):
         success = True
         pamfiles = []
-        if self.usingpamtally2:
-            self.auth = re.sub("auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail\n", self.auth)
         if self.ph.manager == "yum":
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
@@ -1215,7 +1218,7 @@ unlock_time=900 fail_interval=900\n", "auth    required        pam_tally2.so den
                     need to create the kveditor'''
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    comm = self.ph.getRemove()
+                    comm = self.ph.getRemove() + "libuser"
                     event = {"eventtype": "commandstring",
                              "command": comm}
                     self.statechglogger.recordchgevent(myid, event)
