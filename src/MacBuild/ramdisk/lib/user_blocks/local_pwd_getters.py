@@ -30,10 +30,29 @@ if chkApp.isapplicable():
     NOBODY = pwd.getpwnam("nobody").pw_uid
 
 
-class LocalPwdInfo(object):
+class LocalPwdGetters(object):
     '''
     User object that uses the python 'pwd' native library to querry information
     about local users on the system.  Cross platform *nix.
+
+    The pwd module provides access to the Unix user account and password 
+    database. It is available on all Unix versions.
+
+    Password database entries are reported as a tuple-like object, whose 
+    attributes correspond to the members of the passwd structure (Attribute 
+    field below, see <pwd.h>):
+
+    Index    Attribute    Meaning
+      0      pw_name      Login name
+      1      pw_passwd    Optional encrypted password
+      2      pw_uid       Numerical user ID
+      3      pw_gid       Numerical group ID
+      4      pw_gecos     User name or comment field
+      5      pw_dir       User home directory
+      6      pw_shell     User command interpreter
+
+    The uid and gid items are integers, all others are strings. KeyError is 
+    raised if the entry asked for cannot be found.
 
     @author: Roy Nielsen
     '''
@@ -55,7 +74,7 @@ a
         self.userHomeDir = ""
         self.userShell = ""
 
-    def getAllLocalUsersInfo(self):
+    def getAllUsersInfo(self):
         '''
         Return the pwd.getpwall() dictionary
 
