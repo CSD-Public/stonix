@@ -39,6 +39,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
+from ..ServiceHelper import ServiceHelper
 import traceback
 import os
 import re
@@ -154,7 +155,7 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
             success = True
             self.detailedresults = ""
             debug = ""
-
+            self.sh = ServiceHelper(self.environ, self.logger)
             # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
@@ -217,8 +218,12 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
                     else:
                         if not setPerms(self.path, [0, 0, 0o644], self.logger):
                             success = False
+<<<<<<< HEAD
                             
                 if self.editor.fixables or self.editor.removeables:
+=======
+                if self.editor.fixables:
+>>>>>>> develop
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
@@ -227,7 +232,14 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
                         debug += "kveditor fix ran successfully\n"
                         if self.editor.commit():
                             debug += "kveditor commit ran successfully\n"
+<<<<<<< HEAD
                             self.logger.log(LogPriority.DEBUG, debug)
+=======
+                            os.chown(self.path, 0, 0)
+                            os.chmod(self.path, 0o644)
+                            if re.search("linux", self.environ.getosfamily()):
+                                resetsecon(self.path)
+>>>>>>> develop
                         else:
                             debug += "Unable to complete kveditor commit\n"
                             self.logger.log(LogPriority.DEBUG, debug)
@@ -236,10 +248,7 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
                         debug += "Unable to complete kveditor fix\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                        success = False
-                    os.chown(self.path, 0, 0)
-                    os.chmod(self.path, 0o644)
-                    resetsecon(self.path)
+                    
                 self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise

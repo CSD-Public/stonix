@@ -24,8 +24,9 @@
 
 Created on Jan 21, 2016
 
-This rule will set the global policy for inactive accounts so that any account
-not accessed/used within 35 days will be automatically disabled.
+This rule will set the global policy for inactive accounts so that any account,
+which goes 35 days beyond the password expiration date without updating its
+password, will be disabled.
 
 @author: Breen Malmberg
 @change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
@@ -64,9 +65,9 @@ class DisableInactiveAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will set the global policy for inactive \
-accounts so that any account not accessed/used within 35 days will be \
-automatically disabled.'
+        self.helptext = 'This rule will set the global policy for inactive accounts so that any account, \
+which goes 35 days beyond the password expiration date without updating its \
+password, will be disabled.'
         self.guidance = ['CNSSI 1253', 'DISA STIG']
 
         datatype = 'bool'
