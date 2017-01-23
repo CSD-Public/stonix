@@ -312,18 +312,37 @@ effect."""
 
     def __localizeAllPkgs(self):
         packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
-                       "krb5-workstation", "oddjob-mkhomedir",
-                       "libpwquality"]
+                       "krb5-workstation", "oddjob-mkhomedir"]
         packagesRh6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                       "oddjob-mkhomedir", "libpwquality"]
+                       "oddjob-mkhomedir"]
         packagesUbu = ["libpam-ldapd", "libpam-cracklib",
                        "libpam-krb5"]
         packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
                        "libpam-cracklib", "libpam-krb5"]
         packagesSus = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
                        "pam_pwquality", "sssd", "krb5"]
+        pwPkgs = self.__localizePwPkgs()
         if self.ph.determineMgr() == "apt-get":
             if re.search("ubuntu", self.myos):
+                myPkgs = packagesUbu
+            else:
+                myPkgs = packagesDeb
+        elif self.ph.determineMgr() == "zypper":
+            myPkgs = packagesSus
+        elif re.search("red hat", self.myos) and self.majorVer < 7:
+            myPkgs = packagesRh6
+        else:
+            myPkgs = packagesRpm
+        return myPkgs + pwPkgs
+
+    def __localizePwPkgs(self):
+        packagesRpm = ["libpwquality"]
+        packagesRh6 = ["libpwquality"]
+        packagesUbu = ["libpam-pwquality"]
+        packagesDeb = ["libpam-cracklib"]
+        packagesSus = ["pam_pwquality"]
+        if self.ph.determineMgr() == "apt-get":
+            if self.ph.checkAvailable("libpam-pwquality"):
                 return packagesUbu
             else:
                 return packagesDeb
@@ -395,7 +414,8 @@ effect."""
                 self.statechglogger.deleteentry(event)
 
             packages = self.__localizeAllPkgs()
-            for package in packages:
+            pwPackages = self.__localizePwPkgs()
+            for package in packages + pwPackages:
                 if not self.ph.check(package):
                     if self.ph.checkAvailable(package):
                         if not self.ph.install(package):
@@ -416,6 +436,12 @@ effect."""
                     self.nsswitchpath + "\n"
 
             pamconf = self.__getpamconf()
+            # Check for cracklib; replace pwquality if using cracklib
+            if "libpam-cracklib" in pwPackages:
+                for conffile in pamconf:
+                    conf = pamconf[conffile]
+                    conf = re.sub("pwquality", "cracklib", conf)
+                    pamconf[conffile] = conf
             if not self.__fixpam(pamconf):
                 success = False
                 results += "An error occurred while trying to write " + \
