@@ -43,7 +43,7 @@ import traceback
 from ..KVEditorStonix import KVEditorStonix
 from ..localize import AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD, \
     ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM, \
-    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD
+    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD ,SESSION_YUM
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..rule import Rule
@@ -135,6 +135,7 @@ for the login.defs file"""
             self.password = PASSWORD_YUM
             self.auth = AUTH_YUM
             self.acct = ACCOUNT_YUM
+            self.session = SESSION_YUM
 
     def report(self):
         '''
@@ -435,7 +436,7 @@ for the login.defs file"""
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         pamfiles = []
-        if self.ph.manager == "yum":
+        if self.ph.manager in ("yum", "dnf"):
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
         else:
@@ -518,15 +519,13 @@ for the login.defs file"""
         elif self.usingcracklib:
             self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
                                    self.password)
-        if self.ph.manager == "yum":
+        if self.ph.manager in ("yum", "dnf"):
             writecontents = self.auth + "\n" + self.acct + "\n" + \
                 self.password + "\n" + self.session
-        else:
-            writecontents = self.password
-        if self.ph.manager == "yum":
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
         else:
+            writecontents = self.password
             pamfiles.append(self.pampassfile)
         for pamfile in pamfiles:
             if not os.path.exists(pamfile):
@@ -643,7 +642,6 @@ for the login.defs file"""
         @author: dwalker
         @return: bool
         '''
-        regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
         which = "/usr/bin/which "
         cmd1 = which + "faillock"
         cmd2 = which + "pam_tally2"
@@ -680,12 +678,13 @@ for the login.defs file"""
         elif self.usingpamtally2:
             regex = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
                 "unlock_time=900 onerr=fail"
-        if self.ph.manager == "yum":
+        if self.ph.manager in("yum", "dnf"):
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
         else:
             pamfiles.append(self.pamauthfile)
         for pamfile in pamfiles:
+            found = False
             if not os.path.exists(pamfile):
                 self.detailedresults += "Critical pam file " + pamfile + \
                     "doesn't exist\n"
@@ -703,10 +702,8 @@ for the login.defs file"""
                     compliant = False
                 else:
                     for line in contents:
-                        found = False
-                        if re.search(regex, line):
+                        if re.search(regex, line.strip()):
                             found = True
-                            break
                     if not found:
                         self.detailedresults += "Didn't find the correct " + \
                             "contents in " + pamfile + "\n"
@@ -717,7 +714,7 @@ for the login.defs file"""
     def setaccountlockout(self, regex):
         success = True
         pamfiles = []
-        if self.ph.manager == "yum":
+        if self.ph.manager in ("yum", "dnf"):
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
             writecontents = self.auth + "\n" + self.acct + "\n" + \
@@ -741,11 +738,11 @@ for the login.defs file"""
                     self.detailedresults += "Unable to set " + \
                         "correct permissions on " + pamfile + "\n"
             contents = readFile(pamfile, self.logger)
-            found1 = False
+            found = False
             for line in contents:
                 if re.search(regex, line.strip()):
-                    found1 = True
-            if not found1:
+                    found = True
+            if not found:
                 tmpfile = pamfile + ".tmp"
                 if writeFile(tmpfile, writecontents, self.logger):
                     self.iditerator += 1
@@ -1231,7 +1228,6 @@ for the login.defs file"""
                     self.editor1.report()
             else:
                 return True
-#         if self.ph.manager in ["apt-get", "yum"]:      
         if not os.path.exists(self.libuserfile):
             if not createFile(self.libuserfile, self.logger):
                 self.detailedresults += "Unable to create libuser file\n"
@@ -1283,44 +1279,6 @@ for the login.defs file"""
                     "be corrected\n"
                 success = False
         return success
-#         else:
-#             if self.ph.manager == "zypper":
-#                 if os.path.exists(self.libuserfile):
-#                     contents = readFile(self.libuserfile, self.logger)
-#                     tempstring = ""
-#                     found = False
-#                     for line in contents:
-#                         if re.search("^#", line) or re.match('^\s*$', line):
-#                             tempstring += line
-#                         elif re.search("^\"encryption_method\"", line.strip()):
-#                             if re.search(":", line):
-#                                 temp = line.split(":")
-#                                 if temp[1] == "sha512":
-#                                     found = True
-#                                     tempstring += line
-#                                 else:
-#                                     found = False
-#                             else:
-#                                 continue
-#                         else:
-#                             tempstring += line
-#                     if not found:
-#                         line = "\"encryption_method\" : \"sha512\"\n"
-#                         tempstring += line
-#                     tmpfile = self.libuserfile + ".tmp"
-#                     if writeFile(tmpfile, tempstring, self.logger):
-#                         self.iditerator += 1
-#                         myid = iterate(self.iditerator, self.rulenumber)
-#                         event = {'eventtype': 'conf',
-#                                  'filepath': self.libuserfile}
-#                         self.statechglogger.recordchgevent(myid, event)
-#                         self.statechglogger.recordfilechange(self.libuserfile,
-#                                                              tmpfile, myid)
-#                         os.rename(tmpfile, self.libuserfile)
-#                         os.chown(self.libuserfile, 0, 0)
-#                         os.chmod(self.libuserfile, 0o644)
-#                         resetsecon(self.libuserfile)
-        return True
 ###############################################################################
 
     def setlogindefs(self):
