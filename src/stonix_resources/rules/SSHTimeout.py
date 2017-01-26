@@ -218,12 +218,9 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
                     else:
                         if not setPerms(self.path, [0, 0, 0o644], self.logger):
                             success = False
-<<<<<<< HEAD
-                            
-                if self.editor.fixables or self.editor.removeables:
-=======
+
                 if self.editor.fixables:
->>>>>>> develop
+
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
@@ -232,14 +229,12 @@ SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
                         debug += "kveditor fix ran successfully\n"
                         if self.editor.commit():
                             debug += "kveditor commit ran successfully\n"
-<<<<<<< HEAD
-                            self.logger.log(LogPriority.DEBUG, debug)
-=======
+
                             os.chown(self.path, 0, 0)
                             os.chmod(self.path, 0o644)
                             if re.search("linux", self.environ.getosfamily()):
                                 resetsecon(self.path)
->>>>>>> develop
+
                         else:
                             debug += "Unable to complete kveditor commit\n"
                             self.logger.log(LogPriority.DEBUG, debug)
