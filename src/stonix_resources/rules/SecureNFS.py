@@ -36,6 +36,7 @@ removed unnecessary return call (return success) - in fix method - which was at 
 method's return self.rulesuccess call, but before it, so it was always being called instead of
 return self.rulesuccess. self.rulesuccess will now return instead of success.
 '''
+
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
 from ..stonixutilityfunctions import createFile
@@ -341,32 +342,35 @@ contain the no_root_squash, all_squash or insecure_locks options."""
         changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
         '''
 
-        self.rulesuccess = True
+        self.logdispatch.log(LogPriority.DEBUG, "Entering SecureNFS.fix()...")
+
         success = True
+        changed1, changed2 = False, False
+        installed = False
         self.detailedresults = ""
 
         try:
 
             if not self.ci.getcurrvalue():
                 self.detailedresults += "\nThe CI for this rule was not enabled. Nothing has been done."
-                self.rulesuccess = True
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                return self.rulesuccess
+                success = True
+                self.formatDetailedResults("fix", success, self.detailedresults)
+                self.logdispatch.log(LogPriority.DEBUG, "Exiting SecureNFS.fix()...")
+                return success
 
             # Clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            success = True
-            changed1, changed2 = False, False
-            installed = False
+
             if self.environ.getostype() == "Mac OS X":
                 nfsservice = "nfsd"
                 nfsfile = "/etc/nfs.conf"
                 data1 = {"nfs.lockd.port": "",
                          "nfs.lockd.tcp": "1",
                          "nfs.lockd.udp": "1"}
+
             elif self.ph.manager in ("yum", "zypper", "dnf"):
                 nfsfile = "/etc/sysconfig/nfs"
                 data1 = {"LOCKD_TCPPORT": "32803",
@@ -375,11 +379,13 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                          "RQUOTAD_PORT": "875",
                          "STATD_PORT": "662",
                          "STATD_OUTGOING_PORT": "2020"}
+
                 nfsservice = "nfs"
                 if self.ph.manager == "zypper":
                     nfspackage = "nfs-kernel-server"
                 elif self.ph.manager == "yum" or self.ph.manager == "dnf":
                     nfspackage = "nfs-utils"
+
             elif self.ph.manager == "apt-get":
                 nfsservice = "nfs-kernel-server"
                 nfspackage = "nfs-kernel-server"
@@ -394,15 +400,17 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                                        "662/udp"],
                          "rpc.statd-bc": ["2020/tcp",
                                           "2020/udp"]}
+
             if self.environ.getostype() != "Mac OS X":
                 if self.ph.manager in ("apt-get", "zypper"):
                     if not self.ph.check(nfspackage):
-                        self.rulesuccess = True
-                        self.formatDetailedResults("fix", self.rulesuccess,
+                        success = True
+                        self.formatDetailedResults("fix", success,
                                                    self.detailedresults)
                         self.logdispatch.log(LogPriority.INFO,
                                              self.detailedresults)
-                        return self.rulesuccess
+                        return success
+
             if not os.path.exists(nfsfile):
                 if createFile(nfsfile, self.logger):
                     nfstemp = nfsfile + ".tmp"
@@ -411,12 +419,12 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                                                     'LaunchDaemons/' +
                                                     'com.apple.nfsd.plist',
                                                     'com.apple.nfsd'):
-                            self.rulesuccess = True
-                            self.formatDetailedResults("fix", self.rulesuccess,
+                            success = True
+                            self.formatDetailedResults("fix", success,
                                                        self.detailedresults)
                             self.logdispatch.log(LogPriority.INFO,
                                                  self.detailedresults)
-                            return self.rulesuccess
+                            return success
                         self.editor1 = KVEditorStonix(self.statechglogger,
                                                       self.logger, "conf",
                                                       nfsfile, nfstemp, data1,
@@ -558,17 +566,30 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                         success = False
                         debug = "Unable to set permissions on " + export
                         self.logger.log(LogPriority.DEBUG, debug)
+
             if changed1 or changed2:
-                self.sh.reloadservice(nfsservice, nfsservice)
-            if not success:
-                self.rulesuccess = False
+                ## CHANGE (Breen Malmberg) 1/23/2017
+                # The self.sh.reloadservice() call, for SHlaunchd, will start
+                # the service even if it is not already running.
+                # We don't want to start THIS service if it is not
+                # already running/enabled!
+                # We also don't want to change this functionality at the
+                # SHlaunchd class-level, because there may be other
+                # instances in which we want it to do a stop and start
+                # (aka a full reload), so this decision should be made at
+                # the rule-level.
+                ##
+                if self.sh.isrunning(nfsservice, nfsservice):
+                    self.sh.reloadservice(nfsservice, nfsservice)
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting SecureNFS.fix()...")
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", success, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
+        return success

@@ -27,10 +27,12 @@ This object encapsulates the /bin/launchctl command for Service Helper
 @change: 2012-10-31 - ekkehard - original implementation
 @change: 2014-03-31 - ekkehard - took out -w option and converted to cmd list
 @change: 2014-11-24 - ekkehard - added OS X Yosemite 10.10 support
+@change: 2017-01-20 - Breen Malmberg - changed name of var self.findstring to
+        self.noservicemsgs
 '''
 
-import CommandHelper
 import re
+import CommandHelper
 from logdispatcher import LogPriority
 
 
@@ -49,7 +51,7 @@ class SHlaunchd(object):
         self.launchd = "/bin/launchctl"
         self.defaults = "/usr/bin/defaults"
 # NOTE: This needs to be updated with new OS X after Yosemite
-        self.findstring = ["Could not find service ",
+        self.noservicemsgs = ["Could not find service ",
                            "launchctl list returned unknown response"]
         self.ch = CommandHelper.CommandHelper(logdispatcher)
 
@@ -57,24 +59,33 @@ class SHlaunchd(object):
         '''
         Disables the service and terminates it if it is running.
 
+        @return: servicesuccess
+        @rtype: bool
         @param service string: Name of the service to be disabled
         @param servicename string: Short Name of the service to be disabled
-        @return: Bool indicating success status
+        @author: ???
+        @change: Breen Malmberg - 1/20/2017 - minor doc string edit; try/except
         '''
+
         servicesuccess = True
         command = [self.launchd, 'unload', service]
-        self.logdispatcher.log(LogPriority.DEBUG, "command = '" + \
-                               str(command) + "'")
-        if self.ch.executeCommand(command):
-            if self.ch.findInOutput('nothing found to load'):
-                servicesuccess = False
-                self.logdispatcher.log(LogPriority.DEBUG,
-                                       "Disable of " + str(service) + \
-                                       " failed!")
-            else:
-                self.logdispatcher.log(LogPriority.DEBUG,
-                                       "Disable of " + str(service) + \
-                                       " succeded!")
+
+        try:
+
+            self.logdispatcher.log(LogPriority.DEBUG, "command = '" + \
+                                   str(command) + "'")
+            if self.ch.executeCommand(command):
+                if self.ch.findInOutput('nothing found to load'):
+                    servicesuccess = False
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Disable of " + str(service) + \
+                                           " failed!")
+                else:
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Disable of " + str(service) + \
+                                           " succeded!")
+        except Exception:
+            raise
         return servicesuccess
 
     def enableservice(self, service, servicename):
@@ -146,86 +157,106 @@ class SHlaunchd(object):
         @return: Bool, True if the service is configured to run
         @change: 2014-11-24 - ekkehard - remove -x option no supported in
         OS X Yosemite 10.10
+        @change: Breen Malmberg - 1/20/2017 - minor doc string edit; minor
+                refactor; logging
         '''
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.auditservice()...")
+
+        isrunning = True
+        command = [self.launchd, "list"]
+
         try:
-            servicesuccess = True
-            command = [self.launchd, "list", servicename]
-            self.logdispatcher.log(LogPriority.DEBUG, "command = '" + \
-                                   str(command) + "'")
-            if self.ch.executeCommand(command):
-                if self.ch.getErrorOutput() == []:
-                    servicesuccess = False
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                   'Blank output (' + service + ', ' + \
-                                    servicename + \
-                                    ')!')
-                elif self.ch.findInOutput(self.findstring[0]) or self.ch.findInOutput(self.findstring[1]):
-                    servicesuccess = False
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                           'Cannot Find service ' + \
-                                           service + ', ' + \
-                                           servicename + \
-                                           ') Output is ' + \
-                                           str(self.ch.getErrorOutput()) + \
-                                           "!")
-                else:
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                   'Found (' + service + ', ' + \
-                                    servicename + \
-                                    ') Output is ' + \
-                                    str(self.ch.getErrorOutput()) + "!")
-            self.logdispatcher.log(LogPriority.DEBUG,
-                                   '(' + service + ', ' + \
-                                    servicename + \
-                                    ') = ' + str(servicesuccess))
-            return servicesuccess
+
+            self.ch.executeCommand(command)
+            retcode = self.ch.getReturnCode()
+
+            if retcode != 0:
+                self.logdispatcher.log(LogPriority.DEBUG, "Command failed: " + str(command) + " with return code: " + str(retcode))
+
+            cmdoutput = self.ch.getOutput()
+
+            if not cmdoutput:
+                isrunning = False
+                self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
+
+            for line in cmdoutput:
+                if re.search(servicename, line, re.IGNORECASE):
+                    sline = line.split()
+                    if re.search('\-', sline[0], re.IGNORECASE):
+                        isrunning = False
+                elif re.search(self.noservicemsgs[0], line, re.IGNORECASE):
+                    isrunning = False
+                elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
+                    isrunning = False
+
+            if isrunning:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
+            else:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
+
+            self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.auditservice()...")
+
         except Exception:
             raise
+        return isrunning
 
     def isrunning(self, service, servicename):
         '''
-        Check to see if a service is currently running.
+        Use launchctl to determine if the given service is running or not
+        Return True if it is
+        Return False if it is not
 
+        @return: isrunning
+        @rtype: bool
         @param service string: Name of the service to be checked
         @param servicename string: Short Name of the service to be checked
-        @return: bool, True if the service is already running
+        @author: ???
         @change: 2014-12-22 - ekkehard - remove -x option no supported in
         OS X Yosemite 10.10
+        @change: Breen Malmberg - 1/20/2017 - minor doc string edit; minor
+                refactor; logging
         '''
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.isrunning()...")
+
+        isrunning = True
+        command = [self.launchd, "list"]
+
         try:
-            servicesuccess = True
-            command = [self.launchd, "list", servicename]
-            self.logdispatcher.log(LogPriority.DEBUG, "command = '" + \
-                                   str(command) + "'")
-            if self.ch.executeCommand(command):
-                if self.ch.getErrorOutput() == []:
-                    servicesuccess = False
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                   'Blank output (' + service + ', ' + \
-                                    servicename + \
-                                    ')!')
-                elif self.ch.findInOutput(self.findstring[0]) or self.ch.findInOutput(self.findstring[1]):
-                    servicesuccess = False
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                           'Cannot Find service ' + \
-                                           service + ', ' + \
-                                           servicename + \
-                                           ') Output is ' + \
-                                           str(self.ch.getErrorOutput()) + \
-                                           "!")
-                else:
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                   'Found (' + service + ', ' + \
-                                    servicename + \
-                                    ') Output is ' + \
-                                    str(self.ch.getErrorOutput()) + "!")
-            self.logdispatcher.log(LogPriority.DEBUG,
-                                   '(' + service + ', ' + \
-                                    servicename + \
-                                    ') = ' + str(servicesuccess))
-            return servicesuccess
+
+            self.ch.executeCommand(command)
+            retcode = self.ch.getReturnCode()
+
+            if retcode != 0:
+                self.logdispatcher.log(LogPriority.DEBUG, "Command failed: " + str(command) + " with return code: " + str(retcode))
+
+            cmdoutput = self.ch.getOutput()
+
+            if not cmdoutput:
+                isrunning = False
+                self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
+
+            for line in cmdoutput:
+                if re.search(servicename, line, re.IGNORECASE):
+                    sline = line.split()
+                    if re.search('\-', sline[0], re.IGNORECASE):
+                        isrunning = False
+                elif re.search(self.noservicemsgs[0], line, re.IGNORECASE):
+                    isrunning = False
+                elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
+                    isrunning = False
+
+            if isrunning:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
+            else:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
+
+            self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.isrunning()...")
+
         except Exception:
             raise
+        return isrunning
 
     def reloadservice(self, service, servicename):
         '''
@@ -233,21 +264,58 @@ class SHlaunchd(object):
         by rules that are configuring a service to make the new configuration
         active.
 
+        @return: servicesuccess
+        @rtype: bool
         @param service string: Name of the service to be reloaded
         @param servicename string: Short Name of the service to be reloaded
-        @return: bool indicating success status
+        @author: ???
+        @change: Breen Malmberg - 1/20/2017 - minor doc string edit; refactor;
+                try/except; logging
         '''
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.reloadservice()...")
 
         servicesuccess = False
         startsuccess = True
-        stopsuccess = self.stopservice(service, servicename)
-        if stopsuccess:
-            startsuccess = self.startservice(service, servicename)
-        servicesuccess = startsuccess and stopsuccess
+        stopsuccess = True
+        isrunning = False
 
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '(' + service + ', ' + servicename + \
-                               ') = ' + str(servicesuccess))
+        try:
+
+            if self.isrunning(service, servicename):
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
+                isrunning = True
+            else:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
+    
+            if isrunning:
+
+                self.logdispatcher.log(LogPriority.INFO, "Stopping " + str(service) + " service...")
+                if not self.stopservice(service, servicename):
+                    stopsuccess = False
+
+                if stopsuccess:
+                    self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " successfully stopped")
+                    self.logdispatcher.log(LogPriority.INFO, "Starting " + str(service) + " service...")
+                    startsuccess = self.startservice(service, servicename)
+            else:
+                self.logdispatcher.log(LogPriority.INFO, "Starting " + str(service) + " service...")
+                startsuccess = self.startservice(service, servicename)
+
+            if startsuccess:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " successfully started")
+    
+            servicesuccess = startsuccess and stopsuccess
+    
+            if servicesuccess:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " successfully reloaded")
+            else:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " failed to reload")
+
+            self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.reloadservice()...")
+
+        except Exception:
+            raise
         return servicesuccess
 
     def listservices(self):
