@@ -136,20 +136,20 @@ invalid."""
                                 "/var/log/local",
                                 "/var/log/ftp"]
             self.bootlog = "/var/log/boot.log"
-            self.logfiles = {"*.*,mark.info": "/var/log/messages",
+            self.logfiles = {"*.*,mark.*": "/var/log/messages",
                              "daemon.*": "/var/log/daemon",
-                             "auth.info,mark.info": "/var/log/auth",
-                             "user.info": "/var/log/user",
-                             "kern.info": "/var/log/kern",
-                             "lpr.info": "/var/log/lpr",
-                             "syslog.info": "/var/log/syslog",
-                             "cron.info": "/var/log/cron",
-                             "mail,uucp,news.info": "/var/log/maillog",
+                             "auth.*,mark.*,authpriv.*": "/var/log/auth",
+                             "user.*": "/var/log/user",
+                             "kern.*": "/var/log/kern",
+                             "lpr.*": "/var/log/lpr",
+                             "syslog.*": "/var/log/syslog",
+                             "cron.*": "/var/log/cron",
+                             "mail,uucp,news.*": "/var/log/maillog",
                              "local0,local1,local2,local3.*": "/var/log/local",
                              "local4,local5,local6,local7.*": "/var/log/local",
-                             "ftp.info": "/var/log/ftp",
+                             "ftp.*": "/var/log/ftp",
                              "local7.*": "/var/log/boot.log",
-                             "auth,authpriv.info,mark.info": WINLOG}
+                             "auth,authpriv.*,mark.*": WINLOG}
             self.detailedresults = ""
             self.wronglogrot = []
             self.missinglogrot = []
@@ -235,21 +235,6 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         return self.rulesuccess
 
 ###############################################################################
-
-#     def reportSystemD(self):
-#         '''
-#         ConfigureLogging.reportSystemD reports on SystemD logger which comes
-#         stock with Opensuse systems, and possibly all systems that use
-#         zypper package manager such as Novell.
-#         @author: dwalker
-#         @return: bool - True or False upon success
-#         '''
-#         debug = ""
-#         compliant = True
-#         self.directories.append("/var/log/messages")
-#         specs = {"Compress":"true",
-#                  "MaxFileSec":"weekly",
-#                  "MaxRetentionSec":"4"}
 
     def reportSysRSyslog(self):
         '''
@@ -725,14 +710,13 @@ rotation config file: " + self.logrotpath + "\n"
             os.chown(self.logrotpath, 0, 0)
         os.chmod(self.logrotpath, 420)
         resetsecon(self.logrotpath)
-#-----------------------------------------------------------------------------#
-        # restart log daemon
-        if not self.ch.executeCommand("/sbin/service " + self.logd + " reload-or-restart"):
-            debug = "Unable to restart the log daemon\n"
+        print "ABOUT TO RESTART DAEMON!!!!!\n\n"
+        if not self.sh.reloadservice("rsyslog"):
+            debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
             success = False
         if not self.ch.getReturnCode() != "0":
-            debug = "Unable to restart the log daemon\n"
+            debug = "Unable to restart the log daemon part 2\n"
             self.logger.log(LogPriority.DEBUG, debug)
             success = False
         return success
