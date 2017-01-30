@@ -57,8 +57,10 @@ class ConfigurePasswordPolicy(Rule):
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11']}}
+#         self.applicable = {'type': 'white',
+#                            'os': {'Mac OS X': ['10.11']}}
+        self.applicable = {'type': 'black',
+                           'os': {'Mac OS X': ['10.10', '+']}}
         datatype = "bool"
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
