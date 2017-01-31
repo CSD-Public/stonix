@@ -114,6 +114,62 @@ valid exceptions.'''
         self.systemdscriptname = self.systemdbase + "stonix-mute-mic.service"
         self.systemdscriptname = "/usr/lib/systemd/system/stonix-mute-mic.service"
 
+    def soundDeviceExists(self):
+        '''
+        This method is only meant to be used on linux systems
+        This method is used to determine the presence of any
+        sound devices on the current system. Return True if
+        any are found. Return False if none are found.
+
+        @return: sdevicefound
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        sdevicefound = False
+        procdir = "/proc/asound/cards"
+        proccheck = "/usr/bin/cat " + procdir
+        procRE = "^[0-9]"
+        arecorddir = "/usr/bin/arecord"
+        arecordcheck = arecorddir + " -l"
+        arecordRE = "^card\s+[0-9]"
+
+        try:
+            if not os.path.exists(procdir):
+                self.logger.log(LogPriority.DEBUG, "Sound device directory within /proc does not exist.")
+            else:
+                self.ch.executeCommand(proccheck)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    self.logger.log(LogPriority.DEBUG, "Command Failed: " + str(proccheck) + " with return code: " + str(retcode))
+                outputlines = self.ch.getOutput()
+                if outputlines:
+                    for line in outputlines:
+                        if re.search(procRE, line, re.IGNORECASE):
+                            sdevicefound = True
+                            
+            if not os.path.exists(arecorddir):
+                self.logger.log(LogPriority.DEBUG, "/usr/bin/arecord command not found on this system.")
+            else:
+                self.ch.executeCommand(arecordcheck)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    self.logger.log(LogPriority.DEBUG, "Command Failed: " + str(arecordcheck) + " with return code: " + str(retcode))
+                outputlines = self.ch.getOutput()
+                if outputlines:
+                    for line in outputlines:
+                        if re.search(arecordRE, line, re.IGNORECASE):
+                            sdevicefound = True
+    
+            if sdevicefound:
+                self.logger.log(LogPriority.DEBUG, "Sound device found on this system... Proceeding to configure it.")
+            else:
+                self.logger.log(LogPriority.DEBUG, "No sound devices found on this system.")
+
+        except Exception:
+            raise
+        return sdevicefound
+
     def getOrigRCcontents(self):
         '''
         retrieve the original contents of rc.local
@@ -248,75 +304,78 @@ valid exceptions.'''
 
         try:
 
-            self.ch.executeCommand(getc0Controls)
-            output = self.ch.getOutput()
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                retval = False
-                self.detailedresults += "\nError while running command: " + str(getc0Controls)
-                self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
-            for line in output:
-                if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
-                    sline = line.split("'")
-                    miccontrols.append("'" + str(sline[1]) + "'")
-                elif re.search("^Simple\s+mixer\s+control\s+\'.*Mic\s+Boost.*\'", line, re.IGNORECASE):
-                    sline = line.split("'")
-                    micbcontrols.append("'" + str(sline[1]) + "'")
-                elif re.search("^Simple\s+mixer\s+control\s+\'.*Capture.*\'", line, re.IGNORECASE):
-                    sline = line.split("'")
-                    c0Capcontrols.append("'" + str(sline[1]) + "'")
-            for mc in miccontrols:
-                getc0mic = self.amixer + " -c 0 sget " + mc
-                self.ch.executeCommand(getc0mic)
+            if self.soundDeviceExists():
+                self.ch.executeCommand(getc0Controls)
                 output = self.ch.getOutput()
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
                     retval = False
-                    self.detailedresults += "\nError while running command: " + str(getc0mic)
+                    self.detailedresults += "\nError while running command: " + str(getc0Controls)
                     self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
                 for line in output:
-                    if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                        if not re.search("\[0\%\]", line, re.IGNORECASE):
-                            retval = False
-                            self.detailedresults += "The microphone labeled: " + str(mc) + " does not have its volume level set to 0"
-            for mcb in micbcontrols:
-                getc0micb = self.amixer + " -c 0 sget " + mcb
-                self.ch.executeCommand(getc0micb)
-                output = self.ch.getOutput()
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    retval = False
-                    self.detailedresults += "\nError while running command: " + str(getc0micb)
-                    self.logger.log(LogPriority.DEBUG, "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n")
-                for line in output:
-                    if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                        if not re.search("\[0\%\]", line, re.IGNORECASE):
-                            retval = False
-                            self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0"
-                    elif re.search("\[on\]|\[off\]", line, re.IGNORECASE):
-                        if not re.search("\[off\]", line, re.IGNORECASE):
-                            retval = False
-                            self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off"
-
-            for cap in c0Capcontrols:
-                getc0Cap = self.amixer + " -c 0 sget " + cap
-                self.ch.executeCommand(getc0Cap)
-                output = self.ch.getOutput()
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    retval = False
-                    self.detailedresults += "\nError while running command: " + str(getc0Cap)
-                for line in output:
-                    if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                        if not re.search("\[0\%\]", line, re.IGNORECASE):
-                            retval = False
-                            self.detailedresults += "\nCapture control labeled: " + str(cap) + " does not have its volume level set to 0"
-                            break
-                for line in output:
-                    if re.search("\[on\]", line, re.IGNORECASE):
+                    if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
+                        sline = line.split("'")
+                        miccontrols.append("'" + str(sline[1]) + "'")
+                    elif re.search("^Simple\s+mixer\s+control\s+\'.*Mic\s+Boost.*\'", line, re.IGNORECASE):
+                        sline = line.split("'")
+                        micbcontrols.append("'" + str(sline[1]) + "'")
+                    elif re.search("^Simple\s+mixer\s+control\s+\'.*Capture.*\'", line, re.IGNORECASE):
+                        sline = line.split("'")
+                        c0Capcontrols.append("'" + str(sline[1]) + "'")
+                for mc in miccontrols:
+                    getc0mic = self.amixer + " -c 0 sget " + mc
+                    self.ch.executeCommand(getc0mic)
+                    output = self.ch.getOutput()
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
                         retval = False
-                        self.detailedresults += "\nCapture control labeled: " + str(cap) + " is not turned off"
-                        break
+                        self.detailedresults += "\nError while running command: " + str(getc0mic)
+                        self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
+                    for line in output:
+                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                            if not re.search("\[0\%\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "The microphone labeled: " + str(mc) + " does not have its volume level set to 0"
+                for mcb in micbcontrols:
+                    getc0micb = self.amixer + " -c 0 sget " + mcb
+                    self.ch.executeCommand(getc0micb)
+                    output = self.ch.getOutput()
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        retval = False
+                        self.detailedresults += "\nError while running command: " + str(getc0micb)
+                        self.logger.log(LogPriority.DEBUG, "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n")
+                    for line in output:
+                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                            if not re.search("\[0\%\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0"
+                        elif re.search("\[on\]|\[off\]", line, re.IGNORECASE):
+                            if not re.search("\[off\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off"
+    
+                for cap in c0Capcontrols:
+                    getc0Cap = self.amixer + " -c 0 sget " + cap
+                    self.ch.executeCommand(getc0Cap)
+                    output = self.ch.getOutput()
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        retval = False
+                        self.detailedresults += "\nError while running command: " + str(getc0Cap)
+                    for line in output:
+                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                            if not re.search("\[0\%\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "\nCapture control labeled: " + str(cap) + " does not have its volume level set to 0"
+                                break
+                    for line in output:
+                        if re.search("\[on\]", line, re.IGNORECASE):
+                            retval = False
+                            self.detailedresults += "\nCapture control labeled: " + str(cap) + " is not turned off"
+                            break
+            else:
+                self.logger.log(LogPriority.DEBUG, "No capture hardware devices found")
 
             self.ch.executeCommand(getgenCap)
             output = self.ch.getOutput()
