@@ -20,6 +20,8 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+from _ast import With
+from pip._vendor.lockfile import UnlockError
 '''
 Created 02/23/2015
 
@@ -32,15 +34,29 @@ Library of functions used to build Mac applications
 
 import re
 import os
+import sys
 import tarfile
 import pwd
 import zipfile
 import plistlib as pl
 from glob import glob
-from PyInstaller import makespec, build
+from subprocess import Popen, STDOUT, PIPE
+from PyInstaller.building import makespec, build_main
+
+sys.path.append('./ramdisk')
+
+from ramdisk.lib.loggers import LogPriority as lp
+from ramdisk.lib.manage_user.manage_user import ManageUser
+from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 
 class macbuildlib(object):
+    def __init__(self, logger, pypaths=None):
+        self.pypaths = pypaths
+        self.logger = logger
+        self.manage_user = ManageUser(self.logger)
+        self.manage_keychain = ManageKeychain(self.logger)
+
     def regexReplace(self, filename, findPattern, replacePattern, outputFile="",
                      backupname=""):
         '''
@@ -91,7 +107,7 @@ class macbuildlib(object):
             raise
 
     def pyinstMakespec(self, scripts, noupx=False, strip=False, console=True,
-                       icon_file=None, pathex=[], specpath=None):
+                       icon_file=None, pathex=[], specpath=None, hiddenimports=None):
         '''
         An interface for direct access to PyInstaller's makespec function
 
@@ -115,11 +131,11 @@ class macbuildlib(object):
             if specpath:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
-                                     pathex=pathex, specpath=specpath)
+                                     pathex=pathex, specpath=specpath, hiddenimports=hiddenimports)
             else:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
-                                     pathex=pathex)
+                                     pathex=pathex, hiddenimports=hiddenimports)
         except Exception:
             raise
 
@@ -146,7 +162,7 @@ class macbuildlib(object):
         except Exception:
             raise
 
-        return build.main(None, specfile, noconfirm, **kwargs)
+        return build_main.main(None, specfile, noconfirm, **kwargs)
 
     def chownR(self, user, target):
         '''Recursively apply chown to a directory'''
@@ -240,6 +256,40 @@ class macbuildlib(object):
         except Exception:
             raise
 
+    def getHiddenImports(self):
+        '''
+        Acquire a list of all '*.py' files in the stonix_resources directory,
+        replace '/' with '.' for a module name that can be imported. 
+
+        @author: Roy Nielsen
+        '''
+        try:
+            origdir = os.getcwd()
+            
+            os.chdir("..")
+            hiddenimports = []
+            for root, dirs, files in os.walk("stonix_resources"):
+                for myfile in files:
+                    if myfile.endswith(".py"):
+                         #print(os.path.join(root, file)) 
+                         #####
+                         # Create an 'import' name based on the file found.
+                         myfile = re.sub(".py", "", myfile)
+                         hiddenimportfile = os.path.join(root, myfile)
+                         # Create a list out of the name, removing '/''s to
+                         # set up for concatinating with '.'s
+                         hiddenimportlist = hiddenimportfile.split('/')
+                         # Concatinating the list with '.'s to add to the 
+                         # hiddenimports list.
+                         hiddenimport = ".".join(hiddenimportlist)
+                         hiddenimports.append(hiddenimport)
+        except OSError:
+            self.logger.log(lp.DEBUG, "Error trying to acquire python files...")
+        finally:
+            os.chdir(origdir)
+        
+        return hiddenimports
+        
     def getpyuicpath(self):
         '''
         Attempt to find PyQt4
@@ -310,3 +360,63 @@ class macbuildlib(object):
 
         print "checkBuildUser Finished..."
         return CURRENT_USER, RUNNING_ID
+
+    def codeSign(self, username, password, sig='', verbose='', deep='', appName=''):
+        '''
+        For codesigning on the Mac.
+        
+        @param: Signature to sign with (string)
+        @param: How verbose to be: 'v', 'vv', 'vvv' or 'vvvv' (string)
+        @param: Whether or not to do a 'deep' codesign or not. (bool)
+        @param: App name (ending in .app)
+
+        @returns: True for success, False otherwise.
+        '''
+        success = False
+        requirementMet = False
+        if sig:
+            #####
+            # Make sure the keychain is unlocked
+            userHome = self.manage_user.getUserHomeDir(username)
+            loginKeychain = userHome + "/Library/Keychains/login.keychain"
+            self.manage_keychain.setUser(username)
+            self.manage_keychain.unlockKeychain(password, loginKeychain)
+
+            if verbose:
+                if re.match('^v+$', verbose) and len(verbose) <= 4:
+                    verbose = '-' + verbose
+                    requirementMet = True
+                elif re.match('^-v+$', verbose) and len(verbose) <= 5:
+                    requriementMet = True
+                elif not verbose:
+                    requirementMet = True
+            cmd = []
+            if requirementMet and deep is True and verbose:
+                cmd = ['/usr/bin/codesign', verbose, '--deep', '-f', '-s', sig, "--keychain", loginKeychain, appName]
+            elif requirementMet and not deep and verbose:
+                cmd = ['/usr/bin/codesign', verbose, '-f', '-s', sig, "--keychain", loginKeychain,  appName]
+            elif requirementMet and deep and not verbose:
+                cmd = ['/usr/bin/codesign', '--deep', '-f', '-s', sig, "--keychain", loginKeychain,  appName]
+            elif requirementMet and not deep and not verbose:
+                cmd = ['/usr/bin/codesign', '-f', '-s', sig, "--keychain", loginKeychain,  appName]
+            if cmd:
+                output = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
+                self.logger.log(lp.INFO, "Output from trying to codesign: " + str(output))
+        return success
+
+    def unlockKeychain(self, username, password):
+        '''
+        Unlock the appropriate keychain for signing purposes
+        
+        @param: Username of the login.keychain to unlock
+        @param: Password for the user
+        
+        @author: Roy Nielsen
+        '''
+        success = False
+        userHome = self.manage_user.getUserHomeDir(username)
+        loginKeychain = userHome + "/Library/Keychains/login.keychain"
+        success = self.manage_keychain.setUser(username)
+        success = self.manage_keychain.unlockKeychain(password, loginKeychain)
+        self.logger.log(lp.DEBUG, "Unlock Keychain success: " + str(success))
+        return success

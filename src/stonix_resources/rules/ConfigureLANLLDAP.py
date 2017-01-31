@@ -31,6 +31,11 @@ from LANL-stor.
 @change: 2015/11/16 eball - Moving RHEL6 back to nslcd
 @change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG standards
 @change: 2016/01/28 eball - Improved handling for LDAPServer CI
+@change: 2016/11/14 eball - Moved PAM configurations to localize.py
+@change: 2016/12/21 eball - Separated required packages for report, put package
+    localization into individual methods
+@change: 2017/01/12 eball - Modified __checkconf to read file contents within
+    the method. This allows for more specific feedback on file content issues.
 '''
 from __future__ import absolute_import
 import os
@@ -41,6 +46,11 @@ from ..stonixutilityfunctions import iterate, resetsecon, checkPerms, setPerms
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..KVEditorStonix import KVEditorStonix
+from ..localize import AUTH_APT, ACCOUNT_APT, PASSWORD_APT, SESSION_APT, \
+    SESSION_HOME_APT, AUTH_NSLCD, ACCOUNT_NSLCD, PASSWORD_NSLCD, \
+    SESSION_NSLCD, SESSION_HOME_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM, \
+    SESSION_YUM, SESSION_HOME_YUM, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
+    PASSWORD_ZYPPER, SESSION_ZYPPER, SESSION_HOME_ZYPPER
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..ServiceHelper import ServiceHelper
@@ -98,13 +108,14 @@ effect."""
     def report(self):
         try:
             compliant = True
+            self.detailedresults = ""
             results = ""
             server = self.ldapci.getcurrvalue()
             self.ldapsettings = ""
             self.myos = self.environ.getostype().lower()
             self.majorVer = self.environ.getosver().split(".")[0]
             self.majorVer = int(self.majorVer)
-            self.fixOkay = True
+            self.validLdap = True
 
             # All systems except RHEL 6 and Ubuntu use sssd
             if (re.search("red hat", self.myos) and self.majorVer < 7) or \
@@ -113,43 +124,17 @@ effect."""
             else:
                 self.nslcd = False
 
-            packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
-                           "krb5-workstation", "oddjob-mkhomedir",
-                           "libpwquality"]
-            packagesRhel6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
-                             "oddjob-mkhomedir", "libpwquality"]
-            packagesUbu = ["libpam-ldapd", "libpam-cracklib",
-                           "libpam-krb5"]
-            packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
-                           "libpam-cracklib", "libpam-krb5"]
-            packagesSuse = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
-                            "pam_pwquality", "sssd", "krb5"]
-            if self.ph.determineMgr() == "apt-get":
-                if re.search("ubuntu", self.myos):
-                    packages = packagesUbu
-                else:
-                    packages = packagesDeb
-            elif self.ph.determineMgr() == "zypper":
-                packages = packagesSuse
-            elif re.search("red hat", self.myos) and self.majorVer < 7:
-                packages = packagesRhel6
-            else:
-                packages = packagesRpm
-            self.packages = packages
-            for package in packages:
+            reqPackages = self.__localizeReqPkgs()
+            for package in reqPackages:
                 if not self.ph.check(package) and \
                    self.ph.checkAvailable(package):
                     compliant = False
                     results += package + " is not installed\n"
 
-            pamconf = self.__getpamconf()
-            self.pamconf = pamconf
-            for conffile in pamconf:
-                currentConf = readFile(conffile, self.logger)
-                if not self.__checkconf(currentConf,
-                                        pamconf[conffile].split("\n")):
+            reqpamconf = self.__getreqpamconf()
+            for conffile in reqpamconf:
+                if not self.__checkconf(conffile, reqpamconf[conffile]):
                     compliant = False
-                    results += "Settings in " + conffile + " are incorrect\n"
 
             if not self.nslcd:
                 sssdconfpath = "/etc/sssd/sssd.conf"
@@ -190,11 +175,8 @@ effect."""
                                     'group:     compat sss']
                 self.nsswitchsettings = nsswitchsettings
                 if os.path.exists(nsswitchpath):
-                    nsconf = readFile(nsswitchpath, self.logger)
-                    if not self.__checkconf(nsconf, nsswitchsettings):
+                    if not self.__checkconf(nsswitchpath, nsswitchsettings):
                         compliant = False
-                        results += "Settings in " + nsswitchpath + \
-                            " are not correct.\n"
                     elif not checkPerms(nsswitchpath, [0, 0, 0644],
                                         self.logger):
                         compliant = False
@@ -228,7 +210,7 @@ effect."""
                     serversplit = server.split(".")
                     if len(serversplit) != 3:
                         compliant = False
-                        self.fixOkay = False
+                        self.validLdap = False
                         error = "Custom LDAPServer does not follow " + \
                             "convention of \"[server].[domain].[tld]\". " + \
                             "ConfigureLANLLDAP cannot automate your LDAP " + \
@@ -245,11 +227,8 @@ effect."""
                                              'nss_initgroups_ignoreusers root']
                 ldapsettings = self.ldapsettings
                 if os.path.exists(ldapfile):
-                    ldapconf = readFile(ldapfile, self.logger)
-                    if not self.__checkconf(ldapconf, ldapsettings):
+                    if not self.__checkconf(ldapfile, ldapsettings):
                         compliant = False
-                        results += "Settings in " + ldapfile + \
-                            " are not correct.\n"
                     elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
                         compliant = False
                         results += "Settings in " + ldapfile + " are " + \
@@ -269,11 +248,8 @@ effect."""
                                     'group:     files ldap']
                 self.nsswitchsettings = nsswitchsettings
                 if os.path.exists(nsswitchpath):
-                    nsconf = readFile(nsswitchpath, self.logger)
-                    if not self.__checkconf(nsconf, nsswitchsettings):
+                    if not self.__checkconf(nsswitchpath, nsswitchsettings):
                         compliant = False
-                        results += "Settings in " + nsswitchpath + \
-                            " are not correct.\n"
                     elif not checkPerms(nsswitchpath, [0, 0, 0644],
                                         self.logger):
                         compliant = False
@@ -302,7 +278,7 @@ effect."""
                             "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
-            self.detailedresults = results
+            self.detailedresults += results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -314,17 +290,86 @@ effect."""
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-    def __checkconf(self, contents, settings):
+    def __localizeReqPkgs(self):
+        packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
+                       "krb5-workstation"]
+        packagesRh6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients"]
+        packagesUbu = ["libpam-ldapd", "libpam-krb5"]
+        packagesDeb = ["sssd", "libnss-sss", "libpam-sss", "libpam-krb5"]
+        packagesSus = ["yast2-auth-client", "sssd-krb5", "pam_ldap", "sssd",
+                       "krb5"]
+        if self.ph.determineMgr() == "apt-get":
+            if re.search("ubuntu", self.myos):
+                return packagesUbu
+            else:
+                return packagesDeb
+        elif self.ph.determineMgr() == "zypper":
+            return packagesSus
+        elif re.search("red hat", self.myos) and self.majorVer < 7:
+            return packagesRh6
+        else:
+            return packagesRpm
+
+    def __localizeAllPkgs(self):
+        packagesRpm = ["nss-pam-ldapd", "openldap-clients", "sssd",
+                       "krb5-workstation", "oddjob-mkhomedir"]
+        packagesRh6 = ["pam_ldap", "nss-pam-ldapd", "openldap-clients",
+                       "oddjob-mkhomedir"]
+        packagesUbu = ["libpam-ldapd", "libpam-cracklib",
+                       "libpam-krb5"]
+        packagesDeb = ["sssd", "libnss-sss", "libpam-sss",
+                       "libpam-cracklib", "libpam-krb5"]
+        packagesSus = ["yast2-auth-client", "sssd-krb5", "pam_ldap",
+                       "pam_pwquality", "sssd", "krb5"]
+        pwPkgs = self.__localizePwPkgs()
+        if self.ph.determineMgr() == "apt-get":
+            if re.search("ubuntu", self.myos):
+                myPkgs = packagesUbu
+            else:
+                myPkgs = packagesDeb
+        elif self.ph.determineMgr() == "zypper":
+            myPkgs = packagesSus
+        elif re.search("red hat", self.myos) and self.majorVer < 7:
+            myPkgs = packagesRh6
+        else:
+            myPkgs = packagesRpm
+        return myPkgs + pwPkgs
+
+    def __localizePwPkgs(self):
+        packagesRpm = ["libpwquality"]
+        packagesRh6 = ["libpwquality"]
+        packagesUbu = ["libpam-pwquality"]
+        packagesDeb = ["libpam-cracklib"]
+        packagesSus = ["pam_pwquality"]
+        if self.ph.determineMgr() == "apt-get":
+            if self.ph.checkAvailable("libpam-pwquality"):
+                return packagesUbu
+            else:
+                return packagesDeb
+        elif self.ph.determineMgr() == "zypper":
+            return packagesSus
+        elif re.search("red hat", self.myos) and self.majorVer < 7:
+            return packagesRh6
+        else:
+            return packagesRpm
+
+    def __checkconf(self, filepath, settings):
         '''Private method to audit a conf file to ensure that it contains all
         of the required directives.
 
-        @param contents: contents of the configfile as returned by readFile
+        @param file: configuration file to load current settings from
         @param settings: list of settings that should be present in the conf
         @return: Bool Returns True if all settings are present.
         @author: Eric Ball
         '''
+        if os.path.exists(filepath):
+            contents = readFile(filepath, self.logger)
+        else:
+            debug = "File passed to __checkconf does not exist"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
         if len(contents) == 0:
-            debug = "File contents passed to __checkconf is empty"
+            debug = "File passed to __checkconf is empty"
             self.logger.log(LogPriority.DEBUG, debug)
             return False
         if len(settings) == 0:
@@ -334,23 +379,33 @@ effect."""
 
         contentsSplit = []
         comment = re.compile('^#')
+        results = ""
+        foundAll = True
         for line in contents:
             if not comment.match(line):
                 contentsSplit.append(line.split())
         for setting in settings:
-            if setting == "":
+            if setting == "" or comment.match(setting):
                 continue
-            if not comment.match(setting) and \
-               setting.split() not in contentsSplit:
-                debug = str(setting.split()) + " not in " + str(contentsSplit)
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-        return True
+            settingOpts = setting.split("|")
+            found = False
+            for opt in settingOpts:
+                if opt.split() in contentsSplit:
+                    found = True
+            if not found:
+                results += 'Could not find line "' + settingOpts[0].strip() + \
+                    '"'
+                for opt in settingOpts[1:]:
+                    results += ' or line "' + opt + '"'
+                results += " in file " + filepath + "\n"
+                foundAll = False
+        self.detailedresults += results
+        return foundAll
 
     def fix(self):
+        self.detailedresults = ""
         try:
-            if not self.ci.getcurrvalue() or not self.fixOkay:
-                return
+            assert self.ci.getcurrvalue() and self.validLdap
             success = True
             results = ""
             self.iditerator = 0
@@ -358,8 +413,9 @@ effect."""
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            packages = self.packages
-            for package in packages:
+            packages = self.__localizeAllPkgs()
+            pwPackages = self.__localizePwPkgs()
+            for package in packages + pwPackages:
                 if not self.ph.check(package):
                     if self.ph.checkAvailable(package):
                         if not self.ph.install(package):
@@ -379,7 +435,14 @@ effect."""
                 results += "Problem writing new contents to " + \
                     self.nsswitchpath + "\n"
 
-            if not self.__fixpam(self.pamconf):
+            pamconf = self.__getpamconf()
+            # Check for cracklib; replace pwquality if using cracklib
+            if "libpam-cracklib" in pwPackages:
+                for conffile in pamconf:
+                    conf = pamconf[conffile]
+                    conf = re.sub("pwquality", "cracklib", conf)
+                    pamconf[conffile] = conf
+            if not self.__fixpam(pamconf):
                 success = False
                 results += "An error occurred while trying to write " + \
                     "the PAM files\n"
@@ -462,9 +525,13 @@ effect."""
                             success = False
 
                     ldapconf = readFile(ldapfile, self.logger)
+                    # Back up detailedresults, so that we can ignore the
+                    # report-focused output from checkconf()
+                    results = self.detailedresults
                     for setting in nonkv:
-                        if not self.__checkconf(ldapconf, [setting]):
+                        if not self.__checkconf(ldapfile, [setting]):
                             ldapconf.append(setting + "\n")
+                    self.detailedresults = results
 
                     if not self.__writeFile(ldapfile, "".join(ldapconf),
                                             [0, 0, 0600]):
@@ -513,6 +580,12 @@ effect."""
 
             self.detailedresults = results
             self.rulesuccess = success
+        except AssertionError:
+            if not self.ci.getcurrvalue():
+                self.detailedresults = "Primary CI for this rule is not " + \
+                    "enabled"
+            elif not self.validLdap:
+                self.detailedresults = "Invalid LDAP server address"
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -551,8 +624,6 @@ effect."""
                             # flag is not supported. Hence the use of newlines
                             nsConf = re.sub(confLine, settings[ind],
                                             nsConf)
-                        else:
-                            nsConf += "\n" + settings[ind] + "\n"
                     else:
                         nsConf += "\n" + settings[ind] + "\n"
                 return self.__writeFile(path, nsConf, [0, 0, 0644])
@@ -610,6 +681,39 @@ krb5_realm = lanl.gov
         else:
             return self.__writeFile(sssdconfpath, sssdconf, [0, 0, 0600])
 
+    def __getreqpamconf(self):
+        '''
+        Get only the sections of the pam configuration that are required.
+        @author: Eric Ball
+        @return reqpamconf: dictionary of the required lines for each pam
+            configuration file. Note that, unlike getpamconf(), this returns
+            the lines as separate items in a list, rather than a single string.
+        '''
+        pamconf = self.__getpamconf()
+        reqpamconf = {}
+        searchstring = "pam_tally2|faillock|pam_unix|pwquality|cracklib" + \
+            "|krb5|sss|mkhomedir"
+        tally = "auth required pam_tally2.so deny=5 unlock_time=900 onerr=fail"
+        faillock = "auth required pam_faillock.so preauth silent " + \
+            "audit deny=5 unlock_time=900 fail_interval=900"
+        pwquality = "password requisite pam_pwquality.so minlen=14 " + \
+            "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
+            "retry=3 maxrepeat=3"
+        cracklib = "password requisite pam_cracklib.so minlen=14 " + \
+            "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
+            "retry=3 maxrepeat=3"
+        for conf in pamconf:
+            tempconf = []
+            for line in pamconf[conf].splitlines(True):
+                if re.search(searchstring, line):
+                    if re.search("account pam_tally2|account faillock", line):
+                        line = tally + "|" + faillock
+                    elif re.search("pwquality|cracklib", line):
+                        line = pwquality + "|" + cracklib
+                    tempconf.append(line)
+            reqpamconf[conf] = tempconf
+        return reqpamconf
+
     def __getpamconf(self):
         pamconf = {}
         if self.ph.determineMgr() == "apt-get":
@@ -618,40 +722,13 @@ krb5_realm = lanl.gov
             acc = prefix + "account"
             passwd = prefix + "password"
             sess = prefix + "session"
-            pamconf[auth] = '''auth        required      pam_env.so
-auth        required      pam_tally2.so deny=5 unlock_time=600 onerr=fail
-auth        sufficient    pam_unix.so nullok try_first_pass
-auth        requisite     pam_succeed_if.so uid >= 500 quiet
-auth        sufficient    pam_krb5.so use_first_pass
-auth        required      pam_deny.so
-'''
-            pamconf[acc] = '''account     required      pam_tally2.so
-account     required      pam_access.so
-account     required      pam_unix.so broken_shadow
-account     sufficient    pam_localuser.so
-account     sufficient    pam_succeed_if.so uid < 500 quiet
-account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
-account     required      pam_permit.so
-'''
-            pamconf[passwd] = '''password    requisite     \
-pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-            pamconf[sess] = '''session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
-session     [success=1 default=ignore] pam_succeed_if.so service in crond \
-quiet use_uid
-session     required      pam_unix.so
-session     optional      pam_krb5.so
--session    optional      pam_systemd.so
-'''
+            pamconf[auth] = AUTH_APT
+            pamconf[acc] = ACCOUNT_APT
+            pamconf[passwd] = PASSWORD_APT
             if self.mkhomedirci.getcurrvalue():
-                pamconf[sess] += "session     required      " + \
-                    "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
+                pamconf[sess] = SESSION_HOME_APT
+            else:
+                pamconf[sess] = SESSION_APT
 
         elif self.ph.determineMgr() == "zypper":
             prefix = "/etc/pam.d/common-"
@@ -659,36 +736,13 @@ session     optional      pam_krb5.so
             acc = prefix + "account"
             passwd = prefix + "password"
             sess = prefix + "session"
-            pamconf[auth] = '''auth    required        pam_env.so
-auth    required        pam_tally2.so deny=5 unlock_time=600 onerr=fail
-auth    optional        pam_gnome_keyring.so
-auth    sufficient      pam_unix.so     try_first_pass
-auth    required        pam_sss.so      use_first_pass
-'''
-            pamconf[acc] = '''account requisite       pam_unix.so     try_first_pass
-account sufficient      pam_localuser.so
-account required        pam_sss.so      use_first_pass
-'''
-            pamconf[passwd] = '''password        requisite       \
-pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3
-password        sufficient      pam_unix.so sha512 shadow nullok \
-try_first_pass use_authtok remember=10
-password        optional        pam_gnome_keyring.so    use_authtok
-password        required        pam_sss.so      use_authtok
-'''
-            pamconf[sess] = '''session required        pam_limits.so
-session required        pam_unix.so     try_first_pass
-session optional        pam_sss.so
-session optional        pam_umask.so
-session optional        pam_systemd.so
-session optional        pam_gnome_keyring.so    auto_start \
-only_if=gdm,gdm-password,lxdm,lightdm
-session optional        pam_env.so
-'''
+            pamconf[auth] = AUTH_ZYPPER
+            pamconf[acc] = ACCOUNT_ZYPPER
+            pamconf[passwd] = PASSWORD_ZYPPER
             if self.mkhomedirci.getcurrvalue():
-                pamconf[sess] += "session     required      " + \
-                    "pam_mkhomedir.so skel=/etc/skel umask=0077\n"
+                pamconf[sess] = SESSION_HOME_ZYPPER
+            else:
+                pamconf[sess] = SESSION_ZYPPER
 
         elif self.nslcd:
             sysauth = "/etc/pam.d/system-auth"
@@ -696,41 +750,15 @@ session optional        pam_env.so
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
-auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900
-auth        sufficient    pam_unix.so nullok try_first_pass
-auth        requisite     pam_succeed_if.so uid >= 500 quiet
-auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail audit deny=5
-auth        required      pam_deny.so
-
-account     required      pam_faillock.so
-account     required      pam_access.so
-account     required      pam_unix.so broken_shadow
-account     sufficient    pam_localuser.so
-account     sufficient    pam_succeed_if.so uid < 500 quiet
-account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
-account     required      pam_permit.so
-
-password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
-dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-
-session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
 '''
+            config += AUTH_NSLCD + "\n"
+            config += ACCOUNT_NSLCD + "\n"
+            config += PASSWORD_NSLCD + "\n"
             if self.mkhomedirci.getcurrvalue():
-                config += "session     optional      " + \
-                    "pam_mkhomedir.so umask=0077\n"
-            config += '''session     [success=1 default=ignore] \
-pam_succeed_if.so service in crond quiet use_uid
-session     required      pam_unix.so
-session     optional      pam_krb5.so
-'''
+                config += SESSION_HOME_NSLCD
+            else:
+                config += SESSION_NSLCD
+
             pamconf[sysauth] = config
             pamconf[passauth] = config
 
@@ -740,46 +768,15 @@ session     optional      pam_krb5.so
             config = '''#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
-auth        required      pam_env.so
-auth        required      pam_faillock.so preauth silent audit deny=5 \
-unlock_time=900
-auth        sufficient    pam_unix.so nullok try_first_pass
-auth        requisite     pam_succeed_if.so uid >= 500 quiet
-auth        sufficient    pam_sss.so use_first_pass
-auth        sufficient    pam_krb5.so use_first_pass
-auth        [default=die] pam_faillock.so authfail audit deny=5
-auth        required      pam_deny.so
-
-account     required      pam_faillock.so
-account     required      pam_access.so
-account     required      pam_unix.so broken_shadow
-account     sufficient    pam_localuser.so
-account     sufficient    pam_succeed_if.so uid < 500 quiet
-account     [default=bad success=ok user_unknown=ignore] pam_sss.so
-account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
-account     required      pam_permit.so
-
-password    requisite     pam_pwquality.so minlen=14 minclass=4 difok=7 \
-dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3
-password    sufficient    pam_unix.so sha512 shadow \
-nullok try_first_pass use_authtok remember=10
-password    sufficient    pam_sss.so use_authtok
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-
-session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
--session    optional      pam_systemd.so
 '''
+            config += AUTH_YUM + "\n"
+            config += ACCOUNT_YUM + "\n"
+            config += PASSWORD_YUM + "\n"
             if self.mkhomedirci.getcurrvalue():
-                config += "session     optional      " + \
-                    "pam_mkhomedir.so umask=0077\n"
-            config += '''session     [success=1 default=ignore] \
-pam_succeed_if.so service in crond quiet use_uid
-session     required      pam_unix.so
-session     optional      pam_sss.so
-session     optional      pam_krb5.so
-'''
+                config += SESSION_HOME_YUM
+            else:
+                config += SESSION_YUM
+
             pamconf[sysauth] = config
             pamconf[passauth] = config
         return pamconf

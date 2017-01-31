@@ -26,10 +26,10 @@ Created on Jan 14, 2013
 
 The SetNTP class configures ntp for each client.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2014/04/18 ekkehard ci updates and ci fix method implementation
 @change: 2014/08/27 - ekkehard - added self.ss = "/usr/sbin/systemsetup" to make sure we use the full path
-@change: 08/27/2014 bemalmbe added colons after each docblock parameter
+@change: 08/27/2014 Breen Malmberg added colons after each docblock parameter
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
 '''
@@ -126,6 +126,9 @@ class SetNTP(Rule):
             else:
                 self.ntpservers = NTPSERVERSEXTERNAL
 
+        self.ntppkg = 'ntp'
+        self.chronypkg = 'chrony'
+
 ###############################################################################
 
     def report(self):
@@ -134,7 +137,7 @@ class SetNTP(Rule):
         yet or not
 
         @return: bool
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -168,7 +171,7 @@ class SetNTP(Rule):
 
         @return: bool
         @author: ekkehard j. koch
-        @change: 08/26/2014 bemalmbe added detailedresults message updates to
+        @change: 08/26/2014 Breen Malmberg added detailedresults message updates to
                 indicate which config items are missing/incorrect
         '''
 
@@ -226,7 +229,7 @@ class SetNTP(Rule):
         determine rule compliance status for linux based systems
 
         @return: bool
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -248,16 +251,27 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_chrony(self):
+        '''
+        '''
+
+        # defaults
+        conffile = '/etc/chrony/chrony.conf'
+        conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf']
+        for f in conffiles:
+            if os.path.exists(f):
+                conffile = f
+        confitemsdict = {'^cmddeny\s*all': False}
+        confitems = True
+        retval = False
 
         try:
 
-            if os.path.exists('/etc/chrony.conf'):
-
-                # defaults
-                conffile = '/etc/chrony.conf'
-                confitemsdict = {'^cmddeny\s*all': False}
-                confitems = True
+            if not self.ph.check(self.chronypkg):
                 retval = False
+                self.detailedresults += "\nchrony is not installed"
+
+            if os.path.exists('/etc/chrony.conf')|os.path.exists('/etc/chrony/chrony.conf'):
+
                 timeserversdict = {}
                 for server in self.ntpservers:
                     timeserversdict[server] = False
@@ -294,7 +308,8 @@ class SetNTP(Rule):
                     retval = True
 
             else:
-                self.detailedresults += '\nNo chrony.conf file found.'
+                self.detailedresults += '\nNo chrony.conf file found'
+                retval = False
 
         except Exception:
             raise
@@ -302,15 +317,21 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_ntp(self):
+        '''
+        '''
+
+        # defaults
+        retval = False
+        timeservers = True
+        confitems = True
+        confitemdict = {'restrict\s*default\s*ignore': False,
+                        'disable\s*monitor': False}
 
         try:
 
-            # defaults
-            retval = False
-            timeservers = True
-            confitems = True
-            confitemdict = {'restrict\s*default\s*ignore': False,
-                            'disable\s*monitor': False}
+            if not self.ph.check(self.ntppkg):
+                retval = False
+                self.detailedresults += "\nntp is not installed"
 
             if os.path.exists('/etc/ntp.conf'):
 
@@ -336,11 +357,11 @@ class SetNTP(Rule):
                     timeservers = False
                     self.detailedresults += '\ntime servers not set correctly in conf file'
 
+                if confitems and timeservers:
+                    retval = True
             else:
-                self.detailedresults += '\nno ntp.conf file found'
-
-            if confitems and timeservers:
-                retval = True
+                self.detailedresults += '\nNo ntp.conf file found'
+                retval = False
 
         except Exception:
             raise
@@ -378,7 +399,7 @@ class SetNTP(Rule):
         '''
         Decide which fix sub method to run, and run it to configure ntp
 
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -419,7 +440,7 @@ class SetNTP(Rule):
         '''
         private method to perform fix operations for mac os x machines
 
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -562,8 +583,8 @@ class SetNTP(Rule):
         configure it.
 
         @return: bool
-        @author: bemalmbe
-        @change: 08/27/2014 bemalmbe added blank line to bottom in accordance
+        @author: Breen Malmberg
+        @change: 08/27/2014 Breen Malmberg added blank line to bottom in accordance
                 with pep8
         '''
 
@@ -571,22 +592,27 @@ class SetNTP(Rule):
 
             # defaults
             fixresult = True
+            conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf', '/etc/ntp.conf']
 
             if self.useschrony:
 
                 confoptions = {'cmddeny all': False}
-                conffile = '/etc/chrony.conf'
-                package = 'chrony'
+                conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf']
+                package = self.chronypkg
             else:
 
                 confoptions = {'restrict default ignore': False,
                                'disable monitor': False}
                 conffile = '/etc/ntp.conf'
-                package = 'ntp'
+                package = self.ntppkg
 
             # check for installation of package
             if not self.ph.check(package):
                 self.ph.install(package)
+
+            for f in conffiles:
+                if os.path.exists(f):
+                    conffile = f
 
             # check for existence and correct configuration of conf file
             if os.path.exists(conffile):
@@ -647,10 +673,9 @@ class SetNTP(Rule):
             else:
 
                 fixresult = False
-                self.detailedresults += '\nNTP installation failed. No config file to check'
+                self.detailedresults += '\nNetwork time package installation failed'
 
         except Exception:
-            fixresult = False
             raise
         return fixresult
 
@@ -673,10 +698,12 @@ class SetNTP(Rule):
             # the minimum version number of each distro which uses chrony instead of ntp
             osversion = {'red': 7,
                          'fedora': 20,
-                         'centos': 7}
+                         'centos': 7,
+                         'debian': 8,
+                         'ubuntu': 16}
 
             # get the os distro name to use in comparison with the dictionary version values above
-            filedict = ['/etc/redhat-release', '/etc/SuSE-release']
+            filedict = ['/etc/redhat-release', '/etc/SuSE-release', '/etc/os-release']
             relfile = ''
             for path in filedict:
                 if os.path.exists(path):
@@ -684,19 +711,20 @@ class SetNTP(Rule):
             if not os.path.exists(relfile):
                 self.detailedresults += '\nparseVersion(): could not locate an os version release file to parse'
                 return False
+
             f = open(relfile, 'r')
             contentline = f.readline()
             f.close()
-            sline = contentline.split()
-            key = sline[0].lower()
-            if key not in osversion:
-                return False
+
+            for key in osversion:
+                if re.search(key, contentline, re.IGNORECASE):
+                    osname = key
 
             # compare the os version to the minimum chrony version number of each os in osversion dict above
             osver = self.environ.getosver()
             element = osver.split('.')
             majorver = element[0]
-            if int(majorver) >= osversion[key]:
+            if int(majorver) >= osversion[osname]:
                 useschrony = True
 
         except Exception:

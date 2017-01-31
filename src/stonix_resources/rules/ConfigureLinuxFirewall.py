@@ -143,8 +143,19 @@ CONFIGURELINUXFIREWALL to False.'''
                     outputufw = self.cmdhelper.getOutputString()
                     if re.search('Status: inactive', outputufw):
                         compliant = False
-                        self.detailedresults = 'This system appears to have ' + \
+                        self.detailedresults += 'This system appears to have ' + \
                             'ufw but it is not running as required'
+                    elif re.search('Status: active', outputufw):
+                        cmdufw = "/usr/sbin/ufw status verbose"
+                        if not self.cmdhelper.executeCommand(cmdufw):
+                            compliant = False
+                            self.detailedresults += "Cannot retrieve firewall rules\n"
+                        else:
+                            outputufw = self.cmdhelper.getOutputString()
+                            if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                                compliant = False
+                                self.detailedresults += "The default value for " + \
+                                    "incoming unspecified packets is not deny\n"
             elif "iptables" not in self.servicehelper.listservices():
                 # Debian systems do not provide a service for iptables
                 cmd = [self.iptables, "-L"]
@@ -348,18 +359,60 @@ CONFIGURELINUXFIREWALL to False.'''
         self.detailedresults = ""
         if self.clfci.getcurrvalue():
             self.rulesuccess = True
+            success = True
             try:
                 if self.isfirewalld:
                     self.servicehelper.enableservice('firewalld.service')
                     self.detailedresults += "Firewall configured.\n "
                 elif self.isufw:
-                    ufwcmd = '/usr/sbin/ufw --force enable'
-                    if not self.cmdhelper.executeCommand(ufwcmd):
+                    cmdufw = '/usr/sbin/ufw status'
+                    if not self.cmdhelper.executeCommand(cmdufw):
                         self.detailedresults += "Unable to run " + \
-                            "ufw enable command\n"
-                        self.rulesuccess = False
+                            "ufw status command\n"
+                        success = False
                     else:
-                        self.detailedresults += "Firewall configured.\n "
+                        outputufw = self.cmdhelper.getOutputString()
+                        if re.search('Status: inactive', outputufw):
+                            ufwcmd = '/usr/sbin/ufw --force enable'
+                            if not self.cmdhelper.executeCommand(ufwcmd):
+                                self.detailedresults += "Unable to run " + \
+                                    "ufw enable command\n"
+                                success = False
+                            else:
+                                cmdufw = "/usr/sbin/ufw status verbose"
+                                if not self.cmdhelper.executeCommand(cmdufw):
+                                    self.detailedresults += "Unable to retrieve firewall rules\n"
+                                    success = False
+                                else:
+                                    outputfw = self.cmdhelper.getOutputString()
+                                    if not re.search("Default\:\ deny\ \(incoming\)", outputfw):
+                                        ufwcmd = "/usr/sbin/ufw default deny incoming"
+                                        if not self.cmdhelper.executeCommand(ufwcmd):
+                                            self.detailedresults += "Unable to set default " + \
+                                                "rule for incoming unspecified packets\n"
+                                            success = False
+                        elif re.search('Status: active', outputufw):
+                            cmdufw = "/usr/sbin/ufw status verbose"
+                            if not self.cmdhelper.executeCommand(cmdufw):
+                                self.detailedresults += "Cannot retrieve firewall rules\n"
+                                success = False
+                            else:
+                                outputufw = self.cmdhelper.getOutputString()
+                                if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                                    ufwcmd = "/usr/sbin/ufw default deny incoming"
+                                    if not self.cmdhelper.executeCommand(ufwcmd):
+                                        self.detailedresults += "Unable to set default " + \
+                                            "rule for incoming unspecified packets\n"
+                                        success = False
+                    self.rulesuccess = success
+#                     ufwcmd = '/usr/sbin/ufw --force enable'
+#                     if not self.cmdhelper.executeCommand(ufwcmd):
+#                         self.detailedresults += "Unable to run " + \
+#                             "ufw enable command\n"
+#                         self.rulesuccess = False
+#                     else:
+#                         ufwcmd = "/"
+#                         self.detailedresults += "Firewall configured.\n "
                 elif os.path.exists('/usr/bin/system-config-firewall') or \
                      os.path.exists('/usr/bin/system-config-firewall-tui'):
 

@@ -57,8 +57,11 @@ class ConfigurePasswordPolicy(Rule):
             "Mac OSX operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
-        self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
+#         self.applicable = {'type': 'white',
+#                            'os': {'Mac OS X': ['10.11']}}
+        self.applicable = {'type': 'black',
+                           'family': ['linux', 'darwin'],
+                           'os': {'Mac OS X': ['10.10', '+']}}
         datatype = "bool"
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
@@ -75,24 +78,15 @@ class ConfigurePasswordPolicy(Rule):
         self.iditerator = 0
         self.pwreport = True
         self.secreport = True
-        if search("10\.10.*", self.environ.getosver()):
+        if search("10\.11\.*", self.environ.getosver()):
             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
                              "Resources/stonix.app/Contents/MacOS/" + \
                              "stonix_resources/files/" + \
-                             "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
+                             "stonix4macPasscodeProfileForOSXElCapitan10.11.mobileconfig"
             self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
                               "Resources/stonix.app/Contents/MacOS/" + \
                               "stonix_resources/files/" + \
-                              "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
-        elif search("10\.11\.*", self.environ.getosver()):
-            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
-            self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
-                          "Resources/stonix.app/Contents/MacOS/" + \
-                          "stonix_resources/files/" + \
-                          "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
+                              "stonix4macSecurity&PrivacyForOSXElCapitan10.11.mobileconfig"
 ################################################################################################
 
     def report(self):

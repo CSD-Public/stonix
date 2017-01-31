@@ -31,9 +31,9 @@ USE_PKGBUILD=1
 include /usr/local/share/luggage/luggage.make
 
 pack-stonix: l_Applications
-	@sudo ${CP} -R ./dist/${TITLE}.app ${WORK_D}/Applications
+	@sudo ${CP} -R ./build/Release/${TITLE}.app ${WORK_D}/Applications
 	@sudo chown -R root:admin ${WORK_D}/Applications/${TITLE}.app
-	@sudo chmod -R +rwx ${WORK_D}/Applications/${TITLE}.app
+	@sudo chmod -R 775 ${WORK_D}/Applications/${TITLE}.app
 	@-sudo /usr/bin/xattr -dr com.apple.quarantine ${WORK_D}/Applications/${TITLE}.app
 
 pack-stonix-manpage: l_usr_man_man8
@@ -45,7 +45,7 @@ pack-stonix4mac-install :
 
 MYPWD=$(shell pwd)
 TITLE := stonix4mac
-PACKAGE_VERSION=0.9.5
+PACKAGE_VERSION=0.9.5.0
 REVERSE_DOMAIN=gov.lanl.${TITLE}.${PACKAGE_VERSION}
 PI=postinstall
 PRE=preinstall

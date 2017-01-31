@@ -59,7 +59,7 @@ from CommandHelper import CommandHelper
 from pkghelper import Pkghelper
 from ServiceHelper import ServiceHelper
 import traceback
-
+from CheckApplicable import CheckApplicable
 
 class Rule (Observable):
 

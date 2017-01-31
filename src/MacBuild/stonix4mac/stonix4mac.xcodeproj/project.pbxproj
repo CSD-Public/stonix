@@ -1,0 +1,535 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CF0EA8401DCD10F90079D707 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0EA83F1DCD10F90079D707 /* AppDelegate.swift */; };
+		CF0EA8421DCD10F90079D707 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0EA8411DCD10F90079D707 /* ViewController.swift */; };
+		CF0EA8441DCD10F90079D707 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CF0EA8431DCD10F90079D707 /* Assets.xcassets */; };
+		CF0EA8471DCD10F90079D707 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CF0EA8451DCD10F90079D707 /* Main.storyboard */; };
+		CF0EA8521DCD10F90079D707 /* stonix4macTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0EA8511DCD10F90079D707 /* stonix4macTests.swift */; };
+		CF0EA85D1DCD10F90079D707 /* stonix4macUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0EA85C1DCD10F90079D707 /* stonix4macUITests.swift */; };
+		CF0EA86B1DCD115B0079D707 /* stonix.app in Resources */ = {isa = PBXBuildFile; fileRef = CF0EA86A1DCD115B0079D707 /* stonix.app */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CF0EA84E1DCD10F90079D707 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF0EA8341DCD10F90079D707 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF0EA83B1DCD10F90079D707;
+			remoteInfo = stonix4mac;
+		};
+		CF0EA8591DCD10F90079D707 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF0EA8341DCD10F90079D707 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF0EA83B1DCD10F90079D707;
+			remoteInfo = stonix4mac;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		CF0EA83C1DCD10F90079D707 /* stonix4mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = stonix4mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF0EA83F1DCD10F90079D707 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		CF0EA8411DCD10F90079D707 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		CF0EA8431DCD10F90079D707 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CF0EA8461DCD10F90079D707 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		CF0EA8481DCD10F90079D707 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CF0EA84D1DCD10F90079D707 /* stonix4macTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = stonix4macTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF0EA8511DCD10F90079D707 /* stonix4macTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stonix4macTests.swift; sourceTree = "<group>"; };
+		CF0EA8531DCD10F90079D707 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CF0EA8581DCD10F90079D707 /* stonix4macUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = stonix4macUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF0EA85C1DCD10F90079D707 /* stonix4macUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stonix4macUITests.swift; sourceTree = "<group>"; };
+		CF0EA85E1DCD10F90079D707 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CF0EA86A1DCD115B0079D707 /* stonix.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = stonix.app; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CF0EA8391DCD10F90079D707 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF0EA84A1DCD10F90079D707 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF0EA8551DCD10F90079D707 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CF0EA8331DCD10F90079D707 = {
+			isa = PBXGroup;
+			children = (
+				CF0EA86A1DCD115B0079D707 /* stonix.app */,
+				CF0EA83E1DCD10F90079D707 /* stonix4mac */,
+				CF0EA8501DCD10F90079D707 /* stonix4macTests */,
+				CF0EA85B1DCD10F90079D707 /* stonix4macUITests */,
+				CF0EA83D1DCD10F90079D707 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CF0EA83D1DCD10F90079D707 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CF0EA83C1DCD10F90079D707 /* stonix4mac.app */,
+				CF0EA84D1DCD10F90079D707 /* stonix4macTests.xctest */,
+				CF0EA8581DCD10F90079D707 /* stonix4macUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CF0EA83E1DCD10F90079D707 /* stonix4mac */ = {
+			isa = PBXGroup;
+			children = (
+				CF0EA83F1DCD10F90079D707 /* AppDelegate.swift */,
+				CF0EA8411DCD10F90079D707 /* ViewController.swift */,
+				CF0EA8431DCD10F90079D707 /* Assets.xcassets */,
+				CF0EA8451DCD10F90079D707 /* Main.storyboard */,
+				CF0EA8481DCD10F90079D707 /* Info.plist */,
+			);
+			path = stonix4mac;
+			sourceTree = "<group>";
+		};
+		CF0EA8501DCD10F90079D707 /* stonix4macTests */ = {
+			isa = PBXGroup;
+			children = (
+				CF0EA8511DCD10F90079D707 /* stonix4macTests.swift */,
+				CF0EA8531DCD10F90079D707 /* Info.plist */,
+			);
+			path = stonix4macTests;
+			sourceTree = "<group>";
+		};
+		CF0EA85B1DCD10F90079D707 /* stonix4macUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CF0EA85C1DCD10F90079D707 /* stonix4macUITests.swift */,
+				CF0EA85E1DCD10F90079D707 /* Info.plist */,
+			);
+			path = stonix4macUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CF0EA83B1DCD10F90079D707 /* stonix4mac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF0EA8611DCD10F90079D707 /* Build configuration list for PBXNativeTarget "stonix4mac" */;
+			buildPhases = (
+				CF0EA8381DCD10F90079D707 /* Sources */,
+				CF0EA8391DCD10F90079D707 /* Frameworks */,
+				CF0EA83A1DCD10F90079D707 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = stonix4mac;
+			productName = stonix4mac;
+			productReference = CF0EA83C1DCD10F90079D707 /* stonix4mac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CF0EA84C1DCD10F90079D707 /* stonix4macTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF0EA8641DCD10F90079D707 /* Build configuration list for PBXNativeTarget "stonix4macTests" */;
+			buildPhases = (
+				CF0EA8491DCD10F90079D707 /* Sources */,
+				CF0EA84A1DCD10F90079D707 /* Frameworks */,
+				CF0EA84B1DCD10F90079D707 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF0EA84F1DCD10F90079D707 /* PBXTargetDependency */,
+			);
+			name = stonix4macTests;
+			productName = stonix4macTests;
+			productReference = CF0EA84D1DCD10F90079D707 /* stonix4macTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CF0EA8571DCD10F90079D707 /* stonix4macUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF0EA8671DCD10F90079D707 /* Build configuration list for PBXNativeTarget "stonix4macUITests" */;
+			buildPhases = (
+				CF0EA8541DCD10F90079D707 /* Sources */,
+				CF0EA8551DCD10F90079D707 /* Frameworks */,
+				CF0EA8561DCD10F90079D707 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF0EA85A1DCD10F90079D707 /* PBXTargetDependency */,
+			);
+			name = stonix4macUITests;
+			productName = stonix4macUITests;
+			productReference = CF0EA8581DCD10F90079D707 /* stonix4macUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CF0EA8341DCD10F90079D707 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0810;
+				LastUpgradeCheck = 0810;
+				ORGANIZATIONNAME = "Los Alamos National Laboratory";
+				TargetAttributes = {
+					CF0EA83B1DCD10F90079D707 = {
+						CreatedOnToolsVersion = 8.1;
+						DevelopmentTeam = SBN3637X9W;
+						ProvisioningStyle = Automatic;
+					};
+					CF0EA84C1DCD10F90079D707 = {
+						CreatedOnToolsVersion = 8.1;
+						ProvisioningStyle = Automatic;
+						TestTargetID = CF0EA83B1DCD10F90079D707;
+					};
+					CF0EA8571DCD10F90079D707 = {
+						CreatedOnToolsVersion = 8.1;
+						ProvisioningStyle = Automatic;
+						TestTargetID = CF0EA83B1DCD10F90079D707;
+					};
+				};
+			};
+			buildConfigurationList = CF0EA8371DCD10F90079D707 /* Build configuration list for PBXProject "stonix4mac" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CF0EA8331DCD10F90079D707;
+			productRefGroup = CF0EA83D1DCD10F90079D707 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CF0EA83B1DCD10F90079D707 /* stonix4mac */,
+				CF0EA84C1DCD10F90079D707 /* stonix4macTests */,
+				CF0EA8571DCD10F90079D707 /* stonix4macUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CF0EA83A1DCD10F90079D707 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF0EA8441DCD10F90079D707 /* Assets.xcassets in Resources */,
+				CF0EA86B1DCD115B0079D707 /* stonix.app in Resources */,
+				CF0EA8471DCD10F90079D707 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF0EA84B1DCD10F90079D707 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF0EA8561DCD10F90079D707 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CF0EA8381DCD10F90079D707 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF0EA8421DCD10F90079D707 /* ViewController.swift in Sources */,
+				CF0EA8401DCD10F90079D707 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF0EA8491DCD10F90079D707 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF0EA8521DCD10F90079D707 /* stonix4macTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF0EA8541DCD10F90079D707 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF0EA85D1DCD10F90079D707 /* stonix4macUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CF0EA84F1DCD10F90079D707 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CF0EA83B1DCD10F90079D707 /* stonix4mac */;
+			targetProxy = CF0EA84E1DCD10F90079D707 /* PBXContainerItemProxy */;
+		};
+		CF0EA85A1DCD10F90079D707 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CF0EA83B1DCD10F90079D707 /* stonix4mac */;
+			targetProxy = CF0EA8591DCD10F90079D707 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		CF0EA8451DCD10F90079D707 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				CF0EA8461DCD10F90079D707 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		CF0EA85F1DCD10F90079D707 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CF0EA8601DCD10F90079D707 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		CF0EA8621DCD10F90079D707 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = SBN3637X9W;
+				INFOPLIST_FILE = stonix4mac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_BUNDLE_IDENTIFIER = gov.lanl.stonix4mac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_VERSION = 3.0.1;
+			};
+			name = Debug;
+		};
+		CF0EA8631DCD10F90079D707 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = SBN3637X9W;
+				INFOPLIST_FILE = stonix4mac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_BUNDLE_IDENTIFIER = gov.lanl.stonix4mac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_VERSION = 3.0.1;
+			};
+			name = Release;
+		};
+		CF0EA8651DCD10F90079D707 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = stonix4macTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = gov.lanl.stonix4macTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/stonix4mac.app/Contents/MacOS/stonix4mac";
+			};
+			name = Debug;
+		};
+		CF0EA8661DCD10F90079D707 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = stonix4macTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = gov.lanl.stonix4macTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/stonix4mac.app/Contents/MacOS/stonix4mac";
+			};
+			name = Release;
+		};
+		CF0EA8681DCD10F90079D707 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = stonix4macUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = gov.lanl.stonix4macUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
+				TEST_TARGET_NAME = stonix4mac;
+			};
+			name = Debug;
+		};
+		CF0EA8691DCD10F90079D707 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = stonix4macUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = gov.lanl.stonix4macUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
+				TEST_TARGET_NAME = stonix4mac;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CF0EA8371DCD10F90079D707 /* Build configuration list for PBXProject "stonix4mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF0EA85F1DCD10F90079D707 /* Debug */,
+				CF0EA8601DCD10F90079D707 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF0EA8611DCD10F90079D707 /* Build configuration list for PBXNativeTarget "stonix4mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF0EA8621DCD10F90079D707 /* Debug */,
+				CF0EA8631DCD10F90079D707 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF0EA8641DCD10F90079D707 /* Build configuration list for PBXNativeTarget "stonix4macTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF0EA8651DCD10F90079D707 /* Debug */,
+				CF0EA8661DCD10F90079D707 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF0EA8671DCD10F90079D707 /* Build configuration list for PBXNativeTarget "stonix4macUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF0EA8681DCD10F90079D707 /* Debug */,
+				CF0EA8691DCD10F90079D707 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CF0EA8341DCD10F90079D707 /* Project object */;
+}

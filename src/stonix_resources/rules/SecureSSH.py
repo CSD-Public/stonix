@@ -24,7 +24,7 @@
 
 Created on Feb 19, 2013
 
-@author: bemalmbe,dwalker
+@author: Breen Malmberg, dwalker
 @change: 02/16/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/16/2014 ekkehard Implemented isapplicable
 @change: 04/21/2014 ekkehard ci updates and ci fix method implementation
@@ -33,6 +33,8 @@ Created on Feb 19, 2013
 @change: 2015/09/23 eball Removed Banner setting to resolve InstallBanners conflict
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/01/04 Breen Malmberg - added more detail to the help text to make
+        it more clear to the end user, what the rule actually does.
 '''
 from __future__ import absolute_import
 import os
@@ -50,7 +52,7 @@ class SecureSSH(Rule):
     The SecureSSH class makes a number of configuration changes to SSH in \
     order to ensure secure use of the functionality.
 
-    @author bemalmbe
+    @author Breen Malmberg
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -63,11 +65,38 @@ class SecureSSH(Rule):
         self.rulename = 'SecureSSH'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule makes a number of configuration \
-changes to SSH in order to ensure its security.  This rule \
-will not attempt to install the SSH server or client if it is not installed. \
-However, it will create the appropriate files if not present and put the \
-appropriate contents in them whether installed or not.'''
+        self.helptext = '''This rule will not install SSH if it does
+not already exist on the system.
+
+This rule touches a number of configuration
+options in the ssh_config and/or sshd_config file(s).
+These options are checked and then changed, if necessary
+to be more secure than the default configuration.
+
+The client options touched are:
+Host
+Protocol
+GSSAPIAuthentication
+GSSAPIDelegateCredentials
+
+The server options touched are:
+Protocol
+SyslogFacility
+PermitRootLogin
+MaxAuthTries
+RhostsRSAAuthentication
+HostbasedAuthentication
+IgnoreRhosts
+PermitEmptyPasswords
+PasswordAuthentication
+ChallengeResponseAuthentication
+KerberosAuthentication
+GSSAPIAuthentication
+GSSAPICleanupCredentials
+UsePAM
+Ciphers
+PermitUserEnvironment'''
+
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}

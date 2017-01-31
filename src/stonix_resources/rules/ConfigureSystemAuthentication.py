@@ -30,8 +30,9 @@ Created on Sep 11, 2013
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/22 eball Rebased code in several spots for readability, and to
     correct logic errors (e.g. unreachable code, unused vars)
-@change: 2016/01/25 eball - Changed pw policies to meet RHEL 7 STIG and
+@change: 2016/01/25 eball Changed pw policies to meet RHEL 7 STIG and
     CNSSI standards
+@change: 2016/11/14 eball Updated for PAM configurations in localize.py
 '''
 from __future__ import absolute_import
 
@@ -40,12 +41,15 @@ import re
 from subprocess import call
 import traceback
 from ..KVEditorStonix import KVEditorStonix
+from ..localize import AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD, \
+    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM, \
+    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD ,SESSION_YUM
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, readFile, \
     writeFile, resetsecon, createFile
-
+from ..CommandHelper import CommandHelper
 
 class ConfigureSystemAuthentication(Rule):
 
@@ -60,7 +64,7 @@ class ConfigureSystemAuthentication(Rule):
 requirements and failed login attempts. It also ensures the system uses \
 SHA512 encryption.
 There are three configuration items. Two of these \
-configuration involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please \
+involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please \
 be advised, due to the complexity and sensitivity of PAM, portions of the PAM \
 files that these two CIs configure will be completely overwritten, therefore \
 if you have configured PAM with other modules, you may want to avoid enabling \
@@ -70,7 +74,7 @@ receive the same contents. Due to this, no undo events will be recorded for \
 the first two configuration items. However, backups will be made in the \
 /etc/pam.d directory to restore them back to the way before the rule was run. \
 Run these rules at your own risk. If your system uses portage for a package \
-manager (i.e. Gentoo), you will need to do fix manually for all files except \
+manager (e.g. Gentoo), you will need to do fix manually for all files except \
 for the login.defs file"""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
@@ -110,6 +114,28 @@ for the login.defs file"""
         self.guidance = ["NSA 2.3.3.1,", "NSA 2.3.3.2"]
         self.iditerator = 0
         self.created = False
+        self.localize()
+
+    def localize(self):
+        myos = self.environ.getostype().lower()
+        if re.search("red hat.*?release 6", myos):
+            self.password = PASSWORD_NSLCD
+            self.auth = AUTH_NSLCD
+            self.acct = ACCOUNT_NSLCD
+            self.session = SESSION_NSLCD
+        elif re.search("suse", myos):
+            self.password = PASSWORD_ZYPPER
+            self.auth = AUTH_ZYPPER
+            self.acct = ACCOUNT_ZYPPER
+        elif re.search("debian|ubuntu", myos):
+            self.password = PASSWORD_APT
+            self.auth = AUTH_APT
+            self.acct = ACCOUNT_APT
+        else:
+            self.password = PASSWORD_YUM
+            self.auth = AUTH_YUM
+            self.acct = ACCOUNT_YUM
+            self.session = SESSION_YUM
 
     def report(self):
         '''
@@ -120,6 +146,7 @@ for the login.defs file"""
         @return: bool - True if system is compliant, False if it isn't
         '''
         try:
+            self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
             self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
                 self.compliant = self.reportLinux()
@@ -137,152 +164,7 @@ for the login.defs file"""
                                    self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
-
-    def reportLinux(self):
-        '''Linux specific submethod for linux distributions.
-        @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
-        '''
-        self.logindefs = "/etc/login.defs"
-        debug = ""
-        compliant = True
-        self.editor1, self.editor2 = "", ""
-        self.pwqeditor = ""
-        self.ph = Pkghelper(self.logger, self.environ)
-        self.pamsha512present = True
-        if self.ph.manager == "apt-get":
-            self.pam = "/etc/pam.d/common-password"
-            self.pam2 = "/etc/pam.d/common-auth"
-            self.cracklib = "libpam-cracklib"
-            self.quality = "libpam-pwquality"
-            self.libuserfile = "/etc/libuser.conf"
-        elif self.ph.manager == "zypper":
-            self.pam = "/etc/pam.d/common-password-pc"
-            self.pam2 = "/etc/pam.d/common-auth-pc"
-            self.cracklib = "cracklib"
-            self.quality = "pam_pwquality"
-            self.libuserfile = "/var/lib/YaST2/users_first_stage.ycp"
-        else:
-            self.pam = "/etc/pam.d/password-auth-ac"
-            self.pam2 = "/etc/pam.d/system-auth-ac"
-            self.cracklib = "cracklib"
-            self.quality = "libpwquality"
-            self.libuserfile = "/etc/libuser.conf"
-        quality = "quality"
-        cracklib = "cracklib"
-
-        # This section to configure password regulations ######################
-        if self.ph.manager == "apt-get":
-            # for apt-get systems, pwquality doesn't work
-            # we will use cracklib until pwquality is fixed
-            if not self.chkpassword(cracklib):
-                debug = "chkpassword() is not compliant\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                self.detailedresults += "Cracklib is not configured\n"
-                compliant = False
-        elif self.ph.check(self.quality):
-            if not self.chkpassword(quality):
-                debug = "chkpassword() is not compliant\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                self.detailedresults += "pwquality is not configured\n"
-                compliant = False
-        elif not self.ph.checkAvailable(self.quality):
-            if self.ph.check(self.cracklib):
-                if not self.chkpassword(cracklib):
-                    debug = "chkpassword() is not compliant\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    self.detailedresults += "Cracklib is not configured\n"
-                    compliant = False
-            elif not self.ph.checkAvailable(self.cracklib):
-                debug = "There is no password checking program " + \
-                    "installed nor available on this system\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                self.detailedresults += "There is no password checking " + \
-                    "program installed nor available for your system\n"
-                compliant = False
-            # cracklib is not installed but available for install
-            else:
-                debug = "cracklib not installed but is available\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                self.detailedresults += "This system will use cracklib " + \
-                    "password checking program but is not installed.  " + \
-                    "Will install and be configured when fix is run\n"
-                compliant = False
-        # pwquality is not installed but available for install
-        else:
-            debug = "pwquality not installed but is available\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            self.detailedresults += "This system will use pwquality " + \
-                    "password checking program but is not installed.  " + \
-                    "Will install and be configured when fix is run\n"
-            compliant = False
-        #######################################################################
-
-        # check if pam file has correct contents for screen lock out
-        if not self.chklockout():
-            if self.ph.manager == "zypper":
-                self.detailedresults += "zypper based systems do not have " + \
-                    "a lockout program\n"
-            else:
-                debug = "Account locking configuration is incorrect\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
-
-        # check if libuser file is present, if so check its contents
-        if os.path.exists(self.libuserfile):
-            if not self.chklibuserhash():
-                debug = "chklibuserhash() is not compliant\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
-        # check if the /etc/login.defs file has correct contents
-        if not self.chkdefspasshash():
-            debug = "chkdefspasshash() is not compliant\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            compliant = False
-        return compliant
-
-###############################################################################
-
-    def reportSolaris(self):
-        compliant = True
-        self.pam = "/etc/pam.conf"
-        self.config = readFile(self.pam, self.logger)
-        if self.config:
-            if not checkPerms(self.pam, [0, 0, 420], self.logger):
-                compliant = False
-            if os.path.exists("/usr/lib/security/pam_passwdqc.so"):
-                if not self.chkpasswdqcCracklib():
-                    compliant = False
-        else:
-            compliant = False
-        if not self.chklockout():
-            compliant = False
-        if not self.chkpolicy():
-            compliant = False
-        return compliant
-
-###############################################################################
-
-    def reportFreebsd(self):
-        '''no pam_tally2.so or pam_cracklib.so  available for freebsd'''
-        compliant = True
-        self.logindefs = "/etc/login.conf"
-        self.pam = "/etc/pam.d/passwd"
-        self.config = readFile(self.pam, self.logger)
-        if self.config:
-            if not checkPerms(self.pam2, [0, 0, 420], self.logger):
-                compliant = False
-            if self.chkpasswdqcinstall():
-                if not self.chkpasswdqcCracklib():
-                    compliant = False
-            if not self.chkpampasshash():
-                compliant = False
-        if not self.chkdefspasshash():
-            compliant = False
-        return compliant
-
+    
 ###############################################################################
 
     def fix(self):
@@ -293,6 +175,7 @@ for the login.defs file"""
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
         '''
+        self.detailedresults = ""
         try:
             if not self.ci1.getcurrvalue():
                 return
@@ -323,6 +206,58 @@ for the login.defs file"""
         return self.rulesuccess
 ###############################################################################
 
+    def reportLinux(self):
+        '''Linux specific submethod for linux distributions.
+        @author: dwalker
+        @param self - essential if you override this definition
+        @return: bool - True if system is compliant, False if it isn't
+        '''
+        self.logindefs = "/etc/login.defs"
+        debug = ""
+        compliant = True
+        self.editor1, self.editor2 = "", ""
+        self.pwqeditor = ""
+        self.usingpwquality, self.usingcracklib = False, False
+        self.usingpamtally2, self.usingpamfail = False, False
+        self.created1, self.created2 = False, False
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.cracklibpkgs = ["libpam-cracklib",
+                             "cracklib"]
+        self.pwqualitypkgs = ["libpam-pwquality",
+                              "pam_pwquality",
+                              "libpwquality"]
+        self.libuserfile = "/etc/libuser.conf"
+        if self.ph.manager == "apt-get":
+            self.pampassfile = "/etc/pam.d/common-password"
+            self.pamauthfile = "/etc/pam.d/common-auth"
+        elif self.ph.manager == "zypper":
+            self.pampassfile = "/etc/pam.d/common-password-pc"
+            self.pamauthfile = "/etc/pam.d/common-auth-pc"
+        else:
+            self.pampassfile = "/etc/pam.d/password-auth-ac"
+            self.pamauthfile = "/etc/pam.d/system-auth-ac"
+
+        if not self.checkpasswordreqs():
+            self.ci2comp = False
+            debug += "checkpasswordreqs method is False compliancy\n"
+            compliant = False
+        if not self.checkaccountlockout():
+            self.ci3comp = False
+            debug += "checkaccountlockout method is False compliancy\n"
+            compliant = False
+        if not self.checklogindefs():
+            self.ci4comp = False
+            debug += "checklogindefs method is False compliancy\n"
+            compliant = False
+        if not self.checklibuser():
+            self.ci4comp = False
+            debug += "checklibuser method is False compliancy\n"
+            compliant = False
+        if debug:
+            self.logger.log(LogPriority.DEBUG, debug)
+        return compliant
+###############################################################################
+
     def fixLinux(self):
         '''
         Linux specific submethod to correct linux distributions.  If your
@@ -336,279 +271,508 @@ for the login.defs file"""
         success = True
         debug = ""
         self.detailedresults = ""
-        usingcracklib, usingquality = False, False
-        if self.ph.manager == "apt-get":
-            isDebian = True
-        else:
-            isDebian = False
-        createFile(self.pam + ".backup", self.logger)
-        createFile(self.pam2 + ".backup", self.logger)
+        '''create backups of pamfiles'''
+        if os.path.exists(self.pampassfile):
+            createFile(self.pampassfile + ".backup", self.logger)
+        if os.path.exists(self.pamauthfile):
+            createFile(self.pamauthfile + ".backup", self.logger)
+        self.cracklibpkgs = ["libpam-cracklib",
+                             "cracklib"]
+        self.pwqualitypkgs = ["libpam-pwquality",
+                              "pam_pwquality",
+                              "libpwquality"]
         if self.ci2.getcurrvalue():
-            if self.ph.check(self.quality) and not isDebian:
-                usingquality = True
-            elif self.ph.checkAvailable(self.quality) and not isDebian:
-                if not self.ph.install(self.quality):
-                    debug = "Wasn't able to install pwquality, unable to " + \
-                        "continue with the rest of the rule\n"
-                    self.detailedresults += debug
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    return False
+            if not self.ci2comp:
+                if self.usingpwquality:
+                    regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
+                        "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                        "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+                    if self.pwqinstalled:
+                        if not self.setpasswordsetup(regex):
+                            success = False
+                    else:
+                        if not self.setpasswordsetup(regex, self.pwqualitypkgs):
+                            success = False
+                elif self.usingcracklib:
+                    regex = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
+                        "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                        "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+                    if self.clinstalled:
+                        if not self.setpasswordsetup(regex):
+                            success = False
+                    else:
+                        if not self.setpasswordsetup(regex, self.cracklibpkgs):
+                            success = False
                 else:
-                    usingquality = True
-            elif self.ph.check(self.cracklib):
-                usingcracklib = True
-            elif self.ph.checkAvailable(self.cracklib):
-                if not self.ph.install(self.cracklib):
-                    debug = "Wasn't able to install cracklib, unable " + \
-                        "to continue with the rest of the rule\n"
-                    self.detailedresults += debug
-                    self.logger.log(LogPriority.DEBUG, debug)
+                    error = "Could not find pwquality/cracklib pam " + \
+                        "module. Fix failed."
+                    self.logger.log(LogPriority.ERROR, error)
+                    self.detailedresults += error + "\n"
                     return False
-                else:
-                    usingcracklib = True
-            else:
-                debug = "There are no preferred password enforcement " + \
-                    "pam modules available to install on this system.  " + \
-                    "Unable to proceed with configuration\n"
-                self.detailedresults += debug
-                self.logger.log(LogPriority.DEBUG, debug)
-                success = False
-
-            if usingquality:
-                package = "quality"
-            elif usingcracklib:
-                package = "cracklib"
-            else:
-                error = "Could not find pwquality/cracklib pam " + \
-                    "module. Fix failed."
-                self.logger.log(LogPriority.ERROR, error)
-                self.detailedresults += error + "\n"
-                return False
-            if not self.setpassword(package):
-                self.detailedresults += "Unable to set the pam password " + \
-                    " authority\n"
-                success = False
         if self.ci3.getcurrvalue():
-            if self.ph.manager != "zypper": 
-                if not self.chklockout():
-                    if not self.setlockout():
-                        self.detailedresults += "Unable to set the pam " + \
-                            "lockout authority\n"
+            if not self.ci3comp:
+                if self.usingpamfail:
+                    regex = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
+                        "deny=5 unlock_time=900 fail_interval=900"
+                    if not self.setaccountlockout(regex):
                         success = False
+                        self.detailedresults += "Unable to configure pam " + \
+                            "for faillock\n"
+                elif self.usingpamtally2:
+                    regex = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
+                        "unlock_time=900 onerr=fail"
+                    if not self.setaccountlockout(regex):
+                        success = False
+                        self.detailedresults += "Unable to configure pam " + \
+                            "for pam_tally2\n"
+                else:
+                    self.detailedresults += "There is no account lockout " + \
+                        "program available for this system\n"
+                    success = False
         if self.ci4.getcurrvalue():
-            if not os.path.exists(self.libuserfile):
-                if not self.pamsha512present:
-                    if self.ph.checkAvailable("libuser"):
-                        if self.ph.install("libuser"):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            comm  = self.ph.getRemove()
-                            event = {"eventtype": "commandstring",
-                                     "command": comm}
-                            self.statechglogger.recordchgevent(myid, event)
-                            
-            elif not self.chklibuserhash():
-                if not self.setlibhash():
-                    debug = "setlibhash() failed\n"
-                    self.detailedresults += "Unable to configure " + \
-                        "/etc/libuser.conf\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
-            if not self.chkdefspasshash():
-                if not self.setdefpasshash():
-                    debug = "setdefpasshash() failed\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    self.detailedresults += "Unable to configure " + \
-                        "/etc/login.defs file\n"
-                    success = False
-        return success
-
-###############################################################################
-
-    def fixSolaris(self):
-        changed = False
-        success = True
-        if self.config:
-            if not checkPerms(self.pam, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam, [0, 0, 420], self.logger,
-                                self.statechglogger, myid):
-                    return False
-            if not self.chkpasswdqc():
-                if self.setpasswdqc():
-                    changed = True
-                else:
-                    success = False
-        if changed:
-            tempstring = ""
-            for line in self.config:
-                tempstring += line
-            tmpfile = self.pam + ".tmp"
-            if writeFile(tmpfile, tempstring, self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.pam}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.pam, tmpfile, myid)
-                os.rename(tmpfile, self.pam)
-                os.chown(self.pam, 0, 0)
-                os.chmod(self.pam, 420)
-                resetsecon(self.pam)
-            else:
-                success = False
-
-        path = "/etc/default/login"
-        if os.path.exists(path):
-            if not checkPerms(path, [0, 0, 292], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, [0, 0, 292], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-        if self.editor1.fixables:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.editor1.setEventID(myid)
-            if not self.editor1.fix():
-                success = False
-            elif not self.editor1.commit():
-                success = False
-            os.chown(path, 0, 0)
-            os.chmod(path, 292)
-            resetsecon(path)
-        if not self.fixPolicy():
-            success = False
-        return success
-
-###############################################################################
-
-    def fixFreebsd(self):
-        changed = False
-        success = True
-        if self.config:
-            if not checkPerms(self.pam, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam, [0, 0, 420], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-            if not self.chklockout():
-                if os.path.exists('/lib/security/pam_faillock.so'):
-                    if self.setlockout6():
-                        changed = True
-                    else:
+            if not self.ci4comp:
+                if not self.checklibuser():
+                    if not self.setlibuser():
+                        debug = "setlibuser() failed\n"
+                        self.detailedresults += "Unable to configure " + \
+                            "/etc/libuser.conf\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-                else:
-                    if self.setlockout5():
-                        changed = True
-                    else:
+                if not self.checklogindefs():
+                    if not self.setlogindefs():
+                        debug = "setdefpasshash() failed\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        self.detailedresults += "Unable to configure " + \
+                            "/etc/login.defs file\n"
                         success = False
-                tempstring = ""
-                for line in self.config:
-                    tempstring += line
-                tmpfile = self.pam + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': self.pam}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.pam, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, self.pam)
-                    os.chown(self.pam, 0, 0)
-                    os.chmod(self.pam, 420)
-                    resetsecon(self.pam)
-                else:
-                    success = False
-        if self.config2:
-            changed = False
-            self.config = self.config2
-            if not checkPerms(self.pam2, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam2, [0, 0, 420], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-            if not self.chkpasswdqc():
-                if self.setpasswdqc():
-                    changed = True
-                else:
-                    success = False
-            if not self.chkpampasshash():
-                if self.setpampasshash():
-                    changed = True
-                else:
-                    success = False
-            if changed:
-                tempstring = ""
-                for line in self.config:
-                    tempstring += line
-                tmpfile = self.pam2 + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': self.pam2}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.pam2, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, self.pam2)
-                    os.chown(self.pam2, 0, 0)
-                    os.chmod(self.pam2, 420)
-                    resetsecon(self.pam2)
-                else:
-                    success = False
-        if not self.chkdefspasshash():
-            if not self.fixLogin():
-                success = False
         return success
 
-###############################################################################       
-    
-    def chkpassword(self, package):
-        '''Private method to check for the presence of the correct
-        pwquality/cracklib directives. In this method we want
-        the pwquality/cracklib line to be the first line to appear of the
-        password type and the pam_unix.so line to be right after.
+    def checkpasswordreqs(self):
+        '''
+        Method to check which password checking program the system
+        is or should be using.
         @author: dwalker
         @return: bool
         '''
-        compliant = False
-        regex2 = r"^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=5"
-        if package == "quality":
-            compliant1 = self.chkpwquality()
-            regex1 = r"^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
-                "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
-                "lcredit=0 ocredit=0 retry=3"
-            compliant2 = self.chkPwCheck(regex1, regex2, package)
-            if compliant1 and compliant2:
-                compliant = True
+        self.pwqinstalled, self.clinstalled = False, False
+        self.pwqpkg, self.crackpkg = "", ""
+        '''Check if either pam_pwquality or cracklib are installed'''
+        for pkg in self.pwqualitypkgs:
+            if self.ph.check(pkg):
+                self.pwqinstalled = True
+        for pkg in self.cracklibpkgs:
+            if self.ph.check(pkg):
+                self.clinstalled = True
+        '''if pwquality is installed we check to see if it's configured'''
+        if self.pwqinstalled:
+            '''If it's not, since it is already installed we want to
+            configure pwquality and not cracklib since it's better'''
+            if not self.checkpasswordsetup("pwquality"):
+                self.usingpwquality = True
+                self.detailedresults += "System is using pwquality but " + \
+                    "it's not configured properly in PAM\n"
+                return False
+            else:
+                '''pwquality is installed and configured'''
+                return True
+        elif self.clinstalled:
+            '''Although we want pwquality over cracklib, if cracklib is
+            already installed and configured correctly, we will go with that'''
+            if not self.checkpasswordsetup("cracklib"):
+                '''cracklib is not configured correctly so we check
+                if pwquality is available for install'''
+                for pkg in self.pwqualitypkgs:
+                    if self.ph.checkAvailable(pkg):
+                        self.usingpwquality = True
+                        self.pwqpkg = pkg
+                        self.detailedresults += "System has cracklib " + \
+                            "installed but is not configured properly with " + \
+                            "PAM, will install and configure pwquality\n"
+                        return False
+                    self.detailedresults += "cracklib installed but not " + \
+                        "configured properly\n"
+                    self.usingcracklib = True
+            else:
+                '''cracklib is installed and configured'''
+                return True
+        else:
+            '''neither pwquality or cracklib is installed, we prefer
+            pwquality so we check if it's available for install'''
+            for pkg in self.pwqualitypkgs:
+                if self.ph.checkAvailable(pkg):
+                    self.usingpwquality = True
+                    self.pwqpkg = pkg
+                    self.detailedresults += "pwquality is available for " + \
+                        "install\n"
+                    return False
+            '''pwquality wasn't available for install, check for cracklib'''
+            for pkg in self.cracklibpkgs:
+                if self.ph.checkAvailable(pkg):
+                    self.usingcracklib = True
+                    self.crackpkg = pkg
+                    self.detailedresults += "cracklib is available for " + \
+                        "install\n"
+                    return False
+            return False
+    
+    def checkpasswordsetup(self, package):
+        '''
+        Method called from within checkpasswordreqs method
+        @author: dwalker
+        @param package: pwquality or cracklib
+        @return: bool
+        '''
+        compliant = True
+        if package == "pwquality":
+            regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
+                    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+            if not self.chkpwquality():
+                compliant = False
         elif package == "cracklib":
-            regex1 = r"^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
-                "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 " + \
-                "lcredit=0 ocredit=0 retry=3"
-            compliant = self.chkPwCheck(regex1, regex2, package)
+            regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
+                    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
+            "try_first_pass use_authtok remember=10"
+        pamfiles = []
+        if self.ph.manager in ("yum", "dnf"):
+            pamfiles.append(self.pamauthfile)
+            pamfiles.append(self.pampassfile)
+        else:
+            pamfiles.append(self.pampassfile)
+        for pamfile in pamfiles:
+            found1, found2 = False, False
+            if not os.path.exists(pamfile):
+                self.detailedresults += pamfile + " doesn't exist\n"
+                compliant = False
+            else:
+                if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
+                    self.detailedresults += ""
+                    compliant = False
+                contents = readFile(pamfile, self.logger)
+                if not contents:
+                    self.detailedresults += pamfile + " is blank\n"
+                    compliant = False
+                else:
+                    for line in contents:
+                        if re.search(regex1, line.strip()):
+                            found1 = True
+                        if re.search(regex2, line.strip()):
+                            found2 = True
+                    if not found1 or not found2:
+                        self.detailedresults += "Didn't find the correct " + \
+                            "contents in " + pamfile + "\n"
+                        compliant = False
         return compliant
 
-###############################################################################
+    def setpasswordsetup(self, regex1, pkglist = ""):
+        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
+            "try_first_pass use_authtok remember=10"
+        success = True
+        pamfiles = []
+        installed = False
+        if pkglist:
+            for pkg in pkglist:
+                if self.ph.check(pkg):
+                    installed = True
+                    break
+        else:
+            installed = True
+        if not installed:
+            for pkg in pkglist:
+                if self.ph.checkAvailable(pkg):
+                    if not self.ph.install(pkg):
+                        self.detailedresults += "Unable to install pkg " + \
+                            pkg + "\n" 
+                        return False
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        comm = self.ph.getRemove() + pkg
+                        event = {"eventtype": "commandstring",
+                                 "command": comm}
+                        self.statechglogger.recordchgevent(myid, event)
+                        installed = True
+                        pwqfile = "/etc/security/pwquality.conf"
+                        tmpfile = pwqfile + ".tmp"
+                        data = {"difok": "7",
+                                "minlen": "14",
+                                "dcredit": "0",
+                                "ucredit": "0",
+                                "lcredit": "0",
+                                "ocredit": "0",
+                                "maxrepeat": "3",
+                                "minclass": "4"}
+                        self.pwqeditor = KVEditorStonix(self.statechglogger,
+                                                        self.logger, "conf",
+                                                        pwqfile, tmpfile, data,
+                                                        "present", "openeq")
+                        self.pwqeditor.report()
+                        break
+        if not installed:
+            self.detailedresults += "No password checking program available\n"
+            return False
+        if self.usingpwquality:
+            if not self.setpwquality():
+                success = False
+        elif self.usingcracklib:
+            self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
+                                   self.password)
+        if self.ph.manager in ("yum", "dnf"):
+            writecontents = self.auth + "\n" + self.acct + "\n" + \
+                self.password + "\n" + self.session
+            pamfiles.append(self.pamauthfile)
+            pamfiles.append(self.pampassfile)
+        else:
+            writecontents = self.password
+            pamfiles.append(self.pampassfile)
+        for pamfile in pamfiles:
+            if not os.path.exists(pamfile):
+                self.detailedresults += pamfile + " doesn't exist.\n" + \
+                    "Stonix will not attempt to create this file " + \
+                    "and the fix for the this rule will not continue\n"
+                return False
+        '''Check permissions on pam file(s)'''
+        for pamfile in pamfiles:
+            if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+                    success = False
+                    self.detailedresults += "Unable to set " + \
+                        "correct permissions on " + pamfile + "\n"
+            contents = readFile(pamfile, self.logger)
+            found1, found2 = False, False
+            for line in contents:
+                if re.search(regex1, line.strip()):
+                    found1 = True
+                if re.search(regex2, line.strip()):
+                    found2 = True
+            if not found1 or not found2:
+                tmpfile = pamfile + ".tmp"
+                if writeFile(tmpfile, writecontents, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'conf',
+                             'filepath': pamfile}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(pamfile, tmpfile, myid)
+                    os.rename(tmpfile, pamfile)
+                    os.chown(pamfile, 0, 0)
+                    os.chmod(pamfile, 0o644)
+                    resetsecon(pamfile)
+                else:
+                    self.detailedresults += "Unable to write to " + pamfile + "\n"
+                    success = False
+        return success
+        ''''section of code commented out can be uncommented if we
+        decide that we will create the pam files if they don't exist.
+        Currently, if the pam file(s) don't exist, we don't do 
+        anything.'''
+#         '''Check existence of pam file(s)'''
+#         for pamfile in pamfiles:
+#             if not os.path.exists(pamfile):
+#                 if createFile(pamfile, self.logger):
+#                     if self.ph.manager == "yum":
+#                         if pamfile == self.pamauthfile:
+#                             self.created1 = True
+#                         else:
+#                             self.created2 = True
+#                     else:
+#                         self.created1 = True
+#                     self.iditerator += 1
+#                     myid = iterate(self.iditerator, self.rulenumber)
+#                     event = {"eventtype": "creation",
+#                              "filepath": pamfile}
+#                     self.statechglogger.recordchgevent(myid, event)
+#                 else:
+#                     success = False
+#                     self.detailedresults += "Unable to create " + pamfile + "\n"
+#         '''Check permissions on pam file(s)'''
+#         for pamfile in pamfiles:
+#             if not os.path.exists(pamfile):
+#                 if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
+#                     if self.ph.manager == "yum":
+#                         if pamfile == self.pamauthfile:
+#                             if self.created1:
+#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger):
+#                                     success = False
+#                                     self.detailedresults += "Unable to set " + \
+#                                         "correct permissions on " + pamfile + "\n"
+#                             else:
+#                                 self.iditerator += 1
+#                                 myid = iterate(self.iditerator, self.rulenumber)
+#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+#                                     success = False
+#                                     self.detailedresults += "Unable to set " + \
+#                                         "correct permissions on " + pamfile + "\n"
+#                         elif pamfile == self.pampassfile:
+#                             if self.created2:
+#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger):
+#                                     success = False
+#                                     self.detailedresults += "Unable to set " + \
+#                                         "correct permissions on " + pamfile + "\n"
+#                             else:
+#                                 self.iditerator += 1
+#                                 myid = iterate(self.iditerator, self.rulenumber)
+#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+#                                     success = False
+#                                     self.detailedresults += "Unable to set " + \
+#                                         "correct permissions on " + pamfile + "\n"
+#                     else:
+#                         if self.created1:
+#                             if not setPerms(pamfile, [0, 0, 0o644], self.logger):
+#                                 success = False
+#                                 self.detailedresults += "Unable to set " + \
+#                                     "correct permissions on " + pamfile + "\n"
+#                         else:
+#                             self.iditerator += 1
+#                             myid = iterate(self.iditerator, self.rulenumber)
+#                             if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+#                                 success = False
+#                                 self.detailedresults += "Unable to set " + \
+#                                     "correct permissions on " + pamfile + "\n"
+
     
+    def checkaccountlockout(self):
+        '''
+        Method to determine which account locking program to
+        use if any.
+        @author: dwalker
+        @return: bool
+        '''
+        which = "/usr/bin/which "
+        cmd1 = which + "faillock"
+        cmd2 = which + "pam_tally2"
+        ch = CommandHelper(self.logger)
+        pamfiles = []
+        compliant = True
+        if ch.executeCommand(cmd1):
+            if ch.getReturnCode() == 0:
+                self.usingpamfail = True
+            elif ch.executeCommand(cmd2):
+                if ch.getReturnCode() == 0:
+                    self.usingpamtally2 = True
+            else:
+                self.detailedresults += "There is no account " + \
+                        "locking program available for this " + \
+                        "distribution\n"
+                return False
+        elif ch.executeCommand(cmd2):
+                if ch.getReturnCode() == 0:
+                    self.usingpamtally2 = True
+                else:
+                    self.detailedresults += "There is no account " + \
+                        "locking program available for this " + \
+                        "distribution\n"
+                    return False
+        else:
+            self.detailedresults += "There is no account " + \
+                "locking program available for this " + \
+                "distribution\n"
+            return False
+        if self.usingpamfail:
+            regex = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
+                "deny=5 unlock_time=900 fail_interval=900"
+        elif self.usingpamtally2:
+            regex = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
+                "unlock_time=900 onerr=fail"
+        if self.ph.manager in("yum", "dnf"):
+            pamfiles.append(self.pamauthfile)
+            pamfiles.append(self.pampassfile)
+        else:
+            pamfiles.append(self.pamauthfile)
+        for pamfile in pamfiles:
+            found = False
+            if not os.path.exists(pamfile):
+                self.detailedresults += "Critical pam file " + pamfile + \
+                    "doesn't exist\n"
+                compliant = False
+            else:
+                if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
+                    self.detailedresults += "Permissions aren't correct " + \
+                        "on " + pamfile + "\n"
+                    self.ci3comp = False
+                    compliant = False
+                contents = readFile(pamfile, self.logger)
+                if not contents:
+                    self.detailedresults += pamfile + " is blank\n"
+                    self.ci3comp = False
+                    compliant = False
+                else:
+                    for line in contents:
+                        if re.search(regex, line.strip()):
+                            found = True
+                    if not found:
+                        self.detailedresults += "Didn't find the correct " + \
+                            "contents in " + pamfile + "\n"
+                        self.ci3comp = False
+                        compliant = False
+        return compliant
+
+    def setaccountlockout(self, regex):
+        success = True
+        pamfiles = []
+        if self.ph.manager in ("yum", "dnf"):
+            pamfiles.append(self.pamauthfile)
+            pamfiles.append(self.pampassfile)
+            writecontents = self.auth + "\n" + self.acct + "\n" + \
+                        self.password + "\n" + self.session
+        else:
+            pamfiles.append(self.pamauthfile)
+            writecontents = self.auth
+        for pamfile in pamfiles:
+            if not os.path.exists(pamfile):
+                self.detailedresults += pamfile + " doesn't exist.\n" + \
+                    "Stonix will not attempt to create this file " + \
+                    "and the fix for the this rule will not continue\n"
+                return False
+        '''Check permissions on pam file(s)'''
+        for pamfile in pamfiles:
+            if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+                    success = False
+                    self.detailedresults += "Unable to set " + \
+                        "correct permissions on " + pamfile + "\n"
+            contents = readFile(pamfile, self.logger)
+            found = False
+            for line in contents:
+                if re.search(regex, line.strip()):
+                    found = True
+            if not found:
+                tmpfile = pamfile + ".tmp"
+                if writeFile(tmpfile, writecontents, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'conf',
+                             'filepath': pamfile}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(pamfile, tmpfile, myid)
+                    os.rename(tmpfile, pamfile)
+                    os.chown(pamfile, 0, 0)
+                    os.chmod(pamfile, 0o644)
+                    resetsecon(pamfile)
+                else:
+                    self.detailedresults += "Unable to write to " + pamfile + "\n"
+                    success = False
+        return success
+
     def chkpwquality(self):
         compliant = True
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
             tmpfile = pwqfile + ".tmp"
-            data = {"difok": "4",
+            data = {"difok": "7",
                     "minlen": "14",
-                    "dcredit" : "-1",
-                    "ucredit": "-1",
-                    "lcredit": "-1",
-                    "ocredit": "-1",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
                     "maxrepeat": "3",
-                    "minclass": "3"}
+                    "minclass": "4"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
@@ -620,101 +784,6 @@ for the login.defs file"""
             compliant = False
             self.detailedresults += "System is using pwquality and " + \
                 "crucial file /etc/security/pwquality doesn't exist\n"
-        return compliant
-    
-###############################################################################
-
-    def chkPwCheck(self, regex1, regex2, package):
-        compliant = True
-        pamfiles = []
-        if self.ph.manager == "yum":
-            pamfiles.append(self.pam)
-            pamfiles.append(self.pam2)
-        else:
-            pamfiles.append(self.pam)
-        for pam in pamfiles:
-            if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
-                    self.detailedresults += "permissions aren't correct " + \
-                        "on " + pam + "\n"
-                    compliant = False
-            else:
-                self.detailedresults += pam + " does not exist.  Due to " + \
-                    "the complexity of pam, stonix will not attempt to " + \
-                    "create this file\n"
-                self.pamsha512present = False
-                return False
-        if self.ph.manager == "solaris":
-            config = self.config
-            if not config:
-                return False
-            for line in config:
-                if re.search("^#", line) or re.match("^\s*$", line):
-                    continue
-                if re.match("^other[ \t]password", line):
-                    if re.search("pam_dhkeys.so.1", line):
-                        pamunixso = True
-                    elif re.search("pam_passwdqc.so", line):
-                        if re.search("other[ \t]password[ \t]requisite[ \t]" +
-                                     "/usr/lib/security/pam_passwdqc.so[ \t]" +
-                                     "min=disabled,disabled,16,12,8", line):
-                            if pamunixso:
-                                compliant = True
-                                break
-                            else:
-                                compliant = False
-                                break
-                        else:
-                            compliant = False
-                            break
-        else:
-            if self.ph.manager == "portage":
-                self.detailedresults = package + " can't be configured " + \
-                    "for gentoo"
-                self.logger.log(LogPriority.INFO, self.detailedresults)
-                return True
-            for pam in pamfiles:
-                tmpconfig1, tmpconfig2 = [], []
-                found = False
-                if not os.path.exists(pam):
-                    self.detailedresults += "Pam file required to configure " + \
-                        package + " does not exist\n"
-                    return False
-                config = readFile(pam, self.logger)
-                # if the file is blank just add the two required lines
-                if not config:
-                    self.detailedresults += "pam file required to " + \
-                        "configure" + package + " is blank.  Will not " + \
-                        "attempt to configure this file\n"
-                    return False
-                # Find lines that start with password, which will be in a
-                # block. Copy all lines that start with password, are comments,
-                # or blank, until we find a line that doesn't start with any of
-                # those.
-                for line in config:
-                    if re.search("^password", line):
-                        tmpconfig1.append(line)
-                        found = True
-                    elif re.search(r"^#|^\s*$", line) and found:
-                        tmpconfig1.append(line)
-                    elif found:
-                        break
-                if not len(tmpconfig1) >= 2:
-                    self.detailedresults += pam + " file has incorrect " + \
-                        "format\n"
-                    compliant = False
-                else:
-                    for line in tmpconfig1:
-                        if re.search("^password", line):
-                            tmpconfig2.append(line)
-                    if not re.search(regex1, tmpconfig2[0].strip()):
-                        self.detailedresults += 'Could not match "' + regex1 + \
-                            '" to the first password line in ' + pam + "\n"
-                        compliant = False
-                    if not re.search(regex2, tmpconfig2[1].strip()):
-                        self.detailedresults += 'Could not match "' + regex2 + \
-                            '" to the second password line in ' + pam + "\n"
-                        compliant = False
         return compliant
 
 ###############################################################################
@@ -729,7 +798,7 @@ for the login.defs file"""
             compliant = True
             path = "/etc/default/login"
             if os.path.exists(path):
-                if not checkPerms(path, [0, 0, 292], self.logger):
+                if not checkPerms(path, [0, 0, 0o444], self.logger):
                     self.detailedresults += "permissions are incorrect " + \
                         "for " + path + " file\n"
                     compliant = False
@@ -746,174 +815,16 @@ for the login.defs file"""
             else:
                 self.detailedresults += path + " doesn't exist\n"
                 return False
-        elif self.ph.manager == "portage":
-            return True
-        else:
-            compliant = False
-            if self.ph.manager in ["zypper", "apt-get"]:
-                compliant = self.chkPamtally2()
-            else:
-                compliant = self.chkPamfaillock()
-            return compliant
-###############################################################################
-
-    def chkPamtally2(self):
-        '''
-        This sub method is only for zypper systems i.e. novell, opensuse etc.
-        Other systems will use pam_faillock
-        @author: dwalker
-        @return: bool
-        '''
-        pamfiles = []
-        compliant = True
-        if self.ph.manager == "yum":
-            pamfiles.append(self.pam)
-            pamfiles.append(self.pam2)
-        else:
-            pamfiles.append(self.pam2)
-        for pam in pamfiles:
-            if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
-                    self.detailedresults += "permissions are incorrect " + \
-                        "on " + pam + " file\n"
-                    compliant = False
-            else:
-                self.detailedresults += pam + " does not exist.  Due to " + \
-                    "the complexity of pam, stonix will not attempt to " + \
-                    "create this file\n"
-                return False
-        regex1 = r"^auth[ \t]+required[ \t]+pam_env.so"
-        regex2 = r"^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-            "unlock_time=600 onerr=fail"
-        for pam in pamfiles:
-            tmpconfig1, tmpconfig2 = [], []
-            found = False
-            if not os.path.exists(pam):
-                self.detailedresults += "Pam file required to configure " + \
-                    "pamtally2 does not exist\n"
-                return False
-            config = readFile(pam, self.logger)
-            # if the file is blank just add the two required lines
-            if not config:
-                self.detailedresults += "pam file required to configure " + \
-                    "pamtally2 is blank.  Will not attempt to configure " + \
-                    "this file"
-                return False
-            # Find lines that start with auth, which will be in a block. Copy
-            # all lines that start with auth, are comments, or blank, until we
-            # find a line that doesn't start with any of those.
-            for line in config:
-                if re.search("^auth", line):
-                    tmpconfig1.append(line)
-                    found = True
-                elif re.search(r"^#|^\s*$", line) and found:
-                    tmpconfig1.append(line)
-                elif found:
-                    break
-            if not len(tmpconfig1) >= 2:
-                self.detailedresults += pam + " file is in bad format\n"
-                compliant = False
-            else:
-                for line in tmpconfig1:
-                    if re.search("^auth", line):
-                        tmpconfig2.append(line)
-                if not re.search(regex1, tmpconfig2[0].strip()):
-                    self.detailedresults += 'Could not match "' + regex1 + \
-                        '" to the first auth line in ' + pam + "\n"
-                    compliant = False
-                if not re.search(regex2, tmpconfig2[1].strip()):
-                    self.detailedresults += 'Could not match "' + regex2 + \
-                        '" to the second auth line in ' + pam + "\n"
-                    compliant = False
-        return compliant
 
 ###############################################################################
 
-    def chkPamfaillock(self):
-        compliant = True
-        pamfiles = []
-        if self.ph.manager == "yum":
-            pamfiles.append(self.pam)
-            pamfiles.append(self.pam2)
-        else:
-            pamfiles.append(self.pam2)
-        for pam in pamfiles:
-            if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
-                    compliant = False
-            else:
-                self.detailedresults += pam + " does not exist.  Due to " + \
-                    "the complexity of pam stonix will not attempt to " + \
-                    "create this file\n"
-                return False
-        regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
-            "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-            "deny=5 unlock_time=900 fail_interval=900\n" + \
-            ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
-            ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
-            ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
-            ".*auth[ \t]+required[ \t]+pam_deny.so"
-        regex2 = r"^account[ \t]+required[ \t]+pam_faillock.so"
-        for pam in pamfiles:
-            tmpconfig1, tmpconfig2 = [], []
-            tmpstring = ""
-            found = False
-            config = readFile(pam, self.logger)
-            if not config:
-                self.detailedresults += "pam file required to configure " + \
-                    "faillock is blank.  Will not attempt to configure " + \
-                    "this file\n"
-                return False
-            # Find lines that start with auth, which will be in a block. Copy
-            # all lines that start with auth, are comments, or blank, until we
-            # find a line that doesn't start with any of those.
-            for line in config:
-                if re.search("^auth", line):
-                    tmpconfig1.append(line)
-                    found = True
-                elif re.search(r"^#|^\s*$", line) and found:
-                    tmpconfig1.append(line)
-                elif found:
-                    break
-            if not len(tmpconfig1) >= 2:
-                compliant = False
-            else:
-                for line in tmpconfig1:
-                    if re.search("^auth", line):
-                        tmpconfig2.append(line)
-                for line in tmpconfig2:
-                    tmpstring += line
-                # Doing re.search with re.S flag, to include newlines in '.'
-                if not re.search(regex1, tmpstring, re.S):
-                    self.detailedresults += "Didn't find the correct " + \
-                        "contents for faillock inside " + pam + " file\n"
-                    compliant = False
-            config = readFile(pam, self.logger)
-            accountfound = False
-            # for the account section of the pam file, the first line should
-            # be the pam_faillock.so line
-            for line in config:
-                if re.search("^account", line):
-                    accountfound = True
-                    if not re.search(regex2, line.strip()):
-                        self.detailedresults += 'Could not match "' + regex2 + \
-                            '" to the first account line in ' + pam + "\n"
-                        compliant = False
-                    break
-            if not accountfound:
-                compliant = False
-        return compliant
-
-###############################################################################
-
-    def chkdefspasshash(self):
-        '''Method to check the password
-        hash algorithm settings in login.defs.'''
+    def checklogindefs(self):
+        '''Method to check the password hash algorithm settings in 
+        login.defs.'''
         compliant = True
         debug = ""
         if os.path.exists(self.logindefs):
-            if not checkPerms(self.logindefs, [0, 0, 420], self.logger):
+            if not checkPerms(self.logindefs, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions incorrect for " + \
                     self.logindefs + " file\n"
                 compliant = False
@@ -967,12 +878,10 @@ for the login.defs file"""
                     "PASS_MAX_DAYS": "180",
                     "PASS_MIN_DAYS": "1",
                     "PASS_WARN_AGE": "7"}
-            datatype = "conf"
-            intent = "present"
             tmppath = self.logindefs + ".tmp"
             self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                          datatype, self.logindefs, tmppath,
-                                          data, intent, "space")
+                                          "conf", self.logindefs, tmppath,
+                                          data, "present", "space")
             if not self.editor2.report():
                 debug = self.logindefs + " doesn't contain the correct " + \
                     "contents\n"
@@ -983,13 +892,24 @@ for the login.defs file"""
         return compliant
 ###############################################################################
 
-    def chklibuserhash(self):
-        '''Systemauth.__chklibuserhash() Private method to check the password
-        hash algorithm settings in libuser.conf.
+    def checklibuser(self):
+        '''Private method to check the password hash algorithm settings in 
+        libuser.conf.
         @author: dwalker
         @return: bool'''
         compliant = True
-        if self.ph.manager in ["yum", "apt-get"]:
+        '''check if libuser is intalled'''
+        if not self.ph.check("libuser"):
+            '''if not, check if available'''
+            if self.ph.checkAvailable("libuser"):
+                self.detailedresults += "libuser available but not installed\n"
+                return False
+            else:
+                '''not available, not a problem'''
+                return True
+        '''create a kveditor for file if it exists, if not, we do it in
+        the setlibuser method inside the fix'''
+        if os.path.exists(self.libuserfile):
             data = {"defaults": {"crypt_style": "sha512"}}
             datatype = "tagconf"
             intent = "present"
@@ -1004,27 +924,99 @@ for the login.defs file"""
                     "contain the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
-            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
+            if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.libuserfile + "\n"
                 compliant = False
-        elif self.ph.manager == "zypper":
-            contents = readFile(self.libuserfile, self.logger)
-            if not contents:
-                self.detailedresults += self.libuserfile + " is blank\n"
-                return False
-            for line in contents:
-                if re.match("^\"encryption_method\"", line.strip()):
-                    if re.search(":", line):
-                        temp = line.split(":")
-                        if temp[1].strip() != "\"sha512\"":
-                            compliant = False
-                            break
-            if not checkPerms(self.libuserfile, [0, 0, 420], self.logger):
-                self.detailedresults += "Permissions are incorrect on " + \
-                    self.libuserfile + "\n"
-                compliant = False
+        else:
+            self.detailedresults += "Libuser installed but libuser " + \
+                "file doesn't exist\n"
+            compliant = False
         return compliant
+
+###############################################################################
+
+    def fixFreebsd(self):
+        changed = False
+        success = True
+        if self.config:
+            if not checkPerms(self.pam, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.pam, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
+            if not self.chklockout():
+                if os.path.exists('/lib/security/pam_faillock.so'):
+                    if self.setlockout6():
+                        changed = True
+                    else:
+                        success = False
+                else:
+                    if self.setlockout5():
+                        changed = True
+                    else:
+                        success = False
+                tempstring = ""
+                for line in self.config:
+                    tempstring += line
+                tmpfile = self.pam + ".tmp"
+                if writeFile(tmpfile, tempstring, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'conf',
+                             'filepath': self.pam}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.pam, tmpfile,
+                                                         myid)
+                    os.rename(tmpfile, self.pam)
+                    os.chown(self.pam, 0, 0)
+                    os.chmod(self.pam, 0o644)
+                    resetsecon(self.pam)
+                else:
+                    success = False
+        if self.config2:
+            changed = False
+            self.config = self.config2
+            if not checkPerms(self.pam2, [0, 0, 0o644], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.pam2, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
+            if not self.chkpasswdqc():
+                if self.setpasswdqc():
+                    changed = True
+                else:
+                    success = False
+            if not self.chkpampasshash():
+                if self.setpampasshash():
+                    changed = True
+                else:
+                    success = False
+            if changed:
+                tempstring = ""
+                for line in self.config:
+                    tempstring += line
+                tmpfile = self.pam2 + ".tmp"
+                if writeFile(tmpfile, tempstring, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {'eventtype': 'conf',
+                             'filepath': self.pam2}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.pam2, tmpfile,
+                                                         myid)
+                    os.rename(tmpfile, self.pam2)
+                    os.chown(self.pam2, 0, 0)
+                    os.chmod(self.pam2, 0o644)
+                    resetsecon(self.pam2)
+                else:
+                    success = False
+        if not self.chkdefspasshash():
+            if not self.fixLogin():
+                success = False
+        return success
 
 ###############################################################################
 
@@ -1040,7 +1032,7 @@ for the login.defs file"""
         self.editor2 = KVEditorStonix(self.statechglogger, self.logger, "conf",
                                       path, tmppath, data, "present",
                                       "closedeq")
-        if not checkPerms(path, [0, 0, 420], self.logger):
+        if not checkPerms(path, [0, 0, 0o644], self.logger):
             self.detailedresults += "permissions are incorrect on " + path + \
                 "\n"
             compliant = False
@@ -1054,10 +1046,10 @@ for the login.defs file"""
 
     def fixPolicy(self):
         path = "/etc/security/policy.conf"
-        if not checkPerms(path, [0, 0, 420], self.logger):
+        if not checkPerms(path, [0, 0, 0o644], self.logger):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 420], self.logger,
+            if not setPerms(path, [0, 0, 0o644], self.logger,
                             self.statechglogger, myid):
                 return False
         if self.editor2.fixables:
@@ -1069,7 +1061,7 @@ for the login.defs file"""
             elif not self.editor2.commit():
                 return False
             os.chown(path, 0, 0)
-            os.chmod(path, 420)
+            os.chmod(path, 0o644)
             resetsecon(path)
         return True
 
@@ -1079,10 +1071,10 @@ for the login.defs file"""
         # only for freebsd
         tempstring = ""
         if os.path.exists(self.logindefs):
-            if not checkPerms(self.logindefs, [0, 0, 416], self.logger):
+            if not checkPerms(self.logindefs, [0, 0, 0o640], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.logindefs, [0, 0, 416], self.logger,
+                if not setPerms(self.logindefs, [0, 0, 0o640], self.logger,
                                 self.statechglogger, myid):
                     return False
             contents = readFile(self.logindefs, self.logger)
@@ -1144,9 +1136,9 @@ for the login.defs file"""
             os.rename(tmpfile, self.logindefs)
             os.chown(self.logindefs, 0, 0)
             if self.ph.manager == "freebsd":
-                os.chmod(self.logindefs, 420)
+                os.chmod(self.logindefs, 0o644)
             else:
-                os.chmod(self.logindefs, 416)
+                os.chmod(self.logindefs, 0o640)
             resetsecon(self.logindefs)
             retval = call(["/usr/bin/cap_mkdb", "/etc/login.conf"],
                           stdout=None, shell=False)
@@ -1159,56 +1151,27 @@ for the login.defs file"""
 
 ###############################################################################
 
-    def setpassword(self, package):
-        success = False
-        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=5"
-        data2 = "password\tsufficient\tpam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=5\n"
-        if package == "quality":
-            success1 = self.setpwquality()
-            regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so " + \
-                "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
-                + "ocredit=0 retry=3"
-            data1 = "password\trequisite\tpam_pwquality.so minlen=14 " + \
-                "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
-                "ocredit=0 retry=3\n"
-            success2 = self.setPwCheck(regex1, regex2, data1, data2, package)
-            if success1 and success2:
-                success = True
-        elif package == "cracklib":
-            regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so " + \
-                "minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " \
-                + "ocredit=0 retry=3"
-            data1 = "password\trequisite\tpam_cracklib.so minlen=14 " + \
-                "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 " + \
-                "ocredit=0 retry=3\n"
-            success = self.setPwCheck(regex1, regex2, data1, data2, package)
-        return success
-###############################################################################
-
     def setpwquality(self):
         success = True
         created = False
-        if not self.pwqeditor:
-            pwqfile = "/etc/security/pwquality.conf"
-            if not os.path.exists(pwqfile):
-                createFile(pwqfile, self.logger)
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'creation',
-                         'filepath': pwqfile}
-                self.statechglogger.recordchgevent(myid, event)
-                created = True
+        pwqfile = "/etc/security/pwquality.conf"
+        if not os.path.exists(pwqfile):
+            createFile(pwqfile, self.logger)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'creation',
+                     'filepath': pwqfile}
+            self.statechglogger.recordchgevent(myid, event)
+            created = True
             tmpfile = pwqfile + ".tmp"
-            data = {"difok": "4",
+            data = {"difok": "7",
                     "minlen": "14",
-                    "dcredit" : "-1",
-                    "ucredit": "-1",
-                    "lcredit": "-1",
-                    "ocredit": "-1",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
                     "maxrepeat": "3",
-                    "minclass": "3"}
+                    "minclass": "4"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
@@ -1226,439 +1189,104 @@ for the login.defs file"""
                 success = False
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
-                        
-    def setPwCheck(self, regex1, regex2, data1, data2, package):
-        '''Private method to set the pwquality/cracklib directive in
-        password-auth or common-password. retval is a list of two items.
-        retval[0] will change from False to True, if anything in the file is
-        changed, but retval[1] will always be True for success of the method
-        @author: dwalker
-        @return: list'''
 
-        pamfiles = []
-        success = True
-        # for yum systems, changes need to be made to both pam files to work
-        if self.ph.manager == "yum":
-            pamfiles.append(self.pam)
-            pamfiles.append(self.pam2)
-        else:
-            pamfiles.append(self.pam)
-        for pam in pamfiles:
-            if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(pam, [0, 0, 420], self.logger,
-                                    "", self.statechglogger, myid):
-                        self.detailedresults += "Unable to set " + \
-                            "permissions on " + pam + " file\n"
-                        success = False
-            else:
-                self.detailedresults += pam + " does not exist. Due to " + \
-                    "the complexity of PAM, STONIX will not attempt to " + \
-                    "create this file\n"
-                return False
-        newconfig = []
-
-        for pam in pamfiles:
-            changed = False
-            tmpconfig1, tmpconfig2 = [], []
-            newconfig = []
-            if not os.path.exists(pam):
-                self.detailedresults += "Pam file required to configure " + \
-                    package + "does not exist\n"
-                return False
-            config = readFile(pam, self.logger)
-
-            # if the file is blank just add the two required lines
-            if not config:
-                self.detailedresults += "Pam file required to configure " + \
-                    "pwquality/cracklib is blank.  Will not attempt to " + \
-                    "configure this file\n"
-                return False
-            for line in config:
-                if re.search("^password", line.strip()):
-                    tmpconfig2.append(line)
-                else:
-                    tmpconfig1.append(line)
-            if not len(tmpconfig2) >= 2:
-                tmpconfig2 = []
-                tmpconfig2.append(data1)
-                tmpconfig2.append(data2)
-                changed = True
-            else:
-                if not re.search(regex1, tmpconfig2[0].strip()):
-                    tmpconfig2[0] = data1
-                    changed = True
-                if not re.search(regex2, tmpconfig2[1].strip()):
-                    tmpconfig2[1] = data2
-                    changed = True
-
-            if changed:
-                for item in tmpconfig1:
-                    newconfig.append(item)
-                for item in tmpconfig2:
-                    newconfig.append(item)
-                tempstring = ""
-                for line in newconfig:
-                    tempstring += line
-                tmpfile = pam + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    if self.ph.manager != "yum":
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {'eventtype': 'conf',
-                                 'filepath': pam}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(pam, tmpfile,
-                                                             myid)
-                        os.rename(tmpfile, pam)
-                        os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
-                        resetsecon(pam)
-                    else:
-                        os.rename(tmpfile, pam)
-                        os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
-                        resetsecon(pam)
-                else:
-                    self.detailedresults += "unable to write changes to: " + \
-                        pam + "\n"
-                    success = False
-        return success
 ###############################################################################
 
-    def setlibhash(self):
+    def setlibuser(self):
         '''
         Method to check if libuser is installed and the contents of libuser
         file.
         @author: dwalker
         @return: bool
         '''
-
-        if self.ph.manager in ["apt-get", "yum"]:
-            if os.path.exists(self.libuserfile):
-                if self.editor1.fixables:
-                    if not self.created:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.editor1.setEventID(myid)
-                    if self.editor1.fix():
-                        if self.editor1.commit():
-                            debug = "/etc/libuser.conf has been corrected\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            os.chown(self.libuserfile, 0, 0)
-                            os.chmod(self.libuserfile, 420)
-                            resetsecon(self.libuserfile)
-                        else:
-                            self.detailedresults += "/etc/libuser.conf " + \
-                                "couldn't be corrected\n"
-                            return False
-                    else:
-                        self.detailedresults += "/etc/libuser.conf couldn't " + \
-                            "be corrected\n"
-                        return False
-        else:
-            if self.ph.manager == "zypper":
-                if os.path.exists(self.libuserfile):
-                    contents = readFile(self.libuserfile, self.logger)
-                    tempstring = ""
-                    found = False
-                    for line in contents:
-                        if re.search("^#", line) or re.match('^\s*$', line):
-                            tempstring += line
-                        elif re.search("^\"encryption_method\"", line.strip()):
-                            if re.search(":", line):
-                                temp = line.split(":")
-                                if temp[1] == "sha512":
-                                    found = True
-                                    tempstring += line
-                                else:
-                                    found = False
-                            else:
-                                continue
-                        else:
-                            tempstring += line
-                    if not found:
-                        line = "\"encryption_method\" : \"sha512\"\n"
-                        tempstring += line
-                    tmpfile = self.libuserfile + ".tmp"
-                    if writeFile(tmpfile, tempstring, self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {'eventtype': 'conf',
-                                 'filepath': self.libuserfile}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.libuserfile,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, self.libuserfile)
-                        os.chown(self.libuserfile, 0, 0)
-                        os.chmod(self.libuserfile, 420)
-                        resetsecon(self.libuserfile)
-        return True
-###############################################################################
-
-    def setlockout(self):
-        if self.ph.manager == "portage":
-            return True
-        elif self.ph.manager == "zypper":
-            self.detailedresults += "zypper based systems do not contain " + \
-                "a pam lockout module\n"
-            return True
-        elif self.ph.manager == "apt-get":
-            success = self.setPamtally2()
-        else:
-            success = self.setFaillock()
-        return success
-###############################################################################
-
-    def setFaillock(self):
-        '''Private method to set the account lockout configuration.
-        using pam_faillock
-        @author: dwalker
-        @return: bool
-        '''
-
-        pamfiles = []
+        created = False
         success = True
-        debug = ""
-        if self.ph.manager == "yum":
-            pamfiles.append(self.pam)
-            pamfiles.append(self.pam2)
-        else:
-            pamfiles.append(self.pam2)
-        for pam in pamfiles:
-            if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
+        data = {"defaults": {"crypt_style": "sha512"}}
+        '''check if installed'''
+        if not self.ph.check("libuser"):
+            '''if not installed, check if available'''
+            if self.ph.checkAvailable("libuser"):
+                '''if available, install it'''
+                if not self.ph.install("libuser"):
+                    self.detailedresults += "Unable to install libuser\n"
+                    return False
+                else:
+                    '''since we're just now installing it we know we now
+                    need to create the kveditor'''
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(pam, [0, 0, 420], self.logger,
-                                    "", self.statechglogger, myid):
-                        self.detailedresults += "Unable to set permissions " + \
-                            "on " + pam + "\n"
-                        success = False
+                    comm = self.ph.getRemove() + "libuser"
+                    event = {"eventtype": "commandstring",
+                             "command": comm}
+                    self.statechglogger.recordchgevent(myid, event)
+                    datatype = "tagconf"
+                    intent = "present"
+                    tmppath = self.libuserfile + ".tmp"
+                    self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                                  datatype, self.libuserfile,
+                                                  tmppath, data, intent, "openeq")
+                    self.editor1.report()
             else:
-                self.detailedresults += pam + " does not exist.  Due to " + \
-                    "the complexity of pam stonix will not attempt to create " + \
-                    "this file\n"
-                return False
-        regex1 = "^auth[ \t]+required[ \t]+pam_env.so\n" + \
-            "auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-            "deny=5 unlock_time=900 fail_interval=900\n" + \
-            ".*auth[ \t]+sufficient[ \t]+pam_unix.so try_first_pass\n" + \
-            ".*auth[ \t]+requisite[ \t]+pam_succeed_if.so uid >= 500 quiet\n" + \
-            ".*auth[ \t]+sufficient[ \t]+pam_krb5.so use_first_pass\n" + \
-            ".*auth[ \t]+\[default=die\][ \t]+pam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900\n" + \
-            ".*auth[ \t]+required[ \t]+pam_deny.so"
-        regex2 = "^account[ \t]+required[ \t]+pam_faillock.so"
-        data1 = """auth\trequired\tpam_env.so
-auth\trequired\tpam_faillock.so preauth silent audit deny=5 unlock_time=900 fail_interval=900
-auth\tsufficient\tpam_unix.so try_first_pass
-auth\trequisite\tpam_succeed_if.so uid >= 500 quiet
-auth\tsufficient\tpam_krb5.so use_first_pass
-auth\t[default=die]\tpam_faillock.so authfail audit deny=5 unlock_time=900 fail_interval=900
-auth\trequired\tpam_deny.so
-"""
-        data2 = "account\trequired\tpam_faillock.so\n"
-        for pam in pamfiles:
-            changed1, changed2 = False, False
-            newconfig = []
-            tmpconfig1, tmpconfig2, tmpconfig3 = "", "", ""
-            if not os.path.exists(pam):
-                debug += pam + " is required to configure " + \
-                    "pam_faillock, but does not exist\n"
+                return True
+        if not os.path.exists(self.libuserfile):
+            if not createFile(self.libuserfile, self.logger):
+                self.detailedresults += "Unable to create libuser file\n"
+                debug = "Unable to create the libuser file\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
-            config = readFile(pam, self.logger)
-            # if the file is blank don't do anything
-            if not config:
-                debug += pam + "is required to configure faillock, but is " + \
-                    "blank. Will not attempt to configure this file\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-            foundAuth = False
-            foundAcc = False
-            for line in config:
-                if re.search("^auth", line) or (re.search("^#", line) and
-                                                foundAuth):
-                    tmpconfig1 += line
-                    foundAuth = True
-                    foundAcc = False
-                elif re.search("^\s+$", line) and foundAuth:
-                    tmpconfig1 += line
-                    foundAuth = False
-                elif re.search("^account", line) or (re.search("^#", line) and
-                                                     foundAcc):
-                    tmpconfig2 += line
-                    foundAcc = True
-                    foundAuth = False
-                elif re.search("^\s+$", line) and foundAcc:
-                    tmpconfig2 += line
-                    foundAcc = False
-                else:
-                    tmpconfig3 += line
-
-            # If lines don't match set tmpconfig1 equal to data1
-            if not re.search(regex1, tmpconfig1):
-                debug = "auth lines don't match what we're looking for\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                tmpconfig1 = data1
-                changed1 = True
-
-            if not re.search(regex2, tmpconfig2):
-                tmpconfig2 = data2 + tmpconfig2
-                changed2 = True
-
-            newconfig = tmpconfig3 + tmpconfig1 + tmpconfig2
-            self.logger.log(LogPriority.DEBUG,
-                            ['ConfigureSystemAuthentication',
-                             'Tempstring: ' + newconfig])
-            tmpfile = pam + ".tmp"
-            if changed1 or changed2:
-                if writeFile(tmpfile, newconfig, self.logger):
-                    if self.ph.manager != "yum":
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {'eventtype': 'conf',
-                                 'filepath': pam}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(pam, tmpfile,
-                                                             myid)
-                        os.rename(tmpfile, pam)
-                        os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
-                        resetsecon(pam)
-                    else:
-                        os.rename(tmpfile, pam)
-                        os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
-                        resetsecon(pam)
-                else:
-                    self.detailedresults += "unable to write changes to: " + \
-                        pam + "\n"
-                    success = False
-        if debug:
-            self.logger.log(LogPriority.DEBUG, debug)
-        return success
-###############################################################################
-
-    def setPamtally2(self):
-        pamfiles = []
-        success = True
-        regex1 = "^auth[ \t]+required[ \t]+pam_env.so"
-        regex2 = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-            "unlock_time=600 onerr=fail"
-        data1 = "auth\trequired\tpam_env.so\n"
-        data2 = "auth\trequired\tpam_tally2.so deny=5 unlock_time=600 " + \
-            "onerr=fail\n"
-        if self.ph.manager == "yum":
-            pamfiles.append(self.pam)
-            pamfiles.append(self.pam2)
-        else:
-            pamfiles.append(self.pam2)
-        for pam in pamfiles:
-            if os.path.exists(pam):
-                if not checkPerms(pam, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(pam, [0, 0, 420], self.logger,
-                                    "", self.statechglogger, myid):
-                        self.detailedresults += "Unable to set permissions" + \
-                            "on " + pam + " file\n"
-                        success = False
-            else:
-                self.detailedresults += pam + " does not exist.  Due to " + \
-                    "the complexity of pam stonix will not attempt to " + \
-                    "create this file\n"
-                return False
-        for pam in pamfiles:
-            changed = False
-            tmpconfig1, tmpconfig2, tmpconfig3 = [], [], []
-            if not os.path.exists(pam):
-                self.detailedresults += "Pam file required to configure " + \
-                    "pamtally2 does not exist\n"
-                return False
-            config = readFile(self.pam2, self.logger)
-
-            # if the file is blank just add the two required lines
-            if not config:
-                self.detailedresults += "pam file required to configure " + \
-                    "pamtally2 is blank.  Will not attempt to configure " + \
-                    "this file\n"
-                return False
-            for line in config:
-                # store lines beginning with auth in tmpconfig2
-                if re.search("^auth", line.strip()):
-                    tmpconfig2.append(line)
-                # store all other lines in tmpconfig1
-                else:
-                    tmpconfig1.append(line)
-            # check the first two lines and see if they contain the data we
-            # want
-            try:
-                i = 0
-                if not re.search(regex1, tmpconfig2[0].strip()):
-                    tmpconfig3.append(data1)
-                    changed = True
-                else:
-                    tmpconfig3.append(data1)
-                    i += 1
-                if not re.search(regex2, tmpconfig2[1].strip()):
-                    tmpconfig3.append(data2)
-                    changed = True
-                else:
-                    tmpconfig3.append(data2)
-            except IndexError:
-                # If there aren't at least two entries in tmpconfig2, we come
-                # to the except block where we just store the two correct lines
-                # in tmpconfig3
-                tmpconfig3 = []
-                tmpconfig3.append(data1)
-                tmpconfig3.append(data2)
-                changed = True
-            if changed:
-                if tmpconfig2:
-                    for line in tmpconfig2:
-                        tmpconfig3.append(line)
-                if tmpconfig3:
-                    for line in tmpconfig3:
-                        tmpconfig1.append(line)
-                tempstring = ""
-                if tmpconfig1:
-                    for line in tmpconfig1:
-                        tempstring += line
-                tmpfile = pam + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    if self.ph.manager != "yum":
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {'eventtype': 'conf',
-                                 'filepath': pam}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(pam, tmpfile,
-                                                             myid)
-                        os.rename(tmpfile, pam)
-                        os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
-                        resetsecon(pam)
-                    else:
-                        os.rename(tmpfile, pam)
-                        os.chown(pam, 0, 0)
-                        os.chmod(pam, 420)
-                        resetsecon(pam)
-                else:
-                    self.detailedresults += "unable to write changes to: " + \
-                        pam + "\n"
-                    success = False
-        return success
-###############################################################################
-
-    def setdefpasshash(self):
-        success = True
-        if not checkPerms(self.logindefs, [0, 0, 420], self.logger):
+            created = True
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(self.logindefs, [0, 0, 420], self.logger,
+            event = {"eventtype": "creation",
+                     "filepath": self.libuserfile}
+            self.statechglogger.recordchgevent(myid, event)
+            tmppath = self.libuserfile + ".tmp"
+            self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                          "tagconf", self.libuserfile,
+                                          tmppath, data, "present", "openeq")
+            self.editor1.report()
+        if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(self.libuserfile, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
+                    self.detailedresults += "Unable to set the " + \
+                        "permissions on " + self.libuserfile + "\n"
+            elif not setPerms(self.libuserfile, [0, 0, 0o644], self.logger):
+                success = False
+                self.detailedresults += "Unable to set the " + \
+                        "permissions on " + self.libuserfile + "\n"
+        if self.editor1.fixables:
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.editor1.setEventID(myid)
+            if self.editor1.fix():
+                if self.editor1.commit():
+                    debug = "/etc/libuser.conf has been corrected\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    os.chown(self.libuserfile, 0, 0)
+                    os.chmod(self.libuserfile, 0o644)
+                    resetsecon(self.libuserfile)
+                else:
+                    self.detailedresults += "/etc/libuser.conf " + \
+                        "couldn't be corrected\n"
+                    success = False
+            else:
+                self.detailedresults += "/etc/libuser.conf couldn't " + \
+                    "be corrected\n"
+                success = False
+        return success
+###############################################################################
+
+    def setlogindefs(self):
+        success = True
+        if not checkPerms(self.logindefs, [0, 0, 0o644], self.logger):
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            if not setPerms(self.logindefs, [0, 0, 0o644], self.logger,
                             self.statechglogger, myid):
                 self.detailedresults += "Unable to set permissions " + \
                     "on " + self.logindefs + " file\n"
@@ -1676,7 +1304,7 @@ auth\trequired\tpam_deny.so
                             debug = "/etc/login.defs file has been corrected\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             os.chown(self.logindefs, 0, 0)
-                            os.chmod(self.logindefs, 420)
+                            os.chmod(self.logindefs, 0o644)
                             resetsecon(self.logindefs)
                         else:
                             debug = "Unable to correct the " + \

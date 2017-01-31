@@ -48,6 +48,7 @@ from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 from ..ruleKVEditor import RuleKVEditor
 from ..KVEditorStonix import KVEditorStonix
+from ..pkghelper import Pkghelper
 from ..localize import WARNINGBANNER
 from ..localize import ALTWARNINGBANNER
 from ..localize import OSXSHORTWARNINGBANNER
@@ -88,18 +89,32 @@ class InstallBanners(RuleKVEditor):
         datatype = 'bool'
         key = 'InstallBanners'
         instructions = "To prevent the installation of warning banners, " + \
-            "set the value of InstallBanners to False."
+            "set the value of InstallBanners to False.\n\n!DEBIAN USERS! Due to " + \
+            "a bug in gdm3 (gnome 3) which has not been patched on debian, we are forced to " + \
+            "change the user's display manager to something else in order to be compliant " + \
+            "with the login banner requirement."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.cmdhelper = CommandHelper(self.logger)
-
         # Initial setup and deterministic resolution of variables
+        self.initobjs()
         self.setcommon()
         self.islinux()
         self.ismac()
 
 ###############################################################################
+
+    def initobjs(self):
+        '''
+        '''
+
+        try:
+
+            self.ph = Pkghelper(self.logger, self.environ)
+            self.ch = CommandHelper(self.logger)
+
+        except Exception:
+            raise
 
     def checkCommand(self, cmd, val, regex=True):
         '''
@@ -114,8 +129,8 @@ class InstallBanners(RuleKVEditor):
         retval = False
 
         try:
-            self.cmdhelper.executeCommand(cmd)
-            output = self.cmdhelper.getOutputString()
+            self.ch.executeCommand(cmd)
+            output = self.ch.getOutputString()
             if not regex:
                 found = output.find(val)
                 if found != -1:
@@ -175,9 +190,8 @@ class InstallBanners(RuleKVEditor):
         rep3 = gconfget + opt3
         val1 = 'true'
         val2 = 'true'
-        val3 = '\'' + ALTWARNINGBANNER + '\''
-        val3report = "This is a Department of Energy (DOE) computer " + \
-            "system. DOE computer"
+        val3 = "'" + WARNINGBANNER + "'"
+        val3report = WARNINGBANNER
         fix1 = gconfset + opt1type + opt1 + ' ' + val1
         fix2 = gconfset + opt2type + opt2 + ' ' + val2
         fix3 = gconfset + opt3type + opt3 + ' ' + val3
@@ -185,6 +199,54 @@ class InstallBanners(RuleKVEditor):
                                  rep2: val2,
                                  rep3: val3report}
         self.gnome2fixlist = [fix1, fix2, fix3]
+
+    def forcelightdm(self):
+        '''
+        force debian systems using gdm3 to
+        change to the lightdm display manager
+        in order to comply with login/display
+        banner requirements
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        self.logger.log(LogPriority.DEBUG, "Forcing display manager to be lightdm...")
+
+        cmd = '/usr/sbin/dpkg-reconfigure --frontend=noninteractive lightdm'
+        path = '/etc/X11/default-display-manager'
+        opt = '/usr/sbin/lightdm\n'
+        mode = 0644
+        uid = 0
+        gid = 0
+        
+
+        try:
+
+            if not self.ph.check('lightdm'):
+                self.logger.log(LogPriority.DEBUG, "Package: lightdm not installed yet. Installing lightdm...")
+                if not self.ph.install('lightdm'):
+                    retval = False
+                    self.detailedresults += "\nFailed to install lightdm"
+            if not self.ch.executeCommand(cmd):
+                retval = False
+                self.detailedresults += "\nFailed to set lightdm as default display manager"
+
+            f = open(path, 'w')
+            f.write(opt)
+            f.close()
+
+            os.chmod(path, mode)
+            os.chown(path, uid, gid)
+
+            self.detailedresults += "\nThe display manager has been changed to lightdm. These changes will only take effect once the system has been restarted."
+
+        except Exception:
+            raise
+        return retval
 
     def setgnome3(self):
         '''
@@ -353,7 +415,7 @@ class InstallBanners(RuleKVEditor):
         @author: Breen Malmberg
         '''
 
-        self.motdfile = '/etc/motd'
+        self.motdfile = '/etc/issue.net'
         self.sshdlocs = ["/etc/sshd_config",
                          "/etc/ssh/sshd_config",
                          "/private/etc/ssh/sshd_config",
@@ -808,6 +870,7 @@ class InstallBanners(RuleKVEditor):
         self.detailedresults = ''
 
         try:
+
             if self.linux:
                 if not self.reportlinux():
                     self.compliant = False
@@ -830,6 +893,39 @@ class InstallBanners(RuleKVEditor):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
+    def getgnome3version(self):
+        '''
+        get the gnome3 version as a float
+
+        @return: g3ver
+        @rtype: float
+        @author: Breen Malmberg
+        '''
+
+        g3ver = 0.0
+
+        cmd = '/usr/sbin/gdm3 --version'
+        self.ch.executeCommand(cmd)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0|1:
+            backupcmd = '/usr/bin/gnome-session --version'
+            self.ch.executeCommand(backupcmd)
+        outlines = self.ch.getOutput()
+        retcode2 = self.ch.getReturnCode()
+        if retcode2 != 0:
+            self.logger.log(LogPriority.DEBUG, "Failed to get gnome3 version")
+            return g3ver
+        for line in outlines:
+            sline = line.split()
+            if len(sline) > 1:
+                g3ver = float(sline[1])
+            else:
+                try:
+                    g3ver = float(sline[0])
+                except Exception:
+                    return g3ver
+        return g3ver
+
     def reportlinux(self):
         '''
         run report functionality for linux-based systems
@@ -842,6 +938,13 @@ class InstallBanners(RuleKVEditor):
         retval = True
 
         try:
+
+            if self.gnome3 and re.search('debian', self.environ.getostype(), re.IGNORECASE):
+                if self.getgnome3version() < 3.15:
+                    self.gnome3 = False
+                    self.forcelightdm()
+                    self.setlightdm()
+
             if not self.reportlinuxcommon():
                 retval = False
             if self.gnome2:
@@ -908,8 +1011,9 @@ class InstallBanners(RuleKVEditor):
                     self.detailedresults += '\nsshd config file does not ' + \
                         'contain required config line: ' + str(self.sshdopt)
             else:
-                retval = False
-                self.detailedresults += '\nRequired sshd config file not found.'
+                if self.ph.check('ssh'):
+                    retval = False
+                    self.detailedresults += '\nRequired sshd config file not found.'
 
             if not self.lightdm:
                 if os.path.exists(self.motdfile):
@@ -919,7 +1023,7 @@ class InstallBanners(RuleKVEditor):
                             'text not found in: ' + str(self.motdfile)
                 else:
                     retval = False
-                    self.detailedresults += '\nRequired motd config file: ' + \
+                    self.detailedresults += '\nRequired banner message text file: ' + \
                         str(self.motdfile) + ' not found.'
         except Exception:
             raise
@@ -953,20 +1057,20 @@ class InstallBanners(RuleKVEditor):
             opt2 = '/apps/gdm/simple-greeter/banner_message_enable'
             opt3 = '/apps/gdm/simple-greeter/banner_message_text'
 
-            self.cmdhelper.executeCommand(gconfget + opt1)
-            undoval1 = self.cmdhelper.getOutputString()
+            self.ch.executeCommand(gconfget + opt1)
+            undoval1 = self.ch.getOutputString()
             if not undoval1:
                 self.gnome2undocmdlist.append(gconfremove + opt1)
             self.gnome2undocmdlist.append(gconfset + opt1type + ' ' + undoval1)
 
-            self.cmdhelper.executeCommand(gconfget + opt2)
-            undoval2 = self.cmdhelper.getOutputString()
+            self.ch.executeCommand(gconfget + opt2)
+            undoval2 = self.ch.getOutputString()
             if not undoval2:
                 self.gnome2undocmdlist.append(gconfremove + opt2)
             self.gnome2undocmdlist.append(gconfset + opt2type + ' ' + undoval2)
 
-            self.cmdhelper.executeCommand(gconfget + opt3)
-            undoval3 = self.cmdhelper.getOutputString()
+            self.ch.executeCommand(gconfget + opt3)
+            undoval3 = self.ch.getOutputString()
             if not undoval3:
                 self.gnome2undocmdlist.append(gconfremove + opt3)
             self.gnome2undocmdlist.append(gconfset + opt3type + ' ' + undoval3)
@@ -991,21 +1095,27 @@ class InstallBanners(RuleKVEditor):
         '''
 
         retval = True
+        foundbannerenable = False
+        foundbannermessage = False
+        founddisableuserlist = False
 
         try:
 
             if os.path.exists('/etc/gdm3/greeter.gsettings'):
-                foundbannerenable = False
-                foundbannermessage = False
+
                 f = open('/etc/gdm3/greeter.gsettings', 'r')
                 contentlines = f.readlines()
                 f.close()
+
                 for line in contentlines:
-                    if re.search('^banner\-message\-enable\=true', line):
+                    if re.search('^banner\-message\-enable\=true', line, re.IGNORECASE):
                         foundbannerenable = True
                     if re.search('^banner\-message\-text\=\"' +
-                                 OSXSHORTWARNINGBANNER, line):
+                                 OSXSHORTWARNINGBANNER, line, re.IGNORECASE):
                         foundbannermessage = True
+                    if re.search('^disable-user-list\=true', line, re.IGNORECASE):
+                        founddisableuserlist = True
+
                 if not foundbannerenable:
                     self.compliant = False
                     self.detailedresults += '\nBanner-message-enable=true ' + \
@@ -1015,6 +1125,9 @@ class InstallBanners(RuleKVEditor):
                     self.detailedresults += '\nBanner-message-text was ' + \
                         'not set to the correct value in ' + \
                         '/etc/gdm3/greeter.gsettings'
+                if not founddisableuserlist:
+                    self.compliant = False
+                    self.detailedresults += '\nDisable-user-list=true was missing from /etc/gdm3/greeter.gsettings'
             else:
                 for opt in self.gnome3optdict:
                     if not self.checkCommand(self.gsettingsget + opt,
@@ -1361,9 +1474,9 @@ class InstallBanners(RuleKVEditor):
 
         try:
             for cmd in self.gnome2fixlist:
-                self.cmdhelper.executeCommand(cmd)
-                errout = self.cmdhelper.getErrorString()
-                if self.cmdhelper.getReturnCode():
+                self.ch.executeCommand(cmd)
+                errout = self.ch.getErrorString()
+                if self.ch.getReturnCode():
                     retval = False
                     self.detailedresults += "Failed to run command: " + str(cmd)
                     self.logger.log(LogPriority.DEBUG,
@@ -1395,29 +1508,36 @@ class InstallBanners(RuleKVEditor):
         try:
             # this is special, for debian 7 only
             if os.path.exists('/etc/gdm3/greeter.gsettings'):
+
                 f = open('/etc/gdm3/greeter.gsettings', 'r')
                 contentlines = f.readlines()
                 f.close()
-                replacementline = 'banner-message-enable=true\n' + \
-                    'banner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+
+                orgoptsreplace = 'banner-message-enable=true\nbanner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+                bannermsgreplace = 'banner-message-text=\"' + OSXSHORTWARNINGBANNER + '\"\n'
+                bannerenablereplace = 'banner-message-enable=true\n'
+                disableulistreplace = 'disable-user-list=true\n'
 
                 for line in contentlines:
                     if re.search('^banner-message-enable', line):
-                        contentlines = [c.replace(line, '')
-                                        for c in contentlines]
+                        contentlines = [c.replace(line, bannerenablereplace) for c in contentlines]
                     if re.search('^banner-message-text', line):
-                        contentlines = [c.replace(line, '')
-                                        for c in contentlines]
+                        contentlines = [c.replace(line, bannermsgreplace) for c in contentlines]
+                    if re.search('disable-user-list', line):
+                        contentlines = [c.replace(line, disableulistreplace) for c in contentlines]
+
                 foundorglogin = False
+
                 for line in contentlines:
                     if re.search('^\[org\.gnome\.login\-screen\]', line):
                         foundorglogin = True
-                        contentlines = [c.replace(line, line + replacementline)
+                        contentlines = [c.replace(line, line + orgoptsreplace)
                                         for c in contentlines]
+
                 if not foundorglogin:
-                    replacementline = '[org.gnome.login-screen]\n' + \
-                        replacementline
-                    contentlines.append('\n' + replacementline)
+                    orgoptsreplace = '[org.gnome.login-screen]\n' + \
+                        orgoptsreplace
+                    contentlines.append('\n' + orgoptsreplace)
                 tf = open('/etc/gdm3/greeter.gsettings.stonixtmp', 'w')
                 tf.writelines(contentlines)
                 tf.close()
@@ -1433,9 +1553,9 @@ class InstallBanners(RuleKVEditor):
                           '/etc/gdm3/greeter.gsettings')
                 os.chmod('/etc/gdm3/greeter.gsettings', 0644)
                 os.chown('/etc/gdm3/greeter.gsettings', 0, 0)
-                self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
-                errout = self.cmdhelper.getErrorString()
-                if self.cmdhelper.getReturnCode():
+                self.ch.executeCommand('dpkg-reconfigure gdm3')
+                errout = self.ch.getErrorString()
+                if self.ch.getReturnCode():
                     retval = False
                     self.detailedresults += '\nEncountered a problem ' + \
                         'trying to run command: dpkg-reconfigure ' + \
@@ -1444,13 +1564,13 @@ class InstallBanners(RuleKVEditor):
             for opt in self.gnome3optdict:
                 value = str(self.gnome3optdict[opt])
                 cmd = self.gsettingsget + opt
-                self.cmdhelper.executeCommand(cmd)
-                output = self.cmdhelper.getOutputString()
+                self.ch.executeCommand(cmd)
+                output = self.ch.getOutputString()
                 if not re.search(value, output):
-                    self.cmdhelper.executeCommand(self.gsettingsset + opt +
+                    self.ch.executeCommand(self.gsettingsset + opt +
                                                   ' ' + value)
-                    errout = self.cmdhelper.getErrorString()
-                    if self.cmdhelper.getReturnCode():
+                    errout = self.ch.getErrorString()
+                    if self.ch.getReturnCode():
                         retval = False
                         self.detailedresults += '\n' + str(errout)
                     else:
@@ -1471,9 +1591,9 @@ class InstallBanners(RuleKVEditor):
                     'banner file: ' + str(self.bannerfile)
             if not self.fixlocks():
                 retval = False
-            if not self.cmdhelper.executeCommand(self.dconfupdate):
+            if not self.ch.executeCommand(self.dconfupdate):
                 retval = False
-                output = self.cmdhelper.getOutputString()
+                output = self.ch.getOutputString()
                 self.detailedresults += '\n' + str(output)
             if os.path.exists('/etc/gdm3/daemon.conf'):
                 f = open('/etc/gdm3/daemon.conf', 'r')
@@ -1514,9 +1634,9 @@ class InstallBanners(RuleKVEditor):
                     os.rename(tmppath, confpath)
                     setPerms(confpath, [0, 0, 0o644], self.logger,
                              self.statechglogger, myid)
-                    self.cmdhelper.executeCommand('dpkg-reconfigure gdm3')
-                    errout = self.cmdhelper.getErrorString()
-                    if self.cmdhelper.getReturnCode():
+                    self.ch.executeCommand('dpkg-reconfigure gdm3')
+                    errout = self.ch.getErrorString()
+                    if self.ch.getReturnCode():
                         retval = False
                         self.detailedresults += '\nEncountered a problem ' + \
                             'trying to run command: dpkg-reconfigure ' + \

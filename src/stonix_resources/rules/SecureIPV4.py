@@ -234,34 +234,50 @@ class SecureIPV4(Rule):
         return compliant
 
     def reportMac2(self):
-        '''Mac specific report method1 that ensures the items in fileContents
+        '''
+        Mac specific report method1 that ensures the items in fileContents
         exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
         exist in the file.
-        @return: bool'''
+
+        @return: compliant
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 1/10/2017 - minor doc string adjustments; fixed
+                permissions on file /etc/sysctl.conf (needs to be 0o600; was 0o644);
+                try/except
+        '''
+
         compliant = True
-        if not os.path.exists(self.path):
-            self.detailedresults += self.path + " does not exist\n"
-            compliant = False
-        else:
-            mfc = {"net.inet.ip.forwarding": "0",
-                   "net.inet.ip.redirect": "0"}
-            kvtype = "conf"
-            intent = "present"
-            self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, self.path, self.tmpPath, mfc,
-                                         intent, "closedeq")
-            if not self.editor.report():
-                self.detailedresults += self.path + " is not " + \
-                    "configured correctly\n"
+
+        try:
+
+            if not os.path.exists(self.path):
+                self.detailedresults += self.path + " does not exist\n"
                 compliant = False
             else:
-                self.detailedresults += self.path + " is " + \
-                    "configured correctly\n"
-            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-                self.detailedresults += "Permissions are incorrect on " + \
-                    self.path + ": Expected 644, found " + \
-                    str(getOctalPerms(self.path)) + "\n"
-                compliant = False
+                mfc = {"net.inet.ip.forwarding": "0",
+                       "net.inet.ip.redirect": "0"}
+                kvtype = "conf"
+                intent = "present"
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             kvtype, self.path, self.tmpPath, mfc,
+                                             intent, "closedeq")
+                if not self.editor.report():
+                    self.detailedresults += self.path + " is not " + \
+                        "configured correctly\n"
+                    compliant = False
+                else:
+                    self.detailedresults += self.path + " is " + \
+                        "configured correctly\n"
+                if not checkPerms(self.path, [0, 0, 0o600], self.logger):
+                    self.detailedresults += "Permissions are incorrect on " + \
+                        self.path + ": Expected 644, found " + \
+                        str(getOctalPerms(self.path)) + "\n"
+                    compliant = False
+
+        except Exception:
+            raise
+
         return compliant
 
     def reportSolaris1(self):
@@ -597,46 +613,63 @@ class SecureIPV4(Rule):
         return success
 
     def fixMac(self):
+        '''
+        run fix actions for mac systems
+
+        @return: success
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
+                fixed perms for file sysctl.conf (should be 0o600; was 0o644)
+        '''
+
         success = True
-        if not os.path.exists(self.path):
-            if createFile(self.path, self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation", "filepath": self.path}
-                self.statechglogger.recordchgevent(myid, event)
-            else:
-                return False
-        if self.networkTuning2.getcurrvalue():
-            if not self.editor:
-                mfc = {"net.inet.ip.forwarding": "0",
-                       "net.inet.ip.redirect": "0"}
-                kvtype = "conf"
-                intent = "present"
-                self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                             kvtype, self.path, self.tmpPath,
-                                             mfc, intent, "closedeq")
-            if not self.editor.report():
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
-                if self.editor.fix():
-                    if not self.editor.commit():
-                        success = False
-                        self.detailedresults += "KVEditor commit to " + \
-                            self.path + " was not successful\n"
+
+        try:
+
+            if not os.path.exists(self.path):
+                if createFile(self.path, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation", "filepath": self.path}
+                    self.statechglogger.recordchgevent(myid, event)
                 else:
-                    success = False
-                    self.detailedresults += "KVEditor fix of " + self.path + \
-                        " was not successful\n"
-                resetsecon(self.path)
-            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    self.detailedresults += "Could not set permissions on " + \
-                        self.path + "\n"
-                    success = False
+                    return False
+            if self.networkTuning2.getcurrvalue():
+                if not self.editor:
+                    mfc = {"net.inet.ip.forwarding": "0",
+                           "net.inet.ip.redirect": "0"}
+                    kvtype = "conf"
+                    intent = "present"
+                    self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                                 kvtype, self.path, self.tmpPath,
+                                                 mfc, intent, "closedeq")
+                if not self.editor.report():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
+                    if self.editor.fix():
+                        if not self.editor.commit():
+                            success = False
+                            self.detailedresults += "KVEditor commit to " + \
+                                self.path + " was not successful\n"
+                    else:
+                        success = False
+                        self.detailedresults += "KVEditor fix of " + self.path + \
+                            " was not successful\n"
+                    resetsecon(self.path)
+                if not checkPerms(self.path, [0, 0, 0o600], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.path, [0, 0, 0o600], self.logger,
+                                    self.statechglogger, myid):
+                        self.detailedresults += "Could not set permissions on " + \
+                            self.path + "\n"
+                        success = False
+
+        except Exception:
+            raise
+
         return success
 
     def fixSolaris1(self):

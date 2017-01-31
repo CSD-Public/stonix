@@ -67,7 +67,8 @@ on their own partitions: /home, /tmp, ,/var, /var/tmp, /var/log, \
         self.rootrequired = False
         self.guidance = ['CCE 14161-4', 'CCE 14777-7', 'CCE 14011-1',
                          'CCE 14171-3', 'CCE 14559-9']
-        self.applicable = {'family': ['darwin']}
+        self.applicable = {'type': 'black',
+                           'family': ['darwin']}
         self.hasrunalready = False
 
     def report(self):
@@ -76,6 +77,9 @@ on their own partitions: /home, /tmp, ,/var, /var/tmp, /var/log, \
 
         @author: D. Kennel
         '''
+
+        self.detailedresults = ""
+
         if self.hasrunalready:
             return True
         tempcompliant = False

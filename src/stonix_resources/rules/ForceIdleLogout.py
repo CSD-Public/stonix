@@ -106,17 +106,19 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         @return: boot - true if settings are set to logout
         @author: D. Kennel
         """
+
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
         except(TypeError):
             self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
                 "valid!\n"
             return False
+
         if not self.environ.geteuid() == 0:
             # Short circuit for user mode run
             # manipulating the GNOME settings requires privilege
             return True
-        elif os.path.exists('/etc/dconf/db/'):
+        elif os.path.exists('/etc/dconf/db/local.d'):
             havedconffile = False
             havelockfile = False
             havetimeout = False
@@ -452,7 +454,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         """
         if not self.environ.geteuid() == 0:
             return
-        if os.path.exists('/etc/dconf/db'):
+        if os.path.exists('/etc/dconf/db/local.d'):
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixgnome3',
                                   'Working GNOME with dconf'])
@@ -515,9 +517,11 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 self.detailedresults += "Could not set permissions " + \
                     "for " + self.gnomelockpath + "\n"
         else:
+
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixgnome3',
                                   'Working GNOME with gconf'])
+
             setprefix = '/usr/bin/gconftool-2 --direct --config-source ' + \
                 'xml:readwrite:/etc/gconf/gconf.xml.mandatory --set '
             settime = setprefix + \
@@ -526,8 +530,23 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
             setlogout = setprefix + \
                 '--type string /desktop/gnome/session/' + \
                 'max_idle_action forced-logout'
+
             self.cmdhelper.executeCommand(settime)
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                errstr = self.cmdhelper.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errstr)
+                self.detailedresults += '\nFailed to configure idle time limit option.'
+            else:
+                self.detailedresults += '\nMaximum idle time limit configured successfully.'
             self.cmdhelper.executeCommand(setlogout)
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                errstr = self.cmdhelper.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errstr)
+                self.detailedresults += '\nFailed to configure idle forced-logout option.'
+            else:
+                self.detailedresults += '\nIdle forced-logout option configured successfully.'
 
     def fixkde4(self):
         """

@@ -1,0 +1,64 @@
+#!/usr/bin/python
+import os
+import pwd
+from optparse import OptionParser
+
+from darwin_funcs import getConsoleUserLoginWindowName
+
+from loggers import CyLogger
+from loggers import LogPriority as lp
+from launchjob import LaunchCtl
+from run_commands import RunWith
+
+parser = OptionParser(usage="  %prog [options]\n\n Use \"%prog -h\" to get a list of options",
+                      version="%prog " + '0.9.111')
+
+parser.add_option("-m", "--module", dest="mod", help="Module to run.",
+                  default="", action="store")
+
+(opts, args) = parser.parse_args()
+
+ppath = opts.mod
+
+logger = CyLogger(debug_mode=True)
+logger.initializeLogs()
+rw = RunWith(logger)
+lctl = LaunchCtl(logger)
+
+consoleUserName = getConsoleUserLoginWindowName()
+consoleUserUid = pwd.getpwnam(consoleUserName)[2]
+
+os.chown(ppath, 0, 0)
+os.chmod(ppath, 0o600)
+
+lctl.load(ppath)
+#lctl.asuser(str(consoleUserUid), '/Applications/stonix4mac/Contents/Resources/stonix.app/Contents/Macos/stonix', args)
+
+domain = ppath.split('/')[-1]
+success, output, error, retcode = lctl.list(domain)
+
+print str(success) + " : " + str(output) + " : " + str(error) + " : " + str(retcode)
+
+if not success:
+    lctl.bootstrap("gui/root", ppath)
+    lctl.enable("gui/root/" + domain)
+lctl.kickstart("gui/root/" + domain, '-k')
+
+#if not success:
+#    lctl.bootstrap("gui/" + str(5), ppath)
+#    lctl.enable("gui/" + str(501) + "/" + domain)
+#lctl.kickstart("gui/" + str(501) + "/" + domain, '-k')
+
+#lctl.bootstrap("gui/" + str(consoleUserUid), ppath)
+#lctl.enable("gui/" + str(consoleUserUid) + "/" + ppath.split("/")[-1])
+#lctl.kickstart("gui/" + str(consoleUserUid) + "/" + ppath.split("/")[-1], '-k')
+
+#lctl.bootstrap("login/" + str(consoleUserUid), ppath)
+#lctl.enable("login/" + str(consoleUserUid) + "/" + ppath.split("/")[-1])
+#lctl.kickstart("login/" + str(consoleUserUid) + "/" + ppath.split("/")[-1], '-k')
+
+#lctl.bootstrap("system", ppath)
+#lctl.enable("system" + "/" + ppath.split("/")[-1])
+#lctl.kickstart("system" + "/" + ppath.split("/")[-1], '-k')
+
+

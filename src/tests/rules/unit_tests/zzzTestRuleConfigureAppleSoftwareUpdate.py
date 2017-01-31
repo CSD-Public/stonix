@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -28,6 +28,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 2013/02/27 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
 '''
 from __future__ import absolute_import
 import sys
@@ -108,6 +109,12 @@ class zzzTestRuleConfigureAppleSoftwareUpdate(RuleTest):
             command = [self.dc, "-currentHost", "delete",
                        "/Library/Preferences/com.apple.SoftwareUpdate",
                        "AllowPreReleaseInstallation"]
+            self.logdispatch.log(LogPriority.DEBUG, str(command))
+            success = self.ch.executeCommand(command)
+        if success:
+            command = [self.dc, "-currentHost", "write",
+                       "/Library/Preferences/com.apple.commerce",
+                       "AutoUpdateRestartRequired", "-bool", "yes"]
             self.logdispatch.log(LogPriority.DEBUG, str(command))
             success = self.ch.executeCommand(command)
         if success:

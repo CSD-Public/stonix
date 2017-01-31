@@ -309,11 +309,10 @@ the Avahi service in order to secure it.'''
                             self.statechglogger, self.logger, kvtype,
                             filepath, tmpfilepath, self.confoptions,
                             intent, conftype)
-                        if not self.avahiconfeditor.report():
+                        self.avahiconfeditor.report()
+                        if self.avahiconfeditor.fixables:
                             compliant = False
-                            self.detailedresults += 'One or more ' + \
-                                'configuration options is missing from ' + \
-                                str(filepath) + ' or has an incorrect value.\n'
+                            self.detailedresults += "\nThe following configuration options are missing or incorrect in " + str(filepath) + ":\n" + "\n".join(self.avahiconfeditor.fixables)
 
                     # if config file not found, check if avahi is installed
                     else:

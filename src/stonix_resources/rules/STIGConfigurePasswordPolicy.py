@@ -28,11 +28,11 @@ Created on Aug 23, 2016
 from __future__ import absolute_import
 import traceback
 import os
-import re
+from re import search
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
-from ..KVEditorStonix import KVEditorStonix
+from ..CommandHelper import CommandHelper
 
 
 class STIGConfigurePasswordPolicy(Rule):
@@ -46,12 +46,11 @@ class STIGConfigurePasswordPolicy(Rule):
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
-        self.rulenumber = 306
+        self.rulenumber = 361
         self.rulename = "STIGConfigurePasswordPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigurePasswordPolicy rule configures the " + \
-            "Mac OSX operating system's password policy according to LANL " + \
-            "standards and practices."
+        self.helptext = "STIGConfigurePasswordPolicy rule installs the " + \
+            "DISA STIG Password Policy profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
@@ -69,9 +68,13 @@ class STIGConfigurePasswordPolicy(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        self.pwreport = True
-        self.secreport = True
-        if re.search("10\.10.*", self.environ.getosver()):
+        if search("10\.10.*", self.environ.getosver()):
+#             self.pwprofile = "/Users/username/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
+#             self.secprofile = "/Users/username/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_privacy_Policy.mobileconfig"
             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
                              "Resources/stonix.app/Contents/MacOS/" + \
                              "stonix_resources/files/" + \
@@ -80,7 +83,13 @@ class STIGConfigurePasswordPolicy(Rule):
                               "Resources/stonix.app/Contents/MacOS/" + \
                               "stonix_resources/files/" + \
                               "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
-        elif re.search("10\.11\.*", self.environ.getosver()):
+        elif search("10\.11\.*", self.environ.getosver()):
+#             self.pwprofile = "/Users/username/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
+#             self.secprofile = "/Users/username/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
                          "Resources/stonix.app/Contents/MacOS/" + \
                          "stonix_resources/files/" + \
@@ -95,56 +104,34 @@ class STIGConfigurePasswordPolicy(Rule):
     def report(self):
         '''
         @since: 3/9/2016
-        @author: dwalker
-        first item in dictionary - identifier (multiple can exist)
-            first item in second nested dictionary - key identifier within
-                opening braces in output
-            first item in nested list is the expected value after the = in
-                output (usually a number, in quotes "1"
-            second item in nested list is accepted datatype of value after
-                the = ("bool", "int")
-            third item in nested list (if int) is whether the allowable value
-                is allowed to be more or less and still be ok
-                "more", "less"
-                '''
+        @author: dwalker'''
         try:
-            compliant = True
+            compliant1, compliant2, compliant = False, False, True
+            self.pwreport = True
+            self.secreport = True
             self.detailedresults = ""
-            self.pweditor, self.seceditor = "", ""
-            self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                  {"allowSimple": ["0", "bool"],
-                                   "forcePIN": ["1", "bool"],
-                                   "maxFailedAttempts": ["4", "int", "less"],
-                                   "maxPINAgeInDays": ["180", "int", "more"],
-                                   "minComplexChars": ["1", "int", "more"],
-                                   "minLength": ["14", "int", "more"],
-                                   "minutesUntilFailedLoginReset":
-                                   ["15", "int", "more"],
-                                   "pinHistory": ["5", "int", "more"],
-                                   "requireAlphanumeric": ["1", "bool"]}}
-            self.spprofiledict = {"com.apple.screensaver": "",
-                                  "com.apple.loginwindow": "",
-                                  "com.apple.systempolicy.managed": "",
-                                  "com.apple.SubmitDiagInfo": "",
-                                  "com.apple.preference.security": "",
-                                  "com.apple.MCX": "",
-                                  "com.apple.applicationaccess": "",
-                                  "com.apple.systempolicy.control": ""}
-
-            self.pweditor = KVEditorStonix(self.statechglogger, self.logger,
-                                               "profiles", self.pwprofile, "",
-                                               self.pwprofiledict, "", "")
-            self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
-                                             "profiles", self.secprofile, "",
-                                             self.spprofiledict, "", "")
-            '''Run the system_proflier command'''
-            if not self.pweditor.report():
-                self.pwreport = False
-                self.detailedresults += "password profile is either uninstalled or weak\n"
+            self.ch = CommandHelper(self.logger)
+            cmd = ["/usr/bin/profiles", "-P"]
+            if not self.ch.executeCommand(cmd):
                 compliant = False
-            if not self.seceditor.report():
+                self.detailedresults += "Unable to run profiles command\n"
+            else:
+                output = self.ch.getOutput()
+                if output:
+                    for line in output:
+                        if search("^There are no configuration profiles installed", line.strip()):
+                            compliant = False
+                            self.detailedresults += "There are no configuration profiles installed\n"
+                            break
+                        elif search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
+                            compliant1 = True
+                        elif search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
+                            compliant2 = True
+            if not compliant1:
+                self.pwreport = False
+            if not compliant2:
                 self.secreport = False
-                self.detailedresults += "security profile is either uninstalled or weak\n"
+            if not self.pwreport or not self.secreport:
                 compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -175,12 +162,6 @@ class STIGConfigurePasswordPolicy(Rule):
             if self.pwci.getcurrvalue():
                 if not self.pwreport:
                     if os.path.exists(self.pwprofile):
-                        success = True
-                        self.detailedresults = ""
-                        self.iditerator = 0
-                        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                        for event in eventlist:
-                            self.statechglogger.deleteentry(event)
                         cmd = ["/usr/bin/profiles", "-I", "-F", self.pwprofile]
                         if not self.ch.executeCommand(cmd):
                             success = False
@@ -197,12 +178,6 @@ class STIGConfigurePasswordPolicy(Rule):
             if self.sci.getcurrvalue():
                 if not self.secreport:
                     if os.path.exists(self.secprofile):
-                        success = True
-                        self.detailedresults = ""
-                        self.iditerator = 0
-                        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                        for event in eventlist:
-                            self.statechglogger.deleteentry(event)
                         cmd = ["/usr/bin/profiles", "-I", "-F", self.secprofile]
                         if not self.ch.executeCommand(cmd):
                             success = False

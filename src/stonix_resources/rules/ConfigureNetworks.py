@@ -43,6 +43,7 @@ class ConfigureNetworks(RuleKVEditor):
     '''
 
     @author: ekkehard j. koch
+    @change: Breen Malmberg - 12/20/2016 - (see method doc strings)
     '''
 
 ###############################################################################
@@ -92,18 +93,51 @@ class ConfigureNetworks(RuleKVEditor):
                          {})
 
     def report(self):
+        '''
+        determine the compliance status of ConfigureNetworks
+        on the current system
+
+        @return: self.compliant
+        @rtype: bool
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/20/2016 - added doc string; 
+        '''
+
+        self.logdispatch.log(LogPriority.DEBUG, "Entering ConfigureNetworks.report()...")
+
+        self.detailedresults = ""
+        self.compliant = True
+        compliant = True
+        kvcompliant = True
+
         try:
-            self.detailedresults = ""
-            kvcompliant = RuleKVEditor.report(self, True)
-            compliant = True
+
+            if not RuleKVEditor.report(self, True):
+                kvcompliant = False
+                self.logdispatch.log(LogPriority.DEBUG, "KVeditor.report() returned False.")
+
+            if not self.nsobject.getLocation():
+                compliant = False
+                self.logdispatch.log(LogPriority.DEBUG, "nsobject.getLocation() returned False. Will not run nsobject.updateCurrentNetworkConfigurationDictionary()!")
+
             if compliant:
-                compliant = self.nsobject.getLocation()
+                if not self.nsobject.updateCurrentNetworkConfigurationDictionary():
+                    compliant = False
+                    self.logdispatch.log(LogPriority.DEBUG, "nsobject.updateCurrentNetworkConfigurationDictionary() returned False. Will not run nsobject.report()!")
+
             if compliant:
-                compliant = self.nsobject.updateCurrentNetworkConfigurationDictionary()
-            if compliant:
-                compliant = self.nsobject.report()
+                if not self.nsobject.report():
+                    compliant = False
+                    self.logdispatch.log(LogPriority.DEBUG, "nsobject.report() returned False.")
                 self.resultAppend(self.nsobject.getDetailedresults())
+
+            self.logdispatch.log(LogPriority.DEBUG, "compliant=" + str(compliant))
+            self.logdispatch.log(LogPriority.DEBUG, "kvcompliant=" + str(kvcompliant))
+
             self.compliant = compliant and kvcompliant
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting ConfigureNetworks.report() and returning self.compliant=" + str(self.compliant))
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -115,23 +149,61 @@ class ConfigureNetworks(RuleKVEditor):
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
 ###############################################################################
 
     def fix(self):
+        '''
+        run fix actions for ConfigureNetworks
+        return True if all succeed
+
+        @return: fixed
+        @rtype: bool
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/20/2016 - added doc string; detailedresults
+                and fixed var's moved to before try; 
+        @change: Breen Malmberg - 1/12/2017 - added debug logging; default init kvfixed to True
+        '''
+
+        self.logdispatch.log(LogPriority.DEBUG, "Entering ConfigureNetworks.fix()...")
+
+        self.detailedresults = ""
+        fixed = True
+        kvfixed = True
+
         try:
-            fixed = True
-            self.detailedresults = ""
+
+            self.logdispatch.log(LogPriority.DEBUG, "Running nsobject.getLocation()...")
+            if not self.nsobject.getLocation():
+                fixed = False
+
+            if not fixed:
+                self.logdispatch.log(LogPriority.DEBUG, "nsobject.getLocation() returned False! Will not run updateCurrentNetworkConfigurationDictionary() or nsobject.fix()!")
+
             if fixed:
-                fixed = self.nsobject.getLocation()
+                if not self.nsobject.updateCurrentNetworkConfigurationDictionary():
+                    fixed = False
+
+            if not fixed:
+                self.logdispatch.log(LogPriority.DEBUG, "updateCurrentNetworkConfigurationDictionary() returned False! Will not run nsobject.fix()!")
+
             if fixed:
-                fixed = self.nsobject.updateCurrentNetworkConfigurationDictionary()
-            if fixed:
-                fixed = self.nsobject.fix()
+                self.logdispatch.log(LogPriority.DEBUG, "Running nsobject.fix()...")
+                if not self.nsobject.fix():
+                    fixed = False
+                    self.logdispatch.log(LogPriority.DEBUG, "nsobject.fix() failed. fixed set to False.")
                 self.resultAppend(self.nsobject.getDetailedresults())
-            kvfixed = RuleKVEditor.fix(self, True)
+
+            if not RuleKVEditor.fix(self, True):
+                kvfixed = False
+                self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed. kvfixed set to False.")
+
             fixed = fixed and kvfixed
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting ConfigureNetworks.fix() and returning fixed=" + str(fixed) + "...")
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -141,16 +213,27 @@ class ConfigureNetworks(RuleKVEditor):
             messagestring = str(err) + " - " + str(traceback.format_exc())
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", fixed,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", fixed, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return fixed
 
 ###############################################################################
 
     def afterfix(self):
+        '''
+        restart the service after fix
+
+        @return: afterfixsuccessful
+        @rtype: bool
+        @author: ekkehard j. koch
+        @change: Breen Malmberg - 12/20/2016 - added doc string; var init before
+                try
+        '''
+
+        afterfixsuccessful = True
+
         try:
-            afterfixsuccessful = True
+
             service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
             servicename = "com.apple.blued"
             if afterfixsuccessful:
@@ -161,7 +244,7 @@ class ConfigureNetworks(RuleKVEditor):
                 afterfixsuccessful = self.sh.enableservice(service, servicename)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             afterfixsuccessful = False
             messagestring = str(err) + " - " + str(traceback.format_exc())

@@ -174,30 +174,129 @@ CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
 # Content of the kerb5.conf file
 MACKRB5 = '''# Updated Test Configuration
-# 2016-10-25
-# 0.9.46 krb5.conf + realm win.lanl.gov + allow_weak_crypto = false
+# https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
+
+# 20160928  [libdefaults]  Added dns_lookup_kdc=false and dns_lookup_realm=false
+#           [domain_realm] Added Exchange and SharePoint file share realm mappings
+# 20161014  Added note to service admins
+#           [domain_realm] Added file share realm mappings
+# 20161018  [appdefaults]  Added section
+#           [pam] section removed; pam config added to [appdefaults] per krb5 syntax
+# 20161020  [domain_realm] Added mappings of services discovered through Splunk logs
+#           These include unique results in Server OUs with more than 14 hits last month
+#
+
+### NOTE to Service Admins: Suggested configuration is to ensure your service DNS A record
+### is in the same domain/realm as the service SPN (i.e. service.lanl.gov has the SPN 
+### HTTP/service.lanl.gov registered in the lanl.gov Kerberos realm or service.win.lanl.gov
+### has the SPN HTTP/service.win.lanl.gov registered in the WIN.LANL.GOV Kerberos realm).
+### Situations such as where service.lanl.gov has the SPN HTTP/service.lanl.gov registered
+### in the WIN.LANL.GOV Kerberos realm may cause issues with clients finding the SPN
+
 [libdefaults]
-    default_realm = lanl.gov
-    allow_weak_crypto = false
-    forwardable = true
+   default_realm = lanl.gov
+   forwardable = true
+   dns_lookup_kdc = false
+   dns_lookup_realm = false
+   ticket_lifetime = 24h
+   renew_lifetime = 7d
+   clockslew = 300
+
 [realms]
-    lanl.gov = {
-    kdc = kerberos.lanl.gov
-    kdc = kerberos-slaves.lanl.gov
-    admin_server = kerberos.lanl.gov
-    }
-    win.lanl.gov = {
-    kdc = win.lanl.gov
-    admin_server = win.lanl.gov
-    }
-[pam]
-    debug = false
-    krb4_convert = false
+   lanl.gov = {
+      kdc = kerberos-slaves.lanl.gov
+      kdc = kerberos.lanl.gov
+      admin_server = kerberos.lanl.gov
+   }
+   WIN.LANL.GOV = {
+      kdc = win.lanl.gov
+   }
+
+[capaths]
+   WIN.LANL.GOV = {
+      lanl.gov = .
+   }
+
 [domain_realm]
-    .lanl.gov = win.lanl.gov
-    .lanl.gov = lanl.gov
-    .lanl.org = lanl.gov
- '''
+# LANL domains
+   .win.lanl.gov = WIN.LANL.GOV
+   .lanl.gov = lanl.gov
+   win.lanl.gov = WIN.LANL.GOV
+
+# File shares
+   slide.lanl.gov = WIN.LANL.GOV
+   slip.lanl.gov = WIN.LANL.GOV
+   nisac.lanl.gov = WIN.LANL.GOV
+   myhome.lanl.gov = WIN.LANL.GOV
+   eden.lanl.gov = WIN.LANL.GOV
+   lenz.lanl.gov = WIN.LANL.GOV
+   bioassay4.lanl.gov = WIN.LANL.GOV
+   cfo-acct.lanl.gov = WIN.LANL.GOV
+   EIA-DW-P-WS2.lanl.gov = WIN.LANL.GOV
+   EIA-EDMS-P-CS1.lanl.gov = WIN.LANL.GOV
+   eia-emp-b-wa2.lanl.gov = WIN.LANL.GOV
+   eia-esbmc-d-as1.lanl.gov = WIN.LANL.GOV
+   eia-gis-p-as2.lanl.gov = WIN.LANL.GOV
+   eia-gis-p-ws2.lanl.gov = WIN.LANL.GOV
+   EIA-PFITS-B-SQ2.lanl.gov = WIN.LANL.GOV
+   esde-dev-ph.lanl.gov = WIN.LANL.GOV
+   esde-sql-ph.lanl.gov = WIN.LANL.GOV
+   eswebserver.lanl.gov = WIN.LANL.GOV
+   eswebserver2.lanl.gov = WIN.LANL.GOV
+   hdcs.lanl.gov = WIN.LANL.GOV
+   HODAKA.lanl.gov = WIN.LANL.GOV
+   hsr-rpas.lanl.gov = WIN.LANL.GOV
+   ITSM-ARS-P.lanl.gov = WIN.LANL.GOV
+   ITSM-SQL-P.lanl.gov = WIN.LANL.GOV
+   MAICO.lanl.gov = WIN.LANL.GOV
+   rtg-atf.lanl.gov = WIN.LANL.GOV
+   ta55storageb.lanl.gov = WIN.LANL.GOV
+   virginia.lanl.gov = WIN.LANL.GOV
+   xfiles02.lanl.gov = WIN.LANL.GOV
+   xsamba03.lanl.gov = WIN.LANL.GOV
+
+# Web services
+   exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-hns-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-ssf-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-ssf-f5-oce.lanl.gov = WIN.LANL.GOV
+   sp2013-p-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-ws01-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-ws02-f5.lanl.gov = WIN.LANL.GOV
+   sp2013-p-106-ws02.lanl.gov = WIN.LANL.GOV
+   sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
+   cmdp1.lanl.gov = WIN.LANL.GOV
+   cmdp2.lanl.gov = WIN.LANL.GOV
+   cmdp3.lanl.gov = WIN.LANL.GOV
+   cmmp1.lanl.gov = WIN.LANL.GOV
+   cmsup.lanl.gov = WIN.LANL.GOV
+   conmanmp.lanl.gov = WIN.LANL.GOV
+   eia-drs-p-ws1.lanl.gov = WIN.LANL.GOV
+   EIA-DWSUB-P-AS2.lanl.gov = WIN.LANL.GOV
+   EIA-EAS-P-AS2.lanl.gov = WIN.LANL.GOV
+   EIA-EAS-P-WS1.lanl.gov = WIN.LANL.GOV
+   eia-sp10-p-as1.lanl.gov = WIN.LANL.GOV
+   grantami.lanl.gov = WIN.LANL.GOV
+   jobboss.lanl.gov = WIN.LANL.GOV
+   lims-as3.lanl.gov = WIN.LANL.GOV
+   mymail.lanl.gov = WIN.LANL.GOV
+   pmdprintsrv.lanl.gov = WIN.LANL.GOV
+   pmdshpt-b.lanl.gov = WIN.LANL.GOV
+   pmd-shpt-prod.lanl.gov = WIN.LANL.GOV
+   pmd-sql-p.lanl.gov = WIN.LANL.GOV
+   print02.lanl.gov = WIN.LANL.GOV
+   proforce-web.lanl.gov = WIN.LANL.GOV
+
+# Other
+
+[appdefaults]
+   pam = {
+      debug = false
+      krb4_convert = false
+   }
+
+'''
 
 LINUXKRB5 = '''# Test Configuration
 # 2016-09-28
@@ -241,9 +340,10 @@ LINUXKRB5 = '''# Test Configuration
  sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
 [capaths]
   WIN.LANL.GOV = {
-	lanl.gov = .
+    lanl.gov = .
   }
- '''
+
+'''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
@@ -402,3 +502,187 @@ AAOBgQBzHXovZ7uyqHEmT8H1ov83leUZrg7IYjtUBxhQ//YkmCLtrUoklzjC0qyT
 i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
 i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
+
+AUTH_APT = '''auth        required      pam_env.so
+auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_APT = '''account     required      pam_tally2.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_APT = '''password    requisite     \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
+use_authtok remember=10
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_APT = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
+'''
+
+SESSION_HOME_APT = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+'''
+
+AUTH_ZYPPER = '''auth    required        pam_env.so
+auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth    optional        pam_gnome_keyring.so
+auth    sufficient      pam_unix.so     try_first_pass
+auth    required        pam_sss.so      use_first_pass
+'''
+
+ACCOUNT_ZYPPER = '''account requisite       pam_unix.so     try_first_pass
+account sufficient      pam_localuser.so
+account required        pam_sss.so      use_first_pass
+'''
+
+PASSWORD_ZYPPER = '''password        requisite       \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3 maxrepeat=3
+password        sufficient      pam_unix.so sha512 shadow \
+try_first_pass use_authtok remember=10
+password        optional        pam_gnome_keyring.so    use_authtok
+password        required        pam_sss.so      use_authtok
+'''
+
+SESSION_ZYPPER = '''session required        pam_limits.so
+session required        pam_unix.so     try_first_pass
+session optional        pam_sss.so
+session optional        pam_umask.so
+session optional        pam_systemd.so
+session optional        pam_gnome_keyring.so    auto_start \
+only_if=gdm,gdm-password,lxdm,lightdm
+session optional        pam_env.so
+'''
+
+SESSION_HOME_ZYPPER = '''session required        pam_limits.so
+session required        pam_unix.so     try_first_pass
+session optional        pam_sss.so
+session optional        pam_umask.so
+session optional        pam_systemd.so
+session optional        pam_gnome_keyring.so    auto_start \
+only_if=gdm,gdm-password,lxdm,lightdm
+session optional        pam_env.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+'''
+
+AUTH_NSLCD = '''auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_NSLCD = '''account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow \
+try_first_pass use_authtok remember=10
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_NSLCD = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+
+SESSION_HOME_NSLCD = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     optional      pam_mkhomedir.so umask=0077
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+
+AUTH_YUM = '''auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_sss.so use_first_pass
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_YUM = '''account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_sss.so
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
+use_authtok remember=10
+password    sufficient    pam_sss.so use_authtok
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_YUM = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session    optional      pam_systemd.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_sss.so
+session     optional      pam_krb5.so
+'''
+
+SESSION_HOME_YUM = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session    optional      pam_systemd.so
+session     optional      pam_mkhomedir.so umask=0077
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_sss.so
+session     optional      pam_krb5.so
+'''

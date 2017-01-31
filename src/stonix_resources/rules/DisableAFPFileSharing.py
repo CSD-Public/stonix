@@ -66,14 +66,15 @@ $ sudo serveradmin settings afp:setting
 
 ###############################################################################
 
-    def __init__(self, config, environ, logdispatcher, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logdispatcher,
+    def __init__(self, config, environ, logger, statechglogger):
+        RuleKVEditor.__init__(self, config, environ, logger,
                               statechglogger)
         self.rulenumber = 164
         self.rulename = 'DisableAFPFileSharing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = "This rule disables AFP file sharing."
+        self.logger = logger
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.3']
 
@@ -104,7 +105,7 @@ $ sudo serveradmin settings afp:setting
         @author: Breen Malmberg
         '''
 
-        self.cmdhelper = CommandHelper(self.logdispatcher)
+        self.cmdhelper = CommandHelper(self.logger)
 
     def determineOrigAFPstatus(self):
         '''
@@ -123,7 +124,7 @@ $ sudo serveradmin settings afp:setting
             retcode = self.cmdhelper.getReturnCode()
             if retcode != 0:
                 errstr = self.cmdhelper.getErrorString()
-                self.logdispatcher.log(LogPriority.DEBUG, errstr)
+                self.logger.log(LogPriority.DEBUG, errstr)
             outputstr = self.cmdhelper.getOutputString()
             if not re.search("Could not find", outputstr, re.IGNORECASE):
                 self.afporigstatus = True
@@ -160,13 +161,13 @@ $ sudo serveradmin settings afp:setting
                 retcode = self.cmdhelper.getReturnCode()
                 if retcode != 0:
                     errstr = self.cmdhelper.getErrorString()
-                    self.logdispatcher.log(LogPriority.DEBUG, errstr)
+                    self.logger.log(LogPriority.DEBUG, errstr)
                     success = False
                 self.cmdhelper.executeCommand(clientfixcmd2)
                 retcode = self.cmdhelper.getReturnCode()
                 if retcode != 0:
                     errstr = self.cmdhelper.getErrorString()
-                    self.logdispatcher.log(LogPriority.DEBUG, errstr)
+                    self.logger.log(LogPriority.DEBUG, errstr)
                     success = False
 
             if success:
@@ -178,7 +179,7 @@ $ sudo serveradmin settings afp:setting
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
-            self.logdispatcher.log(LogPriority.ERROR, self.detailedresults)
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
 
     def undo(self):
         '''
@@ -206,13 +207,13 @@ $ sudo serveradmin settings afp:setting
                     if retcode != 0:
                         success = False
                         errstr = self.cmdhelper.getErrorString()
-                        self.logdispatcher.log(LogPriority.DEBUG, errstr)
+                        self.logger.log(LogPriority.DEBUG, errstr)
                     self.cmdhelper.executeCommand(undocmd2)
                     retcode = self.cmdhelper.getReturnCode()
                     if retcode != 0:
                         success = False
                         errstr = self.cmdhelper.getErrorString()
-                        self.logdispatcher.log(LogPriority.DEBUG, errstr)
+                        self.logger.log(LogPriority.DEBUG, errstr)
 
                 if not success:
                     self.detailedresults += "\nUndo failed to restore Apple File Sharing to its original state on this system."
@@ -223,6 +224,6 @@ $ sudo serveradmin settings afp:setting
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
-            self.logdispatcher.log(LogPriority.ERROR, self.detailedresults)
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults('undo', success, self.detailedresults)
         return success

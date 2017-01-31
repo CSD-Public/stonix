@@ -838,24 +838,24 @@ class Environment:
 
         @author: Roy Nielsen
         """
-        script_path_zero = os.path.realpath(sys.argv[0])
+        try:
+            script_path_zero = sys._MEIPASS
+        except Exception:
+            script_path_zero = os.path.realpath(sys.argv[0])
+
         try:
             script_path_one = os.path.realpath(sys.argv[1])
         except:
             script_path_one = ""
 
         self.test_mode = False
-
-        # Get environment.py path
-        self.resources_path = os.path.dirname(os.path.realpath(__file__))
-
         #####
         # Check which argv variable has the script name -- required to allow
         # for using the eclipse debugger.
-        if re.search("stonix$|stonix.py$", script_path_zero):
+        if re.search("stonix.py$", script_path_zero) or re.search("stonix$", script_path_zero):
             #####
-            # stonix path should be in the parent of stonix_resources
-            self.script_path = os.path.dirname(self.resources_path)
+            # Run normally
+            self.script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
         else:
             #####
             # Run with Eclipse debugger -- Eclipse debugger will never try to run
@@ -876,10 +876,22 @@ class Environment:
                     print "ERROR: Cannot run using this method"
             else:
                 #print "DEBUG: Cannot find appropriate path, building paths for current directory"
-                self.script_path = os.getcwd()
+                try:
+                    self.script_path = sys._MEIPASS
+                except Exception:
+                    self.script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 
+        #####
+        # Set the rules & stonix_resources paths
+        # ##
+        # create the self.resources_path
+        self.resources_path = os.path.join(self.script_path,
+                                           "stonix_resources")
+        # ##
         # create the self.rules_path
-        self.rules_path = os.path.join(self.resources_path, "rules")
+        self.rules_path = os.path.join(self.script_path,
+                                       "stonix_resources",
+                                       "rules")
         #####
         # Set the log file path
         if self.geteuid() == 0:
@@ -896,19 +908,7 @@ class Environment:
 
         #####
         # Set the configuration file path
-        if os.path.exists(os.path.join(self.script_path, "etc",
-                                       "stonix.conf")):
-            self.conf_path = os.path.join(self.script_path, "etc",
-                                          "stonix.conf")
-        elif re.search('pydev', script_path_zero) and \
-             re.search('stonix_resources', script_path_one):
-            print "INFO: Called by unit test"
-            srcpath = script_path_one.split('/')[:-2]
-            srcpath = '/'.join(srcpath)
-            self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print self.conf_path
-        else:
-            self.conf_path = "/etc/stonix.conf"
+        self.conf_path = "/etc/stonix.conf"
 
     def get_test_mode(self):
         """

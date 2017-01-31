@@ -147,7 +147,7 @@ certificate into Firefox, set the value of INSTALLROOTCERTBROWSER to False."""
                     self.detailedresults += "Could not find DOE certificate in " + \
                         anchorsPath + " or " + certsPath + "\n"
 
-            # certutils is needed for this functionality. We will install the
+            # certutil is needed for this functionality. We will install the
             # necessary package if it is not already on the system.
             ph = Pkghelper(self.logger, self.environ)
             if self.isDeb:
@@ -167,10 +167,14 @@ certificate into Firefox, set the value of INSTALLROOTCERTBROWSER to False."""
                 browserFound = True
             name = "Department of Energy - U.S. Government"
             for ffDir in ffDirs:
-                cmd = ["certutil", "-L", "-an", name, "-d", ffDir]
-                self.ch.executeCommand(cmd)
-                if re.search(rootcert, self.ch.getAllString()):
-                    browserFound = True
+                try:
+                    cmd = ["certutil", "-L", "-an", name, "-d", ffDir]
+                    self.ch.executeCommand(cmd)
+                except OSError:
+                    browserFound = False
+                else:
+                    if re.search(rootcert, self.ch.getAllString()):
+                        browserFound = True
             if not browserFound:
                 self.detailedresults += "Could not find DOE certificate " + \
                     "in Firefox database for one or more users\n"

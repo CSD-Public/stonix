@@ -378,7 +378,7 @@ def fix_app_perms(rootDir="/Applications/stonix4mac.app",
             log_message('\t%s' % fullFName, "normal", message_level)
             if os.path.isfile(fullFName):
                 os.chmod(fullFName, 0664)
-                os.chown(fullDirName, 0, 80)
+                os.chown(fullFName, 0, 80)
 
 
 def make_files_executable():
@@ -413,13 +413,13 @@ def main():
     make_files_executable()
 
     stonix = "/usr/local/bin/stonix"
-    stonix4mac = "/usr/local/bin/stonix4mac"
+    #stonix4mac = "/usr/local/bin/stonix4mac"
 
     # make_valid_link(my_link, my_link_source, message_level="normal"):
     make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" +
                     "Resources/stonix.app/Contents/MacOS/stonix")
-    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" +
-                    "MacOS/stonix4mac")
+    #make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" +
+    #                "MacOS/stonix4mac")
 
     log_message("Finished stonix4mac package postflight...", "normal",
                 message_level)

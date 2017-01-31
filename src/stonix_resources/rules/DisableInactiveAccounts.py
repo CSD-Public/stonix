@@ -24,8 +24,9 @@
 
 Created on Jan 21, 2016
 
-This rule will set the global policy for inactive accounts so that any account
-not accessed/used within 35 days will be automatically disabled.
+This rule will set the global policy for inactive accounts so that any account,
+which goes 35 days beyond the password expiration date without updating its
+password, will be disabled.
 
 @author: Breen Malmberg
 @change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
@@ -64,9 +65,9 @@ class DisableInactiveAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will set the global policy for inactive \
-accounts so that any account not accessed/used within 35 days will be \
-automatically disabled.'
+        self.helptext = 'This rule will set the global policy for inactive accounts so that any account, \
+which goes 35 days beyond the password expiration date without updating its \
+password, will be disabled.'
         self.guidance = ['CNSSI 1253', 'DISA STIG']
 
         datatype = 'bool'
@@ -202,11 +203,19 @@ automatically disabled.'
                                           user + ' accountPolicyData ' +
                                           'passwordLastSetTime')
             epochchangetimestr = self.cmdhelper.getOutputString()
-            if self.cmdhelper.getReturnCode() != 0:
-                self.detailedresults += '\nThere was an issue reading ' + \
-                    user + '\'s accountPolicyData passwordLastSetTime'
-                self.compliant = False
-                return inactivedays
+            retcode = self.cmdhelper.getReturnCode()
+            outstr = self.cmdhelper.getOutputString()
+            if retcode != 0:
+                if retcode == 181: # this is the mac os x error code when a plist path does not exist
+                    if re.search("No such plist path: passwordLastSetTime", outstr, re.IGNORECASE):
+                        self.detailedresults += "The local account: " + str(user) + " has never had a password set for it! We will now disable this local account on this machine."
+                        self.logger.log(LogPriority.DEBUG, "The local user account: " + str(user) + " had no password for it. STONIX will disable it now.")
+                        inactivedays = 9999 # this will ensure it gets added to the list of accounts to disable
+                else:
+                    self.detailedresults += '\nThere was an issue reading ' + \
+                        user + '\'s accountPolicyData passwordLastSetTime'
+                    self.compliant = False
+                    return inactivedays
 
             epochchangetimelist = epochchangetimestr.split(':')
             epochchangetimestropr = epochchangetimelist[1].strip()
