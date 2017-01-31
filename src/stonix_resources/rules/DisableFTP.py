@@ -86,7 +86,7 @@ class DisableFTP(RuleKVEditor):
         @author: dwalker
         @return: boolean
         '''
-        if self.sh.auditservice("ftpd", "ftpd"):
+        if self.sh.auditservice("/System/Library/LaunchDaemons/ftp.plist", "ftp"):
             self.detailedresults += "FTP is set to be disabled but " + \
                 "hasn't been unloaded"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
