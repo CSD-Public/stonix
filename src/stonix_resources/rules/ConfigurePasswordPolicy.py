@@ -60,6 +60,7 @@ class ConfigurePasswordPolicy(Rule):
 #         self.applicable = {'type': 'white',
 #                            'os': {'Mac OS X': ['10.11']}}
         self.applicable = {'type': 'black',
+                           'family': ['linux', 'darwin'],
                            'os': {'Mac OS X': ['10.10', '+']}}
         datatype = "bool"
         key = "PWPOLICY"
