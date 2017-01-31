@@ -201,9 +201,10 @@ class DisableWeakAuthentication(Rule):
                     else:
                         success = False
             for item in self.pams:
-                if not checkPerms(item, [0, 0, 420], self.logger):
-                    if not setPerms(item, [0, 0, 420], self.logger):
-                        success = False
+                if os.path.exists(item):
+                    if not checkPerms(item, [0, 0, 420], self.logger):
+                        if not setPerms(item, [0, 0, 420], self.logger):
+                            success = False
             if os.path.exists("/etc/pam.d/"):
                 fileItems = glob.glob("/etc/pam.d/*")
                 for item in fileItems:
