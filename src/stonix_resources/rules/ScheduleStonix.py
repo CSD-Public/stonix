@@ -26,7 +26,7 @@ Created on Dec 12, 2013
 Schedule Stonix to run randomly throughout the week and once in a user context
 per day
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2014/02/16 ekkehard Implemented self.detailedresults flow
 @change: 2014/02/16 ekkehard Implemented isapplicable
 @change: 2014/04/30 dkennel Corrected bug where crons were created without -c
@@ -35,6 +35,8 @@ per day
 @change: 2014/09/02 ekkehard self.rootrequired = True & OS X 10.10 compliant
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
+        within ServiceHelper and SHlaunchd)
 '''
 
 from __future__ import absolute_import
@@ -416,8 +418,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                 itemshort = item.split('/')[3][:-6]
                 if not self.svchelper.auditservice(itemlong, itemshort):
                     configured = False
-                    self.detailedresults += "Service not running: " + itemshort + "\n"
-                    self.detailedresults += "Service not running: " + self.detailedresults
 
         except (IOError, IndexError):
             raise
@@ -432,7 +432,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         and return it as a string
 
         @return: string
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         randday = random.randrange(1, 7)
@@ -450,7 +450,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         If no cron file exists, create it (location based on os type)
         If cron file exists but stonix config entry/entries missing, append it
 
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         self.detailedresults = ""
@@ -574,7 +574,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         Create plist files as necessary for system runs as well as user context
         (user home director(y)(ies)) plist.
 
-        @author bemalmbe
+        @author Breen Malmberg
         '''
 
         retval = False

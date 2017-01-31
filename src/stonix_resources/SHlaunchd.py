@@ -29,6 +29,10 @@ This object encapsulates the /bin/launchctl command for Service Helper
 @change: 2014-11-24 - ekkehard - added OS X Yosemite 10.10 support
 @change: 2017-01-20 - Breen Malmberg - changed name of var self.findstring to
         self.noservicemsgs
+@change: 2017/01/31 - Breen Malmberg - clarified the difference between auditservice
+        and isrunning methods in the documentation; clarified the nature of the
+        two parameters in each of those methods in the doc strings as well;
+        fixed a logic error in auditservice()
 '''
 
 import re
@@ -149,21 +153,27 @@ class SHlaunchd(object):
 
     def auditservice(self, service, servicename):
         '''
-        Checks the status of a service and returns a bool indicating whether or
-        not the service is configured to run or not.
+        Use launchctl to determine if a given service is configured
+        to run (aka currently loaded). Return True if so. Return
+        False if not.
 
-        @param service string: Name of the service to be audited
-        @param servicename string: Short Name of the service to be audited
-        @return: Bool, True if the service is configured to run
+        @return: isloaded
+        @rtype: bool
+        @param service string: Full path to the plist of the service to run
+                ex: /System/Library/LaunchDaemons/com.apple.someservice.plist
+        @param servicename string: Name of service without full path or the '.plist'
+                ex: com.apple.someservice
+        @author: ???
         @change: 2014-11-24 - ekkehard - remove -x option no supported in
         OS X Yosemite 10.10
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; minor
                 refactor; logging
+        @change: Breen Malmberg - 1/31/2017 - doc string edit; minor refactor
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.auditservice()...")
 
-        isrunning = True
+        isloaded = True
         command = [self.launchd, "list"]
         found = False
 
@@ -179,7 +189,7 @@ class SHlaunchd(object):
 
             # is there any output at all?
             if not cmdoutput:
-                isrunning = False
+                isloaded = False
                 self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
 
             # did we even find the service in the output at all?
@@ -189,41 +199,35 @@ class SHlaunchd(object):
                 if re.search(servicename, line, re.IGNORECASE):
                     found = True
 
-            # if found, is it configured to run or not?
             # did we get any messages specifically stating the
             # specified service is not loaded or not configured
             # to run?
             for line in cmdoutput:
-                if re.search(servicename, line, re.IGNORECASE):
-                    sline = line.split()
-                    if re.search('\-', sline[0], re.IGNORECASE):
-                        isrunning = False
-                elif re.search(self.noservicemsgs[0], line, re.IGNORECASE):
-                    isrunning = False
+                if re.search(self.noservicemsgs[0], line, re.IGNORECASE):
+                    isloaded = False
                 elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
-                    isrunning = False
+                    isloaded = False
 
             # if it wasn't found at all, it's not configured to run
             if not found:
-                isrunning = False
+                isloaded = False
 
             # log whether it's running or not
-            if isrunning:
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
+            if isloaded:
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is loaded")
             else:
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
+                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT loaded")
 
             self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.auditservice()...")
 
         except Exception:
             raise
-        return isrunning
+        return isloaded
 
     def isrunning(self, service, servicename):
         '''
-        Use launchctl to determine if the given service is running or not
-        Return True if it is
-        Return False if it is not
+        Use launchctl to determine if the given service is currnetly
+        running or not. Return True if it is. Return False if it is not.
 
         @return: isrunning
         @rtype: bool

@@ -28,6 +28,9 @@ Created on Aug 9, 2012
 @change: 2015/10/15 eball disableservice now checks audit and isrunning
 @change: 2016/06/10 dkennel wrapped audit in try catch in case service is not
 installed.
+@change: 2017/01/31 Breen Malmberg clarified the difference between auditservice
+        and isrunning methods in the documentation; clarified the nature of the
+        two parameters in each of those methods in the doc strings as well
 '''
 import os
 import types
@@ -426,10 +429,16 @@ class ServiceHelper(object):
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param service string: Name of the service to be audited
-        @param servicename string: Short Name of the service to be audit
-        @return: Bool, True if the service is configured to run
+        @return: servicesuccess
+        @rtype: bool
+        @param service string: Full path to the plist of the service to run
+                ex: /System/Library/LaunchDaemons/com.apple.someservice.plist
+        @param servicename string: Name of service without full path or the '.plist'
+                ex: com.apple.someservice
+        @author: ???
+        @change: Breen Malmberg - 1/31/2017 - doc string edit
         '''
+
         self.logdispatcher.log(LogPriority.DEBUG,
                                '--START AUDIT(' + service + ', ' + servicename +
                                ')')
