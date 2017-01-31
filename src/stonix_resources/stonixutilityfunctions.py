@@ -1117,7 +1117,7 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
         gid = grp.getgrnam(group)[2]
     if pwd.getpwnam(owner)[2] != "":
         uid = pwd.getpwnam(owner)[2]
-    if uid and gid:
+    if str(uid) and str(gid):
         if actualmode != desiredmode or ownergrp[0] != owner or ownergrp[1] != group:
             retval.append(uid)
             retval.append(gid)
