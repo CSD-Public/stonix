@@ -165,6 +165,7 @@ class SHlaunchd(object):
 
         isrunning = True
         command = [self.launchd, "list"]
+        found = False
 
         try:
 
@@ -176,10 +177,22 @@ class SHlaunchd(object):
 
             cmdoutput = self.ch.getOutput()
 
+            # is there any output at all?
             if not cmdoutput:
                 isrunning = False
                 self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
 
+            # did we even find the service in the output at all?
+            for line in cmdoutput:
+                if re.search(service, line, re.IGNORECASE):
+                    found = True
+                if re.search(servicename, line, re.IGNORECASE):
+                    found = True
+
+            # if found, is it configured to run or not?
+            # did we get any messages specifically stating the
+            # specified service is not loaded or not configured
+            # to run?
             for line in cmdoutput:
                 if re.search(servicename, line, re.IGNORECASE):
                     sline = line.split()
@@ -190,6 +203,11 @@ class SHlaunchd(object):
                 elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
                     isrunning = False
 
+            # if it wasn't found at all, it's not configured to run
+            if not found:
+                isrunning = False
+
+            # log whether it's running or not
             if isrunning:
                 self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
             else:
@@ -222,6 +240,7 @@ class SHlaunchd(object):
 
         isrunning = True
         command = [self.launchd, "list"]
+        found = False
 
         try:
 
@@ -233,10 +252,22 @@ class SHlaunchd(object):
 
             cmdoutput = self.ch.getOutput()
 
+            # is there any output at all?
             if not cmdoutput:
                 isrunning = False
                 self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
 
+            # did we even find the service in the output at all?
+            for line in cmdoutput:
+                if re.search(service, line, re.IGNORECASE):
+                    found = True
+                if re.search(servicename, line, re.IGNORECASE):
+                    found = True
+
+            # if found, is it configured to run or not?
+            # did we get any messages specifically stating the
+            # specified service is not loaded or not configured
+            # to run?
             for line in cmdoutput:
                 if re.search(servicename, line, re.IGNORECASE):
                     sline = line.split()
@@ -247,6 +278,11 @@ class SHlaunchd(object):
                 elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
                     isrunning = False
 
+            # if it wasn't found at all, it's not configured to run
+            if not found:
+                isrunning = False
+
+            # log whether it's running or not
             if isrunning:
                 self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
             else:
