@@ -175,7 +175,7 @@ class VerifySysFilePerms(Rule):
         '''
 
         retval = True
-        reportcommand = '/usr/libexec/repair_packages --verify --standard-pkgs --volume /'
+        reportcommand = '/usr/libexec/repair_packages --verify --standard-pkgs'
 
         try:
 
