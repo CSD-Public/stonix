@@ -96,6 +96,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
                         elif search("mil\.disa\.STIG\.loginwindow\.alacarte$", line.strip()):
+                            self.detailedresults += "Couldn't find loginwindow profile\n"
                             compliant = True
                             break
             self.compliant = compliant
@@ -113,7 +114,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
     
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
+            if not self.lwci.getcurrvalue():
                 return
             if os.path.exists(self.profile):
                 success = True
@@ -124,6 +125,8 @@ class STIGConfigureLoginWindowPolicy(Rule):
                     self.statechglogger.deleteentry(event)
                 cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
                 if not self.ch.executeCommand(cmd):
+                    debug = "Unable to install profile\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
                     self.iditerator += 1
