@@ -722,11 +722,9 @@ rotation config file: " + self.logrotpath + "\n"
         if not self.sh.reloadservice("rsyslog"):
             debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            success = False
         if not self.ch.getReturnCode() != "0":
             debug = "Unable to restart the log daemon part 2\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            success = False
         return success
 
 ###############################################################################
