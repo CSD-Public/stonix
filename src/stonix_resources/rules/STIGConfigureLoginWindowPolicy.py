@@ -114,7 +114,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
     
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
+            if not self.lwci.getcurrvalue():
                 return
             if os.path.exists(self.profile):
                 success = True
