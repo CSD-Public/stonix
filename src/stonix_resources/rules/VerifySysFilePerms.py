@@ -194,8 +194,16 @@ class VerifySysFilePerms(Rule):
             if output:
                 for line in output:
                     if re.search('differ', line, re.IGNORECASE):
-                        retval = False
-                        self.detailedresults += '\n' + str(line) + '\n'
+                        # added the following line to essentially white list a file
+                        # that there is currently a bug with, in mac os x
+                        # there is currently nothing we can do about this, so we will
+                        # ignore the file, to prevent the rule from being ncaf every
+                        # time on mac os x. a bug has been filed with apple as of 1/31/2017
+                        if re.search("Applications\/Safari\.app\/Contents\/Resources\/Safari\.help\/Contents\/Resources\/index\.html", line, re.IGNORECASE):
+                            continue
+                        else:
+                            retval = False
+                            self.detailedresults += '\n' + str(line) + '\n'
 
         except Exception:
             raise

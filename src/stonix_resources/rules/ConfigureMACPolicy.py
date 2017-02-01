@@ -206,14 +206,13 @@ certain programs are allowed and not allowed to do.'''
                                 "Unable to determine os version number")
                 self.setRedHatBackupMethod()
 
+            if not self.path2:
+                self.logger.log(LogPriority.DEBUG, "Could not determine location of grub file")
+
+            self.tpath2 = self.path2 + '.tmp'
+
         except Exception:
             raise
-
-        if not self.path2:
-            self.logger.log(LogPriority.DEBUG,
-                            "Could not determine location of grub file")
-
-        self.tpath2 = self.path2 + '.tmp'
 
     def setRedHatBackupMethod(self):
         '''
@@ -282,8 +281,7 @@ certain programs are allowed and not allowed to do.'''
                     # parse os-release file
                     osver = self.parseRedhatRelease(contentlines)
             else:
-                self.logger.log(LogPriority.DEBUG,
-                                "Unable to locate release file")
+                self.logger.log(LogPriority.DEBUG, "Unable to locate release file")
 
         except Exception:
             raise
@@ -347,10 +345,12 @@ certain programs are allowed and not allowed to do.'''
 
         @return: void
         @author: Breen Malmberg
+        @change: increased the version number accounted for, in
+                the regex search (now 20-29; was 20-23 (oops!))
         '''
 
-        self.logger.log(LogPriority.DEBUG,
-                        "This system is using Fedora operating system")
+        self.logger.log(LogPriority.DEBUG, "This system is using Fedora operating system")
+
         self.fedora = True
         self.selinux = 'libselinux'
         self.setype = 'targeted'
@@ -360,32 +360,25 @@ certain programs are allowed and not allowed to do.'''
 
         try:
 
-            if re.search('([2][0-3]\.)|(^[2][0-3]$)', self.getOsVer()):
-                # set options for fedora 20 or higher
-                self.logger.log(LogPriority.DEBUG,
-                                "This system is using version 20 or higher " +
-                                "of the operating system")
+            if re.search('([2][0-9]\.)|(^[2][0-9]$)', self.getOsVer()):
+                # set options for fedora 20 to 29
+                self.logger.log(LogPriority.DEBUG, "This system is using version 20 or higher of the operating system. Setting grub conf path to /etc/default/grub")
                 self.path2 = '/etc/default/grub'
                 self.perms2 = [0, 0, 384]
             elif re.search('([1][0-9]\.)|(^[1][0-9]$)', self.getOsVer()):
-                # set options for fedora 19 or lower
-                self.logger.log(LogPriority.DEBUG,
-                                "This system is using version 19 or lower " +
-                                "of the operating system")
+                # set options for fedora 10 to 19
+                self.logger.log(LogPriority.DEBUG, "This system is using version 19 or lower of the operating system. Setting grub conf path to /etc/grub.conf")
                 self.path2 = '/etc/grub.conf'
                 self.perms2 = [0, 0, 420]
             else:
-                self.logger.log(LogPriority.DEBUG,
-                                "Unable to determine os version number")
+                self.logger.log(LogPriority.DEBUG, "Unable to determine OS version number")
 
             if not self.path2:
-                self.logger.log(LogPriority.DEBUG,
-                                "Could not determine location of grub file")
+                self.logger.log(LogPriority.DEBUG, "Could not determine location of grub file")
+            self.tpath2 = self.path2 + '.tmp'
 
         except Exception:
             raise
-
-        self.tpath2 = self.path2 + '.tmp'
 
     def setDebian(self):
         '''
@@ -874,6 +867,9 @@ the sestatus command to see if SELinux is configured properly\n"
         @author: Derek Walker
         @change: Breen Malmberg - 10/26/2015 - filled in stub method;
             added doc string; changed method to use correct return variable
+        @change: added dnf package manager type to the detectable types; this
+                fixed an issue where the package manager could not be detected
+                correctly on later versions of fedora OS
         '''
 
         fixresult = True
@@ -884,13 +880,13 @@ the sestatus command to see if SELinux is configured properly\n"
 
             if self.ConfigureMAC.getcurrvalue():
 
-                if str(self.pkghelper.manager).strip() in ["yum", "portage"]:
+                if str(self.pkghelper.manager).strip() in ["yum", "portage", "dnf"]:
                     if not self.fixSELinux():
                         fixresult = False
                 elif str(self.pkghelper.manager).strip() in ["zypper", "apt-get"]:
                     if not self.fixAppArmor():
                         fixresult = False
-                if str(self.pkghelper.manager).strip() not in ["zypper", "apt-get", "yum", "portage"]:
+                if str(self.pkghelper.manager).strip() not in ["zypper", "apt-get", "yum", "portage", "dnf"]:
                     self.detailedresults += 'Could not identify your OS ' + \
                         'type, or OS not supported for this rule.\n'
                     fixresult = False
