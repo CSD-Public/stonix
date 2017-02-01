@@ -385,6 +385,8 @@ administrators may want to disable this rule.
                                'sshd',
                                'sshd.service',
                                'sshd-keygen.service',
+                               'stonix-mute-mic.service',
+                               'stonix-mute-mic',
                                'SuSEfirewall2.service',
                                'SuSEfirewall2_init.service',
                                'syslog.service',
