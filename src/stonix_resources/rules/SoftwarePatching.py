@@ -214,8 +214,12 @@ class SoftwarePatching(Rule):
         @return: bool
         @author: dkennel
         '''
+
+        self.caveats = ""
+        self.detailedresults = ""
+
         try:
-            self.detailedresults = ""
+            
             self.logger.log(LogPriority.DEBUG, 'Checking patching')
             patchingcurrent = self.updated()
             self.logger.log(LogPriority.DEBUG, 'Checking cron jobs')
