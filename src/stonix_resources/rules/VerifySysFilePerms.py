@@ -71,16 +71,11 @@ class VerifySysFilePerms(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.isApplicableWhiteList = [{"0": "darwin",
-                                       "1": "Mac OS X",
-                                       "2": ["10.9", "10.10"]}]
-        self.isApplicableBlackList = [{"0": "darwin",
-                                       "1": "Mac OS X",
-                                       "2": ["10.0", "10.1", "10.2", "10.3",
-                                             "10.4", "10.5", "10.6", "10.7",
-                                             "10.8"]}]
+        # this rule does not apply to sierra because mac completely removed the
+        # ability to check and fix disk permissions, via command line,
+        # in os x 10.12 and later
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
 
         self.findsysvol = '/usr/sbin/bless --info --getBoot'
         self.hasrun = False
