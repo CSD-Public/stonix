@@ -285,7 +285,7 @@ for the login.defs file"""
             if not self.ci2comp:
                 if self.usingpwquality:
                     regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-                        "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                        "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                         "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
                     if self.pwqinstalled:
                         if not self.setpasswordsetup(regex):
@@ -295,7 +295,7 @@ for the login.defs file"""
                             success = False
                 elif self.usingcracklib:
                     regex = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-                        "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                        "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                         "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
                     if self.clinstalled:
                         if not self.setpasswordsetup(regex):
@@ -425,13 +425,13 @@ for the login.defs file"""
         compliant = True
         if package == "pwquality":
             regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-                    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
             if not self.chkpwquality():
                 compliant = False
         elif package == "cracklib":
             regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-                    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+                    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
                     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
@@ -497,13 +497,13 @@ for the login.defs file"""
                         pwqfile = "/etc/security/pwquality.conf"
                         tmpfile = pwqfile + ".tmp"
                         data = {"difok": "7",
-                                "minlen": "14",
+                                "minlen": "8",
                                 "dcredit": "0",
                                 "ucredit": "0",
                                 "lcredit": "0",
                                 "ocredit": "0",
                                 "maxrepeat": "3",
-                                "minclass": "4"}
+                                "minclass": "3"}
                         self.pwqeditor = KVEditorStonix(self.statechglogger,
                                                         self.logger, "conf",
                                                         pwqfile, tmpfile, data,
@@ -766,13 +766,13 @@ for the login.defs file"""
         if os.path.exists(pwqfile):
             tmpfile = pwqfile + ".tmp"
             data = {"difok": "7",
-                    "minlen": "14",
+                    "minlen": "8",
                     "dcredit": "0",
                     "ucredit": "0",
                     "lcredit": "0",
                     "ocredit": "0",
                     "maxrepeat": "3",
-                    "minclass": "4"}
+                    "minclass": "3"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
@@ -1165,13 +1165,13 @@ for the login.defs file"""
             created = True
             tmpfile = pwqfile + ".tmp"
             data = {"difok": "7",
-                    "minlen": "14",
+                    "minlen": "8",
                     "dcredit": "0",
                     "ucredit": "0",
                     "lcredit": "0",
                     "ocredit": "0",
                     "maxrepeat": "3",
-                    "minclass": "4"}
+                    "minclass": "3"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
