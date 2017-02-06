@@ -262,16 +262,32 @@ effect."""
 
                 # On Ubuntu, Unity/LightDM requires an extra setting to add an
                 # option to the login screen for network users
+
                 if re.search("ubuntu", self.myos):
-                    lightdmconf = "/etc/lightdm/lightdm.conf"
-                    self.lightdmconf = lightdmconf
-                    tmppath = lightdmconf + ".tmp"
-                    manLogin = {"greeter-show-manual-login": "true"}
-                    self.editor2 = KVEditorStonix(self.statechglogger,
-                                                  self.logger, "conf",
-                                                  lightdmconf,
-                                                  tmppath, manLogin,
-                                                  "present", "closedeq")
+                    # search for versions 16-19 (may have to update later if they change
+                    # the way lightdm is configured again in the future..
+                    if re.search('[1][6-9]\.', self.environ.getosver(), re.IGNORECASE):
+                        lightdmconf = "/etc/lightdm/lightdm.conf.d/50-unity-greeter.conf"
+                        self.lightdmconf = lightdmconf
+                        tmppath = lightdmconf + ".tmp"
+                        manLogin = {"Seat:*": {"greeter-session": "unity-greeter",
+                                               "greeter-show-manual-login": "true"}}
+                        self.editor2 = KVEditorStonix(self.statechglogger,
+                                                      self.logger, "tagconf",
+                                                      lightdmconf,
+                                                      tmppath, manLogin,
+                                                      "present", "closedeq")
+                    else:
+                        lightdmconf = "/etc/lightdm/lightdm.conf"
+                        self.lightdmconf = lightdmconf
+                        tmppath = lightdmconf + ".tmp"
+                        manLogin = {"Seat:*": {"greeter-session": "unity-greeter",
+                                               "greeter-show-manual-login": "true"}}
+                        self.editor2 = KVEditorStonix(self.statechglogger,
+                                                      self.logger, "tagconf",
+                                                      lightdmconf,
+                                                      tmppath, manLogin,
+                                                      "present", "closedeq")
                     if not self.editor2.report():
                         compliant = False
                         results += '"greeter-show-manual-login=true" not ' + \
