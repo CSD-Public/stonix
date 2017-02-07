@@ -31,11 +31,9 @@ TARGET_LOCATION = sys.argv[2]
 def removeOldStonix(target):
     try:
         shutil.rmtree(target)
-        return 0
     except OSError:
         print "Could not find " + str(target)
-        return 1
-
+    return 0
 
 def backupOldStonixConf(target):
     '''
@@ -51,6 +49,6 @@ def backupOldStonixConf(target):
 
 
 if __name__ == "__main__":
-    target = TARGET_LOCATION + "/Applications/stonix4mac.app"
+    target = os.path.join(TARGET_LOCATION + "Applications/stonix4mac.app")
     backupOldStonixConf(target)
     sys.exit(removeOldStonix(target))
