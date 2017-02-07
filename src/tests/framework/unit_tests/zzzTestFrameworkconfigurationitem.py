@@ -27,8 +27,13 @@ Created on Sep 21, 2011
 ###############################################################################
 
 @author: dkennel
+@change: 2016-02-10 roy - adding sys.path.append for both test framework and 
+                          individual test runs.
 '''
+import sys
 import unittest
+
+sys.path.append("../../../..")
 import src.stonix_resources.configurationitem as configurationitem
 
 

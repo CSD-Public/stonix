@@ -26,10 +26,15 @@ This is a Unit Test for Rule DisableUncommonProtocols
 
 @author: Eric Ball
 @change: 2015/09/10 eball - Original implementation
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
 import os
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority

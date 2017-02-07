@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2016.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,11 +21,34 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-TARGET_LOCATION=$2
+import os
+import shutil
+import sys
+
+TARGET_LOCATION = sys.argv[2]
 
 
-rm -rf ${TARGET_LOCATION}/stonix4mac.app
+def removeOldStonix(target):
+    try:
+        shutil.rmtree(target)
+    except OSError:
+        print "Could not find " + str(target)
+    return 0
 
-exit 0
+def backupOldStonixConf(target):
+    '''
+    If the target conf file exists, stonix will be using it to save the users
+    settings, regarless of whether or not /etc/stonix.conf exists. Newer
+    versions of stonix will no longer put a conf file in the application path,
+    so this should now be moved to /etc.
+    '''
+    conffile = target + "/Contents/Resources/stonix.app/Contents/" + \
+        "Resources/stonix.conf"
+    if os.path.exists(conffile) and not os.path.islink(conffile):
+        os.rename(conffile, "/etc/stonix.conf")
 
 
+if __name__ == "__main__":
+    target = os.path.join(TARGET_LOCATION + "Applications/stonix4mac.app")
+    backupOldStonixConf(target)
+    sys.exit(removeOldStonix(target))

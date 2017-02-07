@@ -29,9 +29,15 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 07/14/2014 - ekkehard - made testing more rigorous
 @change: 07/28/2014 - ekkehard - bug fixes
 @change: 2015/12/18 - eball - Added eventids
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
+import os
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.filehelper import FileHelper
@@ -47,61 +53,28 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                                       self.environ,
                                       self.logdispatch,
                                       self.statechglogger)
+        self.setCheckUndo(True)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.fh = FileHelper(self.logdispatch, self.statechglogger)
         if self.environ.getosfamily() == 'darwin':
-            self.files = {"kerb5.conf":
-                          {"path": "/etc/krb5.conf",
-                           "remove": True,
-                           "content": None,
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "kerb5ut"},
-                          "edu.mit.Kerberos":
-                          {"path": "/Library/Preferences/edu.mit.Kerberos",
-                           "remove": False,
-                           "content": "test",
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "Kerberosut"},
-                          "edu.mit.Kerberos.krb5kdc.launchd":
-                          {"path": "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd",
-                           "remove": False,
-                           "content": "test",
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "krb5kdcut"},
-                          "edu.mit.Kerberos.kadmind.launchd":
-                          {"path": "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd",
-                           "remove": False,
-                           "content": "test",
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "kadmindut"},
-                        }
+            krb5 = "/etc/krb5.conf"
+            mitkrb = "/Library/Preferences/edu.mit.Kerberos"
+            krb5kdc = "/Library/Preferences/edu.mit.Kerberos.krb5kdc.launchd"
+            kadmind = "/Library/Preferences/edu.mit.Kerberos.kadmind.launchd"
+            self.pathList = [krb5, mitkrb, krb5kdc, kadmind]
         else:
-            self.files = {"kerb5.conf":
-                          {"path": "/etc/krb5.conf",
-                           "remove": True,
-                           "content": None,
-                           "permissions": None,
-                           "owner": None,
-                           "group": None,
-                           "eventid": str(self.rulenumber).zfill(4) +
-                           "kerb5ut"}}
+            krb5 = "/etc/krb5.conf"
+            self.pathList = [krb5]
+        for path in self.pathList:
+            if os.path.exists(path):
+                os.rename(path, path + ".stonixUT")
+            open(path, "w").write("test\n")
 
     def tearDown(self):
-        pass
+        for path in self.pathList:
+            if os.path.exists(path + ".stonixUT"):
+                os.rename(path + ".stonixUT", path)
 
     def runTest(self):
         self.simpleRuleTest()
@@ -113,17 +86,7 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        for filelabel, fileinfo in sorted(self.files.items()):
-            self.fh.addFile(filelabel,
-                            fileinfo["path"],
-                            fileinfo["remove"],
-                            fileinfo["content"],
-                            fileinfo["permissions"],
-                            fileinfo["owner"],
-                            fileinfo["group"],
-                            fileinfo["eventid"])
-
-        success = self.fh.fixFiles()
+        success = True
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

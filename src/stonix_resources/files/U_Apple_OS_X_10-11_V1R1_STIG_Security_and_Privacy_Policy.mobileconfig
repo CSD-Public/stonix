@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>PayloadIdentifier</key>
+		<string>mil.disa.STIG.Security_Privacy.alacarte</string>
+		<key>PayloadRemovalDisallowed</key>
+		<false/>
+		<key>PayloadScope</key>
+		<string>System</string>
+		<key>PayloadType</key>
+		<string>Configuration</string>
+		<key>PayloadUUID</key>
+		<string>fc2e24b0-a1e6-0133-8b17-003ee1c1075e</string>
+		<key>PayloadOrganization</key>
+		<string>DISA</string>
+		<key>PayloadVersion</key>
+		<integer>1</integer>
+		<key>PayloadDisplayName</key>
+		<string>STIG Settings-Security_Privacy</string>
+		<key>PayloadContent</key>
+		<array>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.SubmitDiagInfo</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>com.apple.mdm.alacarte.privacy.SubmitDiagInfo</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadUUID</key>
+				<string>987e6bd5-ece9-6d8f-e05e-c2e9ef0534cf</string>
+				<key>PayloadDisplayName</key>
+				<string>Security &amp; Privacy</string>
+				<key>AutoSubmit</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.applicationaccess</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>com.apple.mdm.alacarte.privacy.applicationaccess</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadUUID</key>
+				<string>57236c05-510f-2153-8d1a-1717b9d4e641</string>
+				<key>PayloadDisplayName</key>
+				<string>Security &amp; Privacy</string>
+				<key>allowDiagnosticSubmission</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.systempolicy.control</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>com.apple.mdm.alacarte.privacy.control</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadUUID</key>
+				<string>cc11b668-0b66-a9f9-e452-03292cbaae01</string>
+				<key>PayloadDisplayName</key>
+				<string>Security &amp; Privacy</string>
+				<key>EnableAssessment</key>
+				<true/>
+				<key>AllowIdentifiedDevelopers</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.systempolicy.managed</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>com.apple.mdm.alacarte.privacy.managed</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadUUID</key>
+				<string>be576977-a860-ee8b-049c-801afa4acad3</string>
+				<key>PayloadDisplayName</key>
+				<string>Security &amp; Privacy</string>
+				<key>DisableOverride</key>
+				<true/>
+			</dict>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.preference.security</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>com.apple.mdm.alacarte.privacy.security</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadUUID</key>
+				<string>2d23b218-7809-8609-5547-4e74bd963c2b</string>
+				<key>PayloadDisplayName</key>
+				<string>Security &amp; Privacy</string>
+			</dict>
+		</array>
+	</dict>
+</plist>
