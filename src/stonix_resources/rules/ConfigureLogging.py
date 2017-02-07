@@ -136,20 +136,20 @@ invalid."""
                                 "/var/log/local",
                                 "/var/log/ftp"]
             self.bootlog = "/var/log/boot.log"
-            self.logfiles = {"*.*,mark.info": "/var/log/messages",
+            self.logfiles = {"*.*,mark.*": "/var/log/messages",
                              "daemon.*": "/var/log/daemon",
-                             "auth.info,mark.info": "/var/log/auth",
-                             "user.info": "/var/log/user",
-                             "kern.info": "/var/log/kern",
-                             "lpr.info": "/var/log/lpr",
-                             "syslog.info": "/var/log/syslog",
-                             "cron.info": "/var/log/cron",
-                             "mail,uucp,news.info": "/var/log/maillog",
+                             "auth.*,mark.*,authpriv.*": "/var/log/auth",
+                             "user.*": "/var/log/user",
+                             "kern.*": "/var/log/kern",
+                             "lpr.*": "/var/log/lpr",
+                             "syslog.*": "/var/log/syslog",
+                             "cron.*": "/var/log/cron",
+                             "mail,uucp,news.*": "/var/log/maillog",
                              "local0,local1,local2,local3.*": "/var/log/local",
                              "local4,local5,local6,local7.*": "/var/log/local",
-                             "ftp.info": "/var/log/ftp",
+                             "ftp.*": "/var/log/ftp",
                              "local7.*": "/var/log/boot.log",
-                             "auth,authpriv.info,mark.info": WINLOG}
+                             "auth,authpriv.*,mark.*": WINLOG}
             self.detailedresults = ""
             self.wronglogrot = []
             self.missinglogrot = []
@@ -236,21 +236,6 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
 
 ###############################################################################
 
-#     def reportSystemD(self):
-#         '''
-#         ConfigureLogging.reportSystemD reports on SystemD logger which comes
-#         stock with Opensuse systems, and possibly all systems that use
-#         zypper package manager such as Novell.
-#         @author: dwalker
-#         @return: bool - True or False upon success
-#         '''
-#         debug = ""
-#         compliant = True
-#         self.directories.append("/var/log/messages")
-#         specs = {"Compress":"true",
-#                  "MaxFileSec":"weekly",
-#                  "MaxRetentionSec":"4"}
-
     def reportSysRSyslog(self):
         '''
         ConfigureLogging.reporSysRsyslog reports on the logging facilities,
@@ -315,6 +300,10 @@ aren't present\n"
                 break
             else:
                 if self.ph.manager == "apt-get":
+                    if re.search("debian", self.environ.getostype().lower()):
+                        distroowner = "root"
+                    elif re.search("ubuntu", self.environ.getostype().lower()):
+                        distroowner = "syslog"
                     statdata = os.stat(item)
                     mode = stat.S_IMODE(statdata.st_mode)
                     ownergrp = getUserGroupName(item)
@@ -326,7 +315,7 @@ aren't present\n"
                             "aren't 600\n"
                         debug = "permissions on " + item + " aren't 600\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                    if owner != "syslog":
+                    if owner != distroowner:
                         compliant = False
                         self.detailedresults += "Owner of " + item + \
                             " isn't syslog\n"
@@ -519,16 +508,20 @@ daemon config file: " + self.logpath
                     debug = "There is no logging daemon available\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-                
 #-----------------------------------------------------------------------------#
         # check if all necessary dirs are present and correct perms
+        if re.search("debian", self.environ.getostype().lower()):
+            distroowner = "root"
+        elif re.search("ubuntu", self.environ.getostype().lower()):
+            distroowner = "syslog"
         for item in self.directories:
             if os.path.exists(item):
                 if self.ph.manager == "apt-get":
                     statdata = os.stat(item)
                     mode = stat.S_IMODE(statdata.st_mode)
                     ownergrp = getUserGroupName(item)
-                    retval = checkUserGroupName(ownergrp, "syslog", "adm", mode, 384, self.logger)
+                    retval = checkUserGroupName(ownergrp, distroowner, "adm",
+                                                mode, 384, self.logger)
                     if isinstance(retval, list):
                         origuid = statdata.st_uid
                         origgid = statdata.st_gid
@@ -566,7 +559,8 @@ daemon config file: " + self.logpath
                         statdata = os.stat(item)
                         mode = stat.S_IMODE(statdata.st_mode)
                         ownergrp = getUserGroupName(item)
-                        retval = checkUserGroupName(ownergrp, "syslog", "adm", mode, 384, self.logger)
+                        retval = checkUserGroupName(ownergrp, distroowner,
+                                                    "adm", mode, 384, self.logger)
                         if isinstance(retval, list):
                             os.chown(item, retval[0], retval[1])
                             os.chmod(item, 384)
@@ -725,16 +719,12 @@ rotation config file: " + self.logrotpath + "\n"
             os.chown(self.logrotpath, 0, 0)
         os.chmod(self.logrotpath, 420)
         resetsecon(self.logrotpath)
-#-----------------------------------------------------------------------------#
-        # restart log daemon
-        if not self.ch.executeCommand("/sbin/service " + self.logd + " reload-or-restart"):
-            debug = "Unable to restart the log daemon\n"
+        if not self.sh.reloadservice("rsyslog"):
+            debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            success = False
         if not self.ch.getReturnCode() != "0":
-            debug = "Unable to restart the log daemon\n"
+            debug = "Unable to restart the log daemon part 2\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            success = False
         return success
 
 ###############################################################################

@@ -52,6 +52,8 @@ class MacOSUser(ParentManageUser):
     """
     Class to manage users on Mac OS.
 
+    #----- Acquire user (pwd) map
+    @method getUsers
     #----- Getters
     @method findUniqueUid
     @method uidTaken
@@ -103,6 +105,35 @@ class MacOSUser(ParentManageUser):
         self.dscl = "/usr/bin/dscl"
         self.runWith = RunWith(self.logger)
 
+        self.users = getUsers()
+
+    #----------------------------------------------------------------------
+    # Getters
+    #----------------------------------------------------------------------
+
+    def getUsers(self):
+        """
+        Return a list of users, from pwd.
+        
+        Password database entries are reported as a tuple-like object, whose 
+        attributes correspond to the members of the passwd structure (Attribute
+        field below, see <pwd.h>):
+        
+        Index    Attribute    Meaning
+        0    pw_name    Login name
+        1    pw_passwd    Optional encrypted password
+        2    pw_uid    Numerical user ID
+        3    pw_gid    Numerical group ID
+        4    pw_gecos    User name or comment field
+        5    pw_dir    User home directory
+        6    pw_shell    User command interpreter
+
+        The uid and gid items are integers, all others are strings. KeyError
+        is raised if the entry asked for cannot be found. 
+        """
+        self.users = pwd.getpwall()
+        return self.users
+        
     #----------------------------------------------------------------------
     # Getters
     #----------------------------------------------------------------------

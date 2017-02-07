@@ -77,26 +77,43 @@ class NoCoreDumps(Rule):
 ###############################################################################
 
     def report(self):
-        '''Main parent report method that calls the sub report methods report1
-        and report2
-        @author: dwalker
-        @return: bool
         '''
+        Main parent report method that calls the sub report methods report1
+        and report2
+
+        @author: dwalker
+        @return: self.compliant
+        @rtype: bool
+        @change: Breen Malmberg - 1/10/2017 - doc string edit; return var init;
+                minor refactor
+        '''
+
+        self.detailedresults = ""
+        self.compliant = True
+
         try:
-            self.detailedresults = ""
-            self.rulesuccess = True
+
             osfam = self.environ.getosfamily()
+            ostype = self.environ.getostype()
+
             if osfam == "linux":
-                compliant1 = self.reportLinux1()
-                compliant2 = self.reportLinux2()
-                if not compliant1 or not compliant2:
+                if not self.reportLinux1():
                     self.compliant = False
-                else:
-                    self.compliant = True
-            elif osfam == "freebsd" or self.environ.getostype() == "Mac OS X":
-                self.compliant = self.reportFreebsdMac()
-            elif osfam == "solaris":
-                self.compliant = self.reportSolaris()
+                if not self.reportLinux2():
+                    self.compliant = False
+
+            if osfam == "freebsd":
+                if not self.reportFreebsdMac():
+                    self.compliant = False
+
+            if ostype == "Mac OS X":
+                if not self.reportFreebsdMac():
+                    self.compliant = False
+
+            if osfam == "solaris":
+                if not self.reportSolaris():
+                    self.compliant = False
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -107,40 +124,57 @@ class NoCoreDumps(Rule):
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
 ###############################################################################
 
     def reportFreebsdMac(self):
-        # there may be a more update way to do this using launchctl
-        self.detailedresults = ""
-        lookfor = {'kern.coredump': "0"}
-        if self.environ.getostype() == "Mac OS X":
-            path = "/private/etc/sysctl.conf"
-            tmpPath = "/private/etc/sysctl.conf.tmp"
-            perms = [0, 0, 0o600]
-        else:
-            path = "/etc/sysctl.conf"
-            tmpPath = "/etc/sysctl.conf.tmp"
-            perms = [0, 0, 0o644]
-        kvtype = "conf"
-        intent = "present"
+        '''
+        run report actions for freebsd and mac systems
+
+        @return: compliant
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 1/10/2017 - added doc string; default return var init;
+                try/except; logging; minor refactor
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "System has been detected as either freebsd or mac, running reportFreebsdMac()...")
         compliant = True
-        if not os.path.exists(path):
-            compliant = False
-            self.detailedresults += path + " does not exist\n"
-        else:
-            if not checkPerms(path, perms, self.logger):
-                self.detailedresults += "Permissions incorrect on " + path + \
-                    "\n"
+        lookfor = {'kern.coredump': "0"}
+
+        try:
+
+            if self.environ.getostype() == "Mac OS X":
+                path = "/private/etc/sysctl.conf"
+                tmpPath = path + ".tmp"
+                perms = [0, 0, 0o600]
+            else:
+                path = "/etc/sysctl.conf"
+                tmpPath = path + ".tmp"
+                perms = [0, 0, 0o644]
+            kvtype = "conf"
+            intent = "present"
+    
+            if not os.path.exists(path):
                 compliant = False
-            self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, path, tmpPath, lookfor,
-                                         intent, "closedeq")
-            if not self.editor.report():
-                self.detailedresults += "Correct contents were not found in " + \
-                    path + " file\n"
-                compliant = False
+                self.detailedresults += "File path: " + str(path) + " does not exist\n"
+            else:
+                if not checkPerms(path, perms, self.logger):
+                    self.detailedresults += "Permissions incorrect on " + str(path) + "\n"
+                    compliant = False
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             kvtype, path, tmpPath, lookfor,
+                                             intent, "closedeq")
+                if not self.editor.report():
+                    self.detailedresults += "Correct contents were not found in " + \
+                        path + " file\n"
+                    compliant = False
+
+        except Exception:
+            raise
+
         return compliant
 
 ###############################################################################
@@ -378,51 +412,81 @@ class NoCoreDumps(Rule):
 ###############################################################################
 
     def fixFreebsdMac(self):
-        if self.environ.getostype() == "Mac OS X":
-            path = "/private/etc/sysctl.conf"
-            perms = [0, 0, 0o600]
-        else:
-            path = "/etc/sysctl.conf"
-            perms = [0, 0, 0o644]
+        '''
+        run fix actions for freebsd and mac systems
+
+        @return: success
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 1/10/2017 - added doc string; default return var init;
+                try/except; fixed command being used to restart sysctl on mac; logging
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "System detected as either freebsd or mac. Running fixFreebsdMac()...")
         success = True
 
-        if not os.path.exists(path):
-            createFile(path, self.logger)
-            self.created1 = True
-            setPerms(path, perms, self.logger)
-            self.reportFreebsdMac()  # Set up KVEditor
+        try:
 
-        if self.created1:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation",
-                     "filepath": path}
-            self.statechglogger.recordchgevent(myid, event)
-        if self.editor.fixables or self.editor.removeables:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.editor.setEventID(myid)
-            if not self.editor.fix():
-                self.rulesuccess = False
-                return False
-            elif not self.editor.commit():
-                self.rulesuccess = False
-                return False
-            elif not checkPerms(path, perms, self.logger):
+            self.cmdhelper = CommandHelper(self.logger)
+
+            if self.environ.getostype() == "Mac OS X":
+                path = "/private/etc/sysctl.conf"
+                perms = [0, 0, 0o600]
+            else:
+                path = "/etc/sysctl.conf"
+                perms = [0, 0, 0o644]
+    
+            if not os.path.exists(path):
+                createFile(path, self.logger)
+                self.created1 = True
+                setPerms(path, perms, self.logger)
+                self.reportFreebsdMac()  # Set up KVEditor
+    
+            if self.created1:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": path}
+                self.statechglogger.recordchgevent(myid, event)
+            if self.editor.fixables or self.editor.removeables:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.editor.setEventID(myid)
+                if not self.editor.fix():
+                    success = False
+                    self.logger.log(LogPriority.DEBUG, "kveditor fix() failed.\n")
+                    return success
+                elif not self.editor.commit():
+                    success = False
+                    self.logger.log(LogPriority.DEBUG, "kveditor commit() failed.\n")
+                    return success
+            if not checkPerms(path, perms, self.logger):
+                self.logger.log(LogPriority.DEBUG, "Fixing permissions and ownership on file: " + str(path) + "\n")
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(path, perms, self.logger,
                                 self.statechglogger, myid):
-                    self.rulesuccess = False
-                    return False
-        resetsecon(path)
-        if self.environ.getostype() != "Mac OS X":
-            cmd = "/sbin/sysctl"
-            retval = call([cmd, "-p"], stdout=None, stderr=None, shell=False)
-            if retval != 0:
-                self.detailedresults = "Unable to restart sysctl"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                success = False
+                    success = False
+                    self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
+                    return success
+
+            resetsecon(path)
+
+            # restart/reload the sysctl with the updated values
+            if self.environ.getostype() != "Mac OS X":
+                cmdbase = "/usr/sbin/sysctl"
+                sysctlcmd = cmdbase + " -a"
+                self.cmdhelper.executeCommand(sysctlcmd)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
+                    errmsg = self.cmdhelper.getErrorString()
+                    self.detailedresults += "Unable to restart sysctl"
+                    self.logger.log(LogPriority.DEBUG, "Unable to restart sysctl.\n" + errmsg)
+                    success = False
+
+        except Exception:
+            raise
+
         return success
 
 ###############################################################################

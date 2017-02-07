@@ -80,6 +80,8 @@ well-managed web server is recommended.
         # set up class var's
         self.maclongname = '/System/Library/LaunchDaemons/org.apache.httpd.plist'
         self.macshortname = 'org.apache.httpd'
+        self.svchelper = ServiceHelper(self.environ, self.logger)
+        self.cmhelper = CommandHelper(self.logger)
 
     def report(self):
         '''
@@ -94,18 +96,17 @@ well-managed web server is recommended.
         self.compliant = False
 
         # init servicehelper object
-        self.svchelper = ServiceHelper(self.environ, self.logger)
-        self.cmhelper = CommandHelper(self.logger)
-
         if not os.path.exists(self.maclongname):
             self.detailedresults += '\norg.apache.httpd.plist does not exist'
             return False
 
         try:
-            if not self.svchelper.auditservice(self.maclongname, self.macshortname):
+            if self.disableWebSharing.getcurrvalue():
+                if not self.svchelper.auditservice(self.maclongname, self.macshortname):
+                    self.comliance = True
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
                     output = self.cmhelper.getOutput()
-                    if self.checkPlistVal('1', output):
+                    if self.checkPlistVal('1', output[0].strip()):
                         self.compliant = True
             else:
                 self.detailedresults += '\n' + self.maclongname + ' is still loaded/enabled'
@@ -138,8 +139,8 @@ well-managed web server is recommended.
         try:
 
             if self.disableWebSharing.getcurrvalue():
-                if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
-                    self.rulesuccess = False
+                #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
+                #    self.rulesuccess = False
                 if not self.svchelper.disableservice(self.maclongname, self.macshortname):
                     self.rulesuccess = False
 
@@ -210,3 +211,9 @@ well-managed web server is recommended.
         except Exception:
             raise
         return retval
+
+###############################################################################
+    def afterfix(self):
+        afterfixsuccessful = True
+        afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
+        return afterfixsuccessful

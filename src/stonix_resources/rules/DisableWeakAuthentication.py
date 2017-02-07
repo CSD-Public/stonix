@@ -138,12 +138,17 @@ class DisableWeakAuthentication(Rule):
                     if found:
                         self.incorrects.append(item)
                 for item in fileItems:
+                    if os.path.islink(item) or os.path.isdir(item):
+                        continue
                     if not checkPerms(item, [0, 0, 420], self.logger):
                         compliant = False
                         self.detailedresults += "Permissions for " + \
                             item + " are incorrect\n"
                         break
-
+            if self.incorrects:
+                debug = "The following files need to be corrected: " + \
+                    str(self.incorrects) + "\n\n"
+                self.logger.log(LogPriority.DEBUG, debug)
             self.compliant = compliant
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -196,9 +201,10 @@ class DisableWeakAuthentication(Rule):
                     else:
                         success = False
             for item in self.pams:
-                if not checkPerms(item, [0, 0, 420], self.logger):
-                    if not setPerms(item, [0, 0, 420], self.logger):
-                        success = False
+                if os.path.exists(item):
+                    if not checkPerms(item, [0, 0, 420], self.logger):
+                        if not setPerms(item, [0, 0, 420], self.logger):
+                            success = False
             if os.path.exists("/etc/pam.d/"):
                 fileItems = glob.glob("/etc/pam.d/*")
                 for item in fileItems:
