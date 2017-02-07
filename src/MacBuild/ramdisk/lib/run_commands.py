@@ -93,7 +93,7 @@ class RunWith(object):
         if env and isinstance(env, dict):
             self.environ = env
         else:
-            self.environ = False
+            self.environ = None
         if close_fds and isinstance(close_fds, bool):
             self.cfds = close_fds
         else:
