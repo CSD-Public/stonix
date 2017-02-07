@@ -11,6 +11,7 @@ from __future__ import absolute_import
 import re
 import os
 import pty
+import pwd
 import sys
 import time
 import shutil
@@ -105,7 +106,7 @@ class MacOSUser(ParentManageUser):
         self.dscl = "/usr/bin/dscl"
         self.runWith = RunWith(self.logger)
 
-        self.users = getUsers()
+        self.users = self.getUsers()
 
     #----------------------------------------------------------------------
     # Getters
