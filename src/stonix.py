@@ -191,7 +191,6 @@ class Controller(Observable):
 
         if self.mode == 'gui':
             applicable2PyQt5 = {'type': 'white',
-                                'family' : [],
                                'os': {'Mac OS X': ['10.10', '+']}}
             applicable2PyQt4 = {'type': 'black',
                                'family': ['darwin']}
