@@ -23,6 +23,7 @@
 ###############################################################################
 """
 import re
+import ssl
 import socket
 import httplib
 import urllib
@@ -45,14 +46,15 @@ class Connectivity(object):
     
     @author: Roy Nielsen
     """
-    def __init__(self, logger):
+    def __init__(self, logger, use_proxy=False):
         """
         Constructor
         """
         self.logger = logger
         ##########################
         # Make it so this will only work on the yellow.
-        set_no_proxy()
+        if not use_proxy:
+            set_no_proxy()
 
     ############################################################
         
@@ -155,6 +157,10 @@ class Connectivity(object):
                               
                 if host and port:
                     #####
+                    # Revert to unverified context
+                    if hasattr(ssl, '_create_unverified_context'):
+                        ssl._create_default_https_context = ssl._create_unverified_context
+                    #####
                     # Create a different type of connection based on 
                     # http or https...
                     if re.match("^https://.+", url):
@@ -189,6 +195,7 @@ class Connectivity(object):
         3 - the URL is a string
         """
         success = False
+        self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
         
         if isinstance(url, str) and url:
             self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")

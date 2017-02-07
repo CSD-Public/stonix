@@ -123,8 +123,12 @@ import re
 import traceback
 import time
 import subprocess
+import imp
+from pkgutil import extend_path
 
 # Local imports
+__path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
+import stonix_resources
 
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
@@ -132,12 +136,10 @@ from stonix_resources.environment import Environment
 from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
+from stonix_resources.CheckApplicable import CheckApplicable
+#import stonix_resources.fixFrozen
+
 from stonix_resources.cli import Cli
-try:
-    from stonix_resources.gui import GUI
-    from PyQt4 import QtCore, QtGui
-except(ImportError):
-    pass
 
 
 class Controller(Observable):
@@ -188,24 +190,70 @@ class Controller(Observable):
         self.tryacquirelock()
 
         if self.mode == 'gui':
-            # This resets the UI to the command line if GUI was selected on the
-            # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
-                self.mode = 'cli'
-                self.logger.log(LogPriority.ERROR,
-                                'GUI Selected but PyQt4 not available. ' +
-                                'Please install PyQt4 and dependencies for ' +
-                                'GUI functionality.')
-            else:
-                app = QtGui.QApplication(sys.argv)
-                splashart = os.path.join(self.environ.get_icon_path(),
-                                         'StonixSplash.png')
-                splashimage = QtGui.QPixmap(splashart)
-                splash = QtGui.QSplashScreen(splashimage,
-                                             QtCore.Qt.WindowStaysOnTopHint)
-                splash.setMask(splashimage.mask())
-                splash.show()
-                app.processEvents()
+            applicable2PyQt5 = {'type': 'white',
+                               'os': {'Mac OS X': ['10.10', '+']}}
+            applicable2PyQt4 = {'type': 'black',
+                               'family': ['darwin']}
+            self.chkapp = CheckApplicable(self.environ, self.logger)
+            
+            if self.chkapp.isapplicable(applicable2PyQt5):
+                #####
+                # Appropriate to OS that supports PyQt5
+                try:
+                    from PyQt5 import QtCore, QtWidgets, QtGui
+                    from stonix_resources.gui_pyqt5 import GUI
+                except ImportError:
+                    pass
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt5' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt5 not available. ' +
+                                    'Please install PyQt5 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt5' in sys.modules:
+                    app = QtWidgets.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtWidgets.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
+
+            if self.chkapp.isapplicable(applicable2PyQt4):
+                #####
+                # Appropriate to OS that supports PyQt4
+                try:
+                    from PyQt4 import QtCore, QtGui
+                    from stonix_resources.gui import GUI
+                except(ImportError):
+                    pass
+  
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt4' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt4 not available. ' +
+                                    'Please install PyQt4 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt4' in sys.modules:
+                    app = QtGui.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtGui.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
         self.statechglogger = StateChgLogger(self.logger, self.environ)
         # NB We don't have a main event loop at this point so we call
         # the app.processEvents() again to make the splash screen show
@@ -216,7 +264,7 @@ class Controller(Observable):
         if not(self.mode == 'test'):
             # This resets the UI to the command line if GUI was selected on the
             # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
+            if 'PyQt4' not in sys.modules and 'PyQt5' not in sys.modules and self.mode == 'gui':
                 self.mode = 'cli'
                 self.logger.log(LogPriority.ERROR,
                                 'GUI Selected but PyQt4 not available. ' +
@@ -228,7 +276,13 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         'Running in ' + self.mode)
         starttime = time.time()
-        allrules = self.getrules(self.config, self.environ)
+        #####
+        # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
+        # process rules accordingly
+        if hasattr(sys, 'frozen'):
+            allrules = self.getRulesFrozen()
+        else:
+            allrules = self.getrules(self.config, self.environ)
         etime = time.time() - starttime
         self.logger.log(LogPriority.DEBUG,
                         'Rules Processed in ' + str(etime))
@@ -361,6 +415,46 @@ class Controller(Observable):
                                 "Error instantiating rule: " + trace)
                 continue
         # print instruleclasses
+        return instruleclasses
+
+    def getRulesFrozen(self):
+        """
+        Acquire rules from a frozen python application, such as one created
+        with PyInstaller.  A stonix_resources.rules.__init__ must be generated
+        with import statements importing all of the current rules prior to 
+        packaging with pyinstaller or other 'freezing' mechanism.
+        
+        @author: Roy Nielsen
+        """
+        success = False
+        #allRules = []
+        instruleclasses = []
+        for item in sys.modules.keys():
+            self.logger.log(LogPriority.DEBUG, str(item))
+        #####
+        # Search through the already imported libraries for stonix rules
+        for item in sys.modules.keys():
+            #####
+            # Make sure rules start with a letter...
+            if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
+                #allRules.append(item)
+                self.logger.log(LogPriority.DEBUG, "Loading rule: " + str(item))
+                #####
+                # Get just the rule name
+                ruleClass = item.split('.')[2]
+                #####
+                # Acquire the rule class module 
+                ruleClassMod = getattr(sys.modules[item], ruleClass)
+                #####
+                # Create an instance of a rule class
+                ruleClassInst = ruleClassMod(self.config,
+                                             self.environ,
+                                             self.logger,
+                                             self.statechglogger)
+                #####
+                # Append the instance to the list
+                instruleclasses.append(ruleClassInst)
+
         return instruleclasses
 
     def findapplicable(self, rules):

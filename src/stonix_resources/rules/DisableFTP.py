@@ -45,7 +45,7 @@ class DisableFTP(RuleKVEditor):
         self.mandatory = True
         self.helptext = "This rule disables FTP services for the Mac"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         # init CIs
         datatype = 'bool'
@@ -86,7 +86,7 @@ class DisableFTP(RuleKVEditor):
         @author: dwalker
         @return: boolean
         '''
-        if self.sh.auditservice("ftpd", "ftpd"):
+        if self.sh.auditservice("/System/Library/LaunchDaemons/ftp.plist", "ftp"):
             self.detailedresults += "FTP is set to be disabled but " + \
                 "hasn't been unloaded"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)

@@ -33,12 +33,13 @@ Created on May 20, 2013
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/01/22 eball Changed daemon log level from daemon.info to daemon.*
-
+@change: 2016/05/31 ekkehard Added OpenDirectory Logging
+@change: 2016/06/22 eball Improved report feedback for reportMac
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
-from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
-from ..rule import Rule
+from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms, checkUserGroupName
+from ..ruleKVEditor import RuleKVEditor
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
@@ -46,17 +47,18 @@ from ..CommandHelper import CommandHelper
 from ..localize import WINLOG, LANLLOGROTATE
 from subprocess import PIPE, Popen
 import os
+import pwd
 import traceback
 import re
 import grp
-import pwd
 import stat
 
 
-class ConfigureLogging(Rule):
+class ConfigureLogging(RuleKVEditor):
 
     def __init__(self, config, environ, logger, statechglogger):
-        Rule.__init__(self, config, environ, logger, statechglogger)
+        RuleKVEditor.__init__(self, config, environ, logger,
+                              statechglogger)
         self.logger = logger
         self.rulenumber = 16
         self.rulename = "ConfigureLogging"
@@ -81,7 +83,7 @@ invalid."""
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         datatype = 'bool'
         key = 'CONFIGURELOGGING'
@@ -99,6 +101,20 @@ invalid."""
         self.logs = {"rsyslog": False,
                      "syslog": False}
         self.created1, self.created2 = True, True
+        if self.environ.getostype() == "Mac OS X":
+            self.addKVEditor("OpenDirectoryLogging",
+                             "defaults",
+                             "/Library/Preferences/OpenDirectory/opendirectoryd",
+                             "",
+                             {"Debug Logging Level": ["5", "5"]},
+                             "present",
+                             "",
+                             'Set OpenDirectory "Debug Logging Level" Level to 5 ' + \
+                             "This show user creation and deletion events " + \
+                             "in '/private/var/log/opendirectoryd.log'.",
+                             None,
+                             False,
+                             {})
 
     def report(self):
         '''ConfigureLogging.report() Public method to report on the
@@ -120,20 +136,20 @@ invalid."""
                                 "/var/log/local",
                                 "/var/log/ftp"]
             self.bootlog = "/var/log/boot.log"
-            self.logfiles = {"*.*,mark.info": "/var/log/messages",
+            self.logfiles = {"*.*,mark.*": "/var/log/messages",
                              "daemon.*": "/var/log/daemon",
-                             "auth.info,mark.info": "/var/log/auth",
-                             "user.info": "/var/log/user",
-                             "kern.info": "/var/log/kern",
-                             "lpr.info": "/var/log/lpr",
-                             "syslog.info": "/var/log/syslog",
-                             "cron.info": "/var/log/cron",
-                             "mail,uucp,news.info": "/var/log/maillog",
+                             "auth.*,mark.*,authpriv.*": "/var/log/auth",
+                             "user.*": "/var/log/user",
+                             "kern.*": "/var/log/kern",
+                             "lpr.*": "/var/log/lpr",
+                             "syslog.*": "/var/log/syslog",
+                             "cron.*": "/var/log/cron",
+                             "mail,uucp,news.*": "/var/log/maillog",
                              "local0,local1,local2,local3.*": "/var/log/local",
                              "local4,local5,local6,local7.*": "/var/log/local",
-                             "ftp.info": "/var/log/ftp",
+                             "ftp.*": "/var/log/ftp",
                              "local7.*": "/var/log/boot.log",
-                             "auth,authpriv.info,mark.info": WINLOG}
+                             "auth,authpriv.*,mark.*": WINLOG}
             self.detailedresults = ""
             self.wronglogrot = []
             self.missinglogrot = []
@@ -154,8 +170,7 @@ invalid."""
                 else:
                     self.detailedresults = "no log daemons exist\n"
             elif self.environ.getostype() == "Mac OS X":
-                if self.reportMac():
-                    self.compliant = True
+                self.compliant = self.reportMac()
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -221,21 +236,6 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
 
 ###############################################################################
 
-#     def reportSystemD(self):
-#         '''
-#         ConfigureLogging.reportSystemD reports on SystemD logger which comes
-#         stock with Opensuse systems, and possibly all systems that use
-#         zypper package manager such as Novell.
-#         @author: dwalker
-#         @return: bool - True or False upon success
-#         '''
-#         debug = ""
-#         compliant = True
-#         self.directories.append("/var/log/messages")
-#         specs = {"Compress":"true",
-#                  "MaxFileSec":"weekly",
-#                  "MaxRetentionSec":"4"}
-
     def reportSysRSyslog(self):
         '''
         ConfigureLogging.reporSysRsyslog reports on the logging facilities,
@@ -258,7 +258,7 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "endscript"]
-        self.expression = "\s*/var/log/user/\s+/var/log/daemon\s+/var/log/auth\s+/var/log/kern\s+/var/log/lpr\s+/var/log/syslog\s+/var/log/cron\s+/var/log/maillog\s+/var/log/local\s+/var/log/ftp\s*\{\s*" + \
+        self.expression = "\s*/var/log/user\s+/var/log/daemon\s+/var/log/auth\s+/var/log/kern\s+/var/log/lpr\s+/var/log/syslog\s+/var/log/cron\s+/var/log/maillog\s+/var/log/local\s+/var/log/ftp\s*\{\s*" + \
             "\s*rotate 4\s+weekly\s+missingok\s+notifempty\s+compress\s+delaycompress\s+sharedscripts\s+postrotate\s+" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
@@ -299,7 +299,37 @@ aren't present\n"
                 compliant = False
                 break
             else:
-                if not checkPerms(item, [0, 0, 384], self.logger):
+                if self.ph.manager == "apt-get":
+                    if re.search("debian", self.environ.getostype().lower()):
+                        distroowner = "root"
+                    elif re.search("ubuntu", self.environ.getostype().lower()):
+                        distroowner = "syslog"
+                    statdata = os.stat(item)
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    ownergrp = getUserGroupName(item)
+                    owner = ownergrp[0]
+                    group = ownergrp[1]
+                    if mode != 384:
+                        compliant = False
+                        self.detailedresults += "permissions on " + item + \
+                            "aren't 600\n"
+                        debug = "permissions on " + item + " aren't 600\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    if owner != distroowner:
+                        compliant = False
+                        self.detailedresults += "Owner of " + item + \
+                            " isn't syslog\n"
+                        debug = "Owner of " + item + \
+                            " isn't syslog\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    if group != "adm":
+                        compliant = False
+                        self.detailedresults += "Group of " + item + \
+                            " isn't adm\n"
+                        debug = "Group of " + item + \
+                            " isn't adm\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                elif not checkPerms(item, [0, 0, 384], self.logger):
                     self.detailedresults += "Permissions are not correct on \
 all required logging files"
                     compliant = False
@@ -312,7 +342,10 @@ all required logging files"
 bootlog file\n"
             compliant = False
         if self.logs["rsyslog"]:
-            self.logpath = "/etc/rsyslog.conf"
+            if self.ph.manager == "apt-get":
+                self.logpath = "/etc/rsyslog.d/50-default.conf"
+            else:
+                self.logpath = "/etc/rsyslog.conf"
         elif self.logs["syslog"]:
             self.logpath = "/etc/syslog.conf"
         else:
@@ -355,10 +388,6 @@ daemon config file: " + self.logpath
                 self.config.append(key + "\t\t\t" + self.logfiles[key] + "\n")
             compliant = False
         self.logger.log(LogPriority.DEBUG, debug)
-
-
-
-
 
         # check if correct contents of logrotate file exist
         self.logrotpath = self.checkLogRotation()
@@ -403,137 +432,6 @@ daemon config file: " + self.logpath
                     self.detailedresults = "logrotate file doesn't " + \
                         "contain the correct log contents\n"
                     compliant = False
-#                 length = len(contents) - 1
-#                 self.fixables = {}
-#                 for key in self.directories:
-#                     current = False
-#                     found1 = False
-#                     contents2 = []
-#                     contents3 = []
-#                     iterator = 0
-#                     for item1 in contents:
-#                         #blank line or comment, skip
-#                         if re.match('^#', item1.strip()) or re.match('^\s*$', item1.strip()):
-#                             iterator = iterator + 1
-#                             continue
-#                         if current:
-#                             if re.search('{', item1.strip()):
-#                                 # open bracket is on it's own line
-#                                 if re.match('^{$', item1.strip()):
-#                                     contents2 = contents[iterator + 1:]
-#                                 # bracket is on line with a spec
-#                                 elif re.match('^{(.)*', item1.strip()):
-#                                     contents2 = contents[iterator:]
-#                                     contents2[0] = re.sub('{', "",
-#                                                           contents2[0])
-#                                 # bracket after another dir
-#                                 elif re.match('(.)+{$', item1.strip()):
-#                                     contents2 = contents[iterator + 1:]
-#                                 else:
-#                                     debug += "bad configuration file format\n"
-#                                     self.logger.log(LogPriority.DEBUG, debug)
-#                                 iterator2 = 0
-#                                 for item2 in contents2:
-#                                     if re.search('}$', item2.strip()):
-#                                         # closing bracket is on its own line
-#                                         if re.match('^}$', item2.strip()):
-#                                             contents3 = contents2[0:iterator2]
-#                                         # closing bracket is on a line after a spec
-#                                         elif re.match('(.)+}$', item2.strip()):
-#                                             contents3 = contents2[0:iterator2]
-#                                             contents[iterator2] = re.sub('}', "", \
-#                                                             contents3[iterator2])
-#                                         contents3 = contents2[0:iterator2]
-#                                         current = None
-#                                         for spec in specs:
-#                                             temp = False
-#                                             found2 = False
-#                                             for item3 in contents3:
-#                                                 if re.match('^#', item3.strip()) or re.match('^\s*$', item3.strip()):
-#                                                     continue
-#                                                 elif re.match(spec + '$',
-#                                                               item3.strip()):
-#                                                     found2 = True
-#                                                     break
-#                                             if found2:
-#                                                 continue
-#                                             else:
-#                                                 self.detailedresults += \
-#                                                     key + " file doesn't " + \
-#                                                     "contain the correct " + \
-#                                                     "contents\n"
-#                                                 compliant = False
-#                                                 temp = True
-#                                         if temp:
-#                                             current = False
-#                                             self.wronglogrot.append(key)
-#                                             break
-#                                     else:
-#                                         iterator2 += 1
-#                                         continue
-#                             else:
-#                                 iterator += 1
-#                                 continue
-#                         else:
-#                             #found the key on this line
-#                             if re.search(key + '(\s)+', item1) or re.search(key + '\s*{', item1):
-#                                 print "found the key: " + key + " on line: " + item1 + "\n\n"
-#                                 found1 = True
-#                                 current = key
-#                                 #current line also contains an open bracket at end
-#                                 if re.search('{$', item1.strip()):
-#                                     contents2 = contents[iterator:]
-#                                     iterator2 = 0
-#                                     for item2 in contents2:
-#                                         if re.match('}$', item2.strip()):
-#                                             contents3 = contents2[1: iterator2 + 1]
-#                                             current = None
-#                                             for spec in specs:
-#                                                 print "current spec: " + spec + "\n\n"
-#                                                 temp = False
-#                                                 found2 = False
-#                                                 for item3 in contents3:
-#                                                     if re.match('^#', item3.strip()) or re.match('^\s*$', item3.strip()):
-#                                                         continue
-#                                                     elif re.match(spec + '$', item3.strip()):
-#                                                         found2 = True
-#                                                         break
-#                                                 if found2:
-#                                                     continue
-#                                                 else:
-#                                                     print "didn't find the spec: " + spec + "\n\n"
-#                                                     compliant = False
-#                                                     temp = True
-#                                                 if temp:
-#                                                     print "putting " + spec + " inside wronglot list\n\n"
-#                                                     self.wronglogrot.append(spec)
-#                                                     #break
-#                                             if self.wronglogrot:
-#                                                 self.fixables[key] = self.wronglogrot
-#                                                 self.wronglogrot = []
-#                                             break
-#                                         else:
-#                                             iterator2 += 1
-#                                 else:
-#                                     iterator += 1
-#                                     continue
-#                             #didn't find key but not at the end of file, continue
-#                             elif iterator < length:
-#                                 iterator += 1
-#                                 continue
-#                             #at the end of file and didn't find key
-#                             elif iterator == length:
-#                                 if not found1:
-#                                     compliant = False
-#                                     self.missinglogrot.append(key)
-#                                 continue
-#         else:
-#             self.detailedresults += "Log rotation file doesn\'t exist"
-#             compliant = False
-#             for key in self.directories:
-#                 self.missinglogrot.append(key)
-#         print "self.missinglogrot: " + str(self.missinglogrot) + "\n"
-#         print "self.fixables: " + str(self.fixables) + "\n"
         return compliant
 
 ###############################################################################
@@ -563,12 +461,12 @@ daemon config file: " + self.logpath
                  "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true"]
-        addon = "/var/log/user/ /var/log/daemon /var/log/auth /var/log/kern /var/log/lpr /var/log/syslog /var/log/cron /var/log/maillog /var/log/local /var/log/ftp {\n" + \
+        addon = "/var/log/user /var/log/daemon /var/log/auth /var/log/kern /var/log/lpr /var/log/syslog /var/log/cron /var/log/maillog /var/log/local /var/log/ftp {\n" + \
             "rotate 4\nweekly\nmissingok\nnotifempty\ncompress\ndelaycompress\nsharedscripts\npostrotate\n" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true\n" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true\n" + \
             "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true\n" + \
-            "endscript}\n"
+            "endscript\n}\n"
 #-----------------------------------------------------------------------------#
         #this should actually remove systemd-logger and automatically install
         #rsyslog.  For opensuse systems only
@@ -606,11 +504,41 @@ daemon config file: " + self.logpath
                         specs.remove("/bin/kill -HUP `/bin/cat " + \
                         "/var/run/rsyslogd.pid 2> /dev/null` 2> " + \
                         "/dev/null || true")
+                else:
+                    debug = "There is no logging daemon available\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
 #-----------------------------------------------------------------------------#
         # check if all necessary dirs are present and correct perms
+        if re.search("debian", self.environ.getostype().lower()):
+            distroowner = "root"
+        elif re.search("ubuntu", self.environ.getostype().lower()):
+            distroowner = "syslog"
         for item in self.directories:
             if os.path.exists(item):
-                if not checkPerms(item, [0, 0, 384], self.logger):
+                if self.ph.manager == "apt-get":
+                    statdata = os.stat(item)
+                    mode = stat.S_IMODE(statdata.st_mode)
+                    ownergrp = getUserGroupName(item)
+                    retval = checkUserGroupName(ownergrp, distroowner, "adm",
+                                                mode, 384, self.logger)
+                    if isinstance(retval, list):
+                        origuid = statdata.st_uid
+                        origgid = statdata.st_gid
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "perm",
+                                 "startstate": [origuid, origgid, mode],
+                                 "endstated": [retval[0], retval[1], 384],
+                                 "filepath": item}
+                        self.statechglogger.recordchgevent(myid, event)
+                        os.chown(item, retval[0], retval[1])
+                        os.chmod(item, 384)
+                    elif not retval:
+                        self.detailedresults += "There was a problem getting permissions on " + \
+                            item + "\n"
+                        success = False
+                elif not checkPerms(item, [0, 0, 384], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(item, [0, 0, 384], self.logger,
@@ -627,8 +555,18 @@ daemon config file: " + self.logpath
                 else:
                     self.detailedresults += "Successfully created file: " + \
                         item + "\n"
-                    os.chown(item, 0, 0)
-                    os.chmod(item, 384)
+                    if self.ph.manager == "apt-get":
+                        statdata = os.stat(item)
+                        mode = stat.S_IMODE(statdata.st_mode)
+                        ownergrp = getUserGroupName(item)
+                        retval = checkUserGroupName(ownergrp, distroowner,
+                                                    "adm", mode, 384, self.logger)
+                        if isinstance(retval, list):
+                            os.chown(item, retval[0], retval[1])
+                            os.chmod(item, 384)
+                    else:
+                        os.chown(item, 0, 0)
+                        os.chmod(item, 384)
                     resetsecon(item)
         if os.path.exists(self.bootlog):
             if not checkPerms(self.bootlog, [0, 0, 420], self.logger):
@@ -781,51 +719,12 @@ rotation config file: " + self.logrotpath + "\n"
             os.chown(self.logrotpath, 0, 0)
         os.chmod(self.logrotpath, 420)
         resetsecon(self.logrotpath)
-#         if self.missinglogrot or self.fixables:
-#             contents = readFile(self.logrotpath, self.logger)
-#             tempstring1 = ""
-#             tempstring2 = ""
-#             tmpfile = self.logrotpath + '.tmp'
-#             if self.missinglogrot:
-#                 for key in self.missinglogrot:
-#                     tempstring2 += key + " "
-#                 tempstring2 += "{\n"
-#                 for spec in specs:
-#                     tempstring2 += spec + "\n"
-#                 tempstring2 += "}\n"
-#             if self.fixables:
-#                 for key in self.fixables:
-#                     tempstring2 += key + " "
-#                     tempstring2 += "{\n"
-#                     for item in self.fixables[key]:
-#                         tempstring2 += item + "\n"
-#                     tempstring2 += "}\n"
-#             for line in contents:
-#                 tempstring1 += line
-#             tempstring1 += tempstring2
-# 
-#             if not writeFile(tmpfile, tempstring1, self.logger):
-#                 return
-#             if not self.created2:
-#                 self.iditerator += 1
-#                 myid = iterate(self.iditerator, self.rulenumber)
-#                 event = {"eventtype": "conf",
-#                          "filepath": self.logrotpath}
-#                 self.statechglogger.recordchgevent(myid, event)
-#                 self.statechglogger.recordfilechange(self.logrotpath, tmpfile,
-#                                                      myid)
-#             os.rename(tmpfile, self.logrotpath)
-
-#-----------------------------------------------------------------------------#
-        # restart log daemon
-        if not self.ch.executeCommand("/sbin/service " + self.logd + " reload-or-restart"):
-            debug = "Unable to restart the log daemon\n"
+        if not self.sh.reloadservice("rsyslog"):
+            debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            success = False
         if not self.ch.getReturnCode() != "0":
-            debug = "Unable to restart the log daemon\n"
+            debug = "Unable to restart the log daemon part 2\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            success = False
         return success
 
 ###############################################################################
@@ -1419,14 +1318,15 @@ because these values are optional\n"
 
     def reportMac(self):
         debug = ""
-        compliant = True
+        compliant = RuleKVEditor.report(self, True)
+        self.detailedresults += "\n"
         self.macDirs = ["/var/log/cron.log",
                         "/var/log/daemon.log",
                         "/var/log/kern.log",
                         "/var/log/local.log",
                         "/var/log/syslog.log",
                         "/var/log/user.log",
-                        "/var/log/stom2.log",
+                        "/var/log/stonix.log",
                         "/var/log/system.log",
                         "/var/log/lpr.log",
                         "/var/log/mail.log",
@@ -1444,7 +1344,7 @@ because these values are optional\n"
                          "mail,uucp,news.*": "/var/log/mail.log",
                          "local0,local1,local2,local3.*": "/var/log/local.log",
                          "local4,local,local6,local7.*": "/var/log/local.log",
-                         "local5.*": "/var/log/stom2.log",
+                         "local5.*": "/var/log/stonix.log",
                          "install.*": "/var/log/install.log",
                          "netinfo.*": "/var/log/netinfo.log",
                          "remoteauth,authpriv.*": "/var/log/secure.log",
@@ -1483,6 +1383,7 @@ because these values are optional\n"
 #----------Check /etc/syslog.conf file for correct contents-------------------#
         contents = readFile(syslog, self.logger)
         bad = False
+        missing = []
         for log in self.logfiles:
             found = False
             for line in contents:
@@ -1509,15 +1410,20 @@ because these values are optional\n"
                 bad = True
                 debug = "didn't find: " + str(log) + " in " + syslog + "\n"
                 self.logger.log(LogPriority, debug)
+                missing.append(log)
                 compliant = False
         if exist:
             for item in exist:
                 del self.logfiles[item]
         if bad:
-            self.detailedresults += syslog + " file was not configured well\n"
+            self.detailedresults += "The following lines were not found in " + \
+                syslog + ":\n"
+            for item in missing:
+                self.detailedresults += str(item) + "\n"
 #-------------------Check asl.conf file---------------------------------------#
         bad = False
         exist = []
+        missing = []
         contents = readFile(aslfile, self.logger)
         for asl in self.asl:
             found = False
@@ -1531,12 +1437,16 @@ because these values are optional\n"
                 bad = True
                 debug = "didn't find: " + str(asl) + " in " + aslfile + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+                missing.append(asl)
                 compliant = False
         if exist:
             for item in exist:
                 self.asl.remove(item)
         if bad:
-            self.detailedresults += aslfile + " file was not configured well\n"
+            self.detailedresults += "The following lines were not found in " + \
+                aslfile + ":\n"
+            for item in missing:
+                self.detailedresults += str(item) + "\n"
 #-----------------check newsyslog.conf file-----------------------------------#
         if os.path.exists(newsyslog):
             contents = readFile(newsyslog, self.logger)
@@ -1591,6 +1501,9 @@ because these values are optional\n"
         if not self.sh.isrunning(service, servicename):
             compliant = False
             self.detailedresults += "syslogd is not running\n"
+        if not compliant:
+            self.detailedresults += "Log rotation is not correctly " + \
+                "set up in " + newsyslog + "\n"
         return compliant
 
 ###############################################################################
@@ -1601,7 +1514,7 @@ because these values are optional\n"
         aslfile = "/etc/asl.conf"
         service = "/System/Library/LaunchDaemons/com.apple.syslogd.plist"
         servicename = "com.apple.syslogd"
-        success = True
+        success = RuleKVEditor.fix(self, True)
         debug = ""
         universal = "#The following lines were added by stonix\n"
         for path in self.macDirs:

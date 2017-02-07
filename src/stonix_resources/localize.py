@@ -40,6 +40,8 @@ that access the version variable to use this copy.
 @change: 2015/03/01 - ekkehard - incremented STONIXVERSION = '0.8.15'
 @change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.8.16'
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
+@change: 2016/02/03 - ekkehard - incremented STONIXVERSION = '0.9.5'
+@change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -48,7 +50,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.9.4'
+STONIXVERSION = '0.9.5'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -98,7 +100,7 @@ WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
 "ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\n" + \
 "AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\n" + \
 "DISCLOSURE OF COMPUTER ACTIVITY.\n\n" + \
-"**WARNING**WARNING**WARNING**WARNING**WARNING**"
+"**WARNING**WARNING**WARNING**WARNING**WARNING**\n"
 
 ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE computer\n" + \
 "systems are provided for the processing of official U.S. Government\n" + \
@@ -116,7 +118,10 @@ ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE co
 OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
 "system. Authorized use only. Users have no explicit/implicit expectation " + \
 "of privacy. By using this system the user consents to monitoring and " + \
-"disclosure. See http://foo.bar.com/copyright.shtml#disclaimers"
+"disclosure. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR UNAUTHORIZED, " + \
+"CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, " + \
+"COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. " + \
+"See http://foo.bar.com/copyright.shtml#disclaimers"
 
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
@@ -138,16 +143,20 @@ STONIXDEVS = 'stonix-dev@bar.com'
 # PROXY = None
 PROXY = 'http://foo.bar.com:8080'
 PROXYCONFIGURATIONFILE = "http://foo.bar.com/wpad.dat"
+PROXYDOMAIN = "bar.com"
 
-# Specify a subnet to allow services access to in /etc/hosts.allow
-ALLOWNET = '192.168.0.1/24'
+# Domain Name Server (DNS) defaults
+DNS = "192.168.0.1 192.168.0.2"
+
+# (for redhat 7 and later) Specify a subnet to allow services access to in /etc/hosts.allow
+ALLOWNETS = ['192.168.0.1/24']
 
 # Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
 XINETDALLOW = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
-PRINTBROWSESUBNET = ''
+PRINTBROWSESUBNET = '192.168.0.1/24'
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
 NTPSERVERSINTERNAL = ["foo.bar.com", "foo.bar.com"]
@@ -303,3 +312,225 @@ DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
 WINLOG = "@@foo.bar.com"
 LANLLOGROTATE = "700.lanl.logrotate"
+
+# These are accounts to exclude from DisableInactiveAccounts rule
+EXCLUDEACCOUNTS = []
+
+# The following list is used by AuditFirefoxUsage(84). It lists domains that
+# are approved for browsing by the root user.
+LOCALDOMAINS = ["127.0.0.1", "localhost", "bar.com"]
+
+# these options will be set in /etc/dhcp/dhclient.conf
+# a value of 'request' will cause the client to request that
+# option's configuration from the dhcp server. a value of
+# 'supersede' will cause the client to use the locally-defined
+# value in the dhclient.conf configuration file
+DHCPDict = {'subnet-mask': 'request',
+            'broadcast-address': 'supersede',
+            'time-offset': 'supersede',
+            'routers': 'supersede',
+            'domain-name': 'supersede',
+            'domain-name-servers': 'supersede',
+            'host-name': 'supersede',
+            'nis-domain': 'supersede',
+            'nis-servers': 'supersede',
+            'ntp-servers': 'supersede'}
+
+# these options will be used whenever a value of
+# 'supersede' is specified for one of the options in
+# DCHPDict. Change these to reflect your organization's
+# actual servers/domains/settings
+DHCPSup = {'subnet-mask': '"example.com"',
+           'broadcast-address': '192.168.1.255',
+           'time-offset': '-18000',
+           'routers': '192.168.1.1',
+           'domain-name': '"example.com"',
+           'domain-name-servers': '192.168.1.2',
+           'host-name': '"localhost"',
+           'nis-domain': '""',
+           'nis-servers': '""',
+           'ntp-servers': '"ntp.example.com"'}
+
+AUTH_APT = '''auth        required      pam_env.so
+auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_APT = '''account     required      pam_tally2.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_APT = '''password    requisite     \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
+use_authtok remember=10
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_APT = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
+'''
+
+SESSION_HOME_APT = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+-session    optional      pam_systemd.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+'''
+
+AUTH_ZYPPER = '''auth    required        pam_env.so
+auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail
+auth    optional        pam_gnome_keyring.so
+auth    sufficient      pam_unix.so     try_first_pass
+auth    required        pam_sss.so      use_first_pass
+'''
+
+ACCOUNT_ZYPPER = '''account requisite       pam_unix.so     try_first_pass
+account sufficient      pam_localuser.so
+account required        pam_sss.so      use_first_pass
+'''
+
+PASSWORD_ZYPPER = '''password        requisite       \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+ocredit=0 retry=3 maxrepeat=3
+password        sufficient      pam_unix.so sha512 shadow \
+try_first_pass use_authtok remember=10
+password        optional        pam_gnome_keyring.so    use_authtok
+password        required        pam_sss.so      use_authtok
+'''
+
+SESSION_ZYPPER = '''session required        pam_limits.so
+session required        pam_unix.so     try_first_pass
+session optional        pam_sss.so
+session optional        pam_umask.so
+session optional        pam_systemd.so
+session optional        pam_gnome_keyring.so    auto_start \
+only_if=gdm,gdm-password,lxdm,lightdm
+session optional        pam_env.so
+'''
+
+SESSION_HOME_ZYPPER = '''session required        pam_limits.so
+session required        pam_unix.so     try_first_pass
+session optional        pam_sss.so
+session optional        pam_umask.so
+session optional        pam_systemd.so
+session optional        pam_gnome_keyring.so    auto_start \
+only_if=gdm,gdm-password,lxdm,lightdm
+session optional        pam_env.so
+session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
+'''
+
+AUTH_NSLCD = '''auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_NSLCD = '''account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow \
+try_first_pass use_authtok remember=10
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_NSLCD = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+
+SESSION_HOME_NSLCD = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     optional      pam_mkhomedir.so umask=0077
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_krb5.so
+'''
+
+AUTH_YUM = '''auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        sufficient    pam_unix.so try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        sufficient    pam_sss.so use_first_pass
+auth        sufficient    pam_krb5.so use_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=5 \
+unlock_time=900 fail_interval=900
+auth        required      pam_deny.so
+'''
+
+ACCOUNT_YUM = '''account     required      pam_faillock.so
+account     required      pam_access.so
+account     required      pam_unix.so broken_shadow
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     [default=bad success=ok user_unknown=ignore] pam_sss.so
+account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
+account     required      pam_permit.so
+'''
+
+PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+password    sufficient    pam_unix.so sha512 shadow try_first_pass \
+use_authtok remember=10
+password    sufficient    pam_sss.so use_authtok
+password    sufficient    pam_krb5.so use_authtok
+password    required      pam_deny.so
+'''
+
+SESSION_YUM = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session    optional      pam_systemd.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_sss.so
+session     optional      pam_krb5.so
+'''
+
+SESSION_HOME_YUM = '''session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session    optional      pam_systemd.so
+session     optional      pam_mkhomedir.so umask=0077
+session     [success=1 default=ignore] pam_succeed_if.so service in crond \
+quiet use_uid
+session     required      pam_unix.so
+session     optional      pam_sss.so
+session     optional      pam_krb5.so
+'''

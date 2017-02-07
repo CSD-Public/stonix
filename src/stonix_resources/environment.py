@@ -838,7 +838,11 @@ class Environment:
 
         @author: Roy Nielsen
         """
-        script_path_zero = os.path.realpath(sys.argv[0])
+        try:
+            script_path_zero = sys._MEIPASS
+        except Exception:
+            script_path_zero = os.path.realpath(sys.argv[0])
+
         try:
             script_path_one = os.path.realpath(sys.argv[1])
         except:
@@ -872,29 +876,22 @@ class Environment:
                     print "ERROR: Cannot run using this method"
             else:
                 #print "DEBUG: Cannot find appropriate path, building paths for current directory"
-                self.script_path = os.getcwd()
+                try:
+                    self.script_path = sys._MEIPASS
+                except Exception:
+                    self.script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 
         #####
         # Set the rules & stonix_resources paths
-        if re.search("stonix.app/Contents/MacOS$", self.script_path):
-            #####
-            # Find the stonix.conf file in the stonix.app/Contents/Resources
-            # directory
-            macospath = self.script_path
-            self.resources_path = os.path.join(self.script_path,
-                                               "stonix_resources")
-            self.rules_path = os.path.join(self.resources_path,
-                                           "rules")
-        else:
-            # ##
-            # create the self.resources_path
-            self.resources_path = os.path.join(self.script_path,
-                                               "stonix_resources")
-            # ##
-            # create the self.rules_path
-            self.rules_path = os.path.join(self.script_path,
-                                           "stonix_resources",
-                                           "rules")
+        # ##
+        # create the self.resources_path
+        self.resources_path = os.path.join(self.script_path,
+                                           "stonix_resources")
+        # ##
+        # create the self.rules_path
+        self.rules_path = os.path.join(self.script_path,
+                                       "stonix_resources",
+                                       "rules")
         #####
         # Set the log file path
         if self.geteuid() == 0:
@@ -911,26 +908,7 @@ class Environment:
 
         #####
         # Set the configuration file path
-        if re.search("stonix.app/Contents/MacOS/stonix$", os.path.realpath(sys.argv[0])):
-            #####
-            # Find the stonix.conf file in the stonix.app/Contents/Resources
-            # directory
-            macospath = self.script_path
-            parents = macospath.split("/")
-            parents.pop()
-            parents.append("Resources")
-            resources_dir = "/".join(parents)
-            self.conf_path = os.path.join(resources_dir, "stonix.conf")
-        elif os.path.exists(os.path.join(self.script_path, "etc", "stonix.conf")):
-            self.conf_path = os.path.join(self.script_path, "etc", "stonix.conf")
-        elif re.search('pydev', script_path_zero) and re.search('stonix_resources', script_path_one):
-            print "INFO: Called by unit test"
-            srcpath = script_path_one.split('/')[:-2]
-            srcpath = '/'.join(srcpath)
-            self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print self.conf_path
-        else:
-            self.conf_path = "/etc/stonix.conf"
+        self.conf_path = "/etc/stonix.conf"
 
     def get_test_mode(self):
         """

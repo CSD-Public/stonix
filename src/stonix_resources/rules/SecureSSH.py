@@ -24,7 +24,7 @@
 
 Created on Feb 19, 2013
 
-@author: bemalmbe,dwalker
+@author: Breen Malmberg, dwalker
 @change: 02/16/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/16/2014 ekkehard Implemented isapplicable
 @change: 04/21/2014 ekkehard ci updates and ci fix method implementation
@@ -33,6 +33,8 @@ Created on Feb 19, 2013
 @change: 2015/09/23 eball Removed Banner setting to resolve InstallBanners conflict
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/01/04 Breen Malmberg - added more detail to the help text to make
+        it more clear to the end user, what the rule actually does.
 '''
 from __future__ import absolute_import
 import os
@@ -50,7 +52,7 @@ class SecureSSH(Rule):
     The SecureSSH class makes a number of configuration changes to SSH in \
     order to ensure secure use of the functionality.
 
-    @author bemalmbe
+    @author Breen Malmberg
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -63,14 +65,41 @@ class SecureSSH(Rule):
         self.rulename = 'SecureSSH'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule makes a number of configuration \
-changes to SSH in order to ensure its security.  This rule \
-will not attempt to install the SSH server or client if it is not installed. \
-However, it will create the appropriate files if not present and put the \
-appropriate contents in them whether installed or not.'''
+        self.helptext = '''This rule will not install SSH if it does
+not already exist on the system.
+
+This rule touches a number of configuration
+options in the ssh_config and/or sshd_config file(s).
+These options are checked and then changed, if necessary
+to be more secure than the default configuration.
+
+The client options touched are:
+Host
+Protocol
+GSSAPIAuthentication
+GSSAPIDelegateCredentials
+
+The server options touched are:
+Protocol
+SyslogFacility
+PermitRootLogin
+MaxAuthTries
+RhostsRSAAuthentication
+HostbasedAuthentication
+IgnoreRhosts
+PermitEmptyPasswords
+PasswordAuthentication
+ChallengeResponseAuthentication
+KerberosAuthentication
+GSSAPIAuthentication
+GSSAPICleanupCredentials
+UsePAM
+Ciphers
+PermitUserEnvironment'''
+
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
         datatype = 'bool'
         key = 'SECURESSH'
         instructions = "To disable this rule set the value " + \
@@ -111,8 +140,12 @@ appropriate contents in them whether installed or not.'''
             compliant = True
             debug = ""
             if self.environ.getostype() == "Mac OS X":
-                self.path1 = "/private/etc/sshd_config"  # server file
-                self.path2 = "/private/etc/ssh_config"  # client file
+                if re.search("10\.11\.*|10\.12\.*", self.environ.getosver()):
+                    self.path1 = '/private/etc/ssh/sshd_config'
+                    self.path2 = '/private/etc/ssh/ssh_config'
+                else:
+                    self.path1 = "/private/etc/sshd_config"  # server file
+                    self.path2 = "/private/etc/ssh_config"  # client file
             else:
                 self.path1 = "/etc/ssh/sshd_config"  # server file
                 self.path2 = "/etc/ssh/ssh_config"  # client file
@@ -128,9 +161,8 @@ appropriate contents in them whether installed or not.'''
                                           self.server, "present",
                                           "space")
                 if not self.ed1.report():
-                    debug = "didn't find the correct" + \
-                        " contents in sshd_config\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Did not find the correct " + \
+                        "contents in sshd_config\n"
                     compliant = False
                 if re.search("Ubuntu", self.environ.getostype()):
                     self.server = {"GSSAPIAuthentication": "",
@@ -144,9 +176,11 @@ appropriate contents in them whether installed or not.'''
                         compliant = False
                 if not checkPerms(self.path1, [0, 0, 420],
                                   self.logger):
+                    self.detailedresults += "Incorrect permissions for " + \
+                        "file " + self.path1 + "\n"
                     compliant = False
             else:
-                self.detailedresults += self.path1 + " doesn't exist\n"
+                self.detailedresults += self.path1 + " does not exist\n"
                 compliant = False
             if os.path.exists(self.path2):
                 tpath2 = self.path2 + ".tmp"
@@ -158,24 +192,23 @@ appropriate contents in them whether installed or not.'''
                                           self.client, "present",
                                           "space")
                 if not self.ed2.report():
-                    debug = "didn't find the correct" + \
-                        " contents in ssh_config\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Did not find the correct " + \
+                        "contents in ssh_config\n"
                     compliant = False
                 if re.search("Ubuntu", self.environ.getostype()):
                     self.client = {"GSSAPIAuthentication": ""}
                     self.ed2.setIntent("notpresent")
                     self.ed2.setData(self.client)
                     if not self.ed2.report():
-                        debug = "didn't find the correct" + \
-                            " contents in ssh_config\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
+                        self.detailedresults += "Did not find the correct " + \
+                            "contents in ssh_config\n"
                 if not checkPerms(self.path2, [0, 0, 420],
                                   self.logger):
+                    self.detailedresults += "Incorrect permissions for " + \
+                        "file " + self.path2 + "\n"
                     compliant = False
             else:
-                self.detailedresults += self.path2 + " doesn't exist\n"
+                self.detailedresults += self.path2 + " does not exist\n"
                 compliant = False
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):

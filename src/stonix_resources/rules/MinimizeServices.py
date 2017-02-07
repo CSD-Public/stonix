@@ -31,11 +31,18 @@ RHEL 7
 @change: 2015/04/15 dkennel: updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/30 dwalker: added additional services to allowed list.
+@change: 2016/04/26 ekkehard Results Formatting
+@change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
+@change: 2016/10/06 dkennel Updates service lists and minor hacking to support
+ubuntu 16.04.
+@change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
+@change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
 '''
 from __future__ import absolute_import
 
 import os
 import traceback
+import re
 
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
@@ -59,6 +66,7 @@ class MinimizeServices(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 12
         self.rulename = 'MinimizeServices'
+        self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''The MinimizeServices rule will minimize the \
 services that the system is running. Each running service is a potential \
@@ -105,33 +113,75 @@ administrators may want to disable this rule.
                            'mixer', 'newsyslog', 'ntpd', 'sendmail_submit',
                            'sendmail_submit', 'sendmail_msp_queue', 'sshd',
                            'syslogd', 'virecover']
-        self.linuxdefault = ['acpid', 'atd', 'autofs', 'cups', 'firstboot',
-                             'haldaemon', 'messagebus', 'netfs', 'nfslock',
-                             'rasagent', 'rpcgssd', 'rpcidmapd', 'rpcbind',
-                             'nslcd', 'ntpd', 'oddjobd', 'portmap', 'smartd',
-                             'anacron', 'apmd', 'audit', 'auditd', 'crond',
-                             'irqbalance', 'lm_sensors', 'lvm2-monitor',
-                             'mdmonitor', 'network', 'restorecond', 'rhnsd',
-                             'sendmail', 'postfix', 'setroubleshoot', 'sshd',
-                             'rsyslog', 'syslog', 'sysstat', 'cpuspeed', 'nscd',
-                             'sssd', 'xfs', 'mcstrans', 'cron', 'acpi-support',
-                             'alsa-restore', 'alsa-store', 'dbus',
-                             'bootlogd', 'libnss-ldap', 'grub-common',
-                             'ondemand', 'rc.local', 'pulseaudio', 'splash',
-                             'splash-early', 'smartd', 'random', 'udev-post',
-                             'purge-kernels', 'network-remotefs', 'kbd',
-                             'haveged', 'fbset', 'earlysyslog', 'alsasound',
-                             'blk-availability', 'gdm3', 'motd', 'nfs-common',
-                             'network-manager', 'exim4', 'rmnologin',
-                             'minissdpd']
+        self.linuxdefault = ['acpi-support', 'acpid',
+                             'alsa-restore', 'alsa-store', 'alsasound',
+                             'anacron',
+                             'apmd',
+                             'atd',
+                             'audit', 'auditd',
+                             'autofs',
+                             'blk-availability',
+                             'bootlogd',
+                             'cpuspeed',
+                             'cron', 'crond',
+                             'cups',
+                             'dbus',
+                             'earlysyslog',
+                             'exim4',
+                             'fbset',
+                             'firstboot',
+                             'gdm3',
+                             'grub-common',
+                             'haldaemon',
+                             'haveged',
+                             'iptables', 'ip6tables',
+                             'irqbalance',
+                             'kbd',
+                             'libnss-ldap',
+                             'lm_sensors',
+                             'lvm2-monitor',
+                             'mcstrans',
+                             'mdmonitor',
+                             'messagebus',
+                             'minissdpd',
+                             'motd',
+                             'netfs',
+                             'network', 'network-manager', 'network-remotefs',
+                             'nfs-common', 'nfslock',
+                             'nscd', 'nslcd',
+                             'ntpd',
+                             'oddjobd',
+                             'ondemand',
+                             'portmap',
+                             'postfix',
+                             'pulseaudio',
+                             'purge-kernels',
+                             'random',
+                             'rasagent',
+                             'rc.local',
+                             'restorecond',
+                             'rhnsd',
+                             'rmnologin',
+                             'rpcgssd', 'rpcidmapd', 'rpcbind',
+                             'rsyslog',
+                             'sendmail',
+                             'setroubleshoot',
+                             'smartd',
+                             'splash', 'splash-early',
+                             'sshd',
+                             'sssd',
+                             'syslog',
+                             'sysstat',
+                             'udev-post',
+                             'xfs']
         self.specials = ['apparmor', 'urandom', 'x11-common', 'sendsigs',
-                              'unmountnfs.sh', 'networking', 'umountfs',
-                              'umountroot', 'reboot', 'halt', 'killprocs',
-                              'single', 'unattended-upgrades', 'devfs', 'dmesg',
-                              'bootmisc', 'fsck', 'hostname', 'hwclock',
-                              'keymaps', 'localmount', 'modules', 'mount-ro',
-                              'mtab', 'net.lo', 'procfs', 'root', 'savecache',
-                              'swap', 'sysctl', 'termencoding', 'udev']
+                         'unmountnfs.sh', 'networking', 'umountfs',
+                         'umountroot', 'reboot', 'halt', 'killprocs',
+                         'single', 'unattended-upgrades', 'devfs', 'dmesg',
+                         'bootmisc', 'fsck', 'hostname', 'hwclock',
+                         'keymaps', 'localmount', 'modules', 'mount-ro',
+                         'mtab', 'net.lo', 'procfs', 'root', 'savecache',
+                         'swap', 'sysctl', 'termencoding', 'udev']
         self.soldefault = ['lrc:/etc/rc2_d/S10lu', 'lrc:/etc/rc2_d/S20sysetup',
                            'lrc:/etc/rc2_d/S40llc2',
                            'lrc:/etc/rc2_d/S42ncakmod',
@@ -230,169 +280,187 @@ administrators may want to disable this rule.
                            'svc:/system/webconsole:console',
                            'svc:/network/cswpuppetd:default']
         self.systemddefault = ['accounts-daemon.service',
-                              'after-local.service',
-                              'alsa-restore.service', 'alsasound',
-                              'alsa-store.service',
-                              'alsa-state.service',
-                              'alsa-state.service',
-                              'anacron.service',
-                              'arp-ethers.service', 'atd.service',
-                              'auditd.service',
-                              'auth-rpcgss-module.service',
-                              'brandbot.service',
-                              'chronyd.service',
-                              'colord.service',
-                              'cron',
-                              'crond.service', 'cups', 'cups.service',
-                              'debian-fixup.service',
-                              'dbus.service', 'dbus',
-                              'dm-event.service',
-                              'dmraid-activation.service',
-                              'dnf-makecache.service',
-                              'dracut-shutdown.service',
-                              'emergency.service',
-                              'fedora-autorelabel-mark.service',
-                              'fedora-autorelabel.service',
-                              'fedora-configure.service',
-                              'fedora-import-state.service',
-                              'fedora-loadmodules.service',
-                              'fedora-readonly.service',
-                              'fedora-storage-init-late.service',
-                              'fedora-storage-init.service',
-                              'fedora-wait-storage.service',
-                              'firewalld.service',
-                              'gdm.service',
-                              'gdm3.service',
-                              'gdm3',
-                              'getty@tty1.service',
-                              'getty@tty2.service',
-                              'getty@tty3.service',
-                              'getty@tty5.service',
-                              'getty-static.service',
-                              'halt.service', 'localfs.service',
-                              'ip6tables.service', 'iptables.service',
-                              'irqbalance.service',
-                              'iprdump.service', 'iprinit.service',
-                              'iprupdate.service',
-                              'iscsi-shutdown.service',
-                              'kmod',
-                              'kmod-static-nodes.service',
-                              'ksm.service', 'ksmtuned.service',
-                              'ldconfig.service',
-                              'lvm2-monitor.service',
-                              'mcelog',
-                              'mcelog.service', 'mdmonitor-takeover.service',
-                              'mdmonitor.service',
-                              'named-setup-rndc.service',
-                              'netconsole.service', 'network.service',
-                              'network', 'netcf-transaction.service',
-                              'NetworkManager.service',
-                              'nfs-blkmap.service', 'nfs-config.service',
-                              'nfs-idmapd.service', 'nfs-mountd.service',
-                              'nfs-utils.service',
-                              'nfs-lock.service', 'nslcd.service',
-                              'ntpd.service', 'ntpdate.service',
-                              'pcscd', 'pcscd.service', 'postfix',
-                              'polkit.service', 'purge-kernels.service',
-                              'plymouth-quit-wait.service',
-                              'plymouth-quit.service',
-                              'plymouth-read-write.service',
-                              'plymouth-start.service',
-                              'polkit.service', 'postfix.service',
-                              'poweroff.service', 'prefdm.service',
-                              'procps.service',
-                              'procps',
-                              'rc-local.service',
-                              'rc.local',
-                              'reboot.service',
-                              'remount-rootfs.service', 'rescue.service',
-                              'rhel-autorelabel',
-                              'rhel-configure.service',
-                              'rhel-import-state.service',
-                              'rhel-loadmodules.service',
-                              'rhel-readonly.service', 'rhnsd.service',
-                              'rhel-autorelabel-mark.service',
-                              'rhel-autorelabel.service',
-                              'rhsmcertd.service',
-                              'rsyslog.service', 'rtkit-daemon.service',
-                              'rhnsd',
-                              'rngd.service', 'rpcbind.service',
-                              'rpc-gssd.service', 'rpc-statd-notify.service',
-                              'rpc-statd.service', 'rpc-svcgssd.service',
-                              'sendmail.service', 'sm-client.service',
-                              'spice-vdagentd.service', 'sshd', 'sshd.service',
-                              'sshd-keygen.service',
-                              'SuSEfirewall2.service',
-                              'SuSEfirewall2_init.service',
-                              'syslog.service',
-                              'systemd-firstboot.service',
-                              'systemd-fsck-root.service',
-                              'systemd-hostnamed.service',
-                              'systemd-hwdb-update.service',
-                              'systemd-journal-catalog-update.service',
-                              'systemd-machine-id-commit.service',
-                              'systemd-setup-dgram-qlen.service',
-                              'systemd-sysusers.service',
-                              'systemd-update-done.service',
-                              'systemd-journal-flush.service',
-                              'systemd-random-seed.service',
-                              'systemd-tmpfiles-setup-dev.service',
-                              'systemd-udev-root-symlink.service',
-                              'systemd-udev-settle.service',
-                              'systemd-udev-trigger.service',
-                              'systemd-udev.service', 'systemd-udevd.service',
-                              'systemd-update-utmp.service',
-                              'sssd.service', 'system-setup-keyboard.service',
-                              'smartd.service', 'sysstat.service',
-                              'systemd-fsck-root.service',
-                              'systemd-journal-flush.service',
-                              'systemd-random-seed.service',
-                              'systemd-reboot.service',
-                              'systemd-tmpfiles-setup-dev.service',
-                              'systemd-udev-settle.service',
-                              'systemd-udev-trigger.service',
-                              'systemd-udevd.service',
-                              'systemd-update-utmp.service',
-                              'systemd-ask-password-console.service',
-                              'systemd-ask-password-plymouth.service',
-                              'systemd-ask-password-wall.service',
-                              'systemd-binfmt.service',
-                              'systemd-initctl.service',
-                              'systemd-journald.service',
-                              'systemd-logind.service',
-                              'systemd-modules-load.service',
-                              'systemd-random-seed-load.service',
-                              'systemd-random-seed-save.service',
-                              'systemd-readahead-collect.service',
-                              'systemd-readahead-done.service',
-                              'systemd-readahead-replay.service',
-                              'systemd-remount-api-vfs.service',
-                              'systemd-remount-fs.service',
-                              'systemd-shutdownd.service',
-                              'systemd-sysctl.service',
-                              'systemd-tmpfiles-clean.service',
-                              'systemd-tmpfiles-setup.service',
-                              'systemd-update-utmp-runlevel.service',
-                              'systemd-update-utmp-shutdown.service',
-                              'systemd-user-sessions.service',
-                              'systemd-vconsole-setup.service',
-                              'tcsd.service', 'tuned.service',
-                              'udev',
-                              'udev.service',
-                              'udev-settle.service',
-                              'udev-trigger.service', 'udev.service',
-                              'udev-finish.service',
-                              'udev-finish',
-                              'udisks2.service', 'upower.service',
-                              'unbound-anchor.service',
-                              'urandom.service',
-                              'urandom',
-                              'virtlockd.service',
-                              'xdm', 'xdm.service',
-                              'YaST2-Second-Stage.service',
-                              'ypbind.service',
-                              'sysstat-collect.service',
-                              'sysstat-summary.service']
+                               'after-local.service',
+                               'alsa-restore.service', 'alsasound',
+                               'alsa-store.service',
+                               'alsa-state.service',
+                               'alsa-state.service',
+                               'anacron.service',
+                               'arp-ethers.service', 'atd.service',
+                               'auditd.service',
+                               'auth-rpcgss-module.service',
+                               'brandbot.service',
+                               'chronyd.service',
+                               'colord.service',
+                               'cron', 'cron.service',
+                               'crond.service', 'cups', 'cups.service',
+                               'debian-fixup.service',
+                               'dbus.service', 'dbus',
+                               'display-manager.service',
+                               'dm-event.service',
+                               'dmraid-activation.service',
+                               'dnf-makecache.service',
+                               'dracut-shutdown.service',
+                               'emergency.service',
+                               'fedora-autorelabel-mark.service',
+                               'fedora-autorelabel.service',
+                               'fedora-configure.service',
+                               'fedora-import-state.service',
+                               'fedora-loadmodules.service',
+                               'fedora-readonly.service',
+                               'fedora-storage-init-late.service',
+                               'fedora-storage-init.service',
+                               'fedora-wait-storage.service',
+                               'firewalld.service',
+                               'gdm.service',
+                               'gdm3.service',
+                               'gdm3',
+                               'getty@tty1.service',
+                               'getty@tty2.service',
+                               'getty@tty3.service',
+                               'getty@tty5.service',
+                               'getty-static.service',
+                               'halt.service', 'localfs.service',
+                               'ip6tables.service', 'iptables.service',
+                               'irqbalance.service',
+                               'iprdump.service', 'iprinit.service',
+                               'iprupdate.service',
+                               'iscsi-shutdown.service',
+                               'kmod',
+                               'kmod-static-nodes.service',
+                               'ksm.service', 'ksmtuned.service',
+                               'ldconfig.service',
+                               'lightdm.service',
+                               'lightdm',
+                               'lvm2-activation.service',
+                               'lvm2-activation-early.service',
+                               'lvm2-monitor.service',
+                               'mcelog',
+                               'mcelog.service', 'mdmonitor-takeover.service',
+                               'mdmonitor.service',
+                               'named-setup-rndc.service',
+                               'netconsole.service', 'network.service',
+                               'networking.service',
+                               'networking',
+                               'network', 'netcf-transaction.service',
+                               'NetworkManager.service',
+                               'nfs-blkmap.service', 'nfs-config.service',
+                               'nfs-idmapd.service', 'nfs-mountd.service',
+                               'nfs-utils.service',
+                               'nfs-lock.service', 'nslcd.service',
+                               'ntpd.service', 'ntpdate.service',
+                               'ondemand.service',
+                               'pcscd', 'pcscd.service', 'postfix',
+                               'polkit.service', 'purge-kernels.service',
+                               'plymouth-quit-wait.service',
+                               'plymouth-quit.service',
+                               'plymouth-read-write.service',
+                               'plymouth-start.service',
+                               'polkit.service', 'postfix.service',
+                               'poweroff.service', 'prefdm.service',
+                               'procps.service',
+                               'procps', 'psacct.service',
+                               'psacct', 'rc-local.service',
+                               'rc.local',
+                               'reboot.service',
+                               'remount-rootfs.service', 'rescue.service',
+                               'resolvconf.service',
+                               'rhel-autorelabel',
+                               'rhel-configure.service',
+                               'rhel-import-state.service',
+                               'rhel-loadmodules.service',
+                               'rhel-readonly.service', 'rhnsd.service',
+                               'rhel-autorelabel-mark.service',
+                               'rhel-autorelabel.service',
+                               'rhsmcertd.service',
+                               'rsyslog.service', 'rtkit-daemon.service',
+                               'rhnsd',
+                               'rngd.service', 'rpcbind.service',
+                               'rpc-gssd.service', 'rpc-statd-notify.service',
+                               'rpc-statd.service', 'rpc-svcgssd.service',
+                               'sendmail.service', 'sm-client.service',
+                               'spice-vdagentd.service',
+                               'ssh',
+                               'ssh.service',
+                               'sshd',
+                               'sshd.service',
+                               'sshd-keygen.service',
+                               'stonix-mute-mic.service',
+                               'stonix-mute-mic',
+                               'SuSEfirewall2.service',
+                               'SuSEfirewall2_init.service',
+                               'syslog.service',
+                               'systemd-firstboot.service',
+                               'systemd-fsck-root.service',
+                               'systemd-hostnamed.service',
+                               'systemd-hwdb-update.service',
+                               'systemd-journal-catalog-update.service',
+                               'systemd-machine-id-commit.service',
+                               'systemd-setup-dgram-qlen.service',
+                               'systemd-sysusers.service',
+                               'systemd-update-done.service',
+                               'systemd-journal-flush.service',
+                               'systemd-random-seed.service',
+                               'systemd-tmpfiles-setup-dev.service',
+                               'systemd-udev-root-symlink.service',
+                               'systemd-udev-settle.service',
+                               'systemd-udev-trigger.service',
+                               'systemd-udev.service', 'systemd-udevd.service',
+                               'systemd-update-utmp.service',
+                               'sssd.service', 'system-setup-keyboard.service',
+                               'smartd.service', 'sysstat.service',
+                               'systemd-fsck-root.service',
+                               'systemd-journal-flush.service',
+                               'systemd-random-seed.service',
+                               'systemd-reboot.service',
+                               'systemd-tmpfiles-setup-dev.service',
+                               'systemd-udev-settle.service',
+                               'systemd-udev-trigger.service',
+                               'systemd-udevd.service',
+                               'systemd-update-utmp.service',
+                               'systemd-ask-password-console.service',
+                               'systemd-ask-password-plymouth.service',
+                               'systemd-ask-password-wall.service',
+                               'systemd-binfmt.service',
+                               'systemd-initctl.service',
+                               'systemd-journald.service',
+                               'systemd-logind.service',
+                               'systemd-modules-load.service',
+                               'systemd-random-seed-load.service',
+                               'systemd-random-seed-save.service',
+                               'systemd-readahead-collect.service',
+                               'systemd-readahead-done.service',
+                               'systemd-readahead-replay.service',
+                               'systemd-remount-api-vfs.service',
+                               'systemd-remount-fs.service',
+                               'systemd-shutdownd.service',
+                               'systemd-sysctl.service',
+                               'systemd-tmpfiles-clean.service',
+                               'systemd-tmpfiles-setup.service',
+                               'systemd-update-utmp-runlevel.service',
+                               'systemd-update-utmp-shutdown.service',
+                               'systemd-user-sessions.service',
+                               'systemd-vconsole-setup.service',
+                               'tcsd.service', 'tuned.service',
+                               'udev',
+                               'udev.service',
+                               'udev-settle.service',
+                               'udev-trigger.service', 'udev.service',
+                               'udev-finish.service',
+                               'udev-finish',
+                               'udisks2.service',
+                               'ufw.service',
+                               'upower.service',
+                               'unbound-anchor.service',
+                               'urandom.service',
+                               'urandom',
+                               'virtlockd.service',
+                               'xdm', 'xdm.service',
+                               'YaST2-Second-Stage.service',
+                               'ypbind.service',
+                               'sysstat-collect.service',
+                               'sysstat-summary.service']
+
         datatype = 'bool'
         key = 'minimizesvcs'
         instructions = '''To disable this rule set the value of MINIMIZESVCS to
@@ -403,90 +471,44 @@ False.'''
         # self.svcslistci = self.__initializeenablelist()
         datatype2 = 'list'
         key2 = 'serviceenable'
-        instructions2 = '''This list contains services that are permitted to run on this
-platform. If you need to run a service not currently in this list add the
-service to the list and STONIX will ensure that it is set to run. List elements
-should be space separated.'''
+        instructions2 = '''This list contains services that are permitted to \
+run on this platform. If you need to run a service not currently in this \
+list, add the service to the list and STONIX will not disable it. List \
+elements should be space separated.'''
         self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                            "Starting platform detection"])
+                        ['MinimizeServices.__init__',
+                         "Starting platform detection"])
         if os.path.exists('/bin/systemctl'):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "systemctl found using systemd list"])
+                             "systemctl found using systemd list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.systemddefault)
+                                          self.systemddefault)
         elif self.environ.getosfamily() == 'linux':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "Linux OS found using Linux default list"])
+                             "Linux OS found using Linux default list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.linuxdefault)
+                                          self.linuxdefault)
         elif self.environ.getosfamily() == 'solaris':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "Solaris OS found using Solaris list"])
+                             "Solaris OS found using Solaris list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.soldefault)
+                                          self.soldefault)
         elif self.environ.getosfamily() == 'freebsd':
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "FreeBSD OS found using BSD list"])
+                             "FreeBSD OS found using BSD list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.bsddefault)
+                                          self.bsddefault)
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
-                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
+                             "Detection fell through. Return from ENV:" +
+                             self.environ.getosfamily()])
             self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                       self.linuxdefault)
-
-    def __initializeenablelist(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        serviceenable list.
-        @return: configuration object instance
-        '''
-        datatype = 'list'
-        key = 'serviceenable'
-        instructions = '''This list contains services that are permitted to run on this
-platform. If you need to run a service not currently in this list add the
-service to the list and STONIX will ensure that it is set to run. List elements
-should be space separated.'''
-        self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Starting platform detection"])
-        if os.path.exists('/bin/systemctl'):
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "systemctl found using systemd list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.systemddefault)
-        elif self.environ.getosfamily() == 'linux':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Linux OS found using Linux default list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.linuxdefault)
-        elif self.environ.getosfamily() == 'solaris':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Solaris OS found using Solaris list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.soldefault)
-        elif self.environ.getosfamily() == 'freebsd':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "FreeBSD OS found using BSD list"])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.bsddefault)
-        else:
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__initializeenablelist',
-                            "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
-            cienablelist = self.initCi(datatype, key, instructions,
-                                       self.linuxdefault)
-        return cienablelist
+                                          self.linuxdefault)
 
     def report(self):
         """
@@ -496,26 +518,40 @@ should be space separated.'''
         @return: bool
         @author: D.Kennel
         """
+
         compliant = True
         myresults = "Unauthorized running services detected: "
+        running = False # default init var
+
         try:
+
+            self.detailedresults = ""
             servicelist = self.servicehelper.listservices()
             allowedlist = self.svcslistci.getcurrvalue()
             corelist = self.svcslistci.getdefvalue()
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.report',
-                            "ServiceList: " + str(servicelist)])
+                             "ServiceList: " + str(servicelist)])
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.report',
-                            "AllowedList: " + str(allowedlist)])
+                             "AllowedList: " + str(allowedlist)])
             for service in servicelist:
-                if service in allowedlist:
-                    if service not in corelist:
+                running = False # re-init var for new service
+                if service in allowedlist or re.search('user@[0-9]*.service',
+                                                       service):
+                    if service in allowedlist:
+                        self.logger.log(LogPriority.INFO, """\nWhite-listed service found. Will not disable: """ + str(service) + """\n""")
+                        # user@foo.service are user managers started by PAM
+                        # on Linux. They are GRAS (generally regarded as safe)
+                    if service not in corelist and \
+                    not re.search('user@[0-9]*.service', service):
                         self.logger.log(LogPriority.WARNING,
                                         ['MinimizeServices',
-                                         'Non-core service running: ' + service])
+                                         'Non-core service running: ' +
+                                         service])
                 else:
-                    running = self.servicehelper.auditservice(service)
+                    if self.servicehelper.auditservice(service):
+                        running = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['MinimizeServices.report',
                                      "Audit: " + service + str(running)])
@@ -529,23 +565,23 @@ should be space separated.'''
                 self.detailedresults = myresults
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.report',
-                            "Compliant: " + str(compliant)])
+                             "Compliant: " + str(compliant)])
             self.compliant = compliant
             self.targetstate = 'notconfigured'
-            return compliant
-
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception:
             self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults = self.detailedresults + \
+                traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
-                            ['MinimizeServices.report',
-                             self.detailedresults])
-            return False
-        return True
+                            self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
 
     def fix(self):
         """
@@ -553,45 +589,53 @@ should be space separated.'''
 
         @author: D. Kennel
         """
+        self.detailedresults = ""
         changes = []
-        if not self.minimizeci.getcurrvalue():
-            return True
-        try:
-            servicelist = self.servicehelper.listservices()
-            allowedlist = self.svcslistci.getcurrvalue()
-            for service in servicelist:
-                if service in allowedlist:
-                    continue
-                else:
-                    running = self.servicehelper.auditservice(service)
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['MinimizeServices.fix',
-                                     "Audit: " + service + str(running)])
-                    if running and service not in self.specials:
-                        changes.append(service)
-                        self.servicehelper.disableservice(service)
-            mytype = 'command'
-            mystart = []
-            myend = changes
-            myid = '0013001'
-            event = {'eventtype': mytype,
-                     'startstate': mystart,
-                     'endstate': myend}
-            self.statechglogger.recordchgevent(myid, event)
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
-            self.rulesuccess = False
-            self.logger.log(LogPriority.ERROR,
-                            ['MinimizeServices.fix',
-                             self.detailedresults])
-            return False
-        if self.report():
-            self.currstate = 'configured'
-        return True
+        fixed = True
+        if self.minimizeci.getcurrvalue():
+            try:
+                servicelist = self.servicehelper.listservices()
+                allowedlist = self.svcslistci.getcurrvalue()
+                for service in servicelist:
+                    if service in allowedlist:
+                        continue
+                    if re.search('user@[0-9]*.service', service):
+                        # these are systemd usermanagers started by PAM
+                        # they are OK.
+                        continue
+                    else:
+                        running = self.servicehelper.auditservice(service)
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['MinimizeServices.fix',
+                                         "Audit: " + service + str(running)])
+                        if running and service not in self.specials:
+                            changes.append(service)
+                            self.servicehelper.disableservice(service)
+                mytype = 'command'
+                mystart = []
+                myend = changes
+                myid = '0013001'
+                event = {'eventtype': mytype,
+                         'startstate': mystart,
+                         'endstate': myend}
+                self.statechglogger.recordchgevent(myid, event)
+
+                self.rulesuccess = fixed
+            except (KeyboardInterrupt, SystemExit):
+                # User initiated exit
+                raise
+            except Exception:
+                self.rulesuccess = False
+                self.detailedresults = 'MinimizeServices: '
+                self.detailedresults = self.detailedresults + \
+                    traceback.format_exc()
+                self.rulesuccess = False
+                self.logger.log(LogPriority.ERROR,
+                                self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
 
     def undo(self):
         """
@@ -607,13 +651,15 @@ should be space separated.'''
                 self.servicehelper.enableservice(service)
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
-                        ['MinimizeServices.undo', "EventID 0013001 not found"])
+                            ['MinimizeServices.undo',
+                             "EventID 0013001 not found"])
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception:
             self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults = self.detailedresults + \
+                traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
                             ['MinimizeServices.fix',
@@ -621,5 +667,6 @@ should be space separated.'''
             return False
         self.report()
         if self.currstate == self.targetstate:
-            self.detailedresults = 'MinimizeServices: Changes successfully reverted'
+            self.detailedresults = 'MinimizeServices: Changes ' + \
+                'successfully reverted'
         return True
