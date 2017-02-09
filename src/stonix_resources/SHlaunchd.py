@@ -304,11 +304,11 @@ class SHlaunchd(object):
         by rules that are configuring a service to make the new configuration
         active.
 
-        @return: servicesuccess
+        @return: reloadsuccess
         @rtype: bool
         @param servicelong string: Name of the service to be reloaded
         @param serviceshort string: Short Name of the service to be reloaded
-        @author: ???
+        @author: Breen Malmberg
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; refactor;
                 try/except; logging
         @change: Breen Malmberg - 2/9/2017 - complete refactor of method, will use
@@ -321,7 +321,7 @@ class SHlaunchd(object):
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.reloadservice()...")
 
-        reloadsuccess = False
+        reloadsuccess = True
         unloadcmd = [self.launchd, "unload", servicelong]
         loadcmd = [self.launchd, "load", servicelong]
         errmsg = ""
@@ -332,6 +332,7 @@ class SHlaunchd(object):
             self.ch.executeCommand(unloadcmd)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
+                reloadsuccess = False
                 errmsg = self.ch.getErrorString()
                 self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(unloadcmd) + " failed with error code: " + str(retcode))
                 self.logdispatcher.log(LogPriority.DEBUG, "\n" + errmsg)
@@ -341,6 +342,7 @@ class SHlaunchd(object):
             self.ch.executeCommand(loadcmd)
             retcode2 = self.ch.getReturnCode()
             if retcode2 != 0:
+                reloadsuccess = False
                 errmsg2 = self.ch.getErrorString()
                 self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(loadcmd) + " failed with error code: " + str(retcode2))
                 self.logdispatcher.log(LogPriority.DEBUG, "\n" + errmsg2)
