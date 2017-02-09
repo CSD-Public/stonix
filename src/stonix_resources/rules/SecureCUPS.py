@@ -220,16 +220,15 @@ class SecureCUPS(Rule):
             self.cupsfilesopts = {}
             self.cupsfilesconf = ""
             self.cupsdconf = ""
+            self.cupsdconfremopts = {}
 
 # darwin config
             if self.darwin:
                 accesslog = "/private/var/log/cups/access_log"
                 # a value of 'strict' causes issues connecting to printers on some mac systems
-                sandboxing = "relaxed"
-                self.cupsfilesopts["Sandboxing"] = sandboxing
                 self.configfileperms = '0644'
                 logfileperms = '0644'
-                errorlog = "/var/log/cups/error_log"
+                errorlog = "/private/var/log/cups/error_log"
                 self.svclongname = "/System/Library/LaunchDaemons/org.cups.cupsd.plist"
                 self.svcname = "org.cups.cupsd"
 
@@ -251,13 +250,11 @@ class SecureCUPS(Rule):
             # options for cups-files.conf
             self.cupsfilesopts["ConfigFilePerm"] = self.configfileperms
             self.cupsfilesopts["ErrorLog"] = errorlog
-            self.cupsfilesopts["FatalErrors"] = "config"
             self.cupsfilesopts["LogFilePerm"] = logfileperms
 
             # cupsd conf default configuration options
             loglevel = "warn"
             self.cupsdconfopts = {"LogLevel": loglevel}
-            self.cupsdconfopts["HostNameLookups"] = "Double"
             self.cupsdconfopts["AccessLog"] = accesslog
             self.cupsdconfopts["AccessLogLevel"] = "config"
 
