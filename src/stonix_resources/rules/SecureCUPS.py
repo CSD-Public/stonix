@@ -467,8 +467,27 @@ class SecureCUPS(Rule):
         # DEFAULTS
         self.detailedresults = ""
         self.compliant = True
+        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
+        badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
 
         try:
+
+            # check for bad config options in files
+            for f in badoptsfiles:
+                if os.path.exists(f):
+                    fh = open(f, 'r')
+                    contentlines = fh.readlines()
+                    fh.close()
+                    for line in contentlines:
+                        for opt in badopts:
+                            if re.search(opt, line, re.IGNORECASE):
+                                self.compliant = False
+            # if these opts exist, then we don't want to do anything else
+            ## except just remove them
+            if not self.compliant:
+                self.logger.log(LogPriority.DEBUG, "Bad configuration options found in cups config files. Will now remove them.")
+                self.formatDetailedResults('report', self.compliant, self.detailedresults)
+                return self.compliant
 
             if self.linux:
                 if not self.ph.check(self.pkgname):
@@ -654,8 +673,42 @@ class SecureCUPS(Rule):
         self.detailedresults = ""
         success = True
         self.iditerator = 0
+        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
+        badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
+        foundbadopts = False
 
         try:
+
+            # fix bad opts; do not record state change,
+            ## so that a possible revert, afterward, will
+            ## not revert back to the bad state
+            ## this code is a one-off for a hotfix and
+            ## should probably be discontinued in some future
+            ## release at some point
+            for f in badoptsfiles:
+                contentlines = []
+                if os.path.exists(f):
+                    fh = open(f, 'r')
+                    contentlines = fh.readlines()
+                    fh.close()
+                    for line in contentlines:
+                        for opt in badopts:
+                            if re.search(opt, line, re.IGNORECASE):
+                                foundbadopts = True
+                                contentlines = [c.replace(line, '\n') for c in contentlines]
+                    # finished building new contentlines; now write them for each file
+                    fn = open(f, 'w')
+                    fn.writelines(contentlines)
+                    fn.close()
+                    os.chmod(f, 0644)
+            if foundbadopts:
+                # do not continue with rest of fix because that would save state for this fix run
+                self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
+                self.sh.reloadservice(self.svclongname, self.svcname)
+                self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
+                self.formatDetailedResults('fix', success, self.detailedresults)
+                return success
+
 
             # Are any of the CIs enabled?
             # If not, then exit, returning True
