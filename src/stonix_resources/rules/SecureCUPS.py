@@ -33,6 +33,9 @@ With this rule, you can:
         Setup default set of policy blocks for CUPS
 
 @author: Breen Malmberg
+@change: Breen Malmberg - 2/8/2017 - set the default value of the self.DisableGenericPort CI to False;
+        fixed a typo with the data2 dict var name for cupsdconf; KVcupsdrem will now only be processed if
+        the value of the self.DisableGenericPort CI is True; added some inline comments
 '''
 
 from __future__ import absolute_import
@@ -134,7 +137,7 @@ class SecureCUPS(Rule):
         'to and using locally configured printers by disabling the CUPS print ' + \
         'server sharing capabilities, set the value of DisableGenericPort to ' + \
         'True.'
-        default5 = True
+        default5 = False
         self.DisableGenericPort = self.initCi(datatype5, key5, instructions5, default5)
 
         datatype6 = 'bool'
@@ -199,6 +202,8 @@ class SecureCUPS(Rule):
 
         @return: void
         @author: Breen Malmberg
+        @change: Breen Malmberg - 2/8/2017 - fixed a typo with the var name of the dict
+                for cupsd conf options; 
         '''
 
         try:
@@ -215,15 +220,15 @@ class SecureCUPS(Rule):
             self.cupsfilesopts = {}
             self.cupsfilesconf = ""
             self.cupsdconf = ""
+            self.cupsdconfremopts = {}
 
 # darwin config
             if self.darwin:
                 accesslog = "/private/var/log/cups/access_log"
-                sandboxing = "strict"
-                self.cupsfilesopts["Sandboxing"] = sandboxing
+                # a value of 'strict' causes issues connecting to printers on some mac systems
                 self.configfileperms = '0644'
                 logfileperms = '0644'
-                errorlog = "/var/log/cups/error_log"
+                errorlog = "/private/var/log/cups/error_log"
                 self.svclongname = "/System/Library/LaunchDaemons/org.cups.cupsd.plist"
                 self.svcname = "org.cups.cupsd"
 
@@ -234,7 +239,7 @@ class SecureCUPS(Rule):
                 if os.path.exists(loc):
                     self.cupsdconf = loc
             self.tmpcupsdconf = self.cupsdconf + ".stonixtmp"
-    
+
             cupsfileslocs = ['/etc/cups/cups-files.conf',
                              '/private/etc/cups/cups-files.conf']
             for loc in cupsfileslocs:
@@ -245,18 +250,17 @@ class SecureCUPS(Rule):
             # options for cups-files.conf
             self.cupsfilesopts["ConfigFilePerm"] = self.configfileperms
             self.cupsfilesopts["ErrorLog"] = errorlog
-            self.cupsfilesopts["FatalErrors"] = "config"
             self.cupsfilesopts["LogFilePerm"] = logfileperms
-    
+
             # cupsd conf default configuration options
             loglevel = "warn"
             self.cupsdconfopts = {"LogLevel": loglevel}
-            self.cupsdconfopts["HostNameLookups"] = "Double"
             self.cupsdconfopts["AccessLog"] = accesslog
             self.cupsdconfopts["AccessLogLevel"] = "config"
 
             # cupsd conf remove these options
-            self.cupsdconfremopts = {"Port": "631"}
+            if self.DisableGenericPort.getcurrvalue():
+                self.cupsdconfremopts = {"Port": "631"}
 
             ## create kveditor objects
             if os.path.exists(self.cupsfilesconf):
@@ -273,20 +277,21 @@ class SecureCUPS(Rule):
                 kvtype2 = "conf"
                 path2 = self.cupsdconf
                 tmpPath2 = path2 + ".stonixtmp"
-                data2 = self.cupsdconf
+                data2 = self.cupsdconfopts
                 intent2 = "present"
                 configType2 = "space"
                 self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
                                               data2, intent2, configType2)
 
-                kvtype3 = "conf"
-                path3 = self.cupsdconf
-                tmpPath3 = path3 + ".stonixtmp"
-                data3 = self.cupsdconfremopts
-                intent3 = "notpresent"
-                configType3 = "space"
-                self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
-                                              data3, intent3, configType3)
+                if self.cupsdconfremopts:
+                    kvtype3 = "conf"
+                    path3 = self.cupsdconf
+                    tmpPath3 = path3 + ".stonixtmp"
+                    data3 = self.cupsdconfremopts
+                    intent3 = "notpresent"
+                    configType3 = "space"
+                    self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
+                                                  data3, intent3, configType3)
 
             # policy blocks
             self.serveraccess = """# Restrict access to the server...
@@ -386,6 +391,8 @@ class SecureCUPS(Rule):
 
         @return: void
         @author: Breen Malmberg
+        @change: Breen Malmberg - 2/8/2017 - KVcupsdrem will now only be processed if
+                self.DisableGenericPort CI is True
         '''
 
         try:
@@ -430,14 +437,15 @@ class SecureCUPS(Rule):
                 configType2 = "space"
                 self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
                                               data2, intent2, configType2)
-                kvtype3 = "conf"
-                path3 = self.cupsdconf
-                tmpPath3 = path3 + ".stonixtmp"
-                data3 = self.cupsdconfremopts
-                intent3 = "notpresent"
-                configType3 = "space"
-                self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
-                                              data3, intent3, configType3)
+                if self.cupsdconfremopts:
+                    kvtype3 = "conf"
+                    path3 = self.cupsdconf
+                    tmpPath3 = path3 + ".stonixtmp"
+                    data3 = self.cupsdconfremopts
+                    intent3 = "notpresent"
+                    configType3 = "space"
+                    self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
+                                                  data3, intent3, configType3)
             else:
                 self.logger.log(LogPriority.DEBUG, "Location of required configuration file cupsd.conf could not be determined")
 
@@ -459,8 +467,27 @@ class SecureCUPS(Rule):
         # DEFAULTS
         self.detailedresults = ""
         self.compliant = True
+        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
+        badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
 
         try:
+
+            # check for bad config options in files
+            for f in badoptsfiles:
+                if os.path.exists(f):
+                    fh = open(f, 'r')
+                    contentlines = fh.readlines()
+                    fh.close()
+                    for line in contentlines:
+                        for opt in badopts:
+                            if re.search(opt, line, re.IGNORECASE):
+                                self.compliant = False
+            # if these opts exist, then we don't want to do anything else
+            ## except just remove them
+            if not self.compliant:
+                self.logger.log(LogPriority.DEBUG, "Bad configuration options found in cups config files. Will now remove them.")
+                self.formatDetailedResults('report', self.compliant, self.detailedresults)
+                return self.compliant
 
             if self.linux:
                 if not self.ph.check(self.pkgname):
@@ -590,6 +617,8 @@ class SecureCUPS(Rule):
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
+        @change: Breen Malmberg - 2/8/2017 - KVcupsdrem will now only be run if 
+                self.DisableGenericPort CI is True
         '''
 
         self.logger.log(LogPriority.DEBUG, "\n\nREPORTSECURE()\n\n")
@@ -605,9 +634,10 @@ class SecureCUPS(Rule):
                     if self.KVcupsd.fixables:
                         retval = False
                         self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsd.fixables)
-                    self.KVcupsdrem.report()
-                    if self.KVcupsdrem.removeables:
-                        retval = False
+                    if self.cupsdconfremopts:
+                        self.KVcupsdrem.report()
+                        if self.KVcupsdrem.removeables:
+                            retval = False
                         self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsdrem.removeables)
                     if not self.checkPolicyBlocks():
                         retval = False
@@ -643,8 +673,42 @@ class SecureCUPS(Rule):
         self.detailedresults = ""
         success = True
         self.iditerator = 0
+        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
+        badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
+        foundbadopts = False
 
         try:
+
+            # fix bad opts; do not record state change,
+            ## so that a possible revert, afterward, will
+            ## not revert back to the bad state
+            ## this code is a one-off for a hotfix and
+            ## should probably be discontinued in some future
+            ## release at some point
+            for f in badoptsfiles:
+                contentlines = []
+                if os.path.exists(f):
+                    fh = open(f, 'r')
+                    contentlines = fh.readlines()
+                    fh.close()
+                    for line in contentlines:
+                        for opt in badopts:
+                            if re.search(opt, line, re.IGNORECASE):
+                                foundbadopts = True
+                                contentlines = [c.replace(line, '\n') for c in contentlines]
+                    # finished building new contentlines; now write them for each file
+                    fn = open(f, 'w')
+                    fn.writelines(contentlines)
+                    fn.close()
+                    os.chmod(f, 0644)
+            if foundbadopts:
+                # do not continue with rest of fix because that would save state for this fix run
+                self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
+                self.sh.reloadservice(self.svclongname, self.svcname)
+                self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
+                self.formatDetailedResults('fix', success, self.detailedresults)
+                return success
+
 
             # Are any of the CIs enabled?
             # If not, then exit, returning True
@@ -684,6 +748,9 @@ class SecureCUPS(Rule):
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
+        @change: Breen Malmberg - 2/8/2017 - added inline comments; changed the way KVCupsdrem
+                was being handled (will not be run if there are no options to remove; aka if
+                self.DisableGenericPort CI is False)
         '''
 
         retval = True
@@ -697,6 +764,7 @@ class SecureCUPS(Rule):
 
             if os.path.exists(self.cupsdconf):
 
+# cupsdconf add/change options
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.KVcupsd.setEventID(myid)
@@ -705,15 +773,19 @@ class SecureCUPS(Rule):
                         self.detailedresults += "\nCommit failed for cupsd.conf"
                         self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsd")
                         retval = False
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.KVcupsdrem.setEventID(myid)
-                if self.KVcupsdrem.fix():
-                    if not self.KVcupsdrem.commit():
-                        self.detailedresults += "\nCommit failed for cupsd.conf"
-                        self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsdrem")
-                        retval = False
 
+# cupsdconf remove options
+                if self.cupsdconfremopts:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.KVcupsdrem.setEventID(myid)
+                    if self.KVcupsdrem.fix():
+                        if not self.KVcupsdrem.commit():
+                            self.detailedresults += "\nCommit failed for cupsd.conf"
+                            self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsdrem")
+                            retval = False
+
+# cups-files conf add/change options
             if os.path.exists(self.cupsfilesconf):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
@@ -724,6 +796,9 @@ class SecureCUPS(Rule):
                         self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsfiles")
                         retval = False
 
+# cupsdconf default policy blocks
+# this portion cannot be handled by kveditor because of its
+# xml style formatting
             if os.path.exists(self.cupsdconf):
                 if self.SetupDefaultPolicyBlocks.getcurrvalue():
                     f = open(self.cupsdconf, 'r')
