@@ -704,7 +704,10 @@ class SecureCUPS(Rule):
             if foundbadopts:
                 # do not continue with rest of fix because that would save state for this fix run
                 self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
-                self.sh.reloadservice(self.svclongname, self.svcname)
+                if self.darwin:
+                    self.sh.reloadservice(self.svclongname, self.svcname)
+                else:
+                    self.sh.reloadservice(self.svcname)
                 self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
                 self.formatDetailedResults('fix', success, self.detailedresults)
                 return success
