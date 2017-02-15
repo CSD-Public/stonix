@@ -69,7 +69,9 @@ class MuteMic(Rule):
         self.helptext = '''The MuteMic rule will mute or set the microphone \
 input levels to zero. This can help prevent a compromised computer from being \
 used as a listening device. On most platforms input volume changes require no \
-privileges so this setting can be easily undone.'''
+privileges so this setting can be easily undone. If you are not running STONIX with elevated privileges, \
+some fix functionality will be disabled for this rule. This will probably \
+result in the rule being not compliant after being run.'''
         self.rootrequired = False
         self.mutemicrophone = self.__initializeMuteMicrophone()
         self.guidance = ['CIS']
@@ -90,9 +92,9 @@ privileges so this setting can be easily undone.'''
         '''
         datatype = 'bool'
         key = 'mutemicrophone'
-        instructions = '''If set to yes or true the MUTEMICROPHONE action \
+        instructions = 'If set to yes or true the MUTEMICROPHONE action \
 will mute the microphone. This rule should always be set to TRUE with few \
-valid exceptions.'''
+valid exceptions.'
         default = True
         myci = self.initCi(datatype, key, instructions, default)
         return myci
@@ -495,6 +497,9 @@ valid exceptions.'''
         @author: dkennel
         @change: Breen Malmberg - 07/19/2016 - fixed comment block; init default return
         param value, retval; made sure method always returns something
+        @change: Breen Malmberg - 2/15/2017 - made sure method does not run if the rule is
+                being run in user mode, because the method writes to a location which requires
+                root privileges
         '''
 
         retval = True
@@ -506,6 +511,10 @@ valid exceptions.'''
             return retval
 
         expectedlines = []
+
+        if self.environ.geteuid() != 0:
+            self.detailedresults += "\nYou are currently running this rule as an unprivileged user. This rule requires root privileges to configure pulse audio."
+            return
 
         try:
 
@@ -586,6 +595,9 @@ valid exceptions.'''
         success = True
 
         try:
+
+            if self.environ.geteuid() != 0:
+                self.detailedresults += "\nYou are not running STONIX with elevated privileges. Some fix functionality will be disabled for this rule."
 
             # if the CI is disabled, then don't run the fix
             if not self.mutemicrophone.getcurrvalue():
@@ -808,12 +820,16 @@ valid exceptions.'''
         @author: Breen Malmberg
         '''
 
+        if self.environ.geteuid() != 0:
+            self.detailedresults += "\nYou are currently running this rule as an unprivileged user. This rule requires root privileges to create the startup script.\nWithout the startup script, the mic(s) will not be disabled at boot time, or upon reboot."
+            return
+
         try:
 
             if systype == "systemd":
-    
+
                 tempsystemdscriptname = self.systemdscriptname + ".stonixtmp"
-    
+
                 # make sure the base directory exists
                 # before we attempt to write a file to it
                 if not os.path.exists(self.systemdbase):
