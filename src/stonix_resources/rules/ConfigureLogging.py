@@ -258,7 +258,7 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "endscript"]
-        self.expression = "\s*/var/log/user\s+/var/log/daemon\s+/var/log/auth\s+/var/log/kern\s+/var/log/lpr\s+/var/log/syslog\s+/var/log/cron\s+/var/log/maillog\s+/var/log/local\s+/var/log/ftp\s*\{\s*" + \
+        self.expression = "\s*/var/log/user\s+/var/log/daemon\s+/var/log/auth\s+/var/log/kern\s+/var/log/lpr\s+/var/log/syslog\s+/var/log/cron\s+/var/log/maillog\s+/var/log/local\s+/var/log/ftp\s+/var/log/messages\s*\{\s*" + \
             "\s*rotate 4\s+weekly\s+missingok\s+notifempty\s+compress\s+delaycompress\s+sharedscripts\s+postrotate\s+" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null \|\| true\s+" + \
@@ -461,7 +461,7 @@ daemon config file: " + self.logpath
                  "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true"]
-        addon = "/var/log/user /var/log/daemon /var/log/auth /var/log/kern /var/log/lpr /var/log/syslog /var/log/cron /var/log/maillog /var/log/local /var/log/ftp {\n" + \
+        addon = "/var/log/user /var/log/daemon /var/log/auth /var/log/kern /var/log/lpr /var/log/syslog /var/log/cron /var/log/maillog /var/log/local /var/log/ftp /var/log/messages{\n" + \
             "rotate 4\nweekly\nmissingok\nnotifempty\ncompress\ndelaycompress\nsharedscripts\npostrotate\n" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true\n" + \
             "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true\n" + \
