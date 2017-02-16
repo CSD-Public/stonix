@@ -61,7 +61,7 @@ from ServiceHelper import ServiceHelper
 import traceback
 from CheckApplicable import CheckApplicable
 
-class Rule (Observable):
+class Rule (Observable, CheckApplicable):
 
     """
     Abstract class for all Rule objects.
@@ -71,6 +71,7 @@ class Rule (Observable):
 
     def __init__(self, config, environ, logger, statechglogger):
         Observable.__init__(self)
+        CheckApplicable.__init__(self, environ, logger)
         self.config = config
         self.environ = environ
         self.statechglogger = statechglogger

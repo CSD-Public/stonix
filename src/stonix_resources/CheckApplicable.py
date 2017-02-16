@@ -117,15 +117,21 @@ class CheckApplicable(object):
         self.logger.log(LogPriority.DEBUG,
                         'Dictionary is: ' + str(applicable))
         try:
-            if 'os' not in applicable and 'family' not in applicable:
-                amidefault = applicable['default']
-                if amidefault == 'default':
-                    self.logger.log(LogPriority.DEBUG,
-                                    'Defaulting to True')
-                    return True
+            default = applicable['default']
+            if default == 'default':
+                #####
+                # Use self.applicable as is
+                pass
         except KeyError:
-            self.logger.log(LogPriority.DEBUG,
-                            "KeyError in CheckApplicable.applicable variable")
+            try:
+                if 'os' in applicable or 'family' in applicable:
+                    self.applicable = applicable
+                    self.logger.log(LogPriority.DEBUG, "Passed in applicable: " + str(self.applicable))
+                else:
+                    return False
+            except KeyError:
+                self.logger.log(LogPriority.DEBUG, "Required passed in variables not present...")
+                return False
 
         # Determine whether we are a blacklist or a whitelist, default to a
         # blacklist
