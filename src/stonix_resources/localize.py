@@ -253,6 +253,7 @@ MACKRB5 = '''# Updated Test Configuration
    ta55storageb.lanl.gov = WIN.LANL.GOV
    virginia.lanl.gov = WIN.LANL.GOV
    xfiles02.lanl.gov = WIN.LANL.GOV
+   xsamba.lanl.gov = WIN.LANL.GOV
    xsamba03.lanl.gov = WIN.LANL.GOV
 
 # Web services
