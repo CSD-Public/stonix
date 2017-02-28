@@ -556,6 +556,42 @@ LANL-stonix."""
 
         return applies
 
+    def checkConsts(self, constlist=[]):
+        """
+        This method returns True or False depending
+        on whether the list of constants passed to it
+        are defined or not (if they are == None)
+        This method was implemented to handle the
+        default undefined state of constants in localize.py
+        when operating in the public environment
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        """
+
+        retval = True
+
+        # if there is nothing to check, return False
+        if not constlist:
+            retval = False
+            return retval
+
+        if not isinstance(constlist, list):
+            retval = False
+            return retval
+
+        try:
+
+            # If there is a None type variable, return False
+            for v in constlist:
+                if v == None:
+                    retval = False
+
+        except Exception:
+            raise
+        return retval
+
     def addresses(self):
         """
         This method returns the list of guidance elements addressed by the

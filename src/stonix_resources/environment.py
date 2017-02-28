@@ -812,19 +812,39 @@ class Environment:
     def oncorporatenetwork(self):
         """
         Determine if we are running on the corporate network
+
+        @return: amoncorporatenetwork
+        @rtype: bool
         @author: ekkehard j. koch
+        @change: Breen Malmberg - 2/28/2017 - added logic to ensure that this
+                code only runs if the constant, CORPORATENETWORKSERVERS, is
+                properly defined and not set to 'None', in localize.py;
+                minor doc string edit; note: no logging facility available in
+                environment, so can't log when CORPORATENETWORKSERVERS
+                is undefined or None...
         """
+
         amoncorporatenetwork = False
-        listOfServers = CORPORATENETWORKSERVERS
-        for server in listOfServers:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect((server, 80))
-                sock.close()
-                amoncorporatenetwork = True
-                return amoncorporatenetwork
-            except (socket.gaierror, socket.timeout, socket.error):
-                amoncorporatenetwork = False
+
+        # return False if the constant CORPORATENETWORKSERVERS is
+        # either set to 'None' or not defined, in localize.py
+        if CORPORATENETWORKSERVERS == None:
+            print str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py")
+            return amoncorporatenetwork
+        elif not CORPORATENETWORKSERVERS:
+            print str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py")
+            return amoncorporatenetwork
+        else:
+            listOfServers = CORPORATENETWORKSERVERS
+            for server in listOfServers:
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect((server, 80))
+                    sock.close()
+                    amoncorporatenetwork = True
+                    return amoncorporatenetwork
+                except (socket.gaierror, socket.timeout, socket.error):
+                    amoncorporatenetwork = False
         return amoncorporatenetwork
 
     def collectpaths(self):

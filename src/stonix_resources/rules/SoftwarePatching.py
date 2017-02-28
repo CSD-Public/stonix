@@ -93,6 +93,7 @@ class SoftwarePatching(Rule):
         self.caveats = ''
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
+        self.constlist = [PROXY, UPDATESERVERS]
 
     def updated(self):
         '''
@@ -211,9 +212,17 @@ class SoftwarePatching(Rule):
     def report(self):
         '''Method to report on the configuration status of the system.
 
-        @return: bool
+        @return: self.compliant
+        @rtype: bool
         @author: dkennel
         '''
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkconfigopts(self.constlist):
+            self.compliant = False
+            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: PROXY, UPDATESERVERS"
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
 
         self.caveats = ""
         self.detailedresults = ""
@@ -406,9 +415,17 @@ class SoftwarePatching(Rule):
         '''Method to set system settings to configure software update sources
         and schedule updates.
 
-        @return: bool
+        @return: self.rulesuccess
+        @rtype: bool
         @author: dkennel
         '''
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkconfigopts(self.constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
+
         try:
             self.detailedresults = ""
             if self.ci.getcurrvalue() and not self.crons:
