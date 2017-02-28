@@ -32,6 +32,7 @@ dictionary
 '''
 from __future__ import absolute_import
 import traceback
+import re
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
@@ -66,31 +67,43 @@ class ConfigureNetworks(RuleKVEditor):
         self.guidance = []
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
-        self.nsobject = networksetup(self.logdispatch)
-        self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
-        self.addKVEditor("DisableBluetoothUserInterface",
-                         "defaults",
-                         "/Library/Preferences/com.apple.Bluetooth",
-                         "",
-                         {"ControllerPowerState": ["0", "-int 0"]},
-                         "present",
-                         "",
-                         "Disable Bluetooth User Interface.",
-                         None,
-                         False,
-                         {})
-        self.addKVEditor("DisableBluetoothInternetSharing",
-                         "defaults",
-                         "/Library/Preferences/com.apple.Bluetooth",
-                         "",
-                         {"PANServices": ["0", "-int 0"]},
-                         "present",
-                         "",
-                         "Disable Bluetooth Internet Sharing.",
-                         None,
-                         False,
-                         {})
+
+        ## this section added to prevent code, which relies on constants in localize.py,
+        # from running if those constants are not defined or are set to 'None'
+        self.nsobject = None
+        try:
+            self.nsobject = networksetup(self.logdispatch)
+        except (AttributeError, TypeError) as errmsg:
+            if re.search("NoneType", errmsg, re.IGNORECASE):
+                self.detailedresults += "\nPlease ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN"
+        # this section added to prevent code, which relies on constants in localize.py,
+        ## from running if those constants are not defined or are set to 'None'
+
+        if self.nsobject != None:
+            self.ch = CommandHelper(self.logdispatch)
+            self.sh = ServiceHelper(self.environ, self.logdispatch)
+            self.addKVEditor("DisableBluetoothUserInterface",
+                             "defaults",
+                             "/Library/Preferences/com.apple.Bluetooth",
+                             "",
+                             {"ControllerPowerState": ["0", "-int 0"]},
+                             "present",
+                             "",
+                             "Disable Bluetooth User Interface.",
+                             None,
+                             False,
+                             {})
+            self.addKVEditor("DisableBluetoothInternetSharing",
+                             "defaults",
+                             "/Library/Preferences/com.apple.Bluetooth",
+                             "",
+                             {"PANServices": ["0", "-int 0"]},
+                             "present",
+                             "",
+                             "Disable Bluetooth Internet Sharing.",
+                             None,
+                             False,
+                             {})
 
     def report(self):
         '''
@@ -102,6 +115,14 @@ class ConfigureNetworks(RuleKVEditor):
         @author: ekkehard j. koch
         @change: Breen Malmberg - 12/20/2016 - added doc string; 
         '''
+
+        # CHANGES REQUIRED IN INIT OF THIS RULE IF THE CONSTANTS, THAT NETWORKSETUP.PY USE, ARE CHANGED
+        # ALSO CHANGE THE DETAILEDRESULTS OUTPUT HERE IF THOSE CONSTANTS CHANGE
+        if self.nsobject == None:
+            self.compliant = False
+            self.detailedresults += "\nPlease ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN"
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering ConfigureNetworks.report()...")
 
@@ -166,6 +187,12 @@ class ConfigureNetworks(RuleKVEditor):
                 and fixed var's moved to before try; 
         @change: Breen Malmberg - 1/12/2017 - added debug logging; default init kvfixed to True
         '''
+
+        # CHANGES REQUIRED IN INIT OF THIS RULE IF THE CONSTANTS, THAT NETWORKSETUP.PY USE, ARE CHANGED
+        if self.nsobject == None:
+            fixed = False
+            self.formatDetailedResults("fix", fixed, self.detailedresults)
+            return fixed
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering ConfigureNetworks.fix()...")
 

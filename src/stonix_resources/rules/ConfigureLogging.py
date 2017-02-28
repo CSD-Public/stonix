@@ -124,6 +124,15 @@ invalid."""
         @param self - essential if you override this definition
         @return: bool - True if system is compliant, False if it isn't
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [WINLOG, LANLLOGROTATE]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constants: WINLOG and LANLLOGROTATE, in localize.py, are defined and is not None. This rule will not function without them."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         try:
             self.directories = ["/var/log/daemon",
                                 "/var/log/auth",
@@ -190,6 +199,14 @@ invalid."""
         @return: bool - False if the method died during execution
         @param self:essential if you override this definition
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [WINLOG, LANLLOGROTATE]
+        if not self.checkConsts(constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
+
         try:
             if not self.ci.getcurrvalue():
                 return

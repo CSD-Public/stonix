@@ -145,6 +145,19 @@ for the login.defs file"""
         @param self - essential if you override this definition
         @return: bool - True if system is compliant, False if it isn't
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD,
+                    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM,
+                    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD, SESSION_YUM]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constants: AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD,\
+                    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM,\
+                    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD, SESSION_YUM, in localize.py, are defined and are not None. This rule will not function without them."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         try:
             self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
             self.detailedresults = ""
@@ -175,6 +188,16 @@ for the login.defs file"""
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD,
+                    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM,
+                    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD, SESSION_YUM]
+        if not self.checkConsts(constlist):
+            success = False
+            self.formatDetailedResults("fix", success, self.detailedresults)
+            return success
+
         self.detailedresults = ""
         try:
             if not self.ci1.getcurrvalue():
