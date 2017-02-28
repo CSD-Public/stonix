@@ -257,7 +257,6 @@ class DisableRemoveableStorage(Rule):
 ###############################################################################
 
     def reportMac(self):
-        debug = ""
         self.detailedresults = ""
         compliant = True
         self.cronfile = "/usr/lib/cron/tabs/root"
@@ -273,6 +272,10 @@ class DisableRemoveableStorage(Rule):
                 compliant = False
                 self.detailedresults += "Didn't find the correct contents " + \
                     "in crontab file\n"
+        else:
+            self.detailedresults += self.cronfile + " doesn't exist\n"
+            compliant = False
+        return compliant
 #         self.plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
 #         self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
 # <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -519,9 +522,6 @@ class DisableRemoveableStorage(Rule):
 #             compliant = False
 #             debug += "SD card kernel module is loaded\n"
 #             self.detailedresults += "SD card kernel module is loaded\n"
-        if debug:
-            self.logger.log(LogPriority.DEBUG, debug)
-        return compliant
 ###############################################################################
 
     def fix(self):
@@ -746,6 +746,18 @@ class DisableRemoveableStorage(Rule):
                         self.statechglogger.recordchgevent(myid, event)
                         self.statechglogger.recordfilechange(self.cronfile,
                                                                      tmpfile, myid)
+                        if not checkPerms(self.cronfile, [0, 0, 0o644], self.logger):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            if not setPerms(self.cronfile, [0, 0, 0o644],
+                                            self.logger,
+                                            self.statechglogger, myid):
+                                success = False
+                    else:
+                        if not checkPerms(self.cronfile, [0, 0, 0o644], self.logger):
+                            if not setPerms(self.cronfile, [0, 0, 0o644],
+                                            self.logger):
+                                success = False
                     os.rename(tmpfile, self.cronfile)
 #         if not os.path.exists(self.plistpath):
 #             createFile(self.plistpath, self.logger)

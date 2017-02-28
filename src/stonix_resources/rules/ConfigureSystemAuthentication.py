@@ -649,10 +649,18 @@ for the login.defs file"""
         pamfiles = []
         compliant = True
         if ch.executeCommand(cmd1):
+            debug = "ran " + cmd1 + " successfully\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             if ch.getReturnCode() == 0:
+                debug = "return code of 0 and using faillock\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 self.usingpamfail = True
             elif ch.executeCommand(cmd2):
+                debug = "ran " + cmd2 + " successfully\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 if ch.getReturnCode() == 0:
+                    debug = "return code of 0 and using pam_tally2\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     self.usingpamtally2 = True
             else:
                 self.detailedresults += "There is no account " + \
@@ -660,7 +668,11 @@ for the login.defs file"""
                         "distribution\n"
                 return False
         elif ch.executeCommand(cmd2):
+                debug = "ran " + cmd2 + " successfully\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 if ch.getReturnCode() == 0:
+                    debug = "return code of 0 and using pam_tally2\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     self.usingpamtally2 = True
                 else:
                     self.detailedresults += "There is no account " + \
