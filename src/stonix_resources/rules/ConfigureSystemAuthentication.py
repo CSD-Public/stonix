@@ -497,13 +497,13 @@ for the login.defs file"""
                         pwqfile = "/etc/security/pwquality.conf"
                         tmpfile = pwqfile + ".tmp"
                         data = {"difok": "7",
-                                "minlen": "14",
+                                "minlen": "8",
                                 "dcredit": "0",
                                 "ucredit": "0",
                                 "lcredit": "0",
                                 "ocredit": "0",
                                 "maxrepeat": "3",
-                                "minclass": "4"}
+                                "minclass": "3"}
                         self.pwqeditor = KVEditorStonix(self.statechglogger,
                                                         self.logger, "conf",
                                                         pwqfile, tmpfile, data,
