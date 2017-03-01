@@ -712,11 +712,11 @@ krb5_realm = lanl.gov
         tally = "auth required pam_tally2.so deny=5 unlock_time=900 onerr=fail"
         faillock = "auth required pam_faillock.so preauth silent " + \
             "audit deny=5 unlock_time=900 fail_interval=900"
-        pwquality = "password requisite pam_pwquality.so minlen=14 " + \
-            "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
+        pwquality = "password requisite pam_pwquality.so minlen=8 " + \
+            "minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
             "retry=3 maxrepeat=3"
-        cracklib = "password requisite pam_cracklib.so minlen=14 " + \
-            "minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
+        cracklib = "password requisite pam_cracklib.so minlen=8 " + \
+            "minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 " + \
             "retry=3 maxrepeat=3"
         for conf in pamconf:
             tempconf = []
