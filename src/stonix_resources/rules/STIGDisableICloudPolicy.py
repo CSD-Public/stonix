@@ -52,7 +52,7 @@ class STIGDisableICloudPolicy(Rule):
             "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.11.6']}}
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']}}
         datatype = "bool"
         key = "DISABLEICLOUDPROMPT"
         instructions = "To disable the installation of the Disable " + \
