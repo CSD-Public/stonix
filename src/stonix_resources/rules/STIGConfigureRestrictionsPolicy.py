@@ -51,7 +51,7 @@ class STIGConfigureRestrictionsPolicy(Rule):
             "DISA STIG Restrictions profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.11.6']}}
         datatype = "bool"
         key = "RESTRICTIONS"
         instructions = "To disable the installation of the restrictions " + \
