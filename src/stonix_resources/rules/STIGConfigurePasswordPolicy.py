@@ -53,12 +53,12 @@ class STIGConfigurePasswordPolicy(Rule):
             "DISA STIG Password Policy profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.11.6']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.12.6']}}
         datatype = "bool"
         key = "STIGPWPOLICY"
         instructions = "To disable the installation of the password " + \
             "profile set the value of STIGPWPOLICY to False"
-        default = True
+        default = False
         self.pwci = self.initCi(datatype, key, instructions, default)
         
         datatype = "bool"
