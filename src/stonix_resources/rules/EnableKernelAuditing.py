@@ -523,7 +523,7 @@ this system, set the value of EnableKernelAuditing to False"""
                                 'superuser-clear-sflags-mask:has_authenticated,has_console_access': True,
                                 'member-set-sflags-mask:': True,
                                 'member-clear-sflags-mask:has_authenticated': True}
-            self.auopts = {'root:lo,ad:no': True}
+            self.useropts = {'root:lo,ad:no': True}
             self.auditinitcmd = ''
             if os.path.exists('/usr/sbin/audit'):
                 self.auditinitcmd = '/usr/sbin/audit -i'
@@ -551,10 +551,10 @@ this system, set the value of EnableKernelAuditing to False"""
             # audit_user section
             missingauopts = []
             aucontentlines = self.getFileContents(self.audituserfile)
-            for opt in self.auopts:
+            for opt in self.useropts:
                 if not self.searchFileContents(aucontentlines, opt):
                     retval = False
-                    self.auopts[opt] = False
+                    self.useropts[opt] = False
                     missingauopts.append(opt)
             if missingauopts:
                 self.detailedresults += "\nFollowing required audit_user options missing:\n" + "\n".join(missingauopts)
