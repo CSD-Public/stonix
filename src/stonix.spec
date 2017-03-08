@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.5
+Version: 0.9.6
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -116,6 +116,15 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Wed Mar 8 2017 David Kennel <dkennel@lanl.gov> - 0.9.6
+- EnableKernelAuditing – Audit rules now persist between reboots (RHEL 7, Centos, Fedora)
+- SecureCUPS – Issue has been fixed where certain lines in CUPS configuration files were breaking Mac OS and linux systems.
+- DisableInactiveAccounts – now disabled for Mac OS until password policy is in full effect.
+- ConfigureMACPolicy – Issues with fixing GRUB on OpenSUSE resolved.
+- ConfigureSudo – Changed group name to sudo for sudo access for Ubuntu 14 and 16
+- ConfigureLogging - /var/log/messages has been added to list of log files to be rotated.
+- ConfigureLinuxFirewall – No longer enabled by default
+
 * Fri Feb 3 2017 David Kennel <dkennel@lanl.gov> - 0.9.5
 - Corrected bug that caused STONIX to not recognize when firewalld was running.
 - New rule added: ConfigureFirefox. The configure Firefox rule will disable all automatic update and "phone home" behavior and configure the browser for SSO authentication.
