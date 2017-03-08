@@ -39,6 +39,7 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: 2014/05/29 - ekkehard j. koch - pep8 and comment updates
+@change: 2017/03/07 - dkennel - added fisma risk level support
 '''
 import os
 import re
@@ -49,7 +50,7 @@ import types
 import platform
 import pwd
 import time
-from localize import CORPORATENETWORKSERVERS, STONIXVERSION
+from localize import CORPORATENETWORKSERVERS, STONIXVERSION, FISMACAT
 if os.geteuid() == 0:
     try:
         import dmidecode
@@ -89,6 +90,8 @@ class Environment:
         self.verbosemode = False
         self.debugmode = False
         self.runtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        self.systemfismacat = 'low'
+        self.determinefismacat()
         self.collectinfo()
 
     def setinstallmode(self, installmode):
@@ -272,6 +275,7 @@ class Environment:
         # print 'Environment running guessnetwork'
         self.guessnetwork()
         self.collectpaths()
+        self.determinefismacat()
 
     def discoveros(self):
         """
@@ -910,6 +914,21 @@ class Environment:
         # Set the configuration file path
         self.conf_path = "/etc/stonix.conf"
 
+    def determinefismacat(self):
+        '''
+        This method pulls the fimsa categorization from the localize.py
+        localization file. This allows a site to prepare special packages for
+        use on higher risk systems rather than letting the system administrator
+        self select the higher level.
+
+        @return: string - low, med, high
+        @author: dkennel
+        '''
+        if FISMACAT not in ['high', 'med', 'low']:
+            raise ValueError('FISMACAT invalid: valid values are low, med, high')
+        else:
+            return FISMACAT
+
     def get_test_mode(self):
         """
         Getter test mode flag
@@ -978,7 +997,7 @@ class Environment:
         '''
         Set the number of rules that apply to the system. This information is
         used by the log dispatcher in the run metadata.
-        
+
         @param num: int - number of rules that apply to this host
         @author: dkennel
         '''
@@ -992,9 +1011,35 @@ class Environment:
     def getnumrules(self):
         '''
         Return the number of rules that apply to this host.
-        
+
         @author: dkennel
         '''
         return self.numrules
 
-    
+    def getsystemfismacat(self):
+        '''
+        Return the system FISMA risk categorization.
+
+        @return: string - low, med, high
+        @author: dkennel
+        '''
+        return self.systemfismacat
+
+    def setsystemfismacat(self, category):
+        '''
+        Set the systems FISMA risk categorization. The risk categorization
+        cannot be set lower than the default risk level set in FISMACAT in
+        localize.py
+
+        @param category: string - low, med, high
+        @author: dkennel
+        '''
+
+        if category not in ['high', 'med', 'low']:
+            raise ValueError('SystemFismaCat invalid: valid values are low, med, high')
+        elif self.systemfismacat == 'high':
+            self.systemfismacat = 'high'
+        elif self.systemfismacat == 'med' and category == 'high':
+            self.systemfismacat = 'high'
+        elif self.systemfismacat == 'low' and category == 'high':
+            self.systemfismacat = category
