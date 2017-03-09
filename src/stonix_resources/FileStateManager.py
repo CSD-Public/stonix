@@ -91,7 +91,7 @@ class FileStateManager(object):
         '''
         pass
 
-    def isKnownStateMatch(self, metaState='', fileName=''):
+    def isKnownStateMatch(self, targetStateFile='', fileName=''):
         '''
         Checks the state of filename (full path to a file) against 
         <metaState>/<filename>, where metaState is the path to a mirror
@@ -113,10 +113,10 @@ class FileStateManager(object):
         diff = None
         isSame = False
         if self.isSaneFilePath(fileName):
-            fromFile = metaState + fileName
-            if self.isSaneFilePath(metaState):
+            fromFile = targetStateFile
+            if self.isSaneFilePath(targetStateFile):
                 toFile = fileName
-        self.logger.log(lp.DEBUG, "metaState: " + str(fromFile) + " fileName: " + str(toFile))
+        self.logger.log(lp.DEBUG, "targetStateFile: " + str(fromFile) + " fileName: " + str(toFile))
         
         if fromFile and toFile and os.path.exists(fromFile) and os.path.exists(toFile):
             if re.match("^filecmp$", self.mode):
@@ -151,14 +151,14 @@ class FileStateManager(object):
         self.logger.log(lp.DEBUG, "diff:   " + str(diff))
         return isSame, diff
 
-    def areFilesInStates(self, states[], files=[]):
+    def areFilesInStates(self, states=[], files=[]):
         '''
         Make sure all files in the files list identify as from the same list.
         '''
         success = False
         allMeta = []
         for fileName in files:
-            allMeta.append(self.checkStateOfFile(fromState, toState, fileName))
+            allMeta.append(self.isFileInStates(states, fileName))
         try:
             fileRef = allMeta[0]
         except KeyError, err:
@@ -192,11 +192,32 @@ class FileStateManager(object):
         metaState = None
         self.version = self.getVersion()
 
+        inStates = False
+
+        stateCheckList = self.buildSearchList(states, fileName)
+
+        self.logger.log(lp.DEBUG, "stateCheckList: " + str(stateCheckList))
+
+        for check in stateCheckList:
+            #####
+            # Find the first state in the sorted list
+            isSame, diff = self.isKnownStateMatch(check, fileName)
+            if isSame:
+                metaState = check
+                success = True
+                break
+        
+        self.logger.log(lp.DEBUG, "Success: " + str(success))
+        self.logger.log(lp.DEBUG, "metaState: " + str(metaState))
+
+        """
+
+
         if isinstance(states, list):
             for state in states:
                 if isinstance(state, basestring) and state and self.isSaneFilePath(state):
 
-                toMetaState = self.prefix + "/" + str(self.getVersion()) + "/" + toState
+                metaState = self.prefix + "/" + str(self.getVersion()) + "/" + toState
                 self.logger.log(lp.DEBUG, "toMetaStat: " + str(toMetaState))
                 toFileState = toMetaState + fileName
                 
@@ -219,6 +240,7 @@ class FileStateManager(object):
         
         self.logger.log(lp.DEBUG, "Success: " + str(success))
         self.logger.log(lp.DEBUG, "metaState: " + str(metaState))
+        """
         return success, metaState
 
     def changeFileState(self, fromState='', fileName=''):
@@ -245,7 +267,7 @@ class FileStateManager(object):
 
         return success
             
-    def buildSearchList(self, states=[]):
+    def buildSearchList(self, states=[], map=""):
         """
         Use predefined prefix, version along with the state and filename
         to build a list of potential meta-states, sorted by version number.
@@ -255,6 +277,7 @@ class FileStateManager(object):
         @author: Roy Nielsen
         """
         versions = []
+        states2check = []
         listing = os.listdir(self.prefix)
         
         if listing:
@@ -263,11 +286,19 @@ class FileStateManager(object):
                 if os.path.isdir(self.prefix + "/" + item):
                     versions.append(item)
             sorted = self.qsort(versions)
-            self.logger.log(lp.DEBUG, "versions: " + str(sorted))
-            versions = []
+            self.logger.log(lp.DEBUG, "sorted: " + str(sorted))
             for item in sorted:
-                versions.append(self.prefix + "/" + item + "/" + state)
-        return versions
+                for state in states:
+                    self.logger.log(lp.DEBUG, "item: " + item + " state: " + state)
+                    fullPath = self.prefix + "/" + item + "/" + state + map
+                    self.logger.log(lp.DEBUG, "fullPath: " + str(fullPath))
+                    try:
+                        if os.path.isfile(fullPath):
+                            states2check.append(fullPath)
+                    except OSError:
+                        continue
+
+        return states2check
 
     def getVersion(self):
         '''
