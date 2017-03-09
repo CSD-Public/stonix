@@ -210,37 +210,6 @@ class FileStateManager(object):
         self.logger.log(lp.DEBUG, "Success: " + str(success))
         self.logger.log(lp.DEBUG, "metaState: " + str(metaState))
 
-        """
-
-
-        if isinstance(states, list):
-            for state in states:
-                if isinstance(state, basestring) and state and self.isSaneFilePath(state):
-
-                metaState = self.prefix + "/" + str(self.getVersion()) + "/" + toState
-                self.logger.log(lp.DEBUG, "toMetaStat: " + str(toMetaState))
-                toFileState = toMetaState + fileName
-                
-                #####
-                # Check to state first
-                success, metaStateFound = self.isKnownStateMatch(toMetaState, fileName)
-                if not success:
-                    fromVersionsList = self.buildSearchList(fromState)
-                    toVersionsList = self.buildSearchList(toState)
-                    stateCheckList = fromVersionsList + toVersionsList
-    
-                    for check in stateCheckList:
-                        #####
-                        # Find the first state in the sorted list
-                        isSame, diff = self.isKnownStateMatch(check, fileName)
-                        if isSame:
-                            metaState = check
-                            success = True
-                            break
-        
-        self.logger.log(lp.DEBUG, "Success: " + str(success))
-        self.logger.log(lp.DEBUG, "metaState: " + str(metaState))
-        """
         return success, metaState
 
     def changeFileState(self, fromState='', fileName=''):
@@ -282,11 +251,19 @@ class FileStateManager(object):
         
         if listing:
             self.logger.log(lp.DEBUG, "listing: " + str(listing))
+            #####
+            # Validate that only directory names are in the list
             for item in listing:
                 if os.path.isdir(self.prefix + "/" + item):
                     versions.append(item)
+            #####
+            # Sort the version list
             sorted = self.qsort(versions)
             self.logger.log(lp.DEBUG, "sorted: " + str(sorted))
+            
+            #####
+            # Create a new list only with valid files out of the versions 
+            # and states list
             for item in sorted:
                 for state in states:
                     self.logger.log(lp.DEBUG, "item: " + item + " state: " + state)
@@ -297,7 +274,9 @@ class FileStateManager(object):
                             states2check.append(fullPath)
                     except OSError:
                         continue
-
+        #####
+        # reverse the array so the latest version is first
+        states2check = states2check[::-1] 
         return states2check
 
     def getVersion(self):
@@ -342,7 +321,7 @@ class FileStateManager(object):
     
     def qsort(self, data=[]):
         '''
-        Generic computer science QSORT algorithm.
+        Generic computer science QSORT divide and conquer algorithm.
         '''
         success = False
         less = ['0']
@@ -358,6 +337,3 @@ class FileStateManager(object):
         return success
 
     #--------------------------------------------------------------------------
-
-
-
