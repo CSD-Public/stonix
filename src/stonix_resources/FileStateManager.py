@@ -275,7 +275,8 @@ class FileStateManager(object):
                     except OSError:
                         continue
         #####
-        # reverse the array so the latest version is first
+        # reverse the array so the latest version is first - valid since
+        # python 2.3.5
         states2check = states2check[::-1] 
         return states2check
 
