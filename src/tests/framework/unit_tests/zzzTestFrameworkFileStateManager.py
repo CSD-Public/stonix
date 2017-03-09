@@ -64,10 +64,12 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     def setUp(self):
         """
         """
-        self.environ = Environment()
-        self.environ.stonixversion = "1.2.3"
-        self.logger = LogDispatcher(self.environ, debug_mode=True, )
-        self.logger.initializeLogs("/tmp/zzzTestFrameworkFileStateManager", extension_type="time", syslog=False, myconsole=False)
+        #self.environ = Environment()
+        #self.environ.stonixversion = "1.2.3"
+        self.environ = environ
+        self.logger = logger
+        #self.logger = LogDispatcher(self.environ, debug_mode=True, )
+        #self.logger.initializeLogs("/tmp/zzzTestFrameworkFileStateManager", extension_type="time", syslog=False, myconsole=False)
         
         self.fsm = FileStateManager(self.environ, self.logger)
         self.fsm.setPrefix("/tmp/stonixtest")
@@ -115,7 +117,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
     ############################################################################
     
-    def test_fileStateCheck(self):
+    def test_isFileInStateCheck(self):
         """
         Run methods or functionality that performs a state change on a file.
         
@@ -144,8 +146,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             item.close()
             LIBC.sync()
         
-        success, _ = self.fsm.checkStateOfFile("stateBefore", 
-                                               "stateAfter", 
+        success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"], 
                                                firstTestFile)
         
         self.logger.log(lp.DEBUG, "first test . . .")
@@ -169,8 +170,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         fpBefore.write("hello world")
         fpBefore.close()
 
-        success, _ = self.fsm.checkStateOfFile("stateBefore", 
-                                               "stateAfter", 
+        success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"],
                                                firstTestFile)        
 
         self.logger.log(lp.DEBUG, "second test . . .")
@@ -196,9 +196,8 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
         LIBC.sync()
         
-        success, _ = self.fsm.checkStateOfFile("stateBefore", 
-                                               "stateAfter", 
-                                               firstTestFile)        
+        success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"],
+                                               firstTestFile)
 
         self.logger.log(lp.DEBUG, "Third test . . .")
         self.logger.log(lp.DEBUG, "Success: " + str(success))
@@ -210,9 +209,8 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         
         LIBC.sync()
         
-        success, _ = self.fsm.checkStateOfFile("AnotherState", 
-                                               "stateAfter", 
-                                               firstTestFile)        
+        success, _ = self.fsm.isFileInStates(["AnotherState", "stateAfter"],
+                                               firstTestFile)
 
         self.logger.log(lp.DEBUG, "fourth test . . .")
         self.logger.log(lp.DEBUG, "Success: " + str(success))
