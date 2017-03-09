@@ -195,7 +195,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         fpPrevious.close()
 
         LIBC.sync()
-        
+
         success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"],
                                                firstTestFile)
 
@@ -206,9 +206,9 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
        #####
         # Set up and test for missing reference state file (expected fail)
-        
+
         LIBC.sync()
-        
+
         success, _ = self.fsm.isFileInStates(["AnotherState", "stateAfter"],
                                                firstTestFile)
 
@@ -219,10 +219,65 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
         #####
         # Set up and test for missing target state (expected fail)
-        
+
+        LIBC.sync()
+
+        success, _ = self.fsm.isFileInStates([], firstTestFile)
+
+        self.logger.log(lp.DEBUG, "fifth . . .")
+        self.logger.log(lp.DEBUG, "Success: " + str(success))
+        self.logger.log(lp.DEBUG, "      _: " + str(_))
+        self.assertFalse(success, "Could not aquire a refrence...")
+
         #####
-        # Set up and test for missing target file (expected fail)
+        # Set up and test for missing map file (expected fail)
+
+        LIBC.sync()
     
+        success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"], "")
+
+        self.logger.log(lp.DEBUG, "sixth test . . .")
+        self.logger.log(lp.DEBUG, "Success: " + str(success))
+        self.logger.log(lp.DEBUG, "      _: " + str(_))
+        self.assertFalse(success, "Could not aquire a refrence...")
+
+    ############################################################################
+
+    def test_isSaneFilePath(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented")
+
+    ############################################################################
+
+    def test_isKnownStateMatch(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented")
+
+    ############################################################################
+
+    def test_areFilesInStates(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented")
+
+    ############################################################################
+
+    def test_buildSearchList(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented")
+
+    ############################################################################
+
+    def test_qsort(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented")
+
+    ############################################################################
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
