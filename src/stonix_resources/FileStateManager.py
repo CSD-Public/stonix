@@ -81,8 +81,9 @@ class FileStateManager(object):
         """
         sane = False
         if isinstance(filepath, basestring):
-            if re.match("^[A-Za-z0-9./][A-Za-z0-9/_.\-]*", filepath):
+            if re.match("^[A-Za-z0-9/.][A-Za-z0-9/_.\-]*", filepath):
                 sane = True
+        self.logger.log(lp.DEBUG, "sane: " + str(sane))
         return sane
 
     def warnOfMissMatch(self, message=''):
@@ -135,7 +136,7 @@ class FileStateManager(object):
                     lines = len(fromlines)
                     diff = difflib.unified_diff(fromlines, tolines, fromFile, toFile,
                                                 fromdate, todate, n=lines)
-                elif re.match("^ndiff$", self.mode): 
+                elif re.match("^ndiff$", self.mode):
                     diff = difflib.ndiff(fromlines, tolines)
                 if diff is not None and not diff:
                     #####
@@ -145,7 +146,7 @@ class FileStateManager(object):
                 else:
                     #####
                     # String is empty, so we have a match
-                    isSame = True 
+                    isSame = True
                     self.logger.log(lp.DEBUG, "Found a diff: '" + str(diff) + "'")
         self.logger.log(lp.DEBUG, "isSame: " + str(isSame))
         self.logger.log(lp.DEBUG, "diff:   " + str(diff))
@@ -179,10 +180,10 @@ class FileStateManager(object):
         Check Item State, will check for the latest known good state, by way
         of the fromState, and current version of the application using this
         library, then iterate backwards through known good versions defined by
-        the directory path in the class header.  
-        
-        @param: fromState - first expected known good state to check.  
-        @param: toState - expected state based on passed in state and 
+        the directory path in the class header.
+
+        @param: fromState - first expected known good state to check.
+        @param: toState - expected state based on passed in state and
                           application version.
         @param: filename - full path to a file on the filesystem.
 
@@ -293,8 +294,8 @@ class FileStateManager(object):
         return self.version
 
     #--------------------------------------------------------------------------
-    # Qsort algorithm for sorting a list of version number as defined by the
-    # distutils.version.LooseVersion
+    # Quick sort algorithm for sorting a list of version number as defined by
+    # the distutils.version.LooseVersion
     def partition(self, data=[], pivot=""):
         '''
         Partitioning data based on the passed in pivot value.  Partition defined

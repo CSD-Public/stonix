@@ -32,6 +32,7 @@ import sys
 import ctypes
 import shutil
 import unittest
+from distutils.version import LooseVersion
 
 sys.path.append("../../../..")
 from src.stonix_resources.FileStateManager import FileStateManager
@@ -246,14 +247,52 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     def test_isSaneFilePath(self):
         """
         """
-        self.assertTrue(False, "Not yet implemented")
+        invalidResults = []
+
+        invalidFilePaths = ["^abc","$garbage","user@email.address.net",
+                            "NotAFile!","one+one=two"]
+
+        for item in invalidFilePaths:
+            result = self.fsm.isSaneFilePath(item)
+            invalidResults.append(result)
+
+        if True in invalidResults:
+            invalidCheck = False
+        else:
+            invalidCheck = True
+
+        self.assertFalse(invalidCheck, "Found a valid format in the invalid path list.")
+
+        validResults = []
+        
+        validFilePaths = ["/","/bin","/usr/local/bin",
+                          ".bashrc","/tmp/test_file-v1.2.3",
+                          "/home/user/.bashrc","/etc/sshd_config"]
+
+        for item in validFilePaths:
+            result = self.fsm.isSaneFilePath(item)
+            validResults.append(result)
+
+        if False in validResults:
+            validCheck = False
+        else:
+            validCheck = True
+
+        self.assertTrue(validCheck, "Found an invalid format in the valid path list.")
 
     ############################################################################
 
     def test_isKnownStateMatch(self):
         """
         """
-        self.assertTrue(False, "Not yet implemented")
+        testFp = open("/tmp/test", "w")
+        testFp.write("Hello World!")
+        testFp.close()
+
+        result = self.fsm.isKnownStateMatch("/tmp/test", "/tmp/test")
+        self.assertTrue(result, "Files don't match...")
+        
+        os.unlink("/tmp/test")
 
     ############################################################################
 
@@ -267,6 +306,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     def test_buildSearchList(self):
         """
         """
+        self.fsm.buildSearchList([], test)
         self.assertTrue(False, "Not yet implemented")
 
     ############################################################################
@@ -274,7 +314,61 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     def test_qsort(self):
         """
         """
-        self.assertTrue(False, "Not yet implemented")
+        versions = ['1.4.3', '1.2.3', '0.9.6.42', '1.5.6']
+        
+        newVersions = self.fsm.qsort(versions)
+        success = False
+        successes = []
+        
+        i = 0
+        
+        for version in newVersions:
+            if i == 0:
+                i = i + 1
+                continue
+            elif LooseVersion(version) >= LooseVersion(newVersions[i-1]):
+                successes.append(True)
+            else:
+                successes.append(False)
+            i = i + 1
+        
+        if False in successes:
+            success = False
+        else:
+            success = True
+        
+        self.logger.log(lp.DEBUG, "Successes: " + str(successes))
+        self.logger.log(lp.DEBUG, "Success: " + str(success))
+        
+        #####
+        # Assert that a Quick Sorted array is ordered
+        self.assertTrue(success, "Quicksort did not correctly order the versions.")
+        
+        i = 0
+        success = False
+        successes = []
+        
+        for version in versions:
+            if i == 0:
+                i = i + 1
+                continue
+            elif LooseVersion(version) >= LooseVersion(versions[i-1]):
+                successes.append(True)
+            else:
+                successes.append(False)
+            i = i + 1
+
+        if False in successes:
+            success = False
+        else:
+            success = True
+        
+        self.logger.log(lp.DEBUG, "Successes: " + str(successes))
+        self.logger.log(lp.DEBUG, "Success: " + str(success))
+        
+        #####
+        # Assert that the unordered array is NOT ordered
+        self.assertFalse(success, "Versions is correctly ordered.")
 
     ############################################################################
 
