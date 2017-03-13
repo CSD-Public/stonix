@@ -61,12 +61,12 @@ class ConfigurePasswordPolicy(Rule):
 #                            'os': {'Mac OS X': ['10.11']}}
         self.applicable = {'type': 'black',
                            'family': ['linux', 'darwin'],
-                           'os': {'Mac OS X': ['10.10', '+']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.12.6']}}
         datatype = "bool"
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
             "profile set the value of PWPOLICY to False"
-        default = True
+        default = False
         self.pwci = self.initCi(datatype, key, instructions, default)
         
         datatype = "bool"
