@@ -52,7 +52,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
-STONIXVERSION = '0.9.5'
+STONIXVERSION = '0.9.6'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -184,7 +184,7 @@ MACKRB5 = '''# Updated Test Configuration
 #           [pam] section removed; pam config added to [appdefaults] per krb5 syntax
 # 20161020  [domain_realm] Added mappings of services discovered through Splunk logs
 #           These include unique results in Server OUs with more than 14 hits last month
-#
+# 20170228  [domain_realm] Renamed xsamba03.lanl.gov to xsamba.lanl.gov
 
 ### NOTE to Service Admins: Suggested configuration is to ensure your service DNS A record
 ### is in the same domain/realm as the service SPN (i.e. service.lanl.gov has the SPN 
@@ -253,7 +253,7 @@ MACKRB5 = '''# Updated Test Configuration
    ta55storageb.lanl.gov = WIN.LANL.GOV
    virginia.lanl.gov = WIN.LANL.GOV
    xfiles02.lanl.gov = WIN.LANL.GOV
-   xsamba03.lanl.gov = WIN.LANL.GOV
+   xsamba.lanl.gov = WIN.LANL.GOV
 
 # Web services
    exg13-p-mbx01-f5.lanl.gov = WIN.LANL.GOV
