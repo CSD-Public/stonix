@@ -157,23 +157,31 @@ class FileStateManager(object):
         Make sure all files in the files list identify as from the same list.
         '''
         success = False
-        allMeta = []
-        for fileName in files:
-            allMeta.append(self.isFileInStates(states, fileName))
-        try:
-            fileRef = allMeta[0]
-        except KeyError, err:
-            self.logger.log(lp.DEBUG, "Error attempting to acquire reference.")
-            self.logger.log(lp.DEBUG, traceback.format_exc(err))
-        else:
-            try:
-                if allMeta[1:] == allMeta[:-1]:
-                    metaStateFound = allMeta[0]
+        filesState = []
+        state_search = {}
+        thisState = False
+        stateListItem = ""
+
+        for state in states:
+            state_search = self.buildSearchList(states=[state])
+            for stateListItem in state_search:
+                for fileName in files:
+                    thisState, _ = self.isKnownStateMatch(stateListItem + fileName, fileName)
+                    filesState.append(thisState)
+                self.logger.log(lp.DEBUG, "filesState: " + str(filesState))
+                if False in filesState:
+                    filesState = []
+                    continue
+                else:
+                    filesState = []
                     success = True
-            except KeyError, err:
-                self.logger.log(lp.DEBUG, "Error attempting to acquire references.")
-                self.logger.log(lp.DEBUG, traceback.format_exc(err))
-        return success, metaStateFound
+                    break
+            if success is True:
+                break
+            else:
+                filesState = []
+        self.logger.log(lp.DEBUG, "areFilesInStates: " + str(success) + " " + str(stateListItem))
+        return success, stateListItem
 
     def isFileInStates(self, states=[], fileName=''):
         '''
@@ -250,7 +258,9 @@ class FileStateManager(object):
         states2check = []
         listing = os.listdir(self.prefix)
         
-        if listing:
+        if listing and states and map:
+            #####
+            # create the search list of states for a specific file map
             self.logger.log(lp.DEBUG, "listing: " + str(listing))
             #####
             # Validate that only directory names are in the list
@@ -261,10 +271,10 @@ class FileStateManager(object):
             # Sort the version list
             sorted = self.qsort(versions)
             self.logger.log(lp.DEBUG, "sorted: " + str(sorted))
-            
+
             #####
-            # Create a new list only with valid files out of the versions 
-            # and states list
+            # Create a new list only with valid files out of the versions
+            # and states list, with the file map.
             for item in sorted:
                 for state in states:
                     self.logger.log(lp.DEBUG, "item: " + item + " state: " + state)
@@ -275,16 +285,44 @@ class FileStateManager(object):
                             states2check.append(fullPath)
                     except OSError:
                         continue
+        elif listing and states and not map:
+            #####
+            # Just need a states list, without the map...
+            self.logger.log(lp.DEBUG, "listing: " + str(listing))
+            #####
+            # Validate that only directory names are in the list
+            for item in listing:
+                if os.path.isdir(self.prefix + "/" + item):
+                    versions.append(item)
+            #####
+            # Sort the version list
+            sorted = self.qsort(versions)
+            self.logger.log(lp.DEBUG, "sorted: " + str(sorted))
+
+            #####
+            # Create a new list only with valid files out of the versions
+            # and states list, WITHOUT the file map.
+            for item in sorted:
+                for state in states:
+                    self.logger.log(lp.DEBUG, "item: " + item + " state: " + state)
+                    fullPath = self.prefix + "/" + item + "/" + state
+                    self.logger.log(lp.DEBUG, "fullPath: " + str(fullPath))
+                    try:
+                        if os.path.isdir(fullPath):
+                            states2check.append(fullPath)
+                    except OSError:
+                        continue
+
         #####
         # reverse the array so the latest version is first - valid since
         # python 2.3.5
-        states2check = states2check[::-1] 
+        states2check = states2check[::-1]
         return states2check
 
     def getVersion(self):
         '''
         Acquire the version of the application using this library.
-        
+
         @author: Roy Nielsen
         '''
         if self.version is None:
@@ -320,7 +358,7 @@ class FileStateManager(object):
         self.logger.log(lp.DEBUG, "equal  : " + str(equal))
         self.logger.log(lp.DEBUG, "greater: " + str(greater))
         return less, equal, greater
-    
+
     def qsort(self, data=[]):
         '''
         Generic computer science QSORT divide and conquer algorithm.

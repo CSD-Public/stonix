@@ -29,6 +29,7 @@
 import os
 import re
 import sys
+import time
 import ctypes
 import shutil
 import unittest
@@ -102,6 +103,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             os.makedirs(item)
 
         LIBC.sync()
+        #time.sleep(2)
         self.ch = CommandHelper(self.logger)
         self.logger.log(lp.INFO, "setUp...")
         
@@ -115,6 +117,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         shutil.rmtree("/tmp/stonixtest")
         LIBC.sync()
         LIBC.sync()
+        #time.sleep(2)
 
     ############################################################################
     
@@ -299,15 +302,219 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     def test_areFilesInStates(self):
         """
         """
-        self.assertTrue(False, "Not yet implemented")
+        success = False
+        
+        fileOne   = "/firstTestFile"
+        fileTwo   = "/secondTestFile"
+        fileThree = "/thirdTestFile"
+        fileFour  = "/fourthTestFile"
+        fileFive  = "/fifthTestFile"
+        
+        filesOrig = [self.testTargetDirs[0] + fileOne,
+                     self.testTargetDirs[1] + fileTwo,
+                     self.testTargetDirs[2] + fileThree,
+                     self.testTargetDirs[3] + fileFour,
+                     self.testTargetDirs[1] + fileFive,
+                     ]
+        filesTargetState = [self.testTargetDirs[0] + fileOne,
+                            self.testTargetDirs[1] + fileTwo,
+                            self.testTargetDirs[2] + fileThree,
+                            self.testTargetDirs[3] + fileFour,
+                            self.testTargetDirs[1] + fileFive,
+                            ]
+
+
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Hello World!")
+            itemFp.close()
+            LIBC.sync()
+
+        #####
+        # Check the latest version in that stateAfter state as the "expected state"
+        for item in filesTargetState:
+            myfile = self.testMetaDirs[9] + item
+            myfileFp = open(myfile, "w")
+            myfileFp.write("Hello World!")
+            myfileFp.close()
+            LIBC.sync()
+
+        states = ["stateAfter", "stateBefore"]
+
+        success, _ = self.fsm.areFilesInStates(states, filesOrig)
+
+        self.assertTrue(success, "Files in States check one failed...")
+
+        #####
+        # Found approved files in one of the iterative states
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("hello world!")
+            itemFp.close()
+            LIBC.sync()
+
+        filesStateOne = [self.testTargetDirs[0] + fileOne,
+                         self.testTargetDirs[1] + fileTwo,
+                         self.testTargetDirs[2] + fileThree,
+                         self.testTargetDirs[3] + fileFour,
+                         self.testTargetDirs[1] + fileFive,
+                         ]
+
+        #####
+        # Check a previous state and find all the correct files in that state
+        for item in filesTargetState:
+            myfile = self.testMetaDirs[0] + item
+            myfileFp = open(myfile, "w")
+            myfileFp.write("hello world!")
+            myfileFp.close()
+            LIBC.sync()
+
+        states = ["stateAfter", "stateBefore"]
+
+        success, _ = self.fsm.areFilesInStates(states, filesOrig)
+
+        self.assertTrue(success, "Files in States check two failed...")
+
+        #####
+        # multiple files in another state, but not all of them
+        filesStateOne = [self.testTargetDirs[0] + fileOne,
+                         self.testTargetDirs[1] + fileTwo,
+                         self.testTargetDirs[2] + fileThree,
+                         ]
+
+        #####
+        # Check a previous state and find all the correct files in that state
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Hello World")
+            itemFp.close()
+            LIBC.sync()
+
+        for item in filesStateOne:
+            myfile = self.testMetaDirs[3] + item
+            myfileFp = open(myfile, "w")
+            myfileFp.write("Hello World")
+            myfileFp.close()
+            LIBC.sync()
+
+        states = ["stateAfter", "stateBefore"]
+
+        success, _ = self.fsm.areFilesInStates(states, filesOrig)
+
+        self.assertFalse(success, "Files in States check three succeeded...")
+        
+        #####
+        # There is one file off in one state, match till found in states
+        filesStateOne = [self.testTargetDirs[0] + fileOne,
+                         self.testTargetDirs[1] + fileTwo,
+                         self.testTargetDirs[2] + fileThree,
+                         self.testTargetDirs[3] + fileFour,
+                         self.testTargetDirs[1] + fileFive,
+                         ]
+
+        #####
+        # Check a previous state and find all the correct files in that state
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Hello World")
+            itemFp.close()
+            LIBC.sync()
+
+        for item in filesStateOne:
+            myfile = self.testMetaDirs[3] + item
+            myfileFp = open(myfile, "w")
+            myfileFp.write("Hello World")
+            myfileFp.close()
+            LIBC.sync()
+
+        fileFiveFp = open(self.testTargetDirs[1] + fileFive, "w")
+        fileFiveFp.write("Hello World!")
+        fileFiveFp.close()
+        LIBC.sync()
+
+        states = ["stateAfter", "stateBefore"]
+
+        success, _ = self.fsm.areFilesInStates(states, filesOrig)
+
+        self.assertFalse(success, "Files in States check four succeeded...")
+
+        #####
+        # no state of files match
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Howdy!")
+            itemFp.close()
+            LIBC.sync()
+
+        states = ["stateAfter", "stateBefore"]
+
+        success, _ = self.fsm.areFilesInStates(states, filesOrig)
+
+        self.assertFalse(success, "Files in States check five succeeded...")
+
+        #####
+        # In new list, not in old list
+        fileSix = "/sixthTestFile"
+        filesStateOne = [self.testTargetDirs[0] + fileOne,
+                         self.testTargetDirs[1] + fileTwo,
+                         self.testTargetDirs[2] + fileThree,
+                         self.testTargetDirs[3] + fileFour,
+                         self.testTargetDirs[1] + fileFive,
+                         self.testTargetDirs[1] + fileSix,
+                         ]
+
+        #####
+        # Check a previous state and find all the correct files in that state
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Greetings Traveler")
+            itemFp.close()
+            LIBC.sync()
+
+        for item in filesStateOne:
+            myfile = self.testMetaDirs[3] + item
+            myfileFp = open(myfile, "w")
+            myfileFp.write("Greetings Traveloer")
+            myfileFp.close()
+            LIBC.sync()
+
+        states = ["stateAfter", "stateBefore"]
+
+        success, _ = self.fsm.areFilesInStates(states, filesOrig)
+
+        self.assertFalse(success, "Files in States check five succeeded...")
 
     ############################################################################
 
     def test_buildSearchList(self):
         """
         """
-        self.fsm.buildSearchList([], test)
-        self.assertTrue(False, "Not yet implemented")
+        #####
+        # Set up and test for expected state check
+        thirdTestFile = self.testTargetDirs[0] + "/thirdTestFile"
+        
+        fpBefore = open(self.testMetaDirs[0] + thirdTestFile, "w")
+        fpAfter = open(self.testMetaDirs[1] + thirdTestFile, "w")
+        anotherFpAfter = open(self.testMetaDirs[2] + thirdTestFile, "w")
+        yetAnotherFpAfter = open(self.testMetaDirs[3] + thirdTestFile, "w")
+        fpSecondTestFile = open(thirdTestFile, "w")
+        
+        for item in [fpSecondTestFile, fpBefore, fpAfter, anotherFpAfter, yetAnotherFpAfter]:
+            item.write("Hello World!")
+            item.close()
+            LIBC.sync()
+        
+        searchList = self.fsm.buildSearchList(["stateBefore", "stateAfter"], thirdTestFile)
+        
+        self.logger.log(lp.DEBUG, "buildSearchList test list: " + str(searchList))
+        
+        expectedList = ['/tmp/stonixtest/1.2.4.5/stateAfter/tmp/stonixtest/testOne/thirdTestFile',
+                        '/tmp/stonixtest/1.2.4.5/stateBefore/tmp/stonixtest/testOne/thirdTestFile',
+                        '/tmp/stonixtest/1.2.3/stateAfter/tmp/stonixtest/testOne/thirdTestFile',
+                        '/tmp/stonixtest/1.2.3/stateBefore/tmp/stonixtest/testOne/thirdTestFile']
+
+        success = expectedList == searchList        
+        self.assertTrue(success, "Lists don't match, Houston, we have a problem...")
 
     ############################################################################
 
