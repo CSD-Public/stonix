@@ -467,7 +467,7 @@ class SecureCUPS(Rule):
         # DEFAULTS
         self.detailedresults = ""
         self.compliant = True
-        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
+        badopts = ["^HostNameLookups\s+Double", "^Sandboxing\s+strict", "^FatalErrors\s+config"]
         badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
 
         try:
@@ -673,7 +673,7 @@ class SecureCUPS(Rule):
         self.detailedresults = ""
         success = True
         self.iditerator = 0
-        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
+        badopts = ["^HostNameLookups\s+Double", "^Sandboxing\s+strict", "^FatalErrors\s+config"]
         badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
         foundbadopts = False
 
