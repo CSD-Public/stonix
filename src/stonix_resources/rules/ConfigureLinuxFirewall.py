@@ -91,7 +91,7 @@ STONIX has done the baseline configuration.
         key = 'configurelinuxfirewall'
         instructions = '''To disable this rule set the value of \
 CONFIGURELINUXFIREWALL to False.'''
-        default = True
+        default = False
         self.clfci = self.initCi(datatype, key, instructions, default)
         self.isfirewalld = False
         self.isufw = False

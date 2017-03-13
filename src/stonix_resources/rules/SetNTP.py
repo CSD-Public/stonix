@@ -686,16 +686,21 @@ class SetNTP(Rule):
         is using chrony or openNTPD by default.
         
         @return: Bool True if the system uses chrony
-        @author: B. Malmberg
+        @author: Breen Malmberg
         @change: Modified to correct for bugs in Environment object by D. Kennel
+        @change: Breen Malmberg - 2/1/2017 - fixed bug with variable osname being
+                referenced before assignment if the osname was not found in the osversion
+                dictionary
         '''
 
         # defaults
         useschrony = False
+        osname = ''
 
         try:
 
             # the minimum version number of each distro which uses chrony instead of ntp
+            # suse still uses ntp
             osversion = {'red': 7,
                          'fedora': 20,
                          'centos': 7,
@@ -724,8 +729,11 @@ class SetNTP(Rule):
             osver = self.environ.getosver()
             element = osver.split('.')
             majorver = element[0]
-            if int(majorver) >= osversion[osname]:
-                useschrony = True
+
+            # if this is an os that uses chrony (in any version)
+            if osname:
+                if int(majorver) >= osversion[osname]:
+                    useschrony = True
 
         except Exception:
             raise

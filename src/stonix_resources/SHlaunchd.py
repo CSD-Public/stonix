@@ -298,65 +298,62 @@ class SHlaunchd(object):
             raise
         return isrunning
 
-    def reloadservice(self, service, servicename):
+    def reloadservice(self, servicelong, serviceshort):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @return: servicesuccess
+        @return: reloadsuccess
         @rtype: bool
-        @param service string: Name of the service to be reloaded
-        @param servicename string: Short Name of the service to be reloaded
-        @author: ???
+        @param servicelong string: Name of the service to be reloaded
+        @param serviceshort string: Short Name of the service to be reloaded
+        @author: Breen Malmberg
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; refactor;
                 try/except; logging
+        @change: Breen Malmberg - 2/9/2017 - complete refactor of method, will use
+                load and unload commands instead of stop and start job commands
+                (stop and start are not used on newer versions of mac os x), but
+                load and unload still work on all currently supported versions (10.10,
+                10.11, 10.12); kept the additional parameter for backwards compatibility
+                even though it is now unused in this method; parameter order maintained
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.reloadservice()...")
 
-        servicesuccess = False
-        startsuccess = True
-        stopsuccess = True
-        isrunning = False
+        reloadsuccess = True
+        unloadcmd = [self.launchd, "unload", servicelong]
+        loadcmd = [self.launchd, "load", servicelong]
+        errmsg = ""
+        errmsg2 = ""
 
         try:
 
-            if self.isrunning(service, servicename):
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
-                isrunning = True
+            self.ch.executeCommand(unloadcmd)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                reloadsuccess = False
+                errmsg = self.ch.getErrorString()
+                self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(unloadcmd) + " failed with error code: " + str(retcode))
+                self.logdispatcher.log(LogPriority.DEBUG, "\n" + errmsg)
             else:
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
-    
-            if isrunning:
+                self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(unloadcmd) + " was run successfully")
 
-                self.logdispatcher.log(LogPriority.INFO, "Stopping " + str(service) + " service...")
-                if not self.stopservice(service, servicename):
-                    stopsuccess = False
-
-                if stopsuccess:
-                    self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " successfully stopped")
-                    self.logdispatcher.log(LogPriority.INFO, "Starting " + str(service) + " service...")
-                    startsuccess = self.startservice(service, servicename)
+            self.ch.executeCommand(loadcmd)
+            retcode2 = self.ch.getReturnCode()
+            if retcode2 != 0:
+                reloadsuccess = False
+                errmsg2 = self.ch.getErrorString()
+                self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(loadcmd) + " failed with error code: " + str(retcode2))
+                self.logdispatcher.log(LogPriority.DEBUG, "\n" + errmsg2)
             else:
-                self.logdispatcher.log(LogPriority.INFO, "Starting " + str(service) + " service...")
-                startsuccess = self.startservice(service, servicename)
-
-            if startsuccess:
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " successfully started")
-    
-            servicesuccess = startsuccess and stopsuccess
-    
-            if servicesuccess:
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " successfully reloaded")
-            else:
-                self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " failed to reload")
+                self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(loadcmd) + " was run successfully")
 
             self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.reloadservice()...")
 
         except Exception:
             raise
-        return servicesuccess
+        return reloadsuccess
 
     def listservices(self):
         '''

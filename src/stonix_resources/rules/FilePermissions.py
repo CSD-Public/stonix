@@ -655,7 +655,18 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                     if groupwrite:
                         gwfiles.append(fpath)
                     if fmode.st_uid != 0:
-                        nrofiles.append(fpath)
+                        if self.environ.getosfamily == 'darwin':
+                            macuucpfiles = ['/usr/lib/cron', '/usr/bin/cu',
+                                            '/usr/bin/uucp', '/usr/bin/uuname',
+                                            '/usr/bin/uustat', '/usr/bin/uux',
+                                            '/usr/sbin/uucico',
+                                            '/usr/sbin/uuxqt']
+                            if fpath in macuucpfiles:
+                                continue
+                            else:
+                                nrofiles.append(fpath)
+                        else:
+                            nrofiles.append(fpath)
 
         self.logger.log(LogPriority.DEBUG,
                         ['GroupWritable.report',
