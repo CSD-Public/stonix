@@ -267,7 +267,7 @@ password, will be disabled.'
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {'eventtype': 'commandstring',
-                                     'command': '/usr/bin/pwpolicy -enableuser '
+                                     'command': '/usr/bin/pwpolicy -enableuser -u '
                                                 + user}
                             self.statechglogger.recordchgevent(myid, event)
 
