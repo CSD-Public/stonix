@@ -42,6 +42,7 @@ that access the version variable to use this copy.
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
 @change: 2016/02/03 - ekkehard - incremented STONIXVERSION = '0.9.5'
 @change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
+@change: 2017/03/07 - dkennel add FISMACAT for FISMA/FIPS 199 risk category
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -51,6 +52,15 @@ that access the version variable to use this copy.
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
 STONIXVERSION = '0.9.5'
+
+# FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
+# is used to determine rule applicability and behavior with the higher the
+# risk value is causing more rules to activate and active rules to be more
+# stringent. This can be overridden by the System Administrator via the conf
+# file but may never be lower than the value specified here. Valid values are
+# 'low', 'med' and 'high'
+
+FISMACAT = 'low'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
