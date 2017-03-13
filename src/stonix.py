@@ -115,6 +115,7 @@ hardening process please review the hardening guidance from CIS, DISA and NSA.
 Created on Aug 23, 2010
 
 @author: dkennel
+@change: 2017/03/07 - dkennel - Added support for FISMA categorization.
 '''
 # Std Library imports
 import sys
@@ -180,6 +181,11 @@ class Controller(Observable):
             self.prog_args = ProgramArguments()
             self.processargs()
         self.config = Configuration(self.environ)
+        try:
+            fismacategory = self.config.getconfvalue('main', 'fismacat')
+            self.environ.setsystemfismacat(fismacategory)
+        except(KeyError):
+            pass
         self.numrulesrunning = 0
         self.numrulescomplete = 0
         self.currulename = ''
@@ -195,7 +201,7 @@ class Controller(Observable):
             applicable2PyQt4 = {'type': 'black',
                                'family': ['darwin']}
             self.chkapp = CheckApplicable(self.environ, self.logger)
-            
+
             if self.chkapp.isapplicable(applicable2PyQt5):
                 #####
                 # Appropriate to OS that supports PyQt5
