@@ -156,6 +156,10 @@ class InstallBanners(RuleKVEditor):
         self.kde = False
         self.lightdm = False
 
+        constlist = [WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER]
+        if not self.checkConsts(constlist):
+            return
+
         try:
             if self.environ.getosfamily() == 'linux':
                 self.setlinuxcommon()
@@ -437,6 +441,11 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.mac = True
+
+        constlist = [WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER]
+        if not self.checkConsts(constlist):
+            return
+
         self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/private/etc/sshd_config'
@@ -865,6 +874,14 @@ class InstallBanners(RuleKVEditor):
 
         @author Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constants: WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER, in localize.py, are defined and are not None. This rule will not function without them."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
 
         self.compliant = True
         self.detailedresults = ''
@@ -1348,6 +1365,13 @@ class InstallBanners(RuleKVEditor):
 
         @author Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER]
+        if not self.checkConsts(constlist):
+            success = False
+            self.formatDetailedResults("fix", success, self.detailedresults)
+            return success
 
         success = True
         self.detailedresults = ''

@@ -124,6 +124,15 @@ invalid."""
         @param self - essential if you override this definition
         @return: bool - True if system is compliant, False if it isn't
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [WINLOG, LANLLOGROTATE]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constants: WINLOG and LANLLOGROTATE, in localize.py, are defined and are not None. This rule will not function without them."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         try:
             self.directories = ["/var/log/daemon",
                                 "/var/log/auth",
@@ -190,6 +199,14 @@ invalid."""
         @return: bool - False if the method died during execution
         @param self:essential if you override this definition
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [WINLOG, LANLLOGROTATE]
+        if not self.checkConsts(constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
+
         try:
             if not self.ci.getcurrvalue():
                 return
@@ -1377,9 +1394,14 @@ because these values are optional\n"
             if not os.path.exists(path):
                 compliant = False
                 self.detailedresults += path + " logfile doesn't exist\n"
-        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
-            compliant = False
-            self.detailedresults += "old logrotation file exists\n"
+
+        # if LANLLOGROTATE const is set to none, this is a public environment
+        # (not lanl related) so ignore the next bit of code
+        if LANLLOGROTATE != None:
+            if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
+                compliant = False
+                self.detailedresults += "old logrotation file exists\n"
+
 #----------Check /etc/syslog.conf file for correct contents-------------------#
         contents = readFile(syslog, self.logger)
         bad = False
@@ -1523,8 +1545,12 @@ because these values are optional\n"
                     success = False
                     self.detailedresults += "unsuccessful in creating file: \
 " + path + "\n"
-        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
-            os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
+
+        # if the LANLLOGROTATE const is set to none, this is a public environment
+        # (not lanl related) so ignore the next bit of code
+        if LANLLOGROTATE != None:
+            if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
+                os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
         if os.path.exists(syslog):
             tempstring = ""
             contents = readFile(syslog, self.logger)
