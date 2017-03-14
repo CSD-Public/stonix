@@ -66,8 +66,11 @@ browser for administration tasks."""
         instructions = """This is a list of domains which the root user is \
 approved to browse."""
         default = LOCALDOMAINS
-        self.approvedDomainsCi = self.initCi(datatype, key, instructions,
-                                             default)
+        if default == None:
+            default = ["localhost"]
+        elif not default:
+            default = ["localhost"]
+        self.approvedDomainsCi = self.initCi(datatype, key, instructions, default)
 
         datatype = 'bool'
         key = 'DISABLEPROXY'

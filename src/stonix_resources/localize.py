@@ -252,7 +252,7 @@ APPLEMAILDOMAINFORMATCHING = None
 # world writable directories that are common at your site (possibly due to
 # widely deployed software).
 # Variable Type: List (of strings)
-SITELOCALWWWDIRS = []
+SITELOCALWWWDIRS = None
 
 # Default messages for self.detailedresults initialization, report, fix, undo
 # Variables Type: String

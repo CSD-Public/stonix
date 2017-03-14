@@ -129,7 +129,7 @@ invalid."""
         constlist = [WINLOG, LANLLOGROTATE]
         if not self.checkConsts(constlist):
             self.compliant = False
-            self.detailedresults = "\nPlease ensure that the constants: WINLOG and LANLLOGROTATE, in localize.py, are defined and is not None. This rule will not function without them."
+            self.detailedresults = "\nPlease ensure that the constants: WINLOG and LANLLOGROTATE, in localize.py, are defined and are not None. This rule will not function without them."
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
 
@@ -1394,9 +1394,14 @@ because these values are optional\n"
             if not os.path.exists(path):
                 compliant = False
                 self.detailedresults += path + " logfile doesn't exist\n"
-        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
-            compliant = False
-            self.detailedresults += "old logrotation file exists\n"
+
+        # if LANLLOGROTATE const is set to none, this is a public environment
+        # (not lanl related) so ignore the next bit of code
+        if LANLLOGROTATE != None:
+            if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
+                compliant = False
+                self.detailedresults += "old logrotation file exists\n"
+
 #----------Check /etc/syslog.conf file for correct contents-------------------#
         contents = readFile(syslog, self.logger)
         bad = False
@@ -1540,8 +1545,12 @@ because these values are optional\n"
                     success = False
                     self.detailedresults += "unsuccessful in creating file: \
 " + path + "\n"
-        if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
-            os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
+
+        # if the LANLLOGROTATE const is set to none, this is a public environment
+        # (not lanl related) so ignore the next bit of code
+        if LANLLOGROTATE != None:
+            if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
+                os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
         if os.path.exists(syslog):
             tempstring = ""
             contents = readFile(syslog, self.logger)
