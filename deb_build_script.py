@@ -26,7 +26,9 @@ Created on Feb 28, 2014
 
 build script for stonix package on debian systems
 
-@author bemalmbe
+@author Breen Malmberg
+@change: Breen Malmberg - 3/14/2017 - updated controltext and
+        changelog text
 '''
 
 import os
@@ -47,18 +49,19 @@ if curruserid != 0:
 # Defaults
 stonixversion = STONIXVERSION
 
+# change package name to stonix-red if
+# packaging for the red network
 controltext = '''Package: stonix
 Version: ''' + str(stonixversion) + '''
 Architecture: all
-Maintainer: Breen Malmberg <bemalmbe@lanl.gov>
-Depends: python-appindicator
+Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
+Depends: python
 Section: python
 Priority: extra
 Description: ''' + str(stonixversion) + ''' release of STONIX hardening tool for Ubuntu
-X-Python-Version: = 2.7
 '''
 
-changelogtext = str(stonixversion) + ''' ALPHA release notes:
+changelogtext = str(stonixversion) + ''' BETA release notes:
 [Packager needs to modify these to reflect current release notes]
 '''
 
@@ -83,6 +86,8 @@ copyrighttext = '''#############################################################
 ###############################################################################
 '''
 
+# change the ending of the -1.noarch and -1.noarch.deb strings to
+# -red-1.noarch and -red-1.noarch.deb if packaging for the red network
 sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
 builddir = '/stonix-' + str(stonixversion) + '-1.noarch'
 pkgname = 'stonix-' + str(stonixversion) + '-1.noarch.deb'
