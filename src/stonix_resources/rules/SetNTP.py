@@ -143,15 +143,16 @@ class SetNTP(Rule):
         @author: Breen Malmberg
         '''
 
+        self.detailedresults = ""
+
         # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
-        if not self.checkconfigopts(self.constlist):
+        if not self.checkConsts(self.constlist):
             self.compliant = False
             self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: NTPSERVERSEXTERNAL, NTPSERVERSINTERNAL"
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
 
         # defaults
-        self.detailedresults = ""
         self.compliant = True
 
         try:
@@ -416,7 +417,7 @@ class SetNTP(Rule):
         '''
 
         # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
-        if not self.checkconfigopts(self.constlist):
+        if not self.checkConsts(self.constlist):
             self.rulesuccess = False
             self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
             return self.rulesuccess

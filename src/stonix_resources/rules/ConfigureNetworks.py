@@ -33,6 +33,11 @@ dictionary
 from __future__ import absolute_import
 import traceback
 import re
+
+from ..localize import DNS
+from ..localize import PROXY
+from ..localize import PROXYCONFIGURATIONFILE
+from ..localize import PROXYDOMAIN
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
@@ -70,14 +75,24 @@ class ConfigureNetworks(RuleKVEditor):
 
         ## this section added to prevent code, which relies on constants in localize.py,
         # from running if those constants are not defined or are set to 'None'
-        self.nsobject = None
-        try:
-            self.nsobject = networksetup(self.logdispatch)
-        except (AttributeError, TypeError) as errmsg:
-            if re.search("NoneType", errmsg, re.IGNORECASE):
-                self.detailedresults += "\nPlease ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN"
+#         if DNS == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+#         if PROXY == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+#         if PROXYCONFIGURATIONFILE == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+#         if PROXYDOMAIN == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
         # this section added to prevent code, which relies on constants in localize.py,
         ## from running if those constants are not defined or are set to 'None'
+
+        self.nsobject = None
+
+        self.nsobject = networksetup(self.logdispatch)
 
         if self.nsobject != None:
             self.ch = CommandHelper(self.logdispatch)

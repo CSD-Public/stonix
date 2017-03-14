@@ -156,6 +156,10 @@ class InstallBanners(RuleKVEditor):
         self.kde = False
         self.lightdm = False
 
+        constlist = [WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER]
+        if not self.checkConsts(constlist):
+            return
+
         try:
             if self.environ.getosfamily() == 'linux':
                 self.setlinuxcommon()
@@ -437,6 +441,11 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.mac = True
+
+        constlist = [WARNINGBANNER, ALTWARNINGBANNER, OSXSHORTWARNINGBANNER]
+        if not self.checkConsts(constlist):
+            return
+
         self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/private/etc/sshd_config'
