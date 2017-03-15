@@ -55,12 +55,24 @@ class FileStateManager(object):
         if isinstance(mode, basestring) and mode in modes:
             self.mode = mode
 
+    def getMode(self, mode=''):
+        '''
+        Getter for the mode of differential checking
+        '''
+        return self.mode
+
     def setPrefix(self, prefix=''):
         '''
         Setter for the prefix used in building the compare path.
         '''
         if isinstance(prefix, basestring):
             self.prefix = prefix
+
+    def getPrefix(self, prefix=''):
+        '''
+        Getter for the prefix used in building the compare path.
+        '''
+        return self.prefix
 
     def setVersion(self, version=""):
         '''
@@ -72,7 +84,13 @@ class FileStateManager(object):
             self.version = version
             success = True
         return success
-    
+
+    def getVersion(self):
+        '''
+        Getter for the version to check against)
+        '''
+        return self.version
+
     def isSaneFilePath(self, filepath):
         """
         Check for a good file path in the passed in string.
@@ -151,6 +169,25 @@ class FileStateManager(object):
         self.logger.log(lp.DEBUG, "isSame: " + str(isSame))
         self.logger.log(lp.DEBUG, "diff:   " + str(diff))
         return isSame, diff
+
+    def areFilesInState(self, metaState='', files=[]):
+        '''
+        Are all files in the list in a known metaState
+        '''
+        success = False
+        filesState = []
+        
+        for item in files:
+            success = False
+            success = filecmp.cmp(metaState + item, item)
+            filesState.append(success)
+
+        if False in filesState:
+            success = False
+        else:
+            success = True
+
+        return success
 
     def areFilesInStates(self, states=[], files=[]):
         '''
