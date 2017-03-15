@@ -77,7 +77,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         self.fsm = FileStateManager(self.environ, self.logger)
         self.fsm.setPrefix("/tmp/stonixtest")
         self.fsm.setMode("filecmp")
-        self.fsm.setVersion = "1.2.3"
+        self.fsm.setVersion("1.2.3")
         self.testMetaDirs = ["/tmp/stonixtest/1.2.3/stateBefore",
                              "/tmp/stonixtest/1.2.3/stateAfter",
                              "/tmp/stonixtest/1.2.4.5/stateBefore",
@@ -689,7 +689,71 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         self.assertTrue(changed, "Expected change failed...")
 
     ############################################################################
+
+    def test_areFilesInState(self):
+        """
+        """
+        #####
+        # Set two files as different
+        fileOne   = "/firstTestFile"
+        fileTwo   = "/secondTestFile"
+        fileThree = "/thirdTestFile"
+        fileFour  = "/fourthTestFile"
+        fileFive  = "/fifthTestFile"
         
+        filesOrig = [self.testTargetDirs[0] + fileOne,
+                     self.testTargetDirs[1] + fileTwo,
+                     self.testTargetDirs[2] + fileThree,
+                     self.testTargetDirs[3] + fileFour,
+                     self.testTargetDirs[1] + fileFive,
+                     ]
+
+        metaState = self.fsm.getPrefix() + "/" +\
+                    self.fsm.getVersion() + "/" +\
+                    "stateAfter"
+                    
+        self.logger.log(lp.DEBUG, "metaState: " + metaState)
+        #raise
+        filesTargetState = [metaState + filesOrig[0],
+                            metaState + filesOrig[1],
+                            metaState + filesOrig[2],
+                            metaState + filesOrig[3],
+                            metaState + filesOrig[4],
+                            ]
+
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Hello World!")
+            itemFp.close()
+            LIBC.sync()
+
+        for item in filesTargetState:
+            itemFp = open(item, "w")
+            itemFp.write("Bonjour Monde!")
+            itemFp.close()
+            LIBC.sync()
+
+        success = False
+        success = self.fsm.areFilesInState(metaState, filesOrig)
+
+        self.assertFalse(success, "Files aren't supposed to match here...")
+
+        for item in filesTargetState:
+            itemFp = open(item, "w")
+            itemFp.write("Hello World!")
+            itemFp.close()
+            LIBC.sync()
+
+        success = False
+        success = self.fsm.areFilesInState(metaState, filesOrig)
+
+        self.assertTrue(success, "Files need to match here...")
+
+
+        #####
+        
+    ############################################################################
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
