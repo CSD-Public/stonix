@@ -32,6 +32,7 @@ import sys
 import time
 import ctypes
 import shutil
+import filecmp
 import unittest
 from distutils.version import LooseVersion
 
@@ -582,14 +583,110 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     def test_changeFileState(self):
         """
         """
-        self.assertTrue(False, "Not yet implemented...")
+
+        #####
+        # Set two files as different
+        fileName = self.testTargetDirs[0] + "/refFileOne"
+        metaState = self.testMetaDirs[0]
+        metaStateFile = self.testMetaDirs[0] + fileName
+
+        fileNameFp = open(fileName, "w")
+        fileNameFp.write("hello world")
+        fileNameFp.close()
+
+        metaStateFileFp = open(metaStateFile, "w")
+        metaStateFileFp.write("Hello World!")
+        metaStateFileFp.close()
+
+        #####
+        # Compare to assert they are different
+        isSame = filecmp.cmp(metaStateFile, fileName)
+
+        #####
+        # Assert they are different
+        self.assertFalse(isSame, "Files are not supposed to be the same, they are the same...")
+
+        #####
+        # Run the state change
+        changeResult = self.fsm.changeFileState(metaStateFile, fileName)
+
+        #####
+        # check they are the same
+        isSame = filecmp.cmp(metaStateFile, fileName)
+        #####
+        # assert the check returns that they are the same
+        self.assertTrue(isSame == changeResult, "Files are supposed to be the same, they are not...")
 
     ############################################################################
-        
+
     def test_changeFilesState(self):
         """
         """
-        self.assertTrue(False, "Not yet implemented...")
+        #####
+        # Set two files as different
+        fileOne   = "/firstTestFile"
+        fileTwo   = "/secondTestFile"
+        fileThree = "/thirdTestFile"
+        fileFour  = "/fourthTestFile"
+        fileFive  = "/fifthTestFile"
+        
+        filesOrig = [self.testTargetDirs[0] + fileOne,
+                     self.testTargetDirs[1] + fileTwo,
+                     self.testTargetDirs[2] + fileThree,
+                     self.testTargetDirs[3] + fileFour,
+                     self.testTargetDirs[1] + fileFive,
+                     ]
+        filesTargetState = [self.testMetaDirs[0] + filesOrig[0],
+                            self.testMetaDirs[0] + filesOrig[1],
+                            self.testMetaDirs[0] + filesOrig[2],
+                            self.testMetaDirs[0] + filesOrig[3],
+                            self.testMetaDirs[0] + filesOrig[4],
+                            ]
+
+
+        for item in filesOrig:
+            itemFp = open(item, "w")
+            itemFp.write("Hello World!")
+            itemFp.close()
+            LIBC.sync()
+
+        for item in filesTargetState:
+            itemFp = open(item, "w")
+            itemFp.write("Bonjour Monde!")
+            itemFp.close()
+            LIBC.sync()
+
+        
+        #####
+        # Compare to assert they are different
+        success, _ = self.fsm.areFilesInStates(["beforeState", "afterState"], filesOrig)
+
+        #####
+        # Assert they are different
+        self.assertFalse(success, "File sets don't match...")
+
+        #####
+        # Run the state change
+        changed = self.fsm.changeFilesState("/tmp/stonixtest/1.2.3/stateBefore", filesOrig)
+
+        #####
+        # check they are the same
+        compareList = []
+        success = False
+
+        for item in filesOrig:
+            success = filecmp.cmp("/tmp/stonixtest/1.2.3/stateBefore" + item, item)
+            compareList.append(success)
+        if False in compareList:
+            success = False
+        else:
+            success = True
+
+        self.assertTrue(success, "We have a problem matching all the files...")
+
+        #####
+        # assert the check returns that they are the same
+        self.assertTrue(changed, "Expected change failed...")
 
     ############################################################################
         
