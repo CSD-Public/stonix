@@ -59,7 +59,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
         instructions = "To disable the installation of the login window " + \
             "profile set the value of STIGLOGINCONFIG to False"
         default = True
-        self.lwci = self.initCi(datatype, key, instructions, default)
+        self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         if search("10\.10.*", self.environ.getosver()):
 #             self.profile = "/Users/username/src/" + \
@@ -114,7 +114,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
     
     def fix(self):
         try:
-            if not self.lwci.getcurrvalue():
+            if not self.ci.getcurrvalue():
                 return
             if os.path.exists(self.profile):
                 success = True
@@ -131,7 +131,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
+                    cmd = ["/usr/bin/profiles", "-I", "-R", self.profile]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
