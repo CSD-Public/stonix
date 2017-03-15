@@ -168,7 +168,7 @@ class STIGConfigurePasswordPolicy(Rule):
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-I", "-F", self.pwprofile]
+                            cmd = ["/usr/bin/profiles", "-I", "-R", self.pwprofile]
                             event = {"eventtype": "comm",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
@@ -184,7 +184,7 @@ class STIGConfigurePasswordPolicy(Rule):
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-I", "-F", self.secprofile]
+                            cmd = ["/usr/bin/profiles", "-I", "-R", self.secprofile]
                             event = {"eventtype": "comm",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
