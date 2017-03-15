@@ -245,6 +245,31 @@ class FileStateManager(object):
 
         return success
 
+    def changeFilesState(self, fromMetaState='', files=''):
+        '''
+        Change the file state from the "fromState" to the fileName.
+
+        @param: fromState - known good reference state of a file.
+        @param: filename - the name of the filename to change.
+
+        @author: Roy Nielsen
+        '''
+        success = False
+
+        for item in files:
+            if not filecmp.cmp(fromMetaState + item, item):
+                try:
+                    shutil.copy2(fromMetaState + item, item)
+                    success = True
+                except OSError, err:
+                    self.logger.log(lp.INFO, "Error copying file from reference state.")
+                    self.logger.log(lp.DEBUG, traceback.format_exc(err))
+
+                #####
+                # May need to set correct permissions here . . .
+
+        return success
+
     def buildSearchList(self, states=[], map=""):
         """
         Use predefined prefix, version along with the state and filename
@@ -287,7 +312,7 @@ class FileStateManager(object):
                         continue
         elif listing and states and not map:
             #####
-            # Just need a states list, without the map...
+            # Just need a metaState list, without the map...
             self.logger.log(lp.DEBUG, "listing: " + str(listing))
             #####
             # Validate that only directory names are in the list
