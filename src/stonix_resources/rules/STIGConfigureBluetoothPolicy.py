@@ -60,6 +60,7 @@ class STIGConfigureBluetoothPolicy(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.identifier = '\"Bluetooth Policy\"'
         self.profile = "/Applications/stonix4mac.app/Contents/" + \
                      "Resources/stonix.app/Contents/MacOS/" + \
                      "stonix_resources/files/" + \
@@ -86,7 +87,7 @@ class STIGConfigureBluetoothPolicy(Rule):
                             compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        elif search("mil\.disa\.STIG\.Bluetooth\ Policy\.alacarte$", line.strip()):
+                        elif search("Bluetooth\ Policy$", line.strip()):
                             compliant = True
                             break
             self.compliant = compliant
@@ -119,7 +120,7 @@ class STIGConfigureBluetoothPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-R", self.profile]
+                    cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)

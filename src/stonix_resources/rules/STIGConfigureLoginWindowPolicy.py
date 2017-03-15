@@ -61,6 +61,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.identifier = "mil.disa.STIG.loginwindow.alacarte"
         if search("10\.10.*", self.environ.getosver()):
 #             self.profile = "/Users/username/src/" + \
 #                 "stonix_resources/files/" + \
@@ -131,7 +132,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-R", self.profile]
+                    cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
