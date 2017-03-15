@@ -119,7 +119,7 @@ class STIGConfigureBluetoothPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
+                    cmd = ["/usr/bin/profiles", "-I", "-R", self.profile]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
