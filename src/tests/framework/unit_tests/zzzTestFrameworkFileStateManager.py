@@ -267,7 +267,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         self.assertFalse(invalidCheck, "Found a valid format in the invalid path list.")
 
         validResults = []
-        
+
         validFilePaths = ["/","/bin","/usr/local/bin",
                           ".bashrc","/tmp/test_file-v1.2.3",
                           "/home/user/.bashrc","/etc/sshd_config"]
@@ -294,7 +294,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
         result = self.fsm.isKnownStateMatch("/tmp/test", "/tmp/test")
         self.assertTrue(result, "Files don't match...")
-        
+
         os.unlink("/tmp/test")
 
     ############################################################################
@@ -578,6 +578,21 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         self.assertFalse(success, "Versions is correctly ordered.")
 
     ############################################################################
+
+    def test_changeFileState(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented...")
+
+    ############################################################################
+        
+    def test_changeFilesState(self):
+        """
+        """
+        self.assertTrue(False, "Not yet implemented...")
+
+    ############################################################################
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

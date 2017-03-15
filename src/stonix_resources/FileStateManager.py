@@ -215,26 +215,26 @@ class FileStateManager(object):
                 metaState = check
                 success = True
                 break
-        
+
         self.logger.log(lp.DEBUG, "Success: " + str(success))
         self.logger.log(lp.DEBUG, "metaState: " + str(metaState))
 
         return success, metaState
 
-    def changeFileState(self, fromState='', fileName=''):
+    def changeFileState(self, fromMetaState='', fileName=''):
         '''
-        Change the file state from the "fromState" to the fileName.  
-        
+        Change the file state from the "fromState" to the fileName.
+
         @param: fromState - known good reference state of a file.
         @param: filename - the name of the filename to change.
 
         @author: Roy Nielsen
         '''
         success = False
-        
-        if not filecmp.cmp(fromState, fileName):
+
+        if not filecmp.cmp(fromMetaState, fileName):
             try:
-                shutil.copy2(fromState, fileName)
+                shutil.copy2(fromMetaState, fileName)
                 success = True
             except OSError, err:
                 self.logger.log(lp.INFO, "Error copying file from reference state.")
@@ -244,7 +244,7 @@ class FileStateManager(object):
             # May need to set correct permissions here . . .
 
         return success
-            
+
     def buildSearchList(self, states=[], map=""):
         """
         Use predefined prefix, version along with the state and filename
