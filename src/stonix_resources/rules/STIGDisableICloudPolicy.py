@@ -60,6 +60,7 @@ class STIGDisableICloudPolicy(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.identifier = "mil.disa.STIG.Disable_iCloud_Prompt.alacarte"
         self.profile = "/Applications/stonix4mac.app/Contents/" + \
                      "Resources/stonix.app/Contents/MacOS/" + \
                      "stonix_resources/files/" + \
@@ -119,7 +120,7 @@ class STIGDisableICloudPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-R", self.profile]
+                    cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)

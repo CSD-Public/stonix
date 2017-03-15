@@ -68,6 +68,8 @@ class STIGConfigurePasswordPolicy(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.passidentifier = "mil.disa.STIG.passwordpolicy.alacarte"
+        self.secidentifier = "mil.disa.STIG.Security_Privacy.alacarte"
         if search("10\.10.*", self.environ.getosver()):
 #             self.pwprofile = "/Users/username/src/" + \
 #                 "stonix_resources/files/" + \
@@ -168,7 +170,8 @@ class STIGConfigurePasswordPolicy(Rule):
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-I", "-R", self.pwprofile]
+                            cmd = ["/usr/bin/profiles", "-R", "-p",
+                                   self.passidentifier]
                             event = {"eventtype": "comm",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
@@ -184,7 +187,8 @@ class STIGConfigurePasswordPolicy(Rule):
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-I", "-R", self.secprofile]
+                            cmd = ["/usr/bin/profiles", "-R", "-p",
+                                   self.secidentifier]
                             event = {"eventtype": "comm",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
