@@ -65,6 +65,9 @@ changelogtext = str(stonixversion) + ''' BETA release notes:
 [Packager needs to modify these to reflect current release notes]
 '''
 
+conffilestext = '''/etc/stonix.conf
+'''
+
 copyrighttext = '''###############################################################################
 #                                                                             #
 # Copyright, 2008, Los Alamos National Security, LLC.                         #
@@ -97,7 +100,8 @@ etcdir = os.path.join(builddir, 'etc/')
 
 filesneeded = {debiandir + 'control': controltext,
                debiandir + 'changelog': changelogtext,
-               debiandir + 'copyright': copyrighttext}
+               debiandir + 'copyright': copyrighttext,
+               debiandir + 'conffiles' : conffilestext}
 
 try:
 
