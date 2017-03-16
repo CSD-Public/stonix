@@ -66,7 +66,7 @@ class STIGDisableICloudPolicy(Rule):
                      "stonix_resources/files/" + \
                      "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
         '''These directories for testing purposes only'''
-#             self.profile = "/Users/username/src/" + \
+#             self.profile = "/Users/username/stonix/src/" + \
 #                          "stonix_resources/files/" + \
 #                          "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
     
@@ -124,6 +124,8 @@ class STIGDisableICloudPolicy(Rule):
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
+            else:
+                success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
