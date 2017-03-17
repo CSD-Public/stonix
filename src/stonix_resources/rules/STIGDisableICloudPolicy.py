@@ -60,12 +60,13 @@ class STIGDisableICloudPolicy(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.identifier = "mil.disa.STIG.Disable_iCloud_Prompt.alacarte"
         self.profile = "/Applications/stonix4mac.app/Contents/" + \
                      "Resources/stonix.app/Contents/MacOS/" + \
                      "stonix_resources/files/" + \
                      "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
         '''These directories for testing purposes only'''
-#             self.profile = "/Users/username/src/" + \
+#             self.profile = "/Users/username/stonix/src/" + \
 #                          "stonix_resources/files/" + \
 #                          "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
     
@@ -119,10 +120,12 @@ class STIGDisableICloudPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
+                    cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
+            else:
+                success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise

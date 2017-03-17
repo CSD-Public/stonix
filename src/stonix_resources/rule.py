@@ -39,6 +39,7 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
+@change: 2017/03/07 dkennel - Added FISMA risk level support to isapplicable
 '''
 
 from observable import Observable
@@ -415,6 +416,14 @@ LANL-stonix."""
                             actually cause problems. If this option is set to
                             True (python bool) then this method will return
                             false if EUID == 0. The default is False.
+        fisma    low|med|high  This is the FISMA risk categorization that the
+                            rule should apply to. Under FIPS 199 systems are
+                            categorized for risk into low, medium (moderate),
+                            and high categories. Some controls are particularly
+                            impactful to operations and are only specified for
+                            FISMA medium or high systems. Rules are selected
+                            for low, medium or high applicability based on
+                            guidance from NIST 800-53 or the applicable STIG.
         default  default    This is the default value in the template class and
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
@@ -423,7 +432,9 @@ LANL-stonix."""
         An Example dictionary might look like this:
         self.applicable = {'type': 'white',
                            'family': Linux,
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5'],
+                           'fisma': 'high',
+                           'noroot': True}
         That example whitelists all Linux operating systems and Mac OS X from
         10.9.0 to 10.10.5.
 
@@ -555,7 +566,61 @@ LANL-stonix."""
                 if self.applicable['noroot'] == True:
                     applies = False
 
+        # Perform the FISMA categorization check
+        if applies:
+            if self.environ.getsystemfismacat() not in ['high', 'med', 'low']:
+                raise ValueError('SystemFismaCat invalid: valid values are low, med, high')
+            if 'fisma' in self.applicable:
+                if self.applicable['fisma'] not in ['high', 'med', 'low']:
+                    raise ValueError('fisma value invalid: valid values are low, med, high')
+            if self.environ.getsystemfismacat() == 'high':
+                pass
+            elif self.environ.getsystemfismacat() == 'med':
+                if 'fisma' in self.applicable:
+                    if self.applicable['fisma'] == 'high':
+                        applies = False
+            elif self.environ.getsystemfismacat() == 'low':
+                if 'fisma' in self.applicable:
+                    if self.applicable['fisma'] in ['high', 'med']:
+                        applies = False
+
         return applies
+
+    def checkConsts(self, constlist=[]):
+        """
+        This method returns True or False depending
+        on whether the list of constants passed to it
+        are defined or not (if they are == None)
+        This method was implemented to handle the
+        default undefined state of constants in localize.py
+        when operating in the public environment
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        """
+
+        retval = True
+
+        # if there is nothing to check, return False
+        if not constlist:
+            retval = False
+            return retval
+
+        if not isinstance(constlist, list):
+            retval = False
+            return retval
+
+        try:
+
+            # If there is a None type variable, return False
+            for v in constlist:
+                if v == None:
+                    retval = False
+
+        except Exception:
+            raise
+        return retval
 
     def addresses(self):
         """
