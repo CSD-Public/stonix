@@ -98,16 +98,28 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
         for meta in self.testMetaDirs:
             for item in self.testTargetDirs:
-                os.makedirs(meta + item)
+                try:
+                    os.makedirs(meta + item)
+                except OSError:
+                    pass
 
         for item in self.testTargetDirs:
-            os.makedirs(item)
+            try:
+                os.makedirs(item)
+            except OSError:
+                pass
 
         LIBC.sync()
         #time.sleep(2)
         self.ch = CommandHelper(self.logger)
         self.logger.log(lp.INFO, "setUp...")
         
+        version = "/" + environ.getstonixversion()
+        osFamily = "/" + environ.getosfamily()
+        osType = "/" + environ.getostype()
+        osVersion = "/" + environ.getosver()
+        state = osFamily + osType + osVersion + "/stateAfter"
+        state = re.sub(" ", "", state)
 
     ############################################################################
     

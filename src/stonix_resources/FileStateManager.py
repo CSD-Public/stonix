@@ -5,6 +5,7 @@ import time
 import shutil
 import difflib
 import filecmp
+import datetime
 import optparse
 import traceback
 
@@ -65,8 +66,20 @@ class FileStateManager(object):
         '''
         Setter for the prefix used in building the compare path.
         '''
-        if isinstance(prefix, basestring):
+        success = False
+        if isinstance(prefix, basestring) and self.isSaneFilePath(prefix):
             self.prefix = prefix
+            #####
+            # Move to a backup location if it isn't a directory and is a file.
+            if not os.path.isdir(prefix) and os.path.isfile(prefix):
+                newName = prefix + "-" + str(datetime.datetime.now().strftime("%Y%m%d.%H%M.%s"))
+                shutil.move(prefix, newName)
+            if not os.path.isdir(prefix):
+                os.makedirs(prefix)
+                success = True
+            else:
+                success = True
+        return success
 
     def getPrefix(self, prefix=''):
         '''
@@ -176,16 +189,16 @@ class FileStateManager(object):
         '''
         success = False
         filesState = []
-        
-        for item in files:
-            success = False
-            success = filecmp.cmp(metaState + item, item)
-            filesState.append(success)
-
-        if False in filesState:
-            success = False
-        else:
-            success = True
+        if files:
+            for item in files:
+                success = False
+                success = filecmp.cmp(metaState + item, item)
+                filesState.append(success)
+    
+            if False in filesState:
+                success = False
+            else:
+                success = True
 
         return success
 
@@ -292,18 +305,27 @@ class FileStateManager(object):
         @author: Roy Nielsen
         '''
         success = False
+        copyResults = []
 
         for item in files:
             if not filecmp.cmp(fromMetaState + item, item):
                 try:
                     shutil.copy2(fromMetaState + item, item)
-                    success = True
+                    copyResults.append(True)
                 except OSError, err:
                     self.logger.log(lp.INFO, "Error copying file from reference state.")
                     self.logger.log(lp.DEBUG, traceback.format_exc(err))
+                    copyResults.append(False)
+            else:
+                copyResults.append(True)
 
                 #####
                 # May need to set correct permissions here . . .
+
+        if False in copyResults:
+            success = False
+        else:
+            success = True
 
         return success
 
@@ -351,11 +373,13 @@ class FileStateManager(object):
             #####
             # Just need a metaState list, without the map...
             self.logger.log(lp.DEBUG, "listing: " + str(listing))
+
             #####
             # Validate that only directory names are in the list
             for item in listing:
                 if os.path.isdir(self.prefix + "/" + item):
                     versions.append(item)
+
             #####
             # Sort the version list
             sorted = self.qsort(versions)
