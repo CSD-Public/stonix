@@ -256,7 +256,6 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         @author: dwalker
         @return: bool - True or False upon success
         '''
-        print "inside reportSysRsyslog\n\n"
         debug = ""
         compliant = True
         specs = ["rotate 4",
@@ -484,7 +483,6 @@ daemon config file: " + self.logpath
                                         reaching } which will indicate the end
                                         of log rotation specifications for
                                         current directory'''
-                                        print "going through contents3\n"
                                         try:
                                             specstemp = ["rotate 4",
                                                          "weekly",
@@ -570,7 +568,6 @@ daemon config file: " + self.logpath
         @author: dwalker
         @return: bool - True or False upon success
         '''
-        print "inside fixSysRsyslog\n\n"
         self.detailedresults = ""
         success = True
         specs = ["rotate 4",
@@ -809,17 +806,13 @@ rotation config file: " + self.logrotpath + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
         if self.fixables:
-            print "There are fixables in fix\n"
             contents = readFile(self.logrotpath, self.logger)
             tempstring = ""
             tempcontents = []
             for line in contents:
                 templine = re.sub("[ \t\r\f\v]", " ", line)
                 tempcontents.append(templine)
-            print "tempcontents: " + str(tempcontents) + "\n"
-            print "fixables: " + str(self.fixables) + "\n"
             for directory in self.fixables:
-                print "current directory: " + directory + "\n"
                 tempcontents2 = []
                 for line in tempcontents:
                     if re.search("^" + directory + " ", line) or \
@@ -829,7 +822,6 @@ rotation config file: " + self.logrotpath + "\n"
                         re.search("^" + directory + "{", line) or \
                         re.search("^" + directory + "\n", line) or \
                         re.search(" " + directory + "\n", line):
-                        print "found directory\n"
                         templine = re.sub(directory, "", line)
                         tempcontents2.append(templine)
                     else:
