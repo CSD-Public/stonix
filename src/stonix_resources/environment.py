@@ -91,7 +91,7 @@ class Environment:
         self.debugmode = False
         self.runtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self.systemfismacat = 'low'
-        self.determinefismacat()
+        self.systemfismacat = self.determinefismacat()
         self.collectinfo()
 
     def setinstallmode(self, installmode):
