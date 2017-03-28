@@ -43,16 +43,9 @@ import traceback
 from ..KVEditorStonix import KVEditorStonix
 from ..localize import PWQUALITY_HIGH_REGEX, PWQUALITY_REGEX, \
     CRACKLIB_HIGH_REGEX, CRACKLIB_REGEX, PAMFAIL_REGEX, PAMTALLY_REGEX, \
-    AUTH_APT, ACCOUNT_APT, PASSWORD_APT_PWQUALITY, \
-    PASSWORD_APT_HIGH_PWQUALITY, PASSWORD_APT_CRACKLIB, \
-    PASSWORD_APT_HIGH_CRACKLIB, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
-    PASSWORD_ZYPPER_CRACKLIB, PASSWORD_ZYPPER_PWQUALITY, \
-    PASSWORD_ZYPPER_HIGH_CRACKLIB, PASSWORD_ZYPPER_HIGH_PWQUALITY, \
-    AUTH_NSLCD, ACCOUNT_NSLCD, PASSWORD_NSLCD_PWQAULITY, \
-    PASSWORD_NSLCD_HIGH_PWQUALITY, PASSWORD_NSLCD_CRACKLIB, \
-    PASSWORD_NSLCD_HIGH_CRACKLIB, SESSION_NSLCD, AUTH_YUM, ACCOUNT_YUM, \
-    PASSWORD_YUM_PWQUALITY, PASSWORD_YUM_HIGH_PWQUALITY, \
-    PASSWORD_YUM_CRACKLIB, PASSWORD_YUM_HIGH_CRACKLIB, SESSION_YUM
+    AUTH_APT, ACCOUNT_APT, PASSWORD_ZYPPER, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
+    PASSWORD_NSLCD, AUTH_NSLCD, ACCOUNT_NSLCD, SESSION_NSLCD, AUTH_YUM, \
+    ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..rule import Rule
@@ -128,40 +121,20 @@ for the login.defs file"""
     def localize(self):
         myos = self.environ.getostype().lower()
         if re.search("red hat.*?release 6", myos):
-            if self.environ.getsystemfismacat() == "high":
-                self.password_quality = PASSWORD_NSLCD_HIGH_PWQUALITY
-                self.password_cracklib = PASSWORD_NSLCD_HIGH_CRACKLIB
-            else:
-                self.password_quality = PASSWORD_NSLCD_PWQAULITY
-                self.password_cracklib = PASSWORD_NSLCD_CRACKLIB
+            self.password = PASSWORD_NSLCD
             self.auth = AUTH_NSLCD
             self.acct = ACCOUNT_NSLCD
             self.session = SESSION_NSLCD
         elif re.search("suse", myos):
-            if self.environ.getsystemfismacat() == "high":
-                self.password_quality = PASSWORD_ZYPPER_HIGH_PWQUALITY
-                self.password_cracklib = PASSWORD_ZYPPER_HIGH_CRACKLIB
-            else:
-                self.password_quality = PASSWORD_ZYPPER_PWQUALITY
-                self.password_cracklib = PASSWORD_ZYPPER_CRACKLIB
+            self.password = PASSWORD_ZYPPER
             self.auth = AUTH_ZYPPER
             self.acct = ACCOUNT_ZYPPER
         elif re.search("debian|ubuntu", myos):
-            if self.environ.getsystemfismacat() == "high":
-                self.password_quality = PASSWORD_APT_HIGH_PWQUALITY
-                self.password_cracklib = PASSWORD_APT_HIGH_CRACKLIB
-            else:
-                self.password_quality = PASSWORD_APT_PWQUALITY
-                self.password_cracklib = PASSWORD_APT_CRACKLIB
+            self.password = AUTH_APT
             self.auth = AUTH_APT
             self.acct = ACCOUNT_APT
         else:
-            if self.environ.getsystemfismacat() == "high":
-                self.password_quality = PASSWORD_YUM_HIGH_PWQUALITY
-                self.password_cracklib = PASSWORD_YUM_HIGH_CRACKLIB
-            else:
-                self.password_quality = PASSWORD_YUM_PWQUALITY
-                self.password_cracklib = PASSWORD_YUM_CRACKLIB
+            self.password = PASSWORD_YUM
             self.auth = AUTH_YUM
             self.acct = ACCOUNT_YUM
             self.session = SESSION_YUM
@@ -313,6 +286,11 @@ for the login.defs file"""
         if self.ci2.getcurrvalue():
             if not self.ci2comp:
                 if self.usingpwquality:
+                    self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
+                                       self.password)
+                    if self.environ.getsystemfismacat() == "high":
+                        self.password = re.sub("minlen=8", "minlen=14", self.password)
+                        self.password = re.sub("minclass=3", "minclass=4", self.password)
                     if self.environ.getsystemfismacat() == "high":
                         regex = PWQUALITY_HIGH_REGEX
                     else:
@@ -324,6 +302,11 @@ for the login.defs file"""
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
                 elif self.usingcracklib:
+                    self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
+                                       self.password)
+                    if self.environ.getsystemfismacat() == "high":
+                        self.password = re.sub("minlen=8", "minlen=14", self.password)
+                        self.password = re.sub("minclass=3", "minclass=4", self.password)
                     if self.environ.getsystemfismacat() == "high":
                         regex = CRACKLIB_HIGH_REGEX
                     else:
@@ -453,14 +436,22 @@ for the login.defs file"""
         '''
         compliant = True
         if package == "pwquality":
+            self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
+                                       self.password)
             if self.environ.getsystemfismacat() == "high":
+                self.password = re.sub("minlen=8", "minlen=14", self.password)
+                self.password = re.sub("minclass=3", "minclass=4", self.password)
                 regex1 = PWQUALITY_HIGH_REGEX
             else:
                 regex1 = PWQUALITY_REGEX
             if not self.chkpwquality():
                 compliant = False
         elif package == "cracklib":
+            self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
+                                       self.password)
             if self.environ.getsystemfismacat() == "high":
+                self.password = re.sub("minlen=8", "minlen=14", self.password)
+                self.password = re.sub("minclass=3", "minclass=4", self.password)
                 regex1 = CRACKLIB_HIGH_REGEX
             else:
                 regex1 = CRACKLIB_REGEX
@@ -558,13 +549,6 @@ for the login.defs file"""
         if self.usingpwquality:
             if not self.setpwquality():
                 success = False
-#         elif self.usingcracklib:
-#             self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
-#                                    self.password)
-        if self.usingpwquality:
-            self.password = self.password_quality
-        elif self.usingcracklib:
-            self.password = self.password_cracklib
         if self.ph.manager in ("yum", "dnf"):
             writecontents = self.auth + "\n" + self.acct + "\n" + \
                 self.password + "\n" + self.session
