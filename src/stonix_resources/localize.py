@@ -54,6 +54,15 @@ that access the version variable to use this copy.
 
 STONIXVERSION = '0.9.6'
 
+# FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
+# is used to determine rule applicability and behavior with the higher the
+# risk value is causing more rules to activate and active rules to be more
+# stringent. This can be overridden by the System Administrator via the conf
+# file but may never be lower than the value specified here. Valid values are
+# 'low', 'med' and 'high'
+
+FISMACAT = 'low'
+
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
 REPORTSERVER = 'csd-web.lanl.gov'
