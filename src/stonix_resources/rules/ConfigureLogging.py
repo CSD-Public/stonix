@@ -853,30 +853,6 @@ rotation config file: " + self.logrotpath + "\n"
                 os.chown(self.logrotpath, 0, 0)
             os.chmod(self.logrotpath, 420)
             resetsecon(self.logrotpath)
-#         contentstring = ""
-#         contents = readFile(self.logrotpath, self.logger)
-#         for line in contents:
-#             contentstring += line
-#         if not re.search(self.expression, contentstring):
-#             contentstring += addon
-#         tmpfile = self.logrotpath + ".tmp"
-#         if not writeFile(tmpfile, contentstring, self.logger):
-#             return False
-#         if not self.created2:
-#             self.iditerator += 1
-#             myid = iterate(self.iditerator, self.rulenumber)
-#             event = {"eventtype": "conf",
-#                      "filepath": self.logrotpath}
-#             self.statechglogger.recordchgevent(myid, event)
-#             self.statechglogger.recordfilechange(self.logrotpath, tmpfile, myid)
-#         os.rename(tmpfile, self.logrotpath)
-#         if re.search("^Red Hat", self.environ.getostype().strip()) and \
-#                 re.search("^6", self.environ.getosver()):
-#             os.chown(self.logrotpath, 0, gid)
-#         else:
-#             os.chown(self.logrotpath, 0, 0)
-#         os.chmod(self.logrotpath, 420)
-#         resetsecon(self.logrotpath)
         if not self.sh.reloadservice("rsyslog"):
             debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
