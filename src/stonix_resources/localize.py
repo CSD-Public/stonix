@@ -54,15 +54,6 @@ that access the version variable to use this copy.
 
 STONIXVERSION = '0.9.6'
 
-# FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
-# is used to determine rule applicability and behavior with the higher the
-# risk value is causing more rules to activate and active rules to be more
-# stringent. This can be overridden by the System Administrator via the conf
-# file but may never be lower than the value specified here. Valid values are
-# 'low', 'med' and 'high'
-
-FISMACAT = 'low'
-
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
 REPORTSERVER = 'csd-web.lanl.gov'
@@ -511,22 +502,6 @@ AAOBgQBzHXovZ7uyqHEmT8H1ov83leUZrg7IYjtUBxhQ//YkmCLtrUoklzjC0qyT
 i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
 i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
-PWQUALITY_HIGH_REGEX =  "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-PWQUALITY_REGEX = regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-CRACKLIB_HIGH_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-CRACKLIB_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-PAMFAIL_REGEX = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-                        "deny=5 unlock_time=900 fail_interval=900"
-PAMTALLY_REGEX = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-                        "unlock_time=900 onerr=fail"
 
 AUTH_APT = '''auth        required      pam_env.so
 auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
@@ -545,8 +520,7 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
 
-# Variable Type: String
-PASSWORD_APT_PWQUALITY = '''password    requisite     \
+PASSWORD_APT = '''password    requisite     \
 pam_pwquality.so minlen=8 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
@@ -554,31 +528,7 @@ use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
-PASSWORD_APT_HIGH_PWQUALITY = '''password    requisite     \
-pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-PASSWORD_APT_CRACKLIB = '''password    requisite     \
-pam_cracklib.so minlen=8 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-PASSWORD_APT_HIGH_CRACKLIB = '''password    requisite     \
-pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-# Variable Type: String
+
 SESSION_APT = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond \
@@ -610,33 +560,8 @@ account sufficient      pam_localuser.so
 account required        pam_sss.so      use_first_pass
 '''
 
-# Variable Type: String
-PASSWORD_ZYPPER_PWQUALITY = '''password        requisite       \
+PASSWORD_ZYPPER = '''password        requisite       \
 pam_pwquality.so minlen=8 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3 maxrepeat=3
-password        sufficient      pam_unix.so sha512 shadow \
-try_first_pass use_authtok remember=10
-password        optional        pam_gnome_keyring.so    use_authtok
-password        required        pam_sss.so      use_authtok
-'''
-PASSWORD_ZYPPER_HIGH_PWQUALITY = '''password        requisite       \
-pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3 maxrepeat=3
-password        sufficient      pam_unix.so sha512 shadow \
-try_first_pass use_authtok remember=10
-password        optional        pam_gnome_keyring.so    use_authtok
-password        required        pam_sss.so      use_authtok
-'''
-PASSWORD_ZYPPER_CRACKLIB = '''password        requisite       \
-pam_cracklib.so minlen=8 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 \
-ocredit=0 retry=3 maxrepeat=3
-password        sufficient      pam_unix.so sha512 shadow \
-try_first_pass use_authtok remember=10
-password        optional        pam_gnome_keyring.so    use_authtok
-password        required        pam_sss.so      use_authtok
-'''
-PASSWORD_ZYPPER_HIGH_CRACKLIB = '''password        requisite       \
-pam_cracklib.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3 maxrepeat=3
 password        sufficient      pam_unix.so sha512 shadow \
 try_first_pass use_authtok remember=10
@@ -685,31 +610,8 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
 
-# Variable Type: String
-PASSWORD_NSLCD_PWQAULITY = '''password    requisite     pam_pwquality.so minlen=8 \
+PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=8 \
 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow \
-try_first_pass use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-
-PASSWORD_NSLCD_HIGH_PWQUALITY = '''password    requisite     pam_pwquality.so minlen=14 \
-minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow \
-try_first_pass use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-PASSWORD_NSLCD_CRACKLIB = '''password    requisite     pam_cracklib.so minlen=8 \
-minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow \
-try_first_pass use_authtok remember=10
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-PASSWORD_NSLCD_HIGH_CRACKLIB = '''password    requisite     pam_cracklib.so minlen=14 \
-minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow \
 try_first_pass use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
@@ -755,36 +657,8 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
 
-# Variable Type: String
-PASSWORD_YUM_PWQUALITY = '''password    requisite     pam_pwquality.so minlen=8 \
+PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=8 \
 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_sss.so use_authtok
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-
-PASSWORD_YUM_HIGH_PWQUALITY = '''password    requisite     pam_pwquality.so minlen=14 \
-minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_sss.so use_authtok
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-# Variable Type: String
-PASSWORD_YUM_CRACKLIB = '''password    requisite     pam_cracklib.so minlen=8 \
-minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-password    sufficient    pam_unix.so sha512 shadow try_first_pass \
-use_authtok remember=10
-password    sufficient    pam_sss.so use_authtok
-password    sufficient    pam_krb5.so use_authtok
-password    required      pam_deny.so
-'''
-
-PASSWORD_YUM_HIGH_CRACKLIB = '''password    requisite     pam_cracklib.so minlen=14 \
-minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
 password    sufficient    pam_sss.so use_authtok
