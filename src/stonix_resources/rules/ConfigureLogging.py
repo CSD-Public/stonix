@@ -99,45 +99,6 @@ invalid."""
         self.logs = {"rsyslog": False,
                      "syslog": False}
         self.created1, self.created2 = True, True
-        self.logfiles = ["mark.* /var/log/messages",
-                         "mark.* /var/log/auth",
-                         "*.* /var/log/messages",
-                         "daemon.* /var/log/daemon",
-                         "auth.* /var/log/auth",
-                         "authpriv.* /var/log/auth",
-                         "user.* /var/log/user",
-                         "kern.* /var/log/kern",
-                         "lpr.* /var/log/lpr",
-                         "syslog.* /var/log/syslog",
-                         "cron.* /var/log/cron",
-                         "mail.* /var/log/maillog",
-                         "uucp.* /var/log/maillog",
-                         "news.* /var/log/maillog",
-                         "local0.* /var/log/local",
-                         "local1.* /var/log/local",
-                         "local2.* /var/log/local",
-                         "local4.* /var/log/local",
-                         "local5.* /var/log/local",
-                         "local6.* /var/log/local",
-                         "local7.* /var/log/local", 
-                         "local7.* /var/log/boot.log",
-                         "ftp.* /var/log/ftp"]
-        self.directories = ["/var/log/daemon",
-                            "/var/log/auth",
-                            "/var/log/user",
-                            "/var/log/kern",
-                            "/var/log/lpr",
-                            "/var/log/syslog",
-                            "/var/log/cron",
-                            "/var/log/maillog",
-                            "/var/log/local",
-                            "/var/log/ftp",
-                            "/var/log/messages"]
-        if WINLOG is not None and isinstance(WINLOG, str):
-            self.logfiles.append("mark.* " + WINLOG)
-            self.logfiles.append("authpriv.* " + WINLOG)
-            self.logfiles.append("auth.* " + WINLOG)
-            self.directories.append(WINLOG)
         self.bootlog = "/var/log/boot.log"
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("OpenDirectoryLogging",
@@ -270,6 +231,45 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
                  "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
                  "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true",
                  "endscript"]
+        self.logfiles = ["mark.* /var/log/messages",
+                         "mark.* /var/log/auth",
+                         "*.* /var/log/messages",
+                         "daemon.* /var/log/daemon",
+                         "auth.* /var/log/auth",
+                         "authpriv.* /var/log/auth",
+                         "user.* /var/log/user",
+                         "kern.* /var/log/kern",
+                         "lpr.* /var/log/lpr",
+                         "syslog.* /var/log/syslog",
+                         "cron.* /var/log/cron",
+                         "mail.* /var/log/maillog",
+                         "uucp.* /var/log/maillog",
+                         "news.* /var/log/maillog",
+                         "local0.* /var/log/local",
+                         "local1.* /var/log/local",
+                         "local2.* /var/log/local",
+                         "local4.* /var/log/local",
+                         "local5.* /var/log/local",
+                         "local6.* /var/log/local",
+                         "local7.* /var/log/local", 
+                         "local7.* /var/log/boot.log",
+                         "ftp.* /var/log/ftp"]
+        self.directories = ["/var/log/daemon",
+                            "/var/log/auth",
+                            "/var/log/user",
+                            "/var/log/kern",
+                            "/var/log/lpr",
+                            "/var/log/syslog",
+                            "/var/log/cron",
+                            "/var/log/maillog",
+                            "/var/log/local",
+                            "/var/log/ftp",
+                            "/var/log/messages"]
+        if WINLOG is not None and isinstance(WINLOG, str):
+            self.logfiles.append("mark.* " + WINLOG)
+            self.logfiles.append("authpriv.* " + WINLOG)
+            self.logfiles.append("auth.* " + WINLOG)
+            self.directories.append(WINLOG)
 #        opensuse 13 and later uses systemd-logger instead of rsyslog
 #        this logging daemon doesn't have the functionality we need so
 #        we remove it firsthand and install rsyslog in the fix.
@@ -1454,6 +1454,7 @@ because these values are optional\n"
         debug = ""
         compliant = RuleKVEditor.report(self, True)
         self.detailedresults += "\n"
+        self.badsyslog = False
         self.macDirs = ["/var/log/cron.log",
                         "/var/log/daemon.log",
                         "/var/log/kern.log",
@@ -1467,23 +1468,37 @@ because these values are optional\n"
                         "/var/log/install.log",
                         "/var/log/netinfo.log",
                         "/var/log/secure.log"]
-        self.logfiles = {"*.*": "/var/log/system.log",
-                         "daemon.*": "/var/log/daemon.log",
-                         "auth.*": "/var/log/secure.log",
-                         "user.*": "/var/log/user.log",
-                         "kern.*": "/var/log/kern.log",
-                         "lpr.*": "/var/log/lpr.log",
-                         "syslog.*": "/var/log/syslog.log",
-                         "cron.*": "/var/log/cron.log",
-                         "mail,uucp,news.*": "/var/log/mail.log",
-                         "local0,local1,local2,local3.*": "/var/log/local.log",
-                         "local4,local,local6,local7.*": "/var/log/local.log",
-                         "local5.*": "/var/log/stonix.log",
-                         "install.*": "/var/log/install.log",
-                         "netinfo.*": "/var/log/netinfo.log",
-                         "remoteauth,authpriv.*": "/var/log/secure.log",
-                         "*.crit": "/dev/console",
-                         "auth.info,authpriv.info,mark.info": WINLOG}
+        self.logfiles = ["*.* /var/log/system.log",
+                         "daemon.* /var/log/daemon.log",
+                         "auth.* /var/log/secure.log",
+                         "user.* /var/log/user.log",
+                         "kern.* /var/log/kern.log",
+                         "lpr.* /var/log/lpr.log",
+                         "syslog.* /var/log/syslog.log",
+                         "cron.* /var/log/cron.log",
+                         "mail.* /var/log/mail.log",
+                         "uucp.* /var/log/mail.log",
+                         "news.* /var/log/mail.log",
+                         "local.* /var/log/local.log",
+                         "local0.* /var/log/local.log",
+                         "local1.* /var/log/local.log",
+                         "local2.* /var/log/local.log",
+                         "local3.* /var/log/local.log",
+                         "local4.* /var/log/local.log",
+                         "local5.* /var/log/local.log",
+                         "local6.* /var/log/local.log",
+                         "local7.* /var/log/local.log",
+                         "local5.* /var/log/stonix.log",
+                         "install.* /var/log/install.log",
+                         "netinfo.* /var/log/netinfo.log",
+                         "remoteauth.* /var/log/secure.log",
+                         "*authpriv.* /var/log/secure.log",
+                         "*.crit /dev/console"]
+        if WINLOG is not None and isinstance(WINLOG, str):
+            self.logfiles.append("mark.* " + WINLOG)
+            self.logfiles.append("authpriv.* " + WINLOG)
+            self.logfiles.append("auth.* " + WINLOG)
+            self.directories.append(WINLOG)
         self.asl = ["? [T com.apple.message.domain] store_dir /var/log/DiagnosticMessages",
                     "? [A= Facility com.apple.performance] store_dir /var/log/performance",
                     "? [A= Facility com.apple.eventmonitor] store_dir /var/log/eventmonitor",
@@ -1501,8 +1516,8 @@ because these values are optional\n"
                     "? [= Facility authpriv] file /var/log/system.log",
                     "? [= Facility mail] file /var/log/mail.log mode=0644 format=bsd",
                     "? [= Facility com.apple.alf.logging] file /var/log/appfirewall.log]"]
-        exist = []
-        syslog = "/etc/syslog.conf"
+#         exist = []
+        self.logpath = "/etc/syslog.conf"
         newsyslog = "/etc/newsyslog.conf"
         aslfile = "/etc/asl.conf"
         service = " /System/Library/LaunchDaemons/com.apple.syslogd.plist"
@@ -1518,47 +1533,118 @@ because these values are optional\n"
             if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
                 compliant = False
                 self.detailedresults += "old logrotation file exists\n"
-
-#----------Check /etc/syslog.conf file for correct contents-------------------#
-        contents = readFile(syslog, self.logger)
-        bad = False
-        missing = []
-        for log in self.logfiles:
-            found = False
+                # check if correct contents of rsyslog.conf file
+        '''temporary quick fix to fix broken macs with corrupted syslog file'''
+        regex = "*.* /var/log/system.log\n" + \
+                "daemon.* /var/log/daemon.log\n" + \
+                "auth.* /var/log/secure.log\n" + \
+                "user.* /var/log/user.log\n" + \
+                "kern.* /var/log/kern.log\n" + \
+                "lpr.* /var/log/lpr.log\n" + \
+                "syslog.* /var/log/syslog.log\n" + \
+                "cron.* /var/log/cron.log\n" + \
+                "mail.* /var/log/mail.log\n" + \
+                "uucp.* /var/log/mail.log\n" + \
+                "news.* /var/log/mail.log\n" + \
+                "local,local0,local1,local2,local3,local4,local5,local6,local7.* /var/log/local.log\n" + \
+                "local5.* /var/log/stonix.log\n" + \
+                "install.* /var/log/install.log\n" + \
+                "netinfo.* /var/log/netinfo.log\n" + \
+                "remoteauth.* /var/log/secure.log\n" + \
+                "*authpriv.* /var/log/secure.log\n" + \
+                "*.crit /dev/console\n"
+        if os.path.exists(self.logpath):
+            contents = readFile(self.logpath, self.logger)
+            filestring = ""
             for line in contents:
-                if re.search("^#", line.strip()) or re.match("^\s*$", line.strip()):
-                    continue
-                elif re.search("^" + re.escape(log), line):
-                    line = line.strip()
-                    line = re.sub("(\s)+", " ", line)
-                    temp = line.split()
-                    try:
-                        if self.logfiles[log] == temp[1].strip():
-                            found = True
-                            break
-                    except IndexError:
-                        debug = traceback.format_exc() + "\n"
-                        debug += "Index out of range\n"
-                        debug += "from line: " + line + "\n"
-                        self.logger.log(LogPriority, debug)
-                        compliant = False
-                        raise
-            if found:
-                exist.append(log)
-            else:
-                bad = True
-                debug = "didn't find: " + str(log) + " in " + syslog + "\n"
-                self.logger.log(LogPriority, debug)
-                missing.append(log)
+                filestring += line
+            if not re.search(re.escape(regex), filestring):
+                self.detailedresults += self.logpath + " doesn't contain " + \
+                    "correct contents\n"
                 compliant = False
-        if exist:
-            for item in exist:
-                del self.logfiles[item]
-        if bad:
-            self.detailedresults += "The following lines were not found in " + \
-                syslog + ":\n"
-            for item in missing:
-                self.detailedresults += str(item) + "\n"
+                self.badsyslog = True
+        else:
+            compliant = False
+            self.detailedresults += self.logpath + " doesn't exist\n"
+#        !!!!!!eventual implementation currently commented out!!!!!!!!!
+#         if os.path.exists(self.logpath):
+#             if not checkPerms(self.logpath, [0, 0, 420], self.logger):
+#                 self.detailedresults += "permissions aren't correct on log \
+# daemon config file: " + self.logpath
+#                 compliant = False
+#             contents = readFile(self.logpath, self.logger)
+#             for key in self.logfiles:
+#                 keytemp = key.split()
+#                 for line in contents:
+#                     if re.search("^#", line.strip()) or re.match("^\s*$",
+#                                                                  line.strip()):
+#                         continue
+#                     line = line.strip()
+#                     line = re.sub("(\s)+", " ", line)
+#                     temp = line.split()
+#                     try:
+#                         if re.search(re.escape(keytemp[0]), temp[0].strip()):
+#                             if re.search(keytemp[1], temp[1]):
+#                                 if key not in self.logfilescopy:
+#                                     self.logfilescopy.append(key)
+#                                 break
+#                     except IndexError:
+#                         debug = traceback.format_exc() + "\n"
+#                         debug += "Index out of range\n"
+#                         debug += "from line: " + line + "\n"
+#                         continue
+#             if self.logfilescopy:
+#                 for item in self.logfilescopy:
+#                     self.logfiles.remove(item)
+#             if self.logfiles:
+#                 compliant = False
+#                 for item in self.logfiles:
+#                     self.detailedresults += item + " not found in " + self.logpath + "\n"
+#         else:
+#             self.detailedresults += self.logpath + "doesn\'t exist\n"
+#             compliant = False
+#         self.logger.log(LogPriority.DEBUG, debug)
+            #!!!!!original report for rule, may reinstate!!!!!!!
+#----------Check /etc/syslog.conf file for correct contents-------------------#
+#         contents = readFile(syslog, self.logger)
+#         bad = False
+#         missing = []
+#         for log in self.logfiles:
+#             found = False
+#             for line in contents:
+#                 if re.search("^#", line.strip()) or re.match("^\s*$", line.strip()):
+#                     continue
+#                 elif re.search("^" + re.escape(log), line):
+#                     line = line.strip()
+#                     line = re.sub("(\s)+", " ", line)
+#                     temp = line.split()
+#                     try:
+#                         if self.logfiles[log] == temp[1].strip():
+#                             found = True
+#                             break
+#                     except IndexError:
+#                         debug = traceback.format_exc() + "\n"
+#                         debug += "Index out of range\n"
+#                         debug += "from line: " + line + "\n"
+#                         self.logger.log(LogPriority, debug)
+#                         compliant = False
+#                         raise
+#             if found:
+#                 exist.append(log)
+#             else:
+#                 bad = True
+#                 debug = "didn't find: " + str(log) + " in " + syslog + "\n"
+#                 self.logger.log(LogPriority, debug)
+#                 missing.append(log)
+#                 compliant = False
+#         if exist:
+#             for item in exist:
+#                 del self.logfiles[item]
+#         if bad:
+#             self.detailedresults += "The following lines were not found in " + \
+#                 syslog + ":\n"
+#             for item in missing:
+#                 self.detailedresults += str(item) + "\n"
 #-------------------Check asl.conf file---------------------------------------#
         bad = False
         exist = []
@@ -1648,11 +1734,28 @@ because these values are optional\n"
 ###############################################################################
 
     def fixMac(self):
-        syslog = "/etc/syslog.conf"
         newsyslog = "/etc/newsyslog.conf"
         aslfile = "/etc/asl.conf"
         service = "/System/Library/LaunchDaemons/com.apple.syslogd.plist"
         servicename = "com.apple.syslogd"
+        tempstring = "*.* /var/log/system.log\n" + \
+                "daemon.* /var/log/daemon.log\n" + \
+                "auth.* /var/log/secure.log\n" + \
+                "user.* /var/log/user.log\n" + \
+                "kern.* /var/log/kern.log\n" + \
+                "lpr.* /var/log/lpr.log\n" + \
+                "syslog.* /var/log/syslog.log\n" + \
+                "cron.* /var/log/cron.log\n" + \
+                "mail.* /var/log/mail.log\n" + \
+                "uucp.* /var/log/mail.log\n" + \
+                "news.* /var/log/mail.log\n" + \
+                "local,local0,local1,local2,local3,local4,local5,local6,local7.* /var/log/local.log\n" + \
+                "local5.* /var/log/stonix.log\n" + \
+                "install.* /var/log/install.log\n" + \
+                "netinfo.* /var/log/netinfo.log\n" + \
+                "remoteauth.* /var/log/secure.log\n" + \
+                "*authpriv.* /var/log/secure.log\n" + \
+                "*.crit /dev/console\n"
         success = RuleKVEditor.fix(self, True)
         debug = ""
         universal = "#The following lines were added by stonix\n"
@@ -1668,33 +1771,69 @@ because these values are optional\n"
         if LANLLOGROTATE != None:
             if os.path.exists("/etc/periodic/weekly/" + LANLLOGROTATE):
                 os.remove("/etc/periodic/weekly/" + LANLLOGROTATE)
-        if os.path.exists(syslog):
-            tempstring = ""
-            contents = readFile(syslog, self.logger)
-            for line in contents:
-                if re.search(universal, line):
-                    continue
-                tempstring += line
-            tempstring += universal
-            for item in self.logfiles:
-                tempstring += item + "\t" + self.logfiles[item] + "\n"
-            tmpfile = syslog + ".tmp"
-            if writeFile(tmpfile, tempstring, self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf",
-                         "filepath": syslog}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(syslog, tmpfile, myid)
-                os.rename(tmpfile, syslog)
-            else:
-                success = False
-                self.detailedresults += "Unable to write to /etc/syslog\n"
+        '''quick fix for corrupted syslog files'''
+        if os.path.exists(self.logpath):
+            if self.badsyslog:
+                tmpfile = self.logpath + ".tmp"
+                if writeFile(tmpfile, tempstring, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": self.logpath}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.logpath, tmpfile, myid)
+                    os.rename(tmpfile, self.logpath)
+                else:
+                    success = False
+                    self.detailedresults += "Unable to write to /etc/asl.conf\n"
         else:
-            success = False
-            self.detailedresults += "/etc/syslog does not exist, will not \
-attempt to create this file. Please make sure syslog is installed and create \
-the file manually\n"
+            if not createFile(self.logpath, self.logger):
+                debug = "Unable to create missing log rotation config " + \
+                    "file: " + self.logpath + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+            else:
+                self.detailedresults += "successfully created " + \
+                    self.logpath + " file\n"
+                event = {"eventtype": "creation",
+                         "filepath": self.logpath}
+                tmpfile = self.logpath + ".tmp"
+                self.statechglogger.recordchgevent(myid, event)
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    debug = "Unable to write to file " + tmpfile + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+                else:
+                    os.rename(tmpfile, self.logpath)
+#!!!!!!!!!!!!!!!!current implementation currently commented out!!!!!!!!!!!!!!!!!!
+# 
+#         if os.path.exists(syslog):
+#             tempstring = ""
+#             contents = readFile(syslog, self.logger)
+#             for line in contents:
+#                 if re.search(universal, line):
+#                     continue
+#                 tempstring += line
+#             tempstring += universal
+#             for item in self.logfiles:
+#                 tempstring += item + "\t" + self.logfiles[item] + "\n"
+#             tmpfile = syslog + ".tmp"
+#             if writeFile(tmpfile, tempstring, self.logger):
+#                 self.iditerator += 1
+#                 myid = iterate(self.iditerator, self.rulenumber)
+#                 event = {"eventtype": "conf",
+#                          "filepath": syslog}
+#                 self.statechglogger.recordchgevent(myid, event)
+#                 self.statechglogger.recordfilechange(syslog, tmpfile, myid)
+#                 os.rename(tmpfile, syslog)
+#             else:
+#                 success = False
+#                 self.detailedresults += "Unable to write to /etc/syslog\n"
+#         else:
+#             success = False
+#             self.detailedresults += "/etc/syslog does not exist, will not \
+# attempt to create this file. Please make sure syslog is installed and create \
+# the file manually\n"
         if os.path.exists(aslfile):
             contents = readFile(aslfile, self.logger)
             tempstring = ""
