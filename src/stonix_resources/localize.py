@@ -512,6 +512,23 @@ i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
 i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
 
+PWQUALITY_HIGH_REGEX =  "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
+    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+PWQUALITY_REGEX = regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
+    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+CRACKLIB_HIGH_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
+    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+CRACKLIB_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
+    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+PAMFAIL_REGEX = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
+                        "deny=5 unlock_time=900 fail_interval=900"
+PAMTALLY_REGEX = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
+                        "unlock_time=900 onerr=fail"
+
 AUTH_APT = '''auth        required      pam_env.so
 auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
 auth        sufficient    pam_unix.so try_first_pass
