@@ -41,9 +41,11 @@ import re
 from subprocess import call
 import traceback
 from ..KVEditorStonix import KVEditorStonix
-from ..localize import AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD, \
-    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM, \
-    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD ,SESSION_YUM
+from ..localize import PWQUALITY_HIGH_REGEX, PWQUALITY_REGEX, \
+    CRACKLIB_HIGH_REGEX, CRACKLIB_REGEX, PAMFAIL_REGEX, PAMTALLY_REGEX, \
+    AUTH_APT, ACCOUNT_APT, PASSWORD_ZYPPER, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
+    PASSWORD_NSLCD, AUTH_NSLCD, ACCOUNT_NSLCD, SESSION_NSLCD, AUTH_YUM, \
+    ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM, PASSWORD_APT
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..rule import Rule
@@ -145,19 +147,6 @@ for the login.defs file"""
         @param self - essential if you override this definition
         @return: bool - True if system is compliant, False if it isn't
         '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD,
-                    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM,
-                    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD, SESSION_YUM]
-        if not self.checkConsts(constlist):
-            self.compliant = False
-            self.detailedresults = "\nPlease ensure that the constants: AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD,\
-                    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM,\
-                    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD, SESSION_YUM, in localize.py, are defined and are not None. This rule will not function without them."
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            return self.compliant
-
         try:
             self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
             self.detailedresults = ""
@@ -188,16 +177,6 @@ for the login.defs file"""
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
         '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [AUTH_APT, ACCOUNT_APT, PASSWORD_APT, AUTH_NSLCD,
-                    ACCOUNT_NSLCD, PASSWORD_NSLCD, AUTH_YUM, ACCOUNT_YUM, PASSWORD_YUM,
-                    AUTH_ZYPPER, ACCOUNT_ZYPPER, PASSWORD_ZYPPER, SESSION_NSLCD, SESSION_YUM]
-        if not self.checkConsts(constlist):
-            success = False
-            self.formatDetailedResults("fix", success, self.detailedresults)
-            return success
-
         self.detailedresults = ""
         try:
             if not self.ci1.getcurrvalue():
@@ -307,9 +286,14 @@ for the login.defs file"""
         if self.ci2.getcurrvalue():
             if not self.ci2comp:
                 if self.usingpwquality:
-                    regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-                        "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-                        "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+                    self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
+                                       self.password)
+                    if self.environ.getsystemfismacat() == "high":
+                        self.password = re.sub("minlen=8", "minlen=14", self.password)
+                        self.password = re.sub("minclass=3", "minclass=4", self.password)
+                        regex = PWQUALITY_HIGH_REGEX
+                    else:
+                        regex = PWQUALITY_REGEX
                     if self.pwqinstalled:
                         if not self.setpasswordsetup(regex):
                             success = False
@@ -317,9 +301,14 @@ for the login.defs file"""
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
                 elif self.usingcracklib:
-                    regex = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-                        "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-                        "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+                    self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
+                                       self.password)
+                    if self.environ.getsystemfismacat() == "high":
+                        self.password = re.sub("minlen=8", "minlen=14", self.password)
+                        self.password = re.sub("minclass=3", "minclass=4", self.password)
+                        regex = CRACKLIB_HIGH_REGEX
+                    else:
+                        regex = CRACKLIB_REGEX
                     if self.clinstalled:
                         if not self.setpasswordsetup(regex):
                             success = False
@@ -335,15 +324,13 @@ for the login.defs file"""
         if self.ci3.getcurrvalue():
             if not self.ci3comp:
                 if self.usingpamfail:
-                    regex = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-                        "deny=5 unlock_time=900 fail_interval=900"
+                    regex = PAMFAIL_REGEX
                     if not self.setaccountlockout(regex):
                         success = False
                         self.detailedresults += "Unable to configure pam " + \
                             "for faillock\n"
                 elif self.usingpamtally2:
-                    regex = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-                        "unlock_time=900 onerr=fail"
+                    regex = PAMTALLY_REGEX
                     if not self.setaccountlockout(regex):
                         success = False
                         self.detailedresults += "Unable to configure pam " + \
@@ -410,11 +397,12 @@ for the login.defs file"""
                         self.pwqpkg = pkg
                         self.detailedresults += "System has cracklib " + \
                             "installed but is not configured properly with " + \
-                            "PAM, will install and configure pwquality\n"
+                            "PAM and pwquality is available for install. " + \
+                            "will install and configure pwquality\n"
                         return False
-                    self.detailedresults += "cracklib installed but not " + \
-                        "configured properly\n"
-                    self.usingcracklib = True
+                self.detailedresults += "cracklib installed but not " + \
+                    "configured properly\n"
+                self.usingcracklib = True
             else:
                 '''cracklib is installed and configured'''
                 return True
@@ -447,15 +435,25 @@ for the login.defs file"""
         '''
         compliant = True
         if package == "pwquality":
-            regex1 = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-                    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-                    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+            self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
+                                       self.password)
+            if self.environ.getsystemfismacat() == "high":
+                self.password = re.sub("minlen=8", "minlen=14", self.password)
+                self.password = re.sub("minclass=3", "minclass=4", self.password)
+                regex1 = PWQUALITY_HIGH_REGEX
+            else:
+                regex1 = PWQUALITY_REGEX
             if not self.chkpwquality():
                 compliant = False
         elif package == "cracklib":
-            regex1 = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-                    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-                    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+            self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
+                                       self.password)
+            if self.environ.getsystemfismacat() == "high":
+                self.password = re.sub("minlen=8", "minlen=14", self.password)
+                self.password = re.sub("minclass=3", "minclass=4", self.password)
+                regex1 = CRACKLIB_HIGH_REGEX
+            else:
+                regex1 = CRACKLIB_REGEX
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         pamfiles = []
@@ -510,38 +508,46 @@ for the login.defs file"""
                             pkg + "\n" 
                         return False
                     else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        comm = self.ph.getRemove() + pkg
-                        event = {"eventtype": "commandstring",
-                                 "command": comm}
-                        self.statechglogger.recordchgevent(myid, event)
                         installed = True
-                        pwqfile = "/etc/security/pwquality.conf"
-                        tmpfile = pwqfile + ".tmp"
-                        data = {"difok": "7",
-                                "minlen": "8",
-                                "dcredit": "0",
-                                "ucredit": "0",
-                                "lcredit": "0",
-                                "ocredit": "0",
-                                "maxrepeat": "3",
-                                "minclass": "3"}
-                        self.pwqeditor = KVEditorStonix(self.statechglogger,
-                                                        self.logger, "conf",
-                                                        pwqfile, tmpfile, data,
-                                                        "present", "openeq")
-                        self.pwqeditor.report()
-                        break
+                        if self.usingpwquality:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            comm = self.ph.getRemove() + pkg
+                            event = {"eventtype": "commandstring",
+                                     "command": comm}
+                            self.statechglogger.recordchgevent(myid, event)
+                            pwqfile = "/etc/security/pwquality.conf"
+                            tmpfile = pwqfile + ".tmp"
+                            if self.environ.getsystemfismacat() == "high":
+                                data = {"difok": "7",
+                                        "minlen": "14",
+                                        "dcredit": "0",
+                                        "ucredit": "0",
+                                        "lcredit": "0",
+                                        "ocredit": "0",
+                                        "maxrepeat": "3",
+                                        "minclass": "4"}
+                            else:
+                                data = {"difok": "7",
+                                        "minlen": "8",
+                                        "dcredit": "0",
+                                        "ucredit": "0",
+                                        "lcredit": "0",
+                                        "ocredit": "0",
+                                        "maxrepeat": "3",
+                                        "minclass": "3"}
+                            self.pwqeditor = KVEditorStonix(self.statechglogger,
+                                                            self.logger, "conf",
+                                                            pwqfile, tmpfile, data,
+                                                            "present", "openeq")
+                            self.pwqeditor.report()
+                            break
         if not installed:
             self.detailedresults += "No password checking program available\n"
             return False
         if self.usingpwquality:
             if not self.setpwquality():
                 success = False
-        elif self.usingcracklib:
-            self.password = re.sub("pam_pwquality.so", "pam_cracklib.so",
-                                   self.password)
         if self.ph.manager in ("yum", "dnf"):
             writecontents = self.auth + "\n" + self.acct + "\n" + \
                 self.password + "\n" + self.session
@@ -800,14 +806,24 @@ for the login.defs file"""
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
             tmpfile = pwqfile + ".tmp"
-            data = {"difok": "7",
-                    "minlen": "8",
-                    "dcredit": "0",
-                    "ucredit": "0",
-                    "lcredit": "0",
-                    "ocredit": "0",
-                    "maxrepeat": "3",
-                    "minclass": "3"}
+            if self.environ.getsystemfismacat() == "high":
+                data = {"difok": "7",
+                        "minlen": "14",
+                        "dcredit": "0",
+                        "ucredit": "0",
+                        "lcredit": "0",
+                        "ocredit": "0",
+                        "maxrepeat": "3",
+                        "minclass": "4"}
+            else:
+                data = {"difok": "7",
+                        "minlen": "8",
+                        "dcredit": "0",
+                        "ucredit": "0",
+                        "lcredit": "0",
+                        "ocredit": "0",
+                        "maxrepeat": "3",
+                        "minclass": "3"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
@@ -1199,14 +1215,24 @@ for the login.defs file"""
             self.statechglogger.recordchgevent(myid, event)
             created = True
             tmpfile = pwqfile + ".tmp"
-            data = {"difok": "7",
-                    "minlen": "8",
-                    "dcredit": "0",
-                    "ucredit": "0",
-                    "lcredit": "0",
-                    "ocredit": "0",
-                    "maxrepeat": "3",
-                    "minclass": "3"}
+            if self.environ.getsystemfismacat() == "high":
+                data = {"difok": "7",
+                        "minlen": "14",
+                        "dcredit": "0",
+                        "ucredit": "0",
+                        "lcredit": "0",
+                        "ocredit": "0",
+                        "maxrepeat": "3",
+                        "minclass": "4"}
+            else:
+                data = {"difok": "7",
+                        "minlen": "8",
+                        "dcredit": "0",
+                        "ucredit": "0",
+                        "lcredit": "0",
+                        "ocredit": "0",
+                        "maxrepeat": "3",
+                        "minclass": "3"}
             self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
                                             "conf", pwqfile, tmpfile, data,
                                             "present", "openeq")
