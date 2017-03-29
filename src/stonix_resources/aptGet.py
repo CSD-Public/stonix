@@ -157,7 +157,7 @@ class AptGet(object):
                     continue
                 message.stdout.close()
                 for line in info:
-                    if search(package, line):
+                    if search("^" + package + "$", line):
                         found = True
                 if found:
                     self.detailedresults = package + " pkg is available"
