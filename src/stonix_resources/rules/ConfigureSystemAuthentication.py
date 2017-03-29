@@ -45,7 +45,7 @@ from ..localize import PWQUALITY_HIGH_REGEX, PWQUALITY_REGEX, \
     CRACKLIB_HIGH_REGEX, CRACKLIB_REGEX, PAMFAIL_REGEX, PAMTALLY_REGEX, \
     AUTH_APT, ACCOUNT_APT, PASSWORD_ZYPPER, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
     PASSWORD_NSLCD, AUTH_NSLCD, ACCOUNT_NSLCD, SESSION_NSLCD, AUTH_YUM, \
-    ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM
+    ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM, PASSWORD_APT
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..rule import Rule
@@ -130,7 +130,7 @@ for the login.defs file"""
             self.auth = AUTH_ZYPPER
             self.acct = ACCOUNT_ZYPPER
         elif re.search("debian|ubuntu", myos):
-            self.password = AUTH_APT
+            self.password = PASSWORD_APT
             self.auth = AUTH_APT
             self.acct = ACCOUNT_APT
         else:
@@ -291,7 +291,6 @@ for the login.defs file"""
                     if self.environ.getsystemfismacat() == "high":
                         self.password = re.sub("minlen=8", "minlen=14", self.password)
                         self.password = re.sub("minclass=3", "minclass=4", self.password)
-                    if self.environ.getsystemfismacat() == "high":
                         regex = PWQUALITY_HIGH_REGEX
                     else:
                         regex = PWQUALITY_REGEX
@@ -307,7 +306,6 @@ for the login.defs file"""
                     if self.environ.getsystemfismacat() == "high":
                         self.password = re.sub("minlen=8", "minlen=14", self.password)
                         self.password = re.sub("minclass=3", "minclass=4", self.password)
-                    if self.environ.getsystemfismacat() == "high":
                         regex = CRACKLIB_HIGH_REGEX
                     else:
                         regex = CRACKLIB_REGEX
@@ -399,11 +397,12 @@ for the login.defs file"""
                         self.pwqpkg = pkg
                         self.detailedresults += "System has cracklib " + \
                             "installed but is not configured properly with " + \
-                            "PAM, will install and configure pwquality\n"
+                            "PAM and pwquality is available for install. " + \
+                            "will install and configure pwquality\n"
                         return False
-                    self.detailedresults += "cracklib installed but not " + \
-                        "configured properly\n"
-                    self.usingcracklib = True
+                self.detailedresults += "cracklib installed but not " + \
+                    "configured properly\n"
+                self.usingcracklib = True
             else:
                 '''cracklib is installed and configured'''
                 return True
@@ -509,6 +508,7 @@ for the login.defs file"""
                             pkg + "\n" 
                         return False
                     else:
+                        installed = True
                         if self.usingpwquality:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
@@ -516,7 +516,6 @@ for the login.defs file"""
                             event = {"eventtype": "commandstring",
                                      "command": comm}
                             self.statechglogger.recordchgevent(myid, event)
-                            installed = True
                             pwqfile = "/etc/security/pwquality.conf"
                             tmpfile = pwqfile + ".tmp"
                             if self.environ.getsystemfismacat() == "high":
