@@ -1,0 +1,10 @@
+# screensaver: auth account
+# --- start of modification
+# modify the following line sufficient try_first_pass default_principal for crypto card
+auth       sufficient     pam_krb5.so try_first_pass default_principal
+# --- end of modification
+auth       required       pam_opendirectory.so use_first_pass nullok
+account    required       pam_opendirectory.so
+account    sufficient     pam_self.so
+account    required       pam_group.so no_warn group=wheel fail_safe
+account    required       pam_group.so no_warn deny group=admin,wheel ruser fail_safe
