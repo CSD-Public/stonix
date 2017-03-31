@@ -24,6 +24,7 @@
 Created on Aug 23, 2016
 
 @author: dwalker
+@change: 2017/03/30 dkennel Marked as FISMA High
 '''
 from __future__ import absolute_import
 import traceback
@@ -53,14 +54,15 @@ class STIGConfigurePasswordPolicy(Rule):
             "DISA STIG Password Policy profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.12.6']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.12.6']},
+                           'fisma': 'high'}
         datatype = "bool"
         key = "STIGPWPOLICY"
         instructions = "To disable the installation of the password " + \
             "profile set the value of STIGPWPOLICY to False"
         default = False
         self.pwci = self.initCi(datatype, key, instructions, default)
-        
+
         datatype = "bool"
         key = "STIGSECPOLICY"
         instructions = "To disable the installation of the security " + \
