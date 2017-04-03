@@ -58,7 +58,7 @@ class ConfigureMFA(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.12.10']}}
 
         datatype = "bool"
         key = "CCPOLICY"
@@ -69,7 +69,7 @@ class ConfigureMFA(Rule):
 
         self.chkApp = CheckApplicable(self.environ, self.logdispatch)
         self.macApplicable = {'type': 'white',
-                              'os': {'Mac OS X': ['10.11.0', 'r', '10.12.10']}}
+                              'os': {'Mac OS X': ['10.10.0', 'r', '10.12.10']}}
 
         self.fsm = FileStateManager(self.environ, self.logdispatch)
         self.fsm.setPrefix(self.environ.get_resources_path() + "/files/FileStateManager/pam")
