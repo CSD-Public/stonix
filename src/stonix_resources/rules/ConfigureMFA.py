@@ -64,7 +64,7 @@ class ConfigureMFA(Rule):
         key = "CCPOLICY"
         instructions = "To enable stonix to configure cryptocard login, set " +\
                        "the value of CCPOLICY to True."
-        default = True
+        default = False
         self.ccci = self.initCi(datatype, key, instructions, default)
 
         self.chkApp = CheckApplicable(self.environ, self.logdispatch)
