@@ -1,3 +1,0 @@
-#%PAM-1.0
-auth    required pam_opendirectory.so
-account required pam_opendirectory.so
