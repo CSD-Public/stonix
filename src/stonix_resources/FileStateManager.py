@@ -320,7 +320,7 @@ class FileStateManager(object):
         stateListItem = ""
 
         for state in states:
-            state_search = self.buildSearchList(state)
+            state_search = self.buildSearchList(states=[state])
             for stateListItem in state_search:
                 for fileName in files:
                     thisState, _ = self.isKnownStateMatch(stateListItem + fileName, fileName)
