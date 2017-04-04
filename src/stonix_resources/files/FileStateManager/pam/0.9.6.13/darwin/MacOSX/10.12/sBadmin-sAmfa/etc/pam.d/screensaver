@@ -1,0 +1,13 @@
+# screensaver: auth account
+# --- start of modification
+# add the following for crypto card
+# modify the following line use_kcminit default_principal for crypto card
+auth       optional       pam_krb5.so use_first_pass use_kcminit default_principal
+# add the following for crypto card
+auth       sufficient     pam_krb5.so use_first_pass default_principal
+# --- end of modification
+auth       required       pam_opendirectory.so use_first_pass nullok
+account    required       pam_opendirectory.so
+account    sufficient     pam_self.so
+account    required       pam_group.so no_warn group=admin,wheel fail_safe
+account    required       pam_group.so no_warn deny group=admin,wheel ruser fail_safe

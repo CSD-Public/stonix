@@ -1,10 +1,14 @@
 import os
 import re
+import pwd
 import sys
+import copy
 import time
 import shutil
 import difflib
 import filecmp
+import inspect
+import datetime
 import optparse
 import traceback
 
@@ -44,8 +48,10 @@ class FileStateManager(object):
         '''
         self.environ = environ
         self.logger = logger
-        self.mode = None
+        self.mode = "filecmp"
         self.version = None
+        self.prefix = None
+        self.backupPrefix = None
 
     def setMode(self, mode=''):
         '''
@@ -65,10 +71,73 @@ class FileStateManager(object):
         '''
         Setter for the prefix used in building the compare path.
         '''
-        if isinstance(prefix, basestring):
+        success = False
+        if isinstance(prefix, basestring) and self.isSaneFilePath(prefix):
             self.prefix = prefix
+            #####
+            # Move to a backup location if it isn't a directory and is a file.
+            if not os.path.isdir(prefix) and os.path.isfile(prefix):
+                newName = prefix + "-" + str(datetime.datetime.now().strftime("%Y%m%d.%H%M.%s"))
+                shutil.move(prefix, newName)
+            if not os.path.isdir(prefix):
+                os.makedirs(prefix)
+                success = True
+            else:
+                success = True
+        return success
 
-    def getPrefix(self, prefix=''):
+    def setBackupPrefix(self, prefix='', inspectLevel=1):
+        '''
+        Setter for the prefix used in building the compare path.
+        '''
+        success = False
+
+        if not self.backupPrefix or not prefix:
+            programFullPath = sys.argv[0]
+            programName = programFullPath.split("/")[-1]
+            programNameWithoutExtension = ".".join(programName.split(".")[:-1])
+            version = self.getVersion()
+            (_, inspectFileName, _, _, _, _) = inspect.getouterframes(inspect.currentframe())[inspectLevel]
+            inspectFileName = ".".join(inspectFileName.split("/")[-1].split(".")[:-1])
+            datestamp = datetime.datetime.now()
+            stamp = datestamp.strftime("%Y%m%d.%H%M%S.%f")
+
+            euid = os.geteuid()
+
+            if euid == 0:
+                userPrefix = "/var/db/"
+            else:
+                userInfo = pwd.getpwuid(euid)
+                userHome = userInfo[5]
+                userPrefix = userHome
+
+            self.backupPrefix = userPrefix + \
+                                "/" + programNameWithoutExtension + \
+                                "/" + version + \
+                                "/" + stamp + \
+                                "/" + inspectFileName
+
+        elif isinstance(prefix, basestring) and self.isSaneFilePath(prefix):
+            self.backupPrefix = prefix
+
+        #####
+        # Move to a backup location if it isn't a directory and is a file.
+        if not os.path.isdir(self.backupPrefix) and os.path.isfile(self.backupPrefix):
+            newName = self.backupPrefix + "-" + str(datetime.datetime.now().strftime("%Y%m%d.%H%M.%s"))
+            shutil.move(self.backupPrefix, newName)
+        if not os.path.isdir(self.backupPrefix):
+            try:
+                os.makedirs(self.backupPrefix)
+            except OSError:
+                success = False
+            else:
+                success = True
+        else:
+            success = True
+
+        return success
+
+    def getPrefix(self):
         '''
         Getter for the prefix used in building the compare path.
         '''
@@ -109,6 +178,105 @@ class FileStateManager(object):
         Build a warning string for reporting purposes.
         '''
         pass
+
+    def getLatestStatePath(self, state=''):
+        '''
+        Get the path to the latest version of a specified state.
+        '''
+        statePath = ''
+        stateSearchList = self.buildSearchList([state])
+        for state in stateSearchList:
+            if os.path.exists(state):
+                statePath = state
+                break
+        return state
+
+    def getLatestFileSet(self, state=''):
+        '''
+        Get the latest file set from a specific state.
+        '''
+        fileList = []
+        lastState = ''
+        #####
+        # Input validation
+        if state and self.isSaneFilePath(state):
+            ######
+            # build a state list
+            scratchStateList = self.buildSearchList([state])
+            self.logger.log(lp.DEBUG, "available states: " + str(scratchStateList))
+            #####
+            # Find the latest existing state in the state list
+            for state in scratchStateList:
+                if os.path.exists(state):
+                    lastState = state
+                    break
+
+            statePathLength = len(lastState.split("/"))
+            pathStart = statePathLength
+
+            #####
+            # collect the files from that state
+            for (dirPath, dirnames, filenames) in os.walk(lastState):
+                for filename in filenames:
+                    pathItem = dirPath + "/" + filename
+                    self.logger.log(lp.DEBUG, pathItem)
+                    pathItemList = pathItem.split("/")[pathStart:]
+                    pathItem = "/" + "/".join(pathItemList)
+                    fileList.append(pathItem)
+
+            self.logger.log(lp.DEBUG, "fileList: " + str(fileList))
+        return lastState, fileList
+
+
+
+    def buildTextFilesOutput(self, files=[]):
+        '''
+        '''
+        isValid = []
+        text = ""
+        if isinstance(files, list):
+            for filename in files:
+                if isinstance(filename, list):
+                    isValid.append(True)
+                else:
+                    isValid.append(False)
+            if False not in isValid:
+                text += "File states do not match.\n========================"
+                i = 0
+                for itemList in files:
+                    if i == 0:
+                        text += "Expected state of files:\n ---------\n"
+                    elif i == 1:
+                        text += " ------------------\nCurrent state of files:\n ---------\n"
+                    elif i == 2:
+                        text += " ------------------\nFactory state of files:\n ---------\n"
+                    for item in itemList:
+                        text += item + "\n-------"
+                        itemFp = open(item, 'r')
+                        text = itemFp.read()
+        return text
+
+    def buildHtmlFilesOutput(self, files=[]):
+        '''
+        '''
+        pass
+
+    def acquireReferenceFilesSets(self, afterState='', beforeState=''):
+        '''
+        Get three files lists.  First, the expected state, second the current
+        state, third the passed in 'before' state.
+        '''
+        latestAfterState, self.afterStateFiles = self.getLatestFileSet(afterState)
+
+        referenceFiles = copy.deepcopy(self.afterStateFiles)
+        currentFiles = []
+        for filename in referenceFiles:
+            currentFile = re.sub(latestAfterState, '', filename)
+            currentFiles.append(currentFile)
+
+        latestBeforeState, self.afterStateFiles = self.getLatestFileSet(beforeState)
+
+        return latestAfterState, currentFiles, latestBeforeState
 
     def isKnownStateMatch(self, targetStateFile='', fileName=''):
         '''
@@ -176,16 +344,21 @@ class FileStateManager(object):
         '''
         success = False
         filesState = []
-        
-        for item in files:
-            success = False
-            success = filecmp.cmp(metaState + item, item)
-            filesState.append(success)
-
-        if False in filesState:
-            success = False
-        else:
-            success = True
+        self.logger.log(lp.DEBUG, "metaState: " + str(metaState)) 
+        self.logger.log(lp.DEBUG, "files: " + str(files))
+        if files:
+            for item in files:
+                success = False
+                if os.path.exists(item) and os.path.exists(metaState + item):
+                    success = filecmp.cmp(metaState + item, item)
+                    filesState.append(success)
+                else:
+                    filesState.append(False)
+    
+            if False in filesState:
+                success = False
+            else:
+                success = True
 
         return success
 
@@ -195,7 +368,6 @@ class FileStateManager(object):
         '''
         success = False
         filesState = []
-        state_search = {}
         thisState = False
         stateListItem = ""
 
@@ -236,7 +408,7 @@ class FileStateManager(object):
         '''
         success = False
         metaState = None
-        self.version = self.getVersion()
+        version = self.getVersion()
 
         inStates = False
 
@@ -258,6 +430,35 @@ class FileStateManager(object):
 
         return success, metaState
 
+    def backupFile(self, fileName='', inspectIndex=2):
+        '''
+        '''
+        self.logger.log(lp.DEBUG, "Entering backupFile...")
+        success = False
+        if fileName and os.path.exists(fileName):
+            if not self.backupPrefix:
+                self.setBackupPrefix()
+            backupFile = self.backupPrefix + fileName
+            backupDir = os.path.dirname(backupFile)
+            self.logger.log(lp.DEBUG, "backupDir: " + str(backupDir))
+            if os.path.isfile(backupDir) and not os.path.isdir(backupDir):
+                newfile = backupDir + "-" + str(datetime.datetime.now().strftime("%Y%m%d.%H%M.%s"))
+                shutil.move(backupDir, newfile)
+
+            if not os.path.exists(backupDir):
+                try:
+                    os.makedirs(backupDir)
+                except OSError:
+                    self.logger.log(lp.DEBUG, "Unable to make: " + str(backupDir))
+            try:
+                shutil.copy2(fileName, backupFile)
+            except OSError:
+                self.logger.log(lp.DEBUG, "Unable to make a backup: " + str(backupFile))
+            else:
+                success = True
+        self.logger.log(lp.DEBUG, "Exiting backupFile...")            
+        return success
+    
     def changeFileState(self, fromMetaState='', fileName=''):
         '''
         Change the file state from the "fromState" to the fileName.
@@ -269,20 +470,30 @@ class FileStateManager(object):
         '''
         success = False
 
-        if not filecmp.cmp(fromMetaState, fileName):
+        if not os.path.exists(fileName):
             try:
                 shutil.copy2(fromMetaState, fileName)
-                success = True
-            except OSError, err:
+            except shutil.Error, err:
                 self.logger.log(lp.INFO, "Error copying file from reference state.")
                 self.logger.log(lp.DEBUG, traceback.format_exc(err))
+            else:
+                success = True
+        elif not filecmp.cmp(fromMetaState, fileName):
+            self.backupFile(fileName)
+            try:
+                shutil.copy2(fromMetaState, fileName)
+            except shutil.Error, err:
+                self.logger.log(lp.INFO, "Error copying file from reference state.")
+                self.logger.log(lp.DEBUG, traceback.format_exc(err))
+            else:
+                success = True
 
             #####
             # May need to set correct permissions here . . .
 
         return success
 
-    def changeFilesState(self, fromMetaState='', files=''):
+    def changeFilesState(self, fromMetaState='', files=[]):
         '''
         Change the file state from the "fromState" to the fileName.
 
@@ -292,22 +503,46 @@ class FileStateManager(object):
         @author: Roy Nielsen
         '''
         success = False
-
+        copyResults = []
+        self.logger.log(lp.DEBUG, "fromMetaState: " + str(fromMetaState))
+        self.logger.log(lp.DEBUG, "files: " + str(files))
+        if not self.backupPrefix:
+            self.setBackupPrefix()
         for item in files:
-            if not filecmp.cmp(fromMetaState + item, item):
+            self.backupFile(item)
+            if not os.path.exists(item):
                 try:
                     shutil.copy2(fromMetaState + item, item)
-                    success = True
                 except OSError, err:
                     self.logger.log(lp.INFO, "Error copying file from reference state.")
                     self.logger.log(lp.DEBUG, traceback.format_exc(err))
+                    copyResults.append(False)
+                else:
+                    copyResults.append(True)
 
-                #####
-                # May need to set correct permissions here . . .
+            elif not filecmp.cmp(fromMetaState + item, item):
+                try:
+                    shutil.copy2(fromMetaState + item, item)
+                except OSError, err:
+                    self.logger.log(lp.INFO, "Error copying file from reference state.")
+                    self.logger.log(lp.DEBUG, traceback.format_exc(err))
+                    copyResults.append(False)
+                else:
+                    copyResults.append(True)
+            else:
+                self.logger.log(lp.DEBUG, "File doesn't need to be copied...")
+
+            #####
+            # May need to set correct permissions here . . .
+
+        if False in copyResults:
+            success = False
+        else:
+            success = True
 
         return success
 
-    def buildSearchList(self, states=[], map=""):
+    def buildSearchList(self, states=[], map=''):
         """
         Use predefined prefix, version along with the state and filename
         to build a list of potential meta-states, sorted by version number.
@@ -317,9 +552,12 @@ class FileStateManager(object):
         @author: Roy Nielsen
         """
         versions = []
+        fullPath = ''
         states2check = []
         listing = os.listdir(self.prefix)
-        
+        self.logger.log(lp.DEBUG, "listing: " + str(listing))
+        self.logger.log(lp.DEBUG, "states: " + str(states))
+        self.logger.log(lp.DEBUG, "map: " + str(map))
         if listing and states and map:
             #####
             # create the search list of states for a specific file map
@@ -351,11 +589,13 @@ class FileStateManager(object):
             #####
             # Just need a metaState list, without the map...
             self.logger.log(lp.DEBUG, "listing: " + str(listing))
+
             #####
             # Validate that only directory names are in the list
             for item in listing:
                 if os.path.isdir(self.prefix + "/" + item):
                     versions.append(item)
+
             #####
             # Sort the version list
             sorted = self.qsort(versions)
@@ -365,33 +605,26 @@ class FileStateManager(object):
             # Create a new list only with valid files out of the versions
             # and states list, WITHOUT the file map.
             for item in sorted:
+                self.logger.log(lp.DEBUG, "item: " + str(item))
                 for state in states:
                     self.logger.log(lp.DEBUG, "item: " + item + " state: " + state)
                     fullPath = self.prefix + "/" + item + "/" + state
                     self.logger.log(lp.DEBUG, "fullPath: " + str(fullPath))
-                    try:
-                        if os.path.isdir(fullPath):
-                            states2check.append(fullPath)
-                    except OSError:
-                        continue
-
+                    if os.path.isdir(fullPath):
+                        states2check.append(fullPath)
+                        self.logger.log(lp.DEBUG, "Adding: " + str(fullPath) + " to the list . . .")
+                        self.logger.log(lp.DEBUG, "states2check: " + str(states2check))
+                    else:
+                        self.logger.log(lp.DEBUG, "Damn it Jim!!!")
+        else:
+            self.logger.log(lp.DEBUG, "Variables invalid...")
         #####
         # reverse the array so the latest version is first - valid since
         # python 2.3.5
-        states2check = states2check[::-1]
+        reverseStates = states2check[::-1]
+        self.logger.log(lp.DEBUG, "reverse: " + str(reverseStates))
+        states2check = reverseStates
         return states2check
-
-    def getVersion(self):
-        '''
-        Acquire the version of the application using this library.
-
-        @author: Roy Nielsen
-        '''
-        if self.version is None:
-            #####
-            # Acquire the version of the application from the "environment"
-            self.version = self.environ.getstonixversion()
-        return self.version
 
     #--------------------------------------------------------------------------
     # Quick sort algorithm for sorting a list of version number as defined by
