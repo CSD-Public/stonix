@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.6
+Version: 0.9.7
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -116,6 +116,16 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Apr 4 2017 David Kennel <dkennel@lanl.gov> - 0.9.7
+- Added filter mechanism and variables to support fine tuned actions and rule filtering based on FISMA risk categorization
+- Corrected issue with duplicate rule id numbers affecting ConfigureProcessAccounting and EncryptSwap
+- Corrected multiple issues with MacOS STIG rules
+- Updated MinimizeServices to correct issues on Debian systems
+- Corrected permissions problem with SecureATCRON
+- Fixed issues with the way that some rules responded to default values in localize.py
+- Fixed traceback in DisableInactiveAccounts that affected MacOS
+- Fixed multiple issues in ConfigureLogging
+
 * Wed Mar 8 2017 David Kennel <dkennel@lanl.gov> - 0.9.6
 - EnableKernelAuditing – Audit rules now persist between reboots (RHEL 7, Centos, Fedora)
 - SecureCUPS – Issue has been fixed where certain lines in CUPS configuration files were breaking Mac OS and linux systems.
