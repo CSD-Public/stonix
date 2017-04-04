@@ -126,8 +126,8 @@ effect."""
             else:
                 self.session = SESSION_NSLCD
             self.nslcd = True
-            self.pampassfile = "/etc/pam.d/password-auth"
-            self.pamauthfile = "/etc/pam.d/system-auth"
+            self.pampassfile = "/etc/pam.d/password-auth-ac"
+            self.pamauthfile = "/etc/pam.d/system-auth-ac"
         elif re.search("suse", myos):
             self.password = PASSWORD_ZYPPER
             self.auth = AUTH_ZYPPER
@@ -162,8 +162,8 @@ effect."""
                 self.session = SESSION_HOME_YUM
             else:
                 self.session = SESSION_YUM
-            self.pampassfile = "/etc/pam.d/password-auth"
-            self.pamauthfile = "/etc/pam.d/system-auth"
+            self.pampassfile = "/etc/pam.d/password-auth-ac"
+            self.pamauthfile = "/etc/pam.d/system-auth-ac"
     def report(self):
         try:
             compliant = True
@@ -196,17 +196,14 @@ effect."""
             if not self.checkpasswordreqs():
                 self.pwcompliant = False
                 debug += "checkpasswordreqs method is False compliancy\n"
-                self.detailedresults += "checkpasswordreqs method is False compliancy\n"
                 compliant = False
             if not self.checkaccountlockout():
                 self.lockcompliant = False
                 debug += "checkaccountlockout method is False compliancy\n"
-                self.detailedresults += "checkaccountlockout method is False compliancy\n"
                 compliant = False
             if not self.checkotherpam():
                 self.ci4comp = False
                 debug += "checkotherpam method is False compliancy\n"
-                self.detailedresults += "checkotherpam method is False compliancy\n"
                 compliant = False
             if not self.nslcd:
                 sssdconfpath = "/etc/sssd/sssd.conf"
@@ -480,12 +477,14 @@ effect."""
                         elif self.ph.manager in ("yum", "dnf"):
                             self.sesscompliant = True
                             self.acccompliant = True
+                            self.lockcompliant = True
                     else:
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
                         elif self.ph.manager in ("yum", "dnf"):
                             self.sesscompliant = True
                             self.acccompliant = True
+                            self.lockcompliant = True
                 elif self.usingcracklib:
                     self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
                                        self.password)
@@ -546,7 +545,6 @@ effect."""
                     self.nsswitchpath + "\n"
 
             if not self.nslcd:
-                print "SYSYTEM IS NOT NSLCD\n\n\n"
                 if not self.__fixsssd():
                     success = False
                     self.detailedresults += "Failed to write good configuration to " + \
@@ -723,7 +721,8 @@ effect."""
                                             nsConf)
                     else:
                         nsConf += "\n" + settings[ind] + "\n"
-                return self.__writeFile(path, nsConf, [0, 0, 0644])
+                return self.__writeFile(path, nsConf, [0, 0, 0644],
+                                        self.created1)
             else:
                 createFile(path, self.logger)
                 self.created1 = True
@@ -737,7 +736,6 @@ effect."""
             raise
 
     def __fixsssd(self):
-        print "INSIDE _FIXSSSD METHOD!!!\n\n\n"
         sssdconf = '''[sssd]
 config_file_version = 2
 services = nss, pam
@@ -767,7 +765,8 @@ krb5_realm = lanl.gov
             self.created2 = True
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation", "filepath": sssdconfpath}
+            event = {"eventtype": "creation",
+                     "filepath": sssdconfpath}
             self.statechglogger.recordchgevent(myid, event)
 
         # Though we are using the KVEditor to check for valid config details,
@@ -1370,21 +1369,19 @@ krb5_realm = lanl.gov
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
 
-    def __writeFile(self, path, contents, perms, created=""):
+    def __writeFile(self, path, contents, perms, created):
         try:
             tmppath = path + ".tmp"
             success = writeFile(tmppath, contents, self.logger)
-            if created:
-                return True
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf", "filepath": path}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(path, tmppath, myid)
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": path}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(path, tmppath, myid)
             os.rename(tmppath, path)
-            myid = iterate(self.iditerator, self.rulenumber)
-            success &= setPerms(path, perms, self.logger,
-                                self.statechglogger, myid)
+            success &= setPerms(path, perms, self.logger)
             resetsecon(path)
             return success
         except Exception:
