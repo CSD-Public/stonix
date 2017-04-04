@@ -127,6 +127,8 @@ class ConfigureMFA(Rule):
             messagestring = str(err) + " - " + str(traceback.format_exc())
             self.detailedresults += messagestring
             self.logdispatch.log(LogPriority.ERROR, str(self.detailedresults))
+        if not self.compliant:
+            self.detailedresults += self.acquireStateReport()       
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -194,7 +196,7 @@ class ConfigureMFA(Rule):
                             self.logger.log(LogPriority.DEBUG, "....")
                             continue
                     if not self.rulesuccess:
-                        self.detailedresults = "Configuration state change from: " + str(availableBeforeStates) + " failed... "
+                        self.detailedresults = "Configuration state change from: " + str(state) + " failed... "
                     else:
                         break
                 if not self.rulesuccess:
@@ -256,3 +258,49 @@ class ConfigureMFA(Rule):
             self.logdispatch.log(LogPriority.DEBUG, "pre_state: " + str(self.states))
         self.logdispatch.log(LogPriority.DEBUG, "state: " + str(self.states))
         return success
+
+    def acquireStateReport(self):
+        '''
+        Find the file sets for the expected state, current state and factory
+        state, and create a text report based on this information.
+        '''
+        try:
+            #####
+            # Build the "stateAfter" state string for the current platform
+            macReportApplicable = copy.deepcopy(self.macApplicable)
+            if self.chkApp.isApplicable(macReportApplicable):
+                self.buildMacStates(self.environ.getosfamily(),
+                                    self.environ.getostype(),
+                                    self.environ.getosver(),
+                                    ["sAadmin-sAmfa"])
+
+                afterState = copy.deepcopy(self.states)
+
+                latestAfterState, afterStateFiles = self.fsm.getLatestFileSet(afterState)
+
+                currentFiles = []
+                for filename in afterStateFiles:
+                    currentFile = re.sub(latestAfterState, '', filename)
+                    currentFiles.append(currentFile)
+
+                self.buildMacStates(self.environ.getosfamily(),
+                                    self.environ.getostype(),
+                                    self.environ.getosver(),
+                                    ["sBadmin-sBmfa"])
+
+                beforeState = copy.deepcopy(self.states)
+
+                latestBeforeState, beforeStateFiles = self.fsm.getLatestFileSet(beforeState)
+                
+                self.filesDiffReport = self.fsm.buildTextFilesOutput([afterStateFiles,
+                                                                      currentFiles,
+                                                                      beforeStateFiles])
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.exresults = 'ConfigureMFA: '
+            self.exresults = self.exresults + \
+                traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR,
+                            self.exresults)

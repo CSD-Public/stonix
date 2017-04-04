@@ -2,6 +2,7 @@ import os
 import re
 import pwd
 import sys
+import copy
 import time
 import shutil
 import difflib
@@ -222,9 +223,60 @@ class FileStateManager(object):
                     pathItemList = pathItem.split("/")[pathStart:]
                     pathItem = "/" + "/".join(pathItemList)
                     fileList.append(pathItem)
- 
+
             self.logger.log(lp.DEBUG, "fileList: " + str(fileList))
         return lastState, fileList
+
+
+
+    def buildTextFilesOutput(self, files=[]):
+        '''
+        '''
+        isValid = []
+        text = ""
+        if isinstance(files, list):
+            for filename in files:
+                if isinstance(filename, list):
+                    isValid.append(True)
+                else:
+                    isValid.append(False)
+            if False not in isValid:
+                text += "File states do not match.\n========================"
+                i = 0
+                for itemList in files:
+                    if i == 0:
+                        text += "Expected state of files:\n ---------\n"
+                    elif i == 1:
+                        text += " ------------------\nCurrent state of files:\n ---------\n"
+                    elif i == 2:
+                        text += " ------------------\nFactory state of files:\n ---------\n"
+                    for item in itemList:
+                        text += item + "\n-------"
+                        itemFp = open(item, 'r')
+                        text = itemFp.read()
+        return text
+
+    def buildHtmlFilesOutput(self, files=[]):
+        '''
+        '''
+        pass
+
+    def acquireReferenceFilesSets(self, afterState='', beforeState=''):
+        '''
+        Get three files lists.  First, the expected state, second the current
+        state, third the passed in 'before' state.
+        '''
+        latestAfterState, self.afterStateFiles = self.getLatestFileSet(afterState)
+
+        referenceFiles = copy.deepcopy(self.afterStateFiles)
+        currentFiles = []
+        for filename in referenceFiles:
+            currentFile = re.sub(latestAfterState, '', filename)
+            currentFiles.append(currentFile)
+
+        latestBeforeState, self.afterStateFiles = self.getLatestFileSet(beforeState)
+
+        return latestAfterState, currentFiles, latestBeforeState
 
     def isKnownStateMatch(self, targetStateFile='', fileName=''):
         '''
@@ -430,7 +482,7 @@ class FileStateManager(object):
             self.backupFile(fileName)
             try:
                 shutil.copy2(fromMetaState, fileName)
-            except shutil.ERROR, err:
+            except shutil.Error, err:
                 self.logger.log(lp.INFO, "Error copying file from reference state.")
                 self.logger.log(lp.DEBUG, traceback.format_exc(err))
             else:
