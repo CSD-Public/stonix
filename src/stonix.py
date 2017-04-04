@@ -202,7 +202,7 @@ class Controller(Observable):
                                'family': ['darwin']}
             self.chkapp = CheckApplicable(self.environ, self.logger)
 
-            if self.chkapp.isapplicable(applicable2PyQt5):
+            if self.chkapp.isApplicable(applicable2PyQt5):
                 #####
                 # Appropriate to OS that supports PyQt5
                 try:
@@ -231,7 +231,7 @@ class Controller(Observable):
                     app.processEvents()
 
 
-            if self.chkapp.isapplicable(applicable2PyQt4):
+            if self.chkapp.isApplicable(applicable2PyQt4):
                 #####
                 # Appropriate to OS that supports PyQt4
                 try:
@@ -476,7 +476,7 @@ class Controller(Observable):
         applicablerules = []
         for rule in rules:
             try:
-                if rule.isapplicable():
+                if rule.isApplicable():
                     self.logger.log(LogPriority.DEBUG,
                                     'Rule is applicable by platform ' +
                                     ' EUID: ' + str(self.environ.geteuid()) +
