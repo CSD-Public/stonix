@@ -1214,29 +1214,29 @@ for the login.defs file"""
                      'filepath': pwqfile}
             self.statechglogger.recordchgevent(myid, event)
             created = True
-            tmpfile = pwqfile + ".tmp"
-            if self.environ.getsystemfismacat() == "high":
-                data = {"difok": "7",
-                        "minlen": "14",
-                        "dcredit": "0",
-                        "ucredit": "0",
-                        "lcredit": "0",
-                        "ocredit": "0",
-                        "maxrepeat": "3",
-                        "minclass": "4"}
-            else:
-                data = {"difok": "7",
-                        "minlen": "8",
-                        "dcredit": "0",
-                        "ucredit": "0",
-                        "lcredit": "0",
-                        "ocredit": "0",
-                        "maxrepeat": "3",
-                        "minclass": "3"}
-            self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
-                                            "conf", pwqfile, tmpfile, data,
-                                            "present", "openeq")
-            self.pwqeditor.report()
+        tmpfile = pwqfile + ".tmp"
+        if self.environ.getsystemfismacat() == "high":
+            data = {"difok": "7",
+                    "minlen": "14",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
+                    "maxrepeat": "3",
+                    "minclass": "4"}
+        else:
+            data = {"difok": "7",
+                    "minlen": "8",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
+                    "maxrepeat": "3",
+                    "minclass": "3"}
+        self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                        "conf", pwqfile, tmpfile, data,
+                                        "present", "openeq")
+        self.pwqeditor.report()
         if self.pwqeditor.fixables:
             if self.pwqeditor.fix():
                 if not created:
