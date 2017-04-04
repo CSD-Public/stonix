@@ -437,6 +437,11 @@ effect."""
                 createFile(self.pampassfile + ".backup", self.logger)
             if os.path.exists(self.pamauthfile):
                 createFile(self.pamauthfile + ".backup", self.logger)
+            if self.ph.manager not in ("yum", "dnf"):
+                if os.path.exists(self.pamsessfile):
+                    createFile(self.pamsessfile + ".backup", self.logger)
+                if os.path.exists(self.pamacctfile):
+                    createFile(self.pamacctfile + ".backup", self.logger)
             for package in self.packages:
                 if not self.ph.check(package):
                     if self.ph.checkAvailable(package):
@@ -448,7 +453,6 @@ effect."""
                                                        self.detailedresults)
                             self.logdispatch.log(LogPriority.INFO,
                                                  self.detailedresults)
-                            print "RETURNING PREMATURELY IN FIX\n\n"
                             return False
                         else:
                             self.iditerator += 1
@@ -458,11 +462,8 @@ effect."""
                                      "startstate": "removed",
                                      "endstate": "installed"}
                             self.statechglogger.recordchgevent(myid, event)
-            print "DONE WITH PACKAGING PORTION\n\n\n"
             if not self.pwcompliant:
-                print "PWCOMPLIANT IS FALSE\n\n"
                 if self.usingpwquality:
-                    print "USING PWQUALITY\n\n"
                     self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
                                        self.password)
                     if self.environ.getsystemfismacat() == "high":
@@ -478,7 +479,6 @@ effect."""
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
                 elif self.usingcracklib:
-                    print "USING CRACKLIB\n\n"
                     self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
                                        self.password)
                     if self.environ.getsystemfismacat() == "high":
@@ -500,7 +500,6 @@ effect."""
                     self.detailedresults += error + "\n"
                     return False
             if not self.lockcompliant:
-                print "LOCKCOMPLIANT IS FALSE\n\n"
                 if self.usingpamfail:
                     regex = PAMFAIL_REGEX
                     if not self.setaccountlockout(regex):
@@ -776,11 +775,9 @@ krb5_realm = lanl.gov
                 self.clinstalled = True
         '''if pwquality is installed we check to see if it's configured'''
         if self.pwqinstalled:
-            print "INSIDE CHECKPASSWORDREQS AND USING PWQUALITY\n\n"
             '''If it's not, since it is already installed we want to
             configure pwquality and not cracklib since it's better'''
             if not self.checkpasswordsetup("pwquality"):
-                print "PWQUALITY NOT CONFIGURED CORRECTLY\n"
                 self.usingpwquality = True
                 self.detailedresults += "System is using pwquality but " + \
                     "it's not configured properly in PAM\n"
@@ -892,7 +889,6 @@ krb5_realm = lanl.gov
         return compliant
 
     def setpasswordsetup(self, regex1, pkglist = ""):
-        print "INSIDE SETPASSWORDSETUP\n\n"
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         success = True
@@ -906,7 +902,6 @@ krb5_realm = lanl.gov
         else:
             installed = True
         if not installed:
-            print "PWQUALITY ISN'T INSTALLED \n\n"
             for pkg in pkglist:
                 if self.ph.checkAvailable(pkg):
                     if not self.ph.install(pkg):
@@ -1138,7 +1133,8 @@ krb5_realm = lanl.gov
                 else:
                     tempstring = ''''''
                     for line in contents:
-                        if re.search("^session", line.strip()):
+                        if re.search("^session", line.strip()) or \
+                            re.search("^-session", line.strip()):
                             tempstring += line
                     if tempstring != self.session:
                         self.detailedresults += pamfile + " doesn't " + \
@@ -1348,3 +1344,21 @@ krb5_realm = lanl.gov
                 success = False
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
+
+    def __writeFile(self, path, contents, perms):
+        try:
+            tmppath = path + ".tmp"
+            success = writeFile(tmppath, contents, self.logger)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "conf", "filepath": path}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(path, tmppath, myid)
+            os.rename(tmppath, path)
+            myid = iterate(self.iditerator, self.rulenumber)
+            success &= setPerms(path, perms, self.logger,
+                                self.statechglogger, myid)
+            resetsecon(path)
+            return success
+        except Exception:
+            raise
