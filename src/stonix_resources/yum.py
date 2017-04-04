@@ -43,7 +43,7 @@ class Yum(object):
         self.ch = CommandHelper(self.logger)
         self.install = "/usr/bin/yum install -y "
         self.remove = "/usr/bin/yum remove -y "
-        self.search = "/usr/bin/yum search "
+        self.search = "/usr/bin/yum list "
         self.rpm = "/bin/rpm -q "
 ###############################################################################
 
