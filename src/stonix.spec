@@ -126,6 +126,15 @@ installed at /usr/local/stonix/stonixdb.sql
 - Fixed traceback in DisableInactiveAccounts that affected MacOS
 - Fixed multiple issues in ConfigureLogging
 
+* Wed Mar 8 2017 David Kennel <dkennel@lanl.gov> - 0.9.6
+- EnableKernelAuditing – Audit rules now persist between reboots (RHEL 7, Centos, Fedora)
+- SecureCUPS – Issue has been fixed where certain lines in CUPS configuration files were breaking Mac OS and linux systems.
+- DisableInactiveAccounts – now disabled for Mac OS until password policy is in full effect.
+- ConfigureMACPolicy – Issues with fixing GRUB on OpenSUSE resolved.
+- ConfigureSudo – Changed group name to sudo for sudo access for Ubuntu 14 and 16
+- ConfigureLogging - /var/log/messages has been added to list of log files to be rotated.
+- ConfigureLinuxFirewall – No longer enabled by default. This rule by default, sets really strict firewall rules. Please be fully aware of this before running this rule. 
+
 * Wed Feb 15 2017 David Kennel <dkennel@lanl.gov> - 0.9.5-1
 - Updated release of 0.9.5 to resolve issues
 - Fixed issue in secure cups which broke printing
