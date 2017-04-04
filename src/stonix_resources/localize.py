@@ -476,6 +476,7 @@ DHCPDict = {'subnet-mask': 'request',
 # 'supersede' is specified for one of the options in
 # DCHPDict. Change these to reflect your organization's
 # actual servers/domains/settings
+
 # change the 'changeme' values if you choose to supersede
 # them in the DHCPDict dictionary, above!
 DHCPSup = {'subnet-mask': 'changeme',
@@ -511,6 +512,7 @@ AAOBgQBzHXovZ7uyqHEmT8H1ov83leUZrg7IYjtUBxhQ//YkmCLtrUoklzjC0qyT
 i/zquys8IPF+WLFtQrThyN/t0n9mnFhGAg1vtkwQtCXfzqAizXXUx0ni8NOO/O3M
 i44wV+MRwyGk0t7l1mz9pKEsbJ1ZkvjmyjNBHLDfv2s64qgDBw==
 -----END CERTIFICATE-----"""
+
 
 PWQUALITY_HIGH_REGEX =  "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
     "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \

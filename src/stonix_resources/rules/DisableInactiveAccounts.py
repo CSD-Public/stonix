@@ -30,6 +30,7 @@ password, will be disabled.
 
 @author: Breen Malmberg
 @change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
+@change: 2017/03/30 dkennel Marked as FISMA high until Apple resolves bugs
 '''
 
 from __future__ import absolute_import
@@ -78,7 +79,8 @@ password, will be disabled.'
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']},
+                           'fisma': 'high'}
 
         self.initobjs()
 

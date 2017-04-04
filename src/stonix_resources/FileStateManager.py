@@ -482,7 +482,9 @@ class FileStateManager(object):
             self.backupFile(fileName)
             try:
                 shutil.copy2(fromMetaState, fileName)
+
             except shutil.Error, err:
+
                 self.logger.log(lp.INFO, "Error copying file from reference state.")
                 self.logger.log(lp.DEBUG, traceback.format_exc(err))
             else:
