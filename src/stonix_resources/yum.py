@@ -84,9 +84,9 @@ class Yum(object):
             self.ch.executeCommand(self.remove + package)
             if self.ch.getReturnCode() == 0:
                 removed = True
-                self.detailedresults += package + " pkg removed successfully\n"
+                self.detailedresults = package + " pkg removed successfully\n"
             else:
-                self.detailedresults += package + \
+                self.detailedresults = package + \
                     " pkg not able to be removed\n"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return removed
@@ -111,9 +111,9 @@ class Yum(object):
             self.ch.executeCommand(self.rpm + package)
             if self.ch.getReturnCode() == 0:
                 found = True
-                self.detailedresults += package + " pkg found\n"
+                self.detailedresults = package + " pkg found\n"
             else:
-                self.detailedresults += package + " pkg not found\n"
+                self.detailedresults = package + " pkg not found\n"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return found
         except(KeyboardInterrupt, SystemExit):
@@ -130,10 +130,10 @@ class Yum(object):
             self.ch.executeCommand(self.search + "\"" + package + "\"")
             output = self.ch.getOutputString()
             if self.ch.getReturnCode() != 0:
-                self.detailedresults += package + " pkg is not available " + \
+                self.detailedresults = package + " pkg is not available " + \
                     " or may be misspelled\n"
             elif self.ch.getReturnCode() == 0:
-                self.detailedresults += package + " pkg is available\n"
+                self.detailedresults = package + " pkg is available\n"
                 found = True
 #             if re.search("no matches found", output.lower()):
 #                 self.detailedresults += package + " pkg is not available " + \
