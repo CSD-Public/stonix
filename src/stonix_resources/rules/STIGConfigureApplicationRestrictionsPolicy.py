@@ -25,6 +25,7 @@
 Created on Oct 26, 2016
 
 @author: dwalker
+@change: 2017/03/30 dkennel Marked as FISMA high
 '''
 from __future__ import absolute_import
 import traceback
@@ -34,6 +35,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
+
 
 class STIGConfigureApplicationRestrictionsPolicy(Rule):
 
@@ -52,7 +54,8 @@ class STIGConfigureApplicationRestrictionsPolicy(Rule):
             "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']}}
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']},
+                           'fisma': 'high'}
         datatype = "bool"
         key = "APPRESTRICTIONS"
         instructions = "To disable the installation of the application " + \

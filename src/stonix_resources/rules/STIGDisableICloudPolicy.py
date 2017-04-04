@@ -25,6 +25,7 @@
 Created on Oct 27, 2016
 
 @author: dwalker
+@change: 2017/03/30 dkennel Marked rule as FISMA high
 '''
 from __future__ import absolute_import
 import traceback
@@ -34,6 +35,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
+
 
 class STIGDisableICloudPolicy(Rule):
 
@@ -52,7 +54,8 @@ class STIGDisableICloudPolicy(Rule):
             "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']}}
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']},
+                           'fisma': 'high'}
         datatype = "bool"
         key = "DISABLEICLOUDPROMPT"
         instructions = "To disable the installation of the Disable " + \
@@ -69,7 +72,7 @@ class STIGDisableICloudPolicy(Rule):
 #             self.profile = "/Users/username/stonix/src/" + \
 #                          "stonix_resources/files/" + \
 #                          "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
-    
+
     def report(self):
         try:
             compliant = False

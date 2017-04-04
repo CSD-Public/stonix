@@ -113,7 +113,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         #time.sleep(2)
         self.ch = CommandHelper(self.logger)
         self.logger.log(lp.INFO, "setUp...")
-        
+
         version = "/" + environ.getstonixversion()
         osFamily = "/" + environ.getosfamily()
         osType = "/" + environ.getostype()
@@ -122,7 +122,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         state = re.sub(" ", "", state)
 
     ############################################################################
-    
+
     def tearDown(self):
         """
         Make sure the appropriate files are removed..
@@ -149,11 +149,10 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
         @author: Roy Nielsen
         """
-        
         #####
         # Set up and test for expected state check
         firstTestFile = self.testTargetDirs[0] + "/test"
-        
+
         fpBefore = open(self.testMetaDirs[0] + firstTestFile, "w")
         fpAfter = open(self.testMetaDirs[1] + firstTestFile, "w")
         fpTarget = open(firstTestFile, "w")
@@ -162,17 +161,17 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             item.write("Hello World!")
             item.close()
             LIBC.sync()
-        
+
         success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"], 
                                                firstTestFile)
-        
+
         self.logger.log(lp.DEBUG, "first test . . .")
         self.logger.log(lp.DEBUG, "Success: " + str(success))
         self.logger.log(lp.DEBUG, "      _: " + str(_))
         self.assertTrue(success, "State check failure...")
-        
+
         LIBC.sync()
-        
+
         #####
         # Set up and test for successful state check from a previous state
         fpPrevious = open(self.testMetaDirs[2] + firstTestFile, "w")
@@ -188,7 +187,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         fpBefore.close()
 
         success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"],
-                                               firstTestFile)        
+                                               firstTestFile)
 
         self.logger.log(lp.DEBUG, "second test . . .")
         self.logger.log(lp.DEBUG, "Success: " + str(success))
@@ -196,7 +195,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         self.assertTrue(success, "Could not aquire a refrence...")
 
         LIBC.sync()
-        
+
         #####
         # Set up and test for no state match in any history (expected fail)
         firstTestFile = self.testTargetDirs[0] + "/test"
@@ -221,7 +220,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         self.logger.log(lp.DEBUG, "      _: " + str(_))
         self.assertFalse(success, "Could not aquire a refrence...")
 
-       #####
+        #####
         # Set up and test for missing reference state file (expected fail)
 
         LIBC.sync()
@@ -250,7 +249,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         # Set up and test for missing map file (expected fail)
 
         LIBC.sync()
-    
+
         success, _ = self.fsm.isFileInStates(["stateBefore", "stateAfter"], "")
 
         self.logger.log(lp.DEBUG, "sixth test . . .")
@@ -316,13 +315,13 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         """
         """
         success = False
-        
+
         fileOne   = "/firstTestFile"
         fileTwo   = "/secondTestFile"
         fileThree = "/thirdTestFile"
         fileFour  = "/fourthTestFile"
         fileFive  = "/fifthTestFile"
-        
+
         filesOrig = [self.testTargetDirs[0] + fileOne,
                      self.testTargetDirs[1] + fileTwo,
                      self.testTargetDirs[2] + fileThree,
@@ -415,7 +414,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         success, _ = self.fsm.areFilesInStates(states, filesOrig)
 
         self.assertFalse(success, "Files in States check three succeeded...")
-        
+
         #####
         # There is one file off in one state, match till found in states
         filesStateOne = [self.testTargetDirs[0] + fileOne,
@@ -505,28 +504,28 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         #####
         # Set up and test for expected state check
         thirdTestFile = self.testTargetDirs[0] + "/thirdTestFile"
-        
+
         fpBefore = open(self.testMetaDirs[0] + thirdTestFile, "w")
         fpAfter = open(self.testMetaDirs[1] + thirdTestFile, "w")
         anotherFpAfter = open(self.testMetaDirs[2] + thirdTestFile, "w")
         yetAnotherFpAfter = open(self.testMetaDirs[3] + thirdTestFile, "w")
         fpSecondTestFile = open(thirdTestFile, "w")
-        
+
         for item in [fpSecondTestFile, fpBefore, fpAfter, anotherFpAfter, yetAnotherFpAfter]:
             item.write("Hello World!")
             item.close()
             LIBC.sync()
-        
+
         searchList = self.fsm.buildSearchList(["stateBefore", "stateAfter"], thirdTestFile)
-        
+
         self.logger.log(lp.DEBUG, "buildSearchList test list: " + str(searchList))
-        
+
         expectedList = ['/tmp/stonixtest/1.2.4.5/stateAfter/tmp/stonixtest/testOne/thirdTestFile',
                         '/tmp/stonixtest/1.2.4.5/stateBefore/tmp/stonixtest/testOne/thirdTestFile',
                         '/tmp/stonixtest/1.2.3/stateAfter/tmp/stonixtest/testOne/thirdTestFile',
                         '/tmp/stonixtest/1.2.3/stateBefore/tmp/stonixtest/testOne/thirdTestFile']
 
-        success = expectedList == searchList        
+        success = expectedList == searchList
         self.assertTrue(success, "Lists don't match, Houston, we have a problem...")
 
     ############################################################################
@@ -535,13 +534,13 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         """
         """
         versions = ['1.4.3', '1.2.3', '0.9.6.42', '1.5.6']
-        
+
         newVersions = self.fsm.qsort(versions)
         success = False
         successes = []
-        
+
         i = 0
-        
+
         for version in newVersions:
             if i == 0:
                 i = i + 1
@@ -551,23 +550,23 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             else:
                 successes.append(False)
             i = i + 1
-        
+
         if False in successes:
             success = False
         else:
             success = True
-        
+
         self.logger.log(lp.DEBUG, "Successes: " + str(successes))
         self.logger.log(lp.DEBUG, "Success: " + str(success))
-        
+
         #####
         # Assert that a Quick Sorted array is ordered
         self.assertTrue(success, "Quicksort did not correctly order the versions.")
-        
+
         i = 0
         success = False
         successes = []
-        
+
         for version in versions:
             if i == 0:
                 i = i + 1
@@ -582,10 +581,10 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             success = False
         else:
             success = True
-        
+
         self.logger.log(lp.DEBUG, "Successes: " + str(successes))
         self.logger.log(lp.DEBUG, "Success: " + str(success))
-        
+
         #####
         # Assert that the unordered array is NOT ordered
         self.assertFalse(success, "Versions is correctly ordered.")
@@ -641,7 +640,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         fileThree = "/thirdTestFile"
         fileFour  = "/fourthTestFile"
         fileFive  = "/fifthTestFile"
-        
+
         filesOrig = [self.testTargetDirs[0] + fileOne,
                      self.testTargetDirs[1] + fileTwo,
                      self.testTargetDirs[2] + fileThree,
@@ -668,7 +667,6 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             itemFp.close()
             LIBC.sync()
 
-        
         #####
         # Compare to assert they are different
         success, _ = self.fsm.areFilesInStates(["beforeState", "afterState"], filesOrig)
@@ -712,7 +710,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         fileThree = "/thirdTestFile"
         fileFour  = "/fourthTestFile"
         fileFive  = "/fifthTestFile"
-        
+
         filesOrig = [self.testTargetDirs[0] + fileOne,
                      self.testTargetDirs[1] + fileTwo,
                      self.testTargetDirs[2] + fileThree,
@@ -723,9 +721,9 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
         metaState = self.fsm.getPrefix() + "/" +\
                     self.fsm.getVersion() + "/" +\
                     "stateAfter"
-                    
+
         self.logger.log(lp.DEBUG, "metaState: " + metaState)
-        #raise
+
         filesTargetState = [metaState + filesOrig[0],
                             metaState + filesOrig[1],
                             metaState + filesOrig[2],
@@ -761,9 +759,6 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
 
         self.assertTrue(success, "Files need to match here...")
 
-
-        #####
-        
     ############################################################################
 
 
