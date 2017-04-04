@@ -111,6 +111,8 @@ effect."""
         self.lockcompliant = True
         self.sesscompliant = True
         self.acccompliant = True
+        self.created1 = False
+        self.created2 = False
         self.localize()
         
     def localize(self):
@@ -475,9 +477,15 @@ effect."""
                     if self.pwqinstalled:
                         if not self.setpasswordsetup(regex):
                             success = False
+                        elif self.ph.manager in ("yum", "dnf"):
+                            self.sesscompliant = True
+                            self.acccompliant = True
                     else:
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
+                        elif self.ph.manager in ("yum", "dnf"):
+                            self.sesscompliant = True
+                            self.acccompliant = True
                 elif self.usingcracklib:
                     self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
                                        self.password)
@@ -490,9 +498,15 @@ effect."""
                     if self.clinstalled:
                         if not self.setpasswordsetup(regex):
                             success = False
+                        elif self.ph.manager in ("yum", "dnf"):
+                            self.sesscompliant = True
+                            self.acccompliant = True
                     else:
                         if not self.setpasswordsetup(regex, self.cracklibpkgs):
                             success = False
+                        elif self.ph.manager in ("yum", "dnf"):
+                            self.sesscompliant = True
+                            self.acccompliant = True
                 else:
                     error = "Could not find pwquality/cracklib pam " + \
                         "module. Fix failed."
@@ -506,12 +520,18 @@ effect."""
                         success = False
                         self.detailedresults += "Unable to configure pam " + \
                             "for faillock\n"
+                    elif self.ph.manager in ("yum", "dnf"):
+                        self.sesscompliant = True
+                        self.acccompliant = True
                 elif self.usingpamtally2:
                     regex = PAMTALLY_REGEX
                     if not self.setaccountlockout(regex):
                         success = False
                         self.detailedresults += "Unable to configure pam " + \
                             "for pam_tally2\n"
+                    elif self.ph.manager in ("yum", "dnf"):
+                        self.sesscompliant = True
+                        self.acccompliant = True
                 else:
                     self.detailedresults += "There is no account lockout " + \
                         "program available for this system\n"
@@ -526,6 +546,7 @@ effect."""
                     self.nsswitchpath + "\n"
 
             if not self.nslcd:
+                print "SYSYTEM IS NOT NSLCD\n\n\n"
                 if not self.__fixsssd():
                     success = False
                     self.detailedresults += "Failed to write good configuration to " + \
@@ -705,16 +726,18 @@ effect."""
                 return self.__writeFile(path, nsConf, [0, 0, 0644])
             else:
                 createFile(path, self.logger)
+                self.created1 = True
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation", "filepath": path}
                 self.statechglogger.recordchgevent(myid, event)
                 return self.__writeFile(path, "\n".join(settings),
-                                        [0, 0, 0644])
+                                        [0, 0, 0644], self.created1)
         except Exception:
             raise
 
     def __fixsssd(self):
+        print "INSIDE _FIXSSSD METHOD!!!\n\n\n"
         sssdconf = '''[sssd]
 config_file_version = 2
 services = nss, pam
@@ -741,6 +764,7 @@ krb5_realm = lanl.gov
         tmppath = sssdconfpath + ".tmp"
         if not os.path.exists(sssdconfpath):
             createFile(sssdconfpath, self.logger)
+            self.created2 = True
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation", "filepath": sssdconfpath}
@@ -755,7 +779,8 @@ krb5_realm = lanl.gov
         if self.editor.report():
             return True
         else:
-            return self.__writeFile(sssdconfpath, sssdconf, [0, 0, 0600])
+            return self.__writeFile(sssdconfpath, sssdconf, [0, 0, 0600],
+                                    self.created2)
 
     def checkpasswordreqs(self):
         '''
@@ -1345,10 +1370,12 @@ krb5_realm = lanl.gov
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
 
-    def __writeFile(self, path, contents, perms):
+    def __writeFile(self, path, contents, perms, created=""):
         try:
             tmppath = path + ".tmp"
             success = writeFile(tmppath, contents, self.logger)
+            if created:
+                return True
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "conf", "filepath": path}
