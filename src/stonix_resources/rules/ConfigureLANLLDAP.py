@@ -892,6 +892,7 @@ krb5_realm = lanl.gov
         return compliant
 
     def setpasswordsetup(self, regex1, pkglist = ""):
+        print "INSIDE SETPASSWORDSETUP\n\n"
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         success = True
@@ -905,6 +906,7 @@ krb5_realm = lanl.gov
         else:
             installed = True
         if not installed:
+            print "PWQUALITY ISN'T INSTALLED \n\n"
             for pkg in pkglist:
                 if self.ph.checkAvailable(pkg):
                     if not self.ph.install(pkg):
@@ -913,39 +915,13 @@ krb5_realm = lanl.gov
                         return False
                     else:
                         installed = True
-                        if self.usingpwquality:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            comm = self.ph.getRemove() + pkg
-                            event = {"eventtype": "commandstring",
-                                     "command": comm}
-                            self.statechglogger.recordchgevent(myid, event)
-                            pwqfile = "/etc/security/pwquality.conf"
-                            tmpfile = pwqfile + ".tmp"
-                            if self.environ.getsystemfismacat() == "high":
-                                data = {"difok": "7",
-                                        "minlen": "14",
-                                        "dcredit": "0",
-                                        "ucredit": "0",
-                                        "lcredit": "0",
-                                        "ocredit": "0",
-                                        "maxrepeat": "3",
-                                        "minclass": "4"}
-                            else:
-                                data = {"difok": "7",
-                                        "minlen": "8",
-                                        "dcredit": "0",
-                                        "ucredit": "0",
-                                        "lcredit": "0",
-                                        "ocredit": "0",
-                                        "maxrepeat": "3",
-                                        "minclass": "3"}
-                            self.pwqeditor = KVEditorStonix(self.statechglogger,
-                                                            self.logger, "conf",
-                                                            pwqfile, tmpfile, data,
-                                                            "present", "openeq")
-                            self.pwqeditor.report()
-                            break
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        comm = self.ph.getRemove() + pkg
+                        event = {"eventtype": "commandstring",
+                                 "command": comm}
+                        self.statechglogger.recordchgevent(myid, event)
+                        break
         if not installed:
             self.detailedresults += "No password checking program available\n"
             return False
@@ -1336,29 +1312,29 @@ krb5_realm = lanl.gov
                      'filepath': pwqfile}
             self.statechglogger.recordchgevent(myid, event)
             created = True
-            tmpfile = pwqfile + ".tmp"
-            if self.environ.getsystemfismacat() == "high":
-                data = {"difok": "7",
-                        "minlen": "14",
-                        "dcredit": "0",
-                        "ucredit": "0",
-                        "lcredit": "0",
-                        "ocredit": "0",
-                        "maxrepeat": "3",
-                        "minclass": "4"}
-            else:
-                data = {"difok": "7",
-                        "minlen": "8",
-                        "dcredit": "0",
-                        "ucredit": "0",
-                        "lcredit": "0",
-                        "ocredit": "0",
-                        "maxrepeat": "3",
-                        "minclass": "3"}
-            self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
-                                            "conf", pwqfile, tmpfile, data,
-                                            "present", "openeq")
-            self.pwqeditor.report()
+        tmpfile = pwqfile + ".tmp"
+        if self.environ.getsystemfismacat() == "high":
+            data = {"difok": "7",
+                    "minlen": "14",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
+                    "maxrepeat": "3",
+                    "minclass": "4"}
+        else:
+            data = {"difok": "7",
+                    "minlen": "8",
+                    "dcredit": "0",
+                    "ucredit": "0",
+                    "lcredit": "0",
+                    "ocredit": "0",
+                    "maxrepeat": "3",
+                    "minclass": "3"}
+        self.pwqeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                        "conf", pwqfile, tmpfile, data,
+                                        "present", "openeq")
+        self.pwqeditor.report()
         if self.pwqeditor.fixables:
             if self.pwqeditor.fix():
                 if not created:
