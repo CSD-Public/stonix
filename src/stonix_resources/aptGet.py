@@ -147,10 +147,10 @@ class AptGet(object):
     def checkAvailable(self, package):
         try:
             found = False
-            retval = call(["/usr/bin/apt-cache", "search", package],
+            retval = call(["/usr/bin/apt-cache", "search", "^" + package + "$"],
                           stdout=PIPE, stderr=PIPE, shell=False)
             if retval == 0:
-                message = Popen(["/usr/bin/apt-cache", "search", package],
+                message = Popen(["/usr/bin/apt-cache", "search", "^" + package + "$"],
                                 stdout=PIPE, stderr=PIPE, shell=False)
                 info = message.stdout.readlines()
                 while message.poll() is None:
