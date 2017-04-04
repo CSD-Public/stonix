@@ -126,14 +126,20 @@ class Yum(object):
     def checkAvailable(self, package):
         try:
             found = False
-            self.ch.executeCommand(self.search + package)
+            self.ch.executeCommand(self.search + "\"" + package + "\"")
             output = self.ch.getOutputString()
-            if re.search("no matches found", output.lower()):
+            if self.ch.getReturnCode() != 0:
                 self.detailedresults += package + " pkg is not available " + \
                     " or may be misspelled\n"
-            elif re.search("matched", output.lower()):
+            elif self.ch.getReturnCode() == 0:
                 self.detailedresults += package + " pkg is available\n"
                 found = True
+#             if re.search("no matches found", output.lower()):
+#                 self.detailedresults += package + " pkg is not available " + \
+#                     " or may be misspelled\n"
+#             elif re.search("matched", output.lower()):
+#                 self.detailedresults += package + " pkg is available\n"
+#                 found = True
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return found
         except(KeyboardInterrupt, SystemExit):
