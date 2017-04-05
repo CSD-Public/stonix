@@ -1369,7 +1369,7 @@ krb5_realm = lanl.gov
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
 
-    def __writeFile(self, path, contents, perms, created):
+    def __writeFile(self, path, contents, perms, created=""):
         try:
             tmppath = path + ".tmp"
             success = writeFile(tmppath, contents, self.logger)
