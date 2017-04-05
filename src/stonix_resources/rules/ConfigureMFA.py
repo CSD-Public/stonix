@@ -264,6 +264,7 @@ class ConfigureMFA(Rule):
         Find the file sets for the expected state, current state and factory
         state, and create a text report based on this information.
         '''
+        self.logdispatch.log(LogPriority.DEBUG, "Entered acquireStateReport.")
         try:
             #####
             # Build the "stateAfter" state string for the current platform
@@ -275,13 +276,15 @@ class ConfigureMFA(Rule):
                                     ["sAadmin-sAmfa"])
 
                 afterState = copy.deepcopy(self.states)
-
-                latestAfterState, afterStateFiles = self.fsm.getLatestFileSet(afterState)
+                self.logdispatch.log(LogPriority.DEBUG, "afterState: " + str(afterState))
+                latestAfterState, afterStateFiles = self.fsm.getLatestFileSet(afterState[0])
+                self.logdispatch.log(LogPriority.DEBUG, "afterStateFiles: " + str(afterStateFiles))
 
                 currentFiles = []
                 for filename in afterStateFiles:
                     currentFile = re.sub(latestAfterState, '', filename)
                     currentFiles.append(currentFile)
+                self.logdispatch.log(LogPriority.DEBUG, "currentFiles: " + str(currentFiles))
 
                 self.buildMacStates(self.environ.getosfamily(),
                                     self.environ.getostype(),
@@ -289,10 +292,12 @@ class ConfigureMFA(Rule):
                                     ["sBadmin-sBmfa"])
 
                 beforeState = copy.deepcopy(self.states)
+                self.logdispatch.log(LogPriority.DEBUG, "beforeState: " + str(beforeState))
 
-                latestBeforeState, beforeStateFiles = self.fsm.getLatestFileSet(beforeState)
+                latestBeforeState, beforeStateFiles = self.fsm.getLatestFileSet(beforeState[0])
+                self.logdispatch.log(LogPriority.DEBUG, "beforeStateFiles: " + str(beforeStateFiles))
                 
-                self.filesDiffReport = self.fsm.buildTextFilesOutput([afterStateFiles,
+                filesDiffReport = self.fsm.buildTextFilesOutput([afterStateFiles,
                                                                       currentFiles,
                                                                       beforeStateFiles])
         except (KeyboardInterrupt, SystemExit):
@@ -304,3 +309,6 @@ class ConfigureMFA(Rule):
                 traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR,
                             self.exresults)
+        self.logdispatch.log(LogPriority.DEBUG, "Exiting acquireStateReport.")
+        return filesDiffReport
+    

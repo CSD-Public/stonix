@@ -62,7 +62,7 @@ from ServiceHelper import ServiceHelper
 import traceback
 from CheckApplicable import CheckApplicable
 
-class Rule (Observable, CheckApplicable):
+class Rule (Observable):
 
     """
     Abstract class for all Rule objects.
@@ -72,7 +72,6 @@ class Rule (Observable, CheckApplicable):
 
     def __init__(self, config, environ, logger, statechglogger):
         Observable.__init__(self)
-        CheckApplicable.__init__(self, environ, logger)
         self.config = config
         self.environ = environ
         self.statechglogger = statechglogger
@@ -568,21 +567,23 @@ LANL-stonix."""
 
         # Perform the FISMA categorization check
         if applies:
-            if self.environ.getsystemfismacat() not in ['high', 'med', 'low']:
+            rulefisma = ''
+            systemfismacat = ''
+            systemfismacat = self.environ.getsystemfismacat()
+            if systemfismacat not in ['high', 'med', 'low']:
                 raise ValueError('SystemFismaCat invalid: valid values are low, med, high')
             if 'fisma' in self.applicable:
                 if self.applicable['fisma'] not in ['high', 'med', 'low']:
                     raise ValueError('fisma value invalid: valid values are low, med, high')
-            if self.environ.getsystemfismacat() == 'high':
+                else:
+                    rulefisma = self.applicable['fisma']
+            if systemfismacat == 'high' and rulefisma == 'high':
                 pass
-            elif self.environ.getsystemfismacat() == 'med':
-                if 'fisma' in self.applicable:
-                    if self.applicable['fisma'] == 'high':
-                        applies = False
-            elif self.environ.getsystemfismacat() == 'low':
-                if 'fisma' in self.applicable:
-                    if self.applicable['fisma'] in ['high', 'med']:
-                        applies = False
+            elif systemfismacat == 'med' and rulefisma == 'high':
+                applies = False
+            elif systemfismacat == 'low' and \
+                 (rulefisma == 'med' or rulefisma == "high"):
+                applies = False
 
         return applies
 

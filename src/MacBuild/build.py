@@ -797,7 +797,7 @@ class SoftwareBuilder():
         self.libc.sync()
         # Copy back to pseudo-build directory
         call([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome])
-        call([self.RSYNC, "-aqp", self.tmphome + "/builtSrc", self.buildHome])
+        call([self.RSYNC, "-aqp", self.tmphome + "/src/", self.buildHome + "/builtSrc"])
         self.libc.sync()
         self.libc.sync()
 
