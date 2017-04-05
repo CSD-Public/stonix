@@ -111,7 +111,7 @@ class ConfigureMFA(Rule):
                         self.compliant = True
                         self.detailedresults = "Configuration files state is compliant."
                         break
-                self.logger.log(LogPriority, "filesLists: " + str(self.filesLists))
+                self.logdispatch.log(LogPriority, "filesLists: " + str(self.filesLists))
                 if not self.compliant:
                     self.detailedresults = "Configuration files are not in a compliant state..."
 
@@ -192,8 +192,8 @@ class ConfigureMFA(Rule):
                             break
                         else:
                             self.rulesuccess = False
-                            self.logger.log(LogPriority.DEBUG, "Problem changing the files state.")
-                            self.logger.log(LogPriority.DEBUG, "....")
+                            self.logdispatch.log(LogPriority.DEBUG, "Problem changing the files state.")
+                            self.logdispatch.log(LogPriority.DEBUG, "....")
                             continue
                     if not self.rulesuccess:
                         self.detailedresults = "Configuration state change from: " + str(state) + " failed... "
