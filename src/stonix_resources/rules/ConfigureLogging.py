@@ -630,6 +630,7 @@ daemon config file: " + self.logpath
         elif re.search("ubuntu", self.environ.getostype().lower()):
             distroowner = "syslog"
         for item in self.directories:
+            print "current file to create: " + str(item) + "\n\n"
             if os.path.exists(item):
                 if self.ph.manager == "apt-get":
                     statdata = os.stat(item)
