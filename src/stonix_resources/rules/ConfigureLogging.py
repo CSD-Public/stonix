@@ -269,7 +269,6 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
             self.logfiles.append("mark.* " + WINLOG)
             self.logfiles.append("authpriv.* " + WINLOG)
             self.logfiles.append("auth.* " + WINLOG)
-            self.directories.append(WINLOG)
 #        opensuse 13 and later uses systemd-logger instead of rsyslog
 #        this logging daemon doesn't have the functionality we need so
 #        we remove it firsthand and install rsyslog in the fix.
