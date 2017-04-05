@@ -96,7 +96,7 @@ class RemoveSoftware(Rule):
                    "dhcp-server",
                    "yast2-dhcp-server",
                    "vsftpd",
-                   "httpd"
+                   "httpd",
                    "dovecot",
                    "dovecot-imapd",
                    "dovecot-pop3d",
@@ -106,7 +106,7 @@ class RemoveSoftware(Rule):
                    "ipsec-tools",
                    "irda-utils",
                    "slapd",
-                   "openldap-servers"
+                   "openldap-servers",
                    "openldap2",
                    "bind9",
                    "bind9.i386",
