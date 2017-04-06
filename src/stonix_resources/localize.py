@@ -52,6 +52,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
+# Variable Type: String
 STONIXVERSION = '0.9.7'
 
 # FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value

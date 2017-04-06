@@ -133,7 +133,12 @@ installed at /usr/local/stonix/stonixdb.sql
 - ConfigureMACPolicy – Issues with fixing GRUB on OpenSUSE resolved.
 - ConfigureSudo – Changed group name to sudo for sudo access for Ubuntu 14 and 16
 - ConfigureLogging - /var/log/messages has been added to list of log files to be rotated.
-- ConfigureLinuxFirewall – No longer enabled by default
+- ConfigureLinuxFirewall – No longer enabled by default. This rule by default, sets really strict firewall rules. Please be fully aware of this before running this rule. 
+
+* Wed Feb 15 2017 David Kennel <dkennel@lanl.gov> - 0.9.5-1
+- Updated release of 0.9.5 to resolve issues
+- Fixed issue in secure cups which broke printing
+- Default behavior for ConfigureLinuxFirewall is now for the rule to be disabled by default
 
 * Fri Feb 3 2017 David Kennel <dkennel@lanl.gov> - 0.9.5
 - Corrected bug that caused STONIX to not recognize when firewalld was running.
