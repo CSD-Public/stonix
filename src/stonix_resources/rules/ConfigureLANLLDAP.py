@@ -113,6 +113,7 @@ effect."""
         self.acccompliant = True
         self.created1 = False
         self.created2 = False
+        self.created3 = False
         self.localize()
         
     def localize(self):
@@ -631,19 +632,20 @@ effect."""
                     self.detailedresults = results
 
                     if not self.__writeFile(ldapfile, "".join(ldapconf),
-                                            [0, 0, 0600]):
+                                            [0, 0, 0600], self.created3):
                         success = False
                         self.detailedresults += "Problem writing new contents to " + \
                             ldapfile
                 else:
                     createFile(ldapfile, self.logger)
+                    self.created3 = True
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "creation", "filepath": ldapfile}
                     self.statechglogger.recordchgevent(myid, event)
 
                     if not self.__writeFile(ldapfile, "\n".join(ldapsettings),
-                                            [0, 0, 0600]):
+                                            [0, 0, 0600], self.created3):
                         success = False
                         self.detailedresults += "Problem writing new contents to " + \
                             ldapfile
@@ -1369,7 +1371,7 @@ krb5_realm = lanl.gov
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
 
-    def __writeFile(self, path, contents, perms, created=""):
+    def __writeFile(self, path, contents, perms, created):
         try:
             tmppath = path + ".tmp"
             success = writeFile(tmppath, contents, self.logger)
