@@ -476,7 +476,7 @@ class Controller(Observable):
         applicablerules = []
         for rule in rules:
             try:
-                if rule.isApplicable():
+                if rule.isapplicable():
                     self.logger.log(LogPriority.DEBUG,
                                     'Rule is applicable by platform ' +
                                     ' EUID: ' + str(self.environ.geteuid()) +
