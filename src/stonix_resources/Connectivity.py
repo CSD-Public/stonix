@@ -299,3 +299,76 @@ class Connectivity(object):
         self.logger.log(LogPriority.DEBUG, "page: " + str(page))
 
         return str(host), str(port), str(page)
+
+
+    ###########################################################################
+    
+    def set_no_proxy(self):
+        """ 
+        This method described here: http://www.decalage.info/en/python/urllib2noproxy
+        to create a "no_proxy" environment for python
+    
+        @author: Roy Nielsen
+    
+        """
+        proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(proxy_handler)
+        urllib2.install_opener(opener)
+    
+    ###########################################################################
+    
+    def buildValidatingOpener(self, resourcesDir, ca_certs):
+        '''
+        Build a urllib2 opener that will validate server certs with the passed
+        in cert.
+        
+        example:
+
+        >>> set_no_proxy()
+
+        >>> opener = buildValidatingOpener(resourcesDir + "/.ea.pem")
+        >>> params = urllib.urlencode({'PropNumIn' : self.prop_num})
+        >>> headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+        >>> url = 'https://' + str(host) + str(page)
+        >>>
+        >>> req = urllib2.Request(url, params, headers)
+        >>>
+        >>> data = opener.open(req).read()
+        >>> 
+        >>> opener.close()
+ 
+        @compiler: Roy Nielsen
+        '''
+        class VerifiedHTTPSConnection(httplib.HTTPSConnection):
+            def connect(self):
+                # overrides the version in httplib so that we do
+                #    certificate verification
+                sock = socket.create_connection((self.host, self.port),
+                                                self.timeout)
+                if self._tunnel_host:
+                    self.sock = sock
+                    self._tunnel()
+    
+                # wrap the socket using verification with the root
+                #    certs in trusted_root_certs
+                self.sock = ssl.wrap_socket(sock,
+                                            self.key_file,
+                                            self.cert_file,
+                                            cert_reqs=ssl.CERT_REQUIRED,
+                                            ca_certs=ca_certs,
+                                            )   
+    
+        # wraps https connections with ssl certificate verification
+        class VerifiedHTTPSHandler(urllib2.HTTPSHandler):
+            def __init__(self, connection_class=VerifiedHTTPSConnection):
+                self.specialized_conn_class = connection_class
+                urllib2.HTTPSHandler.__init__(self)
+    
+            def https_open(self, req):
+                return self.do_open(self.specialized_conn_class, req)
+    
+        https_handler = VerifiedHTTPSHandler()
+        url_opener = urllib2.build_opener(https_handler)
+    
+        return url_opener
+    
