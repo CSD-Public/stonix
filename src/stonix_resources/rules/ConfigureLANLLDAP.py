@@ -167,6 +167,8 @@ effect."""
             self.pamauthfile = "/etc/pam.d/system-auth-ac"
     def report(self):
         try:
+	    if self.ph.manager == "dnf":
+                return
             compliant = True
             self.detailedresults = ""
             debug = ""
@@ -426,6 +428,8 @@ effect."""
 
     def fix(self):
         try:
+	    if self.ph.manager == "dnf":
+                return
             assert self.ci.getcurrvalue() and self.validLdap
             success = True
             self.detailedresults = ""
