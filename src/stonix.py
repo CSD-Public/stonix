@@ -202,7 +202,7 @@ class Controller(Observable):
                                'family': ['darwin']}
             self.chkapp = CheckApplicable(self.environ, self.logger)
 
-            if self.chkapp.isapplicable(applicable2PyQt5):
+            if self.chkapp.isApplicable(applicable2PyQt5):
                 #####
                 # Appropriate to OS that supports PyQt5
                 try:
@@ -231,7 +231,7 @@ class Controller(Observable):
                     app.processEvents()
 
 
-            if self.chkapp.isapplicable(applicable2PyQt4):
+            if self.chkapp.isApplicable(applicable2PyQt4):
                 #####
                 # Appropriate to OS that supports PyQt4
                 try:
