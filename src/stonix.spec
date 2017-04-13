@@ -21,7 +21,7 @@
 #                                                                             #
 ###############################################################################
 
-Name: stonix-red
+Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
 Version: 0.9.7
 Release: 0%{dist}
