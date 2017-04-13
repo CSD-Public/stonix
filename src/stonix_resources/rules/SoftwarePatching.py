@@ -33,6 +33,9 @@ updating automatically from a scheduled job where feasible.
 @change: 2015/04/20 dkennel updated to check rpmrc files for "nosignature"
          option per DISA STIG.
 @change: 2015/09/11 eball Fix apt-get compatibility
+@change: 2017/04/12 Breen Malmberg changed applicability to exclude opensuse
+        for the time being, until the problems discovered in 0.9.7 triage can
+        be fixed for it
 '''
 from __future__ import absolute_import
 import os
@@ -76,6 +79,15 @@ class SoftwarePatching(Rule):
             "install updates automatically on systems where that is feasible."
         self.rootrequired = True
         self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
+
+        # this bit added to temporarily pull software patching from opensuse
+        # until the fixes can be implemented
+        ostype = self.environ.getostype()
+        if re.search('suse', ostype, re.IGNORECASE):
+            self.applicable = False
+        # this bit added to temporarily pull software patching from opensuse
+        # until the fixes can be implemented
+
         self.ci = self.initCi("bool",
                               "scheduledupdate",
                               "To disable creation of a scheduled " +
