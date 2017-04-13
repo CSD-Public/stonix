@@ -21,7 +21,7 @@
 #                                                                             #
 ###############################################################################
 
-Name: stonix
+Name: stonix-red
 Summary: Cross platform hardening tool for *NIX platforms
 Version: 0.9.7
 Release: 0%{dist}
@@ -120,6 +120,23 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Apr 4 2017 David Kennel <dkennel@lanl.gov> - 0.9.7
+- Public code base now has placeholders for certain constants, in localize and informs the user when attempting to use rules which require these constants, i$
+- Stonix now has a new "FISMA" setting in localize, which can be overridden in each rule if necessary, which determines which rules are run by default, when $
+- Debian/Ubuntu package will now no longer overwrite existing stonix.conf
+- MinimizeServices - Will no longer disable ntp, chrony or syslog, by default
+- SecureATCron - Now assigns the correct permissions to cron.log
+- RemoveSoftware - Fixed a typo which was resulting in 2 service names being concatenated in the CI list
+- ConfigureLANLLDAP - Fixed a bug which was preventing required packages sssd, krb5, pam_ldap from being installed, related services from being started/enabl$
+- ConfigureLogging - Fixed a traceback error which was preventing the rule from running on CentOS 6
+- Added filter mechanism and variables to support fine tuned actions and rule filtering based on FISMA risk categorization
+- Corrected issue with duplicate rule id numbers affecting ConfigureProcessAccounting and EncryptSwap
+- Corrected multiple issues with MacOS STIG rules
+- Updated MinimizeServices to correct issues on Debian systems
+- Corrected permissions problem with SecureATCRON
+- Fixed issues with the way that some rules responded to default values in localize.py
+- Fixed traceback in DisableInactiveAccounts that affected MacOS
+- Fixed multiple issues in ConfigureLogging
 * Fri Feb 3 2017 David Kennel <dkennel@lanl.gov> - 0.9.5
 - Corrected bug that caused STONIX to not recognize when firewalld was running.
 - New rule added: ConfigureFirefox. The configure Firefox rule will disable all automatic update and "phone home" behavior and configure the browser for SSO authentication.
