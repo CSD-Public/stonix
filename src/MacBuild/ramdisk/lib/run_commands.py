@@ -407,6 +407,10 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
+        output = ""
+        error = ""
+        returncode = 0
+        pretcode = 0
         if re.match("^\s*$", user) or \
            re.match("^\s*$", password) or \
            not self.command :
@@ -417,10 +421,10 @@ class RunWith(object):
             return(255)
         else :
             output = ""
-            internal_command = ["/usr/bin/su", "-", str(user), "-c"]
+            internal_command = ["/usr/bin/su", "-", str(user.strip()), "-c"]
 
             if isinstance(self.command, list) :
-                internal_command.append(" ".join(self.command))
+                internal_command += self.command
                 #log_message("Trying to execute: \"" + \
                 #            " ".join(internal_command) + "\"", \
                 #            "verbose", message_level)
@@ -430,49 +434,59 @@ class RunWith(object):
                 #            str(internal_command) + "\"", \
                 #            "verbose", message_level)
 
+            self.logger.log(lp.DEBUG, "int: " + str(internal_command))
+
             (master, slave) = pty.openpty()
 
             proc = Popen(internal_command,
                          stdin=slave, stdout=slave, stderr=slave,
-                         close_fds=True)
+                         close_fds=True, shell=False)
 
-            prompt = os.read(master, 10)
+            #####
+            # Catch the sudo password prompt
+            # prompt = os.read(master, 512)
+            self.waitnoecho(master, 3)
+            prompt = os.read(master, 512)
+            
+            password = password.strip()
+            #####
+            # Enter the sudo password
+            os.write(master, password + "\n")
 
-            if re.match("^Password:", str(prompt)) :
-                os.write(master, password + "\n")
-                line = os.read(master, 512)
-                output = output + line
-                while True :
+            #####
+            # Catch the password
+            os.read(master, 512)
+
+            #self.waitnoecho(master, 3)
+
+            while True :
+                #####
+                # timeout of 0 means "poll"
+                r,w,e = select.select([master], [], [], 0) 
+                if r :
+                    line = os.read(master, 512)
                     #####
-                    # timeout of 0 means "poll"
-                    r,w,e = select.select([master], [], [], 0) 
-                    if r :
-                        line = os.read(master, 512)
-                        #####
-                        # Warning, uncomment at your own risk - several programs
-                        # print empty lines that will cause this to break and
-                        # the output will be all goofed up.
-                        #if not line :
-                        #    break
-                        #print output.rstrip()
-                        output = output + line
-                    elif proc.poll() is not None :
-                        break
-                os.close(master)
-                os.close(slave)
-                proc.wait()
-                self.output = proc.stdout
-                self.error = proc.stderr
-                self.returncode = proc.returncode
-            else:
-                self.output = None
-                self.error = None
-                self.returncode = None
+                    # Warning, uncomment at your own risk - several programs
+                    # print empty lines that will cause this to break and
+                    # the output will be all goofed up.
+                    #if not line :
+                    #    break
+                    #print output.rstrip()
+                    output = output + line
+                elif proc.poll() is not None:
+                    break
+            os.close(master)
+            os.close(slave)
+            proc.wait()
+            returncode = proc.returncode
+            #error = proc.stderr
+            #returncode = proc.returncode
             #print output.strip()
             output = output.strip()
+            self.logger.log(lp.DEBUG, "retcode: " + str(returncode))
             #log_message("Leaving runAs with: \"" + str(output) + "\"",
             #            "debug", message_level)
-            return output, self.error, self.returncode
+            return output, error, returncode
 
     ############################################################################
 
