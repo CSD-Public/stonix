@@ -53,7 +53,6 @@ from ramdisk.lib.loggers import LogPriority as lp
 from ramdisk.lib.get_libc import getLibc
 from ramdisk.lib.run_commands import RunWith
 from ramdisk.lib.manage_user.manage_user import ManageUser
-from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 #####
 # Exception for when the conf file can't be grokked.
@@ -104,7 +103,6 @@ class SoftwareBuilder():
         self.logger.initializeLogs()
         self.rw = RunWith(self.logger)
         self.mu = ManageUser(self.logger)
-        self.mk = ManageKeychain(self.logger)
         self.ramdisk_size = ramdisk_size
         self.libc = getLibc()
 
@@ -157,16 +155,12 @@ class SoftwareBuilder():
 
         if self.signature:
             while True:
-                success = False
-                self.keyuser = os.environ['SUDO_USER']
+                self.keyuser = raw_input("Keychain User: ")
                 self.keypass = getpass.getpass("Keychain Password: ") 
-
-                if (self.mk.lockKeychain(allKeychains=True)):
-                    success, _ = self.mk.unlockKeychain(self.keypass, self.keychain)
-                if success:
+                if self.mu.authenticate(self.keyuser, self.keypass):
                     break
                 else:
-                    print "Sorry, Keychain password is not valid... Please try again."
+                    print "Sorry, login information is not valid... Please try again."
             #####
             # Get a translated password
             self.ordPass = self.getOrdPass(self.keypass)
@@ -803,7 +797,7 @@ class SoftwareBuilder():
         self.libc.sync()
         # Copy back to pseudo-build directory
         call([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome])
-        call([self.RSYNC, "-aqp", self.tmphome + "/src/", self.buildHome + "/builtSrc"])
+        call([self.RSYNC, "-aqp", self.tmphome + "/src", self.buildHome])
         self.libc.sync()
         self.libc.sync()
 

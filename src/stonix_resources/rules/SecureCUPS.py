@@ -404,14 +404,11 @@ class SecureCUPS(Rule):
                 self.cupsdconfopts["Browsing"] = "Off"
                 self.cupsdconfopts["BrowseAllow"] = "none"
                 self.cupsdconfopts["BrowseWebIF"] = "No"
-            if self.checkConsts([PRINTBROWSESUBNET]):
-                if self.PrintBrowseSubnet.getcurrvalue():
-                    self.cupsdconfopts["Browsing"] = "On"
-                    self.cupsdconfopts["BrowseOrder"] = "allow,deny"
-                    self.cupsdconfopts["BrowseDeny"] = "all"
-                    self.cupsdconfopts["BrowseAllow"] = PRINTBROWSESUBNET
-            else:
-                self.detailedresults += "\nThe constant PRINTBROWSESUBNET is currently not defined (set to None), in localize.py. Setting the print browse subnet requires this to be defined."
+            if self.PrintBrowseSubnet.getcurrvalue():
+                self.cupsdconfopts["Browsing"] = "On"
+                self.cupsdconfopts["BrowseOrder"] = "allow,deny"
+                self.cupsdconfopts["BrowseDeny"] = "all"
+                self.cupsdconfopts["BrowseAllow"] = PRINTBROWSESUBNET
             if self.DisableGenericPort.getcurrvalue():
                 self.cupsdconfremopts["Port"] = "631"
             if self.SetDefaultAuthType.getcurrvalue():
@@ -470,7 +467,7 @@ class SecureCUPS(Rule):
         # DEFAULTS
         self.detailedresults = ""
         self.compliant = True
-        badopts = ["^HostNameLookups\s+Double", "^Sandboxing\s+strict", "^FatalErrors\s+config"]
+        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
         badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
 
         try:
@@ -676,7 +673,7 @@ class SecureCUPS(Rule):
         self.detailedresults = ""
         success = True
         self.iditerator = 0
-        badopts = ["^HostNameLookups\s+Double", "^Sandboxing\s+strict", "^FatalErrors\s+config"]
+        badopts = ["HostNameLookups\s+Double", "Sandboxing\s+strict", "FatalErrors\s+config"]
         badoptsfiles = [self.cupsdconf, self.cupsfilesconf]
         foundbadopts = False
 

@@ -108,25 +108,14 @@ hosts.deny files.'''
         default = ALLOWNETS
 
         self.allownetCI = self.initCi(datatype, key, instructions, default)
-        self.constlist = [ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT]
 
     def report(self):
         '''
         Check for correct configuration of hosts.allow and hosts.deny
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+        @return: bool
+        @author: bemalmbe
         '''
-
-        self.detailedresults = ""
-
-        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
-        if not self.checkConsts(self.constlist):
-            self.compliant = False
-            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT"
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            return self.compliant
 
         # defaults
         self.compliant = True
@@ -273,16 +262,8 @@ hosts.deny files.'''
         '''
         Apply changes to hosts.allow and hosts.deny to correctly configure them
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+        @author: bemalmbe
         '''
-
-        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
-        if not self.checkConsts(self.constlist):
-            self.rulesuccess = False
-            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-            return self.rulesuccess
 
         # defaults
         self.iditer = 0
