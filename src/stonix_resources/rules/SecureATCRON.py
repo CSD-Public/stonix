@@ -595,8 +595,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
-        @change: Breen Malmberg - 3/15/2017 - changed group id in os.chown
-                calls (80=admin) from 0 (wheel)
         '''
 
         success = True
@@ -614,7 +612,7 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                     os.chmod(item, self.fixcronchmodfiledict[item])
             for item in self.cronchownfilelist:
                 if os.path.exists(item):
-                    os.chown(item, 0, 80)
+                    os.chown(item, 0, 0)
 
             if os.path.exists(syslog):
                 tmpsyslog = syslog + '.stonixtmp'
@@ -624,7 +622,8 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 f.close()
 
                 for line in contentlines:
-                    if re.search('cron\.\*\s+' + re.escape(self.cronlog), line, re.IGNORECASE):
+                    if re.search('cron\.\*\s+' + re.escape(self.cronlog), line,
+                                 re.IGNORECASE):
                         cronlinefound = True
 
                 if not cronlinefound:
@@ -637,18 +636,20 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                 tf.close()
 
                 os.rename(tmpsyslog, syslog)
-                os.chown(syslog, 0, 80)
+                os.chown(syslog, 0, 0)
 
             # restart the syslogd service to read the new setting
             self.ch.executeCommand(unload)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
-                self.logger.log(LogPriority.DEBUG, "Failed to run command: " + str(unload))
+                self.logger.log(LogPriority.DEBUG,
+                                "Failed to run command: " + str(unload))
                 success = False
             self.ch.executeCommand(load)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
-                self.logger.log(LogPriority.DEBUG, "Failed to run command: " + str(load))
+                self.logger.log(LogPriority.DEBUG,
+                                "Failed to run command: " + str(load))
                 success = False
 
         except Exception:

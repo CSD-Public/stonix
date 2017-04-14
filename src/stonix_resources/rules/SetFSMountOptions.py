@@ -1,3 +1,4 @@
+'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -20,7 +21,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
+
 Created on Apr 10, 2013
 
 SetFSMountOptions sets the file system mount options for non-Root local
@@ -28,17 +29,14 @@ partitions, file systems mounted on removable media, removable storage
 partitions, and temporary storage partitions such as /tmp and /dev/shm in
 order to help protect against malicious code being run on the system.
 
-@author: Breen Malmberg
+@author: bemalmbe
 @change: 02/13/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
-@change: 09/09/2014 Breen Malmberg fix and report methods rewritten to use new methods;
+@change: 09/09/2014 bemalmbe fix and report methods rewritten to use new methods;
                             added dictSearch() and dictFix() methods; added
                             in-line comments
 @change: 2015/04/17 dkennel updated for new isApplicable
-@change 2017/04/05 Breen Malmberg changed search term for bindmnttmp variable to be regex search instead of string literal
-        added string literal version of bindmnttmp under new var name fixbindmnttmp as the actual line to insert into the file
-        this fixed an issue where it wasn't recognizing the line in the file if the spacing was different
 '''
 from __future__ import absolute_import
 from ..rule import Rule
@@ -57,7 +55,7 @@ class SetFSMountOptions(Rule):
     partitions, and temporary storage partitions such as /tmp and /dev/shm in
     order to help protect against malicious code being run on the system.
 
-    @author Breen Malmberg
+    @author bemalmbe
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -113,8 +111,7 @@ class SetFSMountOptions(Rule):
         self.removeablelist = ['nodev', 'nosuid', 'noexec']
 
         # config line to check for
-        self.fixbindmnttmp = '/tmp /var/tmp none rw,noexec,nosuid,nodev,bind 0 0'
-        self.reportbindmnttmp = '/tmp\s+/var/tmp\s+none\s+rw,noexec,nosuid,nodev,bind\s+0\s+0'
+        self.bindmnttmp = '/tmp /var/tmp none rw,noexec,nosuid,nodev,bind 0 0'
 
         # possible locations of fstab file
         fstablocations = ['/etc/fstab', '/etc/vfstab']
@@ -125,7 +122,7 @@ class SetFSMountOptions(Rule):
                 self.filepath = location
 
     def report(self):
-        '''
+        """
         The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
@@ -133,10 +130,10 @@ class SetFSMountOptions(Rule):
         if the rule does not succeed.
 
         @return bool
-        @author Breen Malmberg
-        @change: Breen Malmberg 09/05/2014 rewritten rule to be more atomic, less
+        @author bemalmbe
+        @change: bemalmbe 09/05/2014 rewritten rule to be more atomic, less
                 complex and more human-readable
-        '''
+        """
 
         # defaults
         self.detailedresults = ""
@@ -178,12 +175,12 @@ class SetFSMountOptions(Rule):
                 except IndexError:
                     continue
 
-                if re.search('^' + self.reportbindmnttmp, line):
+                if re.search('^' + self.bindmnttmp, line):
                         foundcfgline = True
 
             if not foundcfgline:
                 self.compliant = False
-                self.detailedresults += "\nA required configuration line:\n" + str(self.fixbindmnttmp) + "\n was not found"
+                self.detailedresults += "\nA required configuration line:\n" + str(self.bindmnttmp) + "\n was not found"
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -295,18 +292,18 @@ class SetFSMountOptions(Rule):
         return retval
 
     def fix(self):
-        '''
+        """
         The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @author Breen Malmberg
+        @author bemalmbe
         @change: 2014/06/02 dkennel - line 180 changed
         if os.path.exists():
         to
         if os.path.exists(filename):
-        @change: 2014/09/09 Breen Malmberg - method rewritten to use new method
+        @change: 2014/09/09 bemalmbe - method rewritten to use new method
                 dictFix()
-        '''
+        """
 
         # defaults
         self.iditerator = 0
@@ -353,11 +350,11 @@ class SetFSMountOptions(Rule):
 
                     contentlines = [c.replace(line, newLine) for c in contentlines]
 
-                    if re.search('^' + self.reportbindmnttmp, line):
+                    if re.search('^' + self.bindmnttmp, line):
                         bindtmplinefound = True
 
                 if not bindtmplinefound:
-                    contentlines.append('\n' + self.fixbindmnttmp + '\n')
+                    contentlines.append('\n' + self.bindmnttmp + '\n')
 
                 tf = open(tmpfile, 'w')
                 tf.writelines(contentlines)

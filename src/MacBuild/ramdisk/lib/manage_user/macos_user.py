@@ -104,7 +104,7 @@ class MacOSUser(ParentManageUser):
         self.module_version = '20160225.125554.540679'
 
         self.dscl = "/usr/bin/dscl"
-        self.runner = RunWith(self.logger)
+        self.runWith = RunWith(self.logger)
 
         self.users = self.getUsers()
 
@@ -321,9 +321,9 @@ class MacOSUser(ParentManageUser):
         success = False
         if self.isSaneUserName(user):
             cmd = [self.dscl, ".", "-read", "/Users/" + str(user)]
-            self.runner.setCommand(cmd)
-            self.runner.communicate()
-            retval, reterr, retcode = self.runner.getNlogReturns()
+            self.runWith.setCommand(cmd)
+            self.runWith.communicate()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
 
             if not reterr:
                 success = True
@@ -453,9 +453,9 @@ class MacOSUser(ParentManageUser):
         userInfo = False
         
         if self.isSaneUserName(userName):
-            self.runner.setCommand(["/usr/bin/pwpolicy", "-u", str(userName),
+            self.runWith.setCommand(["/usr/bin/pwpolicy", "-u", str(userName),
                                      "-authentication-allowed"])
-            output, error, retcode = self.runner.communicate()
+            output, error, retcode = self.runWith.communicate()
             
             self.logger.log(lp.DEBUG, "Output: " + str(output.strip()))
             
@@ -534,8 +534,6 @@ class MacOSUser(ParentManageUser):
         @author: Roy Nielsen
         """
         authenticated = False
-        output = ""
-        error = ""
 
         if not self.isSaneUserName(user) or \
            re.match("^\s+$", password) or not password:
@@ -544,19 +542,15 @@ class MacOSUser(ParentManageUser):
             self.logger.log(lp.INFO, "check password...")
         else:
             
-            self.runner.setCommand(['/bin/echo', 'HelloWorld'])
-            self.logger.log(lp.DEBUG, "...: " + str(password.strip()))
-            output, error, retcode = self.runner.runAs(user.strip(), password.strip())
+            self.runWith.setCommand(['/bin/echo', 'hello world'])
             
-            #self.logger.log(lp.DEBUG, "Output: " + str(output.strip()))
+            output, error, retcode = self.runWith.communicate()
             
-            if not retcode:
+            self.logger.log(lp.DEBUG, "Output: " + str(output.strip()))
+            
+            if re.match("^hello world$", output.strip()):
                 authenticated = True
 
-        self.logger.log(lp.DEBUG, "output: " + str(output))
-        self.logger.log(lp.DEBUG, "error: " + str(error))
-        self.logger.log(lp.DEBUG, "retcode: " + str(retcode))
-        self.logger.log(lp.DEBUG, "authenticated: " + str(authenticated))
         return authenticated
 
     #----------------------------------------------------------------------
@@ -605,9 +599,9 @@ class MacOSUser(ParentManageUser):
         if isinstance(userName, basestring)\
            and re.match("^[A-Za-z][A-Za-z0-9]*$", userName):
             cmd = [self.dscl, ".", "-create", "/Users/" + str(userName)]
-            self.runner.setCommand(cmd)
-            self.runner.communicate()
-            retval, reterr, retcode = self.runner.getNlogReturns()
+            self.runWith.setCommand(cmd)
+            self.runWith.communicate()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
 
             if not reterr:
                 success = True
@@ -730,9 +724,9 @@ class MacOSUser(ParentManageUser):
         reterr = ""
         if user:
             cmd = ["/usr/sbin/createhomedir", "-c", " -u", + str(user)]
-            self.runner.setCommand(cmd)
-            self.runner.communicate()
-            retval, reterr, retcode = self.runner.getNlogReturns()
+            self.runWith.setCommand(cmd)
+            self.runWith.communicate()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
 
             if not reterr:
                 success = True
@@ -843,9 +837,9 @@ class MacOSUser(ParentManageUser):
 
         if self.isSaneUserName(user):
             cmd = [self.dscl, ".", "-delete", "/Users/" + str(user)]
-            self.runner.setCommand(cmd)
-            self.runner.communicate()
-            retval, reterr, retcode = self.runner.getNlogReturns()
+            self.runWith.setCommand(cmd)
+            self.runWith.communicate()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
 
             if not reterr:
                 success = True
@@ -915,7 +909,7 @@ class MacOSUser(ParentManageUser):
         reterr = ""
         retval = ""
         #####
-        # If elevated, use the liftDown runner method to run the command as
+        # If elevated, use the liftDown runWith method to run the command as
         # a regular user.
         if directory and action and object and property:
             if directory and action and object and property and value:
@@ -923,7 +917,7 @@ class MacOSUser(ParentManageUser):
             else:
                 cmd = [self.dscl, directory, action, object, property]
 
-            self.runner.setCommand(cmd)
+            self.runWith.setCommand(cmd)
             if re.match("^%0$", str(os.getuid()).strip()):
                 passfound = False
                 for arg in cmd:
@@ -936,20 +930,20 @@ class MacOSUser(ParentManageUser):
 
                 #####
                 # Run the command, lift down...
-                self.runner.liftDown(self.userName)
+                self.runWith.liftDown(self.userName)
                 self.logger.log(lp.INFO, "Took the lift down...")
-                retval, reterr, retcode = self.runner.getNlogReturns()
+                retval, reterr, retcode = self.runWith.getNlogReturns()
                 if not reterr:
                     success = True
             else:
                 #####
                 # Run the command
-                retval, reterr, retcode = self.runner.communicate()
+                retval, reterr, retcode = self.runWith.communicate()
 
                 if not reterr:
                     success = True
 
-            retval, reterr, retcode = self.runner.getNlogReturns()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
 
         return success
 
@@ -992,9 +986,9 @@ class MacOSUser(ParentManageUser):
             else:
                 cmd = [self.dscl, directory, action, dirobj, dirprop]
 
-            self.runner.setCommand(cmd)
-            self.runner.communicate()
-            retval, reterr, retcode = self.runner.getNlogReturns()
+            self.runWith.setCommand(cmd)
+            self.runWith.communicate()
+            retval, reterr, retcode = self.runWith.getNlogReturns()
 
             if not reterr:
                 success = True

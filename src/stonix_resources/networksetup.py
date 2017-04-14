@@ -60,42 +60,13 @@ class networksetup():
         self.nsInitialized = False
         self.resultReset()
         self.nsc = "/usr/sbin/networksetup"
-        self.logdispatch = logdispatcher
-
-        # This class can, in no way, continue if
-        # These constants are undefined, or set to
-        # None
-        if not DNS:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        elif DNS == None:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        if not PROXY:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        elif PROXY == None:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        if not PROXYCONFIGURATIONFILE:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        elif PROXYCONFIGURATIONFILE == None:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        if not PROXYDOMAIN:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-        elif PROXYDOMAIN == None:
-            self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. Networksetup.py will not function without these!")
-            return None
-
         fullproxy = PROXY
         self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
         self.pp = fullproxy.split(":")[2]
         self.pf = PROXYCONFIGURATIONFILE
         self.dns = DNS
         self.searchdomain = PROXYDOMAIN
+        self.logdispatch = logdispatcher
         self.ch = CommandHelper(self.logdispatch)
         self.initialized = False
 

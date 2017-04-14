@@ -26,76 +26,24 @@ Created on Aug 24, 2010
 
 @author: Eric Ball
 @change: eball 2016/07/12 Original implementation
-@change: rsn 2017/03/20 Adding methods for validation, fisma check and setting
-                        internal os variables per the environment.
 '''
 
-import re
 from distutils.version import LooseVersion
 from logdispatcher import LogPriority
+import re
 
 
 class CheckApplicable(object):
-    '''
-    This class uses either the passed in 'environment', or operating system
-    identifiation set by the caller to determine if a family or OS is
-    applicable to the identified operating system id.  Also carries
-    a FISMA level check as well as a user privilege level and version or
-    version ranges.
-    '''
+
     def __init__(self, environ, logger):
         self.logger = logger
         self.environ = environ
-        self.applicable = None
 
         self.myosfamily = self.environ.getosfamily()
         self.myosversion = self.environ.getosver()
         self.myostype = self.environ.getostype()
-        self.systemFismaLevel = self.environ.getsystemfismacat()
-        self.noroot = None
 
-    def isApplicableValid(self, applicable):
-        """
-        Validate that the applicable dictionary has valid keys and valid value
-        types.
-
-        @author: Roy Nielsen
-        """
-        success = False
-        if isinstance(applicable, dict):
-            keysSuccess = []
-            valueSuccess = []
-            validKeys = ['type', 'os', 'family', 'noroot', 'fisma']
-            for key, value in applicable.items():
-                if key in validKeys:
-                    keysSuccess.append(True)
-                else:
-                    keysSuccess.append(False)
-                    continue
-                if key is 'type' and value in ['black', 'white']:
-                    valueSuccess.append(True)
-                    continue
-                if key is 'family' and isinstance(value, list):
-                    valueSuccess.append(True)
-                    continue
-                if key is 'os' and isinstance(value, dict):
-                    valueSuccess.append(True)
-                    continue
-                if key is 'noroot' and isinstance(value, bool):
-                    valueSuccess.append(True)
-                    continue
-                if key is 'fisma' and value in ['low', 'medium', 'high']:
-                    valueSuccess.append(True)
-                    continue
-                valueSuccess.append(False)
-            if False in keysSuccess or False in valueSuccess:
-                success = False
-            else:
-                success = True
-
-        return success
-
-    def isApplicable(self, applicableDict={'default': 'default'}):
+    def isapplicable(self, applicable={'default': 'default'}):
         """
         This method returns true if the rule applies to the platform on which
         stonix is currently running. The method in this template class will
@@ -165,32 +113,25 @@ class CheckApplicable(object):
         @return bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
-        @change: 2017/03/18 rsn adding fisma check as well as vaildating both
-                                self.applicable and passed in applicableDict.
         """
-        applies = False
-
         self.logger.log(LogPriority.DEBUG,
-                        'Dictionary is: ' + str(applicableDict))
+                        'Dictionary is: ' + str(applicable))
         try:
-            default = applicableDict['default']
+            default = applicable['default']
             if default == 'default':
                 #####
                 # Use self.applicable as is
-                valid = self.isApplicableValid(self.applicable)
-                self.logger.log(LogPriority.DEBUG, "valid: " + str(valid))
-                if valid:
-                    applicable = self.applicable
-        
+                pass
         except KeyError:
-            valid = self.isApplicableValid(applicableDict)
-            applicable = applicableDict
-
-        if not valid:
-            self.logger.log(LogPriority.DEBUG, "Passed in 'applicable' has invalid contents...")
-            return applies
-        else:
-            self.logger.log(LogPriority.DEBUG, "applicable appears to be valid.")
+            try:
+                if 'os' in applicable or 'family' in applicable:
+                    self.applicable = applicable
+                    self.logger.log(LogPriority.DEBUG, "Passed in applicable: " + str(self.applicable))
+                else:
+                    return False
+            except KeyError:
+                self.logger.log(LogPriority.DEBUG, "Required passed in variables not present...")
+                return False
 
         # Determine whether we are a blacklist or a whitelist, default to a
         # blacklist
@@ -292,79 +233,20 @@ class CheckApplicable(object):
             else:
                 return False
 
-    def fismaApplicable(self, checkLevel=None, systemLevel=None):
-        '''
-        Check if the passed in level matches the class variable level.
-
-        @author: David Kennel, Roy Nielsen
-        
-        applies = False
-        clevel = ""
-        slevel = ""
-        if checkLevel is not None and checkLevel in ['high', 'med', 'low']:
-            clevel = checkLevel
-        else:
-            try:
-                clevel = self.applicable['fisma']
-            except KeyError:
-                self.logger.log(LogPriority.DEBUG, traceback.format_exc())
-                self.logger.log(LogPriority.DEBUG, "Can't acquire a valid checkLevel...")
-                raise ValueError('checkLevel invalid: valid values are low, med, high')
-
-        if systemLevel is not None and systemLevel in ['high', 'med', 'low']:
-             slevel = systemLevel
-        else:
-            try:
-                slevel = self.environ.getsystemfismacat()
-            except KeyError:
-                self.logger.log(LogPriority.DEBUG, traceback.format_exc())
-                self.logger.log(LogPriority.DEBUG, "Can't acquire a valid checkLevel...")
-                raise ValueError('systemLevel invalid: valid values are low, med, high')
-
-        if slevel == 'high':
-            pass
-        elif slevel == 'med':
-            if clevel == 'high':
-                applies = False
-        elif slevel == 'low':
-            if clevel in ['high', 'med']:
-                applies = False
-
-        return applies
-        '''
-        pass
-
-    def getOsFamily(self):
+    def getosfamily(self):
         return self.myosfamily
 
-    def getOsType(self):
+    def getostype(self):
         return self.myostype
 
-    def getOsVer(self):
+    def getosver(self):
         return self.myosversion
 
-    def setOsFamily(self, osfamily):
+    def setosfamily(self, osfamily):
         self.myosfamily = osfamily
 
-    def setOsType(self, ostype):
+    def setostype(self, ostype):
         self.myostype = ostype
 
-    def setOsVer(self, osver):
+    def setosver(self, osver):
         self.myosversion = osver
-
-    def setSystemFismaLevel(self, level):
-        self.systemFismaLevel = level
-
-    def getSystemFismaLevel(self):
-        return self.systemFismaLevel
-
-    def setOsBasedOnEnv(self):
-        '''
-        Set the values to check against to the values
-        found in the environment.
-        '''
-        self.myosfamily = self.environ.getosfamily()
-        self.myosversion = self.environ.getosver()
-        self.myostype = self.environ.getostype()
-        self.fismacat = self.environ.getsystemfismacat()
-

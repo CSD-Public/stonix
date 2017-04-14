@@ -16,7 +16,6 @@ import inspect
 from ..loggers import LogPriority as lp
 from ..libHelperExceptions import UnsupportedOSError
 
-
 class ManageKeychain(object):
     """
     Factory object for acquiring the right keychain manager
@@ -232,11 +231,11 @@ class ManageKeychain(object):
         self.__calledBy()
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.lockKeychain(*args, **kwargs)
+        success, output = self.keychainMgr.unlockKeychain(*args, **kwargs)
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
-        return success
+        return success, output
 
     #----------------------------------------------------------------------
 
