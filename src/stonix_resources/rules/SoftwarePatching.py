@@ -33,6 +33,9 @@ updating automatically from a scheduled job where feasible.
 @change: 2015/04/20 dkennel updated to check rpmrc files for "nosignature"
          option per DISA STIG.
 @change: 2015/09/11 eball Fix apt-get compatibility
+@change: 2017/04/12 Breen Malmberg changed applicability to exclude opensuse
+        for the time being, until the problems discovered in 0.9.7 triage can
+        be fixed for it
 '''
 from __future__ import absolute_import
 import os
@@ -76,6 +79,15 @@ class SoftwarePatching(Rule):
             "install updates automatically on systems where that is feasible."
         self.rootrequired = True
         self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
+
+        # this bit added to temporarily pull software patching from opensuse
+        # until the fixes can be implemented
+        ostype = self.environ.getostype()
+        if re.search('suse', ostype, re.IGNORECASE):
+            self.applicable = False
+        # this bit added to temporarily pull software patching from opensuse
+        # until the fixes can be implemented
+
         self.ci = self.initCi("bool",
                               "scheduledupdate",
                               "To disable creation of a scheduled " +
@@ -93,6 +105,7 @@ class SoftwarePatching(Rule):
         self.caveats = ''
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
+        self.constlist = [PROXY, UPDATESERVERS]
 
     def updated(self):
         '''
@@ -211,12 +224,21 @@ class SoftwarePatching(Rule):
     def report(self):
         '''Method to report on the configuration status of the system.
 
-        @return: bool
+        @return: self.compliant
+        @rtype: bool
         @author: dkennel
         '''
 
-        self.caveats = ""
         self.detailedresults = ""
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.compliant = False
+            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: PROXY, UPDATESERVERS"
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
+        self.caveats = ""
 
         try:
             
@@ -406,9 +428,17 @@ class SoftwarePatching(Rule):
         '''Method to set system settings to configure software update sources
         and schedule updates.
 
-        @return: bool
+        @return: self.rulesuccess
+        @rtype: bool
         @author: dkennel
         '''
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
+
         try:
             self.detailedresults = ""
             if self.ci.getcurrvalue() and not self.crons:

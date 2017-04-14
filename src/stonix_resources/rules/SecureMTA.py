@@ -130,6 +130,14 @@ agent, set the value of SECUREMTA to False.'''
         @change: Breen Malmberg - 12/22/2015 - full refactor
         '''
 
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [MAILRELAYSERVER]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constant: MAILRELAYSERVER, in localize.py, is defined and is not None. This rule will not function without it."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         self.compliant = True
         self.postfixfoundlist = []
         self.detailedresults = ""
@@ -313,6 +321,13 @@ agent, set the value of SECUREMTA to False.'''
         @change: dwalker - ??? - ???
         @change: Breen Malmberg - 12/22/2015 - refactored method
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [MAILRELAYSERVER]
+        if not self.checkConsts(constlist):
+            fixsuccess = False
+            self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+            return fixsuccess
 
         self.logger.log(LogPriority.DEBUG, "Inside main fix() method")
         self.logger.log(LogPriority.DEBUG, "Setting method variable defaults...")
