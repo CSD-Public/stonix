@@ -30,6 +30,7 @@ password, will be disabled.
 
 @author: Breen Malmberg
 @change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
+@change: 2017/03/30 dkennel Marked as FISMA high until Apple resolves bugs
 '''
 
 from __future__ import absolute_import
@@ -78,7 +79,8 @@ password, will be disabled.'
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']},
+                           'fisma': 'high'}
 
         self.initobjs()
 
@@ -102,6 +104,14 @@ password, will be disabled.'
         @rtype: bool
         @author: Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [EXCLUDEACCOUNTS]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constant: EXCLUDEACCOUNTS, in localize.py, is defined and is not None. This rule will not function without it."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
 
         # defaults
         self.compliant = True
@@ -242,6 +252,13 @@ password, will be disabled.'
         @rtype: bool
         @author: Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [EXCLUDEACCOUNTS]
+        if not self.checkConsts(constlist):
+            success = False
+            self.formatDetailedResults("fix", success, self.detailedresults)
+            return success
 
         # defaults
         fixsuccess = True

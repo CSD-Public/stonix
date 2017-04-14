@@ -218,6 +218,8 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
+        self.output = ''
+        self.error = ''
         if self.command :
             try:
                 proc = Popen(self.command,
@@ -227,10 +229,15 @@ class RunWith(object):
                              close_fds=self.cfds)
                 proc.wait()
                 for line in proc.stdout.readline():
-                    self.output = self.output + line
+                    if line:
+                        self.output = self.output + str(line)
+                """
                 for line in proc.stderr.readline():
-                    self.error = self.error + line
+                    if line:
+                        self.error = self.error + str(line)
+                """
             except Exception, err:
+                self.logger.log(lp.WARNING, traceback.format_exc(err))
                 self.logger.log(lp.WARNING, "system_call_retval - Unexpected Exception: "  + \
                            str(err)  + " command: " + str(self.printcmd))
                 raise err
@@ -242,13 +249,14 @@ class RunWith(object):
             finally:
                 self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
                 self.output = str(proc.stdout)
-                self.error = str(proc.stderr)
+                #self.error = str(proc.stderr)
                 self.returncode = str(proc.returncode)
         else :
             self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
             self.stdout = None
             self.stderr = None
             self.returncode = None
+        return self.output, self.error, self.returncode
 
     ############################################################################
 
@@ -273,8 +281,13 @@ class RunWith(object):
                         myout = proc.stdout.readline()
                         if myout == '' and proc.poll() != None: 
                             break
-                        tmpline = myout.strip("\n")
-                        self.output += myout
+                        tmpline = myout.strip()
+                        self.output += tmpline
+                        """
+                        myerr = proc.stderr.readline()
+                        tmperr = myerr.strip()
+                        self.error += tmperr
+                        """
                         self.logger.log(lp.DEBUG, str(tmpline))
         
                         if isinstance(chk_string, str) :
@@ -300,7 +313,7 @@ class RunWith(object):
                                         else:
                                             self.logger.log(lp.INFO, "chk_string found... exiting process.")
                                             break
-                                
+                
                 proc.wait()
                 proc.stdout.close()
 
@@ -314,9 +327,10 @@ class RunWith(object):
                 self.logger.log(lp.WARNING, str(trace))
                 raise
             else :
-                #self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(self.output))
+                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(self.error))
                 self.retcode = str(proc.returncode)
-                proc.stdout.close()
             finally:
                 self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
         else :
@@ -393,6 +407,10 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
+        output = ""
+        error = ""
+        returncode = 0
+        pretcode = 0
         if re.match("^\s*$", user) or \
            re.match("^\s*$", password) or \
            not self.command :
@@ -403,10 +421,10 @@ class RunWith(object):
             return(255)
         else :
             output = ""
-            internal_command = ["/usr/bin/su", "-", str(user), "-c"]
+            internal_command = ["/usr/bin/su", "-", str(user.strip()), "-c"]
 
             if isinstance(self.command, list) :
-                internal_command.append(" ".join(self.command))
+                internal_command += self.command
                 #log_message("Trying to execute: \"" + \
                 #            " ".join(internal_command) + "\"", \
                 #            "verbose", message_level)
@@ -416,49 +434,59 @@ class RunWith(object):
                 #            str(internal_command) + "\"", \
                 #            "verbose", message_level)
 
+            self.logger.log(lp.DEBUG, "int: " + str(internal_command))
+
             (master, slave) = pty.openpty()
 
             proc = Popen(internal_command,
                          stdin=slave, stdout=slave, stderr=slave,
-                         close_fds=True)
+                         close_fds=True, shell=False)
 
-            prompt = os.read(master, 10)
+            #####
+            # Catch the sudo password prompt
+            # prompt = os.read(master, 512)
+            self.waitnoecho(master, 3)
+            prompt = os.read(master, 512)
+            
+            password = password.strip()
+            #####
+            # Enter the sudo password
+            os.write(master, password + "\n")
 
-            if re.match("^Password:", str(prompt)) :
-                os.write(master, password + "\n")
-                line = os.read(master, 512)
-                output = output + line
-                while True :
+            #####
+            # Catch the password
+            os.read(master, 512)
+
+            #self.waitnoecho(master, 3)
+
+            while True :
+                #####
+                # timeout of 0 means "poll"
+                r,w,e = select.select([master], [], [], 0) 
+                if r :
+                    line = os.read(master, 512)
                     #####
-                    # timeout of 0 means "poll"
-                    r,w,e = select.select([master], [], [], 0) 
-                    if r :
-                        line = os.read(master, 512)
-                        #####
-                        # Warning, uncomment at your own risk - several programs
-                        # print empty lines that will cause this to break and
-                        # the output will be all goofed up.
-                        #if not line :
-                        #    break
-                        #print output.rstrip()
-                        output = output + line
-                    elif proc.poll() is not None :
-                        break
-                os.close(master)
-                os.close(slave)
-                proc.wait()
-                self.output = proc.stdout
-                self.error = proc.stderr
-                self.returncode = proc.returncode
-            else:
-                self.output = None
-                self.error = None
-                self.returncode = None
+                    # Warning, uncomment at your own risk - several programs
+                    # print empty lines that will cause this to break and
+                    # the output will be all goofed up.
+                    #if not line :
+                    #    break
+                    #print output.rstrip()
+                    output = output + line
+                elif proc.poll() is not None:
+                    break
+            os.close(master)
+            os.close(slave)
+            proc.wait()
+            returncode = proc.returncode
+            #error = proc.stderr
+            #returncode = proc.returncode
             #print output.strip()
             output = output.strip()
+            self.logger.log(lp.DEBUG, "retcode: " + str(returncode))
             #log_message("Leaving runAs with: \"" + str(output) + "\"",
             #            "debug", message_level)
-            return output, self.error, self.returncode
+            return output, error, returncode
 
     ############################################################################
 
@@ -799,7 +827,7 @@ class RunThread(threading.Thread) :
 
     @author: Roy Nielsen
     """
-    def __init__(self, command=[], logger=False) :
+    def __init__(self, command=[], logger=False, myshell=False) :
         """
         Initialization method
         """
@@ -807,15 +835,16 @@ class RunThread(threading.Thread) :
         self.logger = logger
         self.retout = None
         self.reterr = None
+        self.shell = myshell
         threading.Thread.__init__(self)
-
+        """
         if isinstance(self.command, types.ListType) :
             self.shell = True
             self.printcmd = " ".join(self.command)
         if isinstance(self.command, types.StringTypes) :
             self.shell = False
             self.printcmd = self.command
-
+        """
         if not isinstance(logger, (bool, CyLogger)):
             self.logger = CyLogger()
         else:
@@ -831,9 +860,12 @@ class RunThread(threading.Thread) :
                 p = Popen(self.command, stdout=PIPE,
                                         stderr=PIPE,
                                         shell=self.shell)
+                self.retout, self.reterr = p.communicate()
+                self.logger.log(lp.WARNING, "Finished \"run\" of: " + \
+                            str(self.command))
             except Exception, err :
                 self.logger.log(lp.WARNING, "Exception trying to open: " + \
-                            str(self.printcmd))
+                            str(self.command))
                 self.logger.log(lp.WARNING, "Associated exception: " + str(err))
                 raise err
             else :
@@ -877,7 +909,7 @@ class RunThread(threading.Thread) :
 
 ##############################################################################
 
-def runMyThreadCommand(cmd=[], logger=False) :
+def runMyThreadCommand(cmd=[], logger=False, myshell=False) :
     """
     Use the RunThread class to get the stdout and stderr of a command
 
@@ -888,7 +920,7 @@ def runMyThreadCommand(cmd=[], logger=False) :
     print str(cmd)
     print str(logger)
     if cmd and logger :
-        run_thread = RunThread(cmd, logger)
+        run_thread = RunThread(cmd, logger, myshell)
         run_thread.start()
         run_thread.join()
         retval = run_thread.getStdout()

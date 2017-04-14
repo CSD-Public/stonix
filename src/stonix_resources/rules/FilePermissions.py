@@ -1214,6 +1214,14 @@ find / -xdev \( -nouser -o -nogroup \) -print
         @author: dkennel
         '''
 
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [SITELOCALWWWDIRS]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constants: SITELOCALWWWDIRS, in localize.py, is defined and is not None. This rule will not function without it."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         self.detailedresults = ''
         try:
             if not self.hasrunalready or self.firstrun:
@@ -1277,6 +1285,14 @@ has been called a second time. The previous results are displayed. '''
 
         @author dkennel
         """
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [SITELOCALWWWDIRS]
+        if not self.checkConsts(constlist):
+            success = False
+            self.formatDetailedResults("fix", success, self.detailedresults)
+            return success
+
         rootpath = os.environ["PATH"].split(':')
         pathre = '|'.join(rootpath)
         try:

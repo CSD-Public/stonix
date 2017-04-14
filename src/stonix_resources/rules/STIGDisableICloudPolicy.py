@@ -25,6 +25,7 @@
 Created on Oct 27, 2016
 
 @author: dwalker
+@change: 2017/03/30 dkennel Marked rule as FISMA high
 '''
 from __future__ import absolute_import
 import traceback
@@ -34,6 +35,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
+
 
 class STIGDisableICloudPolicy(Rule):
 
@@ -52,7 +54,8 @@ class STIGDisableICloudPolicy(Rule):
             "if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11']}}
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']},
+                           'fisma': 'high'}
         datatype = "bool"
         key = "DISABLEICLOUDPROMPT"
         instructions = "To disable the installation of the Disable " + \
@@ -60,15 +63,16 @@ class STIGDisableICloudPolicy(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.identifier = "mil.disa.STIG.Disable_iCloud_Prompt.alacarte"
         self.profile = "/Applications/stonix4mac.app/Contents/" + \
                      "Resources/stonix.app/Contents/MacOS/" + \
                      "stonix_resources/files/" + \
                      "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
         '''These directories for testing purposes only'''
-#             self.profile = "/Users/username/src/" + \
+#             self.profile = "/Users/username/stonix/src/" + \
 #                          "stonix_resources/files/" + \
 #                          "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
-    
+
     def report(self):
         try:
             compliant = False
@@ -119,10 +123,12 @@ class STIGDisableICloudPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
+                    cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
+            else:
+                success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
