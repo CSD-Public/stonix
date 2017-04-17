@@ -54,7 +54,7 @@ class STIGConfigurePasswordPolicy(Rule):
             "DISA STIG Password Policy profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.12.6']},
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.11.6']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "STIGPWPOLICY"
