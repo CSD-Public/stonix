@@ -55,7 +55,7 @@ class ConfigurePasswordPolicy(Rule):
         self.rulename = "ConfigurePasswordPolicy"
         self.formatDetailedResults("initialize")
         self.helptext = "STIGConfigureProfileManagement rule configures the " + \
-            "Mac OSX operating system's password policy according to LANL " + \
+            "macOS (OS X) operating system's password policy according to LANL " + \
             "standards and practices."
         self.rootrequired = True
 #         self.applicable = {'type': 'white',
