@@ -3,7 +3,7 @@
 <plist version="1.0">
 	<dict>
 		<key>PayloadIdentifier</key>
-		<string>gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.high</string>
+		<string>mil.disa.STIG.passwordpolicy.alacarte</string>
 		<key>PayloadRemovalDisallowed</key>
 		<false/>
 		<key>PayloadScope</key>
@@ -11,15 +11,15 @@
 		<key>PayloadType</key>
 		<string>Configuration</string>
 		<key>PayloadUUID</key>
-		<string>f51a8380-f856-0134-3667-003ee1c6943e</string>
+		<string>f51a8380-f856-0134-3667-003ee1c6943f</string>
 		<key>PayloadOrganization</key>
-		<string>Los Alamos National Laboratory</string>
+		<string>DISA</string>
 		<key>PayloadVersion</key>
 		<integer>1</integer>
 		<key>PayloadDisplayName</key>
-		<string>Settings for engine.lanl.gov</string>
+		<string>STIG Settings-Passcode</string>
 		<key>PayloadDescription</key>
-		<string>This LANL Passcode Profile implements controls required by the Level 2 Infrastructure and Services Unclassified Segment.</string>
+		<string>STIG Settings-Passcode</string>
 		<key>PayloadContent</key>
 		<array>
 			<dict>
@@ -28,9 +28,9 @@
 				<key>PayloadVersion</key>
 				<integer>1</integer>
 				<key>PayloadIdentifier</key>
-				<string>gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.high.1e035700-f858-0134-3668-003ee1c6943e</string>
+				<string>mil.disa.STIG.passwordpolicy.alacarte.passcodepolicy.1e035700-f858-0134-3668-003ee1c6943f</string>
 				<key>PayloadUUID</key>
-				<string>1e035700-f858-0134-3668-003ee1c6943e</string>
+				<string>1e035700-f858-0134-3668-003ee1c6943f</string>
 				<key>PayloadEnabled</key>
 				<true/>
 				<key>PayloadDisplayName</key>
