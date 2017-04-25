@@ -33,7 +33,6 @@ from re import search, escape
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
-from ..localize import FISMACAT
 
 
 class DisableSIRI(RuleKVEditor):
@@ -63,13 +62,14 @@ class DisableSIRI(RuleKVEditor):
                        "If left blank, we will try to retrieve the home directory inside the rule\n"
         default = ""
         self.homeci = self.initCi(datatype, key, instructions, default)
-        self.profile = "/Users/dwalker/stonix/src/" + \
-                       "stonix_resources/files/" + \
-                       "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
-#         self.profile = "/Applications/stonix4mac.app/Contents/" + \
-#                        "Resources/stonix.app/Contents/MacOS/" + \
+        '''Directory location for testing only'''
+#         self.profile = "/Users/username/stonix/src/" + \
 #                        "stonix_resources/files/" + \
 #                        "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
+        self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                       "Resources/stonix.app/Contents/MacOS/" + \
+                       "stonix_resources/files/" + \
+                       "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
         self.identifier = "097AD858-A863-4130-989F-D87CCE7E393A"
         self.home = ""
         self.ch = CommandHelper(self.logger)
