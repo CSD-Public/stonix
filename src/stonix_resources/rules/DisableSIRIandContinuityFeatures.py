@@ -35,7 +35,7 @@ from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
 
 
-class DisableSIRI(Rule):
+class DisableSIRIandContinuityFeatures(Rule):
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
         Constructor
@@ -44,22 +44,28 @@ class DisableSIRI(Rule):
 
         self.logger = logdispatch
         self.rulenumber = 310
-        self.rulename = "DisableSIRI"
+        self.rulename = "DisableSIRIandContinuityFeatures"
         self.formatDetailedResults("initialize")
-        self.helptext = "Disables Siri assistant/turns off voice recognition."
+        self.helptext = "Disables Siri assistant/turns off voice " + \
+            "recognition and disables universal clipboard across iPhone " + \
+            "and desktop/laptop."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', '+']}}
+                           'os': {'Mac OS X': ['10.12', '+']},
+                           'fisma': 'low'}
         datatype = "bool"
-        key = "DISABLESIRI"
-        instructions = "To disable this rule set the value of DISABLESIRI to False"
+        key = "SIRICONTINUITY"
+        instructions = "To disable this rule set the value of " + \
+            "SIRICONTINUITY to False"
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         
         datatype = "string"
         key = "MACHOMEDIR"
-        instructions = "Enter the current user's home directory here usually: /Users/username\n" + \
-                       "If left blank, we will try to retrieve the home directory inside the rule\n"
+        instructions = "Enter the current user's home directory here " + \
+            " which is usually in the location of: /Users/username\n" + \
+            "If left blank, we will try to retrieve the home directory " + \
+            "inside the rule\n"
         default = ""
         self.homeci = self.initCi(datatype, key, instructions, default)
         '''Directory location for testing only'''
