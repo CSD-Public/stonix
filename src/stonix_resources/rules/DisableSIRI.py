@@ -28,19 +28,19 @@ Created on Apr 20, 2017
 from __future__ import absolute_import
 import traceback
 import os
-from ..ruleKVEditor import RuleKVEditor
+from ..rule import Rule
 from re import search, escape
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
 
 
-class DisableSIRI(RuleKVEditor):
+class DisableSIRI(Rule):
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
         Constructor
         '''
-        RuleKVEditor.__init__(self, config, environ, logdispatch, statechglogger)
+        Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
         self.rulenumber = 310
@@ -79,6 +79,7 @@ class DisableSIRI(RuleKVEditor):
         self.siripath2 = "/Library/Preferences/com.apple.assistant.support" + \
             ".plist"
         self.siriparams2 = "Assistant\ Enabled"
+
     def setupHomeDir(self):
         home = ""
         cmd = "/bin/echo $HOME"
