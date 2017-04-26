@@ -69,13 +69,13 @@ class DisableSIRIandContinuityFeatures(Rule):
         default = ""
         self.homeci = self.initCi(datatype, key, instructions, default)
         '''Directory location for testing only'''
-#         self.profile = "/Users/username/stonix/src/" + \
-#                        "stonix_resources/files/" + \
-#                        "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
-        self.profile = "/Applications/stonix4mac.app/Contents/" + \
-                       "Resources/stonix.app/Contents/MacOS/" + \
+        self.profile = "/Users/dwalker/stonix/src/" + \
                        "stonix_resources/files/" + \
                        "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
+#         self.profile = "/Applications/stonix4mac.app/Contents/" + \
+#                        "Resources/stonix.app/Contents/MacOS/" + \
+#                        "stonix_resources/files/" + \
+#                        "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
         self.identifier = "097AD858-A863-4130-989F-D87CCE7E393A"
         self.home = ""
         self.ch = CommandHelper(self.logger)
