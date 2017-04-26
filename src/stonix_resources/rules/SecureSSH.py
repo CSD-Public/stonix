@@ -401,15 +401,14 @@ PermitUserEnvironment
                     # and run a report on it, to generate fixables/removeables
                     self.SSHDkvo = KVEditorStonix(self.statechglogger, self.logger, self.sshdconftype, self.sshdpath, self.sshdtemppath,
                                                   self.sshdconfig, self.sshdintent, self.sshdseparator)
-
+                    self.SSHDkvo.report()
                     if re.search("Ubuntu", self.environ.getostype()):
                         self.sshdconfig = {"GSSAPIAuthentication": "",
                                        "KerberosAuthentication": "",
                                        "PrintMotd": "no"}
                         self.SSHDkvo.setIntent("notpresent")
                         self.SSHDkvo.setData(self.sshdconfig)
-
-                    self.SSHDkvo.report()
+                        self.SSHDkvo.report()
 
                 # make the config changes to server config file
                 if self.SSHDkvo.fixables or self.SSHDkvo.removeables:
