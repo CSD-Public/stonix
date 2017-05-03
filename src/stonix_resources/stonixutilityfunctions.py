@@ -1548,3 +1548,30 @@ def fixInflation(filepath, logger, perms, owner):
         retval = False
         return retval
     return retval
+
+def validateParam(logger, param, ptype, pname):
+    '''
+    check whether a param is of the given type
+    return True if type matches
+    return False if type does not match
+
+    @param logger: obj; logger object
+    @param param: (variable type); variable to check
+    @param ptype: obj; var type obj definition
+    @param pname: string; name of variable being passed (for logging purposes)
+    @return: valid
+    @rtype: bool
+    @author: Breen Malmberg
+    '''
+
+    valid = True
+
+    try:
+
+        if not isinstance(param, ptype):
+            valid = False
+            logger.log(LogPriority.DEBUG, "Parameter: " + str(pname) + " needs to be of type " + str(ptype) + ". Got: " + str(type(param)))
+
+    except Exception, errmsg:
+        logger.log(LogPriority.ERROR, str(errmsg))
+    return valid
