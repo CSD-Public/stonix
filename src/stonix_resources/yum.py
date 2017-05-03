@@ -21,15 +21,16 @@
 #                                                                             #
 ###############################################################################
 
-import traceback
+import re
+
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
-import re
+from stonixutilityfunctions import validateParam
 
 
 class Yum(object):
-
-    '''The template class that provides a framework that must be implemented by
+    '''
+    The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
 
     @author: Derek T Walker
@@ -39,143 +40,273 @@ class Yum(object):
 
     def __init__(self, logger):
         self.logger = logger
-        self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
-        self.install = "/usr/bin/yum install -y "
-        self.remove = "/usr/bin/yum remove -y "
-        #self.search = "/usr/bin/yum search "
-        self.search = "/usr/bin/yum list "
-        self.rpm = "/bin/rpm -q "
-###############################################################################
+        self.yumloc = "/usr/bin/yum"
+        self.install = self.yumloc + " install -y "
+        self.remove = self.yumloc + " remove -y "
+        self.search = self.yumloc + " list "
+        self.checkupdates = self.search + "updates "
+        self.listavail = self.search + "available "
+        self.listinstalled = self.search + "installed "
+        self.updatepkg = self.yumloc + " update -y --obsoletes "
 
+        self.rpmloc = "/usr/bin/rpm"
+        self.provides = self.rpmloc + " -qf "
+        self.query = self.rpmloc + " -qa "
+
+###############################################################################
     def installpackage(self, package):
-        '''Install a package. Return a bool indicating success or failure.
-        @param string package : Name of the package to be installed, must be
-        recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        '''
+        Install a package. Return a bool indicating success or failure.
+
+        @param package: string; Name of the package to be installed, must be
+                recognizable to the underlying package manager.
+        @return: installed
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        '''
+
+        installed = False
+
         try:
-            installed = False
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return installed
+
             self.ch.executeCommand(self.install + package)
             if self.ch.getReturnCode() == 0:
                 installed = True
-                self.detailedresults = package + \
-                    " pkg installed successfully\n"
-            else:
-                self.detailedresults = package + " pkg not able to install\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return installed
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
 
+            if installed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was installed successfully")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Failed to install package " + str(package))
+
+        except Exception:
+            raise
+        return installed
+
+###############################################################################
     def removepackage(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
-        @param string package : Name of the package to be removed, must be
-        recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        '''
+        Remove a package. Return a bool indicating success or failure.
+
+        @param package: string; Name of the package to be removed, must be
+                recognizable to the underlying package manager.
+        @return: removed
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        '''
+
+        removed = False
+
         try:
-            removed = False
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return removed
+
             self.ch.executeCommand(self.remove + package)
             if self.ch.getReturnCode() == 0:
                 removed = True
-                self.detailedresults = package + " pkg removed successfully\n"
-            else:
-                self.detailedresults = package + \
-                    " pkg not able to be removed\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return removed
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
 
+            if removed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully installed")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
+
+        except Exception:
+            raise
+        return removed
+
+###############################################################################
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if
+        '''
+        Check the installation status of a package. Return a bool; True if
         the package is installed.
-        @param string package : Name of the package whose installation status
+
+        @param package: string; Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-        @return bool :
-        @author'''
+        @return: found
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        '''
+
+        installed = False
+
         try:
-            found = False
-            self.ch.executeCommand(self.rpm + package)
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return installed
+
+            self.ch.executeCommand(self.listinstalled + package)
             if self.ch.getReturnCode() == 0:
-                found = True
-                self.detailedresults = package + " pkg found\n"
+                installed = True
+
+            if installed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
             else:
-                self.detailedresults = package + " pkg not found\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return found
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is NOT installed")
 
-    def checkAvailable(self, package):
+        except Exception:
+            raise
+        return installed
+
+    def Update(self, package=""):
+        '''
+        update specified package if any updates
+        are available for it
+        if no package is specified, update all
+        packages which can be updated on the system
+
+        @param package: string; name of package to update
+        @return: updated
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updated = False
+
         try:
-            found = False
-            self.ch.executeCommand(self.search + "\"" + package + "\"")
-            output = self.ch.getOutputString()
-            if self.ch.getReturnCode() != 0:
-                self.detailedresults = package + " pkg is not available " + \
-                    " or may be misspelled\n"
-            elif self.ch.getReturnCode() == 0:
-                self.detailedresults = package + " pkg is available\n"
-                found = True
-#             if re.search("no matches found", output.lower()):
-#                 self.detailedresults += package + " pkg is not available " + \
-#                     " or may be misspelled\n"
-#             elif re.search("matched", output.lower()):
-#                 self.detailedresults += package + " pkg is available\n"
-#                 found = True
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return found
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
 
+            if not validateParam(self.logger, package, basestring, "package"):
+                return updated
+
+            self.ch.executeCommand(self.updatepkg + package)
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                updated = True
+
+            if package:
+                if updated:
+                    self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully updated")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates were found for package " + str(package))
+            else:
+                if updated:
+                    self.logger.log(LogPriority.DEBUG, "All packages were successfully updated")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates were found for this system")
+
+        except Exception:
+            raise
+        return updated
+
+    def checkUpdate(self, package=""):
+        '''
+        check if there are any updates available for
+        specified package
+        if no package is specified, check if any updates
+        are available for the current system
+
+        @param package: string; name of package to check
+        @return: updatesavail
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updatesavail = False
+
+        try:
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return updatesavail
+
+            self.ch.executeCommand(self.checkupdates + package)
+            output = self.ch.getOutputString()
+            if re.search("Updated packages", output, re.IGNORECASE):
+                updatesavail = True
+
+            if package:
+                if updatesavail:
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for package " + str(package))
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates are available for package " + str(package))
+            else:
+                if updatesavail:
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for this system")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates are available for this system")
+
+        except Exception:
+            raise
+        return updatesavail
+
+###############################################################################
+    def checkAvailable(self, package):
+        '''
+        check if specified package is availabe to install
+        return True if it is
+        return False if not
+
+        @param package: string; name of package to check
+        @return: available
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        available = False
+
+        try:
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return available
+
+            self.ch.executeCommand(self.listavail + package)
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                available = True
+
+            if available:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
+            else:
+                self.logger.log(LogPriority.DEBUG, "No package " + str(package) + " was found to install")
+
+        except Exception:
+            raise
+        return available
+
+###############################################################################
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        '''
+        Returns the name of the package that provides the given
         filename/path.
 
-        @param: string filename : The name or path of the file to resolve
-        @return: string name of package if found, None otherwise
+        @param filename: string; The name or path of the file to resolve
+        @return: packagename
+        @rtype: string
         @author: Eric Ball
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
         '''
-        try:
-            self.ch.executeCommand(self.rpm + "-f " + filename)
-            if self.ch.getReturnCode() == 0:
-                return self.ch.getOutputString()
-            else:
-                return None
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
 
+        packagename = ""
+
+        try:
+
+            if not validateParam(self.logger, filename, basestring, "filename"):
+                return packagename
+
+            self.ch.executeCommand(self.provides + filename)
+            if self.ch.getReturnCode() == 0:
+                packagename = self.ch.getOutputString()
+            else:
+                self.logger.log(LogPriority.DEBUG, "rpm encountered a problem while searching for the package associated with " + filename)
+
+        except Exception:
+            raise
+        return packagename
+
+###############################################################################
     def getInstall(self):
         return self.install
-###############################################################################
 
+###############################################################################
     def getRemove(self):
         return self.remove
