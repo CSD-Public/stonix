@@ -202,6 +202,72 @@ remove command"
             raise
             self.logger.log(LogPriority.ERROR, info)
 
+    def checkUpdate(self, package=""):
+        '''
+        check for updates on the system
+        return True if there are updates available
+        return False if there are no updates available
+
+        @param package: string; name of package to check for. If
+                no package is specified, the rule will check for
+                ANY updates available to the system
+        @return: updatesavail
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        # defaults
+        updatesavail = False
+
+        try:
+
+            # parameter validation
+            if package:
+                if not isinstance(package, basestring):
+                    self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
+                    return updatesavail
+
+            if self.pckgr.checkUpdate(package):
+                updatesavail = True
+
+        except Exception:
+            raise
+        return updatesavail
+
+    def Update(self, package=""):
+        '''
+        update either the specified package
+        or all available updates if no package is specified
+
+        @param package: string; name of package to update
+                will update all packages if no package is
+                specified
+        @return: updated
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updated = True
+        updatesavail = False
+
+        try:
+
+            updatesavail = self.pckgr.checkUpdates(package)
+            if updatesavail:
+                self.logger.log(LogPriority.DEBUG, "Updates are available to install")
+                if not self.pckgr.Update(package):
+                    self.logger.log(LogPriority.DEBUG, "Failed to install updates")
+                    updated = False
+                else:
+                    self.logger.log(LogPriority.DEBUG, "All updates successfully installed")
+            else:
+                self.logger.log(LogPriority.DEBUG, "No updates available to install")
+
+        except Exception:
+            raise
+        return updated
+            
+
     def getPackageFromFile(self, filename):
         '''Returns the name of the package that provides the given
         filename/path.
