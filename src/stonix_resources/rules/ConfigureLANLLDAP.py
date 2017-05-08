@@ -167,7 +167,7 @@ effect."""
             self.pamauthfile = "/etc/pam.d/system-auth-ac"
     def report(self):
         try:
-	    if self.ph.manager in ("dnf", "zypper"):
+            if self.ph.manager in ("zypper"):
                 return
             compliant = True
             self.detailedresults = ""
@@ -189,8 +189,16 @@ effect."""
             self.packages = ["nss-pam-ldapd", "openldap-clients", "sssd",
                        "krb5-workstation", "pam_ldap", "nss-pam-ldapd",
                        "openldap-clients", "libpam-ldapd", "libpam-krb5",
-                       "sssd", "libnss-sss", "libpam-sss", "yast2-auth-client",
-                       "sssd-krb5", "pam_ldap", "sssd", "krb5"]
+                       "libnss-sss", "libpam-sss", "yast2-auth-client",
+                       "sssd-krb5", "krb5"]
+            if self.ph.manager == "dnf":
+                self.packages.remove("pam_ldap")
+                self.packages.remove("krb5")
+                self.packages.remove("libpam-ldapd")
+                self.packages.remove("libpam-krb5")
+                self.packages.remove("libnss-sss")
+                self.packages.remove("libpam-sss")
+                self.packages.remove("yast2-auth-client")
             for package in self.packages:
                 if not self.ph.check(package) and \
                    self.ph.checkAvailable(package):
@@ -209,7 +217,10 @@ effect."""
                 debug += "checkotherpam method is False compliancy\n"
                 compliant = False
             if not self.nslcd:
-                sssdconfpath = "/etc/sssd/sssd.conf"
+                if self.ph.manager == "dnf":
+                    sssdconfpath = "/etc/sssd/conf.d/sssd.conf"
+                else:
+                    sssdconfpath = "/etc/sssd/sssd.conf"
                 self.sssdconfpath = sssdconfpath
                 sssdconfdict = {"services": "nss, pam",
                                 "filter_users": "root",
@@ -428,9 +439,10 @@ effect."""
 
     def fix(self):
         try:
-	    if self.ph.manager in ("dnf", "zypper"):
+            if self.ph.manager == "zypper":
                 return
-            assert self.ci.getcurrvalue() and self.validLdap
+            if not self.ci.getcurrvalue() and self.validLdap:
+                return
             success = True
             self.detailedresults = ""
             self.iditerator = 0
