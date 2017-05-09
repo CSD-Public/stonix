@@ -47,6 +47,8 @@ mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/FileStateManager/pam/0.9.6.13/darwin/MacOSX/10.11/stateAfter/etc/pam.d
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/FileStateManager/pam/0.9.5.99/darwin/MacOSX/10.11/stateAfter/etc/pam.d
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/help
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/images
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man8
 
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/
