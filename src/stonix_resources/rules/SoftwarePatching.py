@@ -334,17 +334,21 @@ class SoftwarePatching(Rule):
                 for repo in os.listdir(repodir):
                     filelist.append(os.path.join(repodir, repo))
                 for conffile in filelist:
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['SoftwarePatching.updatesecurity',
-                                     'Checking conf file ' + conffile])
-                    handle = open(conffile, 'r')
-                    confdata = handle.read()
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['SoftwarePatching.updatesecurity',
-                                     'Conf file data: ' + str(confdata)])
-                    if re.search('gpgcheck=0', confdata):
-                        gpgcheckok = False
-                    handle.close()
+                    if os.path.isfile(conffile):
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['SoftwarePatching.updatesecurity',
+                                         'Checking conf file ' + conffile])
+                        handle = open(conffile, 'r')
+                        confdata = handle.read()
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['SoftwarePatching.updatesecurity',
+                                         'Conf file data: ' + str(confdata)])
+                        if re.search('gpgcheck=0', confdata):
+                            gpgcheckok = False
+                        handle.close()
+                    else:
+                        self.logger.log(LogPriority.DEBUG, str(conffile) + " is not a repo file. Skipping...")
+
                 if os.path.exists('/etc/yum.conf'):
                     handle = open('/etc/yum.conf', 'r')
                     confdata = handle.read()
