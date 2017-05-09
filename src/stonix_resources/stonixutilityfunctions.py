@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-'''
-Created on Oct 18, 2011
-Miscellaneous utility functions.
-@author: dkennel
-'''
 
 ###############################################################################
 #                                                                             #
@@ -44,6 +39,19 @@ Miscellaneous utility functions.
 #
 #   2011/10/18 Copied in storutils as a jumpstart for utility functions.
 
+'''
+Created on Oct 18, 2011
+Miscellaneous utility functions.
+@author: dkennel
+@change: Breen Malmberg - 5/8/2017 - added method validateParam;
+        fixed a bad indentation on/near line 1329, in method
+        isServerVersionHigher; (Note: many methods missing try/except
+        blocks!); Removed old, commented-out isApplicable method (commented
+        out by Dave Kennel - per Dave Kennel "this block can probably be safely
+        removed in 0.8.17"); removed unused method iterate2
+@todo: many methods missing try/except blocks!
+@todo: fix doc strings and standardize them
+'''
 
 import os
 from grp import getgrgid
@@ -62,10 +70,8 @@ from environment import Environment
 from subprocess import call, Popen, PIPE, STDOUT
 import urllib2
 from logdispatcher import LogPriority
-# from twisted.python.procutils import which
 
 # =========================================================================== #
-
 
 def resetsecon(filename):
     '''resetsecon(filename)
@@ -81,7 +87,6 @@ def resetsecon(filename):
              close_fds=True)
 
 # =========================================================================== #
-
 
 def getlocalfs(logger, environ):
     '''This function is used to return a list of local filesystems. It is used
@@ -185,14 +190,15 @@ def getlocalfs(logger, environ):
 # =========================================================================== #
 # This will become a rule or part of a rule
 
-
 def importkey(logger):
-    """importkey()
+    """
+    importkey()
 
     On new installs we need to import the rpm gpg key to check package sigs.
     This function will import the key if has not been imported already. We
     don't need to do this if called in install mode because the assumption
-    is that expressway has done it."""
+    is that expressway has done it.
+    """
 
     stdin, stdout, stderr = os.popen3('/bin/rpm -qi gpg-pubkey')
     isimported = stdout.read()
@@ -220,7 +226,6 @@ def importkey(logger):
             logger.log(LogPriority.ERROR, ['StonixUtilityFunctions.importkey',
                                            err])
 
-
 def write_file(logger, file_name="", file_content=""):
     '''
     Write a config file (file_content) to destination (file_name)
@@ -230,6 +235,7 @@ def write_file(logger, file_name="", file_content=""):
 
     @author: Roy Nielsen
     '''
+
     # Need to make sure there is content in file_name and file_content
     if not re.match("^$", file_name) and not re.match("^$", file_content):
 
@@ -245,7 +251,6 @@ def write_file(logger, file_name="", file_content=""):
 
 # =========================================================================== #
 
-
 def set_no_proxy():
     """
     This method described here: http://www.decalage.info/en/python/urllib2noproxy
@@ -259,7 +264,6 @@ def set_no_proxy():
     urllib2.install_opener(opener)
 
 # =========================================================================== #
-
 
 def delete_plist_key(plist="", key=""):
     '''
@@ -299,7 +303,6 @@ def delete_plist_key(plist="", key=""):
 
 # =========================================================================== #
 
-
 def get_plist_value(plist="", key="", current_host=""):
     '''
     **** Macintosh Specific Function ****
@@ -337,7 +340,6 @@ def get_plist_value(plist="", key="", current_host=""):
 
 # =========================================================================== #
 
-
 def has_connection_to_server(logger, server=None, port=80, timeout=1):
     '''
     Check to see if there is a connection to a server.
@@ -374,17 +376,17 @@ def has_connection_to_server(logger, server=None, port=80, timeout=1):
 
 # =========================================================================== #
 
-
 def cloneMeta(logger, originFile, destinationFile):
     '''
     Copies all permissions, ownership and security context (secon) data
     from originFile to destinationFile. This function does not work on Mac OS X
     systems.
 
-    @param originFile: full file path to copy metadata from
-    @param destinationFile: full file path to copy metadata to
-
-    @author bemalmbe
+    @param originFile: string; full file path to copy metadata from
+    @param destinationFile: string; full file path to copy metadata to
+    @param logger: logDispatch object; for logging
+    @return: void
+    @author Breen Malmberg
     '''
 
     # note that the stat tool is not always installed by default on all systems
@@ -451,57 +453,6 @@ def cloneMeta(logger, originFile, destinationFile):
 
 # =========================================================================== #
 
-
-def iterate2(idbase, iterator):
-    '''
-    take inputs iterator and idbase and dynamically create and output a
-    properly formatted id string for use with 'event' dictionaries used in
-    the undo() methods of each class/rule in Dylan
-
-    @params idbase integer
-    @params iterator integer
-
-    @return int myid
-
-    @author bemalmbe
-    '''
-
-    # #USE CASE 1 (<)
-    # idbase = 01230
-    # iterator = 1
-    # if 5 < (7 - 1) = 5 < 6; true
-    # i = (7 - (5 + 1) = 7 - 6 = 1
-    # idbase = idbase + ('0' * 1) = 012300 = 6 characters
-    # myid = idbase + iterator = 7 characters = 0123001
-
-    # #USE CASE 2 (>=)
-    # idbase = 01230000
-    # iterator = 1
-    # if 8 > (7 - 1); if 8 > 6; if idbase is greater than formatlen - len(iterator)
-    # i = 8 - 7 = 1 + 1 = 2
-    # idbase = idbase - 2 character = 6 characters = 012300
-    # myid = idbase + iterator = 7 characters = 0123001
-
-    iterator = str(iterator).strip()
-    idbase = str(idbase).strip()
-    formatlen = 7
-
-    if len(idbase) < (formatlen - len(iterator)):
-        i = (formatlen - (len(idbase) + len(iterator)))
-        idbase = idbase + ('0' * i)
-
-    elif len(idbase) >= (formatlen - len(iterator)):
-        i = (len(idbase) - formatlen) + len(iterator)
-        idbase = idbase.replace(' ', '')[:-i]
-
-    myid = idbase + iterator
-    myid = int(myid)
-
-    return str(myid)
-
-# =========================================================================== #
-
-
 def isWritable(logger, filepath, owner="o"):
     '''
     return true or false, depending on whether filepath is writable by owner.
@@ -514,11 +465,12 @@ def isWritable(logger, filepath, owner="o"):
      user
      u
 
-    @params filepath string
-    @params owner string
-    @params logger object
-    @return bool
-    @author bemalmbe
+    @params filepath: string; path to file to check
+    @params owner: string; type of writability to check
+    @params logger: logDispatch object; for logging
+    @return isw
+    @rtype: bool
+    @author Breen Malmberg
     '''
 
     # set default return value isw to False
@@ -553,13 +505,12 @@ def isWritable(logger, filepath, owner="o"):
 
 # =========================================================================== #
 
-
 def getOctalPerms(filepath):
     '''
     Get and return the octal format of the file permissions for filepath
 
     @return int
-    @author bemalmbe
+    @author Breen Malmberg
     '''
 
     rawresult = os.stat(filepath).st_mode
@@ -575,13 +526,12 @@ def getOctalPerms(filepath):
 
 # =========================================================================== #
 
-
 def getOwnership(filepath):
     '''
     Get and return the numeric user and group owner of the filepath
 
     @return list of type(int)
-    @author bemalmbe
+    @author Breen Malmberg
     '''
 
     try:
@@ -596,10 +546,7 @@ def getOwnership(filepath):
     except Exception:
         raise
 
-
-
 # =========================================================================== #
-
 
 def isThisYosemite(environ):
     '''
@@ -623,7 +570,6 @@ def isThisYosemite(environ):
 
 # =========================================================================== #
 
-
 def isThisMavericks(environ):
     '''
     returns true if this is OS is Mavericks
@@ -646,7 +592,6 @@ def isThisMavericks(environ):
 
 # =========================================================================== #
 
-
 def isThisMountainLion(environ):
     '''
     returns true if this is OS is Mountain Lion
@@ -667,370 +612,17 @@ def isThisMountainLion(environ):
         isMountainLion = False
     return isMountainLion
 
-# =========================================================================== #
-# Commented out by D. Kennel. Replaced by isApplicable method in template class
-# this block can probably be safely removed in 0.8.17.
-
-# def isApplicable(environ, whitelist=[], blacklist=[]):
-#     '''
-# <<<<<<< HEAD
-#     checks if current os is either white or blacklisted
-# =======
-#     see if osfamily, operatingsystem, osversion are in the whitelist and not
-#     in the blacklist
-# >>>>>>> origin/develop
-#     @author: ekkehard j. koch
-#     @param enivron - the environment object
-#     @param whitelist: list of string or dictionary
-#     {0: osfamily,1: operatingsystem, 2: osversion}
-#     @param blacklist: list of string or dictionary
-#     {0: osfamily,1: operatingsystem, 2: osversion}
-#     @return: boolean - true if applicable false if not
-#     @change: 12/18/2013 - ekkehard - Original Implementation
-#     @change: 07/23/2014 - ekkehard - added operating list processing to
-#     white and black lists
-#     @change: 2014/12/16 - dkennel - Fixed bug that was exposed by fix in
-#     environment.getosver()
-#     '''
-# # Did we get a list for the whitelist?
-#     vartype = type(whitelist)
-#     if not vartype == ListType:
-#         raise TypeError("whitelist = " +
-#                         str(whitelist) +
-#                         " is not a " + str(ListType) +
-#                         " but a " + str(vartype) + ".")
-# # Did we get a list for the blacklist?
-#     vartype = type(blacklist)
-#     if not vartype == ListType:
-#         raise TypeError("blacklist = " +
-#                         str(blacklist) +
-#                         " is not a " + str(ListType) +
-#                         " but a " + str(vartype) + ".")
-# # What are we running on
-#     osfamily = environ.getosfamily()
-#     operatingsystem = environ.getostype()
-#     osversion = environ.getosver()
-# # Intitialize inWhiteList and inBlackList
-#     inWhitlist = False
-#     inBlacklist = False
-# # Evaluate what we got and what we need to do
-#     if whitelist == [] and blacklist == []:
-#         processWhiteList = False
-#         processBlackList = False
-#     elif not whitelist == [] and not blacklist == []:
-#         processWhiteList = True
-#         processBlackList = True
-#     elif not whitelist == []:
-#         processWhiteList = True
-#         processBlackList = False
-#     elif not blacklist == []:
-#         processWhiteList = False
-#         processBlackList = True
-#     else:
-#         processWhiteList = False
-#         processBlackList = False
-# # Process the white list
-#     if processWhiteList:
-#         for item in whitelist:
-#             wlosfamily = ""
-#             wloperatingsytem = ""
-#             wlosversion = None
-#             wldictinary = None
-#             itemtype = type(item)
-#             if itemtype == StringType:
-#                 wlosfamily = item
-#                 if wlosfamily == osfamily:
-#                     inWhitlist = True
-#                     break
-#             elif itemtype == DictType:
-#                 wldictinary = item
-# # Check out white list osfamily entry in dictionary needs to be string
-#                 try:
-#                     wlosfamily = wldictinary["0"]
-#                 except(KeyError):
-#                     wlosfamily = ""
-#                 vartype = type(wlosfamily)
-#                 if not vartype == StringType:
-#                     raise TypeError("whitelist osfamily = " + \
-#                                     str(wlosfamily) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not wlosfamily == "":
-#                     if osfamily == wlosfamily:
-#                         wlosfamilyIsApplicable = True
-#                     else:
-#                         wlosfamilyIsApplicable = False
-#                 else:
-#                     wlosfamilyIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 try:
-#                     wloperatingsytem = wldictinary["1"]
-#                 except(KeyError):
-#                     wloperatingsytem = ""
-#                 vartype = type(wloperatingsytem)
-#                 if vartype == ListType:
-#                     for listitem in wloperatingsytem:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("whitelist osversion " + \
-#                                             str(operatingsystem) + \
-#                                             " list item = " + str(listitem) + \
-#                                             " is not a " + str(StringType) + \
-#                                             " but a " + str(vartype) + ".")
-#                     if not wloperatingsytem == []:
-#                         wloperatingsytemIsApplicable = False
-#                         for ver in wloperatingsytem:
-#                             myver = str(ver)
-#                             if re.match("^%s" % myver, str(operatingsystem)):
-#                                 wloperatingsytemIsApplicable = True
-#                     else:
-#                         wloperatingsytemIsApplicable = True
-#                 elif not vartype == StringType:
-#                     raise TypeError("whitelist operatingsystem = " + \
-#                                     str(wloperatingsytem) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not wloperatingsytem == "":
-#                     if wloperatingsytem == operatingsystem:
-#                         wloperatingsytemIsApplicable = True
-#                     else:
-#                         wloperatingsytemIsApplicable = False
-#                 else:
-#                     wloperatingsytemIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 try:
-#                     wlosversion = wldictinary["2"]
-#                 except(KeyError):
-#                     wlosversion = ""
-#                 vartype = type(wlosversion)
-#                 if vartype == StringType:
-#                     if not wlosversion == "":
-#                         mywlosversion = str(wlosversion)
-#                         if re.match("^%s" % mywlosversion, str(osversion)):
-#                             wlosversionIsApplicable = True
-#                         else:
-#                             wlosversionIsApplicable = False
-#                     else:
-#                         wlosversionIsApplicable = True
-#                 elif vartype == ListType:
-#                     for listitem in wlosversion:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("whitelist osversion " + \
-#                                             str(wlosversion) + \
-#                                             " list item = " + str(listitem) + \
-#                                             " is not a " + str(StringType) + \
-#                                             " but a " + str(vartype) + ".")
-#                     if not wlosversion == []:
-#                         wlosversionIsApplicable = False
-#                         for ver in wlosversion:
-#                             myver = str(ver)
-#                             myverlist = myver.split(".")
-#                             osversionlist = str(osversion).split(".")
-#                             counter = 0
-#                             myvernumber = int(myverlist[counter])
-#                             osversionnumber = int(osversionlist[counter])
-#                             numbersequal = True
-#                             for myveritem in myverlist:
-#                                 myvernumber = int(myveritem)
-#                                 if counter <= len(osversionlist):
-#                                     try:
-#                                         osversionnumber = int(osversionlist[counter])
-#                                     except (IndexError):
-#                                         numbersequal = False
-#                                         continue
-#                                 else:
-#                                     numbersequal = False
-#                                     continue
-#                                 if not myvernumber == osversionnumber:
-#                                     numbersequal = False
-#                                 counter = counter + 1
-#                             if numbersequal:
-#                                 wlosversionIsApplicable = True
-#                     else:
-#                         wlosversionIsApplicable = True
-#                 else:
-#                     raise TypeError("whitelist osversion = " + \
-#                                     str(wlosversion) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(ListType) + \
-#                                     " but a " + str(vartype) + ".")
-# # if osfamily and operintingsystem and osversion are applicable it is in
-# # whitelist
-#                 if wlosfamilyIsApplicable and wloperatingsytemIsApplicable and wlosversionIsApplicable:
-#                     inWhitlist = True
-#                     break
-#             else:
-#                 raise TypeError("whitelist item = " + \
-#                                     str(item) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(DictType) + \
-#                                     " but a " + str(itemtype) + ".")
-# # Process the Black list
-#     if processBlackList:
-#         inBlacklist = False
-#         for item in blacklist:
-#             blosfamily = ""
-#             bloperatingsytem = ""
-#             blosversion = None
-#             bldictinary = None
-#             itemtype = type(item)
-#             if itemtype == StringType:
-#                 if item == osfamily:
-#                     inBlacklist = True
-#                     break
-#             elif itemtype == DictType:
-#                 bldictinary = item
-# # Check out white list osfamily entry in dictionary needs to be string
-#                 try:
-#                     blosfamily = bldictinary["0"]
-#                 except(KeyError):
-#                     blosfamily = ""
-#                 vartype = type(blosfamily)
-#                 if not vartype == StringType:
-#                     raise TypeError("blacklist osfamily = " + \
-#                                     str(blosfamily) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not blosfamily == "":
-#                     if osfamily == blosfamily:
-#                         blosfamilyIsApplicable = True
-#                     else:
-#                         blosfamilyIsApplicable = False
-#                 else:
-#                     blosfamilyIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 bloperatingsytem = bldictinary["1"]
-#                 vartype = type(bloperatingsytem)
-#                 if vartype == ListType:
-#                     for listitem in bloperatingsytem:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("whitelist osversion " + \
-#                                             str(operatingsystem) + \
-#                                             " list item = " + str(listitem) + \
-#                                             " is not a " + str(StringType) + \
-#                                             " but a " + str(vartype) + ".")
-#                     if not bloperatingsytem == []:
-#                         bloperatingsytemIsApplicable = False
-#                         for ver in bloperatingsytem:
-#                             myver = str(ver)
-#                             if re.match("^%s" % myver, str(operatingsystem)):
-#                                 bloperatingsytemIsApplicable = True
-#                     else:
-#                         bloperatingsytemIsApplicable = True
-#                 elif not vartype == StringType:
-#                     raise TypeError("blacklist operatingsystem = " + \
-#                                     str(bloperatingsytem) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not bloperatingsytem == "":
-#                     if bloperatingsytem == operatingsystem:
-#                         bloperatingsytemIsApplicable = True
-#                     else:
-#                         bloperatingsytemIsApplicable = False
-#                 else:
-#                     bloperatingsytemIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 blosversion = bldictinary["2"]
-#                 vartype = type(blosversion)
-#                 if vartype == StringType:
-#                     if not blosversion == "":
-#                         myblosversion = str(blosversion)
-#                         if re.match("^%s" % myblosversion, str(osversion)):
-#                             blosversionIsApplicable = True
-#                         else:
-#                             blosversionIsApplicable = False
-#                     else:
-#                         blosversionIsApplicable = True
-#                 elif vartype == ListType:
-#                     for listitem in blosversion:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("blacklist osversion " +
-#                                             str(blosversion) +
-#                                             " list item = " + str(listitem) +
-#                                             " is not a " + str(StringType) +
-#                                             " but a " + str(vartype) + ".")
-#                     if not blosversion == []:
-#                         blosversionIsApplicable = False
-#                         for ver in blosversion:
-#                             myver = str(ver)
-#                             myverlist = myver.split(".")
-#                             osversionlist = str(osversion).split(".")
-#                             counter = 0
-#                             myvernumber = int(myverlist[counter])
-#                             osversionnumber = int(osversionlist[counter])
-#                             numbersequal = True
-#                             for myveritem in myverlist:
-#                                 myvernumber = int(myveritem)
-#                                 if counter <= len(osversionlist):
-#                                     try:
-#                                         osversionnumber = int(osversionlist[counter])
-#                                     except (IndexError):
-#                                         numbersequal = False
-#                                         continue
-#                                 else:
-#                                     numbersequal = False
-#                                     continue
-#                                 if not myvernumber == osversionnumber:
-#                                     numbersequal = False
-#                                 counter = counter + 1
-#                             if numbersequal:
-#                                 blosversionIsApplicable = True
-#                     else:
-#                         blosversionIsApplicable = True
-#                 else:
-#                     raise TypeError("blacklist osversion = " + \
-#                                     str(blosversion) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(ListType) + \
-#                                     " but a " + str(vartype) + ".")
-# # if osfamily and operintingsystem and osversion are applicable it is in
-# # whitelist
-#                 if blosfamilyIsApplicable and bloperatingsytemIsApplicable and blosversionIsApplicable:
-#                     inBlacklist = True
-#                     break
-#             else:
-#                 raise TypeError("blacklist item = " + \
-#                                     str(item) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(DictType) + \
-#                                     " but a " + str(itemtype) + ".")
-# 
-# # See if isApplicable is valid due to the whitlist
-#     if processWhiteList and inWhitlist:
-#         isApplicableWhiteList = True
-#     elif processWhiteList and not inWhitlist:
-#         isApplicableWhiteList = False
-#     elif not processWhiteList:
-#         isApplicableWhiteList = True
-# 
-# # See if isApplicable is valid due to the blacklist
-#     if processBlackList and inBlacklist:
-#         isApplicableBlackList = False
-#     elif processBlackList and not inBlacklist:
-#         isApplicableBlackList = True
-#     elif not processBlackList:
-#         isApplicableBlackList = True
-# 
-# # Let's see what we should return
-#     if isApplicableWhiteList and isApplicableBlackList:
-#         isApplicableValue = True
-#     else:
-#         isApplicableValue = False
-# 
-#     return isApplicableValue
-
-###############################################################################
-
-
 def readFile(filepath, logger):
-    '''Read the contents of a file.
+    '''
+    Read the contents of a file.
+
     @author: dwalker
-    @param filepath: string
-    @param logger: logger object
-    @return: list  '''
+    @param filepath: string; path to file to read
+    @param logger: logger object; for logging
+    @return: contents
+    @rtype: list
+    '''
+
     contents = []
     try:
         f = open(filepath, 'r')
@@ -1045,41 +637,51 @@ def readFile(filepath, logger):
     return contents
 ###############################################################################
 
-
 def writeFile(tmpfile, contents, logger):
-    '''Write the string of the contents to a file.
+    '''
+    Write the string of the contents to a file.
+
     @author: dwalker
     @param tmpfile: string
     @param contents: string
     @param logger: logger object
-    @return: bool'''
-    debug = ""
+    @return: success
+    @rtype: bool
+    @change: Breen Malmberg - 5/8/2017 - refactor to handle both
+            list and string type contents parameter; no change needed
+            to implementation in rules
+    '''
+
+    success = True
+
     try:
-        w = open(tmpfile, "w")
-    except IOError:
-        debug += "unable to open the specified file\n"
-        debug += traceback.format_exc()
-        logger.log(LogPriority.DEBUG, debug)
-        return False
-    try:
-        w.write(contents)
-    except IOError:
-        debug += "unable to write to the specified file\n"
-        debug += +traceback.format_exc() + "\n"
-        logger.log(LogPriority.DEBUG, debug)
-        return False
-    w.close()
-    return True
+
+        w = open(tmpfile, 'w')
+        if isinstance(contents, basestring):
+            w.write(contents)
+        elif isinstance(contents, list):
+            w.writelines(contents)
+        else:
+            success = False
+            logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
+        w.close()
+    except Exception:
+        raise
+    return success
+
 ###############################################################################
 
 def getUserGroupName(filename):
-    '''This method gets the uid and gid string name of a file
+    '''
+    This method gets the uid and gid string name of a file
     and stores in a list where position 0 is the owner and 
     position 1 is the group
+
     @author: dwalker
-    @param filename: filename to get uid and gid name
+    @param filename: string; filename to get uid and gid name
     @return: list of uid (0) and gid (1)
     '''
+
     retval = []
     statdata = os.stat(filename)
     uid = statdata.st_uid
@@ -1092,9 +694,11 @@ def getUserGroupName(filename):
 ###############################################################################
 
 def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
-    '''This method is usually used in conjuction with getUserGroupName.
+    '''
+    This method is usually used in conjuction with getUserGroupName.
     Returned list from getUserGroupName is passed through this method along
     with desired owner and group string name and checked to see if they match
+
     @author: dwalker
     @param ownergrp: list containing user/owner string name (0) and group string
         name (1)
@@ -1104,6 +708,7 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
     @param logger: Logger object
     @return: list | bool
     '''
+
     retval = []
     if not ownergrp[0]:
         debug = "There is no owner provided for checkUserGroupName method\n"
@@ -1186,7 +791,6 @@ def checkPerms(path, perm, logger):
 
 ###############################################################################
 
-
 def setPerms(path, perm, logger, stchlogger="", myid=""):
     '''
     Set the given file's permissions.
@@ -1243,13 +847,16 @@ def setPerms(path, perm, logger, stchlogger="", myid=""):
 
 ###############################################################################
 
-
 def iterate(iditerator, rulenumber):
-    '''A method to create a unique id number for recording events.
+    '''
+    A method to create a unique id number for recording events.
+
     @author: dwalker
     @param iditerator: int
     @param rulenumber: int 
-    @return: string '''
+    @return: string
+    '''
+
     if len(str(rulenumber)) == 1:
         padding = "000"
     elif len(str(rulenumber)) == 2:
@@ -1270,10 +877,14 @@ def iterate(iditerator, rulenumber):
 ###############################################################################
 
 def createFile(path, logger):
-    '''Method that creates a file if not present.
+    '''
+    Method that creates a file if not present.
+
     @author: dwalker
     @param path: string
-    @return: bool '''
+    @return: bool
+    '''
+
     debug = ""
     try:
         pathdir, _ = os.path.split(path)
@@ -1326,7 +937,7 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
 
     if logger :
         def logprint(x):
-           logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
+            logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
     else :
         def logprint(x):
             print str(x)
@@ -1409,7 +1020,8 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
 
 
 def versioncomp(firstver, secondver):
-    '''versioncomp() is an alternate version comparison to the original
+    '''
+    versioncomp() is an alternate version comparison to the original
     isServerVersionHigher() function. This function takes two version strings
     as arguments. The second string is compared to the first and the results
     are based on that order. The return is a string that is one of the
@@ -1546,7 +1158,6 @@ def fixInflation(filepath, logger, perms, owner):
     except Exception as err:
         logger.log(LogPriority.ERROR, "stonixutilityfunctions.fixInflation(): " + str(err))
         retval = False
-        return retval
     return retval
 
 def validateParam(logger, param, ptype, pname):
@@ -1565,13 +1176,36 @@ def validateParam(logger, param, ptype, pname):
     '''
 
     valid = True
+    log = True
 
     try:
 
+        if not logger:
+            print "No logging object was passed to method validateParam. Printing to console instead..."
+            log = False
+
+        if not pname:
+            valid = False
+            if log:
+                logger.log(LogPriority.DEBUG, "Parameter pname was blank or None!")
+            else:
+                print "Parameter pname was blank or None!"
+            return valid
+        if not param:
+            log = False
+        if not ptype:
+            log = False
+
         if not isinstance(param, ptype):
             valid = False
-            logger.log(LogPriority.DEBUG, "Parameter: " + str(pname) + " needs to be of type " + str(ptype) + ". Got: " + str(type(param)))
+            if log:
+                logger.log(LogPriority.DEBUG, "Parameter: " + str(pname) + " needs to be of type " + str(ptype) + ". Got: " + str(type(param)))
+            else:
+                print "One or more passed parameters was not specified or was an invalid type!"
 
     except Exception, errmsg:
-        logger.log(LogPriority.ERROR, str(errmsg))
+        if log:
+            logger.log(LogPriority.ERROR, str(errmsg))
+        else:
+            print str(errmsg)
     return valid
