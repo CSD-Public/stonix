@@ -156,17 +156,21 @@ class SoftwareBuilder():
         print " "
 
         if self.signature:
-            while True:
+            count = 0
+            while count < 3:
                 success = False
                 self.keyuser = os.environ['SUDO_USER']
                 self.keypass = getpass.getpass("Keychain Password: ") 
 
-                if (self.mk.lockKeychain(allKeychains=True)):
+                if (self.mk.lockKeychain(self.keychain)):
                     success, _ = self.mk.unlockKeychain(self.keypass, self.keychain)
                 if success:
                     break
                 else:
                     print "Sorry, Keychain password is not valid... Please try again."
+                count += 1
+            if not success:
+                sys.exit(1)
             #####
             # Get a translated password
             self.ordPass = self.getOrdPass(self.keypass)

@@ -423,7 +423,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                 cmd = { "lock-keychain" : [keychain] }
             success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
 
-        return success
+        return success, stdout
 
     #-------------------------------------------------------------------------
 
