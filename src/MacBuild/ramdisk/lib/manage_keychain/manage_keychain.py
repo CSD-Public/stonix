@@ -232,11 +232,11 @@ class ManageKeychain(object):
         self.__calledBy()
         #####
         # Call factory created object's mirror method
-        success = self.keychainMgr.lockKeychain(*args, **kwargs)
+        success, output = self.keychainMgr.unlockKeychain(*args, **kwargs)
         #####
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
-        return success
+        return success, output
 
     #----------------------------------------------------------------------
 
