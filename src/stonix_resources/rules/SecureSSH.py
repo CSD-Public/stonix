@@ -36,17 +36,20 @@ Created on Feb 19, 2013
 @change: 2017/01/04 Breen Malmberg - added more detail to the help text to make
         it more clear to the end user, what the rule actually does.
 '''
+
 from __future__ import absolute_import
+
 import os
 import traceback
 import re
+
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
 from ..stonixutilityfunctions import createFile
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-from __builtin__ import True
+from ..ServiceHelper import ServiceHelper
 
 
 class SecureSSH(Rule):
@@ -118,19 +121,45 @@ PermitUserEnvironment'''
 ###############################################################################
 
     def report(self):
+        '''
+        check if ssh is installed and if the correct configuration options
+        are set in the configuration files
+
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
+        @change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
+                that ssh is already loaded before we report on its configuration
+        '''
+
+        self.detailedresults = ""
+        self.installed = False
+        packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.compliant = True
+        self.sh = ServiceHelper(self.environ, self.logger)
+        self.macloaded = False
+
         try:
-            installed = False
-            packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
-            ph = Pkghelper(self.logger, self.environ)
-            for package in packages:
-                if ph.check(package):
-                    installed = True
-                    break
-            if not installed:
-                self.compliant = True
-                self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
-                return self.compliant
+
+            if self.environ.getostype() != "Mac OS X":
+                for package in packages:
+                    if self.ph.check(package):
+                        self.installed = True
+                        break
+                if not self.installed:
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
+            else:
+                if self.sh.auditservice("/System/Library/LaunchDaemons/ssh.plist", "com.openssh.sshd"):
+                    self.macloaded = True
+                if not self.macloaded:
+                    self.detailedresults += "\nSSH not installed/enabled. Nothing to configure."
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
+
             self.client = {"Host": "*",
                            "Protocol": "2",
                            "GSSAPIAuthentication": "yes",
@@ -149,12 +178,12 @@ PermitUserEnvironment'''
                            "GSSAPIAuthentication": "yes",
                            "GSSAPICleanupCredentials": "yes",
                            "UsePAM": "yes",
-                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr," + \
-                                "aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc",
+                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc",
                            "PermitUserEnvironment": "no"}
-            self.detailedresults = ""
+
             compliant = True
             debug = ""
+
             if self.environ.getostype() == "Mac OS X":
                 if re.search("10\.11\.*|10\.12\.*", self.environ.getosver()):
                     self.path1 = '/private/etc/ssh/sshd_config'
@@ -167,7 +196,7 @@ PermitUserEnvironment'''
                 self.path2 = "/etc/ssh/ssh_config"  # client file
 
             if os.path.exists(self.path1):
-                tpath1 = self.path1 + ".tmp"
+                tpath1 = self.path1 + ".stonixtmp"
                 if re.search("Ubuntu", self.environ.getostype()):
                     del(self.server["GSSAPIAuthentication"])
                     del(self.server["KerberosAuthentication"])
@@ -199,7 +228,7 @@ PermitUserEnvironment'''
                 self.detailedresults += self.path1 + " does not exist\n"
                 compliant = False
             if os.path.exists(self.path2):
-                tpath2 = self.path2 + ".tmp"
+                tpath2 = self.path2 + ".stonixtmp"
                 if re.search("Ubuntu", self.environ.getostype()):
                     del(self.client["GSSAPIAuthentication"])
                 self.ed2 = KVEditorStonix(self.statechglogger,
@@ -227,11 +256,13 @@ PermitUserEnvironment'''
                 self.detailedresults += self.path2 + " does not exist\n"
                 compliant = False
             self.compliant = compliant
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
@@ -242,18 +273,52 @@ PermitUserEnvironment'''
 ###############################################################################
 
     def fix(self):
+        '''
+        apply configuration options to config files
+
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Breen Malmberg
+        @change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
+                that ssh is already loaded before we attempt to configure it;
+                added logging
+        '''
+
+        self.detailedresults = ""
+        self.iditerator = 0
+        self.rulesuccess = True
+
         try:
+
             if not self.ci.getcurrvalue():
-                return
-            self.detailedresults = ""
+                self.detailedresults += "\nThe rule CI was not enabled, so nothing was done."
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+
+            if self.environ.getostype() != "Mac OS X":
+                if not self.installed:
+                    self.detailedresults += "\nSSH is not installed. Nothing to configure."
+                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.rulesuccess
+
+            if self.environ.getostype() == "Mac OS X":
+                if not self.macloaded:
+                    self.detailedresults += "\nSSH is not loaded. Will not configure it."
+                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.rulesuccess
+
             created1, created2 = False, False
             debug = ""
 
-            self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            tpath1 = self.path1 + ".tmp"
+            tpath1 = self.path1 + ".stonixtmp"
+
+            print "\n\n\n\nBEGINNING CONFIGURATION OF SSH\n\n\n\n"
 
             if not os.path.exists(self.path1):
                 createFile(self.path1, self.logger)
@@ -263,9 +328,10 @@ PermitUserEnvironment'''
                 event = {"eventtype": "creation",
                          "filepath": self.path1}
                 self.statechglogger.recordchgevent(myid, event)
+
             if os.path.exists(self.path1):
                 if not self.ed1:
-                    tpath1 = self.path1 + ".tmp"
+                    tpath1 = self.path1 + ".stonixtmp"
                     if re.search("Ubuntu", self.environ.getostype()):
                         del(self.server["GSSAPIAuthentication"])
                         del(self.server["KerberosAuthentication"])
@@ -298,21 +364,19 @@ PermitUserEnvironment'''
                     if self.ed1.fix():
                         self.detailedresults += "kveditor1 fix ran successfully\n"
                         if self.ed1.commit():
-                            self.detailedresults += "kveditor1 commit ran \
-successfully\n"
+                            self.detailedresults += "kveditor1 commit ran successfully\n"
+                            print "\nKVEDITOR1 COMMITTED ITS CHANGES\n"
                         else:
-                            self.detailedresults += "kveditor1 commit did not run \
-successfully\n"
+                            self.detailedresults += "kveditor1 commit did not run successfully\n"
                             self.rulesuccess = False
                     else:
-                        self.detailedresults += "kveditor1 fix did not run \
-successfully\n"
+                        self.detailedresults += "kveditor1 fix did not run successfully\n"
                         self.rulesuccess = False
                     os.chown(self.path1, 0, 0)
                     os.chmod(self.path1, 420)
                     resetsecon(self.path1)
 
-            tpath2 = self.path2 + ".tmp"
+            tpath2 = self.path2 + ".stonixtmp"
             if not os.path.exists(self.path2):
                 createFile(self.path2, self.logger)
                 created2 = True
@@ -324,7 +388,7 @@ successfully\n"
 
             if os.path.exists(self.path2):
                 if not self.ed2:
-                    tpath2 = self.path2 + ".tmp"
+                    tpath2 = self.path2 + ".stonixtmp"
                     if re.search("Ubuntu", self.environ.getostype()):
                         del(self.client["GSSAPIAuthentication"])
                     self.ed2 = KVEditorStonix(self.statechglogger,
@@ -356,21 +420,22 @@ successfully\n"
                     if self.ed2.fix():
                         self.detailedresults += "kveditor2 fix ran successfully\n"
                         if self.ed2.commit():
-                            self.detailedresults += "kveditor2 commit ran \
-successfully\n"
+                            self.detailedresults += "kveditor2 commit ran successfully\n"
+                            print "\nKVEDITOR2 COMMITTED ITS CHANGES\n"
                         else:
-                            self.detailedresults += "kveditor2 commit did not \
-run successfully\n"
+                            self.detailedresults += "kveditor2 commit did not run successfully\n"
                             self.rulesuccess = False
                     else:
-                        self.detailedresults += "kveditor2 fix did not run \
-successfully\n"
+                        self.detailedresults += "kveditor2 fix did not run successfully\n"
                         self.rulesuccess = False
                     os.chown(self.path2, 0, 0)
                     os.chmod(self.path2, 420)
                     resetsecon(self.path2)
             if debug:
                 self.logger.log(LogPriority.DEBUG, debug)
+
+            print "\n\n\n\nEND OF CONFIGURATION OF SSH\n\n\n\n"
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
