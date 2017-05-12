@@ -318,8 +318,6 @@ PermitUserEnvironment'''
                 self.statechglogger.deleteentry(event)
             tpath1 = self.path1 + ".stonixtmp"
 
-            print "\n\n\n\nBEGINNING CONFIGURATION OF SSH\n\n\n\n"
-
             if not os.path.exists(self.path1):
                 createFile(self.path1, self.logger)
                 created1 = True
@@ -365,7 +363,6 @@ PermitUserEnvironment'''
                         self.detailedresults += "kveditor1 fix ran successfully\n"
                         if self.ed1.commit():
                             self.detailedresults += "kveditor1 commit ran successfully\n"
-                            print "\nKVEDITOR1 COMMITTED ITS CHANGES\n"
                         else:
                             self.detailedresults += "kveditor1 commit did not run successfully\n"
                             self.rulesuccess = False
@@ -421,7 +418,6 @@ PermitUserEnvironment'''
                         self.detailedresults += "kveditor2 fix ran successfully\n"
                         if self.ed2.commit():
                             self.detailedresults += "kveditor2 commit ran successfully\n"
-                            print "\nKVEDITOR2 COMMITTED ITS CHANGES\n"
                         else:
                             self.detailedresults += "kveditor2 commit did not run successfully\n"
                             self.rulesuccess = False
@@ -433,8 +429,6 @@ PermitUserEnvironment'''
                     resetsecon(self.path2)
             if debug:
                 self.logger.log(LogPriority.DEBUG, debug)
-
-            print "\n\n\n\nEND OF CONFIGURATION OF SSH\n\n\n\n"
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
