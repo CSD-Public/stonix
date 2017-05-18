@@ -167,8 +167,8 @@ effect."""
             self.pamauthfile = "/etc/pam.d/system-auth-ac"
     def report(self):
         try:
-            if self.ph.manager in ("zypper"):
-                return
+#             if self.ph.manager in ("zypper"):
+#                 return
             compliant = True
             self.detailedresults = ""
             debug = ""
@@ -186,7 +186,7 @@ effect."""
             self.pwqualitypkgs = ["libpam-pwquality",
                                   "pam_pwquality",
                                   "libpwquality"]
-            self.packages = ["nss-pam-ldapd", "openldap-clients", "sssd",
+            self.packages = ["openldap-clients", "sssd",
                        "krb5-workstation", "pam_ldap", "nss-pam-ldapd",
                        "libpam-ldapd", "libpam-krb5",
                        "libnss-sss", "libpam-sss", "yast2-auth-client",
@@ -199,6 +199,8 @@ effect."""
                 self.packages.remove("libnss-sss")
                 self.packages.remove("libpam-sss")
                 self.packages.remove("yast2-auth-client")
+            if self.ph.manager == "zypper":
+                self.packages.remove("pam_ldap")
             for package in self.packages:
                 if not self.ph.check(package) and \
                    self.ph.checkAvailable(package):
@@ -216,165 +218,165 @@ effect."""
                 self.ci4comp = False
                 debug += "checkotherpam method is False compliancy\n"
                 compliant = False
-#             if not self.nslcd:
-#                 if self.ph.manager == "dnf":
-#                     sssdconfpath = "/etc/sssd/conf.d/sssd.conf"
-#                 else:
-#                     sssdconfpath = "/etc/sssd/sssd.conf"
-#                 self.sssdconfpath = sssdconfpath
-#                 sssdconfdict = {"services": "nss, pam",
-#                                 "filter_users": "root",
-#                                 "filter_groups": "root",
-#                                 "ldap_uri": "ldap://" + server,
-#                                 "id_provider": "ldap",
-#                                 "auth_provider": "krb5",
-#                                 "krb5_realm": "lanl.gov",
-#                                 "krb5_server": "kerberos.lanl.gov," +
-#                                 "kerberos-slaves.lanl.gov"}
-#                 self.sssdconfdict = sssdconfdict
-#                 if not self.sh.auditservice("sssd"):
-#                     compliant = False
-#                     self.detailedresults += "sssd service is not activated\n"
-#                 if os.path.exists(sssdconfpath):
-#                     tmppath = sssdconfpath + ".tmp"
-#                     self.editor = KVEditorStonix(self.statechglogger,
-#                                                  self.logger, "conf",
-#                                                  sssdconfpath,
-#                                                  tmppath, sssdconfdict,
-#                                                  "present", "openeq")
-#                     if not self.editor.report():
-#                         compliant = False
-#                         self.detailedresults += "The correct settings were not found in " + \
-#                             sssdconfpath + "\n" + str(self.editor.fixables) + \
-#                             "\n"
-#                 else:
-#                     compliant = False
-#                     self.detailedresults += sssdconfpath + " does not exist\n"
-# 
-#                 nsswitchpath = "/etc/nsswitch.conf"
-#                 self.nsswitchpath = nsswitchpath
-#                 nsswitchsettings = ['passwd:    compat sss',
-#                                     'shadow:    compat sss',
-#                                     'group:     compat sss']
-#                 self.nsswitchsettings = nsswitchsettings
-#                 if os.path.exists(nsswitchpath):
-#                     if not self.__checkconf(nsswitchpath, nsswitchsettings):
-#                         compliant = False
-#                     elif not checkPerms(nsswitchpath, [0, 0, 0644],
-#                                         self.logger):
-#                         compliant = False
-#                         self.detailedresults += "Settings in " + nsswitchpath + " are " + \
-#                             "correct, but the file's permissions are " + \
-#                             "incorrect\n"
-#                 else:
-#                     compliant = False
-#                     self.detailedresults += nsswitchpath + " does not exist\n"
-#             else:
-#                 if not self.sh.auditservice("nslcd"):
-#                     compliant = False
-#                     self.detailedresults += "nslcd service is not activated\n"
-# 
-#                 ldapfile = "/etc/nslcd.conf"
-#                 self.ldapfile = ldapfile
-#                 if re.search("ubuntu", self.myos):
-#                     gid = "gid nslcd"
-#                 else:
-#                     gid = "gid ldap"
-#                 if re.match('ldap.lanl.gov$', server):
-#                     self.ldapsettings = ['uri ldap://' + server,
-#                                          'base dc=lanl,dc=gov',
-#                                          'base passwd ou=unixsrv,dc=lanl,' +
-#                                          'dc=gov',
-#                                          'uid nslcd',
-#                                          gid,
-#                                          'ssl no',
-#                                          'nss_initgroups_ignoreusers root']
-#                 else:
-#                     serversplit = server.split(".")
-#                     if len(serversplit) != 3:
-#                         compliant = False
-#                         self.validLdap = False
-#                         error = "Custom LDAPServer does not follow " + \
-#                             "convention of \"[server].[domain].[tld]\". " + \
-#                             "ConfigureLANLLDAP cannot automate your LDAP " + \
-#                             "setup."
-#                         self.logger.log(LogPriority.ERROR, error)
-#                         self.detailedresults += "ERROR: " + error + "\n"
-#                     else:
-#                         self.ldapsettings = ['uri ldap://' + server,
-#                                              'base dc=' + serversplit[1] +
-#                                              ",dc=" + serversplit[2],
-#                                              'uid nslcd',
-#                                              gid,
-#                                              'ssl no',
-#                                              'nss_initgroups_ignoreusers root']
-#                 ldapsettings = self.ldapsettings
-#                 if os.path.exists(ldapfile):
-#                     if not self.__checkconf(ldapfile, ldapsettings):
-#                         compliant = False
-#                     elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
-#                         compliant = False
-#                         self.detailedresults += "Settings in " + ldapfile + " are " + \
-#                             "correct, but the file's permissions are " + \
-#                             "incorrect\n"
-#                 else:
-#                     compliant = False
-#                     self.detailedresults += ldapfile + " does not exist.\n"
-# 
-#                 # nsswitch settings. Deb distros prefer "compat" to "files" as
-#                 # the default, but LANL does not use NSS netgroups, so we will
-#                 # use "files ldap" for all systems
-#                 nsswitchpath = "/etc/nsswitch.conf"
-#                 self.nsswitchpath = nsswitchpath
-#                 nsswitchsettings = ['passwd:    files ldap',
-#                                     'shadow:    files ldap',
-#                                     'group:     files ldap']
-#                 self.nsswitchsettings = nsswitchsettings
-#                 if os.path.exists(nsswitchpath):
-#                     if not self.__checkconf(nsswitchpath, nsswitchsettings):
-#                         compliant = False
-#                     elif not checkPerms(nsswitchpath, [0, 0, 0644],
-#                                         self.logger):
-#                         compliant = False
-#                         self.detailedresults += "Settings in " + nsswitchpath + " are " + \
-#                             "correct, but the file's permissions are " + \
-#                             "incorrect\n"
-#                 else:
-#                     compliant = False
-#                     self.detailedresults += nsswitchpath + " does not exist\n"
-# 
-#                 # On Ubuntu, Unity/LightDM requires an extra setting to add an
-#                 # option to the login screen for network users
-# 
-#                 if re.search("ubuntu", self.myos):
-#                     # search for versions 16-19 (may have to update later if they change
-#                     # the way lightdm is configured again in the future..
-#                     if re.search('[1][6-9]\.', self.environ.getosver(), re.IGNORECASE):
-#                         lightdmconf = "/etc/lightdm/lightdm.conf.d/50-unity-greeter.conf"
-#                         self.lightdmconf = lightdmconf
-#                         tmppath = lightdmconf + ".tmp"
-#                         manLogin = {"Seat:*": {"greeter-session": "unity-greeter",
-#                                                "greeter-show-manual-login": "true"}}
-#                         self.editor2 = KVEditorStonix(self.statechglogger,
-#                                                       self.logger, "tagconf",
-#                                                       lightdmconf,
-#                                                       tmppath, manLogin,
-#                                                       "present", "closedeq")
-#                     else:
-#                         lightdmconf = "/etc/lightdm/lightdm.conf"
-#                         self.lightdmconf = lightdmconf
-#                         tmppath = lightdmconf + ".tmp"
-#                         manLogin = {"Seat:*": {"greeter-session": "unity-greeter",
-#                                                "greeter-show-manual-login": "true"}}
-#                         self.editor2 = KVEditorStonix(self.statechglogger,
-#                                                       self.logger, "tagconf",
-#                                                       lightdmconf,
-#                                                       tmppath, manLogin,
-#                                                       "present", "closedeq")
-#                     if not self.editor2.report():
-#                         compliant = False
-#                         self.detailedresults += '"greeter-show-manual-login=true" not ' + \
-#                             "present in " + lightdmconf + "\n"
+            if not self.nslcd:
+                if self.ph.manager == "dnf":
+                    sssdconfpath = "/etc/sssd/conf.d/sssd.conf"
+                else:
+                    sssdconfpath = "/etc/sssd/sssd.conf"
+                self.sssdconfpath = sssdconfpath
+                sssdconfdict = {"services": "nss, pam",
+                                "filter_users": "root",
+                                "filter_groups": "root",
+                                "ldap_uri": "ldap://" + server,
+                                "id_provider": "ldap",
+                                "auth_provider": "krb5",
+                                "krb5_realm": "lanl.gov",
+                                "krb5_server": "kerberos.lanl.gov," +
+                                "kerberos-slaves.lanl.gov"}
+                self.sssdconfdict = sssdconfdict
+                if not self.sh.auditservice("sssd"):
+                    compliant = False
+                    self.detailedresults += "sssd service is not activated\n"
+                if os.path.exists(sssdconfpath):
+                    tmppath = sssdconfpath + ".tmp"
+                    self.editor = KVEditorStonix(self.statechglogger,
+                                                 self.logger, "conf",
+                                                 sssdconfpath,
+                                                 tmppath, sssdconfdict,
+                                                 "present", "openeq")
+                    if not self.editor.report():
+                        compliant = False
+                        self.detailedresults += "The correct settings were not found in " + \
+                            sssdconfpath + "\n" + str(self.editor.fixables) + \
+                            "\n"
+                else:
+                    compliant = False
+                    self.detailedresults += sssdconfpath + " does not exist\n"
+  
+                nsswitchpath = "/etc/nsswitch.conf"
+                self.nsswitchpath = nsswitchpath
+                nsswitchsettings = ['passwd:    files compat sss',
+                                    'shadow:    files compat sss',
+                                    'group:     files compat sss']
+                self.nsswitchsettings = nsswitchsettings
+                if os.path.exists(nsswitchpath):
+                    if not self.__checkconf(nsswitchpath, nsswitchsettings):
+                        compliant = False
+                    elif not checkPerms(nsswitchpath, [0, 0, 0644],
+                                        self.logger):
+                        compliant = False
+                        self.detailedresults += "Settings in " + nsswitchpath + " are " + \
+                            "correct, but the file's permissions are " + \
+                            "incorrect\n"
+                else:
+                    compliant = False
+                    self.detailedresults += nsswitchpath + " does not exist\n"
+            else:
+                if not self.sh.auditservice("nslcd"):
+                    compliant = False
+                    self.detailedresults += "nslcd service is not activated\n"
+  
+                ldapfile = "/etc/nslcd.conf"
+                self.ldapfile = ldapfile
+                if re.search("ubuntu", self.myos):
+                    gid = "gid nslcd"
+                else:
+                    gid = "gid ldap"
+                if re.match('ldap.lanl.gov$', server):
+                    self.ldapsettings = ['uri ldap://' + server,
+                                         'base dc=lanl,dc=gov',
+                                         'base passwd ou=unixsrv,dc=lanl,' +
+                                         'dc=gov',
+                                         'uid nslcd',
+                                         gid,
+                                         'ssl no',
+                                         'nss_initgroups_ignoreusers root']
+                else:
+                    serversplit = server.split(".")
+                    if len(serversplit) != 3:
+                        compliant = False
+                        self.validLdap = False
+                        error = "Custom LDAPServer does not follow " + \
+                            "convention of \"[server].[domain].[tld]\". " + \
+                            "ConfigureLANLLDAP cannot automate your LDAP " + \
+                            "setup."
+                        self.logger.log(LogPriority.ERROR, error)
+                        self.detailedresults += "ERROR: " + error + "\n"
+                    else:
+                        self.ldapsettings = ['uri ldap://' + server,
+                                             'base dc=' + serversplit[1] +
+                                             ",dc=" + serversplit[2],
+                                             'uid nslcd',
+                                             gid,
+                                             'ssl no',
+                                             'nss_initgroups_ignoreusers root']
+                ldapsettings = self.ldapsettings
+                if os.path.exists(ldapfile):
+                    if not self.__checkconf(ldapfile, ldapsettings):
+                        compliant = False
+                    elif not checkPerms(ldapfile, [0, 0, 0600], self.logger):
+                        compliant = False
+                        self.detailedresults += "Settings in " + ldapfile + " are " + \
+                            "correct, but the file's permissions are " + \
+                            "incorrect\n"
+                else:
+                    compliant = False
+                    self.detailedresults += ldapfile + " does not exist.\n"
+  
+                # nsswitch settings. Deb distros prefer "compat" to "files" as
+                # the default, but LANL does not use NSS netgroups, so we will
+                # use "files ldap" for all systems
+                nsswitchpath = "/etc/nsswitch.conf"
+                self.nsswitchpath = nsswitchpath
+                nsswitchsettings = ['passwd:    files ldap',
+                                    'shadow:    files ldap',
+                                    'group:     files ldap']
+                self.nsswitchsettings = nsswitchsettings
+                if os.path.exists(nsswitchpath):
+                    if not self.__checkconf(nsswitchpath, nsswitchsettings):
+                        compliant = False
+                    elif not checkPerms(nsswitchpath, [0, 0, 0644],
+                                        self.logger):
+                        compliant = False
+                        self.detailedresults += "Settings in " + nsswitchpath + " are " + \
+                            "correct, but the file's permissions are " + \
+                            "incorrect\n"
+                else:
+                    compliant = False
+                    self.detailedresults += nsswitchpath + " does not exist\n"
+  
+                # On Ubuntu, Unity/LightDM requires an extra setting to add an
+                # option to the login screen for network users
+  
+                if re.search("ubuntu", self.myos):
+                    # search for versions 16-19 (may have to update later if they change
+                    # the way lightdm is configured again in the future..
+                    if re.search('[1][6-9]\.', self.environ.getosver(), re.IGNORECASE):
+                        lightdmconf = "/etc/lightdm/lightdm.conf.d/50-unity-greeter.conf"
+                        self.lightdmconf = lightdmconf
+                        tmppath = lightdmconf + ".tmp"
+                        manLogin = {"Seat:*": {"greeter-session": "unity-greeter",
+                                               "greeter-show-manual-login": "true"}}
+                        self.editor2 = KVEditorStonix(self.statechglogger,
+                                                      self.logger, "tagconf",
+                                                      lightdmconf,
+                                                      tmppath, manLogin,
+                                                      "present", "closedeq")
+                    else:
+                        lightdmconf = "/etc/lightdm/lightdm.conf"
+                        self.lightdmconf = lightdmconf
+                        tmppath = lightdmconf + ".tmp"
+                        manLogin = {"Seat:*": {"greeter-session": "unity-greeter",
+                                               "greeter-show-manual-login": "true"}}
+                        self.editor2 = KVEditorStonix(self.statechglogger,
+                                                      self.logger, "tagconf",
+                                                      lightdmconf,
+                                                      tmppath, manLogin,
+                                                      "present", "closedeq")
+                    if not self.editor2.report():
+                        compliant = False
+                        self.detailedresults += '"greeter-show-manual-login=true" not ' + \
+                            "present in " + lightdmconf + "\n"
 
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
@@ -439,10 +441,11 @@ effect."""
 
     def fix(self):
         try:
-            if self.ph.manager == "zypper":
-                return
+#             if self.ph.manager == "zypper":
+#                 return
             if not self.ci.getcurrvalue() and self.validLdap:
                 return
+            print "Inside fix!!!\n\n\n"
             success = True
             self.detailedresults = ""
             self.iditerator = 0
@@ -461,7 +464,9 @@ effect."""
             for package in self.packages:
                 if not self.ph.check(package):
                     if self.ph.checkAvailable(package):
+                        print "found package\n\n"
                         if not self.ph.install(package):
+                            print "unable to install " + package + "\n\n"
                             self.rulesuccess = False
                             self.detailedresults += "Unable to install " + \
                                 package + ".  Will not continue with fix\n"
@@ -471,6 +476,7 @@ effect."""
                                                  self.detailedresults)
                             return False
                         else:
+                            print "installed " + package + " successfully\n\n"
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "pkghelper",
@@ -556,142 +562,142 @@ effect."""
                 success = self.setotherpamsession()
             if not self.acccompliant:
                 success = self.setotherpamaccount()
-#             if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
-#                 success = False
-#                 self.detailedresults += "Problem writing new contents to " + \
-#                     self.nsswitchpath + "\n"
-# 
-#             if not self.nslcd:
-#                 if not self.__fixsssd():
-#                     success = False
-#                     self.detailedresults += "Failed to write good configuration to " + \
-#                         self.sssdconfpath + "\n"
-#                 if not self.sh.disableservice("nscd"):
-#                     warning = "Failed to disable nscd. This may require " + \
-#                         "an administrator to disable this service after a " + \
-#                         "reboot."
-#                     self.logger.log(LogPriority.WARNING, warning)
-#                 else:
-#                     self.iditerator += 1
-#                     myid = iterate(self.iditerator, self.rulenumber)
-#                     event = {"eventtype": "servicehelper",
-#                              "servicename": "nscd",
-#                              "startstate": "enabled",
-#                              "endstate": "disabled"}
-#                     self.statechglogger.recordchgevent(myid, event)
-#                 if self.sh.isrunning("sssd"):
-#                     if not self.sh.reloadservice("sssd"):
-#                         warning = "Failed to reload sssd service; the " + \
-#                             "system should be rebooted to finalize the " + \
-#                             "configuration."
-#                         self.logger.log(LogPriority.WARNING, warning)
-#                 if not self.sh.auditservice("sssd"):
-#                     if not self.sh.enableservice("sssd"):
-#                         success = False
-#                         self.detailedresults += "Failed to enable sssd service\n"
-#                     else:
-#                         self.iditerator += 1
-#                         myid = iterate(self.iditerator, self.rulenumber)
-#                         event = {"eventtype": "servicehelper",
-#                                  "servicename": "sssd",
-#                                  "startstate": "disabled",
-#                                  "endstate": "enabled"}
-#                         self.statechglogger.recordchgevent(myid, event)
-#             else:
-#                 ldapfile = self.ldapfile
-#                 tmppath = ldapfile + ".tmp"
-#                 ldapsettings = self.ldapsettings
-#                 if os.path.exists(ldapfile):
-#                     nonkv = []
-#                     ldapdict = dict()
-# 
-#                     # Use self.ldapsettings for loop, so that remove() will not
-#                     # wreak havoc with the loop's index.
-#                     for setting in self.ldapsettings:
-#                         # For anything that can be seen as a key:value pair, it
-#                         # will be easier to set it using a KVEditor. For other
-#                         # settings, a less refined approach is used.
-#                         split = setting.split()
-#                         if len(split) == 2:
-#                             ldapdict[split[0]] = split[1]
-#                         else:
-#                             nonkv.append(setting)
-#                             ldapsettings.remove(setting)
-#                     ldapKVE = KVEditorStonix(self.statechglogger, self.logger,
-#                                              "conf", ldapfile, tmppath,
-#                                              ldapdict, "present", "space")
-#                     ldapKVE.report()
-#                     if ldapKVE.fixables:
-#                         if ldapKVE.fix():
-#                             if ldapKVE.commit():
-#                                 debug = "The contents of " + ldapfile + \
-#                                     " have been corrected\n."
-#                                 self.logger.log(LogPriority.DEBUG, debug)
-#                             else:
-#                                 debug = "KVEditor commit to " + ldapfile + \
-#                                     " was not successful\n"
-#                                 self.logger.log(LogPriority.DEBUG, debug)
-#                                 success = False
-#                         else:
-#                             debug = "KVEditor fix of " + ldapfile + \
-#                                 " was not successful\n"
-#                             self.logger.log(LogPriority.DEBUG, debug)
-#                             success = False
-# 
-#                     ldapconf = readFile(ldapfile, self.logger)
-#                     # Back up detailedresults, so that we can ignore the
-#                     # report-focused output from checkconf()
-#                     results = self.detailedresults
-#                     for setting in nonkv:
-#                         if not self.__checkconf(ldapfile, [setting]):
-#                             ldapconf.append(setting + "\n")
-#                     self.detailedresults = results
-# 
-#                     if not self.__writeFile(ldapfile, "".join(ldapconf),
-#                                             [0, 0, 0600], self.created3):
-#                         success = False
-#                         self.detailedresults += "Problem writing new contents to " + \
-#                             ldapfile
-#                 else:
-#                     createFile(ldapfile, self.logger)
-#                     self.created3 = True
-#                     self.iditerator += 1
-#                     myid = iterate(self.iditerator, self.rulenumber)
-#                     event = {"eventtype": "creation", "filepath": ldapfile}
-#                     self.statechglogger.recordchgevent(myid, event)
-# 
-#                     if not self.__writeFile(ldapfile, "\n".join(ldapsettings),
-#                                             [0, 0, 0600], self.created3):
-#                         success = False
-#                         self.detailedresults += "Problem writing new contents to " + \
-#                             ldapfile
-# 
-#                 if re.search("ubuntu", self.myos):
-#                     lightdmconf = self.lightdmconf
-#                     if self.editor2.fixables:
-#                         if self.editor2.fix():
-#                             if self.editor2.commit():
-#                                 debug = "The contents of " + lightdmconf + \
-#                                     " have been corrected\n."
-#                                 self.logger.log(LogPriority.DEBUG, debug)
-#                             else:
-#                                 debug = "KVEditor commit to " + lightdmconf + \
-#                                     " was not successful\n"
-#                                 self.logger.log(LogPriority.DEBUG, debug)
-#                                 success = False
-#                         else:
-#                             debug = "KVEditor fix of " + lightdmconf + \
-#                                 " was not successful\n"
-#                             self.logger.log(LogPriority.DEBUG, debug)
-#                             success = False
-# 
-#                 if os.path.exists("/etc/init.d/nscd"):
-#                     cmd = ["/etc/init.d/nscd", "restart"]
-#                     self.ch.executeCommand(cmd)
-#                 cmd = ["/etc/init.d/nslcd", "restart"]
-#                 self.ch.executeCommand(cmd)
-#                 self.sh.enableservice("nscd")
-#                 self.sh.enableservice("nslcd")
+            if not self.__fixnss(self.nsswitchpath, self.nsswitchsettings):
+                success = False
+                self.detailedresults += "Problem writing new contents to " + \
+                    self.nsswitchpath + "\n"
+ 
+            if not self.nslcd:
+                if not self.__fixsssd():
+                    success = False
+                    self.detailedresults += "Failed to write good configuration to " + \
+                        self.sssdconfpath + "\n"
+                if not self.sh.disableservice("nscd"):
+                    warning = "Failed to disable nscd. This may require " + \
+                        "an administrator to disable this service after a " + \
+                        "reboot."
+                    self.logger.log(LogPriority.WARNING, warning)
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "servicehelper",
+                             "servicename": "nscd",
+                             "startstate": "enabled",
+                             "endstate": "disabled"}
+                    self.statechglogger.recordchgevent(myid, event)
+                if self.sh.isrunning("sssd"):
+                    if not self.sh.reloadservice("sssd"):
+                        warning = "Failed to reload sssd service; the " + \
+                            "system should be rebooted to finalize the " + \
+                            "configuration."
+                        self.logger.log(LogPriority.WARNING, warning)
+                if not self.sh.auditservice("sssd"):
+                    if not self.sh.enableservice("sssd"):
+                        success = False
+                        self.detailedresults += "Failed to enable sssd service\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "servicehelper",
+                                 "servicename": "sssd",
+                                 "startstate": "disabled",
+                                 "endstate": "enabled"}
+                        self.statechglogger.recordchgevent(myid, event)
+            else:
+                ldapfile = self.ldapfile
+                tmppath = ldapfile + ".tmp"
+                ldapsettings = self.ldapsettings
+                if os.path.exists(ldapfile):
+                    nonkv = []
+                    ldapdict = dict()
+  
+                    # Use self.ldapsettings for loop, so that remove() will not
+                    # wreak havoc with the loop's index.
+                    for setting in self.ldapsettings:
+                        # For anything that can be seen as a key:value pair, it
+                        # will be easier to set it using a KVEditor. For other
+                        # settings, a less refined approach is used.
+                        split = setting.split()
+                        if len(split) == 2:
+                            ldapdict[split[0]] = split[1]
+                        else:
+                            nonkv.append(setting)
+                            ldapsettings.remove(setting)
+                    ldapKVE = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", ldapfile, tmppath,
+                                             ldapdict, "present", "space")
+                    ldapKVE.report()
+                    if ldapKVE.fixables:
+                        if ldapKVE.fix():
+                            if ldapKVE.commit():
+                                debug = "The contents of " + ldapfile + \
+                                    " have been corrected\n."
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            else:
+                                debug = "KVEditor commit to " + ldapfile + \
+                                    " was not successful\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                success = False
+                        else:
+                            debug = "KVEditor fix of " + ldapfile + \
+                                " was not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+  
+                    ldapconf = readFile(ldapfile, self.logger)
+                    # Back up detailedresults, so that we can ignore the
+                    # report-focused output from checkconf()
+                    results = self.detailedresults
+                    for setting in nonkv:
+                        if not self.__checkconf(ldapfile, [setting]):
+                            ldapconf.append(setting + "\n")
+                    self.detailedresults = results
+  
+                    if not self.__writeFile(ldapfile, "".join(ldapconf),
+                                            [0, 0, 0600], self.created3):
+                        success = False
+                        self.detailedresults += "Problem writing new contents to " + \
+                            ldapfile
+                else:
+                    createFile(ldapfile, self.logger)
+                    self.created3 = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation", "filepath": ldapfile}
+                    self.statechglogger.recordchgevent(myid, event)
+  
+                    if not self.__writeFile(ldapfile, "\n".join(ldapsettings),
+                                            [0, 0, 0600], self.created3):
+                        success = False
+                        self.detailedresults += "Problem writing new contents to " + \
+                            ldapfile
+  
+                if re.search("ubuntu", self.myos):
+                    lightdmconf = self.lightdmconf
+                    if self.editor2.fixables:
+                        if self.editor2.fix():
+                            if self.editor2.commit():
+                                debug = "The contents of " + lightdmconf + \
+                                    " have been corrected\n."
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            else:
+                                debug = "KVEditor commit to " + lightdmconf + \
+                                    " was not successful\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                success = False
+                        else:
+                            debug = "KVEditor fix of " + lightdmconf + \
+                                " was not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+  
+                if os.path.exists("/etc/init.d/nscd"):
+                    cmd = ["/etc/init.d/nscd", "restart"]
+                    self.ch.executeCommand(cmd)
+                cmd = ["/etc/init.d/nslcd", "restart"]
+                self.ch.executeCommand(cmd)
+                self.sh.enableservice("nscd")
+                self.sh.enableservice("nslcd")
             self.rulesuccess = success
         except AssertionError:
             if not self.ci.getcurrvalue():

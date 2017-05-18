@@ -68,14 +68,14 @@ class Zypper(object):
             output = self.ch.getOutputString()
             if self.ch.getReturnCode() == 0:
                 if search("Abort, retry, ignore", output):
-                    self.detailedresults += "There is an error contacting " + \
+                    self.detailedresults = "There is an error contacting " + \
                         "one or more repos, aborting\n"
                     return False
-                self.detailedresults += package + \
+                self.detailedresults = package + \
                     " pkg installed successfully\n"
                 installed = True
             else:
-                self.detailedresults += package + " pkg not able to install\n"
+                self.detailedresults = package + " pkg not able to install\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)
             return installed
         except(KeyboardInterrupt, SystemExit):
@@ -102,13 +102,13 @@ class Zypper(object):
             output = self.ch.getOutputString()
             if self.ch.getReturnCode() == 0:
                 if search("Abort, retry, ignore", output):
-                    self.detailedresults += "There is an error contacting " + \
+                    self.detailedresults = "There is an error contacting " + \
                         "one or more repos, aborting\n"
                     return False
-                self.detailedresults += package + " pkg removed successfully\n"
+                self.detailedresults = package + " pkg removed successfully\n"
                 removed = True
             else:
-                self.detailedresults += package + \
+                self.detailedresults = package + \
                     " pkg not able to be removed\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)
             return removed
@@ -144,25 +144,25 @@ class Zypper(object):
                 output = self.ch.getOutput()
                 outputStr = self.ch.getOutputString()
                 if search("Abort, retry, ignore", outputStr):
-                    self.detailedresults += "There is an error contacting " + \
+                    self.detailedresults = "There is an error contacting " + \
                         "one or more repos, aborting\n"
                     return False
                 for line in output:
                     if search(package, line):
                         installed = True
                         break
-            elif self.ch.getReturnCode() == 106:
-                for line in output:
-                    if search(package, line):
-                        installed = True
-                        break
+#             elif self.ch.getReturnCode() == 106:
+#                 for line in output:
+#                     if search(package, line):
+#                         installed = True
+#                         break
             else:
                 installed = False
 
             if installed:
-                self.detailedresults += package + " pkg is installed\n"
+                self.detailedresults = package + " pkg is installed\n"
             else:
-                self.detailedresults += package + " pkg not found or may be \
+                self.detailedresults = package + " pkg not found or may be \
 misspelled\n"
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             return installed
@@ -195,13 +195,14 @@ misspelled\n"
                     if search(package, line):
                         available = True
                 if available:
-                    self.detailedresults += package + " pkg is available\n"
+                    self.detailedresults = package + " pkg is available\n"
                 else:
-                    self.detailedresults += package + " pkg is not available\n"
+                    self.detailedresults = package + " pkg is not available\n"
             else:
                 self.detailedresults = package + " pkg not found or may be \
 misspelled\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)
+            print "returning " + str(available) + " in package helper class\n\n"
             return available
         except(KeyboardInterrupt, SystemExit):
             raise
