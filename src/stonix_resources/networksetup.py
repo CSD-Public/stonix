@@ -734,7 +734,7 @@ class networksetup():
             if success:
                 if entry == None:
                     success = False
-                 self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
+                    self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
 
             if success:
                 command = [self.nsc, "-getmacaddress", key]
