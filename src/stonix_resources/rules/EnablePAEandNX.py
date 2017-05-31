@@ -205,7 +205,7 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
                       "centos": "kernel-PAE",
                       "cent os": "kernel-PAE",
                       "fedora": "kernel-PAE",
-                      "debian": "linux-generic-pae",
+                      "debian": "linux-image-686-pae",
                       "ubuntu": "linux-generic-pae",
                       "opensuse": "kernel-pae",
                       "suse": "kernel-pae"}
