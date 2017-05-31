@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Oct 11, 2012
 The Software Patching class checks to see if the system is patched, is using
 gpg secured updates where applicable and ensures that the system is
@@ -37,6 +36,7 @@ updating automatically from a scheduled job where feasible.
         for the time being, until the problems discovered in 0.9.7 triage can
         be fixed for it
 '''
+
 from __future__ import absolute_import
 import os
 import re
@@ -88,24 +88,29 @@ class SoftwarePatching(Rule):
         # this bit added to temporarily pull software patching from opensuse
         # until the fixes can be implemented
 
-        self.ci = self.initCi("bool",
-                              "scheduledupdate",
-                              "To disable creation of a scheduled " +
-                              "update job set the value of this " +
-                              "setting to no or false. Doing so " +
-                              "puts a larger burden for keeping " +
-                              "this system up to date on the system " +
-                              "administrators. This setting doesn't " +
-                              "apply to some systems whose updates " +
-                              "cannot be installed automatically " +
-                              "for various reasons.",
-                              True)
+        data = "bool"
+        key = "ScheduleUpdate"
+        instructions = "To disable creation of a scheduled " + \
+                          "update job set the value of this " + \
+                          "setting to no or false. Doing so " + \
+                          "puts a larger burden for keeping " + \
+                          "this system up to date on the system " + \
+                          "administrators. This setting doesn't " + \
+                          "apply to some systems whose updates " + \
+                          "cannot be installed automatically " + \
+                          "for various reasons."
+        default = True
+
+        self.ci = self.initCi(data, key, instructions, default)
+
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.caveats = ''
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
         self.constlist = [PROXY, UPDATESERVERS]
+
+
 
     def updated(self):
         '''
@@ -114,115 +119,34 @@ class SoftwarePatching(Rule):
         is patched or the check doesn't apply. If there are updates that need
         to be applied then it returns False.
 
-        @return: bool
+        @return: updated
+        @rtype: bool
         @author: dkennel
+        @change: Breen Malmberg - 4/26/2017 - added method call checkUpdate()
+                added code to use package helper instead of dynamically looking
+                up the package manager and command to use
         '''
+
         updated = False
         osEnvBkup = os.environ
+        if PROXY is not None:
+            os.environ["http_proxy"] = PROXY
+            os.environ["https_proxy"] = PROXY
+        self.ph = Pkghelper(self.logger, self.environ)
+
         try:
-            self.logger.log(LogPriority.DEBUG, 'Looking for packaging system')
-            if os.path.exists('/usr/bin/yum'):
-                self.logger.log(LogPriority.DEBUG, 'Found yum')
-                if PROXY is not None:
-                    os.environ["http_proxy"] = PROXY
-                    os.environ["https_proxy"] = PROXY
-                cmd = '/usr/bin/yum -q check-update &> /dev/null'
-                ret = subprocess.call(cmd, shell=True, close_fds=True)
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of yum check: ' + str(ret))
-                if ret == 0:
-                    updated = True
-            elif os.path.exists('/usr/sbin/freebsd-update'):
-                self.logger.log(LogPriority.DEBUG, 'Found freebsd-update')
-                cmd = '/usr/sbin/freebsd-update fetch'
-                chk = subprocess.Popen(cmd, shell=True, close_fds=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-                chkdata = chk.stdout.readlines()
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of freebsd-update fetch: ' +
-                                str(chkdata))
-                for line in chkdata:
-                    if re.search('No updates needed', line):
-                        updated = True
-            elif os.path.exists('/usr/bin/apt-get'):
-                self.logger.log(LogPriority.DEBUG, 'Found apt-get')
-                cmd = '/usr/bin/apt-get'
-                if PROXY is not None:
-                    os.environ["http_proxy"] = PROXY
-                    os.environ["https_proxy"] = PROXY
-                cmd1 = cmd + ' -q update &> /dev/null'
-                cmd2 = cmd + ' -s upgrade'
-                self.ch.executeCommand(cmd1)
-                ret = self.ch.getReturnCode()
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of apt-get update: ' + str(ret))
-                if ret != 0:
-                    # we couldn't update the apt-get cache network problem?
-                    return False
-                self.ch.executeCommand(cmd2)
-                chk = self.ch.getReturnCode()
-                chkdata = self.ch.getOutputString()
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of apt-get -s upgrade: ' + chkdata)
-                if re.search('^0 upgraded', chkdata, re.M):
-                    updated = True
-            elif os.path.exists('/usr/bin/emerge'):
-                self.logger.log(LogPriority.DEBUG, 'Found emerge')
-                cmd = '/usr/bin/emerge'
-                cmd = '/usr/bin/apt-get'
-                if PROXY is not None:
-                    os.environ["http_proxy"] = PROXY
-                    os.environ["https_proxy"] = PROXY
-                cmd1 = cmd + ' --sync'
-                cmd2 = cmd + ' -NuDp'
-                ret = subprocess.call(cmd1, shell=True, close_fds=True)
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of emerge --sync: ' + str(ret))
-                if ret != 0:
-                    # we couldn't update the portage cache network problem?
-                    return False
-                chk = subprocess.Popen(cmd2, shell=True, close_fds=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-                chkdata = chk.stdout.readlines()
-                updatecount = 0
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of updatecount: ' + str(updatecount))
-                for line in chkdata:
-                    if re.search('ebuild', line):
-                        updatecount = updatecount + 1
-                if updatecount == 0:
-                    updated = True
-            elif os.path.exists('/usr/bin/zypper'):
-                self.logger.log(LogPriority.DEBUG, 'Found zypper')
-                if PROXY is not None:
-                    os.environ["http_proxy"] = PROXY
-                    os.environ["https_proxy"] = PROXY
-                cmd = '/usr/bin/zypper lp'
-                chk = subprocess.Popen(cmd, shell=True, close_fds=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-                chkdata = chk.stdout.readlines()
-                updatecount = 0
-                self.logger.log(LogPriority.DEBUG,
-                                'Value of updatecount: ' + str(updatecount))
-                for line in chkdata:
-                    if re.search('security', line):
-                        updatecount = updatecount + 1
-                if updatecount == 0:
-                    updated = True
-            else:
-                self.caveats = self.caveats + 'Could not determine update ' + \
-                    'status of this system. '
-        except(OSError):
-            # Something bad happened while checking the status of updates
-            return False
+
+            if not self.ph.checkUpdate():
+                updated = True
+
+        except Exception:
+            raise
         os.environ = osEnvBkup
         return updated
 
     def report(self):
-        '''Method to report on the configuration status of the system.
+        '''
+        Method to report on the configuration status of the system.
 
         @return: self.compliant
         @rtype: bool
@@ -230,6 +154,7 @@ class SoftwarePatching(Rule):
         '''
 
         self.detailedresults = ""
+        self.caveats = ""
 
         # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
         if not self.checkConsts(self.constlist):
@@ -237,8 +162,6 @@ class SoftwarePatching(Rule):
             self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: PROXY, UPDATESERVERS"
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
-
-        self.caveats = ""
 
         try:
             
@@ -294,58 +217,73 @@ class SoftwarePatching(Rule):
             self.updatesec = updatesec
 
             self.detailedresults = self.detailedresults + self.caveats
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
+        except Exception:
+            self.compliant = False
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def cronsconfigured(self):
-        '''Method to check to see if updates are scheduled to run automatically
-
-        @return: bool
-        @author: dkennel
         '''
+        Method to check to see if updates are scheduled to run automatically
+
+        @return: cronpresent
+        @rtype: bool
+        @author: dkennel
+        @change: Breen Malmberg - 4/26/2017 - doc string edit; added try/except
+                
+        '''
+
         cronpresent = False
-        if os.path.exists('/var/spool/cron/root'):
-            fhandle = open('/var/spool/cron/root')
-            crons = fhandle.readlines()
-            fhandle.close()
-            for line in crons:
-                if re.search('^#', line):
-                    continue
-                elif re.search('yum', line) and re.search('-y update', line):
-                    cronpresent = True
-                elif re.search('emerge -[NuD]{2,3}', line) and \
-                re.search('emerge --sync', line):
-                    cronpresent = True
-                elif re.search('zypper -n', line) and \
-                re.search('patch|update|up|', line):
-                    cronpresent = True
-                elif re.search('apt-get update', line) and \
-                re.search('apt-get -y upgrade', line):
-                    cronpresent = True
-                elif re.search('freebsd-update fetch', line) and \
-                re.search('freebsd-update install', line):
-                    cronpresent = True
+
+        try:
+
+            if os.path.exists('/var/spool/cron/root'):
+                fhandle = open('/var/spool/cron/root')
+                crons = fhandle.readlines()
+                fhandle.close()
+                for line in crons:
+                    if re.search('^#', line):
+                        continue
+                    elif re.search('yum', line) and re.search('-y update', line):
+                        cronpresent = True
+                    elif re.search('emerge -[NuD]{2,3}', line) and \
+                    re.search('emerge --sync', line):
+                        cronpresent = True
+                    elif re.search('zypper -n', line) and \
+                    re.search('patch|update|up|', line):
+                        cronpresent = True
+                    elif re.search('apt-get update', line) and \
+                    re.search('apt-get -y upgrade', line):
+                        cronpresent = True
+                    elif re.search('freebsd-update fetch', line) and \
+                    re.search('freebsd-update install', line):
+                        cronpresent = True
+
+        except Exception:
+            raise
         return cronpresent
 
     def localupdatesource(self):
-        '''Method to check to see if the system is getting updates from a local
+        '''
+        Method to check to see if the system is getting updates from a local
         source.
 
-        @return: bool
+        @return: local
+        @rtype: bool
         @author: dkennel
+        @change: Breen Malmberg - 4/26/2017 - doc string edit; added try/except
         '''
+
         local = False
         myos = self.environ.getostype()
+
         if re.search('Red Hat Enterprise', myos):
             up2file = '/etc/sysconfig/rhn/up2date'
             if os.path.exists(up2file):
@@ -364,65 +302,79 @@ class SoftwarePatching(Rule):
         return local
 
     def updatesecurity(self):
-        '''Method to check to see if the package signing is set up correctly.
-
-        @return: bool
-        @author: dkennel
         '''
+        Method to check to see if the package signing is set up correctly.
+
+        @return: pkgsigning
+        @rtype: bool
+        @author: dkennel
+        @change: Breen Malmberg - 4/26/2017 - doc string edit; method now
+                returns a variable; added try/except
+        '''
+
+        pkgsigning = False
         gpgok = False
         gpgcheckok = True
-        if os.path.exists('/bin/rpm'):
-            rpmcmd = '/bin/rpm -q --queryformat "%{SUMMARY}\n" gpg-pubkey'
-            cmd = subprocess.Popen(rpmcmd, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, shell=True,
-                                   close_fds=True)
-            cmddata = cmd.stdout.readlines()
-            for line in cmddata:
-                if re.search('security@redhat.com|security@suse|fedora@fedoraproject|security@centos', line) and re.search('gpg', line):
-                    gpgok = True
 
-        filelist = []
-        repodir = '/etc/yum.repos.d'
-        if os.path.exists(repodir):
-            for repo in os.listdir(repodir):
-                filelist.append(os.path.join(repodir, repo))
-            for conffile in filelist:
-                self.logger.log(LogPriority.DEBUG,
-                                ['SoftwarePatching.updatesecurity',
-                                 'Checking conf file ' + conffile])
-                handle = open(conffile, 'r')
-                confdata = handle.read()
-                self.logger.log(LogPriority.DEBUG,
-                                ['SoftwarePatching.updatesecurity',
-                                 'Conf file data: ' + str(confdata)])
-                if re.search('gpgcheck=0', confdata):
-                    gpgcheckok = False
-                handle.close()
-            if os.path.exists('/etc/yum.conf'):
-                handle = open('/etc/yum.conf', 'r')
-                confdata = handle.read()
-                if not re.search('gpgcheck=1', confdata):
-                    gpgcheckok = False
-        rpmrc = ['/etc/rpmrc', '/usr/lib/rpm/rpmrc',
-                 '/usr/lib/rpm/redhat/rpmrc', '/root/.rpmrc']
-        for rcfile in rpmrc:
-            if os.path.exists(rcfile):
-                self.logger.log(LogPriority.DEBUG,
-                                ['SoftwarePatching.updatesecurity',
-                                 'Checking RC file ' + rcfile])
-                rchandle = open(rcfile, 'r')
-                rcdata = rchandle.read()
-                self.logger.log(LogPriority.DEBUG,
-                                ['SoftwarePatching.updatesecurity',
-                                 'RC File Data: ' + str(rcdata)])
-                if re.search('nosignature', rcdata):
-                    gpgcheckok = False
-                rchandle.close()
+        try:
 
-        if gpgok and gpgcheckok:
-            return True
-        else:
-            return False
+            if os.path.exists('/bin/rpm'):
+                rpmcmd = '/bin/rpm -q --queryformat "%{SUMMARY}\n" gpg-pubkey'
+                cmd = subprocess.Popen(rpmcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, close_fds=True)
+                cmddata = cmd.stdout.readlines()
+
+                for line in cmddata:
+                    if re.search('security@redhat.com|security@suse|fedora@fedoraproject|security@centos', line) and re.search('gpg', line):
+                        gpgok = True
+
+            filelist = []
+            repodir = '/etc/yum.repos.d'
+
+            if os.path.exists(repodir):
+                for repo in os.listdir(repodir):
+                    filelist.append(os.path.join(repodir, repo))
+                for conffile in filelist:
+                    if os.path.isfile(conffile):
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['SoftwarePatching.updatesecurity',
+                                         'Checking conf file ' + conffile])
+                        handle = open(conffile, 'r')
+                        confdata = handle.read()
+                        self.logger.log(LogPriority.DEBUG,
+                                        ['SoftwarePatching.updatesecurity',
+                                         'Conf file data: ' + str(confdata)])
+                        if re.search('gpgcheck=0', confdata):
+                            gpgcheckok = False
+                        handle.close()
+                    else:
+                        self.logger.log(LogPriority.DEBUG, str(conffile) + " is not a repo file. Skipping...")
+
+                if os.path.exists('/etc/yum.conf'):
+                    handle = open('/etc/yum.conf', 'r')
+                    confdata = handle.read()
+                    if not re.search('gpgcheck=1', confdata):
+                        gpgcheckok = False
+            rpmrc = ['/etc/rpmrc', '/usr/lib/rpm/rpmrc',
+                     '/usr/lib/rpm/redhat/rpmrc', '/root/.rpmrc']
+            for rcfile in rpmrc:
+                if os.path.exists(rcfile):
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['SoftwarePatching.updatesecurity',
+                                     'Checking RC file ' + rcfile])
+                    rchandle = open(rcfile, 'r')
+                    rcdata = rchandle.read()
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['SoftwarePatching.updatesecurity',
+                                     'RC File Data: ' + str(rcdata)])
+                    if re.search('nosignature', rcdata):
+                        gpgcheckok = False
+                    rchandle.close()
+
+            pkgsigning = gpgok and gpgcheckok
+
+        except Exception:
+            raise
+        return pkgsigning
 
     def fix(self):
         '''Method to set system settings to configure software update sources
@@ -433,13 +385,13 @@ class SoftwarePatching(Rule):
         @author: dkennel
         '''
 
-        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
         if not self.checkConsts(self.constlist):
             self.rulesuccess = False
             self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
             return self.rulesuccess
 
         try:
+
             self.detailedresults = ""
             if self.ci.getcurrvalue() and not self.crons:
                 self.makecrons()

@@ -128,11 +128,11 @@ class networksetup():
                 self.resultAppend("Non-WiFi Network Setup for " + \
                                   "services for location named " + \
                                   str(self.location))
-            
+
             for key in sorted(self.nso):
                 network = self.nso[key]
                 networkvalues = self.ns[network]
-                
+
                 networkname = networkvalues["name"]
                 networktype = networkvalues["type"]
                 networkenabled = networkvalues["enabled"]
@@ -346,6 +346,7 @@ class networksetup():
         success = True
         if pHardwarePort == None:
             self.initialize()
+            self.setNsoOrder()
             for key in sorted(self.nso):
                 network = self.nso[key]
                 networkvalues = self.ns[network]
@@ -479,7 +480,7 @@ class networksetup():
             newserviceonnexline = False
             newservice = False
             servicename = ""
-            
+            noinfo = False
             for line in self.ch.getOutput():
                 if newserviceonnexline:
                     newservice = True
@@ -566,6 +567,8 @@ class networksetup():
                     nameonnextline = False
                 if re.search("Wi-Fi", line, re.IGNORECASE):
                     nameonnextline = True
+            for sn in self.ns:
+                if self.ns[sn]["type"] == "wi-fi":
                     foundwifi = True
 
             getdevicestatuscommand = [self.nsc, "-getairportpower", self.nameofdevice]
@@ -586,7 +589,7 @@ class networksetup():
             self.logdispatch.log(LogPriority.DEBUG, "self.nameofdevice = " + str(self.nameofdevice))
             self.logdispatch.log(LogPriority.DEBUG, "foundwifi = " + str(foundwifi))
 
-            if self.nameofdevice and foundwifi:
+            if self.nameofdevice and not foundwifi:
                 self.logdispatch.log(LogPriority.DEBUG, "Updating self.ns wi-fi entry with enabled = " + str(deviceenabled))
                 self.notinservicelist = True
                 self.ns["Wi-Fi"] = {"name": self.nameofdevice,
@@ -614,6 +617,96 @@ class networksetup():
 
 ###############################################################################
 
+    def setNsoOrder(self):
+        '''
+        '''
+        #####
+        # Find the interface that needs to be at the top of the self.nso order        
+        cmd = ["/sbin/route", "get", "default"]
+        
+        self.ch.executeCommand(cmd)
+        
+        defaultInterface = None
+
+        for line in self.ch.getOutput():
+            try:
+                interface_match = re.match("\s+interface:\s+(\w+)", line)
+                defaultInterface = interface_match.group(1)
+            except (IndexError, KeyError, AttributeError), err:
+                self.logdispatch.log(LogPriority.DEBUG, str(line))
+            else:
+                break
+
+        #####
+        # Find the interface/service name via networksetup -listallhardwareports
+        cmd = ["/usr/sbin/networksetup", "-listallhardwareports"]
+
+        self.ch.executeCommand(cmd)
+
+        hardwarePort = ""
+        device = ""
+        enet = ""
+
+        for line in self.ch.getOutput():
+            try:
+                hw_match = re.match("^Hardware Port:\s+(.*)\s*$", line)
+                hardwarePort = hw_match.group(1)
+                #print hardwarePort
+            except AttributeError, err:
+                pass
+            try:
+                #print line
+                dev_match = re.match("^Device:\s+(.*)\s*$", line)
+                device = dev_match.group(1)
+                #print str(device)
+            except AttributeError, err:
+                pass
+            try:
+                enet_match = re.match("^Ethernet Address:\s+(\w+:\w+:\w+:\w+:\w+:\w+)\s*$", line)
+                enet = enet_match.group(1)
+                #print enet
+            except AttributeError, err:
+                pass
+
+            if re.match("^$", line) or re.match("^\s+$", line):
+                if re.match("^%s$"%device, defaultInterface):
+                    print device
+                    print defaultInterface
+                    break
+                hardwarePort = ""
+                device = ""
+                enet = ""
+
+        #####
+        # Reset NSO order if the defaultInterface is not at the top of the list
+        newnso = {}
+        i = 1
+        
+        print str(self.nso)
+        print "hardware port: " + hardwarePort
+                
+        for key, value in sorted(self.nso.iteritems()):
+            #print str(key) + " : " + str(value)
+            if re.match("^%s$"%hardwarePort.strip(), value.strip()):
+                key = re.sub("^\d\d\d\d$", "0000", key)
+                newnso[key] = value
+            else:
+                orderkey = str(i).zfill(4)
+                newnso[orderkey] = value
+                i = i + 1
+                print str(newnso)
+        #print str(newnso)
+        self.nso = newnso
+        print str(self.nso)
+        for key, value in sorted(self.nso.iteritems()):
+            print str(key) + " : " + str(value)
+
+        for item in self.ns: 
+            if re.match("^%s$"%hardwarePort.strip(), self.ns[item]["name"]) and self.ns[item]["type"] is "unknown" and re.match("^en", defaultInterface):
+                self.ns[item]["type"] = "ethernet"
+
+###############################################################################
+
     def updateNetworkConfigurationDictionaryEntry(self, pKey):
         '''
         update a single network configuration dictionary entry 
@@ -634,12 +727,14 @@ class networksetup():
         key = pKey
 
         try:
-
+            success = True
+            key = pKey
             entry = self.ns[key]
 
-            if entry == None:
-                success = False
-                self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
+            if success:
+                if entry == None:
+                    success = False
+                    self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
 
             if success:
                 command = [self.nsc, "-getmacaddress", key]
@@ -786,6 +881,7 @@ class networksetup():
             self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.disableNetworkService()")
 
         except Exception:
+            success = False
             raise
         return success
 
@@ -821,14 +917,15 @@ class networksetup():
                 self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName is blank or None!")
                 success = False
 
-            if str(networkName).strip().lower() == str(self.nameofdevice).strip().lower():
-                if self.notinservicelist:
-                    enablecommand = [self.nsc, "-setairportpower", networkName, "on"]
-                    self.ch.executeCommand(enablecommand)
-                    if self.ch.getReturnCode() != 0:
-                        success = False
-                        self.logdispatch.log(LogPriority.DEBUG, "Execution of command failed: " + str(enablecommand))
+            if str(networkName).strip().lower() == str(self.nameofdevice).strip().lower() and self.notinservicelist:
+                enablecommand = [self.nsc, "-setairportpower", networkName, "on"]
+                self.ch.executeCommand(enablecommand)
+                if self.ch.getReturnCode() != 0:
+                    success = False
+                    self.logdispatch.log(LogPriority.DEBUG, "Execution of command failed: " + str(enablecommand))
             else:
+                if networkName == "":
+                    success = False
                 if success:
                     command = [self.nsc, "-setnetworkserviceenabled", networkName, "on"]
                     self.ch.executeCommand(command)
@@ -843,6 +940,9 @@ class networksetup():
 
             self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.enableNetwork()")
 
+        except (KeyboardInterrupt, SystemExit):
+# User initiated exit
+            raise
         except Exception:
             raise
         return success

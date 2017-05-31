@@ -33,16 +33,23 @@ order to help protect against malicious code being run on the system.
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
 @change: 09/09/2014 Breen Malmberg fix and report methods rewritten to use new methods;
-                            added dictSearch() and dictFix() methods; added
-                            in-line comments
+        added dictSearch() and dictFix() methods; added
+        in-line comments
 @change: 2015/04/17 dkennel updated for new isApplicable
-@change 2017/04/05 Breen Malmberg changed search term for bindmnttmp variable to be regex search instead of string literal
+@change: 2017/04/05 Breen Malmberg changed search term for bindmnttmp variable to be regex search instead of string literal
         added string literal version of bindmnttmp under new var name fixbindmnttmp as the actual line to insert into the file
         this fixed an issue where it wasn't recognizing the line in the file if the spacing was different
+@change: ??? ??? dictFix and dictSearch methods removed, code re-written to not use them
+@change: 2017/05/04 Breen Malmberg re-factored much code in fix method; added new methods to handle
+        reading from and writing to files, and recording change events; fixed various doc strings
+@change: 2017/05/08 Breen Malmberg added btrfs to the list of localfstypes
 '''
+
 from __future__ import absolute_import
+
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate
+from ..stonixutilityfunctions import validateParam
 from ..logdispatcher import LogPriority
 
 import os
@@ -56,8 +63,6 @@ class SetFSMountOptions(Rule):
     partitions, file systems mounted on removable media, removable storage
     partitions, and temporary storage partitions such as /tmp and /dev/shm in
     order to help protect against malicious code being run on the system.
-
-    @author Breen Malmberg
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -101,7 +106,7 @@ class SetFSMountOptions(Rule):
 
         # list of local fs types
         self.localfstypes = ['ext2', 'ext3', 'ext4', 'xfs', 'jfs', 'reiser',
-                             'reiserfs']
+                             'reiserfs', 'btrfs']
         self.localfstypesoptions = ['nodev']
 
         # temp mount points options dict
@@ -124,6 +129,32 @@ class SetFSMountOptions(Rule):
             if os.path.exists(location):
                 self.filepath = location
 
+    def readFile(self, filename):
+        '''
+        read filname's contents and return a list of string of the output
+
+        @return: contentlines
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        contentlines = []
+
+        try:
+
+            if not validateParam(self.logger, filename, basestring, "filename"):
+                return contentlines
+
+            self.logger.log(LogPriority.DEBUG, "Reading contents from file " + str(filename) + " ...")
+
+            f = open(filename, 'r')
+            contentlines = f.readlines()
+            f.close()
+
+        except Exception:
+            raise
+        return contentlines
+
     def report(self):
         '''
         The report method examines the current configuration and determines
@@ -132,8 +163,9 @@ class SetFSMountOptions(Rule):
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
-        @author Breen Malmberg
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         @change: Breen Malmberg 09/05/2014 rewritten rule to be more atomic, less
                 complex and more human-readable
         '''
@@ -147,12 +179,8 @@ class SetFSMountOptions(Rule):
 
             if not self.checknfs():
                 self.compliant = False
-                self.logger.log(LogPriority.DEBUG, "checknfs() returned non compliant")
 
-            # search for the various config options
-            f = open(self.filepath, 'r')
-            contentlines = f.readlines()
-            f.close()
+            contentlines = self.readFile(self.filepath)
 
             for line in contentlines:
                 sline = line.split()
@@ -179,7 +207,7 @@ class SetFSMountOptions(Rule):
                     continue
 
                 if re.search('^' + self.reportbindmnttmp, line):
-                        foundcfgline = True
+                    foundcfgline = True
 
             if not foundcfgline:
                 self.compliant = False
@@ -187,13 +215,12 @@ class SetFSMountOptions(Rule):
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+            self.compliant = False
+            self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -228,11 +255,7 @@ class SetFSMountOptions(Rule):
                 retval = False
                 return retval
 
-            self.logger.log(LogPriority.DEBUG, "Attempting to open file: " + str(fstabfile) + " ...")
-            f = open(fstabfile, 'r')
-            contentlines = f.readlines()
-            f.close()
-            self.logger.log(LogPriority.DEBUG, "Successfully retrieved contents of file: " + str(fstabfile))
+            contentlines = self.readFile(fstabfile)
 
             self.logger.log(LogPriority.DEBUG, "Beginning check for required samba share mount options...")
             for line in contentlines:
@@ -256,7 +279,7 @@ class SetFSMountOptions(Rule):
                 if retval:
                     self.detailedresults += "\nAll detected samba shares have packet signing enabled."
                 if not retval:
-                    self.detaildresults += "\nOne or more detected samba shares do not have packet signing enabled!"
+                    self.detailedresults += "\nOne or more detected samba shares do not have packet signing enabled!"
             else:
                 self.logger.log(LogPriority.DEBUG, "No samba shares detected on this system.")
 
@@ -294,6 +317,153 @@ class SetFSMountOptions(Rule):
             raise
         return retval
 
+    def makeFileChanges(self, eventtype, filename, tmpfilename, contents, owner, group, perms):
+        '''
+        write the file changes to disk and record the change event
+
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        success = True
+
+        try:
+
+            if not validateParam(self.logger, eventtype, basestring, "eventtype"):
+                success = False
+                return success
+            if not validateParam(self.logger, filename, basestring, "filename"):
+                success = False
+                return success
+            if not validateParam(self.logger, tmpfilename, basestring, "tmpfilename"):
+                success = False
+                return success
+            if not isinstance(contents, basestring) and not isinstance(contents, list):
+                success = False
+                self.logger.log(LogPriority.DEBUG, "Parameter: contents needs to be of type string, or list. Got: " + str(type(contents)))
+                return success
+            if not validateParam(self.logger, owner, int, "owner"):
+                success = False
+                return success
+            if not validateParam(self.logger, group, int, "group"):
+                success = False
+                return success
+
+
+            if eventtype == "conf":
+
+                self.iditerator += 1
+
+                self.writeFile(tmpfilename, contents)
+
+                event = {'eventtype': eventtype,
+                         'filepath': filename}
+
+                myid = iterate(self.iditerator, self.rulenumber)
+
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(filename, tmpfilename, myid)
+
+                os.rename(tmpfilename, filename)
+                self.fixPerms(filename, owner, group, perms)
+
+            elif eventtype == "creation":
+
+                self.iditerator += 1
+
+                self.writeFile(filename, contents)
+
+                event = {'eventtype': eventtype,
+                         'filepath': filename}
+
+                myid = iterate(self.iditerator, self.rulenumber)
+
+                self.statechglogger.recordchgevent(myid, event)
+
+                self.fixPerms(filename, owner, group, perms)
+
+            elif eventtype == "perm":
+                pass # stub
+            else:
+                success = False
+                self.logger.log(LogPriority.DEBUG, "method makeFileChanges() got unknown eventtype. Could not proceed.")
+
+        except Exception:
+            raise
+        return success
+
+    def writeFile(self, filename, contents):
+        '''
+        write given contents to a file
+
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        success = True
+
+        try:
+
+            if not validateParam(self.logger, filename, basestring, "filename"):
+                success = False
+                return success
+
+            if isinstance(contents, basestring):
+
+                f = open(filename, 'w')
+                f.write(contents)
+                f.close()
+
+            elif isinstance(contents, list):
+
+                f = open(filename, 'w')
+                f.writelines(contents)
+                f.close()
+
+            else:
+                success = False
+                self.logger.log(LogPriority.DEBUG, "Parameter: contents needs to be of type string, or list. Got: " + str(type(contents)))
+
+        except Exception:
+            raise
+        return success
+
+    def fixPerms(self, filename, owner, group, perms):
+        '''
+        set permissions and ownership on a given filename
+
+        @param owner: int; desired owner uid
+        @param group: int; desired group gid
+        @param perms: oct; octal permissions
+        @param filename: string; file to change permissions/ownership on
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        success = True
+
+        try:
+
+            if not validateParam(self.logger, owner, int, "owner"):
+                success = False
+                return success
+            if not validateParam(self.logger, group, int, "group"):
+                success = False
+                return success
+            if not validateParam(self.logger, filename, basestring, "filename"):
+                success = False
+                return success
+
+            os.chmod(filename, perms)
+            os.chown(filename, owner, group)
+
+        except Exception:
+            raise
+        return success
+
     def fix(self):
         '''
         The fix method will apply the required settings to the system.
@@ -318,9 +488,7 @@ class SetFSMountOptions(Rule):
 
             if self.ci.getcurrvalue():
 
-                f = open(self.filepath, 'r')
-                contentlines = f.readlines()
-                f.close()
+                contentlines = self.readFile(self.filepath)
 
                 for line in contentlines:
                     sline = line.split()
@@ -359,39 +527,18 @@ class SetFSMountOptions(Rule):
                 if not bindtmplinefound:
                     contentlines.append('\n' + self.fixbindmnttmp + '\n')
 
-                tf = open(tmpfile, 'w')
-                tf.writelines(contentlines)
-                tf.close()
-
-                # undo stuff
-                event = {'eventtype': 'conf',
-                         'filepath': self.filepath}
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.filepath, tmpfile, myid)
-
-                os.rename(tmpfile, self.filepath)
-                os.chmod(self.filepath, 0644)
-                os.chown(self.filepath, 0, 0)
+                self.makeFileChanges("conf", self.filepath, tmpfile, contentlines, 0, 0, 0644)
 
             else:
 
-                self.detailedresults += '\n' + str(self.ci.getkey()) + \
-                ' was disabled. No action was taken.'
+                self.detailedresults += '\nSetFSMountOptions was not enabled. No action was taken.'
 
-        except (OSError, KeyError, IndexError):
-            self.rulesuccess = False
-            self.detailedresults += ' - ' + str(traceback.format_exc())
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults += '\n' + str(err) + ' - ' + \
-            str(traceback.format_exc())
+            self.detailedresults = traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults('fix', self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults('fix', self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
