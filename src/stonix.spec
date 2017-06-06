@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.7
+Version: 0.9.8
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -123,6 +123,22 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Jun 6 2017 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.8
+- Fixed a broken utility method
+- Fixed a logic issue in DisableGUILogon which was causing it to incorrectly report not compliant
+- SSH service should no longer be turned on if not already on
+- Fixed a traceback in SetFSMountOptions
+- Fixed a traceback in SoftwarePatching
+- Fixed an issue with opensuse 42 which was causing STONIX to choose the wrong package manager
+- Fixed package name for debian 32 bit in EnablePAEandNX
+- Fixed an issue in EnablePAEandNX which was causing it to look for a non-existent package in ubuntu 16 (32 bit)
+- Added better user feedback to BootLoaderPerms rule about what is not compliant when it is not compliant
+- Cleaned up and re-factored SetFSMountOptions for better code maintenance
+- ConfigurePasswordPolicy now adheres to the new FISMA High / Low setting in localize.py
+- Fixed incorrect file contents being added, in Fedora, for rule ConfigureLANLLDAP
+- Fixed package conflicts issue with opensuse, for rule ConfigureLANLLDAP
+- Fixed an incorrect return code comparison issue in helper class zypper.py
+
 * Tue Apr 4 2017 David Kennel <dkennel@lanl.gov> - 0.9.7
 - Added filter mechanism and variables to support fine tuned actions and rule filtering based on FISMA risk categorization
 - Corrected issue with duplicate rule id numbers affecting ConfigureProcessAccounting and EncryptSwap
