@@ -568,7 +568,8 @@ class SoftwareBuilder():
                            '-p', self.ordPass, '-u', self.keyuser, 
                            '-i', appName, 
                            '-d', 
-                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac"]
+                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
+                           '--keychain', self.keychain]
 
                     self.rw.setCommand(cmd)
                     self.rw.liftDown(self.keyuser, appPath)
@@ -577,7 +578,8 @@ class SoftwareBuilder():
                            '-u', self.keyuser, 
                            '-a', appName, 
                            '-d', 
-                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac"]
+                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
+                           '--keychain', self.keychain]
                     self.rw.setCommand(cmd)
                     workingDir = os.getcwd()
                     self.rw.liftDown(self.keyuser, appPath)
