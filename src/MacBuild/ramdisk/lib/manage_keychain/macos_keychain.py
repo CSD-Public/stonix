@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 import os
 import re
+import pwd
 ########## 
 # local app libraries
 from ..run_commands import RunWith
@@ -138,20 +139,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         error = ""
         returncode = ""
         uid = os.getuid()
-        euid = os.geteuid()
-        print '.'
-        print '.'
-        print '.'
-        print '.'
-        print '.'
-        self.logger.log(lp.DEBUG, '.')
-        self.logger.log(lp.DEBUG, '.')
-        self.logger.log(lp.DEBUG, '.')
-        self.logger.log(lp.DEBUG, 'uid: ' + str(uid))
-        self.logger.log(lp.DEBUG, 'euid: ' + str(euid))
-        self.logger.log(lp.DEBUG, '.')
-        self.logger.log(lp.DEBUG, '.')
-        self.logger.log(lp.DEBUG, '.')
+
         #####
         # Make sure the command dictionary was properly formed, as well as
         # returning the formatted subcommand list
@@ -479,6 +467,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         @author: Roy Nielsen
         """
         success = False
+        stdout = ""
         user = user.strip()
         oldPass = oldPass.strip()
         newPass = newPass.strip()
@@ -491,27 +480,25 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
            isinstance(oldPass, basestring) and \
            isinstance(newPass, basestring) and \
            self.isSaneFilePath(keychain):
-            if os.path.isfile(self.getUserHomeDir(user)):
+            userHome = pwd.getpwnam(user).pw_dir
+            if os.path.isdir(userHome) and not keychain:
                 #####
                 # if a keychain isn't passed in use the user's login keychain.
-                if not keychain:
-                    loginKeychain = self.getUserHomeDir(user) + \
-                                   "/Library/Keychains/login.keychain"
+                keychain = userHome + "/Library/Keychains/login.keychain-db"
             #####
             # Command setup - note that the keychain deliberately has quotes
             # around it - there could be spaces in the path to the keychain,
             # so the quotes are required to fully resolve the file path.  
             # Note: this is done in the build of the command, rather than 
             # the build of the variable.
-            cmd = { "set-keychain-password" : ["-o", oldPass, "-p", newPass,
-                                                  keychain] }
+            cmd = { "set-keychain-password" : ["-o", oldPass, "-p", newPass, keychain] }
             self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
             success, stdout, stderr, retcode = self.runSecurityCommand(cmd)
             self.logger.log(lp.DEBUG, "stdout: " + str(stdout))
             self.logger.log(lp.DEBUG, "stderr: " + str(stderr))
             self.logger.log(lp.DEBUG, "retcode: " + str(retcode))
 
-        return success
+        return success, stdout
 
     #-------------------------------------------------------------------------
 
