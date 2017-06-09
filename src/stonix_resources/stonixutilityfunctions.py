@@ -621,19 +621,21 @@ def readFile(filepath, logger):
     @param logger: logger object; for logging
     @return: contents
     @rtype: list
+    @change: bgonz12 - 2017/06/02 - fixed the implementation to use std lib's
+             readlines fuction, removing syntax error; moved the implementation
+             into the try block
     '''
 
     contents = []
     try:
         f = open(filepath, 'r')
+        contents = f.readlines()
+        f.close()
     except IOError:
         detailedresults = "unable to open the specified file"
         detailedresults += traceback.format_exc()
         logger.log(LogPriority.DEBUG, detailedresults)
         return []
-    for line in f:
-        contents.append(line)
-    f.close()
     return contents
 ###############################################################################
 
