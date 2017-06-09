@@ -26,6 +26,8 @@ Created on 2015/07/01
 @author: Eric Ball
 @change: 2015/12/07 eball Added information about REMOVEX CI to help text
 @change: 2016/07/06 eball Separated fix into discrete methods
+@change: 2017/06/02 bgonz12 Changed a conditional in reportUbuntu to search for
+                    "manual" using regex instead of direct comparison
 '''
 from __future__ import absolute_import
 
@@ -242,10 +244,10 @@ enabled.'''
         grub = "/etc/default/grub"
         if os.path.exists(ldmover):
             lightdmText = readFile(ldmover, self.logger)
-            if "manual" not in lightdmText:
+            if not re.search("manual", lightdmText[0], re.IGNORECASE):
                 compliant = False
-                results += ldmover + " exists, but does not contain text " + \
-                                     '"manual". GUI logon is still enabled\n'
+                results += ldmover + ' exists, but does not contain text ' + \
+                                    '"manual". GUI logon is still enabled\n'
         else:
             compliant = False
             results += ldmover + " does not exist; GUI logon is enabled\n"
@@ -262,7 +264,7 @@ enabled.'''
             compliant = False
             results += "Cannot find file " + grub
         if not compliant:
-            results = "/etc/init does not contain proper override file " + \
+            results += "/etc/init does not contain proper override file " + \
                       "for lightdm; GUI logon is enabled\n"
         return compliant, results
 
