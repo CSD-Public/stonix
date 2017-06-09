@@ -161,14 +161,16 @@ class SHlaunchd(object):
         @rtype: bool
         @param service string: Full path to the plist of the service to run
                 ex: /System/Library/LaunchDaemons/com.apple.someservice.plist
-        @param servicename string: Name of service without full path or the '.plist'
-                ex: com.apple.someservice
+        @param servicename: string; label of service in launchd (can be different
+                from filename of service plist)
         @author: ???
         @change: 2014-11-24 - ekkehard - remove -x option no supported in
         OS X Yosemite 10.10
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; minor
                 refactor; logging
         @change: Breen Malmberg - 1/31/2017 - doc string edit; minor refactor
+        @change: Breen Malmberg - 5/11/2017 - doc string edit to explain that
+                servicename can be different from the filename in service
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.auditservice()...")

@@ -21,103 +21,135 @@
 #                                                                             #
 ###############################################################################
 
-from subprocess import Popen, PIPE, call
-from re import search
-import traceback
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
+from stonixutilityfunctions import validateParam
+from subprocess import Popen, PIPE, call
+from re import search
 
 
 class AptGet(object):
-
-    '''Linux specific package manager for distributions that use the apt-get
+    '''
+    Linux specific package manager for distributions that use the apt-get
     command to install packages.
 
     @author: Derek T Walker
     @change: 2012/08/06 dwalker - Original Implementation
     @change: 2015/08/20 eball - Added getPackageFromFile
+    @change: 2017/04/27 Breen Malmberg - added two methods checkUpdate
+            and Update; fixed doc string formatting; removed detailedresults
+            reset in init; replaced with --force-yes flag with --assume-yes
+            (from the man page for apt-get: Force yes. This is a dangerous
+            option that will cause apt-get to continue without prompting
+            if it is doing something potentially harmful. It should not
+            be used except in very special situations. Using --force-yes
+            can potentially destroy your system!)
     '''
 
     def __init__(self, logger):
         self.logger = logger
-        self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
-        self.install = "sudo DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -y --force-yes install "
-        self.remove = "/usr/bin/apt-get -y remove "
+        self.aptgetloc = "/usr/bin/apt-get"
+        self.install = "sudo DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y --assume-yes install "
+        self.remove = self.aptgetloc + " -y remove "
+        self.dpkgloc = "/usr/bin/dpkg"
+        self.checkinstalled = self.dpkgloc + " -l "
+        self.checkupdates = self.aptgetloc + " -u upgrade --assume-no "
+        self.updatepkg = self.aptgetloc + " -u upgrade --assume-yes "
+
 ###############################################################################
-
     def installpackage(self, package):
-        '''Install a package. Return a bool indicating success or failure.
+        '''
+        Install a package. Return a bool indicating success or failure.
 
-        @param string package : Name of the package to be installed, must be
-            recognizable to the underlying package manager.
-        @return bool :
-        @author dwalker'''
+        @param package: string; Name of the package to be installed, must be
+                recognizable to the underlying package manager.
+        @return: installed
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
+                method now returns a variable; parameter validation added
+                detailedresults replaced with logging
+        '''
+
+        installed = False
+
         try:
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return installed
+
             self.ch.executeCommand(self.install + package)
-            if self.ch.getReturnCode() == 0:
-                self.detailedresults = package + " pkg installed successfully"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return True
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                installed = True
+
+            if installed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was installed successfully")
             else:
-                # try to install for a second time
-                self.ch.executeCommand(self.install + package)
-                if self.ch.getReturnCode() == 0:
-                    self.detailedresults = package + \
-                        " pkg installed successfully"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    return True
-                else:
-                    self.detailedresults = package + " pkg not able to install"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    return False
-        except(KeyboardInterrupt, SystemExit):
-            raise
+                self.logger.log(LogPriority.DEBUG, "Failed to install package " + str(package))
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
+        return installed
+
 ###############################################################################
 
     def removepackage(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
+        '''
+        Remove a package. Return a bool indicating success or failure.
 
-        @param string package : Name of the package to be removed, must be
-            recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        @param package: string; Name of the package to be removed, must be
+                recognizable to the underlying package manager.
+        @return: removed
+        @rtype: bool
+        @author: Derek T. Walker
+        '''
+
+        removed = False
 
         try:
-            self.ch.executeCommand(self.remove + package)
-            if self.ch.getReturnCode() == 0:
-                self.detailedresults = package + " pkg removed successfully"
-                self.logger.log(LogPriority.INFO, self.detailedresults)
-                return True
-            else:
-                self.detailedresults = package + " pkg not able to be removed"
-                self.logger.log(LogPriority.INFO, self.detailedresults)
-                return False
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
 
+            if not validateParam(self.logger, package, basestring, "package"):
+                return removed
+
+            self.ch.executeCommand(self.remove + package)
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                removed = True
+
+            if removed:
+                self.logger.log(LogPriority.DEBUG, "Successfully removed package " + str(package))
+            else:
+                self.loger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
+
+        except Exception:
+            raise
+        return removed
+
+###############################################################################
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if
+        '''
+        Check the installation status of a package. Return a bool; True if
         the package is installed.
 
-        @param: string package : Name of the package whose installation status
-            is to be checked, must be recognizable to the underlying package
-            manager.
-        @return: bool :
-        @author: dwalker'''
+        @param: package: string; Name of the package whose installation status
+                is to be checked, must be recognizable to the underlying package
+                manager.
+        @return: installed
+        @rtype: bool
+        @author: dwalker
+        @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
+                method now returns a variable; replaced detailedresults with
+                logging
+        '''
+
+        installed = False
 
         try:
+
             stringToMatch = "(.*)" + package + "(.*)"
-            self.ch.executeCommand(["/usr/bin/dpkg", "-l", package])
+            self.ch.executeCommand(self.checkinstalled + package)
             info = self.ch.getOutput()
             match = False
             for line in info:
@@ -128,26 +160,41 @@ class AptGet(object):
                         break
                 else:
                     continue
+
             if match:
-                self.detailedresults = package + " pkg found and installed\n"
-                self.logger.log(LogPriority.INFO, self.detailedresults)
-                return True
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
+                installed = True
             else:
-                self.detailedresults = package + " pkg not installed\n"
-                self.logger.log(LogPriority.INFO, self.detailedresults)
-                return False
-        except(KeyboardInterrupt, SystemExit):
-            raise
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is NOT installed")
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise
+        return installed
+
 ###############################################################################
 
     def checkAvailable(self, package):
+        '''
+        check if a given package is available
+
+        @param package: string; Name of package to check
+        @return: found
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/27/2017 - created doc string;
+                pulled result logging out of conditional; added
+                parameter validation
+                
+        '''
+
+        found = False
+
         try:
-            found = False
-            retval = call(["/usr/bin/apt-cache", "search", package],
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return found
+
+            retval = call(["/usr/bin/apt-cache", "search", "^" + package + "$"],
                           stdout=PIPE, stderr=PIPE, shell=False)
             if retval == 0:
                 message = Popen(["/usr/bin/apt-cache", "search", package],
@@ -159,50 +206,129 @@ class AptGet(object):
                 for line in info:
                     if search(package, line):
                         found = True
-                if found:
-                    self.detailedresults = package + " pkg is available"
-                else:
-                    self.detailedresults = package + " pkg is not available"
-            else:
-                self.detailedresults = package + " pkg not found or may be \
-misspelled"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return found
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise
-###############################################################################
 
+            if found:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is NOT available to install")
+
+        except Exception:
+            raise
+        return found
+
+    def Update(self, package=""):
+        '''
+        update the specified package if any
+        updates are available for it
+        if no package is specified, apply
+        all available updates for the system
+
+        @param package: string; name of package to update
+        @return: updated
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updated = False
+
+        try:
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return updated
+
+            self.ch.executeCommand(self.updatepkg + package)
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                updated = True
+
+            if package:
+                if updated:
+                    self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was updated successfully")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Failed to apply updates to package " + str(package))
+            else:
+                if updated:
+                    self.logger.log(LogPriority.DEBUG, "All updates were installed successfully")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Failed to apply updates")
+
+        except Exception:
+            raise
+        return updated
+
+    def checkUpdate(self, package=""):
+        '''
+        check for updates for specified package
+        if no package is specified, then check
+        for updates for the entire system
+
+        @param package: string; Name of package to check
+        @return: updatesavail
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updatesavail = False
+
+        try:
+
+            if not validateParam(self.logger, package, basestring, "package"):
+                return updatesavail
+
+            self.ch.executeCommand(self.checkupdates + package)
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                updatesavail = True
+
+            if package:
+                if updatesavail:
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for package " + str(package))
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates are available for package " + str(package))
+            else:
+                if updatesavail:
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for this system")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates are available for this system")
+
+        except Exception:
+            raise
+        return updatesavail
+
+###############################################################################
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        '''
+        Returns the name of the package that provides the given
         filename/path.
 
-        @param: string filename : The name or path of the file to resolve
-        @return: string name of package if found, None otherwise
+        @param: filename: string; The name or path of the file to resolve
+        @return: packagename
+        @rtype: string
         @author: Eric Ball
+        @change: Breen Malmberg - 4/17/2017 - fixed doc string formatting;
+                method now returns a variable; added param validation
         '''
+
+        packagename =  ""
+
         try:
+
+            if not validateParam(self.logger, filename, basestring, "filename"):
+                return packagename
+
             self.ch.executeCommand("dpkg -S " + filename)
             if self.ch.getReturnCode() == 0:
                 output = self.ch.getOutputString()
-                pkgname = output.split(":")[0]
-                return pkgname
-            else:
-                return None
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+                packagename = output.split(":")[0]
 
+        except Exception:
+            raise
+        return packagename
+
+###############################################################################
     def getInstall(self):
         return self.install
-###############################################################################
 
+###############################################################################
     def getRemove(self):
         return self.remove

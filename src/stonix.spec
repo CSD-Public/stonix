@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.5
+Version: 0.9.8
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -45,12 +45,19 @@ mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/rules
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/FileStateManager/pam/0.9.6.13/darwin/MacOSX/10.11/stateAfter/etc/pam.d
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/FileStateManager/pam/0.9.5.99/darwin/MacOSX/10.11/stateAfter/etc/pam.d
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/help
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/images
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man8
 
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/rules/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/rules/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/gfx/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx/
-/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+#/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/images/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/images/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/usr/share/man/man8/stonix.8 $RPM_BUILD_ROOT/usr/share/man/man8/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix.py $RPM_BUILD_ROOT/usr/bin/
 touch $RPM_BUILD_ROOT/etc/stonix.conf
@@ -116,6 +123,46 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Jun 6 2017 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.8
+- Fixed a broken utility method
+- Fixed a logic issue in DisableGUILogon which was causing it to incorrectly report not compliant
+- SSH service should no longer be turned on if not already on
+- Fixed a traceback in SetFSMountOptions
+- Fixed a traceback in SoftwarePatching
+- Fixed an issue with opensuse 42 which was causing STONIX to choose the wrong package manager
+- Fixed package name for debian 32 bit in EnablePAEandNX
+- Fixed an issue in EnablePAEandNX which was causing it to look for a non-existent package in ubuntu 16 (32 bit)
+- Added better user feedback to BootLoaderPerms rule about what is not compliant when it is not compliant
+- Cleaned up and re-factored SetFSMountOptions for better code maintenance
+- ConfigurePasswordPolicy now adheres to the new FISMA High / Low setting in localize.py
+- Fixed incorrect file contents being added, in Fedora, for rule ConfigureLANLLDAP
+- Fixed package conflicts issue with opensuse, for rule ConfigureLANLLDAP
+- Fixed an incorrect return code comparison issue in helper class zypper.py
+
+* Tue Apr 4 2017 David Kennel <dkennel@lanl.gov> - 0.9.7
+- Added filter mechanism and variables to support fine tuned actions and rule filtering based on FISMA risk categorization
+- Corrected issue with duplicate rule id numbers affecting ConfigureProcessAccounting and EncryptSwap
+- Corrected multiple issues with MacOS STIG rules
+- Updated MinimizeServices to correct issues on Debian systems
+- Corrected permissions problem with SecureATCRON
+- Fixed issues with the way that some rules responded to default values in localize.py
+- Fixed traceback in DisableInactiveAccounts that affected MacOS
+- Fixed multiple issues in ConfigureLogging
+
+* Wed Mar 8 2017 David Kennel <dkennel@lanl.gov> - 0.9.6
+- EnableKernelAuditing – Audit rules now persist between reboots (RHEL 7, Centos, Fedora)
+- SecureCUPS – Issue has been fixed where certain lines in CUPS configuration files were breaking Mac OS and linux systems.
+- DisableInactiveAccounts – now disabled for Mac OS until password policy is in full effect.
+- ConfigureMACPolicy – Issues with fixing GRUB on OpenSUSE resolved.
+- ConfigureSudo – Changed group name to sudo for sudo access for Ubuntu 14 and 16
+- ConfigureLogging - /var/log/messages has been added to list of log files to be rotated.
+- ConfigureLinuxFirewall – No longer enabled by default. This rule by default, sets really strict firewall rules. Please be fully aware of this before running this rule. 
+
+* Wed Feb 15 2017 David Kennel <dkennel@lanl.gov> - 0.9.5-1
+- Updated release of 0.9.5 to resolve issues
+- Fixed issue in secure cups which broke printing
+- Default behavior for ConfigureLinuxFirewall is now for the rule to be disabled by default
+
 * Fri Feb 3 2017 David Kennel <dkennel@lanl.gov> - 0.9.5
 - Corrected bug that caused STONIX to not recognize when firewalld was running.
 - New rule added: ConfigureFirefox. The configure Firefox rule will disable all automatic update and "phone home" behavior and configure the browser for SSO authentication.

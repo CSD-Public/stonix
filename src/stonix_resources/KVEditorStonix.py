@@ -121,9 +121,9 @@ class KVEditorStonix(KVEditor):
                 debug = "KVEditorStonix commit is returning False\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
-            event = {"eventtype": "comm",
-                     "command": self.editor.getundoCmd()}
             if self.getEventID():
+                event = {"eventtype": "comm",
+                         "command": self.editor.getundoCmd()}
                 self.stchlgr.recordchgevent(self.getEventID(), event)
             debug = "KVEditorStonix commit is returning True\n"
             self.logger.log(LogPriority.DEBUG, debug)

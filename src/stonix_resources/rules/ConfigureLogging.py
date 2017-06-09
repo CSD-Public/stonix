@@ -1333,23 +1333,43 @@ because these values are optional\n"
                         "/var/log/install.log",
                         "/var/log/netinfo.log",
                         "/var/log/secure.log"]
-        self.logfiles = {"*.*": "/var/log/system.log",
-                         "daemon.*": "/var/log/daemon.log",
-                         "auth.*": "/var/log/secure.log",
-                         "user.*": "/var/log/user.log",
-                         "kern.*": "/var/log/kern.log",
-                         "lpr.*": "/var/log/lpr.log",
-                         "syslog.*": "/var/log/syslog.log",
-                         "cron.*": "/var/log/cron.log",
-                         "mail,uucp,news.*": "/var/log/mail.log",
-                         "local0,local1,local2,local3.*": "/var/log/local.log",
-                         "local4,local,local6,local7.*": "/var/log/local.log",
-                         "local5.*": "/var/log/stonix.log",
-                         "install.*": "/var/log/install.log",
-                         "netinfo.*": "/var/log/netinfo.log",
-                         "remoteauth,authpriv.*": "/var/log/secure.log",
-                         "*.crit": "/dev/console",
-                         "auth.info,authpriv.info,mark.info": WINLOG}
+
+        self.logfiles = ["*.* /var/log/system.log",
+                         "daemon.* /var/log/daemon.log",
+                         "auth.* /var/log/secure.log",
+                         "user.* /var/log/user.log",
+                         "kern.* /var/log/kern.log",
+                         "lpr.* /var/log/lpr.log",
+                         "syslog.* /var/log/syslog.log",
+                         "cron.* /var/log/cron.log",
+                         "mail.* /var/log/mail.log",
+                         "uucp.* /var/log/mail.log",
+                         "news.* /var/log/mail.log",
+                         "local.* /var/log/local.log",
+                         "local0.* /var/log/local.log",
+                         "local1.* /var/log/local.log",
+                         "local2.* /var/log/local.log",
+                         "local3.* /var/log/local.log",
+                         "local4.* /var/log/local.log",
+                         "local5.* /var/log/local.log",
+                         "local6.* /var/log/local.log",
+                         "local7.* /var/log/local.log",
+                         "local5.* /var/log/stonix.log",
+                         "install.* /var/log/install.log",
+                         "netinfo.* /var/log/netinfo.log",
+                         "remoteauth.* /var/log/secure.log",
+                         "*authpriv.* /var/log/secure.log",
+                         "*.crit /dev/console"]
+        if WINLOG is not None and isinstance(WINLOG, str):
+            self.logfiles.append("mark.* " + WINLOG)
+            self.logfiles.append("authpriv.* " + WINLOG)
+            self.logfiles.append("auth.* " + WINLOG)
+            # self.directories only gets instantiated if the system is linux
+            # (line 133 -> line 157) so we can't reference it in code that
+            # only gets called if the system is mac (reportmac)
+            # this is why I commented out the following line
+            ##self.directories.append(WINLOG)
+
         self.asl = ["? [T com.apple.message.domain] store_dir /var/log/DiagnosticMessages",
                     "? [A= Facility com.apple.performance] store_dir /var/log/performance",
                     "? [A= Facility com.apple.eventmonitor] store_dir /var/log/eventmonitor",

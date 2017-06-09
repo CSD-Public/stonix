@@ -205,7 +205,7 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
                       "centos": "kernel-PAE",
                       "cent os": "kernel-PAE",
                       "fedora": "kernel-PAE",
-                      "debian": "linux-generic-pae",
+                      "debian": "linux-image-686-pae",
                       "ubuntu": "linux-generic-pae",
                       "opensuse": "kernel-pae",
                       "suse": "kernel-pae"}
@@ -247,8 +247,23 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         paeflag = False
         paepkg = False
         command = "cat /proc/cpuinfo | grep flags"
+        osname = ""
+        osver = ""
+        checkpkg = True
 
         try:
+
+            osname = self.environ.getostype()
+            osver = self.environ.getosver()
+
+            # do not check for existence of a pae package
+            # on ubuntu 16 32 bit because it is built into
+            # the default kernel and as a result there is no
+            # separate pae kernel package to install
+            if re.search("Ubuntu", osname, re.IGNORECASE):
+                if re.search("16\.", osver, re.IGNORECASE):
+                    checkpkg = False
+                    paepkg = True
 
             if not package:
                 self.detailedresults += "\nNo package was specified. No package check will be performed. Assuming: not installed."
@@ -257,9 +272,10 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
                 self.logger.log(LogPriority.DEBUG, "Required parameter: package was not passed as the correct data type. Type required: string")
                 self.detailedresults += "\nNo package was specified. No package check will be performed. Assuming: not installed."
             else:
-                # check for presence of kernel PAE package
-                if self.pkg.check(package):
-                    paepkg = True
+                if checkpkg:
+                    # check for presence of kernel PAE package
+                    if self.pkg.check(package):
+                        paepkg = True
 
             self.ch.executeCommand(command)
             output = self.ch.getOutput()

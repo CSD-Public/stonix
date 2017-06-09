@@ -78,6 +78,7 @@ class KVAProfiles():
                 return False
             '''keyoutput should just contain lines after Payload Data line'''
             if keyoutput:
+
                 payloadblocktemp = []
                 '''This next loop is getting everything inside the payload
                 section stopping before the next identifier'''
