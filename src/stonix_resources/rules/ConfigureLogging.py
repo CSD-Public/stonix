@@ -1497,7 +1497,11 @@ because these values are optional\n"
             self.logfiles.append("mark.* " + WINLOG)
             self.logfiles.append("authpriv.* " + WINLOG)
             self.logfiles.append("auth.* " + WINLOG)
-            self.directories.append(WINLOG)
+            # self.directories only gets instantiated if the system is linux
+            # (line 133 -> line 157) so we can't reference it in code that
+            # only gets called if the system is mac (reportmac)
+            # this is why I commented out the following line
+            ##self.directories.append(WINLOG)
         self.asl = ["? [T com.apple.message.domain] store_dir /var/log/DiagnosticMessages",
                     "? [A= Facility com.apple.performance] store_dir /var/log/performance",
                     "? [A= Facility com.apple.eventmonitor] store_dir /var/log/eventmonitor",

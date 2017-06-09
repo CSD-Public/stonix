@@ -97,6 +97,7 @@ class DisableSIRIandContinuityFeatures(Rule):
                     
     def report(self):
         try:
+            self.detailedresults = ""
             self.defaults1 = True
             self.defaults2 = True
             self.profilecomp = True
