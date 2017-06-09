@@ -159,6 +159,7 @@ administrators may want to disable this rule.
                              'random',
                              'rasagent',
                              'rc.local',
+                             'rdma',
                              'restorecond',
                              'rhnsd',
                              'rmnologin',

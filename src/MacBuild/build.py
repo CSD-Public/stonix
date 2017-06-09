@@ -154,13 +154,23 @@ class SoftwareBuilder():
         print " "
 
         if self.signature:
-            while True:
-                self.keyuser = raw_input("Keychain User: ")
+
+            count = 0
+            while count < 3:
+                success = False
+                self.keyuser = os.environ['SUDO_USER']
                 self.keypass = getpass.getpass("Keychain Password: ") 
-                if self.mu.authenticate(self.keyuser, self.keypass):
+
+                if (self.mk.lockKeychain(self.keychain)):
+                    success, _ = self.mk.unlockKeychain(self.keypass, self.keychain)
+                if success:
                     break
                 else:
-                    print "Sorry, login information is not valid... Please try again."
+                    print "Sorry, Keychain password is not valid... Please try again."
+                count += 1
+            if not success:
+                sys.exit(1)
+
             #####
             # Get a translated password
             self.ordPass = self.getOrdPass(self.keypass)
@@ -558,7 +568,8 @@ class SoftwareBuilder():
                            '-p', self.ordPass, '-u', self.keyuser, 
                            '-i', appName, 
                            '-d', 
-                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac"]
+                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
+                           '--keychain', self.keychain]
 
                     self.rw.setCommand(cmd)
                     self.rw.liftDown(self.keyuser, appPath)
@@ -567,7 +578,8 @@ class SoftwareBuilder():
                            '-u', self.keyuser, 
                            '-a', appName, 
                            '-d', 
-                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac"]
+                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
+                           '--keychain', self.keychain]
                     self.rw.setCommand(cmd)
                     workingDir = os.getcwd()
                     self.rw.liftDown(self.keyuser, appPath)

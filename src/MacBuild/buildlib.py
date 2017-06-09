@@ -484,6 +484,8 @@ class MacBuildLib(object):
         success = False
         output = ''
         loginKeychain = False
+        self.logger.log(lp.DEBUG, keychain)
+
         if not username or not password:
             return success
         if not keychain:

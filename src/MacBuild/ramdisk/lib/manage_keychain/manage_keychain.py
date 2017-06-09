@@ -225,6 +225,7 @@ class ManageKeychain(object):
         @author: Roy Nielsen
         """
         success = False
+        output = ''
         #####
         # Preprocess logging
         self.logger.log(lp.DEBUG, "processing:" + "")
@@ -246,6 +247,7 @@ class ManageKeychain(object):
         @author: Roy Nielsen
         """
         success = False
+        output = ''
         #####
         # Preprocess logging
         self.logger.log(lp.DEBUG, "processing:" + "")
@@ -267,6 +269,7 @@ class ManageKeychain(object):
         @author: Roy Nielsen
         """
         success = False
+        output = ''
         #####
         # Preprocess logging
         self.logger.log(lp.DEBUG, "processing:" + "")

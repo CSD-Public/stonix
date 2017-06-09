@@ -211,6 +211,7 @@ password, will be disabled.'
                         self.detailedresults += "The local account: " + str(user) + " has never had a password set for it! We will now disable this local account on this machine."
                         self.logger.log(LogPriority.DEBUG, "The local user account: " + str(user) + " had no password for it. STONIX will disable it now.")
                         inactivedays = 9999 # this will ensure it gets added to the list of accounts to disable
+                    return inactivedays
                 else:
                     self.detailedresults += '\nThere was an issue reading ' + \
                         user + '\'s accountPolicyData passwordLastSetTime'
