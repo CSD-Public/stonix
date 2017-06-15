@@ -29,7 +29,6 @@ Created on Jun 6, 2017
 '''
 from __future__ import absolute_import
 import unittest
-import os
 import sys
 
 sys.path.append("../../../..")
@@ -63,7 +62,6 @@ class zzzTestRuleSTIGDisableICloudPolicy(RuleTest):
     def setConditionsForRule(self):
         success = True
         self.detailedresults = ""
-        self.ch = CommandHelper(self.logger)
         cmd = ["/usr/bin/profiles", "-P"]
         if not self.ch.executeCommand(cmd):
             success = False
