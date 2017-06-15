@@ -59,8 +59,13 @@ from ..ServiceHelper import ServiceHelper
 
 
 class ConfigureLANLLDAP(Rule):
+    '''
+    '''
 
     def __init__(self, config, enviro, logger, statechglogger):
+        '''
+        '''
+
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 254
@@ -117,6 +122,9 @@ effect."""
         self.localize()
         
     def localize(self):
+        '''
+        '''
+
         myos = self.environ.getostype().lower()
         if re.search("red hat.*?release 6", myos):
             self.password = PASSWORD_NSLCD
@@ -165,13 +173,19 @@ effect."""
                 self.session = SESSION_YUM
             self.pampassfile = "/etc/pam.d/password-auth-ac"
             self.pamauthfile = "/etc/pam.d/system-auth-ac"
+
     def report(self):
+        '''
+        '''
+
+        self.detailedresults = ""
+        compliant = True
+        debug = ""
+
         try:
 #             if self.ph.manager in ("zypper"):
 #                 return
-            compliant = True
-            self.detailedresults = ""
-            debug = ""
+
             server = self.ldapci.getcurrvalue()
             self.ldapsettings = ""
             self.myos = self.environ.getostype().lower()
@@ -391,7 +405,8 @@ effect."""
         return self.compliant
 
     def __checkconf(self, filepath, settings):
-        '''Private method to audit a conf file to ensure that it contains all
+        '''
+        Private method to audit a conf file to ensure that it contains all
         of the required directives.
 
         @param file: configuration file to load current settings from
@@ -399,6 +414,7 @@ effect."""
         @return: Bool Returns True if all settings are present.
         @author: Eric Ball
         '''
+
         if os.path.exists(filepath):
             contents = readFile(filepath, self.logger)
         else:
@@ -440,14 +456,17 @@ effect."""
         return foundAll
 
     def fix(self):
+        '''
+        '''
+
+        self.detailedresults = ""
+        success = True
+
         try:
 #             if self.ph.manager == "zypper":
 #                 return
             if not self.ci.getcurrvalue() and self.validLdap:
                 return
-            print "Inside fix!!!\n\n\n"
-            success = True
-            self.detailedresults = ""
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -464,9 +483,7 @@ effect."""
             for package in self.packages:
                 if not self.ph.check(package):
                     if self.ph.checkAvailable(package):
-                        print "found package\n\n"
                         if not self.ph.install(package):
-                            print "unable to install " + package + "\n\n"
                             self.rulesuccess = False
                             self.detailedresults += "Unable to install " + \
                                 package + ".  Will not continue with fix\n"
@@ -476,7 +493,6 @@ effect."""
                                                  self.detailedresults)
                             return False
                         else:
-                            print "installed " + package + " successfully\n\n"
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "pkghelper",
@@ -718,13 +734,15 @@ effect."""
         return self.rulesuccess
 
     def __fixnss(self, path, settings):
-        '''Private method made specifically for fixing the nsswitch.conf file
+        '''
+        Private method made specifically for fixing the nsswitch.conf file
 
         @param path: Path to the nsswitch.conf file
         @param settings: List of settings that should be present in the file
         @return: Bool Returns True if all settings are found or written
         @author: Eric Ball
         '''
+
         try:
             if os.path.exists(path):
                 nsConfLines = readFile(path, self.logger)
@@ -760,6 +778,9 @@ effect."""
             raise
 
     def __fixsssd(self):
+        '''
+        '''
+
         sssdconf = '''[sssd]
 config_file_version = 2
 services = nss, pam
@@ -809,9 +830,11 @@ krb5_realm = lanl.gov
         '''
         Method to check which password checking program the system
         is or should be using.
+
         @author: dwalker
         @return: bool
         '''
+
         self.pwqinstalled, self.clinstalled = False, False
         self.pwqpkg, self.crackpkg = "", ""
         '''Check if either pam_pwquality or cracklib are installed'''
@@ -877,10 +900,12 @@ krb5_realm = lanl.gov
     def checkpasswordsetup(self, package):
         '''
         Method called from within checkpasswordreqs method
+
         @author: dwalker
         @param package: pwquality or cracklib
         @return: bool
         '''
+
         compliant = True
         if package == "pwquality":
             self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
@@ -937,6 +962,9 @@ krb5_realm = lanl.gov
         return compliant
 
     def setpasswordsetup(self, regex1, pkglist = ""):
+        '''
+        '''
+
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         success = True
@@ -1023,9 +1051,11 @@ krb5_realm = lanl.gov
         '''
         Method to determine which account locking program to
         use if any.
+
         @author: dwalker
         @return: bool
         '''
+
         which = "/usr/bin/which "
         cmd1 = which + "faillock"
         cmd2 = which + "pam_tally2"
@@ -1106,6 +1136,9 @@ krb5_realm = lanl.gov
         return compliant
 
     def setaccountlockout(self, regex):
+        '''
+        '''
+
         success = True
         pamfiles = []
         if self.ph.manager in ("yum", "dnf"):
@@ -1155,6 +1188,9 @@ krb5_realm = lanl.gov
         return success
     
     def checkotherpam(self):
+        '''
+        '''
+
         pamfiles = []
         compliant = True
         compliant1 = True
@@ -1225,6 +1261,9 @@ krb5_realm = lanl.gov
         return compliant
     
     def setotherpamsession(self):
+        '''
+        '''
+
         success = True
         pamfiles = []
         if self.ph.manager in ("yum", "dnf"):
@@ -1267,6 +1306,9 @@ krb5_realm = lanl.gov
         return success
     
     def setotherpamaccount(self):
+        '''
+        '''
+
         success = True
         pamfiles = []
         if self.ph.manager in ("yum", "dnf"):
@@ -1309,6 +1351,9 @@ krb5_realm = lanl.gov
         return success
     
     def chkpwquality(self):
+        '''
+        '''
+
         compliant = True
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
@@ -1345,6 +1390,9 @@ krb5_realm = lanl.gov
         return compliant
     
     def setpwquality(self):
+        '''
+        '''
+
         success = True
         created = False
         pwqfile = "/etc/security/pwquality.conf"
@@ -1394,6 +1442,9 @@ krb5_realm = lanl.gov
         return success
 
     def __writeFile(self, path, contents, perms, created):
+        '''
+        '''
+
         try:
             tmppath = path + ".tmp"
             success = writeFile(tmppath, contents, self.logger)
