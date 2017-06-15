@@ -445,7 +445,6 @@ effect."""
 #                 return
             if not self.ci.getcurrvalue() and self.validLdap:
                 return
-            print "Inside fix!!!\n\n\n"
             success = True
             self.detailedresults = ""
             self.iditerator = 0
