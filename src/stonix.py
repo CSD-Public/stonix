@@ -116,6 +116,8 @@ Created on Aug 23, 2010
 
 @author: dkennel
 @change: 2017/03/07 - dkennel - Added support for FISMA categorization.
+@change: 2017/06/19 - dkennel - Added safeties to rule loading for redundant
+rule names and numbers.
 '''
 # Std Library imports
 import sys
@@ -332,6 +334,8 @@ class Controller(Observable):
         """
         instruleclasses = []
         validrulefiles = []
+        rulenumbers = []
+        rulenames = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
         stonixPath = self.environ.get_resources_path()
@@ -408,7 +412,16 @@ class Controller(Observable):
                     continue
             try:
                 clinst = mod(config, environ, self.logger, self.statechglogger)
-                instruleclasses.append(clinst)
+                rulenum = clinst.getrulenum()
+                rulename = clinst.getrulename()
+                if rulenum in rulenumbers:
+                    raise ValueError('ERROR: Rule Number ' + rulenum + ' already instantiated! Not loading rule: ' + rulename)
+                elif rulename in rulenames:
+                    raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + rulenum)
+                else:
+                    rulenumbers.append(rulenum)
+                    rulenames.append(rulename)
+                    instruleclasses.append(clinst)
                 etime = time.time() - starttime
                 self.logger.log(LogPriority.DEBUG,
                                 'load time: ' + str(etime))
@@ -429,11 +442,13 @@ class Controller(Observable):
         with PyInstaller.  A stonix_resources.rules.__init__ must be generated
         with import statements importing all of the current rules prior to 
         packaging with pyinstaller or other 'freezing' mechanism.
-        
+
         @author: Roy Nielsen
         """
-        success = False
+
         #allRules = []
+        rulenumbers = []
+        rulenames = []
         instruleclasses = []
         for item in sys.modules.keys():
             self.logger.log(LogPriority.DEBUG, str(item))
@@ -449,7 +464,7 @@ class Controller(Observable):
                 # Get just the rule name
                 ruleClass = item.split('.')[2]
                 #####
-                # Acquire the rule class module 
+                # Acquire the rule class module
                 ruleClassMod = getattr(sys.modules[item], ruleClass)
                 #####
                 # Create an instance of a rule class
@@ -459,7 +474,16 @@ class Controller(Observable):
                                              self.statechglogger)
                 #####
                 # Append the instance to the list
-                instruleclasses.append(ruleClassInst)
+                rulenum = ruleClassInst.getrulenum()
+                rulename = ruleClassInst.getrulename()
+                if rulenum in rulenumbers:
+                    raise ValueError('ERROR: Rule Number ' + rulenum + ' already instantiated! Not loading rule: ' + rulename)
+                elif rulename in rulenames:
+                    raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + rulenum)
+                else:
+                    rulenumbers.append(rulenum)
+                    rulenames.append(rulename)
+                    instruleclasses.append(ruleClassInst)
 
         return instruleclasses
 
