@@ -356,7 +356,9 @@ class Controller(Observable):
             # Search through the already imported libraries for stonix rules
             for item in sys.modules.keys():
                 self.logger.log(LogPriority.DEBUG, str(item))
-                rulewalklist.append(item)
+                if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
+                    #allRules.append(item)
+                    rulewalklist.append(item)
                 self.logger.log(LogPriority.DEBUG,
                             ['sys.modules.keys: ', str(rulewalklist)])
         else:
@@ -382,21 +384,27 @@ class Controller(Observable):
                 # print module
                 classname = 'stonix_resources.rules.' + module + '.' + module
                 rulewalklist.append(classname)
+
+        self.logger.log(LogPriority.DEBUG,
+                        ['Walk list:', str(rulewalklist)])
+
         for rule in rulewalklist:
             if hasattr(sys, 'frozen'):
                 starttime = time.time()
                 #####
                 # Make sure rules start with a letter...
-                if re.match("stonix_resources\.rules\.[A-Z]\w+$", rule):
-                    #allRules.append(item)
-                    self.logger.log(LogPriority.DEBUG,
-                                    "Loading rule: " + str(rule))
-                    #####
-                    # Get just the rule name
-                    ruleClass = rule.split('.')[2]
-                    #####
-                    # Acquire the rule class module
-                    mod = getattr(sys.modules[rule], ruleClass)
+                self.logger.log(LogPriority.DEBUG,
+                                'Using Frozen path for ' + str(rule))
+                #####
+                # Get just the rule name
+                ruleClass = rule.split('.')[2]
+                self.logger.log(LogPriority.DEBUG,
+                                'Class name after split: ' + str(ruleClass))
+                #####
+                # Acquire the rule class module
+                mod = getattr(sys.modules[rule], ruleClass)
+                self.logger.log(LogPriority.DEBUG,
+                                'Mod name: ' + str(mod))
             else:
                 # This is odd and requires detailed comments. This block imports the
                 # modules then recurses down, instantiates the main rule class and
