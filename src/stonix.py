@@ -432,11 +432,19 @@ class Controller(Observable):
                              self.logger,
                              self.statechglogger)
                 rulenum = clinst.getrulenum()
+                self.logger.log(LogPriority.DEBUG,
+                                'Checking Rule Number: ' + str(rulenum))
                 rulename = clinst.getrulename()
+                self.logger.log(LogPriority.DEBUG,
+                                'Checking Rule Name: ' + str(rulename))
                 if rulenum in rulenumbers:
                     raise ValueError('ERROR: Rule Number ' + str(rulenum) + ' already instantiated! Not loading rule: ' + rulename)
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Rule Numbers List: ' + str(rulenumbers))
                 elif rulename in rulenames:
                     raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + str(rulenum))
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Rule Numbers List: ' + str(rulenames))
                 else:
                     rulenumbers.append(rulenum)
                     rulenames.append(rulename)
