@@ -355,12 +355,12 @@ class Controller(Observable):
             #####
             # Search through the already imported libraries for stonix rules
             for item in sys.modules.keys():
-                self.logger.log(LogPriority.DEBUG, str(item))
                 if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
-                    #allRules.append(item)
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Key Match: ' + str(item))
                     rulewalklist.append(item)
-                self.logger.log(LogPriority.DEBUG,
-                            ['sys.modules.keys: ', str(rulewalklist)])
+            self.logger.log(LogPriority.DEBUG,
+                            ['Rule Walk list from keys: ', str(rulewalklist)])
         else:
             for rfile in rulefiles:
                 if rfile in initlist:
