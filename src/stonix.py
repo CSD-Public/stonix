@@ -324,6 +324,7 @@ class Controller(Observable):
         @return: list : a list of instantiated rule classes
         @author: D. Kennel
         """
+        rulewalklist = []
         instruleclasses = []
         validrulefiles = []
         rulenumbers = []
@@ -351,22 +352,13 @@ class Controller(Observable):
         # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
         # process rules accordingly
         if hasattr(sys, 'frozen'):
-            for item in sys.modules.keys():
-                self.logger.log(LogPriority.DEBUG, str(item))
             #####
             # Search through the already imported libraries for stonix rules
             for item in sys.modules.keys():
-                #####
-                # Make sure rules start with a letter...
-                if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
-                    #allRules.append(item)
-                    self.logger.log(LogPriority.DEBUG, "Loading rule: " + str(item))
-                    #####
-                    # Get just the rule name
-                    ruleClass = item.split('.')[2]
-                    #####
-                    # Acquire the rule class module
-                    mod = getattr(sys.modules[item], ruleClass)
+                self.logger.log(LogPriority.DEBUG, str(item))
+                rulewalklist.append(item)
+                self.logger.log(LogPriority.DEBUG,
+                            ['sys.modules.keys: ', str(rulewalklist)])
         else:
             for rfile in rulefiles:
                 if rfile in initlist:
@@ -374,8 +366,7 @@ class Controller(Observable):
                 else:
                     validrulefiles.append(rfile)
             self.logger.log(LogPriority.DEBUG,
-                            ['validrulefiles:', str(validrulefiles)])
-
+                            ['validrulefiles: ', str(rulewalklist)])
             # This is a list comprehension to build a list of module names to
             # import based on the names of valid rule files from stonix/rules
             # destination list = [ *transform* *source* *filter* ]
@@ -386,19 +377,32 @@ class Controller(Observable):
 
             # The output of this section is a list of valid, fully qualified,
             # rule class names.
-            classnames = []
             for module in modulenames:
                 module = module.split("/")[-1]
                 # print module
                 classname = 'stonix_resources.rules.' + module + '.' + module
-                classnames.append(classname)
-
-            # This is odd and requires detailed comments. This block imports the
-            # modules then recurses down, instantiates the main rule class and
-            # appends the class to a list.
-            for cls in classnames:
+                rulewalklist.append(classname)
+        for rule in rulewalklist:
+            if hasattr(sys, 'frozen'):
                 starttime = time.time()
-                parts = cls.split(".")
+                #####
+                # Make sure rules start with a letter...
+                if re.match("stonix_resources\.rules\.[A-Z]\w+$", rule):
+                    #allRules.append(item)
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Loading rule: " + str(rule))
+                    #####
+                    # Get just the rule name
+                    ruleClass = rule.split('.')[2]
+                    #####
+                    # Acquire the rule class module
+                    mod = getattr(sys.modules[rule], ruleClass)
+            else:
+                # This is odd and requires detailed comments. This block imports the
+                # modules then recurses down, instantiates the main rule class and
+                # appends the class to a list.
+                starttime = time.time()
+                parts = rule.split(".")
                 # the module is the class less the last element
                 module = ".".join(parts[:-1])
                 # Using the __import__ built in function to import the module
@@ -424,7 +428,9 @@ class Controller(Observable):
                                         + trace)
                         continue
             try:
-                clinst = mod(config, environ, self.logger, self.statechglogger)
+                clinst = mod(config, environ,
+                             self.logger,
+                             self.statechglogger)
                 rulenum = clinst.getrulenum()
                 rulename = clinst.getrulename()
                 if rulenum in rulenumbers:
@@ -439,7 +445,7 @@ class Controller(Observable):
                 self.logger.log(LogPriority.DEBUG,
                                 'load time: ' + str(etime))
             except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+                # User initiated exit
                 raise
             except Exception:
                 trace = traceback.format_exc()
