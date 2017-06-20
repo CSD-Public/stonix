@@ -29,14 +29,11 @@ Created on Jun 6, 2017
 '''
 from __future__ import absolute_import
 import unittest
-import os
 import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.KVEditorStonix import KVEditorStonix
-from src.stonix_resources.stonixutilityfunctions import setPerms, iterate
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.STIGConfigurePasswordPolicy import STIGConfigurePasswordPolicy
 from re import search
