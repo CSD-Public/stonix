@@ -408,7 +408,7 @@ class Controller(Observable):
                 # Using the __import__ built in function to import the module
                 # since our names are only known at runtime.
                 self.logger.log(LogPriority.DEBUG,
-                                'Attempting to load: ' + module)
+                                'Attempting to load: ' + str(module))
                 try:
                     mod = __import__(module)
                 except Exception:
@@ -425,7 +425,7 @@ class Controller(Observable):
                         trace = traceback.format_exc()
                         self.logger.log(LogPriority.ERROR,
                                         "Error finding rule class reference: "
-                                        + trace)
+                                        + str(trace))
                         continue
             try:
                 clinst = mod(config, environ,
@@ -434,9 +434,9 @@ class Controller(Observable):
                 rulenum = clinst.getrulenum()
                 rulename = clinst.getrulename()
                 if rulenum in rulenumbers:
-                    raise ValueError('ERROR: Rule Number ' + rulenum + ' already instantiated! Not loading rule: ' + rulename)
+                    raise ValueError('ERROR: Rule Number ' + str(rulenum) + ' already instantiated! Not loading rule: ' + rulename)
                 elif rulename in rulenames:
-                    raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + rulenum)
+                    raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + str(rulenum))
                 else:
                     rulenumbers.append(rulenum)
                     rulenames.append(rulename)
@@ -450,7 +450,7 @@ class Controller(Observable):
             except Exception:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,
-                                "Error instantiating rule: " + trace)
+                                "Error instantiating rule: " + str(trace))
                 continue
         # print instruleclasses
         return instruleclasses
