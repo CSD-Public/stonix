@@ -232,7 +232,6 @@ class Controller(Observable):
                     splash.show()
                     app.processEvents()
 
-
             if self.chkapp.isApplicable(applicable2PyQt4):
                 #####
                 # Appropriate to OS that supports PyQt4
@@ -241,7 +240,6 @@ class Controller(Observable):
                     from stonix_resources.gui import GUI
                 except(ImportError):
                     pass
-  
 
                 # This resets the UI to the command line if GUI was selected on the
                 # command line and PyQt4 isn't present.
@@ -284,13 +282,7 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         'Running in ' + self.mode)
         starttime = time.time()
-        #####
-        # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
-        # process rules accordingly
-        if hasattr(sys, 'frozen'):
-            allrules = self.getRulesFrozen()
-        else:
-            allrules = self.getrules(self.config, self.environ)
+        allrules = self.getrules(self.config, self.environ)
         etime = time.time() - starttime
         self.logger.log(LogPriority.DEBUG,
                         'Rules Processed in ' + str(etime))
@@ -355,61 +347,82 @@ class Controller(Observable):
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
 
-        for rfile in rulefiles:
-            if rfile in initlist:
-                continue
-            else:
-                validrulefiles.append(rfile)
-        self.logger.log(LogPriority.DEBUG,
-                        ['validrulefiles:', str(validrulefiles)])
-
-        # This is a list comprehension to build a list of module names to
-        # import based on the names of valid rule files from stonix/rules
-        # destination list = [ *transform* *source* *filter* ]
-        modulenames = [mod.replace('.py', '') for mod in validrulefiles
-                        if re.search("\.py$", mod)]
-        self.logger.log(LogPriority.DEBUG,
-                        ['Module names:', str(modulenames)])
-
-        # The output of this section is a list of valid, fully qualified,
-        # rule class names.
-        classnames = []
-        for module in modulenames:
-            module = module.split("/")[-1]
-            # print module
-            classname = 'stonix_resources.rules.' + module + '.' + module
-            classnames.append(classname)
-
-        # This is odd and requires detailed comments. This block imports the
-        # modules then recurses down, instantiates the main rule class and
-        # appends the class to a list.
-        for cls in classnames:
-            starttime = time.time()
-            parts = cls.split(".")
-            # the module is the class less the last element
-            module = ".".join(parts[:-1])
-            # Using the __import__ built in function to import the module
-            # since our names are only known at runtime.
+        #####
+        # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
+        # process rules accordingly
+        if hasattr(sys, 'frozen'):
+            for item in sys.modules.keys():
+                self.logger.log(LogPriority.DEBUG, str(item))
+            #####
+            # Search through the already imported libraries for stonix rules
+            for item in sys.modules.keys():
+                #####
+                # Make sure rules start with a letter...
+                if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
+                    #allRules.append(item)
+                    self.logger.log(LogPriority.DEBUG, "Loading rule: " + str(item))
+                    #####
+                    # Get just the rule name
+                    ruleClass = item.split('.')[2]
+                    #####
+                    # Acquire the rule class module
+                    mod = getattr(sys.modules[item], ruleClass)
+        else:
+            for rfile in rulefiles:
+                if rfile in initlist:
+                    continue
+                else:
+                    validrulefiles.append(rfile)
             self.logger.log(LogPriority.DEBUG,
-                            'Attempting to load: ' + module)
-            try:
-                mod = __import__(module)
-            except Exception:
-                trace = traceback.format_exc()
-                self.logger.log(LogPriority.ERROR,
-                                "Error importing rule: " + trace)
-                continue
-            # Recurse down the class name until we get a reference to the class
-            # itself. Then we instantiate using the reference.
-            for component in parts[1:]:
+                            ['validrulefiles:', str(validrulefiles)])
+
+            # This is a list comprehension to build a list of module names to
+            # import based on the names of valid rule files from stonix/rules
+            # destination list = [ *transform* *source* *filter* ]
+            modulenames = [mod.replace('.py', '') for mod in validrulefiles
+                            if re.search("\.py$", mod)]
+            self.logger.log(LogPriority.DEBUG,
+                            ['Module names:', str(modulenames)])
+
+            # The output of this section is a list of valid, fully qualified,
+            # rule class names.
+            classnames = []
+            for module in modulenames:
+                module = module.split("/")[-1]
+                # print module
+                classname = 'stonix_resources.rules.' + module + '.' + module
+                classnames.append(classname)
+
+            # This is odd and requires detailed comments. This block imports the
+            # modules then recurses down, instantiates the main rule class and
+            # appends the class to a list.
+            for cls in classnames:
+                starttime = time.time()
+                parts = cls.split(".")
+                # the module is the class less the last element
+                module = ".".join(parts[:-1])
+                # Using the __import__ built in function to import the module
+                # since our names are only known at runtime.
+                self.logger.log(LogPriority.DEBUG,
+                                'Attempting to load: ' + module)
                 try:
-                    mod = getattr(mod, component)
+                    mod = __import__(module)
                 except Exception:
                     trace = traceback.format_exc()
                     self.logger.log(LogPriority.ERROR,
-                                    "Error finding rule class reference: "
-                                    + trace)
+                                    "Error importing rule: " + trace)
                     continue
+                # Recurse down the class name until we get a reference to the 
+                # class itself. Then we instantiate using the reference.
+                for component in parts[1:]:
+                    try:
+                        mod = getattr(mod, component)
+                    except Exception:
+                        trace = traceback.format_exc()
+                        self.logger.log(LogPriority.ERROR,
+                                        "Error finding rule class reference: "
+                                        + trace)
+                        continue
             try:
                 clinst = mod(config, environ, self.logger, self.statechglogger)
                 rulenum = clinst.getrulenum()
@@ -434,57 +447,6 @@ class Controller(Observable):
                                 "Error instantiating rule: " + trace)
                 continue
         # print instruleclasses
-        return instruleclasses
-
-    def getRulesFrozen(self):
-        """
-        Acquire rules from a frozen python application, such as one created
-        with PyInstaller.  A stonix_resources.rules.__init__ must be generated
-        with import statements importing all of the current rules prior to 
-        packaging with pyinstaller or other 'freezing' mechanism.
-
-        @author: Roy Nielsen
-        """
-
-        #allRules = []
-        rulenumbers = []
-        rulenames = []
-        instruleclasses = []
-        for item in sys.modules.keys():
-            self.logger.log(LogPriority.DEBUG, str(item))
-        #####
-        # Search through the already imported libraries for stonix rules
-        for item in sys.modules.keys():
-            #####
-            # Make sure rules start with a letter...
-            if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
-                #allRules.append(item)
-                self.logger.log(LogPriority.DEBUG, "Loading rule: " + str(item))
-                #####
-                # Get just the rule name
-                ruleClass = item.split('.')[2]
-                #####
-                # Acquire the rule class module
-                ruleClassMod = getattr(sys.modules[item], ruleClass)
-                #####
-                # Create an instance of a rule class
-                ruleClassInst = ruleClassMod(self.config,
-                                             self.environ,
-                                             self.logger,
-                                             self.statechglogger)
-                #####
-                # Append the instance to the list
-                rulenum = ruleClassInst.getrulenum()
-                rulename = ruleClassInst.getrulename()
-                if rulenum in rulenumbers:
-                    raise ValueError('ERROR: Rule Number ' + rulenum + ' already instantiated! Not loading rule: ' + rulename)
-                elif rulename in rulenames:
-                    raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + rulenum)
-                else:
-                    rulenumbers.append(rulenum)
-                    rulenames.append(rulename)
-                    instruleclasses.append(ruleClassInst)
-
         return instruleclasses
 
     def findapplicable(self, rules):
