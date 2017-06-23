@@ -182,7 +182,7 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 # corporate network they need to be reachable only internally on port 80
 CORPORATENETWORKSERVERS = ["csd-web.lanl.gov"]
 
-# Content of the kerb5.conf file
+# Content of the krb5.conf file
 MACKRB5 = '''# Updated Test Configuration
 # https://tf.lanl.gov/sf/wiki/do/viewPage/projects.piv/wiki/ProposedKrb5Configuration
 
@@ -348,6 +348,7 @@ LINUXKRB5 = '''# Test Configuration
  sp2013-p-ws02-f5.lanl.gov = WIN.LANL.GOV
  sp2013-p-106-ws02.lanl.gov = WIN.LANL.GOV
  sp2013-p-106-hns.lanl.gov = WIN.LANL.GOV
+ myhome.lanl.gov = WIN.LANL.GOV
 [capaths]
   WIN.LANL.GOV = {
     lanl.gov = .
