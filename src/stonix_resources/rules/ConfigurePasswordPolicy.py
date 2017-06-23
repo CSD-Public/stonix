@@ -81,22 +81,22 @@ class ConfigurePasswordPolicy(Rule):
         
         if self.fismacat == "high":
             self.passidentifier = "gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.high"
-            self.pwprofile = "/Users/dwalker/stonix/src/" + \
-                             "stonix_resources/files/" + \
-                             "stonix4macPasscodeProfileFormacOSSierra10.12FISMAHigh.mobileconfig"
-#             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-#                              "Resources/stonix.app/Contents/MacOS/" + \
+#             self.pwprofile = "/Users/username/stonix/src/" + \
 #                              "stonix_resources/files/" + \
 #                              "stonix4macPasscodeProfileFormacOSSierra10.12FISMAHigh.mobileconfig"
+            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+                             "Resources/stonix.app/Contents/MacOS/" + \
+                             "stonix_resources/files/" + \
+                             "stonix4macPasscodeProfileFormacOSSierra10.12FISMAHigh.mobileconfig"
         else:
             self.passidentifier = "gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.low"
-            self.pwprofile = "/Users/dwalker/stonix/src/" + \
-                             "stonix_resources/files/" + \
-                             "stonix4macPasscodeProfileFormacOSSierra10.12FISMALow.mobileconfig"
-#             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-#                              "Resources/stonix.app/Contents/MacOS/" + \
+#             self.pwprofile = "/Users/username/stonix/src/" + \
 #                              "stonix_resources/files/" + \
 #                              "stonix4macPasscodeProfileFormacOSSierra10.12FISMALow.mobileconfig"
+            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
+                             "Resources/stonix.app/Contents/MacOS/" + \
+                             "stonix_resources/files/" + \
+                             "stonix4macPasscodeProfileFormacOSSierra10.12FISMALow.mobileconfig"
 ################################################################################################
 
     def report(self):
