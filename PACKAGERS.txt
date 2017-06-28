@@ -24,7 +24,7 @@ another way (e.g. puppet or cfengine). It is important that the localize.py be
 set correctly for your organization before stonix is run in fix mode for the 
 first time.
 
-Packaging for OS X
+Packaging for macOS (OS X)
 ------------------------
 
 If you have all the correct frameworks (Luggage, PyQt, QT, SIP, PyInstaller)

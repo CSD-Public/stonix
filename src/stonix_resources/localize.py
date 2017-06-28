@@ -44,6 +44,9 @@ that access the version variable to use this copy.
 @change: 2015/12/14 - ekkehard update os x kerberos option & stonixversion
 @change: 2016/01/13 - rsn Added MACREPOROOT
 @change: 2016/02/03 - ekkehard - incremented STONIXVERSION = '0.9.5'
+@change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
+@change: 2017/03/07 - dkennel add FISMACAT for FISMA/FIPS 199 risk category
+@change: 2017/06/27 - ekkehard - incremented STONIXVERSION = '0.9.10'
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to

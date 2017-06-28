@@ -104,7 +104,7 @@ effect."""
         instructions = "To have a home directory automatically created " + \
             "upon a user's first login, enable MAKEHOMEDIRS. Note that " + \
             "this may be required for GUI logins of LDAP accounts."
-        default = False
+        default = True
         self.mkhomedirci = self.initCi(datatype, key, instructions, default)
 
         self.ch = CommandHelper(self.logger)
