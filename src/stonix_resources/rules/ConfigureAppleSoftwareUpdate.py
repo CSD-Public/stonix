@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,7 @@ dictionary
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/04/28 ekkehard test enhancements
 @change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import re
@@ -102,7 +103,7 @@ to our ASUS server."""
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             if self.checkConsts([APPLESOFTUPDATESERVER]):
