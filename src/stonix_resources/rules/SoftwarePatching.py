@@ -73,7 +73,7 @@ class SoftwarePatching(Rule):
             "update sources (if available), and if the package manager is " + \
             "using GPG secured updates where applicable. This rule will " + \
             "also ensure that the system has a scheduled (cron) job to " + \
-            "install updates automatically on systems where that is feasible."
+            "install updates automatically on systems where that is feasible. "
         self.rootrequired = True
         self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
 
@@ -95,7 +95,7 @@ class SoftwarePatching(Rule):
                           "administrators. This setting doesn't " + \
                           "apply to some systems whose updates " + \
                           "cannot be installed automatically " + \
-                          "for various reasons."
+                          "for various reasons. "
         default = True
 
         self.ci = self.initCi(data, key, instructions, default)
@@ -209,8 +209,8 @@ class SoftwarePatching(Rule):
                     'update source.\n'
             if not updatesec:
                 self.detailedresults = self.detailedresults + \
-                    'The system is not configured to use signed updates.' + \
-                    'Check yum.conf, all rpmrc files and all .repo files.'
+                    'The system is not configured to use signed updates. ' + \
+                    'Check yum.conf, all rpmrc files and all .repo files. '
 
             # Make variables available to fix()
             self.crons = crons
@@ -298,7 +298,7 @@ class SoftwarePatching(Rule):
             # check plist value set local = True if correct.
         else:
             self.caveats = self.caveats + \
-                'A local update source may not be available for this platform.'
+                'A local update source may not be available for this platform. '
         return local
 
     def updatesecurity(self):
@@ -347,7 +347,7 @@ class SoftwarePatching(Rule):
                             gpgcheckok = False
                         handle.close()
                     else:
-                        self.logger.log(LogPriority.DEBUG, str(conffile) + " is not a repo file. Skipping...")
+                        self.logger.log(LogPriority.DEBUG, str(conffile) + " is not a repo file. Skipping... ")
 
                 if os.path.exists('/etc/yum.conf'):
                     handle = open('/etc/yum.conf', 'r')
@@ -409,10 +409,10 @@ class SoftwarePatching(Rule):
                     self.installkeys()
                 self.detailedresults = "Automated updates configured. " + \
                 "Local software update sources may need to be configured " + \
-                "manually."
+                "manually. "
             elif not self.ci.getcurrvalue():
                 self.detailedresults = str(self.ci.getkey()) + \
-                " was disabled. No action was taken."
+                " was disabled. No action was taken. "
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
