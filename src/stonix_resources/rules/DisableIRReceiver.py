@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,7 @@ Created on Sep 5, 2013
 @change: 2014/03/18 ekkehard re-factored to be ruleKVEditor Rule
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -47,7 +48,7 @@ allows the user to remotely control their Mac with a remote control'''
         self.rootrequired = True
         self.guidance = ['CIS 2.4.13.7']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("DisableIRReceiver",
                          "defaults",
                          "/Library/Preferences/com.apple.driver.AppleIRController.plist",
