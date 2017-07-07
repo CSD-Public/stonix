@@ -32,6 +32,7 @@ the system.  This rule is specific to Mac systems.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 
 '''
 from __future__ import absolute_import
@@ -60,7 +61,7 @@ class DisableAutoLogin(RuleKVEditor):
         self.rulename = 'DisableAutoLogin'
         self.formatDetailedResults("initialize")
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.mandatory = True
         self.helptext = "This rule will disable auto login on this " + \
             "computer. This cannot be undone/reverted."
