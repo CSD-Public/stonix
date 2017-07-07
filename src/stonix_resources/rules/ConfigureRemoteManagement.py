@@ -27,13 +27,15 @@ Remote management should only be enabled on trusted networks with strong user
 controls present in a Directory system, mobile devices without strict controls
 are vulnerable to exploit and monitoring.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2016/07/07 eball Converted to RuleKVEditor
+@change: 2017/06/16 Breen Malmberg Added ARD_AllLocalUsersPrivs kveditor
 '''
 
 from __future__ import absolute_import
+
 from ..ruleKVEditor import RuleKVEditor
 
 
@@ -74,6 +76,19 @@ class ConfigureRemoteManagement(RuleKVEditor):
                              None,
                              False,
                              {"ARD_AllLocalUsers": ["1", "-bool yes"]})
+
+            self.addKVEditor("ARD_AllLocalUsersPrivs",
+                             "defaults",
+                             "/Library/Preferences/com.apple.RemoteManagement",
+                             "",
+                             {"ARD_AllLocalUsersPrivs": ["1073742058", "-int 1073742058"]},
+                             "present",
+                             "",
+                             "Set which privleges local users have access to",
+                             None,
+                             False,
+                             {"ARD_AllLocalUsersPrivs": ["0", "-int 0"]})
+
             self.addKVEditor("ScreenSharingReqPermEnabled",
                              "defaults",
                              "/Library/Preferences/com.apple.RemoteManagement",

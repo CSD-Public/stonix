@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2016.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2016-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,6 +26,7 @@ dictionary
 
 @author: ekkehard j. koch
 @change: 2016/03/04 ekkehard Original Implementation
+@change: 2017/06/27 ekkehard Update help text
 '''
 from __future__ import absolute_import
 import traceback
@@ -50,7 +51,9 @@ class SystemIntegrityProtection(Rule):
         self.rulename = 'SystemIntegrityProtection'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules set the network setup of your OS X "
+        self.helptext = "This report only rule verifies that macOS (OS X)'s " + \
+        "System Integrity Protection (SIP) is enabled by checking the " + \
+        "output to the following command: /usr/bin/csrutil status."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
