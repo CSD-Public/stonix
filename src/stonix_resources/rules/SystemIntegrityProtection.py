@@ -27,6 +27,7 @@ dictionary
 @author: ekkehard j. koch
 @change: 2016/03/04 ekkehard Original Implementation
 @change: 2017/06/27 ekkehard Update help text
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import traceback
