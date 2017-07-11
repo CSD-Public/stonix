@@ -338,8 +338,10 @@ contain the no_root_squash, all_squash or insecure_locks options."""
         @rtype: bool
         @author: dwalker
         @change: Breen Malmberg - 4/26/2016 - changed location of defaults variables in method;
-        added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
-        changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
+                added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
+                changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
+        @change: Breen Malmberg - 7/11/2017 - added another service check on mac os x; no files will be created on mac if the service is not
+                enabled
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering SecureNFS.fix()...")
@@ -415,10 +417,7 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                 if createFile(nfsfile, self.logger):
                     nfstemp = nfsfile + ".tmp"
                     if self.environ.getostype() == "Mac OS X":
-                        if not self.sh.auditservice('/System/Library/' +
-                                                    'LaunchDaemons/' +
-                                                    'com.apple.nfsd.plist',
-                                                    'com.apple.nfsd'):
+                        if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
                             success = True
                             self.formatDetailedResults("fix", success,
                                                        self.detailedresults)
@@ -495,8 +494,20 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                                     self.statechglogger, myid):
                         debug = "Unable to set permissions on " + nfsfile
                         self.logger.log(LogPriority.DEBUG, debug)
+
             export = "/etc/exports"
             if not os.path.exists(export):
+                # mac os x will automatically enable the nfs
+                # service and related ports if the file /etc/exports
+                # is created
+                if self.environ.getostype() == "Mac OS X":
+                    if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                        success = True
+                        self.formatDetailedResults("fix", success,
+                                                   self.detailedresults)
+                        self.logdispatch.log(LogPriority.INFO,
+                                             self.detailedresults)
+                        return success
                 if createFile(export, self.logger):
                     extemp = export + ".tmp"
                     data2 = {"all_squash": "",
