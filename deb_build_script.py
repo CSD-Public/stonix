@@ -55,14 +55,14 @@ controltext = '''Package: stonix
 Version: ''' + str(stonixversion) + '''
 Architecture: all
 Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
-Depends: python
+Depends: python2.7
 Section: python
 Priority: extra
 Description: ''' + str(stonixversion) + ''' release of STONIX hardening tool for Ubuntu
 '''
 
 changelogtext = str(stonixversion) + ''' BETA release notes:
-[Packager needs to modify these to reflect current release notes]
+http://trac.lanl.gov/cgi-bin/external/trac.cgi/wiki/STONIXreleaseNotes
 '''
 
 conffilestext = '''/etc/stonix.conf
