@@ -382,7 +382,7 @@ correct format as of the line: " + line + "\n"
                                 break
 
         else:
-            user = os.getlogin()
+            user = pwd.getpwuid(os.getuid())[ 0 ]
             output = os.listdir(homebase)
             for line in output:
                 #the current user has a home directory!
