@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Apr 25, 2013
 
 The su command allows a user to gain the privileges of another user by entering
