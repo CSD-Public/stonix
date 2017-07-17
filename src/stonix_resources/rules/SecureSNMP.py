@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Sep 30, 2013
 
 The Simple Network Management Protocol allows administrators to monitor the state of network 
@@ -35,6 +34,7 @@ possible. Configure SNMP if necessary.
 @change: 04/21/2014 ekkehard ci updates and ci fix method implementation
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -78,7 +78,7 @@ Configure SNMP if necessary.'''
         self.guidance = ['NSA 3.20', 'CCE 4540-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         datatype = 'bool'
         key = 'DisableSNMP'
         instructions = "If there is a mission-critical need for hosts at" + \
