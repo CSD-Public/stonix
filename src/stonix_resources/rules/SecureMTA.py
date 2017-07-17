@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
 Created on Aug 8, 2013
 
 Mail servers are used to send and receive mail over a network on behalf of site
@@ -43,6 +43,7 @@ reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/07/30 eball Changed where setPerms occurs in fix
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -90,7 +91,7 @@ before clicking undo.'''
                          'CCE 14068-1', 'CCE 15018-5', 'CCE 4293-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.postfixfoundlist = []
         self.sendmailfoundlist = []

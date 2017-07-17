@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Mar 11, 2015
 
 @author: dwalker
@@ -35,6 +34,7 @@ added 3 new imports: listdir, isfile, join; added check for nfs exports in repor
 removed unnecessary return call (return success) - in fix method - which was at the same tab level as the
 method's return self.rulesuccess call, but before it, so it was always being called instead of
 return self.rulesuccess. self.rulesuccess will now return instead of success.
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -66,7 +66,7 @@ malformed export lines, export lines that are too permissive, and lines that \
 contain the no_root_squash, all_squash or insecure_locks options."""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.guidance = ["NSA(3.13.4)", "cce-4241-6", "cce-4465-1",
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]
