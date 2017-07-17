@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -31,6 +31,7 @@ possible.
 
 @author: bemalmbe
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -73,7 +74,7 @@ class DisableRemoteAppleEvents(Rule):
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.10']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # set up CIs
         datatype = 'bool'

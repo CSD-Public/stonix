@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Jul 22, 2013
 
 The Avahi daemon implements the DNS Service Discovery and Multicast DNS
@@ -48,6 +47,7 @@ configuration changes to the avahi service
 @change: 2016/02/11 eball PEP8 cleanup
 @change: 2016/02/11 eball Added NOZEROCONF=yes KVEditor for Red Hat systems
     to comply with CCE-RHEL7-CCE-TBD 2.5.2
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -101,7 +101,7 @@ the Avahi service in order to secure it.'''
                          'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)

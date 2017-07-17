@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -32,6 +32,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2016/09/09 eball Refactored reports and fixes to remove file creation
     from reports.
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
@@ -61,7 +62,7 @@ class NoCoreDumps(Rule):
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         datatype = 'bool'
         key = 'NOCOREDUMPS'

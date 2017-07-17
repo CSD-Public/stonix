@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -39,6 +39,7 @@ checked in fix method.
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/04/30 Breen corrected mac implementation and separated mac and linux functionality
 @change: 2015/10/07 eball Help text cleanup
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -92,7 +93,7 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         self.guidance = ['CIS', 'NSA 2.3.4.3', 'CCE-4561-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
     def report(self):
         '''

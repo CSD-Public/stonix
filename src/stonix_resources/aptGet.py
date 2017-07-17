@@ -34,7 +34,7 @@ class AptGet(object):
     command to install packages.
 
     @author: Derek T Walker
-    @change: 2012/08/06 dwalker - Original Implementation
+    @change: 2012/08/06 Derek Walker - Original Implementation
     @change: 2015/08/20 eball - Added getPackageFromFile
     @change: 2017/04/27 Breen Malmberg - added two methods checkUpdate
             and Update; fixed doc string formatting; removed detailedresults
@@ -57,7 +57,6 @@ class AptGet(object):
         self.checkupdates = self.aptgetloc + " -u upgrade --assume-no "
         self.updatepkg = self.aptgetloc + " -u upgrade --assume-yes "
 
-###############################################################################
     def installpackage(self, package):
         '''
         Install a package. Return a bool indicating success or failure.
@@ -66,7 +65,7 @@ class AptGet(object):
                 recognizable to the underlying package manager.
         @return: installed
         @rtype: bool
-        @author: dwalker
+        @author: Derek Walker
         @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
                 method now returns a variable; parameter validation added
                 detailedresults replaced with logging
@@ -92,8 +91,6 @@ class AptGet(object):
         except Exception:
             raise
         return installed
-
-###############################################################################
 
     def removepackage(self, package):
         '''
@@ -121,13 +118,12 @@ class AptGet(object):
             if removed:
                 self.logger.log(LogPriority.DEBUG, "Successfully removed package " + str(package))
             else:
-                self.loger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
+                self.logger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
 
         except Exception:
             raise
         return removed
 
-###############################################################################
     def checkInstall(self, package):
         '''
         Check the installation status of a package. Return a bool; True if
@@ -138,7 +134,7 @@ class AptGet(object):
                 manager.
         @return: installed
         @rtype: bool
-        @author: dwalker
+        @author: Derek Walker
         @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
                 method now returns a variable; replaced detailedresults with
                 logging
@@ -170,8 +166,6 @@ class AptGet(object):
         except Exception:
             raise
         return installed
-
-###############################################################################
 
     def checkAvailable(self, package):
         '''
@@ -298,7 +292,6 @@ class AptGet(object):
             raise
         return updatesavail
 
-###############################################################################
     def getPackageFromFile(self, filename):
         '''
         Returns the name of the package that provides the given
@@ -328,10 +321,8 @@ class AptGet(object):
             raise
         return packagename
 
-###############################################################################
     def getInstall(self):
         return self.install
 
-###############################################################################
     def getRemove(self):
         return self.remove

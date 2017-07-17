@@ -38,6 +38,7 @@ fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2016/08/09 Breen Malmberg Added os x implementation; refactored large
 parts of the code as well
 @change: 2016/08/30 eball Refactored fixLinux() method, PEP8 cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -87,7 +88,7 @@ and enables and configures logging for these daemons.'''
                          'CCE-4230-9', 'CCE-4445-3']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # init CIs
         datatype = 'bool'
