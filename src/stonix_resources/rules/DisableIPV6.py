@@ -31,6 +31,8 @@ Created on Apr 9, 2013
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/16 eball Moved all file creation from report to fix
+@change: 2017/6/29  bgonz12 Added fix in ReportLinux for machines that have
+                            deprecated "ifconfig"
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
@@ -406,7 +408,11 @@ and/or wasn't able to be created\n"
         self.modprobes2 = {"options ipv6 disable": "1"}
         remove1 = []
         remove2 = []
-        cmd = ["/sbin/ifconfig"]
+        # "ifconfig"has been deprecated on Debian9 so use "ip addr" instead
+        if os.path.exists("/sbin/ifconfig"):
+            cmd = ["/sbin/ifconfig"]
+        else:
+            cmd = ["/sbin/ip", "addr"]
         cmdhelper = CommandHelper(self.logger)
         if not cmdhelper.executeCommand(cmd):
             compliant = False
