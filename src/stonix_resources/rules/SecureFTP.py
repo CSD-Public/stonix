@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -34,6 +34,7 @@ the Fix method.
 @change: 2014/08/26 Multiple bugs on RHEL 7 fixed.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/04/26 ekkehard Results Formatting
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -81,7 +82,7 @@ of users allowed to access ftp and set the default umask for ftp users.
                          'CCE 4549-2', 'CCE 4554-2', 'CCE 4443-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # init CI(s)
         datatype = 'bool'
