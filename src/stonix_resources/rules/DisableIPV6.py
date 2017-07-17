@@ -32,6 +32,8 @@ Created on Apr 9, 2013
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/16 eball Moved all file creation from report to fix
+@change: 2017/6/29  bgonz12 Added fix in ReportLinux for machines that have
+                            deprecated "ifconfig"
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
