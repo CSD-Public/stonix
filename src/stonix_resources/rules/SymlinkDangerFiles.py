@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Oct 24, 2012
 The Symlink Dangerous Files class checks for the presence of certain files -
 namely /root/.rhosts, /root/.shosts, and /etc/hosts.equiv, and symlinks them to
@@ -36,6 +35,7 @@ control.
 @change: 2014/08/11 ekkehard fixed isApplicable
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -82,7 +82,7 @@ class SymlinkDangerFiles(Rule):
         self.guidance = ['CIS RHEL 5 Benchmark Appendix A SN.1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # init CIs
         self.ci = self.initCi("bool",
