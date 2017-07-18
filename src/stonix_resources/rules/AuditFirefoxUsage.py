@@ -27,6 +27,7 @@ Checks the root user's Firefox history for non-local browsing. The root user
 should only use the browser for administration tasks.
 @author: Eric Ball
 '''
+
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
 from ..localize import LOCALDOMAINS
@@ -81,6 +82,7 @@ DISABLEPROXY to True."""
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.ph = Pkghelper(self.logger, self.environ)
+        self.auditonly = True
 
     def report(self):
         '''

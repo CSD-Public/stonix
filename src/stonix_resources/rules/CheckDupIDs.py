@@ -90,6 +90,7 @@ class CheckDupIDs(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.issuelist = []
+        self.auditonly = True
 
     def report(self):
         '''CheckDuplicateIds.report(): produce a report on whether or not local

@@ -91,7 +91,7 @@ The following options control the running of the script:
  -v  --verbose print verbose information about what stor is doing.
  -R  --rule run a single stonix rule. Requires -f, -X or -r.
 
-WARNING! If run with the -f flag THIS PROGAM WILL MODIFY
+WARNING! If run with the -f flag THIS PROGRAM WILL MODIFY
 SYSTEM SETTINGS!
 
 *********
@@ -99,7 +99,7 @@ The system should be rebooted when the script completes for all
 changes to take effect.
 *********
 
-stonix is a system hardening program produced by the CSD
+stonix is a system hardening program produced by the NIE
 Development Services team. It is designed to apply hardening settings
 to Unix and Unix-like operating systems in accordance with published
 security guidelines.
@@ -114,11 +114,20 @@ hardening process please review the hardening guidance from CIS, DISA and NSA.
 
 Created on Aug 23, 2010
 
-@author: dkennel
-@change: 2017/03/07 - dkennel - Added support for FISMA categorization.
-@change: 2017/06/19 - dkennel - Added safeties to rule loading for redundant
+@author: David Kennel
+@change: 2017/03/07 - David Kennel - Added support for FISMA categorization.
+@change: 2017/06/19 - David Kennel - Added safeties to rule loading for redundant
 rule names and numbers.
+@change: 2017/07/12 - Breen Malmberg - added method getruleauditonly();
+        added todo notes; changed author name formats to be consistent;
+        fixed some typo's in the class doc string; updated group name (CSD -> NIE)
+@todo: There are some methods that require fixing / completing / re-working
+        (search FIX ME)
+@todo: All methods need a once-over done on their doc strings
+@todo: improve logging/debugging on all methods
+@todo: look at adding try/except to all methods missing them
 '''
+
 # Std Library imports
 import sys
 import os
@@ -322,7 +331,7 @@ class Controller(Observable):
         @return: List of instantiated rule objects
 
         @return: list : a list of instantiated rule classes
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulewalklist = []
         instruleclasses = []
@@ -479,7 +488,7 @@ class Controller(Observable):
 
         @param rules: List of instantiated rule objects
         @return: List of instantiated rule objects
-        @author: D. Kennel
+        @author: David Kennel
         """
         applicablerules = []
         for rule in rules:
@@ -513,7 +522,7 @@ class Controller(Observable):
         and the rule help text. The dictionary is keyed by rule number.
 
         @return: Dictionary of lists
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulesdata = {}
         for rule in self.installedrules:
@@ -537,7 +546,7 @@ class Controller(Observable):
         @param string: name of the rule to fetch a number for.
         @return: int : number for the rule matching the passed name 0 if no
         match is found.
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulenum = 0
         for rule in self.installedrules:
@@ -555,7 +564,7 @@ class Controller(Observable):
         @param int: number of the rule to fetch a name for.
         @return: string : name for the rule matching the passed number. None if
         no match is found.
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulename = None
         for rule in self.installedrules:
@@ -569,7 +578,7 @@ class Controller(Observable):
         Call all rules in fix(harden) mode
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
@@ -624,7 +633,7 @@ class Controller(Observable):
         Call all rules in audit(report) mode
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
@@ -668,7 +677,7 @@ class Controller(Observable):
 
         @param int ruleid :
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
@@ -756,7 +765,7 @@ class Controller(Observable):
 
         @param int ruleid :
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         message = "Controller:runruleaudit: Entering with rule id " + \
         str(ruleid)
@@ -810,7 +819,7 @@ class Controller(Observable):
         Undo all changes to the system.
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
@@ -847,7 +856,7 @@ class Controller(Observable):
 
         @param int ruleid :
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
@@ -888,7 +897,7 @@ class Controller(Observable):
 
         @param int ruleid : int (identifier) of rule to get help text for.
         @return string :
-        @author D. Kennel
+        @author David Kennel
         """
         helptxt = []
         for rule in self.installedrules:
@@ -901,7 +910,7 @@ class Controller(Observable):
         Update all databases held by database rules in stonix_resources.
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         numdbrules = 0
         self.numrulescomplete = 0
@@ -935,7 +944,7 @@ class Controller(Observable):
         text and a list of configitem objects for that rule.
 
         @return dict :
-        @author D. Kennel
+        @author David Kennel
         """
         configdict = {}
         for rule in self.installedrules:
@@ -956,7 +965,7 @@ class Controller(Observable):
 
         @param int ruleid : Integer rule number
         @return list : list of configurationitem objects
-        @author D. Kennel
+        @author David Kennel
         """
         cilist = []
         for rule in self.installedrules:
@@ -975,7 +984,7 @@ class Controller(Observable):
         @param bool simpleconf : Whether or not we are generating a simple
         configuration file or not.
         @return  : void
-        @author D. Kennel
+        @author David Kennel
         """
         currdata = self.getconfigoptions()
         self.config.writeconfig(simpleconf, currdata)
@@ -997,7 +1006,7 @@ class Controller(Observable):
         stack is running.
 
         @return string : rulename
-        @author D. Kennel
+        @author David Kennel
         """
         return self.currulename
 
@@ -1008,7 +1017,7 @@ class Controller(Observable):
 
         @param int: ruleid
         @return: bool
-        @author: D. Kennel
+        @author: David Kennel
         """
         compliant = False
         for rule in self.installedrules:
@@ -1023,7 +1032,7 @@ class Controller(Observable):
 
         @param int: ruleid
         @return: string
-        @author: D. Kennel
+        @author: David Kennel
         """
         detailedresults = []
         for rule in self.installedrules:
@@ -1038,7 +1047,7 @@ class Controller(Observable):
         rule stack is running.
 
         @return int : range 0 - 100
-        @author D. Kennel
+        @author David Kennel
         """
         total = float(self.numrulesrunning)
         curr = float(self.numrulescomplete)
@@ -1053,12 +1062,36 @@ class Controller(Observable):
             print "Controller:getcompletionpercentage: Percent: " + str(percent)
         return percent
 
+    def getruleauditonly(self, ruleid):
+        '''
+        This method returns the audit only status boolean
+        from the rule with a given <ruleid>.
+
+        @param ruleid: int; the rule number identifier
+        @return: auditonly
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        auditonly = False
+
+        try:
+
+            for rule in self.installedrules:
+                if ruleid == rule.getrulenum():
+                    auditonly = rule.getauditonly()
+
+        except Exception as err:
+            self.logger.log(LogPriority.DEBUG, str(err))
+            return False
+        return auditonly
+
     def displaylastrun(self):
         """
         Returns the contents of the log file by way of the logger object.
 
         @return string :
-        @author
+        @author: ???
         """
         return self.logger.displaylastrun()
 
@@ -1070,7 +1103,7 @@ class Controller(Observable):
 
         @param object_ callingobject :
         @return  :
-        @author
+        @author: ???
         """
         pass
 
@@ -1082,7 +1115,7 @@ class Controller(Observable):
         our PID.
 
         @return: void
-        @author: D. Kennel
+        @author: David Kennel
         """
         lockmessage = """
 !WARNING! Another copy of STONIX appears to be running!
@@ -1159,7 +1192,7 @@ ABORTING EXECUTION!"""
         Check that the installation of STONIX is safe from a security
         perspective. All files must only be writable by root.
 
-        @author: dkennel
+        @author: David Kennel
         @return: bool True if install passes checks
         """
         safe = True
@@ -1171,7 +1204,7 @@ ABORTING EXECUTION!"""
         exit.
 
         @return: void
-        @author: D. Kennel
+        @author: David Kennel
         """
 
         if os.path.exists(self.lockfile):
@@ -1187,7 +1220,7 @@ ABORTING EXECUTION!"""
         This method calls the prog_args instance to process the command line
         args and then jumps to the appropriate execution mode.
 
-        @author: R. Nielsen, D. Kennel
+        @author: R. Nielsen, David Kennel
         @return: void
         """
         self.environ.setverbosemode(self.prog_args.get_verbose())
@@ -1261,7 +1294,7 @@ ABORTING EXECUTION!"""
         is needed for users to be able to list rules available to run in module
         mode. The program will exit after this method is complete.
 
-        @author: D. Kennel
+        @author: David Kennel
         @return: void
         """
         rulelist = []
@@ -1284,7 +1317,7 @@ ABORTING EXECUTION!"""
         """
         This private method performs a cli run based on the passed flags.
 
-        @author: D. Kennel
+        @author: David Kennel
         @return: void
         """
         self.logger.log(LogPriority.DEBUG,

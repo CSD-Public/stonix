@@ -66,8 +66,12 @@ class Rule (Observable):
 
     """
     Abstract class for all Rule objects.
-    :version: 1.0
-    :author: D. Kennel
+
+    @version: 1.0
+    @author:  D. Kennel
+    @change: Breen Malmberg - 7/18/2017 - added method getauditonly();
+            added and initialized variable self.auditonly to False (default);
+            fixed doc string
     """
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -99,6 +103,7 @@ LANL-stonix."""
         self.currstate = "notconfigured"
         self.targetstate = "configured"
         self.guidance = []
+        self.auditonly = False
 
     def fix(self):
         """
@@ -764,3 +769,18 @@ LANL-stonix."""
             formattedDetailedResults = ""
             raise
         return formattedDetailedResults
+
+    def getauditonly(self):
+        '''
+        Return the audit only status boolean.
+        This class variable (self.auditonly) is
+        meant to indicate whether a particular
+        rule is intended to be audit-only or not.
+        Default = False.
+
+        @return: self.auditonly
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        return self.auditonly

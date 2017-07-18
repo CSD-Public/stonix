@@ -72,6 +72,7 @@ in promiscuous mode or not.'
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
+        self.auditonly = True
         # set up class var's and objects
         self.setup()
 
@@ -262,16 +263,6 @@ in promiscuous mode or not.'
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-    def fix(self):
-        '''
-        there is no fix for this rule. inform the user.
-
-        @author: Breen Malmberg
-        '''
-
-        self.detailedresults += "\nThere is no fix action for this rule."
-        self.logger.log(LogPriority.DEBUG, "The fix method was run but there is no fix action for this rule.")
 
     def undo(self):
         '''

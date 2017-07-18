@@ -70,6 +70,7 @@ on their own partitions: /home, /tmp, ,/var, /var/tmp, /var/log, \
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
         self.hasrunalready = False
+        self.auditonly = True
 
     def report(self):
         '''CheckPartitioning.report(): produce a report on whether or not the
