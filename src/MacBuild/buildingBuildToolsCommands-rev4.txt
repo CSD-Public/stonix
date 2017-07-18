@@ -1,9 +1,9 @@
 #####
 # If on proxied network, set the proxies:
 
-export HTTPS_PROXY=https://proxyout.lanl.gov:8080
+export HTTPS_PROXY=http://proxyout.lanl.gov:8080
 export HTTP_PROXY=http://proxyout.lanl.gov:8080
-export https_proxy=https://proxyout.lanl.gov:8080
+export https_proxy=http://proxyout.lanl.gov:8080
 export http_proxy=http://proxyout.lanl.gov:8080
 
 #####
