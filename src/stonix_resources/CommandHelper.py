@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -22,6 +21,7 @@
 #                                                                             #
 ###############################################################################
 
+'''
 @author: ekkehard
 @author: rsn
 @author: dwalker
@@ -33,10 +33,14 @@
 @change: 2014/10/20 ekkehard fix pep8 violation
 @change: 2015/09/22 ekkehard Uniform logging
 '''
+
 import re
 import subprocess
 import traceback
 import types
+import time
+import sys
+
 from logdispatcher import LogPriority
 
 
@@ -72,6 +76,7 @@ class CommandHelper(object):
 
         # set this to False if you need to run a command that has no return code
         self.wait = True
+        self.cmdtimeout = 0
 
 ###############################################################################
 
@@ -496,6 +501,8 @@ class CommandHelper(object):
         @author: ekkehard j. koch
         '''
 
+        commandaborted = False
+
         try:
             commandobj = None
             success = True
@@ -514,17 +521,36 @@ class CommandHelper(object):
                                      "".join(self.command) + ")")
 
             if (success):
+                time_start = time.time()
                 commandobj = subprocess.Popen(self.command,
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE,
                                               shell=self.shell)
+                if self.cmdtimeout:
+                    while commandobj.poll() is None:
+                        if time.time() - time_start >= self.cmdtimeout:
+                            commandobj.terminate()
+                            commandobj.returncode = -1
+                            self.logdispatcher.log(LogPriority.DEBUG, "Command exceeded specified max. run time of: " + str(self.cmdtimeout) + " seconds! Command aborted!")
+                            commandaborted
+                            break
+                        else:
+                            continue
+
+                if commandaborted:
+                    success = False
+                    self.returncode = commandobj.returncode
+                    return success
+
                 outlines = []
                 errlines = []
                 # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
-                    outs, errs = commandobj.communicate()
-                    outlines = str(outs).splitlines()
-                    errlines = str(errs).splitlines()
+
+                    if commandobj is not None:
+                        outs, errs = commandobj.communicate()
+                        outlines = str(outs).splitlines()
+                        errlines = str(errs).splitlines()
 
                 if commandobj is not None:
                     self.stdout = outlines
