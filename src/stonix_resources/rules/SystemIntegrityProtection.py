@@ -28,6 +28,7 @@ dictionary
 @change: 2016/03/04 ekkehard Original Implementation
 @change: 2017/06/27 ekkehard Update help text
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/07/26 ekkehard - make it an audit only rule
 '''
 from __future__ import absolute_import
 import traceback
@@ -60,6 +61,7 @@ class SystemIntegrityProtection(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11.0', 'r', '10.13.10']}}
         self.sipobject = SystemIntegrityProtectionObject(self.logdispatch)
+        self.auditonly = True
 
     def report(self):
         try:
@@ -82,34 +84,6 @@ class SystemIntegrityProtection(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
-###############################################################################
-
-    def fix(self):
-        '''
-        Fix
-
-        @author Ekkehard Koch
-        '''
-
-        success = True
-
-        try:
-            self.detailedresults = ''
-            self.rulesuccess = True
-            msg = "No fixes are available"
-            self.logdispatch.log(LogPriority.INFO, msg)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as err:
-            self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return success
     
 ###############################################################################
 
