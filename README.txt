@@ -36,10 +36,7 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
   will not express a dependecy on PyQt due to the GUI's optional nature.
 <<<<<<< HEAD
 
-  At the present time (revision 0.9.9) the following platforms are used for
-=======
   At the present time (revision 0.9.10) the following platforms are used for
->>>>>>> stonix-0.9.10
   development and test: Red Hat Enterprise Linux 6 and 7, Fedora Linux
   22, OpenSuSE 13.2, Debian 7 and 8 (stable), Ubuntu 14.04 LTS, CentOS 7,
   OS X El Capitan 10.11, macOS Sierra 10.12, macOS High Sierra 10.13.
