@@ -285,6 +285,15 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                                          self.rule_list_widget.selectedItems()[0].text())
             rule_name = self.rule_list_widget.selectedItems()[0].text()
             rule_num = self.controller.getrulenumbyname(rule_name)
+
+            # check whether the currently selected rule is audit only
+            auditonly = self.controller.getruleauditonly(rule_num)
+            # disable or enable the fix button, based on audit only status
+            if auditonly:
+                self.fix_button.setEnabled(False)
+            else:
+                self.fix_button.setEnabled(True)
+
             self.rule_instructions_text.setPlainText(QtWidgets.QApplication.translate("MainWindow",
                                                                             self.rule_data[rule_num][1],
                                                                             None))

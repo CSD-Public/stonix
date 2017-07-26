@@ -28,6 +28,8 @@ Created on May 31, 2016
     only occur if Gnome/KDE are installed. Did PEP8 and detailedresults cleanup.
 @change: 2017/7/3 bgonz12 Added check to make sure that gconf2 for Gnome is
     installed before running gconf configuration in fixgnome3
+@change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
+    desktop manager, SDDM.
 '''
 from __future__ import absolute_import
 
@@ -257,100 +259,121 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         """
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
-        except(TypeError):
-            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
-                "valid!\n"
-            return False
-        if self.environ.geteuid() == 0:
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__chkkde4',
-                                  'Root user context beginning passwd loop'])
-            failed = []
-            fhandle = open('/etc/passwd', 'r')
-            passwddata = fhandle.readlines()
-            fhandle.close()
-            for user in passwddata:
-                user = user.split(':')
-                try:
-                    username = user[0]
-                    homepath = user[5]
-                except(IndexError):
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__chkkde4',
-                                          'IndexError processing ' + str(user)])
-                    continue
-                if not os.path.exists(os.path.join(homepath, '.kde')):
+            ph = Pkghelper(self.logger, self.environ)
+            kdesddm = False
+            kdesddm = ph.check("sddm")
+            kdecheck = ""
+            rcpath = ""
+            # Lines to search for in rc file
+            rcdesired = []
+            if kdesddm:
+                kdecheck = ".config/kdeglobals"
+                rcpath = ".config/kscreenlockerrc"
+                rcdesired = ["Timeout=" + str(self.timeoutci.getcurrvalue()) + "\n"]
+            else:
+                kdecheck = ".kde"
+                rcpath = ".kde/share/config/kscreensaverrc"
+                rcdesired = ["AutoLogout=true\n", "AutoLogoutTimeout=" +
+                          str(seconds) + "\n"]
+            if self.environ.geteuid() == 0:
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['ForceIdleLogout.__chkkde4',
+                                      'Root user context beginning passwd ' +
+                                      ' loop'])
+                failed = []
+                fhandle = open('/etc/passwd', 'r')
+                passwddata = fhandle.readlines()
+                fhandle.close()
+                for user in passwddata:
+                    user = user.split(':')
+                    try:
+                        username = user[0]
+                        homepath = user[5]
+                    except(IndexError):
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             ['ForceIdleLogout.__chkkde4',
+                                              'IndexError processing ' + 
+                                              str(user)])
+                        continue
+                    if not os.path.exists(os.path.join(homepath, kdecheck)):
+                        # User does not use KDE
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             ['ForceIdleLogout.__chkkde4',
+                                              kdecheck + ' not found for ' +
+                                              str(username)])
+                        continue
+                    if not os.path.exists(os.path.join(homepath, rcpath)):
+                        failed.append(username)
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             ['ForceIdleLogout.__chkkde4',
+                                              rcpath + ' not found for ' +
+                                              str(username)])
+                    else:
+                        khandle = open(os.path.join(homepath, rcpath))
+                        rcdata = khandle.readlines()
+                        khandle.close()
+                        compliant = False
+                        for desired in rcdesired:
+                            compliant = False
+                            for data in rcdata:
+                                if desired == data:
+                                    compliant = True
+                            if not compliant:
+                                failed.append(username)
+                                break
+                if len(failed) == 0:
+                    return True
+                else:
+                    userlist = ', '.join(failed)
+                    self.detailedresults += "The following users have KDE " + \
+                        "preference files but are not configured for " + \
+                        " automatic logout: " + userlist + "\n"
+                    return False
+            else:
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['ForceIdleLogout.__chkkde4',
+                                      'Non root user context starting check'])
+                if not os.path.exists(os.path.join(self.environ.geteuidhome(),
+                                                   kdecheck)):
                     # User does not use KDE
                     self.logdispatch.log(LogPriority.DEBUG,
                                          ['ForceIdleLogout.__chkkde4',
-                                          'No .kde directory found for ' +
+                                          kdecheck + ' not found for ' +
                                           str(username)])
-                    continue
-                if not os.path.exists(os.path.join(homepath,
-                                                   '.kde/share/config/kscreensaverrc')):
-                    failed.append(username)
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__chkkde4',
-                                          'No kscreensaverrc for ' + str(username)])
+                    return True
                 else:
-                    khandle = open(os.path.join(homepath,
-                                                '.kde/share/config/kscreensaverrc'))
-                    rcdata = khandle.readlines()
-                    khandle.close()
-                    logout = False
-                    timeout = False
-                    for line in rcdata:
-                        if re.search('AutoLogout=true', line):
-                            logout = True
-                        if re.search('AutoLogoutTimeout=' + str(seconds),
-                                     line):
-                            timeout = True
-                    if logout and timeout:
-                        continue
-                    else:
-                        failed.append(username)
-            if len(failed) == 0:
-                return True
-            else:
-                userlist = ', '.join(failed)
-                self.detailedresults += "The following users have KDE " + \
-                    "preference files but are not configured for automatic " + \
-                    "logout: " + userlist + "\n"
-                return False
-        else:
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__chkkde4',
-                                  'Non root user context starting check'])
-            if not os.path.exists(os.path.join(self.environ.geteuidhome(),
-                                               '.kde')):
-                return True
-            else:
-                if not os.path.exists(os.path.join(self.environ.geteuidhome(),
-                                                   '.kde/share/config/kscreensaverrc')):
-                    self.detailedresults += "Your .kde/share/config/" + \
-                        "kscreensaverrc file does not exist.\n"
-                    return False
-                else:
-                    ihandle = open(os.path.join(self.environ.geteuidhome(),
-                                                '.kde/share/config/kscreensaverrc'))
-                    idata = ihandle.readlines()
-                    ilogout = False
-                    itimeout = False
-                    for iline in idata:
-                        if re.search('AutoLogout=true', iline):
-                            ilogout = True
-                        if re.search('AutoLogoutTimeout=' + str(seconds),
-                                     iline):
-                            itimeout = True
-                    if ilogout and itimeout:
-                        return True
-                    else:
-                        self.detailedresults += "Your .kde/share/config/" + \
-                            "kscreensaverrc file is not configured for " + \
-                            "automatic logout. It should contain the " + \
-                            "lines: AutoLogout=true, and AutoLogoutTimeout=" + \
-                            str(seconds) + "\n"
+                    if not os.path.exists(os.path.join(
+                                            self.environ.geteuidhome(),
+                                            rcpath)):
+                        self.detailedresults += "Your " + rcpath + \
+                                                "file does not exist.\n"
                         return False
+                    else:
+                        ihandle = open(os.path.join(self.environ.geteuidhome(),
+                                                    rcpath))
+                        rcdata = ihandle.readlines()
+                        ihandle.close()
+                        compliant = False
+                        for desired in rcdesired:
+                            compliant = False
+                            for data in rcdata:
+                                if desired == data:
+                                    compliant = True
+                            if not compliant:
+                                break
+                        if compliant:
+                            return True
+                        else:
+                            self.detailedresults += "Your " + rcpath + \
+                                " file is not configured for " + \
+                                "automatic logout. It should contain the " + \
+                                "lines: "
+                            for desired in rcdesired:
+                                self.detailedresults += desired
+                            return False
+        except Exception, err:
+            self.detailedresults += str(err)
+            raise
 
     def chkosx(self):
         globalprefs = "/Library/Preferences/.GlobalPreferences.plist"
@@ -381,7 +404,8 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.gnomeInstalled = False
                 if self.gnomeInstalled:
                     gnomecheck = self.chkgnome3()
-                if ph.check("kdm") or ph.check("kde-workspace"):
+                if ph.check("kdm") or ph.check("kde-workspace") or \
+                                      ph.check("sddm"):
                     self.kdeInstalled = True
                 else:
                     self.kdeInstalled = False
@@ -581,18 +605,15 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     defgid = int(user[3])
                     homepath = user[5]
                 except(IndexError):
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__fixkde4',
+                    self.logdispatch.log(LogPriority.DEBUG, \
+                                         ['ForceIdleLogout.__fixkde4', \
                                           'IndexError processing ' + str(user)])
                     continue
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['ForceIdleLogout.__fixkde4',
+                self.logdispatch.log(LogPriority.DEBUG, \
+                                     ['ForceIdleLogout.__fixkde4', \
                                       'Calling rcfix on ' + str(user)])
                 self.kdercfix(uidnum, defgid, homepath)
         else:
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__chkkde4',
-                                  'IndexError processing ' + str(user)])
             homepath = self.environ.geteuidhome()
             uidnum = int(self.environ.geteuid())
             found = False
@@ -622,73 +643,68 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         """
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
-        except(TypeError):
-            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
-                "valid!\n"
-            return False
-        if not os.path.exists(os.path.join(homepath, '.kde')):
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__kdercfix',
-                                  'No .kde folder'])
-            # User does not use KDE
-            return
-        rcpath = os.path.join(homepath,
-                              '.kde/share/config/kscreensaverrc')
-        self.logdispatch.log(LogPriority.DEBUG,
-                             ['ForceIdleLogout.__kdercfix',
-                              'rcpath is ' + str(rcpath)])
-        if not os.path.exists(rcpath):
-            rcstring = '''[ScreenSaver]
-AutoLogout=true
-AutoLogoutTimeout=''' + str(seconds)
-            kwhandle = open(rcpath, 'w')
-            kwhandle.write(rcstring)
-            os.chmod(rcpath, 0644)
-            os.chown(rcpath, uidnum, defgid)
-            resetsecon(rcpath)
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__kdercfix',
-                                  'Created kscreensaverrc'])
-        else:
-            khandle = open(rcpath)
-            rcdata = khandle.readlines()
-            khandle.close()
-            logout = False
-            timeout = False
-            for line in rcdata:
-                if re.search('AutoLogout=true', line):
-                    logout = True
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__kdercfix',
-                                          'Found logout'])
-                if re.search('AutoLogoutTimeout=' + str(seconds),
-                             line):
-                    timeout = True
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__kdercfix',
-                                          'Found timeout'])
-                if re.search('AutoLogoutTimeout=', line) and not timeout:
-                    rcdata.remove(line)
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['ForceIdleLogout.__kdercfix',
-                                          'Fixing timeout'])
-            if logout and timeout:
+            ph = Pkghelper(self.logger, self.environ)
+            kdesddm = False
+            kdesddm = ph.check("sddm")
+            kdecheck = ""
+            rcpath = ""
+            # Lines to add in rc file
+            rcdesired = []
+            if kdesddm:
+                kdecheck = ".config/kdeglobals"
+                rcpath = ".config/kscreenlockerrc"
+                rcdesired = ["[Daemon]\n", 
+                          "Timeout=" + str(self.timeoutci.getcurrvalue()) + "\n"]
+            else:
+                kdecheck = ".kde"
+                rcpath = ".kde/share/config/kscreensaverrc"
+                rcdesired = ["[ScreenSaver]\n" ,"AutoLogout=true\n", 
+                             "AutoLogoutTimeout=" + str(seconds) + "\n"]
+            if not os.path.exists(os.path.join(homepath, kdecheck)):
                 self.logdispatch.log(LogPriority.DEBUG,
                                      ['ForceIdleLogout.__kdercfix',
-                                      'RC file looks correct'])
+                                      kdecheck + ' not found'])
+                # User does not use KDE
                 return
-            else:
+            rcpath = os.path.join(homepath, rcpath)
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 ['ForceIdleLogout.__kdercfix',
+                                  'rcpath is ' + str(rcpath)])
+            if not os.path.exists(rcpath):
+                rcstring = ""
+                for desired in rcdesired:
+                    rcstring += desired + "\n"
                 kwhandle = open(rcpath, 'w')
-                if not logout:
-                    rcdata.append('AutoLogout=true')
-                if not timeout:
-                    rcdata.append('AutoLogoutTimeout=' + str(seconds))
-                #TODO What if file has timeout but seconds is incorrect?
-                kwhandle.writelines(rcdata)
-                kwhandle.close()
+                kwhandle.write(rcstring)
                 os.chmod(rcpath, 0644)
                 os.chown(rcpath, uidnum, defgid)
                 resetsecon(rcpath)
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['ForceIdleLogout.__kdercfix',
+                                      'Created kscreensaverrc'])
+            else:
+                khandle = open(rcpath)
+                rcdata = khandle.readlines()
+                khandle.close()
+                compliant = True
+                for desired in rcdesired:
+                    linefound = False
+                    for data in rcdata:
+                        if desired == data:
+                            linefound = True
+                    if not linefound:
+                        compliant = False
+                        rcdata.append(desired)
+                if not compliant:
+                    kwhandle = open(rcpath, 'w')
+                    kwhandle.writelines(rcdata)
+                    kwhandle.close()
+                    os.chmod(rcpath, 0644)
+                    os.chown(rcpath, uidnum, defgid)
+                    resetsecon(rcpath)
+        except Exception, err:
+            self.detailedresults += err
+            return False
 
     def fixosx(self):
         if not self.editor.report():
