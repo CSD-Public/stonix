@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Apr 22, 2015
 
 @author: dwalker

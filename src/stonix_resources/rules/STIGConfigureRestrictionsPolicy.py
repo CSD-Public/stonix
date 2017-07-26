@@ -1,4 +1,3 @@
-
 ###############################################################################
 #                                                                             #
 # Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
