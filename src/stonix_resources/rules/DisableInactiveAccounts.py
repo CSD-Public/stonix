@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Jan 21, 2016
 
 This rule will set the global policy for inactive accounts so that any account,
