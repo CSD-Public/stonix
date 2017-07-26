@@ -37,7 +37,7 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
   At the present time (revision 0.9.9) the following platforms are used for
   development and test: Red Hat Enterprise Linux 6 and 7, Fedora Linux
   22, OpenSuSE 13.2, Debian 7 and 8 (stable), Ubuntu 14.04 LTS, CentOS 7,
-  Apple's OS X Yosemite 10.10, OS X El Capitan 10.11, and macOS Sierra 10.12.
+  OS X El Capitan 10.11, macOS Sierra 10.12, macOS High Sierra 10.13.
   Close derivatives of these operating systems should be well supported,
   more distant cousins less so.
   
