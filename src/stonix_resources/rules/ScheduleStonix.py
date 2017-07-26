@@ -35,8 +35,8 @@ per day
 @change: 2014/09/02 ekkehard self.rootrequired = True & OS X 10.10 compliant
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
-@change 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
-        within ServiceHelper and SHlaunchd)
+@change: 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
+         within ServiceHelper and SHlaunchd)
 '''
 
 from __future__ import absolute_import
