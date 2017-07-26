@@ -34,7 +34,6 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
   platforms. The program is primarily a command-line utility but there is a
   robust GUI built in. The GUI is implemented in PyQt. Many platform packages
   will not express a dependecy on PyQt due to the GUI's optional nature.
-<<<<<<< HEAD
 
   At the present time (revision 0.9.10) the following platforms are used for
   development and test: Red Hat Enterprise Linux 6 and 7, Fedora Linux
