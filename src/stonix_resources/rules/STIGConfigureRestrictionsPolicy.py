@@ -81,7 +81,14 @@ class STIGConfigureRestrictionsPolicy(Rule):
 #             self.profile = "/Users/username/stonix/src/" + \
 #                          "stonix_resources/files/" + \
 #                          "U_Apple_OS_X_10-11_V1R1_STIG_Restrictions_Policy.mobileconfig"
-    
+        else:
+            self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Restrictions_Policy.mobileconfig"
+#             self.profile = "/Users/username/stonix/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_macOS_10-12_V1R1_STIG_Restrictions_Policy.mobileconfig"
     def report(self):
         try:
             compliant = False

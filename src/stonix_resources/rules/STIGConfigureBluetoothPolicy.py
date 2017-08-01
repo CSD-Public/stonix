@@ -64,14 +64,22 @@ class STIGConfigureBluetoothPolicy(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         self.identifier = '\"Bluetooth Policy\"'
-        self.profile = "/Applications/stonix4mac.app/Contents/" + \
-                     "Resources/stonix.app/Contents/MacOS/" + \
-                     "stonix_resources/files/" + \
-                     "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
-        '''These directories for testing purposes only'''
+        if search("10\.11\.*", self.environ.getosver()):
 #             self.profile = "/Users/username/stonix/src/" + \
-#                          "stonix_resources/files/" + \
-#                          "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+            self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+        else:
+#             self.profile = "/Users/username/stonix/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_macOS_10-12_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+            self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Bluetooth_Policy.mobileconfig"
     
     def report(self):
         try:
