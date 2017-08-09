@@ -26,6 +26,7 @@ Created on Mar 4, 2015
 @author: dwalker
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball PEP8 cleanup
+@change: 2017/8/9 dwalker updated rule to use unload option vs disable option
 '''
 from __future__ import absolute_import
 from ..rule import Rule
