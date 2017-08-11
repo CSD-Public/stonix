@@ -29,17 +29,39 @@ Primary purpose is to create a link from /etc/stonix ->
 
 @author: Roy Nielsen
 """
+#--- Native python libraries
 import os
 import re
 import sys
 import time
 import errno
+import ctypes
 import shutil
 import random
 import inspect
-
 from subprocess import call
 
+def getLibc():
+    """
+    Acquire a reference to the system libc, initially to access the
+    filesystem "sync" function.
+
+    @returns: python reference to the C libc object, or False, if it can't
+              find libc on the system.
+
+    @author: Roy Nielsen
+    """
+    try:
+        #temp_dir = sys._MEIPASS
+        #libc_path = os.path.join(temp_dir, "libc.dylib")
+        #libc = ctypes.CDLL("libSystem.dylib")
+        libc = ctypes.CDLL("/usr/lib/libc.dylib")
+    except:
+        raise Exception("DAMN IT JIM!!!")
+    else:
+        print "Loading Mac dylib......................................"
+
+    return libc
 
 def log_message(message="", level="normal", priority="debug",
                 syslog_level=None):
@@ -398,11 +420,17 @@ def main():
     Main function...
     """
     message_level = "debug"
-
     log_message("Starting stonix4mac package postflight...", "normal",
                 message_level)
 
+    libc = getLibc()
     etcMove("/Applications/stonix4mac.app/Contents/Resources", message_level)
+
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
 
     #####
     # Decision to remove code not currently working on 9/28/2015
