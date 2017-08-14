@@ -428,7 +428,25 @@ def make_whatis(message_level):
     log_message("output: " + str(out), "normal", message_level)
     log_message("error: " + str(err), "normal", message_level)
 
+def touch_stonix_conf(message_level):
+    """
+    If the stonix.conf file doesn't exist, "touch" the file..
+    """
+    stonix_conf = "/etc/stonix.conf"
+    if not os.path.exists("/etc/stonix.conf"):
+        touch(stonix_conf, message_level)
+        try:
+            os.chmod(stonix_conf, 0o644)
+        except, Exception, err:
+            log_message("Could not chmod file: " + str(stonix_conf))
+            log_message("Associated exception: " + str(err))
+        try:
+            os.chown("/etc/stonix.conf", 0, 0)
+        except Exception, err:
+            log_message("Could not chown file: " + str(stonix_conf))
+            log_message("Associated exception: " + str(err))
 
+ 
 def main():
     """
     Main function...
@@ -446,18 +464,15 @@ def main():
     time.sleep(3)
     libc.sync()
 
-    #####
-    # Decision to remove code not currently working on 9/28/2015
-    # install_launchd_job(SOURCE_DIR, TARGET_DIR, message_level)
+    touch_stonix_conf(message_level)
 
     fix_app_perms()
 
     make_files_executable()
 
     stonix = "/usr/local/bin/stonix"
-    #stonix4mac = "/usr/local/bin/stonix4mac"
+    stonix4mac = "/usr/local/bin/stonix4mac"
 
-    # make_valid_link(my_link, my_link_source, message_level="normal"):
     make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" + "Resources/stonix.app/Contents/MacOS/stonix")
     make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" + "MacOS/stonix4mac")
 
