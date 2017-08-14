@@ -40,7 +40,7 @@ import traceback
 import getpass
 from glob import glob
 from tempfile import mkdtemp
-from time import time
+from time import time, sleep
 from subprocess import Popen, STDOUT, PIPE, call
 from shutil import rmtree, copy2
 from ConfigParser import SafeConfigParser
@@ -779,6 +779,46 @@ class SoftwareBuilder():
             output = Popen(makepkg, stdout=PIPE, stderr=STDOUT).communicate()[0]
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
+
+            self.libc.sync()
+            sleep(1)
+            self.libc.sync()
+            sleep(1)
+            self.libc.sync()
+            sleep(1)
+
+            #####
+            # Perform a codesigning on the stonix4mac application
+            cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', 
+                   '--psd', self.tmphome + '/src/MacBuild/stonix4mac/build/Release',
+                   '-c',
+                   '-p', self.ordPass, '-u', self.keyuser, 
+                   '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
+                   '-d',
+                   '-v', self.codesignVerbose,
+                   '-s', '"' + self.signature + '"',
+                   '--keychain', self.keychain]
+
+            self.logger.log(lp.DEBUG, '.')
+            self.logger.log(lp.DEBUG, '.')
+            self.logger.log(lp.DEBUG, "Working dir: " + buildDir)
+            self.logger.log(lp.DEBUG, '.')
+            self.logger.log(lp.DEBUG, '.')
+
+            #####
+            # Run the xcodebuild script to codesign the mac installer package
+            self.rw.setCommand(cmd)
+            output, error, retcode = self.rw.communicate()
+
+            for line in output.split('\n'):
+                self.logger.log(lp.DEBUG, line)
+            for line in error.split('\n'):
+                self.logger.log(lp.DEBUG, line)
+
+            self.libc.sync()
+            sleep(1)
+            self.libc.sync()
+            sleep(1)
 
             print "Moving dmg and pkg to the dmgs directory."
             #dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"

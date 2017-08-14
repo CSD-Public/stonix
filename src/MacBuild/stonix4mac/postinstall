@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -109,8 +110,7 @@ def log_message(message="", level="normal", priority="debug",
             retcode = call(cmd_string, shell=True)
             if retcode < 0:
                 print >> sys.stderr, \
-                    "logger Child was terminated by signal", \
-                    -retcode
+                    "logger Child was terminated by signal", retcode
             else:
                 pass
 
@@ -433,15 +433,22 @@ def touch_stonix_conf(message_level):
     If the stonix.conf file doesn't exist, "touch" the file..
     """
     stonix_conf = "/etc/stonix.conf"
-    if not os.path.exists("/etc/stonix.conf"):
+    if not os.path.exists(stonix_conf):
         touch(stonix_conf, message_level)
+        libc = getLibc()
+        libc.sync()
+        time.sleep(1)
+        libc.sync()
+        time.sleep(1)
+        libc.sync()
+        time.sleep(1)
         try:
             os.chmod(stonix_conf, 0o644)
-        except, Exception, err:
+        except Exception, err:
             log_message("Could not chmod file: " + str(stonix_conf))
             log_message("Associated exception: " + str(err))
         try:
-            os.chown("/etc/stonix.conf", 0, 0)
+            os.chown(stonix_conf, 0, 0)
         except Exception, err:
             log_message("Could not chown file: " + str(stonix_conf))
             log_message("Associated exception: " + str(err))
