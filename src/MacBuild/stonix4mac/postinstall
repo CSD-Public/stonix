@@ -1,4 +1,3 @@
-#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -39,7 +38,7 @@ import ctypes
 import shutil
 import random
 import inspect
-from subprocess import call
+from subprocess import call, Popen, PIPE, STDOUT
 
 def getLibc():
     """
@@ -415,6 +414,21 @@ def make_files_executable():
         os.chmod(myfile, 0775)
 
 
+def make_whatis(message_level):
+    """
+    reindex the man page database
+    """
+    out = ""
+    err = ""
+    try:
+        out, err = Popen("/usr/libexec/makewhatis", stdout=PIPE, stderr=PIPE).communicate()
+    except Exception, err:
+        log_message("error trying to re-index the man page database...", "normal", message_level)
+
+    log_message("output: " + str(out), "normal", message_level)
+    log_message("error: " + str(err), "normal", message_level)
+
+
 def main():
     """
     Main function...
@@ -444,10 +458,16 @@ def main():
     #stonix4mac = "/usr/local/bin/stonix4mac"
 
     # make_valid_link(my_link, my_link_source, message_level="normal"):
-    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" +
-                    "Resources/stonix.app/Contents/MacOS/stonix")
-    #make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" +
-    #                "MacOS/stonix4mac")
+    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" + "Resources/stonix.app/Contents/MacOS/stonix")
+    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" + "MacOS/stonix4mac")
+
+    make_whatis(message_level)
+
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
 
     log_message("Finished stonix4mac package postflight...", "normal",
                 message_level)
