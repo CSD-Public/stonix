@@ -426,20 +426,23 @@ class MacBuildLib(object):
             else:
                 signingKeychain = keychain
 
+            self.logger.log(lp.DEBUG, "keychain: " + str(keychain))
             #####
             # Make sure the keychain is unlocked
-            #self.manage_keychain.setUser(username)
-            #self.manage_keychain.unlockKeychain(password, keychain)
-
+            self.manage_keychain.setUser(username)
+            self.manage_keychain.unlockKeychain(password, keychain)
+            self.logger.log(lp.DEBUG, "Keychain unlocked...")
             #####
             # Build the codesign command
             cmd = ['/usr/bin/codesign']
             options = []
             if verbose:
-                cmd += ['-' + verbose]
+                re.sub("\s+", "", verbose)
+                cmd += ['-' + verbose.rstrip()]
             if deep:
                 cmd += ['--deep']
-            cmd += ['-f', '-s', "'" + sig + "'", '--keychain', signingKeychain, itemName]
+            cmd += ['-f', '-s', "\\'" + sig + "\\'", '--keychain', signingKeychain, parentDirOfItemToSign + "/" + itemName]
+            self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
             self.rw.setCommand(cmd)
 
             #####
