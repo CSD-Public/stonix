@@ -100,20 +100,20 @@ class ServiceHelperParent(object):
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, *args, **kwargs):
+    def disableService(self, service, *args, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.INFO,
-                               '--This service helper not yet in production.')
+                               '--This method not yet in production.')
         self.__calledBy()
         return False
 
     #----------------------------------------------------------------------
 
-    def enableService(self, *args, **kwargs):
+    def enableService(self, service, *args, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -121,13 +121,13 @@ class ServiceHelperParent(object):
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.INFO,
-                               '--This service helper not yet in production.')
+                               '--This method not yet in production.')
         self.__calledBy()
         return False
 
     #----------------------------------------------------------------------
 
-    def auditService(self, *args, **kwargs):
+    def auditService(self, service, *args, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -135,13 +135,13 @@ class ServiceHelperParent(object):
         @return: Bool, True if the service is configured to run
         '''
         self.logdispatcher.log(LogPriority.INFO,
-                               '--This service helper not yet in production.')
+                               '--This method not yet in production.')
         self.__calledBy()
         return False
 
     #----------------------------------------------------------------------
 
-    def isRunning(self, *args, **kwargs):
+    def isRunning(self, service, *args, **kwargs):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -150,13 +150,13 @@ class ServiceHelperParent(object):
         @return: bool, True if the service is already running
         '''
         self.logdispatcher.log(LogPriority.INFO,
-                               '--This service helper not yet in production.')
+                               '--This method not yet in production.')
         self.__calledBy()
         return False
 
     #----------------------------------------------------------------------
 
-    def reloadService(self, *args, **kwargs):
+    def reloadService(self, service, *args, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -168,7 +168,7 @@ class ServiceHelperParent(object):
         @return: bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.INFO,
-                               '--This service helper not yet in production.')
+                               '--This method not yet in production.')
         self.__calledBy()
         return False
 
@@ -181,6 +181,59 @@ class ServiceHelperParent(object):
         @return: list of strings
         '''
         self.logdispatcher.log(LogPriority.INFO,
-                               '--This service helper not yet in production.')
+                               '--This method not yet in production.')
         self.__calledBy()
         return False
+
+    #----------------------------------------------------------------------
+
+    def kill(self, process, *args, **kwargs):
+        '''
+        Kills a process with a unix signal.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        return False
+
+    #----------------------------------------------------------------------
+
+    def start(self, service, *args, **kwargs):
+        '''
+        Start a service installed on the system.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        return False
+
+    #----------------------------------------------------------------------
+
+    def stop(self, service, *args, **kwargs):
+        '''
+        Stop a service installed on the system.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        return False
+
+    #----------------------------------------------------------------------
+
+    def restart(self, service, *args, **kwargs):
+        '''
+        Restart a service installed on the system.
+
+        @return: list of strings
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        return False
+

@@ -28,8 +28,10 @@ Created on Sep 19, 2012
 import subprocess
 import re
 from logdispatcher import LogPriority
+from ServiceHelperParent import ServiceHelperParent
 
-class SHsvcadm(object):
+
+class SHsvcadm(ServiceHelperParent):
     '''
     SHsvcadm is the Service Helper for systems using the svcadm command to
     configure services. (Solaris)
@@ -40,12 +42,11 @@ class SHsvcadm(object):
         '''
         Constructor
         '''
-        self.environment = environment
-        self.logdispatcher = logdispatcher
+        super(SHrcconf, self).__init__(environment, logdispatcher)
         self.cmd = '/usr/sbin/svcadm '
         self.svc = '/usr/bin/svcs '
         
-    def disableservice(self, service):
+    def disableService(self, service):
         '''
         Disables the service and terminates it if it is running.
         
@@ -65,7 +66,7 @@ class SHsvcadm(object):
                                'SHsvcadm.disable ' + service + str(confsuccess))
         return confsuccess        
     
-    def enableservice(self, service):
+    def enableService(self, service):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -86,7 +87,7 @@ class SHsvcadm(object):
                                'SHsvcadm.enable ' + service + str(confsuccess))
         return confsuccess
     
-    def auditservice(self, service):
+    def auditService(self, service):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -110,7 +111,7 @@ class SHsvcadm(object):
                                'SHsvcadm.audit ' + service + str(running))
         return running
     
-    def isrunning(self, service):
+    def isRunning(self, service):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -137,7 +138,7 @@ class SHsvcadm(object):
                                'SHsvcadm.isrunning ' + service + str(running))
         return running        
     
-    def reloadservice(self, service):
+    def reloadService(self, service):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -148,7 +149,7 @@ class SHsvcadm(object):
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.reload ' + service)
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret = subprocess.call(self.cmd + 'refresh ' + service,
                                   shell=True, close_fds=True,
                                   stdout=subprocess.PIPE,
@@ -160,7 +161,7 @@ class SHsvcadm(object):
             else:
                 return True
             
-    def listservices(self):
+    def listServices(self):
         '''
         Return a list containing strings that are service names.
         

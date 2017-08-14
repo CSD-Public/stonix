@@ -29,6 +29,8 @@ import subprocess
 import re
 import os
 from logdispatcher import LogPriority
+from ServiceHelperParent import ServiceHelperParent
+
 
 class SHrcupdate(object):
     '''
@@ -38,18 +40,16 @@ class SHrcupdate(object):
     @author: dkennel
     '''
 
-
     def __init__(self, environment, logdispatcher):
         '''
         Constructor
         '''
-        self.environment = environment
-        self.logdispatcher = logdispatcher
+        super(SHrcconf, self).__init__(environment, logdispatcher)
         self.cmd = '/sbin/rc-update '
         self.svc = '/etc/init.d/ '
         self.svclist = self.getsvclist()
         
-    def getsvclist(self):
+    def getSvcList(self):
         '''
         Returns the list of enabled services and the run level in which they are
         scheduled to run. This is the raw output of rc-update show.
@@ -68,7 +68,7 @@ class SHrcupdate(object):
                                'SHrcupdate.getsvclist' + str(svclist))
         return svclist
     
-    def findrunlevel(self, service):
+    def findRunLevel(self, service):
         '''
         Returns a string indicating the run level that the named service is
         configured to run at. If the service is not configured to run it will
@@ -92,7 +92,7 @@ class SHrcupdate(object):
                                'SHrcupdate.findrunlevel ' + service + ' ' + runlevel)
         return runlevel
         
-    def disableservice(self, service):
+    def disableService(self, service):
         '''
         Disables the service and terminates it if it is running.
         
@@ -125,7 +125,7 @@ class SHrcupdate(object):
         else:
             return False        
     
-    def enableservice(self, service):
+    def enableService(self, service):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -146,7 +146,7 @@ class SHrcupdate(object):
                               stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret2 = subprocess.call(self.svc + service + ' start',
                                    shell=True, close_fds=True,
                                    stdout=subprocess.PIPE,
@@ -160,7 +160,7 @@ class SHrcupdate(object):
         else:
             return False 
     
-    def auditservice(self, service):
+    def auditService(self, service):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -185,7 +185,7 @@ class SHrcupdate(object):
                                'SHrcupdate.auditservice ' + service + ' ' + str(running))
         return running
     
-    def isrunning(self, service):
+    def isRunning(self, service):
         '''
         Check to see if a service is currently running. 
         
@@ -211,7 +211,7 @@ class SHrcupdate(object):
                                'SHrcupdate.isrunning ' + service + ' ' + str(running))
         return running        
     
-    def reloadservice(self, service):
+    def reloadService(self, service):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -224,7 +224,7 @@ class SHrcupdate(object):
                                'SHrcupdate.reload ' + service)
         if not os.path.exists('/etc/init.d/' + service):
             return False
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret = subprocess.call(self.svc + service + ' stop',
                                   shell=True, close_fds=True,
                                   stdout=subprocess.PIPE,
@@ -237,7 +237,7 @@ class SHrcupdate(object):
                                    'SHrcupdate.reload ' + service + str(ret))
             return True
             
-    def listservices(self):
+    def listServices(self):
         '''
         Return a list containing strings that are service names.
         

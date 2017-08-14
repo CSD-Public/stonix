@@ -34,7 +34,7 @@ from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
-class SHsystemctl(object):
+class SHsystemctl(ServiceHelperParent):
     '''
     SHsystemctl is the Service Helper for systems using the systemctl command to
     configure services. (Fedora and future RHEL and variants)
@@ -44,8 +44,7 @@ class SHsystemctl(object):
         '''
         Constructor
         '''
-        self.environment = environment
-        self.logdispatcher = logdispatcher
+        super(SHsystemctl, self).__init__(environment, logdispatcher)
         self.ch = CommandHelper(self.logdispatcher)
         if os.path.exists('/bin/systemctl'):
             self.cmd = '/bin/systemctl '
@@ -54,7 +53,7 @@ class SHsystemctl(object):
         else:
             raise IOError('Cannot find systemctl command')
 
-    def disableservice(self, service):
+    def disableService(self, service):
         '''
         Disables the service and terminates it if it is running.
 
@@ -86,7 +85,7 @@ class SHsystemctl(object):
         else:
             return False
 
-    def enableservice(self, service):
+    def enableService(self, service):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -105,7 +104,7 @@ class SHsystemctl(object):
                               stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret2 = subprocess.call(self.cmd + 'start ' + service,
                                    shell=True, close_fds=True,
                                    stdout=subprocess.PIPE,
@@ -119,7 +118,7 @@ class SHsystemctl(object):
         else:
             return False
 
-    def auditservice(self, service):
+    def auditService(self, service):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -140,7 +139,7 @@ class SHsystemctl(object):
                                + str(running) + ' ' + str(output))
         return running
 
-    def isrunning(self, service):
+    def isRunning(self, service):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -166,7 +165,7 @@ class SHsystemctl(object):
                                'SHsystemctl.isrunning ' + service + ' ' + str(running))
         return running
 
-    def reloadservice(self, service):
+    def reloadService(self, service):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -177,7 +176,7 @@ class SHsystemctl(object):
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.reload ' + service)
-        if not self.environment.getinstallmode():
+        if not self.environ.getinstallmode():
             ret = subprocess.call(self.cmd + 'reload-or-restart ' + service,
                                   shell=True, close_fds=True,
                                   stdout=subprocess.PIPE,
@@ -186,7 +185,7 @@ class SHsystemctl(object):
                                'SHsystemctl.reload ' + service + str(ret))
         return True
 
-    def listservices(self):
+    def listServices(self):
         '''
         Return a list containing strings that are service names.
 
