@@ -44,6 +44,8 @@ class AptGet(object):
             if it is doing something potentially harmful. It should not
             be used except in very special situations. Using --force-yes
             can potentially destroy your system!)
+    @change: 2017/08/16 bgonz12 - Added DEBIAN_FRONTEND=noninteractive env var
+            to remove function
     '''
 
     def __init__(self, logger):
@@ -51,7 +53,7 @@ class AptGet(object):
         self.ch = CommandHelper(self.logger)
         self.aptgetloc = "/usr/bin/apt-get"
         self.install = "sudo DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y --assume-yes install "
-        self.remove = self.aptgetloc + " -y remove "
+        self.remove = "sudo DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y remove "
         self.dpkgloc = "/usr/bin/dpkg"
         self.checkinstalled = self.dpkgloc + " -l "
         self.checkupdates = self.aptgetloc + " -u upgrade --assume-no "
