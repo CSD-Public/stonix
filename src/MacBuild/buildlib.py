@@ -422,24 +422,27 @@ class MacBuildLib(object):
             # keychain of the username passed in.
             if not keychain:
                 userHome = self.manage_user.getUserHomeDir(username)
-                signingKeychain = userHome + "/Library/Keychains/login.keychain"
+                signingKeychain = userHome + "/Library/Keychains/login.keychain-db"
             else:
                 signingKeychain = keychain
 
+            self.logger.log(lp.DEBUG, "keychain: " + str(keychain))
             #####
             # Make sure the keychain is unlocked
-            #self.manage_keychain.setUser(username)
-            #self.manage_keychain.unlockKeychain(password, keychain)
-
+            self.manage_keychain.setUser(username)
+            self.manage_keychain.unlockKeychain(password, keychain)
+            self.logger.log(lp.DEBUG, "Keychain unlocked...")
             #####
             # Build the codesign command
             cmd = ['/usr/bin/codesign']
             options = []
             if verbose:
-                cmd += ['-' + verbose]
+                re.sub("\s+", "", verbose)
+                cmd += ['-' + verbose.rstrip()]
             if deep:
                 cmd += ['--deep']
-            cmd += ['-f', '-s', "'" + sig + "'", '--keychain', signingKeychain, itemName]
+            cmd += ['-f', '-s', "\\'" + sig + "\\'", '--keychain', signingKeychain, parentDirOfItemToSign + "/" + itemName]
+            self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
             self.rw.setCommand(cmd)
 
             #####
@@ -458,7 +461,7 @@ class MacBuildLib(object):
         '''
         Unlock the appropriate keychain for signing purposes
 
-        @param: Username of the login.keychain to unlock
+        @param: Username of the login.keychain-db to unlock
         @param: Password for the user
 
         @author: Roy Nielsen
@@ -468,7 +471,7 @@ class MacBuildLib(object):
             return success
         elif not keychain:
             userHome = self.manage_user.getUserHomeDir(username)
-            keychain = userHome + "/Library/Keychains/login.keychain"
+            keychain = userHome + "/Library/Keychains/login.keychain-db"
         success = self.manage_keychain.setUser(username)
         success = self.manage_keychain.unlockKeychain(password, keychain)
         self.logger.log(lp.DEBUG, "Unlock Keychain success: " + str(success))
@@ -490,7 +493,7 @@ class MacBuildLib(object):
             return success
         if not keychain:
             userHome = self.manage_user.getUserHomeDir(username)
-            keychain = userHome + "/Library/Keychains/login.keychain"
+            keychain = userHome + "/Library/Keychains/login.keychain-db"
             loginKeychain = True
 
         self.logger.log(lp.DEBUG, keychain)
