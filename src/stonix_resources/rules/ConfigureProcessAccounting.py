@@ -25,6 +25,7 @@ This rule will enable process accounting, using the acct/psacct service.
 
 @author: Eric Ball
 @change: 2015/04/18 eball Original implementation
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import re
@@ -45,8 +46,7 @@ class ConfigureProcessAccounting(Rule):
         self.rulename = "ConfigureProcessAccounting"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will enable process accounting, using \
-the acct/psacct service.'''
+        self.sethelptext()
         self.applicable = {"type": "white",
                            "family": ["linux"]}
 

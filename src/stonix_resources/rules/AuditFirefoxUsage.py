@@ -26,6 +26,7 @@ Created on 2016/05/04
 Checks the root user's Firefox history for non-local browsing. The root user
 should only use the browser for administration tasks.
 @author: Eric Ball
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -53,10 +54,8 @@ class AuditFirefoxUsage(Rule):
         self.rulenumber = 84
         self.rulename = "AuditFirefoxUsage"
         self.mandatory = True
-        self.helptext = """This audit-only rule checks the root user's \
-Firefox history for non-local browsing. The root user should only use the \
-browser for administration tasks."""
         self.rootrequired = True
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.guidance = []
         self.applicable = {'type': 'white',

@@ -24,6 +24,7 @@
 Created on Aug 4, 2015
 
 @author: dwalker
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 
@@ -50,10 +51,7 @@ class ConfigureLDAPServer(Rule):
         self.rulename = "ConfigureLDAPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule ensures that any ldap files present \
-have the correct permissions.  However this rule only checks locations of \
-files that LANL believes them to be in.  If your files and certificates \
-are not in those locations, stonix will report compliance'''
+        self.sethelptext()
         datatype = "bool"
         key = "CONFIGURELDAPSERV"
         instructions = '''To disable this rule set the value of \

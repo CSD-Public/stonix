@@ -36,6 +36,7 @@ Created on Mar 7, 2013
 @change: Breen Malmberg - 2/13/2017 - set the default group name to sudo on ubuntu and debian
         systems; set a default initialization of the group name variable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 

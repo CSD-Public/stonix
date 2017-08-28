@@ -37,6 +37,7 @@ world-writable files or directories in any of the path directories.
 @change: 2016/04/01 eball Updated rule per RHEL 7 STIG, fixed inaccurate
     documentation and help text
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -66,11 +67,7 @@ class CheckRootPath(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''This rule ensures that the root user's PATH \
-environment variable is set to the vendor default, and checks all directories \
-in the PATH for user/world-writable entries. If user/world-writable entries \
-are found, it is left up to the system administrator to correct these \
-entries.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['NSA RHEL 2.3.4.1, 2.3.4.1.1, 2.3.4.1.2',
                          "CCE-RHEL7-CCE-TBD 2.4.1.1.7"]

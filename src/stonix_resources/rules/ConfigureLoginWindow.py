@@ -31,6 +31,7 @@ This is a rule for Verifying and/or setting the state of the LoginWindow.
 @change: 2015/04/14 dkennel updated for new stype isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 
@@ -53,11 +54,7 @@ class ConfigureLoginWindow(RuleKVEditor):
         self.rulename = 'ConfigureLoginWindow'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule sets the login window to no longer " + \
-                        "display the names of the accounts on the computer, " + \
-                        "since this may make breaking in easier. This " + \
-                        "forces the user to enter a login name and password " + \
-                        "to log in."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE-28310-1']
         self.applicable = {'type': 'white',
