@@ -86,13 +86,7 @@ class SecureMDNS(Rule):
         self.rulename = 'SecureMDNS'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The Avahi daemon implements the DNS Service \
-Discovery and Multicast DNS protocols, which provide service and host \
-discovery on a network. It allows a system to automatically identify \
-resources on the network, such as printers or web servers. This capability is \
-also known as mDNSresponder and is a major part of Zeroconf networking. By \
-default, it is enabled. This rule makes a number of configuration changes to \
-the Avahi service in order to secure it.'''
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',

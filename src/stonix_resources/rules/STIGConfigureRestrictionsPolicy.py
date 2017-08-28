@@ -49,8 +49,6 @@ class STIGConfigureRestrictionsPolicy(Rule):
         self.rulenumber = 363
         self.rulename = "STIGConfigureRestrictionsPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureRestrictionsPolicy rule installs the " +\
-            "DISA STIG Restrictions profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']},
@@ -89,6 +87,8 @@ class STIGConfigureRestrictionsPolicy(Rule):
 #             self.profile = "/Users/username/stonix/src/" + \
 #                 "stonix_resources/files/" + \
 #                 "U_Apple_macOS_10-12_V1R1_STIG_Restrictions_Policy.mobileconfig"
+        self.sethelptext()
+
     def report(self):
         try:
             compliant = False

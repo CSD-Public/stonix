@@ -71,12 +71,7 @@ class SoftwarePatching(Rule):
         self.rulename = 'SoftwarePatching'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The SoftwarePatching rule will check to see if " + \
-            "all software is patched, if the computer is using local " + \
-            "update sources (if available), and if the package manager is " + \
-            "using GPG secured updates where applicable. This rule will " + \
-            "also ensure that the system has a scheduled (cron) job to " + \
-            "install updates automatically on systems where that is feasible. "
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
 

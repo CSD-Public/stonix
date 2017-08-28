@@ -65,18 +65,7 @@ class SecureIPV4(Rule):
         self.rulename = "SecureIPV4"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures the system's network stack " + \
-            "settings.\nFor Solaris systems, this rule requires a full " + \
-            "system reboot to take effect, and may show up as non-compliant " + \
-            "until the system is rebooted. Also for Solaris systems, if you " + \
-            "have a startup script that configures your network stack, " + \
-            "this file should appear in /etc/init.d " + \
-            "and, in order to pass compliance, it will check for " + \
-            "the existence for a file named S70ndd-nettune. Of course, " + \
-            "this may not be the name of your file that controls your " + \
-            "network parameter tuning, so the system may fail compliance " + \
-            "due to this issue."
-
+        self.sethelptext()
         if self.environ.getostype() == "Mac OS X":
             self.networkTuning2 = self.__InitializeNetworkTuning2()
         else:

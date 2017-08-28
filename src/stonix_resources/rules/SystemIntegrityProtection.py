@@ -53,9 +53,7 @@ class SystemIntegrityProtection(Rule):
         self.rulename = 'SystemIntegrityProtection'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This report only rule verifies that macOS (OS X)'s " + \
-        "System Integrity Protection (SIP) is enabled by checking the " + \
-        "output to the following command: /usr/bin/csrutil status."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
