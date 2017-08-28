@@ -67,12 +67,7 @@ class ReduceSudoTimeout(Rule):
         self.rulenumber = 151
         self.rulename = 'ReduceSudoTimeout'
         self.formatDetailedResults("initialize")
-        self.helptext = "ReduceSudoTimeout ensures that the sudoers file " + \
-            "has a timeout value of 0 so that a password is required for " + \
-            "every sudo call. This is mandatory for Mac users but optional " + \
-            "for all other platforms.\n***Please note, for all systems " + \
-            "besides Mac OS X, this rule is disabled by default. To enable, " + \
-            "click the enable box then click save before running fix***"
+        self.sethelptext()
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

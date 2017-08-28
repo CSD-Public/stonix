@@ -50,7 +50,7 @@ class RestrictAdminSSH(Rule):
         self.rulename = "RestrictAdminSSH"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables SSH root login access"
+        self.sethelptext()
         datatype = 'bool'
         key = 'RESTRICTADMINSSH'
         instructions = '''To disable this rule set the value of

@@ -72,10 +72,7 @@ class ReqAuthSingleUserMode(Rule):
         self.rulename = 'ReqAuthSingleUserMode'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule checks if the system currently requires \
-authentication for single-user mode or not, and if it does not then it makes \
-the necessary config file changes to require authentication for single-user \
-mode.'''
+        self.sethelptext()
         self.guidance = ['CIS, NSA(2.3.5.3)']
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
