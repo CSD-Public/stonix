@@ -27,6 +27,7 @@ Created on Mar 4, 2015
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball PEP8 cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -44,7 +45,6 @@ class DisableFTP(RuleKVEditor):
         self.logger = logdispatcher
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables FTP services for the Mac"
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
@@ -65,7 +65,7 @@ class DisableFTP(RuleKVEditor):
                          "Disable FTP service")
         self.sh = ServiceHelper(self.environ, self.logger)
         self.setkvdefaultscurrenthost()  # default value is False
-
+        self.sethelptext()
     def afterfix(self):
         '''
         @author: dwalker

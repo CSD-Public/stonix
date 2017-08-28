@@ -28,6 +28,7 @@ This method disables AFP file sharing on mac os x systems
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/07/07 ekkehard converted to RuleKVEditor
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -74,7 +75,6 @@ $ sudo serveradmin settings afp:setting
         self.rulename = 'DisableAFPFileSharing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.sethelptext()
         self.logger = logger
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.3']
@@ -97,6 +97,7 @@ $ sudo serveradmin settings afp:setting
 
         self.initObjs()
         self.determineOrigAFPstatus()
+        self.sethelptext()
 
     def initObjs(self):
         '''

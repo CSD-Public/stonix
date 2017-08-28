@@ -29,6 +29,7 @@ locked session.
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2016/02/10 eball Update for El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -48,8 +49,6 @@ class DisableAdminLoginOverride(Rule):
         self.rulename = "DisableAdminLoginOverride"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This rule disables the ability of administrators \
-to log into another user's active, locked session.'''
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
@@ -63,6 +62,7 @@ to log into another user's active, locked session.'''
 
         self.guidance = ["CIS 5.10"]
         self.iditerator = 0
+        self.sethelptext()
 
     def report(self):
         try:

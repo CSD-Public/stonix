@@ -24,6 +24,7 @@
 Created on Apr 20, 2017
 
 @author: dwalker
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import traceback
@@ -46,9 +47,6 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.rulenumber = 310
         self.rulename = "DisableSIRIandContinuityFeatures"
         self.formatDetailedResults("initialize")
-        self.helptext = "Disables Siri assistant/turns off voice " + \
-            "recognition and disables universal clipboard across iPhone " + \
-            "and desktop/laptop."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.12', '+']},
@@ -85,6 +83,7 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.siripath2 = "/Library/Preferences/com.apple.assistant.support" + \
             ".plist"
         self.siriparams2 = "Assistant\ Enabled"
+        self.sethelptext()
 
     def setupHomeDir(self):
         home = ""

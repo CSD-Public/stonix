@@ -27,6 +27,7 @@ Created on Aug 8, 2013
 @change: 04/18/2014 dkennel Replaced old style CI with new
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, checkPerms
@@ -68,6 +69,7 @@ class DisableNobodyAccess(Rule):
         self.iditerator = 0
         self.path = "/etc/default/keyserv"
         self.editor = ""
+        self.sethelptext()
 
     def report(self):
         '''

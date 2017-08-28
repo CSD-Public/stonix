@@ -42,6 +42,7 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2016/03/01 ekkehard cgi default value set to False
 @change: 2017/03/30 dkennel Added fisma = high to applicable dictionary
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -75,12 +76,6 @@ class DisableRemoveableStorage(Rule):
         self.rulename = 'DisableRemoveableStorage'
         self.mandatory = False
         self.formatDetailedResults("initialize")
-        self.helptext = "This optional rule disables USB, Firewire, " + \
-            "thunderbolt, and SD cards (if applicable) " + \
-            "from accessing or being accessed from the system.  " + \
-            "This rule will be mandatory for those who work on the red " + \
-            "network.  This rule will also require a full reboot to fully " + \
-            "take effect\n"
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -99,6 +94,7 @@ class DisableRemoveableStorage(Rule):
         self.iditerator = 0
         self.created = False
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+        self.sethelptext()
 
     def report(self):
         '''

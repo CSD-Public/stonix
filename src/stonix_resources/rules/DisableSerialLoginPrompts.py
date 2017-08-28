@@ -27,6 +27,7 @@ This rule disables serial port logins
 @change: 2015/08/05 eball - Original implementation
 @change: 2015/08/28 eball - Missing /etc/securetty no longer makes report false
 @change: 2015/10/07 eball - Added check and set for permissions
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -64,6 +65,7 @@ virtual console interfaces.'''
         self.guidance = ["NSA 2.3.1.1", "CCE 4111-1", "CCE 4256-4"]
         self.iditerator = 0
         self.myos = self.environ.getostype().lower()
+        self.sethelptext()
 
     def report(self):
         try:

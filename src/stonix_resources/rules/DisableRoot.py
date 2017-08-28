@@ -31,6 +31,7 @@ Created on Dec 2, 2013
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -51,8 +52,6 @@ class DisableRoot(Rule):
         self.rulename = "DisableRoot"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Disables the root user. Administrative " + \
-            "escalations should be performed using sudo."
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
@@ -66,6 +65,7 @@ class DisableRoot(Rule):
 
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ["NSA 1.3.14"]
+        self.sethelptext()
 
     def report(self):
         '''
