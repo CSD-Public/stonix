@@ -54,12 +54,7 @@ class SSHTimeout(Rule):
         self.rulename = 'SSHTimeout'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''SSH allows administrators to set an idle timeout \
-interval. After this interval has passed, the idle user will be \
-automatically logged out.
-
-Note that this rule will consider any value other than the number in the \
-SSHTIMEOUT configuration item to be non-compliant, not just higher values.'''
+        self.sethelptext()
         self.boolCi = self.initCi("bool",
                                   "SSHTIMEOUTON",
                                   "To disable this rule set the value " +

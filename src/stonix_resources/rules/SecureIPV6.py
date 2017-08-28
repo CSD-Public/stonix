@@ -55,9 +55,7 @@ class SecureIPV6(Rule):
         self.rulename = "SecureIPV6"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will configure IPv6 functionality by \
-disabling automatic configuration, enabling privacy extensions for address \
-generation, and limiting network-transmitted configuration information.'''
+        self.sethelptext()
         datatype = "bool"
         key = "SECUREIPV6"
         instructions = '''To disable this rule set the value of SECUREIPV6 to \

@@ -54,8 +54,7 @@ class SetTFTPDSecureMode(Rule):
         self.rulename = 'SetTFTPDSecureMode'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This ensures that the tftp daemon uses secure \
-mode.'''
+        self.sethelptext()
         datatype = 'bool'
         key = 'SETTFTPDSECUREMODE'
         instructions = "To disable this rule set the value of " + \
