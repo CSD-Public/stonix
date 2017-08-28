@@ -37,6 +37,7 @@ dictionary
 @change: 2016/04/28 ekkehard test enhancements
 @change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import re
@@ -90,15 +91,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.rulename = 'ConfigureAppleSoftwareUpdate'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule will set the default to get software \
-updates from """ + str(APPLESOFTUPDATESERVER) + """, and disables the "Check \
-for Updates" option in the Software Update System Preference Panel for most \
-users. Does not disable this option when the account is an admin account and \
-the update server is set to our ASUS server.
-This rule will also disable the "Download Updates in Background" option of \
-the Software Update System Preference Panel for most users. Does not disable \
-this option when the account is an admin account and the update server is set \
-to our ASUS server."""
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']

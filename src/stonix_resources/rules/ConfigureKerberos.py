@@ -34,6 +34,7 @@ dictionary
 @change: 2015/11/02 eball - Added undo events to package installation
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import os
@@ -62,8 +63,7 @@ class ConfigureKerberos(Rule):
         self.rulename = 'ConfigureKerberos'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures Kerberos on your system, " + \
-            "based on the settings in the localize.py file."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',

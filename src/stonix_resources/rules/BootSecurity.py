@@ -33,6 +33,7 @@ bluetooth, microphones, and cameras.
 /Library/LaunchDaemons/stonixBootSecurity.plist to
 /Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 - ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -62,10 +63,7 @@ class BootSecurity(Rule):
         self.rulename = 'BootSecurity'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The BootSecurity rule configures the system to run \
-a job at system boot time that ensures that WiFi and Bluetooth are turned off, \
-and that microphone inputs are muted. This helps ensure that the system is in \
-a secure state at initial startup.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',

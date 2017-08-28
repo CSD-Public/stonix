@@ -24,6 +24,7 @@
 Created on May 27, 2016
 
 @author: dkennel
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 
 '''
 from __future__ import absolute_import
@@ -65,13 +66,7 @@ class ConfigureLinuxFirewall(Rule):
         self.rulename = 'ConfigureLinuxFirewall'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The ConfigureLinuxFirewall rule will configure \
-the firewalld or iptables firewall for a Linux host in an appropriate manner \
-for typical enterprise workstation usage. This will allow most client activity \
-but prevent network access to most services other than SSH. \
-Most workstations will leave this rule enabled but some server \
-administrators may want to disable this rule or customize the firewall after \
-STONIX has done the baseline configuration.
+        self.sethelptext()
 '''
         self.rootrequired = True
         self.applicable = {'type': 'white',

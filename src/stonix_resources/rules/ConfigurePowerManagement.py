@@ -32,6 +32,7 @@ dictionary
 @change: 2015/09/17 ekkehard BatteryDiskSleep should have disksleep value not display sleep.
 @change: 2015/11/16 eball Re-enabled getting values from CIs rather than static dict
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import traceback
@@ -65,8 +66,7 @@ class ConfigurePowerManagement(Rule):
         self.rulename = 'ConfigurePowerManagement'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Set the power setting to optimize battery usage " +\
-        "or computer performance depending on user's current setup."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
