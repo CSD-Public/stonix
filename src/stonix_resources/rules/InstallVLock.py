@@ -51,8 +51,6 @@ class InstallVLock(Rule):
         self.rulenumber = 121
         self.rulename = "InstallVLock"
         self.mandatory = True
-        self.helptext = "The Install VLock rule installs the vlock " + \
-            "package to allow users to lock their consoles"
         self.rootrequired = True
         self.detailedresults = "InstallVLock has not yet been run."
         self.guidance = ["NSA 2.3.5.6"]
@@ -65,6 +63,7 @@ class InstallVLock(Rule):
             "screen lock program vlock set the value of INSTALLVLOCK to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
+        self.sethelptext()
 
     def report(self):
         '''Perform a check to see if package is already installed.

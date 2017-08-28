@@ -53,10 +53,7 @@ class NoEmptyPasswords(Rule):
         self.rulenumber = 41
         self.rulename = "NoEmptyPasswords"
         self.mandatory = True
-        self.helptext = "This rule ensures there are no empty password " + \
-            "hashes in the /etc/shadow file. If empty passwords exist, a " + \
-            "login can occur without entering a password and being " + \
-            "authenticated."
+        self.sethelptext()
         self.rootrequired = True
         self.detailedresults = "NoEmptyPasswords rule has not yet been run"
         self.guidance = ["NSA 2.3.1.5"]
