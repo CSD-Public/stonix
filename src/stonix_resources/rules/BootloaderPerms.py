@@ -70,7 +70,7 @@ class BootloaderPerms(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = 'This rule will ensure the ownership and permissions on the boot loader config file to be root:root and 600'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['NSA(2.3.5.2)', 'cce-4144-2', '3923-0, 4197-0']
 

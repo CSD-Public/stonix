@@ -104,6 +104,7 @@ LANL-stonix."""
         self.targetstate = "configured"
         self.guidance = []
         self.auditonly = False
+        self.sethelptext()
 
     def fix(self):
         """
@@ -784,3 +785,54 @@ LANL-stonix."""
         '''
 
         return self.auditonly
+
+    def sethelptext(self):
+        '''
+        Set the help text for the current rule.
+        Help text is retrieved from help/stonix_helptext.
+
+        The help text blocks within stonix_helptext must
+        always follow 4 basic rules in formatting:
+
+        1) Each new help text block must begin with the
+        rule's rulenumber in diamond brackets - e.g. <123>
+        2) Each help text block must end with ." (period
+        followed by double quote)
+        3) Each help text block must not contain any "
+        (double quotes) other than starting and ending
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        # change helpdir variable if you change where the help text is stored!
+        helpdir = self.environ.resources_path + '/help/stonix_helptext'
+        contents = ''
+        bstring = ''
+        rulenum = self.getrulenum()
+
+        try:
+
+            if os.path.exists(helpdir):
+                f = open(helpdir, 'r')
+                contents = f.read()
+                f.close()
+            else:
+                self.logdispatch.log(LogPriority.DEBUG, "Could not find help text file at: " + helpdir)
+            
+            b=re.findall(r'(?<=\<' + str(rulenum) + '\>).+?(?=\.\")', contents, re.DOTALL)
+            if b:
+                if isinstance(b, list):
+                    if len(b) > 0:
+                        bstring = b[0]
+                bstring = bstring.strip()
+                if re.search('^\"', bstring, re.IGNORECASE):
+                    bstring = bstring[1:]
+            if not bstring:
+                self.logdispatch.log(LogPriority.DEBUG, "Failed to get help text for rulenumber = " + str(self.rulenumber))
+                self.helptext = "Could not locate help text for this rule."
+            else:
+                self.helptext = bstring
+
+        except Exception:
+            raise

@@ -73,13 +73,7 @@ class BlockSystemAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''The BlockSystemAccounts rule will search through \
-/etc/passwd to determine if there are any system accounts which currently \
-allow login. If any are found which do allow login, the fix method will \
-append :/dev/null to the end of the entry in /etc/passwd preventing future \
-login from them. One exception is the 'root' account which will not be \
-blocked due access to it being required by administrators in certain \
-situations and local user accounts will not be blocked.'''
+        self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'
         key = 'blocksysaccounts'

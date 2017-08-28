@@ -82,14 +82,7 @@ class SecureCUPS(Rule):
         self.rulesuccess = True
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''With this rule, you can:
-* Disable the CUPS service
-* Configure CUPS service
-* Disable Printer Browsing
-* Limit Printer Browsing
-* Disable Print Server Capabilities
-* Set the Default Auth Type
-* Setup default set of policy blocks for CUPS'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE 4420-6', 'CCE 4407-3']
         self.applicable = {'type': 'white',

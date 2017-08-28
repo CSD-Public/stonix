@@ -55,7 +55,7 @@ class DisableTouchID(Rule):
         self.mandatory = True
         self.rootrequired = True
         self.environ = environ
-        self.helptext = 'This rule disables touch ID authentication, staring in macOS 10.12'
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.12.3', '+']}}
         datatype = 'bool'

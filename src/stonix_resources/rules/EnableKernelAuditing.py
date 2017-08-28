@@ -64,9 +64,7 @@ class EnableKernelAuditing(Rule):
         self.rulename = 'EnableKernelAuditing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """The kernel auditing service is provided for system \
-auditing. By default, the service audits certain types of security-relevant \
-events such as system logins, account modifications, and authentication events."""
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['CIS', 'NSA 2.6.2', 'CCE-4665-5', 'CCE-4679-7',

@@ -69,6 +69,7 @@ False.'''
 
         self.iditerator = 0
         self.cmdhelper = CommandHelper(self.logger)
+        self.sethelptext()
 
 ###############################################################################
 

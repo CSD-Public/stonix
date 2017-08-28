@@ -62,10 +62,7 @@ in promiscuous mode or not.
         self.rulename = 'AuditNetworkSniffing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'The system should not be acting as a network sniffer, which can capture \
-all traffic on the network to which it is connected. \
-Check to see if any network interface on the current system is running \
-in promiscuous mode or not.'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE-RHEL7-CCE-TBD 2.5.3']
         self.applicable = {'type': 'white',
