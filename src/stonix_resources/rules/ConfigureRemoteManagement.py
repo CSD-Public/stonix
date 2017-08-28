@@ -33,6 +33,7 @@ are vulnerable to exploit and monitoring.
 @change: 2016/07/07 eball Converted to RuleKVEditor
 @change: 2017/06/16 Breen Malmberg Added ARD_AllLocalUsersPrivs kveditor
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
