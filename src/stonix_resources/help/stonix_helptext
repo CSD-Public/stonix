@@ -135,10 +135,15 @@ and keep track of each user's activity on the system as well as what resources a
 Remote management should only be enabled on trusted networks with strong user controls present in a directory system. Mobile devices without 
 strict controls are vulnerable to exploitation and monitoring."
 
-<74>        "***CANNOT BE UNDONE*** 
+<74>        "***On Linux: CANNOT BE UNDONE*** 
 
-This rule will configure the screen to lock after 15 minutes of continuous inactivity. If a desktop manager is not installed, it is 
-considered to be compliant."
+On Mac OS X: This rule will enable screen saver lock, configure the screen to lock after 14 minutes of inactivity, and configure the system to ask 
+for a password when resuming from a screen saver state. It will also set the ask for password delay to 0.
+
+On Linux: This rule will enable screen saver lock, configure the screen to lock after 15 minutes of inactivity, set the screen saver picture 
+opacity to 100, and set the screen saver lock delay to 0.
+
+If a desktop manager is not installed, this rule is considered to be compliant."
 
 <17>        "This rule configures 'Safari Spotlight' to prevent information from being sent to: Apple, Google, Microsoft, etc.
 
