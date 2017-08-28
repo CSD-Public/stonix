@@ -32,6 +32,7 @@ This class will restrict access to the root log on to console only
 @change: 2014/12/15 dkennel Replaced print statements with logger debug calls
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -64,8 +65,7 @@ class ConsoleRootOnly(Rule):
         self.rulenumber = 35
         self.rulename = 'ConsoleRootOnly'
         self.mandatory = True
-        self.helptext = "This rule will restrict access to the root logon " + \
-            "to console only"
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.guidance = ['CIS, NSA(2.3.1.1), cce3820-8, 3485-0, 4111-1']
         self.applicable = {'type': 'white',

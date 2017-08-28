@@ -35,6 +35,7 @@ This rule is optional and will install and configure AIDE when it is run.
 CI was not referenced in the fix and report method.
 @change: 2015/04/14 dkennel updated to use new is applicable
 @change: 2015/10/07 eball PEP8 cleanup
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -63,9 +64,7 @@ class ConfigureAIDE(Rule):
         self.rulenumber = 110
         self.rulename = 'ConfigureAIDE'
         self.formatDetailedResults("initialize")
-        self.helptext = 'Install and configure Advanced Intrusion Detection ' + \
-            'Environment (AIDE). This rule is optional and will install and ' + \
-            'configure AIDE when it is run.'
+        self.sethelptext()
         self.guidance = ['NSA(2.1.3)', 'cce-4209-3']
 
         # init CIs

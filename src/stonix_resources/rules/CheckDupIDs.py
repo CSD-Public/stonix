@@ -33,6 +33,7 @@ on a system must have unique UIDs.
 @change: 2015/10/28 ekkehard fix name and file name
 @change: 2016/04/26 rsn add group checks per RHEL 7 STIG
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import os
@@ -82,10 +83,7 @@ class CheckDupIDs(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "This rule is an audit-only rule that will " + \
-            "examine local account databases for accounts that " + \
-            "have duplicate UID values. All accounts must be unique for " + \
-            "accountability purposes."
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
