@@ -75,10 +75,7 @@ class SetDefaultUserUmask(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = "The SetDefaultUserUmask class sets the default " + \
-        "user umask to 027. Also accepts user input of alternate 077 umask." + \
-        " Mac OS X will have the umask set to 022 because it breaks with " + \
-        "stricter settings."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS', 'NSA(2.3.4.4)', 'CCE-3844-8', 'CCE-4227-5',
                          'CCE-3870-3', 'CCE-4737-6']

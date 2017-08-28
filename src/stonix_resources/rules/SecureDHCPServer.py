@@ -48,9 +48,7 @@ class SecureDHCPServer(Rule):
         self.rulename = "SecureDHCPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Configures the system's dhcpd.conf file to increase \
-the security of the DHCP daemon. If the dhcpd.conf file is not found, the \
-system is considered compliant.'''
+        self.sethelptext()
         datatype = "bool"
         key = "SECUREDHCPSERVER"
         instructions = '''To disable this rule set the value of \
