@@ -45,11 +45,7 @@ class RemoveSUIDGames(Rule):
         self.rulename = "RemoveSUIDGames"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''On Linux systems some games are installed SUID for \
-the purpose of storing high scores. Games are non-essential on business \
-systems and should be removed. This rule will attempt to uninstall all games \
-from a known list for RHEL 6 systems, and anything present in the /usr/games \
-directory.'''
+        self.sethelptext()
         self.applicable = {'type': 'white', 'family': 'linux'}
 
         # Configuration item instantiation
