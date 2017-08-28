@@ -66,9 +66,7 @@ class DisableInactiveAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will set the global policy for inactive accounts so that any account, \
-which goes 35 days beyond the password expiration date without updating its \
-password, will be disabled.'
+        self.sethelptext()
         self.guidance = ['CNSSI 1253', 'DISA STIG']
 
         datatype = 'bool'

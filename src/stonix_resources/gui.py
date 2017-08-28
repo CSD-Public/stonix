@@ -281,7 +281,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             else:
                 self.fix_button.setEnabled(True)
 
-            self.rule_instructions_text.setPlainText(QApplication.translate("MainWindow",
+            self.rule_instructions_text.setText(QApplication.translate("MainWindow",
                                                                             self.rule_data[rule_num][1],
                                                                             None,
                                                                             QApplication.UnicodeUTF8))

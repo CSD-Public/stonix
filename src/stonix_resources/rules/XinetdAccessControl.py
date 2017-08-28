@@ -61,8 +61,7 @@ class XinetdAccessControl(Rule):
         self.rulename = 'XinetdAccessControl'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule will securely configure the xinetd " + \
-            "access control mechanism, if xinetd is present."
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['']

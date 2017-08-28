@@ -55,7 +55,7 @@ class RestrictAccessToKernelMessageBuffer(Rule):
         self.rootrequired = True
         self.rulesuccess = True
         self.formatDetailedResults("initialize")
-        self.helptext = "Unprivileged access to the kernel syslog can expose sensitive kernel address information."
+        self.sethelptext()
         self.guidance = ["CCE-RHEL7-CCE-TBD 2.2.4.5"]
         self.applicable = {"type": "white",
                            "family": "linux"}

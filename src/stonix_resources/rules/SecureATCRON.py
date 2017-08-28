@@ -75,11 +75,7 @@ class SecureATCRON(Rule):
         self.rulenumber = 33
         self.rulename = 'SecureATCRON'
         self.mandatory = True
-        self.helptext = '''The AT and CRON job schedulers are used to \
-schedule jobs for running at a later date/time. These daemons should be \
-configured defensively. The SecureATCRON rule restricts permissions on the \
-files and directories associated with these daemons to authorized users only, \
-and enables and configures logging for these daemons.'''
+        self.sethelptext()
         self.rootrequired = True
         self.formatDetailedResults("initialize")
         self.compliant = False

@@ -72,12 +72,7 @@ class SymlinkDangerFiles(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = "This rule checks for the presence of certain " + \
-            "files (/root/.rhosts, /root/.shosts, /etc/hosts.eqiv, and " + \
-            "/etc/shosts.equiv), and symlinks them to /dev/null in order " + \
-            "to prevent a potentially exploitable weak form of access " + \
-            "control. \nNote that no undo operation is permitted for " + \
-            "this rule due to security reasons."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS RHEL 5 Benchmark Appendix A SN.1']
         self.applicable = {'type': 'white',

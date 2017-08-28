@@ -66,7 +66,7 @@ class SecureWinFileSharing(RuleKVEditor):
         self.rulename = 'SecureWinFileSharing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will secure samba file sharing settings'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['']
 

@@ -78,11 +78,7 @@ class SetFSMountOptions(Rule):
         self.rulename = 'SetFSMountOptions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "SetFSMountOptions sets the file system mount " + \
-        "options for non-Root local partitions, file systems mounted on " + \
-        "removable media, removable storage partitions, and temporary " + \
-        "storage partitions such as /tmp and /dev/shm in order to help " + \
-        "protect against malicious code being run on the system."
+        self.sethelptext()
         self.rootrequired = True
 
         # set up CI's

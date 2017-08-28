@@ -58,12 +58,7 @@ class AuditSSHKeys(Rule):
         self.rulename = 'AuditSSHKeys'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "SSH can be configured to use PKI keys for authentication, commonly referred to as SSH Keys. SSH keys are a good \
-authenticator and are very useful for denying brute force password guessing attacks. There is a potential weakness in \
-SSH keys in that it is possible to create the private key without a password. These passwordless, unencrypted keys can \
-then be used to move laterally by any user with read access to the key. To prevent this sort of exploitation all private \
-keys used for SSH should have a password and be protected by file permissions that limit read access to the owner.\
-*This rule's fix only changes permissions on insecure keys. We cannot fix keys which were made without a password.*"
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['LANL CAP', 'OpenSSH Security Best Practices']
         self.applicable = {'type': 'white',
