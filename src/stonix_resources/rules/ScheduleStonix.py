@@ -74,8 +74,7 @@ class ScheduleStonix(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "Schedule a random time for STONIX to run in admin/" + \
-            "root context once per week, and in user context once per day. NOTE: THIS RULE CANNOT BE REVERTED/UNDONE."
+        self.sethelptext()
         self.guidance = ['']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

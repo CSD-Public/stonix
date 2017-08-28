@@ -63,7 +63,7 @@ class SetRootDefaults(Rule):
         self.rulename = 'SetRootDefaults'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''Set root's gid to 0. Set root's home directory to /root.'''
+        self.sethelptext()
         self.rootrequired = True
 
         citype = "bool"

@@ -64,15 +64,7 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         self.rulename = 'MinimizeAcceptedDHCPOptions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """By default, the DHCP client program, dhclient, \
-requests and applies ten configuration options (in addition to the IP \
-address) from the DHCP server. subnet-mask, broadcast-address, time-offset, \
-routers, domain-name, domain-name-servers, host-name, nis-domain, nis-servers, \
-and ntp-servers. Many of the options requested and applied by dhclient may be \
-the same for every system on a network. It is recommended that almost all \
-configuration options be assigned statically, and only options which must \
-vary on a host-by-host basis be assigned via DHCP. This limits the damage \
-which can be done by a rogue DHCP server"""
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['RHEL 7 STIG 3.8.4.1']
         self.applicable = {'type': 'white',

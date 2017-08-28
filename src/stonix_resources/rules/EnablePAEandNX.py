@@ -62,8 +62,7 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         self.mandatory = True
         self.rootrequired = True
         self.guidance = ["CCE-RHEL7-CCE-TBD 2.2.4.4.1"]
-        self.helptext = '''Install PAE Kernel on Supported 32-bit x86 Systems. If the system is 32-bit and also supports the PAE
-and NX features, the kernel-PAE package should be installed to enable XD or NX support.'''
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': 'linux'}
 

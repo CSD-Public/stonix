@@ -55,10 +55,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
         self.rulename = 'ConfigureRemoteManagement'
         self.compliant = True
         self.formatDetailedResults("initialize")
-        self.helptext = 'Remote management should only be enabled on ' + \
-            'trusted networks with strong user controls present in a ' + \
-            'Directory system. Mobile devices without strict controls are ' + \
-            'vulnerable to exploit and monitoring.'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS 2.4.9', 'Apple HT201710']
 

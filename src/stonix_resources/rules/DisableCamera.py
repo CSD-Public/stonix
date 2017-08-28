@@ -58,9 +58,7 @@ class DisableCamera(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rulesuccess = True
-        self.helptext = '''This rule disables the built-in iSight camera, by using the kextunload command to unload the
-        AppleCameraInterface driver. Please note that this rule is not enabled by default. Please enable it before running
-        Fix, if you wish to disable the camera.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',

@@ -66,12 +66,7 @@ class MuteMic(Rule):
         self.logger = logger
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The MuteMic rule will mute or set the microphone \
-input levels to zero. This can help prevent a compromised computer from being \
-used as a listening device. On most platforms input volume changes require no \
-privileges so this setting can be easily undone. If you are not running STONIX with elevated privileges, \
-some fix functionality will be disabled for this rule. This will probably \
-result in the rule being not compliant after being run.'''
+        self.sethelptext()
         self.rootrequired = False
         self.mutemicrophone = self.__initializeMuteMicrophone()
         self.guidance = ['CIS']

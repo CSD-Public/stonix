@@ -58,14 +58,7 @@ class SetSSCorners(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = False
-        self.helptext = """The screen saver should be set to turn on after a \
-period of inactivity, and should require a password to dismiss. Disabling the \
-screen saver would disable the screen lock. This rule removes the \
-functionality of using a 'hot corner' to disable the screen saver.
-Note: the fix for this rule will not take effect immediately. If you log out \
-or restart it will take effect. It will also take effect automatically, after \
-the fix is run, but you may have to wait a few minutes for Mac OS X to reload \
-the process."""
+        self.sethelptext()
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']},
