@@ -49,9 +49,7 @@ class STIGConfigureBluetoothPolicy(Rule):
         self.rulenumber = 365
         self.rulename = "STIGConfigureBluetoothPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureBluetoothPolicy rule " + \
-            "installs the DISA STIG Bluetooth profile  " + \
-            "if not installed already."
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11.0', 'r', '10.13.10']},

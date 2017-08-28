@@ -51,10 +51,7 @@ class ShellTimeout(Rule):
         self.rulename = "ShellTimeout"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This optional rule will set up shell scripts in \
-/etc/profile.d which will log a user out of a bash or csh login shell after \
-15 minutes of inactivity. This is not practical for systems which run X \
-Windows, as it will close terminal windows in the X environment.'''
+        self.sethelptext()
         datatype = "bool"
         key = "SHELLTIMEOUT"
         instructions = "To disable this rule set the value of " + \

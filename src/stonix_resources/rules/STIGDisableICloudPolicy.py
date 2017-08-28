@@ -49,9 +49,7 @@ class STIGDisableICloudPolicy(Rule):
         self.rulenumber = 366
         self.rulename = "STIGDisableICloudPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGDisableICloudPolicy rule " + \
-            "installs the DISA STIG Disable iCloud profile  " + \
-            "if not installed already."
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11.0', 'r', '10.13.10']},

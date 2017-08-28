@@ -62,8 +62,7 @@ class VerifyAccPerms(Rule):
         self.rulename = 'VerifyAccPerms'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Ensure that the user account databases (passwd, " + \
-        "shadow, group, gshadow, etc) have the correct (secure) permissions."
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.ci = self.initCi("bool",

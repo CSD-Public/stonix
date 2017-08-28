@@ -54,9 +54,7 @@ class SecureMailClient(RuleKVEditor):
         self.rulename = 'SecureMailClient'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """Disable automatic image loading and inline \
-attachment viewing, and alert the user to non-local domains, in the Apple \
-Mail Client."""
+        self.sethelptext()
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',

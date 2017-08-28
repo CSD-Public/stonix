@@ -48,9 +48,7 @@ class STIGConfigureApplicationRestrictionsPolicy(Rule):
         self.rulenumber = 364
         self.rulename = "STIGConfigureApplicationRestrictionsPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureApplicationRestrictionsPolicy rule " + \
-            "installs the DISA STIG Application Restrictions profile  " + \
-            "if not installed already."
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']},
