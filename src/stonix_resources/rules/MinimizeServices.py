@@ -68,13 +68,7 @@ class MinimizeServices(Rule):
         self.rulename = 'MinimizeServices'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The MinimizeServices rule will minimize the \
-services that the system is running. Each running service is a potential \
-avenue for exploitation by an attacker or malicious software. Running only a \
-minimum of services reduces vulnerability and helps preserve system \
-resources. Most workstations will leave this rule enabled but some server \
-administrators may want to disable this rule.
-'''
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black',
                            'family': ['darwin']}

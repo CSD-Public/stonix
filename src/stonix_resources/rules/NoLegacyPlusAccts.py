@@ -52,13 +52,7 @@ class NoLegacyPlusAccts(Rule):
         self.rulename = "NoLegacyPlusAccts"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The NoLegacyPlusAccts rule ensures that no '+' " + \
-        "entries exist in the /etc/shadow, /etc/passwd, or " + \
-        "the /etc/group files.  The '+' symbol was used by systems to " + \
-        "include data from NIS maps into existing files. A certain " + \
-        "configuration error in which NIS inclusion line appears in " + \
-        "/etc/passwd but NIS is not running could lead to anyone being " + \
-        "able to access the system with the username '+' and no password."
+        self.sethelptext()
         self.guidance = ["NSA 2.3.1.8"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

@@ -56,16 +56,7 @@ class RemoveBadDotFiles(Rule):
         self.rulename = 'RemoveBadDotFiles'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The Remove Bad Dot Files rule will remove " + \
-        ".netrc, .shosts, and .rhosts files located in user home " + \
-        "directories. The .netrc file is used to automate connections " + \
-        "via FTP. When present the .netrc file frequently contains " + \
-        "plaintext passwords. The .shosts and .rhosts files are used in " + \
-        "support of the R commands and use an extremely weak form of " + \
-        "authentication. An option is given for disabling this rule but " + \
-        "this rule should only be disabled after a thorough review of the " + \
-        "proposed use of .netrc, .shosts or .rhosts files to ensure that " + \
-        "a potential security issue is not created by the use of the files."
+        self.sethelptext()
         self.rootrequired = False
         datatype = 'bool'
         key = 'removebaddotfiles'

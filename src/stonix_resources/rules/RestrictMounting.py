@@ -52,14 +52,7 @@ class RestrictMounting(Rule):
         self.rulename = "RestrictMounting"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This optional rule can be used to restrict access \
-and permissions related to disk mounts.\nRESTRICTCONSOLEACCESS will restrict \
-device ownership for console users to root only.\nDISABLEAUTOFS disables the \
-autofs service, which is used to dynamically mount NFS filesystems. Even if \
-NFS in needed, NFS filesystems can usually be statically mounted through
-/etc/fstab.\nDISABLEGNOMEAUTOMOUNT will restrict the gnome-volume-manager \
-(part of the GNOME Desktop Environment) from automatically mounting devices \
-and media.'''
+        self.sethelptext()
 
         # Configuration item instantiation
         datatype = "bool"
