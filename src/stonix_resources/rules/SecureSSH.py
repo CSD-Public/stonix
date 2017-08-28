@@ -71,38 +71,7 @@ class SecureSSH(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.environ = environ
-        self.helptext = '''This rule will not install SSH if it does
-not already exist on the system.
-
-This rule touches a number of configuration
-options in the ssh_config and/or sshd_config file(s).
-These options are checked and then changed, if necessary
-to be more secure than the default configuration.
-
-The client options touched are:
-Host
-Protocol
-GSSAPIAuthentication
-GSSAPIDelegateCredentials
-
-The server options touched are:
-Protocol
-SyslogFacility
-PermitRootLogin
-MaxAuthTries
-RhostsRSAAuthentication
-HostbasedAuthentication
-IgnoreRhosts
-PermitEmptyPasswords
-PasswordAuthentication
-ChallengeResponseAuthentication
-KerberosAuthentication
-GSSAPIAuthentication
-GSSAPICleanupCredentials
-UsePAM
-Ciphers
-PermitUserEnvironment'''
-
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}

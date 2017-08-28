@@ -56,9 +56,6 @@ class NoCoreDumps(Rule):
         self.rulename = "NoCoreDumps"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables the ability of the system to " + \
-            "produce core dump images.  A reboot is required or Mac OS X " + \
-            "for this rule to take effect."
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -74,6 +71,7 @@ class NoCoreDumps(Rule):
         self.iditerator = 0
         self.created1 = False
         self.created2 = False
+        self.sethelptext()
 
 ###############################################################################
 

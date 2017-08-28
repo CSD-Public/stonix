@@ -57,18 +57,7 @@ class ConfigureSudo(Rule):
         self.rulename = "ConfigureSudo"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule will check for proper settings for \
-"wheel" (or another administrative group, if specified below) in the sudoers \
-file.
-If the rule is non-compliant after you have run the fix, ensure that the \
-group entered in the text field exists, and that the usernames of all \
-administrators who should be allowed to execute commands as root are members \
-of that group. This rule will not be applicable to Solaris.
-This rule does not remove any lines from the sudoers file.
-***Please be aware that the default group for this rule is wheel or if on a Mac, it is admin. If you \
-would like to change the group, enter the desired group in the text field \
-below and hit save before running.***"""
-
+        self.sethelptext()
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

@@ -62,9 +62,7 @@ class SetNTP(Rule):
         self.rulename = 'SetNTP'
         self.formatDetailedResults("initialize")
         self.logger = logger
-        self.helptext = """This rule configures the Network Time Protocol \
-(NTP) to use the internal and external servers specified in localize.py \
-(NTPSERVERSINTERNAL and NTPSERVERSEXTERNAL)."""
+        self.sethelptext()
         self.compliant = False
         self.mandatory = True
         self.rootrequired = True

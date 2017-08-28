@@ -63,9 +63,7 @@ class LinuxPackageSigning(RuleKVEditor):
         self.mandatory = True
         self.rulename = 'LinuxPackageSigning'
         self.formatDetailedResults("initialize")
-        self.helptext = 'Package signing should always be enabled. On ' + \
-            'yum-based systems, this can be checked by ensuring that all ' + \
-            'repos have gpgcheck=1 set.'
+        self.sethelptext()
         self.guidance = ['CNSSI 1253: cm-5(3)']
 
         # init CIs

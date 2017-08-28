@@ -58,9 +58,7 @@ class VerifySysFilePerms(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will check the default owners and ' + \
-        'access permissions for all system packages and their associated ' + \
-        'files as well as the file contents. NOTE: There is no undo function for this rule!'
+        self.sethelptext()
         self.guidance = ['']
 
         datatype = 'bool'
