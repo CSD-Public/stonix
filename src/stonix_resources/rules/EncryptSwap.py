@@ -26,6 +26,7 @@ Created on Mar 2, 2015
 @author: dwalker
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -45,9 +46,6 @@ class EncryptSwap(RuleKVEditor):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rulename = "EncryptSwap"
-        self.helptext = "Passwords and other sensitive information can be " + \
-        "extracted from insecure virtual memory. This rule secures " + \
-        "virtual memory."
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("swapEncrypt",
@@ -61,3 +59,4 @@ class EncryptSwap(RuleKVEditor):
                           None,
                           False,
                           {})
+        self.sethelptext()

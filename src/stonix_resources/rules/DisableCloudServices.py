@@ -31,6 +31,7 @@ dictionary
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -65,8 +66,6 @@ dictionary
         self.rulename = 'DisableCloudServices'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables iCloud services on OS X or " + \
-            "Unity Webapps and Lens Shopping on Ubuntu."
         self.rootrequired = True
         self.logger = self.logdispatch
         self.guidance = []
@@ -101,7 +100,7 @@ dictionary
         else:
             self.debianpkglist = ['unity-webapps-common',
                                   'unity-lens-shopping']
-
+        self.sethelptext()
     def report(self):
         '''
         choose which report method to run based on OS archetype

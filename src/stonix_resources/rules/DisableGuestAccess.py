@@ -30,6 +30,7 @@ Created on 09/30/2013
 @change: 2015-02-26 ekkehard Artifact artf35702 : DisableGuestAccess
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor

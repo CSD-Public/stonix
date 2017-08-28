@@ -34,6 +34,7 @@ Created on Dec 10, 2013
         got rid of unused code blocks (previously commented out) and unused imports; updated the help text to
         include more detail
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import

@@ -27,6 +27,7 @@ Install PAE Kernel on Supported 32-bit x86 Systems. If the system is 32-bit and 
 and NX features, the kernel-PAE package should be installed to enable XD or NX support.
 
 @author: Breen Malmberg
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import

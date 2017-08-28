@@ -31,7 +31,7 @@ well-managed web server is recommended.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-'''
+@change: 2017/08/28 bemalmbe Fixing to use new help text methods'''
 
 from __future__ import absolute_import
 import traceback
@@ -62,10 +62,6 @@ well-managed web server is recommended.
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.compliant = False
-        self.helptext = 'Web Sharing uses the Apache 2.2.x web server to ' + \
-        'turn the Mac into an HTTP/Web server. As with file sharing, web ' + \
-        'sharing is best left off and a dedicated, well-managed web ' + \
-        'server is recommended.'
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
@@ -81,6 +77,7 @@ well-managed web server is recommended.
         # set up class var's
         self.maclongname = '/System/Library/LaunchDaemons/org.apache.httpd.plist'
         self.macshortname = 'org.apache.httpd'
+        self.sethelptext()
 
     def report(self):
         '''

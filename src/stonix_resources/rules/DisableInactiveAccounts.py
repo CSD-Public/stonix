@@ -31,6 +31,7 @@ password, will be disabled.
 @change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
 @change: 2017/03/30 dkennel Marked as FISMA high until Apple resolves bugs
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import

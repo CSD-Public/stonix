@@ -31,6 +31,7 @@ file system support from the kernel.
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2016/05/26 ekkehard Results Formatting
 @change: 2016/10/20 eball Results Formatting
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -62,12 +63,6 @@ class DisableUnusedFs(Rule):
         self.rulename = 'DisableUnusedFs'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will remove \
-support for uncommon filesystems on this platform. Unused file system \
-support increases the system attack profile while providing no benefit \
-to the system operators. Options are given for disabling this rule or \
-tuning the list of filesystems that should be disabled. Tuning is \
-preferable to disabling the rule.'''
         self.rootrequired = True
         self.blacklistfile = '/etc/modprobe.d/usgcb-blacklist.conf'
 
@@ -90,6 +85,7 @@ be space separated.'''
         self.guidance = ['NSA 2.2.2.5']
         self.applicable = {'type': 'white',
                            'family': ['linux']}
+        self.sethelptext()
 
     def report(self):
         '''Fssupport.report() Public method to report on the status of the

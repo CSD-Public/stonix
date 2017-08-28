@@ -31,6 +31,7 @@ This is a rule to disable password hints, specifically started for the Mac.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -51,10 +52,6 @@ class DisablePasswordHints(RuleKVEditor):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "This rule determines how may login attempts " + \
-                        "until password hints will be displayed.  Default " + \
-                        "is 0, indicating password hints will never be " + \
-                        "displayed."
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("DisablePasswordHints",
@@ -71,3 +68,5 @@ class DisablePasswordHints(RuleKVEditor):
                          None,
                          False,
                          {})
+        self.sethelptext()
+

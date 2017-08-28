@@ -28,6 +28,7 @@ Created on 09/17/2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -53,13 +54,6 @@ class DisableInternetSharing(RuleKVEditor):
         self.rulenumber = 215
         self.rulename = 'DisableInternetSharing'
         self.formatDetailedResults("initialize")
-        self.helptext = "Internet Sharing uses the open source natd " + \
-        "process to share an internet connection with other computers " + \
-        "and devices on a local network. Unless specifically required, " + \
-        "Internet Sharing should be turned off. If used, it should only " + \
-        "be turned on when actual sharing is needed. A much better " + \
-        "solution is a dedicated router. Apple makes a number of " + \
-        "certified compatible routers."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
@@ -75,3 +69,4 @@ class DisableInternetSharing(RuleKVEditor):
                          None,
                          False,
                          {})
+         self.sethelptext()

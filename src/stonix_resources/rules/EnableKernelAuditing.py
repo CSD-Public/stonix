@@ -31,6 +31,7 @@ account modifications, and authentication events.
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
