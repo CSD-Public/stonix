@@ -75,6 +75,7 @@ class SecureSU(Rule):
         self.compliant = False
         self.rulename = 'SecureSU'
         self.mandatory = True
+        self.formatDetailedResults("initialize")
         self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'

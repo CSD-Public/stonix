@@ -66,7 +66,7 @@ class DisablePrelinking(Rule):
             self.isDebian = True
         else:
             self.isDebian = False
-        self.sethelptext
+        self.sethelptext()
 
     def report(self):
         try:

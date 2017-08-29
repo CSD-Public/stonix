@@ -72,7 +72,6 @@ writability/readability on the system.
         self.mandatory = True
         self.sethelptext()
         self.rootrequired = True
-        self.detailedresults = 'The SetDaemonUmask rule has not yet been run'
         self.guidance = ['CCE 4220-0']
 
         # init CIs

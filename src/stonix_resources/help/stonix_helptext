@@ -157,7 +157,7 @@ it is 'admin'. You can edit this and change it to something different before run
 if your operating system or environment uses a different sudo group name."
 
 <57>        "***The 'Pluggable Authentication Module' (PAM) stack is extremely fragile and sensitive by nature. 
-Run this rules at your own risk.*** 
+Run this rule at your own risk.*** 
 
 This rule configures the PAM stack for password requirements and failed login attempts. It also ensures the system uses 
 SHA512 encryption. 
@@ -227,7 +227,7 @@ solution is a dedicated router. Apple makes a number of certified compatible rou
 
 <123>        "***On Solaris: AUDIT-ONLY; NO FIX*** 
 
-This rule disables IPV6 functionality."
+This rule completely disables IPV6."
 
 <202>        "This rule turns off the infrared receiver that allows the user to remotely control their Mac with a remote control."
 
@@ -261,10 +261,10 @@ the 'Allow Access' list, if possible."
 ***REQUIRES REBOOT*** 
 
 This rule disables 'Universal Serial Bus' (USB), 'Firewire', 'Thunderbolt', and 'Secure Digital' (SD) cards 
-(if applicable) from being accessed from the system.
+(if applicable) from being accessed from the system. 
 
 Firewire (IEEE standard no. 1394) is an interface standard for a serial bus for high-speed communications and 
-isochronous real-time data transfer. It was developed in the late 1980s and early 1990s by Apple.
+isochronous real-time data transfer. It was developed in the late 1980s and early 1990s by Apple. 
 
 Thunderbolt is the brand name of a hardware interface developed by Apple and Intel which allows the connection 
 of external peripherals to a computer. Thunderbolt 1 and 2 use the same connector as Mini DisplayPort (MDP), 
@@ -501,24 +501,22 @@ program state are usually dumped at the same time, including the processor regis
 program counter and stack pointer, memory management information, and other processor and operating system 
 flags and information. Core dumps are often used to assist in diagnosing and debugging errors in computer programs."
 
-<41>        "This rule ensures there are no empty password 
-hashes in the /etc/shadow file. If empty passwords exist, someone could 
-successfully login without using having to enter a password."
+<41>        "This rule ensures there are no empty password hashes in the /etc/shadow file. 
 
-<43>        "This rule ensures that no '+' entries exist in the /etc/shadow, /etc/passwd, or 
-the /etc/group files. The '+' symbol was used by systems to include data from NIS maps into existing files. A certain 
-configuration error in which the NIS inclusion line appears in /etc/passwd but NIS is not running could lead to anyone being 
-able to access the system with the username '+' and no password."
+If empty passwords exist, someone could successfully login without using having to enter a password."
+
+<43>        "This rule ensures that no '+' entries exist in the /etc/shadow, /etc/passwd, or the /etc/group files. 
+
+The '+' symbol was used by systems to include data from NIS maps into existing files. A certain configuration error in which the NIS inclusion line appears in /etc/passwd but NIS is not running could lead to anyone being able to access the system with the username '+' and no password."
 
 <42>        "***CANNOT BE UNDONE***
 
 This rule configures the password expiration settings for each entry in the shadow file, and any other files that 
 pertain to password expiration, length, warning time, etc."
 
-<31>        "This rule prevents the X server from being 
-network-aware (or 'listening' on the network). The X graphics display 
-server is, by default, network-aware. Due to security weaknesses in the 
-X server, the service should not be exposed to the external network."
+<31>        "This rule prevents the X server from being network-aware (or 'listening' on the network). 
+
+The X graphics display server is, by default, network-aware. Due to security weaknesses in the X server, the service should not be exposed to the external network."
 
 <151>        "***OPTIONAL RULE***
 
@@ -536,8 +534,7 @@ proposed use of .netrc, .shosts or .rhosts files to ensure that a potential secu
 
 This rule removes any unnecessary software installed on the system. 
 
-The detailed list of software to be removed is listed below, in the CI text box. You may customize this list, or leave the rule 
-disabled entirely."
+The detailed list of software to be removed is listed below, in the CI text box. You may customize this list, or leave the rule disabled entirely."
 
 <5>		"This rule will remove 'Security Tool On Mac' (STOM). 
 
@@ -558,26 +555,23 @@ systems and should be removed."
 has the same UID of 0, and the same privileges as the root account and is used 
 as a backup account for the root user."
 
-<38>        "This rule checks if the system currently requires
-authentication for single-user mode or not, and if it does not then it makes
-the necessary config file changes to require authentication for single-user
-mode. Most systems, by default, do not require authentication when booting into 
-a single-user mode environment. This effectively means that anyone who had physical 
+<38>        "This rule checks if the system currently requires authentication for single-user mode or not, and if it does not then it makes
+the necessary config file changes to require authentication for single-user mode. 
+
+Most systems, by default, do not require authentication when booting into a single-user mode environment. This effectively means that anyone who had physical 
 access to a system would also have full control over it."
 
-<200>        "This rule ensures that the system requires a password in 
-order to unlock, and make changes to, 'System Preferences'. By requiring a password 
-to unlock 'System Preferences', it is less likely that a casual user can make changes 
-which could lead to the system being compromised." 
+<200>        "This rule ensures that the system requires a password in order to unlock, and make changes to, 'System Preferences'. 
 
-<86>        "This rule restricts access to the kernel message buffer - to 
-only privileged accounts. Unprivileged access to the kernel syslog could expose sensitive 
-kernel address information."
+By requiring a password to unlock 'System Preferences', it is less likely that a casual user can make changes which could lead to the system being compromised." 
 
-<269>        "This rule disables SSH root login access. Secure Shell (SSH) is a 
-cryptographic network protocol for operating network services securely over an unsecured 
-network. Users with a need to access privileged functions over SSH, should log in as a non-root 
-account with access to sudo privileges and then only escalate as needed."
+<86>        "This rule restricts access to the kernel message buffer - to only privileged accounts. 
+
+Unprivileged access to the kernel syslog could expose sensitive kernel address information."
+
+<269>        "This rule disables SSH root login access. 
+
+Secure Shell (SSH) is a cryptographic network protocol for operating network services securely over an unsecured network. Users with a need to access privileged functions over SSH, should log in as a non-root account with access to sudo privileges and then only escalate as needed."
 
 <112>        "***OPTIONAL RULE***
 
@@ -588,30 +582,27 @@ automatically mounting devices and media."
 
 <251>        "**This rule requires YOUR INPUT.**
 
-This rule designates an alternate user account to send root mail to. Normally root mail is only sent to the 
-root user. However, actual root account use should be limited to recovery use only and it is therefore necessary 
+This rule designates an alternate user account to send root mail to. 
+
+Normally root mail is only sent to the root user. However, actual root account use should be limited to recovery use only and it is therefore necessary 
 to send the mail to an alternate user so that it can still actually be read on a regular basis."
 
 <268>        "***CANNOT BE UNDONE***
 
-This rule will schedule a random time (after business hours) for STONIX to run in admin/root context, once per week, 
-and once per day in user context."
+This rule will schedule a random time (after business hours) for STONIX to run in admin/root context, once per week, and once per day in user context."
 
-<136>        "This rule will apply secure configurations to the Apache web server conf file 'httpd.conf' and 
-included files in conf.d directory, or other configuration directories. It also applies 
-secure configurations to the PHP interpreter's 'php.ini' file, if present. There 
-are a series of config options for this rule. In general, the Apache web server 
-should not be running on desktop systems and should be disabled by the 
-'MinimizeServices' rule. On servers and in the case where a developer needs a 
-local instance of the web server running, it should be properly configured.
+<136>        "This rule will apply secure configurations to the Apache web server conf file 'httpd.conf' and included files in conf.d directory, or other configuration directories. It also applies 
+secure configurations to the PHP interpreter's 'php.ini' file, if present. There are a series of config options for this rule. 
 
-Server admins running web servers will want to review the actions taken by 
-this rule to ensure that it will not affect their deployed applications."
+In general, the Apache web server should not be running on desktop systems and should be disabled by the 'MinimizeServices' rule. On servers and in the case where a developer needs a 
+local instance of the web server running, it should be properly configured. 
 
-<33>        "This rule restricts permissions on the files and directories, 
-associated with the AT and CRON daemons, to authorized users only. It also enables and configures 
-logging for these daemons. 'AT' and 'CRON' are used in Linux to schedule jobs to run 
-at a later date/time."
+Server admins running web servers will want to review the actions taken by this rule to ensure that it will not affect their deployed applications."
+
+<33>        "This rule restricts permissions on the files and directories, associated with the AT and CRON daemons, to authorized users only. It also enables and configures 
+logging for these daemons. 
+
+AT and CRON are used in Linux to schedule jobs (scripts, services, or binaries) to run at a later date/time."
 
 <128>        "This rule can: 
 
@@ -623,254 +614,196 @@ at a later date/time."
 * Set the Default Authentication Type
 * Setup default policy blocks for CUPS.
 
-CUPS stands for 'Common UNIX Printing System', and is a modular printing system for Unix-like 
-computer operating systems which allows a computer to act as a print server.
+CUPS stands for 'Common UNIX Printing System', and is a modular printing system for Unix-like computer operating systems which allows a computer to act as a print server.
 
-This rule is highly customisable, due to the widely varied sets of required or incompatible settings with 
-any one specific printing environment/network."
+This rule is highly customisable, due to the widely varied sets of required or incompatible settings with any one specific printing environment/network."
 
-<134>        "This rule configures the system's 'dhcpd.conf' file, to increase 
-the level of security of the DHCP daemon. If the 'dhcpd.conf' file is not found, the 
+<134>        "This rule configures the system's 'dhcpd.conf' file, to increase the level of security of the DHCP daemon. If the 'dhcpd.conf' file is not found, the 
 system is considered compliant, as the DHCP daemon will not function without it."
 
-<32>        "This rule enables logging for all attempted FTP access and 
-FTP commands. It also restricts the set of users allowed to access FTP 
-and sets the default umask for FTP users. FTP stands for 'File Transfer Protocol' and is used 
-for the transfer of computer files between a client and server on a computer network."
+<32>        "This rule enables logging for all attempted 'File Transfer Protocol' (FTP) access and FTP commands. It also restricts the set of users allowed to access FTP and sets the default umask for FTP users. 
 
-<45>        "This rule ensures that each user's home directory is not 
-group-writeable or world-readable."
+FTP is used for the transfer of computer files between a client and server on a computer network."
+
+<45>        "This rule ensures that each user's home directory is not group-writeable or world-readable."
 
 <15>        "***On Solaris: REQUIRES REBOOT***
 
-This rule configures the system's IPv4 network stack settings. The number of specific settings touched and their 
-meanings are too numerous and verbose to go into here. The configuration file being edited is 'sysctl.conf'. 
+This rule configures the system's IPv4 network stack settings. 
+
+The number of specific settings touched and their meanings are too numerous and verbose to go into here. The configuration file being edited is 'sysctl.conf'. 
 If you wish to see the full list of specific settings, please feel free to examine the rule code for this rule."
 
-<124>        "This rule will configure IPv6 functionality by
-disabling automatic configuration, enabling privacy extensions for address
-generation, and limiting network-transmitted configuration information."
+<124>        "This rule will configure IPv6 functionality by disabling automatic configuration, enabling privacy extensions for address generation, and limiting network-transmitted configuration information."
 
-<264>        "This rule disables automatic image loading and inline
-attachment viewing, and alert the user to non-local domains, in the 'Apple
-Mail Client'."
+<264>        "This rule disables automatic image loading and inline attachment viewing, and alerts the user to non-local domains, in the 'Apple Mail Client'."
 
-<135>        "This rule makes a number of configuration changes to 
-the 'Avahi' service in order to secure it. The 'Avahi' daemon implements the 'DNS Service 
-Discovery and Multicast DNS' protocols, which provide service and host 
-discovery on a network. It allows a system to automatically identify 
-resources on the network, such as printers or web servers. This capability is 
-also known as 'mDNSresponder' and is a major part of 'Zeroconf' networking."
+<135>        "This rule makes a number of configuration changes to the 'Avahi' service in order to secure it. 
 
-<53>        "This rule ensures that systems are not running MTAs unnecessarily, 
-and configures needed MTAs as defensively as possible. Mail servers are used to send and receive 
-mail over a network on behalf of site users. Mail is a very common service, and
-'Mail Transfer Agents' (MTAs) are frequent targets of network attack.
+The 'Avahi' daemon implements the 'DNS Service Discovery' and 'Multicast DNS' (MDNS) protocols - which provide service and host discovery on a network. It allows a system to automatically identify 
+resources on the network, such as printers or web servers. This capability is also known as 'mDNSresponder' and is a major part of 'Zeroconf' networking."
 
-Please be advised, in one section of this rule, the
-/etc/mail/sendmail.cf is modified two different times. Because of this, the
-undo event that handles this file if a change is made will only revert one
-change, the change that is not reverted is the insertion or modification of
-the line that begins with DS. If you can't remember the original format of
-that line, take a look in the /usr/share/stonix folder for the original file
-before clicking undo."
+<53>        "This rule ensures that systems are not running 'Mail Transfer Agents' (MTAs) unnecessarily, and configures needed MTAs as defensively as possible. 
 
-<39>        "This rule secures the 'Network File System' (NFS) server by configuring 
-NFS services to use fixed ports and checking the /etc/exports file for malformed export lines, export 
+Mail servers are used to send and receive mail over a network on behalf of site users. Mail is a very common service, and MTAs are frequent targets of network attack.
+
+Please be advised, in one section of this rule, the /etc/mail/sendmail.cf is modified two different times. Because of this, the undo event that handles this file if a change is made will only revert one 
+change, the change that is not reverted is the insertion or modification of the line that begins with DS. If you can't remember the original format of 
+that line, take a look in the /usr/share/stonix folder for the original file before clicking undo."
+
+<39>        "This rule secures the 'Network File System' (NFS) server by configuring NFS services to use fixed ports and checking the /etc/exports file for malformed export lines, export 
 lines that are too permissive, or lines that contain the 'no_root_squash', 'all_squash' or 'insecure_locks' options. 
-NFS is a distributed file system protocol originally developed by Sun Microsystems in 1984, allowing a user on a 
-client computer to access files over a computer network much like local storage is accessed."
 
-<141>        "**If both disable and secure options are selected, the disable option will take precedence.
+NFS is a distributed file system protocol originally developed by Sun Microsystems in 1984, allowing a user on a client computer to access files over a computer network much like local storage is accessed."
 
-This rule will, by default, disable all POP and IMAP services 
-on this system. It may be configured (through the CIs) to instead secure these services, if 
-they are needed on this system. The package 'Dovecot' provides IMAP and POP3 services. It is not installed by default. 
-If this system does not need to operate as an IMAP or POP3 server, disable and remove Dovecot 
-if it is installed. If this system does need to operate as an IMAP or POP3 server, securely configure it instead.
+<141>        "**If both disable and secure options are selected, the disable option will take precedence** 
 
-Note: this rule does not set up or install ssl certificates. This should still be done on your CA (certificate authority) system, 
-manually, by the administrator of that system."
+This rule will, by default, disable all POP and IMAP services on this system. It may be configured (through the CIs) to instead secure these services, if they are needed on this system. 
+
+The package 'Dovecot' provides IMAP and POP3 services. It is not installed by default. If this system does not need to operate as an IMAP or POP3 server, disable and remove Dovecot 
+if it is installed. If this system does need to operate as an IMAP or POP3 server, securely configure it instead. 
+
+Note: this rule does not set up or install ssl certificates. This should still be done on your CA (certificate authority) system, manually, by the administrator of that system."
 
 <144>        "This rule will, by default, disable 'Simple Network Management Protocol' (SNMP) on this system. 
-SNMP allows administrators to monitor the state of network devices, including computers. Older versions of SNMP were 
-well-known for weak security, such as plain text transmission of the 'community string' (used for authentication) and 
+
+SNMP allows administrators to monitor the state of network devices, including computers. Older versions of SNMP were well-known for weak security, such as plain text transmission of the 'community string' (used for authentication) and 
 also usage of easily guessable choices for the 'community string'. Disable SNMP if possible. Configure SNMP if necessary."
 
 <143>        "This rule secures 'Squid' proxy functionality. 
-Squid is a caching and forwarding HTTP web proxy. It has a wide variety of 
-uses, including speeding up a web server by caching repeated requests, 
-caching web, DNS and other computer network lookups for a group of people 
-sharing network resources."
+
+Squid is a caching and forwarding HTTP web proxy. It has a wide variety of uses, including speeding up a web server by caching repeated requests, 
+caching web, DNS and other computer network lookups for a group of people sharing network resources."
 
 <8>        "This rule touches a number of configuration options in the ssh_config and/or sshd_config file(s). These options are 
-checked and then changed, if necessary to be more secure than the default configuration.
+checked and then changed, if necessary to be more secure than the default configuration. 
 
-The client options touched are:
-Host
-Protocol
-GSSAPIAuthentication
-GSSAPIDelegateCredentials
+The client options touched are: 
+Host 
+Protocol 
+GSSAPIAuthentication 
+GSSAPIDelegateCredentials 
 
-The server options touched are:
-Protocol
-SyslogFacility
-PermitRootLogin
-MaxAuthTries
-RhostsRSAAuthentication
-HostbasedAuthentication
-IgnoreRhosts
-PermitEmptyPasswords
-PasswordAuthentication
-ChallengeResponseAuthentication
-KerberosAuthentication
-GSSAPIAuthentication
-GSSAPICleanupCredentials
-UsePAM
-Ciphers
-PermitUserEnvironment
+The server options touched are: 
+Protocol 
+SyslogFacility 
+PermitRootLogin 
+MaxAuthTries 
+RhostsRSAAuthentication 
+HostbasedAuthentication 
+IgnoreRhosts 
+PermitEmptyPasswords 
+PasswordAuthentication 
+ChallengeResponseAuthentication 
+KerberosAuthentication 
+GSSAPIAuthentication 
+GSSAPICleanupCredentials 
+UsePAM 
+Ciphers 
+PermitUserEnvironment 
 
 This rule will not install SSH if it is not already installed."
 
-<50>        "This rule secures access to the 'su' comand. The 'su' 
-command allows a user to gain the privileges of another user by entering the 
-password for that user's account. It is desirable to restrict the root user so that 
-only known administrators are ever allowed to access the root account. This restricts 
-password-guessing against the root account by unauthorized users or by accounts which 
-have been compromised. By convention, the group wheel contains all users who are
-allowed to run privileged commands. The PAM module pam_wheel.so is used to restrict root 
-access to this set of users.
+<50>        "This rule secures access to the 'su' comand. 
+
+The su command allows a user to gain the privileges of another user by entering the password for that user's account. It is desirable to restrict the root user so that 
+only known administrators are ever allowed to access the root account. This restricts password-guessing against the root account by unauthorized users or by accounts which 
+have been compromised. By convention, the group wheel contains all users who are allowed to run privileged commands. The PAM module pam_wheel.so is used to restrict root 
+access to this set of users. 
 
 This rule will not configure su on Debian distributions."
 
 <142>        "This rule will secure 'Server Message Block' (SMB; aka 'samba') file sharing settings. 
-In computer networking, SMB operates as an application-layer network protocol mainly used for providing shared 
-access to files, printers, and serial ports and miscellaneous communications between nodes on a network."
 
-<68>        "This rule sets the process daemon umask to 022 (0022) to 
-prevent world writability/readability on the system. The settings file '/etc/sysconfig/init' 
-contains settings which apply to all processes started at boot time. The system 'umask' must 
-be set to at least 022, or daemon processes may create world-writable files. The more 
-restrictive umask setting 027 protects files, including temporary files and log files, 
-from unauthorized reading by unprivileged users on the system.  It is not recommended 
-to use any value more restrictive than 027 because this could cause issues with the normal 
-operation of the operating system."
+In computer networking, SMB operates as an application-layer network protocol mainly used for providing shared access to files, printers, and serial ports and miscellaneous communications between nodes on a network."
 
-<48>        "This rule sets the default user umask to 027. The default 
-value of 027 can be customised. Mac OS X will have the umask set to 022 because it 
-a more restrictive setting will cause issues on Mac OS X. It is not recommended to 
-use any value more restrictive than 027, under any circumstance, as this could 
-interfere with normal/legitimate use of the system by users."
+<68>        "This rule sets the process daemon umask to 022 (0022) to prevent world writability/readability on the system. 
+
+The settings file '/etc/sysconfig/init' contains settings which apply to all processes started at boot time. The system 'umask' must be set to at least 022, or daemon processes may create world-writable files. The more 
+restrictive umask setting 027 protects files, including temporary files and log files, from unauthorized reading by unprivileged users on the system.  It is not recommended to use any value more restrictive than 027 because this could cause issues with the normal operation of the operating system."
+
+<48>        "This rule sets the default user umask to 027. The default value of 027 can be customised. Mac OS X will have the umask set to 022 because it 
+a more restrictive setting will cause issues on Mac OS X. 
+
+It is not recommended to use any value more restrictive than 027, under any circumstance, as this could interfere with normal/legitimate use of the system by users."
 
 <21>        "This rule sets the file system mount options for non-root, 
 local partitions and file systems mounted on removable media, removable storage 
 partitions, and temporary storage partitions such as /tmp and /dev/shm in order to help 
 protect against malicious code being run on the system."
 
-<96>        "This rule configures the 'Network Time Protocol' 
-(NTP) daemon to use the internal and external servers specified in localize.py 
-('NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL')."
+<96>        "This rule configures the 'Network Time Protocol' (NTP) daemon to use the internal and external servers specified in localize.py: 'NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL'."
 
-<77>        "This rule sets root's 'group id' (GID) to 0 and root's home 
-directory to /root."
+<77>        "This rule sets root's 'group id' (GID) to 0 and root's home directory to /root."
 
 <188>        "***REQUIRES LOGOUT and LOGIN*** 
 
-This rule removes the functionality of using a 'hot corner' 
-to disable the screen saver. 
+This rule removes the functionality of using a 'hot corner' to disable the screen saver. 
 
-The screen saver should be set to turn on after a
-period of inactivity, and should require a password to dismiss. Disabling the
-screen saver would disable the screen lock."
+The screen saver should be set to turn on after a period of inactivity, and should require a password to dismiss. Disabling the screen saver would disable the screen lock."
 
-<98>        "This rule ensures that the 'Trivial File Transfer Protocol' (TFTP) 
-daemon uses 'secure mode'. TFTP is an Internet software utility for transferring files 
-that is simpler to use than the File Transfer Protocol (FTP) but less capable. It is 
+<98>        "This rule ensures that the 'Trivial File Transfer Protocol' (TFTP) daemon uses 'secure mode'. 
+
+TFTP is an Internet software utility for transferring files that is simpler to use than the File Transfer Protocol (FTP) but less capable. It is 
 used where user authentication and directory visibility are not required."
 
-<126>        "This rule installs 'Logwatch'. Logwatch is used for reporting 
-on unusual items in syslog. Logwatch is valuable because it provides a parser 
-for the syslog entry format and a number of signatures for types of lines which are 
-considered to be mundane or noteworthy. It is recommended that all Linux sites, which do 
-not have time to deploy a third-party log monitoring application, run Logwatch in its default 
-configuration. This provides some useful information about system activity in 
-exchange for very little administrator effort."
+<126>        "This rule installs 'Logwatch'. 
+
+Logwatch is used for reporting on unusual items in syslog. Logwatch is valuable because it provides a parser for the syslog entry format and a number of signatures for types of lines which are 
+considered to be mundane or noteworthy. It is recommended that all Linux sites, which do not have time to deploy a third-party log monitoring application, run Logwatch in its default 
+configuration. This provides some useful information about system activity in exchange for very little administrator effort."
 
 <120>        "***OPTIONAL RULE***
 
-This rule will set up shell scripts in /etc/profile.d which will log a user out of a 'bash' or 'csh' 
-login shell after 15 minutes of inactivity. This is not practical for systems 
-which run X Windows, as it would close terminal windows in the X environment."
+This rule will set up shell scripts in /etc/profile.d which will log a user out of a 'bash' or 'csh' login shell after 15 minutes of inactivity. 
 
-<7>        "This rule will check to see if all software is patched, 
-if the computer is using local update sources (if available), and if the package 
-manager is using GPG-secured updates where applicable. This rule will 
-also ensure that the system has a scheduled CRON job to 
-install updates automatically on systems where that is feasible."
+This is not practical for systems which run X Windows, as it would close terminal windows in the X environment."
 
-<127>        "This rule sets an idle timeout threshold for 'Secure 
-Shell' (SSH) connections. The default timeout threshold is 15 minutes (900 seconds). 
-This value can be customized to fit your environment's needs."
+<7>        "This rule will check to see if all software is patched, if the computer is using local update sources (if available), and if the package 
+manager is using GPG-secured updates where applicable. This rule will also ensure that the system has a scheduled CRON job to install updates automatically on systems where that is feasible."
 
-<364>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
-'Security Technical Implementation Guidance' (STIG) 'Application Restrictions' profile 
-if not already installed."
+<127>        "This rule sets an idle timeout threshold for 'Secure Shell' (SSH) connections. The default timeout threshold is 15 minutes (900 seconds). This value can be customized to fit your environment's needs."
 
-<365>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
-'Security Technical Implementation Guidance' (STIG) 'Bluetooth' profile 
-if not already installed."
+<364>        "This rule installs the 'Defense Information Systems Agency' (DISA) 'Security Technical Implementation Guidance' (STIG) 'Application Restrictions' profile if not already installed."
 
-<362>        "This rule configures the Mac OS X operating system's 'login window' profile 
-if not already installed."
+<365>        "This rule installs the 'Defense Information Systems Agency' (DISA) 'Security Technical Implementation Guidance' (STIG) 'Bluetooth' profile if not already installed."
 
-<361>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
-'Security Technical Implementation Guidance' (STIG) 'Password Policy' profile if not already installed."
+<362>        "This rule configures the Mac OS X operating system's 'login window' profile if not already installed."
 
-<363>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
-'Security Technical Implementation Guidance' (STIG) 'Restrictions' profile if not already installed."
+<361>        "This rule installs the 'Defense Information Systems Agency' (DISA) 'Security Technical Implementation Guidance' (STIG) 'Password Policy' profile if not already installed."
 
-<366>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
-'Security Technical Implementation Guidance' (STIG) 'Disable iCloud' profile 
-if not already installed."
+<363>        "This rule installs the 'Defense Information Systems Agency' (DISA) 'Security Technical Implementation Guidance' (STIG) 'Restrictions' profile if not already installed."
+
+<366>        "This rule installs the 'Defense Information Systems Agency' (DISA) 'Security Technical Implementation Guidance' (STIG) 'Disable iCloud' profile if not already installed."
 
 <52>        "***CANNOT BE UNDONE*** 
 
-This rule checks for the presence of certain files, such as: /root/.rhosts, /root/.shosts, /etc/hosts.eqiv and 
-/etc/shosts.equiv, and creates a 'symbolic link' (symlink) of them to /dev/null, in order 
-to prevent a potentially exploitable weak form of access control. A symlink is the nickname 
-for any file that contains a reference to another file or directory in the form of an absolute 
-or relative path and that affects pathname resolution."
+This rule checks for the presence of certain files, such as: /root/.rhosts, /root/.shosts, /etc/hosts.eqiv and /etc/shosts.equiv, and creates a 'symbolic link' (symlink) of them to /dev/null, in order to prevent a potentially exploitable weak form of access control. 
+
+A symlink is the nickname for any file that contains a reference to another file or directory in the form of an absolute or relative path and that affects pathname resolution."
 
 <9>        "***OPTIONAL RULE*** 
 
-This rule installs and configures 'System Accounting'. System Accounting is a process which gathers baseline system data 
-(CPU utilization, disk I/O, etc.) every 10 minutes, by default. The data may be accessed 
-with the 'sar' (System Activity Report) command, or by reviewing the nightly report files named 
-'/var/log/sa/sar*'. Once a normal baseline for the system has been established, with frequent 
-monitoring, unauthorized activity (password crackers and other CPU-intensive jobs, and
-activity outside of normal usage hours) may be detected due to the changes these activities 
-represent - from the normal system performance curve."
+This rule installs and configures 'System Accounting'. 
+
+System Accounting is a process which gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 minutes, by default. The data may be accessed 
+with the 'sar' (System Activity Report) command, or by reviewing the nightly report files named '/var/log/sa/sar*'. Once a normal baseline for the system has been established, with frequent 
+monitoring, unauthorized activity (password crackers and other CPU-intensive jobs, and activity outside of normal usage hours) may be detected due to the changes these activities represent - from the normal system performance curve."
 
 <6>        "***AUDIT-ONLY; NO FIX*** 
 
-This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionality is enabled, by running and checking the 
-output to the following command: '/usr/bin/csrutil status'."
+This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionality is enabled, by running and checking the output to the following command: '/usr/bin/csrutil status'."
 
-<13>        "This rule will configure the '/etc/hosts.allow' and
-'/etc/hosts.deny' files for secure operation. 'TCP Wrappers' is a library which provides simple
-access control and standardized logging for supported applications which
-accept connections over a network. Historically, TCP Wrappers was used to
-support 'Internet Service Daemon' (inetd) services. Now that inetd is deprecated, TCP Wrappers 
-supports only those services which were built to make use of the 'libwrap' library."
+<13>        "This rule will configure the '/etc/hosts.allow' and '/etc/hosts.deny' files for secure operation. 
 
-<24>        "This rule ensures that the user account databases (passwd, 
-shadow, group, gshadow) each have the correct (secure) permissions assigned to them."
+TCP Wrappers is a host-based networking 'Access Control List' (ACL) system, used to filter network access to other hosts on Unix-like operating systems. It allows host or subnetwork IP addresses, names and/or ident query replies, to be used as tokens on which to filter for access control purposes."
+
+<24>        "This rule ensures that the user account databases (passwd, shadow, group, gshadow) each have the correct (secure) permissions assigned to them."
 
 <227>        "This rule will use the 'diskutil repairPermissions' or 'repair_packages' 
 utilities (respectively, depending on OS version) to ensure that each package (and its associated files) 
 has the default ownership and access permissions assigned to it."
 
-<36>        "This rule will securely configure the 'Extended Internet Service Daemon' (xinetd) 
-access control mechanism, if it is present. xinetd is an open-source service dispatcher daemon, which runs on 
-many Unix-like systems and manages Internet-based connectivity. It offers a more secure alternative to the older inetd - 
-which most modern Linux distributions have deprecated."
+<36>        "This rule will securely configure the 'Extended Internet Service Daemon' (xinetd) access control mechanism, if it is present. 
+
+Xinetd is an open-source service dispatcher daemon, which runs on many Unix-like systems and manages Internet-based connectivity. It offers a more secure alternative to the older inetd - which most modern Linux distributions have deprecated."
