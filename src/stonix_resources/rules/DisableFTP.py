@@ -101,11 +101,19 @@ class DisableFTP(Rule):
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            cmd = ["/bin/launchctl", "unload", "-w",
+            cmd = ["/bin/launchctl", "disable", "system/com.apple.ftpd"]
+            self.ch.executeCommand(cmd)
+            cmd = ["/bin/launchctl", "unload",
                    "/System/Library/LaunchDaemons/ftp.plist"]
             if not self.ch.executeCommand(cmd):
                 success = False
             else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                cmd = ["/bin/launchctl", "enable", "system/com.apple.ftpd"]
+                event = {"eventtype": "comm",
+                         "command": cmd}
+                self.statechglogger.recordchgevent(myid, event)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 cmd = ["/bin/launchctl", "load", "-w",
