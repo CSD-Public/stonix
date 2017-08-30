@@ -915,6 +915,8 @@ def createFile(path, logger):
     @rtype: bool
     @change: Breen Malmberg - 7/12/2017 - completed doc string; added return var;
             added return var init; added check to see if path already exists
+    @change: Braondon Gonzales - 8/30/17 - Added exception (OSError) to catch
+            if the user does not have permission to create a file.
     '''
 
     retval = True
@@ -929,7 +931,7 @@ def createFile(path, logger):
             w = open(path, "w")
             w.close()
 
-    except IOError:
+    except (IOError, OSError):
         debug += "Unable to create the file: " + path
         debug += traceback.format_exc() + "\n"
         logger.log(LogPriority.DEBUG, debug)

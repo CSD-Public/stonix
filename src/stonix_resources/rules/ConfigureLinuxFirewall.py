@@ -67,7 +67,6 @@ class ConfigureLinuxFirewall(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.sethelptext()
-'''
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux']}
