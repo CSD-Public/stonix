@@ -43,6 +43,8 @@ Created on Jul 11, 2013
     for values that come back with "uint32 [int val]". Also added two single
     quotes to picture-uri value, since a blank value cannot be "set".
 @change: 2016/11/22 eball Changed gsettings times from 300 to 900.
+@change: 2017/8/30  bgonz12 Changed reportGnome to report compliant in user
+                     mode if stonix-settings.conf is missing in /etc/dconf/...
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
@@ -386,7 +388,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                                     "not be able to change picture-uri " + \
                                     "settings\n"
                                 break
-                    else:
+                    elif self.environ.geteuid() == 0:
                         self.writes = ["/org/gnome/desktop/session/idle-delay\n",
                        "/org/gnome/desktop/session/idle-activation-enabled\n",
                        "/org/gnome/desktop/screensaver/lock-enabled\n",
