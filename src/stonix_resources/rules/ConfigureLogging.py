@@ -220,6 +220,7 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         '''
         debug = ""
         compliant = True
+        self.fixables = []
         specs = ["rotate 4",
                  "weekly",
                  "missingok",
@@ -727,7 +728,7 @@ daemon config file: " + self.logpath
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     resetsecon(self.logpath)
-        if os.path.exists:
+        if os.path.exists(self.logpath):
             if self.logfiles:
                 contents = readFile(self.logpath, self.logger)
                 tempstring = ""
