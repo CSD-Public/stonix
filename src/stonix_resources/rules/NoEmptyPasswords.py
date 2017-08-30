@@ -298,7 +298,7 @@ not continue to complete fix"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
             tempfile = self.shadow + ".tmp"
-            if not writeFile(self.tempfile, config, self.logger):
+            if not writeFile(tempfile, config, self.logger):
                 success = False
             os.rename(tempfile, self.shadow)
             if permswrong:
