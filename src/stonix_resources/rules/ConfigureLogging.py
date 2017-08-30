@@ -35,6 +35,8 @@ Created on May 20, 2013
 @change: 2016/06/22 eball Improved report feedback for reportMac
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/8/30 dwalker - fixed self.fixables variable initialization 
+        issue and os.path.exists call not checking for a specific path
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
@@ -206,6 +208,7 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         '''
         debug = ""
         compliant = True
+        self.fixables = []
         specs = ["rotate 4",
                  "weekly",
                  "missingok",
@@ -713,7 +716,7 @@ daemon config file: " + self.logpath
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     resetsecon(self.logpath)
-        if os.path.exists:
+        if os.path.exists(self.logpath):
             if self.logfiles:
                 contents = readFile(self.logpath, self.logger)
                 tempstring = ""
