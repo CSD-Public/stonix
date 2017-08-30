@@ -196,7 +196,7 @@ class ReduceSudoTimeout(Rule):
 permissions on file: " + sudo + "\n"
                     else:
                         success = False
-                        self.detaileresults += "Was not able to successfully \
+                        self.detailedresults += "Was not able to successfully \
 set permissions on file: " + sudo + "\n"
                 contents = readFile(sudo, self.logger)
                 if contents:
