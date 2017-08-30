@@ -26,6 +26,8 @@ Created on Apr 22, 2015
 @author: dwalker
 @change: 2015/10/07 eball Help text cleanup
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change 2017/08/30 bgonz12 Updated fix to restart gconfd after updating the
+                    /desktop/gnome/thumbnailers/disable_all key
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate
@@ -142,6 +144,16 @@ class DisableThumbnailers(Rule):
                                          "command": cmd}
                                 myid = iterate(self.iditerator, self.rulenumber)
                                 self.statechglogger.recordchgevent(myid, event)
+                                # Restart gconfd
+                                cmd = self.gconf + " --shutdown"
+                                if not self.ch.executeCommand(cmd):
+                                    self.detailedresults += "Failed to shutdown and restart gconfd\n"
+                                    success = False
+                                else:
+                                    cmd = self.gconf + " --spawn"
+                                    if not self.ch.executeCommand(cmd):
+                                        self.detailedresults += "Failed to restart gconfd\n"
+                                        success = False
                 else:
                     self.detailedresults += "There was an error running " + \
                         "the gconf command\n"
