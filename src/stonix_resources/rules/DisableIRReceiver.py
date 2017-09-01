@@ -28,8 +28,8 @@ Created on Sep 5, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-'nge 2017/08/28 rsn Fixing to use new help text methods
-''
+@change: 2017/08/28 rsn Fixing to use new help text methods
+'''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 
