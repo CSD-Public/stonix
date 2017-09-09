@@ -24,7 +24,7 @@ logger.initializeLogs()
 
 def getRecursiveTree(targetRootDir="."):
     filesList = []
-    for root, dirs, files in os.walk(dirPkgRoot):
+    for root, dirs, files in os.walk(targetRootDir):
         for myfile in files:
             if re.search(".+\.py$", myfile): 
                 filesList.append(os.path.abspath(os.path.join(root, myfile)))
@@ -45,7 +45,7 @@ def genTestData(fileList=[], excludeFiles=[], excludeFromLines=[]):
 
 
     if not fileList:
-        print "Cannot generate data from nothing..."
+        #print "Cannot generate data from nothing..."
         sys.exit(1)
 
     pIface = PylintIface(logger)
@@ -74,7 +74,7 @@ def genTestData(fileList=[], excludeFiles=[], excludeFromLines=[]):
                         # that contain a search string in excludeFromLines
                         found = False
                         for searchItem in excludeFromLines:
-                            print searchItem
+                            #print searchItem
                             if re.search("%s"%searchItem, item['message']):
                                 found = True
                         if not found:
@@ -184,6 +184,13 @@ if __name__=="__main__":
     '''
 
     test_case_data = []
+    '''
+    print "\n\n"
+    print str(opts.doFiles)
+    print opts.dirToCheck
+    print os.path.abspath(opts.treeRoot)
+    print "\n\n"
+    '''
 
     if not opts.treeRoot and not opts.dirToCheck and not opts.doFiles:
         print "\n\n\nNeed to choose a file acquisition method.\n\n"
@@ -194,10 +201,10 @@ if __name__=="__main__":
         #####
         # Run unittest per options
         if opts.treeRoot:
-            test_case_data = test_case_data + genTestData(getRecursiveTree(opts.treeRoot), opts.excludeFiles, opts.excludeLinesWith)
-        elif opts.dirToCheck:
+            test_case_data = test_case_data + genTestData(getRecursiveTree(os.path.abspath(opts.treeRoot)), opts.excludeFiles, opts.excludeLinesWith)
+        if opts.dirToCheck:
             test_case_data = test_case_data + genTestData(getDirList(opts.dirToCheck), opts.excludeFiles, opts.excludeLinesWith)
-        elif opts.doFiles:
+        if opts.doFiles:
             test_case_data = test_case_data + genTestData(opts.doFiles, opts.excludeFiles, opts.excludeLinesWith)
 
     #for item in test_case_data:
@@ -228,7 +235,7 @@ else:
         #print str(specificError)
         myfile, lineNum, text = specificError
         test_name = "test_with_pylint_{0}_{1}_{2}".format("_".join("_".join(myfile.split("/")).split(".")), lineNum, "_".join("_".join(text.split(" ")).split("'")))
-        print test_name
+        #print test_name
         error_case = pylint_test_template(*specificError)
         setattr(zzzTestFrameworkTestWithPylint, test_name, error_case)
 
