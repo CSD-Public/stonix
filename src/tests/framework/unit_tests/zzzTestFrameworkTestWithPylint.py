@@ -40,6 +40,10 @@ def getDirList(targetDir="."):
 def genTestData(fileList=[], excludeFiles=[], excludeFromLines=[]):
     test_case_data = []
 
+    #print str(excludeFiles)
+    #print str(excludeFromLines)
+
+
     if not fileList:
         print "Cannot generate data from nothing..."
         sys.exit(1)
@@ -63,14 +67,18 @@ def genTestData(fileList=[], excludeFiles=[], excludeFromLines=[]):
                 for item in jsonData:
                     if re.match("^error$", item['type']) or re.match("^fatal$", item['type']):
                         #print "Found: " + str(item['type']) + " (" + str(item['line']) + ") : " + str(item['message'])
+                        item['message'] = re.sub("'", "", item['message'])
                         #####
                         # Don't include json data that has a string from the
                         # excludeLinesWith exclude list.
                         # that contain a search string in excludeFromLines
+                        found = False
                         for searchItem in excludeFromLines:
+                            print searchItem
                             if re.search("%s"%searchItem, item['message']):
-                                continue
-                        test_case_data.append((myfile, item['line'], item['message']))
+                                found = True
+                        if not found:
+                                test_case_data.append((myfile, item['line'], item['message']))
         except AttributeError:
             pass
     #for data in test_case_data:
@@ -192,6 +200,9 @@ if __name__=="__main__":
         elif opts.doFiles:
             test_case_data = test_case_data + genTestData(opts.doFiles, opts.excludeFiles, opts.excludeLinesWith)
 
+    #for item in test_case_data:
+    #    print item
+
     #####
     # Initialize the test suite
     test_suite = unittest.TestSuite()
@@ -204,8 +215,7 @@ if __name__=="__main__":
         error_case = pylint_test_template(*specificError)
         setattr(zzzTestFrameworkTestWithPylint, test_name, error_case)
 
-    test_suite.addTest(unittest.makeSuite(test_with_pylint_errors))
-    #test_suite.addTest(unittest.makeSuite(ConfigTestCase))
+    test_suite.addTest(unittest.makeSuite(zzzTestFrameworkTestWithPylint))
     runner = unittest.TextTestRunner()
     testResults  = runner.run(test_suite)  # output goes to stderr
 
