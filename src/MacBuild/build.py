@@ -204,13 +204,11 @@ class SoftwareBuilder():
             raise Exception("Cannot eject disk: " + str(device).strip())
 
     def _exit(self, ramdisk, luggage, exitcode=0):
-
         os.chdir(self.STONIX_ROOT)
         self._detachRamdisk(ramdisk)
         self._detachRamdisk(luggage)
         print traceback.format_exc()
         exit(exitcode)
-        pass
 
     def _configSectionMap(self, section):
         '''
@@ -708,7 +706,7 @@ class SoftwareBuilder():
         '''
         #####
         # run make to create a pkg installer
-        print "Started buildStonix4MacAppPkg..."
+        self.logger.log(lp.DEBUG, "Started buildStonix4MacAppPkg...")
         try:
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
@@ -748,16 +746,18 @@ class SoftwareBuilder():
                 #####
                 # Run the xcodebuild script to codesign the mac installer package
                 self.rw.setCommand(cmd)
-                output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
-                #output, error, retcode = self.rw.communicate()
-
+                #output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
+                output, error, retcode = self.rw.communicate()
+                self.logger.log(lp.DEBUG, "Codesign returns: " + str(retcode))
                 for line in output.split('\n'):
                     self.logger.log(lp.DEBUG, line)
                 for line in error.split('\n'):
                     self.logger.log(lp.DEBUG, line)
 
                 self.libc.sync()
+                sleep(1)
                 self.libc.sync()
+                sleep(3)
 
             #####
             # Processing makefile to create a package
@@ -859,9 +859,9 @@ class SoftwareBuilder():
         call([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome])
         call([self.RSYNC, "-aqp", self.tmphome + "/src/", self.buildHome + "/builtSrc"])
         self.libc.sync()
-        sleep(2)
+        sleep(1)
         self.libc.sync()
-        sleep(3)
+        sleep(1)
         self.libc.sync()
         sleep(3)
 
