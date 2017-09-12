@@ -12,6 +12,7 @@ from optparse import OptionParser
 from optparse import Option, OptionValueError
 
 sys.path.append("../../..")
+sys.path.append("/opt/tools/lib/Python/2.7/site-packages/PyQt5/")
 
 from stonix_resources.loggers import CyLogger
 from stonix_resources.loggers import LogPriority as lp
