@@ -85,6 +85,8 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         @param controller: The stonix controller object
         @param environment: The stonix environment object
         @author: D. Kennel
+        @change: 2017/13/9 Brandon Gonzales Added calls to setenableci on
+            CiFrame creation.
         """
         View.__init__(self)
         QtWidgets.QMainWindow.__init__(self)
@@ -149,7 +151,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         #self.actionLog.setStatusTip('View Run Log')
         self.actionQuit.setIcon(QtGui.QIcon(exiticon))
         self.actionQuit.setMenuRole(QtWidgets.QAction.QuitRole)
-        self.actionQuit.setObjectName("actionQuit")
+        self.actionQuit.setObjßßectName("actionQuit")
         self.actionQuit.setShortcut('Ctrl+Q')
         #self.actionQuit.setStatusTip('Quit application')
         self.actionAbout.setObjectName("actionAbout")
@@ -219,6 +221,10 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             self.ruleci[rulename] = CiFrame(self, rulenum, self.controller,
                                             self.logger)
             self.ci_contlayout.addWidget(self.ruleci[rulename])
+            if self.environ.geteuid() == 0:
+                self.ruleci[rulename].setenableci(True)
+            else:
+                self.ruleci[rulename].setenableci(False)
             self.ruleci[rulename].hide()
         self.ci_container.setLayout(self.ci_contlayout)
         self.conf_items_scroll_area.setWidget(self.ci_container)
@@ -271,12 +277,14 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         appropriate to the selected rule.
 
         @author: D. Kennel
+        @change: 2017/13/9 Brandon Gonzales Hide save_cancel_frame in user mode
         """
         if len(self.rule_list_widget.selectedItems()) > 0:
             if self.environ.geteuid() == 0:
                 self.revert_button.setEnabled(True)
             else:
                 self.revert_button.setEnabled(False)
+                self.save_cancel_frame.hide()
             self.fix_button.setEnabled(True)
             self.report_button.setEnabled(True)
 
@@ -690,6 +698,7 @@ class CiFrame(QtWidgets.QFrame):
     rule is tied to it's ciFrame via the ruleci dictionary.
 
     @author: D. Kennel
+    @change: 2017/13/9 Brandon Gonzales Added function setenableci.
     """
     def __init__(self, parent, rulenum, controller, logger):
         """
@@ -805,7 +814,7 @@ class CiFrame(QtWidgets.QFrame):
             elif datatype == 'bool':
                 mydata = self.findChild(QtWidgets.QCheckBox, 'value' + name)
                 mydata.setChecked(opt.getcurrvalue())
-            if datatype == 'list':
+            elif datatype == 'list':
                 mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
                 rawlist = opt.getcurrvalue()
                 strlist = ''
@@ -813,6 +822,28 @@ class CiFrame(QtWidgets.QFrame):
                     strlist = strlist + item + ' '
                 mydata.setText(strlist)
             myuc.setPlainText(opt.getusercomment())
+
+    def setenableci(self, enabled):
+        """
+        This function will either enable or disable the editable QtWidgets in
+        this ci frame.
+        @param enabled: boolean to enable or disable
+        @author: Brandon Gonzales
+        """
+        for opt in self.rule_config_opts:
+            datatype = opt.getdatatype()
+            name = opt.getkey()
+            myuc = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + name)
+            if datatype == 'string':
+                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
+                mydata.setEnabled(enabled)
+            elif datatype == 'bool':
+                mydata = self.findChild(QtWidgets.QCheckBox, 'value' + name)
+                mydata.setEnabled(enabled)
+            elif datatype == 'list':
+                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
+                mydata.setEnabled(enabled)
+        return
 
 
 class aboutStonix(QtWidgets.QDialog):
@@ -1011,4 +1042,3 @@ class runThread(QtCore.QThread):
             self.logger.log(LogPriority.DEBUG,
                             ['GUI.runThread.run',
                              'Sent tupdate signal: ' + str(sstatus)])
-
