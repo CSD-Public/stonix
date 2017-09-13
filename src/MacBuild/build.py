@@ -578,7 +578,10 @@ class SoftwareBuilder():
                            '--keychain', self.keychain]
 
                     self.rw.setCommand(cmd)
-                    self.rw.liftDown(self.keyuser, appPath)
+                    output, error, retcode = self.rw.waitNpassThruStdout()
+                    print "Output: " + output
+                    print "Error: " + error
+                    print "Return Code: " + str(retcode)
                 else:
                     cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', 
                            '-u', self.keyuser,
@@ -588,8 +591,10 @@ class SoftwareBuilder():
                            '--keychain', self.keychain]
                     self.rw.setCommand(cmd)
                     workingDir = os.getcwd()
-                    self.rw.liftDown(self.keyuser, appPath)
-
+                    output, error, retcode = self.rw.waitNpassThruStdout()
+                    print "Output: " + output
+                    print "Error: " + error
+                    print "Return Code: " + str(retcode)
             elif appName == "stonix":
                 #####
                 # Perform pyinstaller build
@@ -686,6 +691,7 @@ class SoftwareBuilder():
                 self.libc.sync()
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
+                os.chdir(self.tmphome + "/src/MacBuild/stonix4mac/build/Release")
 
             os.chdir(returnDir)
         except Exception:
@@ -716,7 +722,11 @@ class SoftwareBuilder():
             self.libc.sync()
             self.libc.sync()
             if self.doCodesign and self.signature:
-
+                self.logger.log(lp.DEBUG, "#########################")
+                self.logger.log(lp.DEBUG, "#########################")
+                self.logger.log(lp.DEBUG, "Proceeding with signing!")
+                self.logger.log(lp.DEBUG, "#########################")
+                self.logger.log(lp.DEBUG, "#########################")
                 os.chdir(self.tmphome + '/src/Macbuild/stonix4mac')
                 buildDir = os.getcwd()
                 print buildDir

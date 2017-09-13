@@ -51,6 +51,13 @@ from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 from ramdisk.lib.run_commands import RunWith
 
 
+def BadBuildError(Exception):
+    """
+    Custom Exception
+    """
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
 class MacBuildLib(object):
     def __init__(self, logger, pypaths=None):
         self.pypaths = pypaths
@@ -439,12 +446,12 @@ class MacBuildLib(object):
                 cmd += ['-' + verbose]
             if deep:
                 cmd += ['--deep']
-            cmd += ['-f', '-s', "'" + sig + "'", '--keychain', signingKeychain, itemName]
+            cmd += ['-f', '-s', sig, '--keychain', signingKeychain, itemName]
             self.rw.setCommand(cmd)
 
             #####
             # Check the UID and run the command appropriately
-            output, error, retcode = self.rw.communicate()
+            output, error, retcode = self.rw.waitNpassThruStdout()
 
             #####
             # Return to the working directory
@@ -607,6 +614,8 @@ class MacBuildLib(object):
         
         if not error:
             success = True
+        else:
+            raise BadBuildError("Error building program: " + str(retcode))
         
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
