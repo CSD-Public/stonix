@@ -151,7 +151,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         #self.actionLog.setStatusTip('View Run Log')
         self.actionQuit.setIcon(QtGui.QIcon(exiticon))
         self.actionQuit.setMenuRole(QtWidgets.QAction.QuitRole)
-        self.actionQuit.setObjßßectName("actionQuit")
+        self.actionQuit.setObjectName("actionQuit")
         self.actionQuit.setShortcut('Ctrl+Q')
         #self.actionQuit.setStatusTip('Quit application')
         self.actionAbout.setObjectName("actionAbout")
