@@ -69,4 +69,4 @@ class DisableInternetSharing(RuleKVEditor):
                          None,
                          False,
                          {})
-         self.sethelptext()
+        self.sethelptext()
