@@ -448,9 +448,10 @@ class NoCoreDumps(Rule):
                          "filepath": path}
                 self.statechglogger.recordchgevent(myid, event)
             if self.editor.fixables or self.editor.removeables:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
+                if not self.created1:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
                 if not self.editor.fix():
                     success = False
                     self.logger.log(LogPriority.DEBUG, "kveditor fix() failed.\n")
@@ -461,15 +462,19 @@ class NoCoreDumps(Rule):
                     return success
             if not checkPerms(path, perms, self.logger):
                 self.logger.log(LogPriority.DEBUG, "Fixing permissions and ownership on file: " + str(path) + "\n")
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, perms, self.logger,
-                                self.statechglogger, myid):
-                    success = False
-                    self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
-                    return success
-
-            resetsecon(path)
+                if not self.created1:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(path, perms, self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
+                        return success
+                else:
+                    if not setPerms(path, perms, self.logger):
+                        success = False
+                        self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
+                        return success
 
             # restart/reload the sysctl with the updated values
             if self.environ.getostype() != "Mac OS X":
