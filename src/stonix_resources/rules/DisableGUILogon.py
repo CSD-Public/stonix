@@ -441,7 +441,7 @@ class DisableGUILogon(Rule):
             self.ch.executeCommand(cmd)
         elif re.search("debian|ubuntu", self.myos):
             cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
-                   "xserver-xorg-core", "lightdm.*", "libx11.*"]
+                   "xserver-xorg-core", "xserver-xorg", "lightdm.*", "libx11.*"]
             self.ch.executeCommand(cmd)
         elif re.search("fedora", self.myos):
             # Fedora does not use the same group packages as other
