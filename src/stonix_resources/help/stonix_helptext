@@ -63,7 +63,7 @@ AIDE creates a database from the regular expression rules that it finds from its
 can be used to verify the integrity of the files."
 
 <262>        "This rule will set the default software update source to the server specified in localize.py by the constant 
-"APPLESOFTUPDATESERVER". This rule also disables the 'Check for Updates' option, in the 'Software Update System Preference' panel, 
+'APPLESOFTUPDATESERVER'. This rule also disables the 'Check for Updates' option, in the 'Software Update System Preference' panel, 
 for non-admin users who do NOT have their update server set to our 'ASUS' server. This rule will also disable the 'Download Updates in 
 Background' option of the 'Software Update System Preference' panel for non-admin users who do NOT have their update server set to our 
 'ASUS' server."
