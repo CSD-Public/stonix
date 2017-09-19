@@ -217,13 +217,13 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         self.reportcronchmodfiledict = {self.crontab: '0644',
                                         self.anacrontab: '0600',
                                         self.spoolcron: '0700',
-                                        self.cronlog: '0600',
+                                        self.cronlog: '0644',
                                         self.cronallow: '0400',
                                         self.atallow: '0400'}
         self.fixcronchmodfiledict = {self.crontab: 0644,
                                      self.anacrontab: 0600,
                                      self.spoolcron: 0700,
-                                     self.cronlog: 0600,
+                                     self.cronlog: 0644,
                                      self.cronallow: 0400,
                                      self.atallow: 0400}
         self.cronchownfilelist = [self.cronhourly, self.crondaily,
