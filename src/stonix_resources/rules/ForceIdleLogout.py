@@ -28,7 +28,6 @@ Created on May 31, 2016
     only occur if Gnome/KDE are installed. Did PEP8 and detailedresults cleanup.
 @change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
     desktop manager, SDDM.
-@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 
@@ -71,6 +70,15 @@ class ForceIdleLogout(Rule):
         self.rulename = 'ForceIdleLogout'
         self.formatDetailedResults("initialize")
         self.mandatory = True
+        self.helptext = '''The ForceIdleLogout rule will configure \
+the system to log out gui sessions that have been idle for a long time. This \
+helps prevent take over and illicit use of idle sessions and frees system \
+resources. Because some environments may rely on the capability of interactive \
+sessions to execute long running jobs this control is optional and will need \
+to be enabled below for environments that require it. The idle time before \
+logout may also be customized. N.B. Please note that most Linux window \
+managers will not save work in progress when the logout occurs.
+'''
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux'],
@@ -92,7 +100,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.timeoutci = self.initCi(datatype2, key2, instructions2, default2)
         self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
         self.gnomelockpath = "/etc/dconf/db/local.d/locks/autologout"
-        self.sethelptext()
+
     def chkgnome3(self):
         """
         Check that the GNOME 3 auto logout settings are set correctly
