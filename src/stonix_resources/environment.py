@@ -526,15 +526,18 @@ class Environment:
 
         @return: list of strings
         @author: dkennel
-        @change: 2017/9/20 - bgonz12 - Changed implementation to not branch
-                    conditionally by OS, but to branch by file system searches
-                    and command output.
+        @change: 2017/9/22 - bgonz12 - Changed implementation to use the ip
+                    command before trying to use the ifconfig command.
         """
         iplist = []
         cmd = ''
-        if os.path.exists('/usr/sbin/ifconfig'):
+        if os.path.exists('/usr/sbin/ip'):
+            cmd = '/usr/sbin/ip address'
+        elif os.path.exists('/sbin/ip'):
+            cmd = '/sbin/ip address'
+        elif os.path.exists('/usr/sbin/ifconfig'):
             cmd = '/usr/sbin/ifconfig -a'
-        else:
+        elif os.path.exists('/sbin/ifconfig'):
             cmd = '/sbin/ifconfig -a'
         try:
             ifcmd = subprocess.Popen(cmd, shell=True,
@@ -558,6 +561,8 @@ class Environment:
                 try:
                     line = line.split()
                     addr = line[1]
+                    addr = addr.split('/')
+                    addr = addr[0]
                     iplist.append(addr)
                 except(IndexError):
                     continue
