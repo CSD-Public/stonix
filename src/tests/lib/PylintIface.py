@@ -12,8 +12,8 @@ from pylint.reporters.json import JSONReporter
 
 #####
 # cds libraries
-from stonix_resources.loggers import CyLogger
-from stonix_resources.loggers import LogPriority as lp
+from src.stonix_resources.loggers import CyLogger
+from src.stonix_resources.loggers import LogPriority as lp
 
 
 @contextlib.contextmanager
