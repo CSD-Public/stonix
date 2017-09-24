@@ -14,11 +14,11 @@ from optparse import Option, OptionValueError
 mydir = os.path.dirname(os.path.abspath(__file__))
 parentdir = "/" + "/".join(mydir.split("/")[:-1])
 print parentdir
-sys.path.append(parentdir)
+sys.path.append("../../../..")
 
-from stonix_resources.loggers import CyLogger
-from stonix_resources.loggers import LogPriority as lp
-from tests.lib.PylintIface import PylintIface, processFile
+from src.stonix_resources.loggers import CyLogger
+from src.stonix_resources.loggers import LogPriority as lp
+from src.tests.lib.PylintIface import PylintIface, processFile
 
 from pylint import epylint
 
