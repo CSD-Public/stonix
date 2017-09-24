@@ -160,11 +160,11 @@ if __name__=="__main__":
                       default="",
                       help="The root of a directory to recurse and check all '*.py' files")
 
-    parser.add_option("--dir", dest="dirToCheck",
+    parser.add_option("-d", "--dir-to-check", dest="dirToCheck",
                       default="",
                       help="Name of the directory to look at for '*.py' files (not recursive)")
 
-    parser.add_option("-d", "--debug", action="store_true", dest="debug",
+    parser.add_option("--debug", action="store_true", dest="debug",
                       default=0, help="Print debug messages")
 
     parser.add_option("-v", "--verbose", action="store_true",
