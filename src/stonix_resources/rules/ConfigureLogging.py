@@ -207,6 +207,7 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         debug = ""
         compliant = True
         self.fixables = []
+        fixables = []
         specs = ["rotate 4",
                  "weekly",
                  "missingok",
@@ -416,7 +417,6 @@ daemon config file: " + self.logpath
                     compliant = False
                 
                 contents = readFile(self.logrotpath, self.logger)
-                fixables = []
                 for directory in self.directories:
                     found = False
                     i = 0
