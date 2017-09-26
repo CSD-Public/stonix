@@ -75,7 +75,7 @@ class RootMailAlias(Rule):
         self.rulename = 'RootMailAlias'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'Set an alias for root mail on the system so that it is read by an actual human.'
+        self.sethelptext()
         self.guidance = ['none']
 
         datatype = 'bool'

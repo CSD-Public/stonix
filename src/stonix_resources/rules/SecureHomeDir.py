@@ -54,8 +54,7 @@ class SecureHomeDir(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = False
-        self.helptext = '''Ensures that each user's home directory is not \
-group writeable or world readable'''
+        self.sethelptext()
         datatype = 'bool'
         key = 'SECUREHOME'
         instructions = '''To disable this rule set the value of SECUREHOME to \
@@ -69,6 +68,7 @@ False.'''
 
         self.iditerator = 0
         self.cmdhelper = CommandHelper(self.logger)
+        self.sethelptext()
 
 ###############################################################################
 

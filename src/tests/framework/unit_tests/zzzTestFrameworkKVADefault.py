@@ -30,6 +30,7 @@ Created on 04/29/2012
 @change: roy - adding sys.path.append for both test framework and individual
                test runs.'''
 import unittest
+import sys
 
 sys.path.append("../../../..")
 import src.stonix_resources.KVEditorStonix as KVEditorStonix

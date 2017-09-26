@@ -1,0 +1,876 @@
+
+<84>        "***AUDIT-ONLY; NO FIX*** 
+
+This rule checks the root user's Firefox history for non-local browsing. 
+
+The root user should only use the browser for administration tasks."
+
+<81>        "This rule checks to see if the current system is acting as a network sniffer, which can capture 
+all traffic on the network to which it is connected. It does this by checking to see if any network interface on the current 
+system is running in 'promiscuous' mode or not. 
+
+'Promiscuous' mode is a mode for a wired 'Network Interface Controller' (NIC) or 'Wireless Network Interface Controller' (WNIC) 
+which causes the controller to pass all traffic it receives to the 'Central Processing Unit' (CPU) rather than passing only the frames 
+that the controller is intended to receive. This mode is normally used for packet sniffing."
+
+<62>        "***AUDIT-ONLY; NO FIX*** 
+
+This rule checks to see if each 'Secure Shell' (SSH) key on the system is encrypted with a password. 
+
+The SSH service can be configured to use 'Public Key Infrastructure' (PKI) keys for authentication - commonly referred to as SSH Keys. 
+SSH keys are a good authenticator and are very useful for denying brute-force password guessing attacks. There is a potential weakness in 
+SSH keys in that it is possible to create the private key without a password. These password-less, unencrypted keys can then be used to move 
+laterally by any user with read access to the key. To prevent this sort of exploitation, all private keys used for SSH should have a password 
+and be protected by file permissions that limit read access to the owner."
+
+<40>        "This rule will search through '/etc/passwd' to determine if there are any system accounts which currently 
+allow login. 
+
+System accounts are different from user accounts in that each is meant to be used only by a service within the operating system 
+itself, and not by any user. No one should ever log in as a system account (with the exception of the root account). If any are found which 
+do allow login, the fix method will append ':/dev/null' to the end of the entry in '/etc/passwd', preventing future logins from them. 
+System accounts can generally be identified as having a 'User Identification' (UID) number of less than 500 (or on newer versions of Linux, 
+less than 1000)."
+
+<146>        "This rule will ensure 'root:root' ownership and '0600' (owner:rw, group:none, other:none) permissions 
+on the boot loader configuration file. The 'Master Boot Record' (MBR) occupies the first 512 bytes of the first hard disk, and is the first 
+thing loaded by the 'Basic Input Output System' (BIOS), in order to hand over control to a program capable of booting the desired operating 
+system. In general, a boot loader gets installed in the MBR, replacing the MBR's previous content."
+
+<18>        "This rule configures the system to run a job at boot time, which ensures that both WiFi and Bluetooth are 
+turned off, and that microphone inputs are muted/disabled."
+
+<58>        "***AUDIT-ONLY; NO FIX*** 
+
+This rule will examine local (on-system) account databases for accounts that have duplicate 'UID' (user identification) values. 
+
+Each account must have a unique 'UID' number, for accountability purposes."
+
+<1>        "***AUDIT-ONLY; NO FIX*** 
+
+This rule checks to see if each of the following directories, if present, are placed on their own partition: /home, /tmp, /var, /var/tmp, 
+/var/log, /var/log/audit."
+
+<44>        "This rule ensures that the root user's PATH environment variable is set to the vendor-default. This rule also 
+checks directories in the PATH variable for user-writable or world-writable entries. If any of these entries are found, it is left up to the 
+system administrator to correct the permissions on these entries."
+
+<110>        "***OPTIONAL RULE*** 
+
+This rule will install and configure 'Advanced Intrusion Detection Environment' (AIDE) on the system. 
+
+AIDE creates a database from the regular expression rules that it finds from its configuration file(s). Once this database is initialized it 
+can be used to verify the integrity of the files."
+
+<262>        "This rule will set the default software update source to the server specified in localize.py by the constant 
+'APPLESOFTUPDATESERVER'. This rule also disables the 'Check for Updates' option, in the 'Software Update System Preference' panel, 
+for non-admin users who do NOT have their update server set to our 'ASUS' server. This rule will also disable the 'Download Updates in 
+Background' option of the 'Software Update System Preference' panel for non-admin users who do NOT have their update server set to our 
+'ASUS' server."
+
+<3>        "This rule disables the automatic reporting of diagnostic information to Apple and third party application developers."
+
+<46>        "This rule ensures that no 'dot files', within users' home directories, possess the 'world/other' writable permission. 
+
+A user who can modify another user's configuration files can likely execute commands with that other user's privileges - including: 
+stealing data, destroying files, or launching further attacks on the system."
+
+<14>        "This rule configures the OS X 'firewall'. 
+
+A firewall is a set of rules applied to incoming/outgoing network traffic, which denies or allows access to different kinds of network 
+traffic, based on certain conditions."
+
+<255>        "This rule configures Kerberos on your system, based on the settings in the localize.py file. 
+
+Kerberos is a network authentication protocol. It is designed to provide strong authentication for client/server applications by using 
+secret-key cryptography."
+
+<139>        "This rule ensures that any ldap files found have the correct permissions. However, this rule only checks typical known locations 
+for these files. If your files and/or certificates are not in these locations, STONIX may falsely report compliance."
+
+<92>        "This rule will configure the 'firewalld' or 'iptables' firewall for a Linux host in an appropriate manner for typical enterprise 
+workstation usage. 
+
+This will allow most client activity, but will prevent network access to most services other than SSH. Most workstations 
+users should leave this rule enabled, but some server administrators may want to disable this rule or customize the firewall after 
+STONIX has done the baseline configuration."
+
+<16>        "This rule configures log rotation and 'logwatch' on the central log server. 
+
+Log Rotation ensures that logs don't completely fill up the available disk space. For operating systems such as Linux, many log file entries 
+may have their own block as well, and many of the blocks may contain the same contents. Feel free to combine all of these on one line. If an 
+entry in the Linux fix has incorrect log spec's inside the brackets, the log entry is removed and then re-written with the recommended spec's. 
+In this case, it will not retain any of the previous specs. However, where that log was removed, the spec's inside the brackets may remain with 
+no log file to accompany it. Delete these, as they will make your configuration file invalid."
+
+<170>        "This rule configures the login window so that it will no longer display the names of the accounts on the computer. 
+
+Users will now be required to manually enter their user name each time they wish to log in. This change makes it more difficult for a 
+potential attacker to break into the system."
+
+<107>        "This rule configures the system's 'Mandatory Access Control' (MAC) mechanism (typically either 'SELinux' or 'AppArmor') - based 
+on the system's current 'Operating System' (OS). A MAC mechanism works by enforcing which actions certain programs are allowed take.
+
+'Security-Enhnaced Linux' (SELinux) is a Linux kernel security module which provides a mechanism for supporting access control policies. 
+Access can be constrained on such variables as which users and applications can access which resources.
+'Application Armor' (AppArmor) is a Linux kernel security module which allows the system administrator to restrict programs' capabilities with 
+per-program profiles. Profiles can allow capabilities like network access, raw socket access and the permissions to read, write or execute 
+files."
+
+<122>        "This rule handles the network setup in Mac OS X. It disables bluetooth and the wireless (WiFi/802.11) interface(s) in the 
+Network System Preference Panel unless the location name has 'wi-fi', 'wifi', 'wireless', 'airport', 'off-site', or 'offsite' (case insensitive) 
+in the location name. 
+
+We recommend having one location for off-site DHCP, and one for each static IP address."
+
+<258>        "This rule configures the power setting to minimize battery usage or maximize computer performance, based on current power source."
+
+<97>		"This rule will enable process accounting, using the 'acct' or 'psacct' service.
+
+Both psacct and acct are open-source applications for monitoring users' activities on the system. These applications run in the background 
+and keep track of each user's activity on the system as well as what resources are being consumed."
+
+<261>        "This rule configures 'Remote Management' on Mac OS X systems. 
+
+Remote management should only be enabled on trusted networks with strong user controls present in a directory system. Mobile devices without 
+strict controls are vulnerable to exploitation and monitoring."
+
+<74>        "***On Linux: CANNOT BE UNDONE*** 
+
+On Mac OS X: This rule will enable screen saver lock, configure the screen to lock after 14 minutes of inactivity, and configure the system to ask 
+for a password when resuming from a screen saver state. It will also set the ask for password delay to 0.
+
+On Linux: This rule will enable screen saver lock, configure the screen to lock after 15 minutes of inactivity, set the screen saver picture 
+opacity to 100, and set the screen saver lock delay to 0.
+
+If a desktop manager is not installed, this rule is considered to be compliant."
+
+<17>        "This rule configures 'Safari Spotlight' to prevent information from being sent to: Apple, Google, Microsoft, etc.
+
+When you're using your Mac with all the default settings, anything you search for in Safari or Spotlight gets sent to Apple along 
+with whatever search engine it's accessing."
+
+<56>        "This rule will enable the sudo group in the sudoers file. 
+
+By default, the name of the sudo group on (most) Linux systems is 'wheel' and on Mac systems 
+it is 'admin'. You can edit this and change it to something different before running the rule, 
+if your operating system or environment uses a different sudo group name."
+
+<57>        "***The 'Pluggable Authentication Module' (PAM) stack is extremely fragile and sensitive by nature. 
+Run this rules at your own risk.*** 
+
+This rule configures the PAM stack for password requirements and failed login attempts. It also ensures the system uses 
+SHA512 encryption. 
+
+PAM is a mechanism to integrate multiple low-level authentication schemes into a high-level 'Application Programming Interface' 
+(API). It allows programs that rely on authentication to be written independently of the underlying authentication scheme. 
+
+There are three configuration items for this rule. Two of these involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please 
+be advised that, due to the complexity and sensitivity of PAM, portions of the PAM files that these two CIs configure will be completely 
+overwritten - rather than attempt to edit them in-place; therefore, if you have configured PAM with other modules, you may want to avoid 
+enabling these two items and configure them by hand. Also, if on a yum-based package manager system such as Red Hat, Fedora, or CentOS, 
+both PAM files have to receive the same contents. Due to this, no undo events will be recorded for the first two configuration items. 
+However, backups of these files will be made in the /etc/pam.d directory so they can be restored back to their original state. 
+
+If your system uses portage for a package manager (e.g. Gentoo), you will need to manually configure all relevant files - except 
+for the login.defs file."
+
+<35>        "This rule will restrict access to the root account, to console (physically local) access only."
+
+<177>        "This rule disables the ability of administrators to log into another user's active, locked session."
+
+<164>        "This rule disables 'Apple Filing Protocol' (AFP) file sharing."
+
+<169>        "This rule will disable the automatic login functionality on Mac OS X.
+
+Automatic login does not require a password or even user name entry, and is therefore extremely insecure."
+
+<99>        "This rule will disable all Bluetooth services, blacklist all Bluetooth drivers, and remove all Bluetooth packages.
+
+Bluetooth is a wireless technology standard for exchanging data over short distances (using short-wavelength, 
+'Ultra High Frequency' UHF radio waves in the 'Industrial, Scientific and Medical' ISF band from 2.4 to 2.485 GHz) 
+from fixed and mobile devices, and building 'Personal Area Networks' (PANs)."
+
+<150>        "***OPTIONAL RULE*** 
+
+This rule disables the built-in 'iSight' camera, by using the 'kextunload' command to unload the 'AppleCameraInterface' driver."
+
+<159>		"This rule disables 'iCloud' services on Mac OS X and 'Unity Webapps' and 'Lens Shopping' on Ubuntu."
+
+<266>        "This rule disables 'File Transfer Protocol' (FTP) services for the Mac."
+
+<174>        "This rule configures the 'Apple File Server' (AFS) and the 'Server Message Block' (SMB; aka 'samba') server in order to 
+prohibit anonymous guest access."
+
+<105>        "This rule will disable, secure, or entirely remove the X11/X Windows 'Graphical User Interface' (GUI), 
+depending on which option(s) you select.
+
+**Please note that enabling the REMOVEX configuration item below will COMPLETELY 
+remove X Windows from the system. On most platforms, this will also disable 
+any currently running display manager. It is therefore recommended that this 
+rule be run from a terminal console session rather than from the GUI if REMOVEX is 
+enabled**."
+
+<4>        "This rule will set the global policy for inactive accounts so that any account, which doesn't update its password within 
+35 days of the password expiration date, will be disabled."
+
+<119>        "This rule disables 'interactive start-up' mode - also known as 'recovery mode'. 
+
+In interactive start-up mode it is possible to control which services are run."
+
+<215>        "This rule disables 'Internet sharing'.
+
+Internet sharing uses the open-source 'Network Address Translation Daemon' (NATD) process to share an internet connection 
+with other computers and devices on a local network. Unless specifically required, Internet sharing 
+should be turned off. If used, it should only be turned on when actual sharing is needed. A much better 
+solution is a dedicated router. Apple makes a number of certified compatible routers."
+
+<123>        "***On Solaris: AUDIT-ONLY; NO FIX*** 
+
+This rule disables IPV6 functionality."
+
+<202>        "This rule turns off the infrared receiver that allows the user to remotely control their Mac with a remote control."
+
+<257>        "This rule disables automatic media actions, such as those taken when an audio or video disk is inserted."
+
+<71>        "This rule prevents keyserv from using default keys for the 'nobody' user - effectively stopping this user from accessing 
+information via secure 'Remote Procedure Call' (RPC).
+
+The keyserv process stores user keys that are utilized with the RPC mechanism."
+
+<270>        "This rule disables the 'Open Safe Files After Downloading' feature in Safari."
+
+<171>        "This rule disables password hints at the login screen."
+
+<89>        "This rule disables the prelinking of executable
+binaries.
+
+Prelink is a program that modifies 'Executable Linkable Format' (ELF) shared libraries and 
+ELF dynamically linked binaries in such a way that the time needed for the dynamic linker to perform 
+relocations at startup significantly decreases. Prelink has several long-standing associated bugs and also 
+interferes with checksum integrity tools such as 'Advanced Intrusion Detection Environment' (AIDE)."
+
+<213>        "This rule disables 'Remote Apple Events'.
+
+'Apple Events' is a technology which allows one program to communicate with other programs.
+'Remote Apple Events' allows a program on one computer to communicate with a program on a different computer.
+Unless needed, Remote Apple Events should be turned off. If turned on, utilize a custom list of users through 
+the 'Allow Access' list, if possible."
+
+<29>        "***OPTIONAL RULE*** 
+***REQUIRES REBOOT*** 
+
+This rule disables 'Universal Serial Bus' (USB), 'Firewire', 'Thunderbolt', and 'Secure Digital' (SD) cards 
+(if applicable) from being accessed from the system.
+
+Firewire (IEEE standard no. 1394) is an interface standard for a serial bus for high-speed communications and 
+isochronous real-time data transfer. It was developed in the late 1980s and early 1990s by Apple.
+
+Thunderbolt is the brand name of a hardware interface developed by Apple and Intel which allows the connection 
+of external peripherals to a computer. Thunderbolt 1 and 2 use the same connector as Mini DisplayPort (MDP), 
+whereas Thunderbolt 3 uses USB Type-C."
+
+<160>        "This rule disables the root user. 
+
+Administrative escalations should be performed using the 'sudo' command."
+
+<246>        "This rule disables certain screen savers, which may contain disk contents, including 'Controlled Unclassified 
+Information' (CUI) text or images."
+
+<70>        "This rule disables serial port logins by removing serial port entries from /etc/securetty. This rule will also remove deprecated
+'virtual consoles'.
+
+A 'virtual console' (VC), also known as a 'virtual terminal' (VT), is a conceptual combination 
+of the keyboard and display for a computer user interface. It is a feature of some Unix-like 
+operating systems such as 'Berkeley Software Distribution' (BSD), Linux, illumos and UnixWare, in which 
+the system console of the computer can be used to switch between multiple virtual consoles to access 
+unrelated user interfaces."
+
+<310>        "This rule disables the 'Siri' assistant, turns off voice recognition and disables universal clipboard across 
+iPhone and other devices.
+
+Siri is a built-in 'intelligent assistant' that enables users of Apple iPhone 4S and 
+later and newer iPad and iPod touch devices to speak natural language voice commands 
+in order to operate the mobile device and its applications."
+
+<111>        "This rule disables file thumbnail creation in the 'GNU Network Object Model Environment' (GNOME).
+
+GNOME is a desktop environment composed of free and open-source software which runs on Linux.
+
+A 'file thumbnail' is a small image, which is used in a 'Graphical User Interface' (GUI) environment 
+to visually represent the file to which it is attached."
+
+<102>        "This rule disables 'Touch ID' authentication, starting in Mac OS X 10.12. 
+
+Touch ID is a biometric technology which scans and compares an image of your fingerprint against a stored 
+image in order to facilitate authentication to a device or service. It was developed by Apple Inc., in 2015."
+
+<132>        "This rule disables support for several uncommon network protocols, including: 'dccp', 'sctp', 'rds', 'tipc'.
+
+'Datagram Congestion Control Protocol' (DCCP) is a message-oriented transport layer protocol. DCCP 
+implements reliable connection setup, teardown, 'Explicit Congestion Notification' (ECN), congestion 
+control, and feature negotiation.
+
+'Stream Control Transmission Protocol' (SCTP) provides some of the same service features of both 'User 
+Datagram Protocol' (UDP) and 'Transmission Control Protocol' (TCP): it's message-oriented like UDP and 
+ensures reliable, in-sequence transport of messages with congestion control like TCP; it differs from 
+these in providing multi-homing and redundant paths to increase resilience and reliability.
+
+'Reliable Datagram Sockets' (RDS) is a high-performance, low-latency, reliable, connectionless protocol 
+for delivering datagrams. It is developed by Oracle Corporation. It was included in the Linux kernel 2.6.30 
+which was released on 9th of June, 2009.
+
+The 'Transparent Inter-Process Communication' (TIPC) protocol allows applications in a clustered computer environment 
+to communicate quickly and reliably with other applications, regardless of their location within the cluster."
+
+<256>        "This rule will remove support for uncommon filesystems on this platform. 
+
+Supporting filesystem types which are currently not in use increases the risk of the system being compromised while providing no benefit 
+to the operator/user. Options are given for disabling this rule or customizing the list of filesystems that should be disabled. Customizing 
+the list of filesystems to disable is preferable to disabling the rule entirely."
+
+<30>        "This rule ensures that no 'r-services' are implemented or installed. 
+
+The Berkeley 'r-commands' are legacy services which allow clear-text, remote access and have an 
+insecure trust model. 'r-commands' suffer from the same hijacking and eavesdropping problems as telnet."
+
+<208>        "This rule disables 'web sharing'. 
+
+Web sharing uses the Apache 2.2.x web server to turn a Mac into an HTTP/Web server. As with file sharing, web sharing is best left off, unless 
+this system is intended to be a dedicated, well-managed web server."
+
+<67>        "This rule enables and configures kernel auditing for a wide array of events on the system. The kernel auditing 
+service is provided for system auditing. 
+
+By default, the service audits certain types of security-relevant events such as system logins, account modifications, and 
+authentication events. For a complete list of audited event types, see: http://www.dss.mil/documents/CNSSI_No1253.pdf, control 'AU-2'."
+
+<87>        "This rule installs 'Physical Address Extension' (PAE) and 'No-Execute' (NX) support on compatible 
+32-bit x86 Systems. 
+
+PAE is a technology which allows 32 bit operating systems to use up to 64 GB of memory. NX is a technology used in CPUs to 
+segregate areas of memory for use by either storage of processor instructions (code) or for storage of data."
+
+<101>        "This rule secures virtual memory by encrypting swap file. 
+
+Passwords and other sensitive information can be extracted from insecure virtual memory."
+
+<63>        "This rule configures kernel options for 'ExecShield' and 'va_randomize'. 
+
+ExecShield prevents execution of memory locations that should only hold data. 'va_randomize' randomizes the 
+locations of various memory regions."
+
+<25>        "***CANNOT BE UNDONE***
+
+This rule audits files and folders on the system to check for world-writable 
+files, world-writable folders, 'Set owner User ID upon execution' (SUID) or 'Set Group ID upon execution' 
+(SGID) programs and files without known owners. It ensures that the 'sticky bit' is set on world-writable 
+directories and will remove world write permissions from files in the root user's execution 
+PATH environment variable. When possible, files and folders will be checked against 
+the package manager records to see if their presence is authorized and belongs to an 
+installed package. 
+
+Administrators should review the lists of world-writable, SUID and unowned files and folders carefully since these types of files and 
+programs may provide opportunities for attackers to abuse the system.
+
+The results  of this search are contained in /var/local/info directory and should be reviewed to 
+ensure that the files listed are expected to be in that state for this system.
+Please note that this rule may take several minutes to run.
+
+SUID is a special type of file permissions given to a file. Normally in Linux/Unix when a 
+program runs, it inherits access permissions from the logged in user. SUID is defined as 
+giving temporary permissions to a user to run a program/file with the permissions of the 
+file owner rather that the user who runs it.
+SGID is defined as giving temporary permissions to a user to run a program/file with the 
+permissions of the file group permissions to become member of that group to execute the file.
+A sticky bit is a permission bit that is set on a file or directory, which allows only the file 
+or directory's owner (or root) can rename or delete that file or directory."
+
+<23>        "***OPTIONAL RULE*** 
+
+This rule will configure the system to log out of GUI sessions that have been idle for a long time. 
+
+This helps prevent take-over and illicit use of idle sessions and frees system resources. The idle time before logout 
+may be customized. Please note that most Linux window managers will not save work in progress when the logout occurs."
+
+<51>        "This rule installs and configures warning banners, to be displayed when logging into the system."
+
+<2>		  "This rule installs the 'Just Another Management Framework' (JAMF) 'JAMF Casper Recon' client. 
+The JAMF Casper Recon client is a software inventory tool."
+
+<230>        "This rule will check the integrity of the installed software on this system. An RPM integrity 
+check looks at things like: 
+File size
+File mode
+MD5 checksum
+Symlinks
+Ownership
+Group Ownership
+Timestamps
+Configuration file changes
+Existance of file(s)
+This rule invokes the 'rpm -Va' command - which can take several minutes to complete.
+
+Since the results of these tests are heavily dependent on user configuration, 
+the only changes made to the system are to correct permissions.
+
+SUGGESTED CORRECTIVE ACTIONS: 
+For files with bad user/group ownership:
+ 
+For each file listed in the report output, run the following command as root: 
+# rpm --setugids `rpm -qf [filename]` 
+This will attempt to return the user and group ownership to the package 
+defaults.
+
+For files with changed permissions: 
+The Fix for this rule will automatically change the permissions for the 
+package that each file is a part of back to the vendor defaults. 
+
+For files with changed hashes: 
+If you believe that the file's hash has changed due to corruption or 
+malicious activity, begin by running the following command as root: 
+# rpm -qf [filename] 
+This will output the [package] name. It can also be run in backticks 
+(`rpm -qf [filename]`) in place of [package] in the following commands. 
+Next, run: 
+# rpm -Uvh [package] 
+OR 
+# yum reinstall [package]."
+
+<10>		"This rule will install the local root certificate 
+into the Linux certificate chain. It will also attempt to register this certificate 
+with Firefox/Iceweasel.
+
+In cryptography and computer security, a 'root certificate' is 
+a public key certificate that identifies a root certificate authority (CA). Root certificates 
+are self-signed and form the basis of an X.509-based 'Public Key Infrastructure' (PKI)."
+
+<121>        "This rule will install the 'Virtual Console Lock' (vlock) package.
+
+vlock is a program used to lock one or more sessions on the Linux console. This 
+is especially useful for Linux systems which have multiple users with access 
+to the console. One user may lock his or her session(s) while still allowing 
+other users to use the system on other virtual consoles."
+
+<145>        "This rule ensures that package signing is turned on 
+for systems which support it.
+
+Package signing helps to ensure the authenticity of each package."
+
+<95>        "This rule minimizes the number of DHCP client configuration options 
+which are set dynamically, by a DHCP server.
+
+By default, the Dynamic Host Configuration Protocol (DHCP) client program, 'dhclient',
+requests and applies ten configuration options (in addition to the IP
+address) from the DHCP server. Subnet-mask, broadcast-address, time-offset,
+routers, domain-name, domain-name-servers, host-name, nis-domain, nis-servers,
+and ntp-servers. Many of the options requested and applied by dhclient may be
+the same for every system on a network. It is recommended that almost all
+configuration options be assigned statically, and only options which must
+vary on a host-by-host basis be assigned via DHCP. This limits the damage
+which can be done by a rogue DHCP server."
+
+<12>        "This rule will minimize the number of 
+services that the system runs. Each running service is a potential 
+avenue for exploitation for an attacker or malicious software. Running only a 
+minimum of services reduces vulnerability and helps preserve system 
+resources.
+
+Most workstations should leave this rule enabled but some server 
+administrators may want to disable this rule or customize the list of services."
+
+<201>        "This rule will mute or set the microphone
+input levels to zero. This can help prevent a compromised computer from being
+used as a listening device. On most platforms, input volume changes require no
+privileges so this setting can be easily undone.
+
+If you are not running STONIX with elevated privileges,
+some fix functionality will be disabled for this rule. This will probably
+result in the rule not showing as compliant after being run."
+
+<271>        "This rule prevents a Mac system from saving 'FileVault' 
+'Full Disk Encryption' (FDE) keys on the system."
+
+<49>        "***REQUIRES REBOOT***
+
+This rule disables the ability of the system to produce core dump images.
+
+A core dump consists of the recorded state of the working memory of a computer program at a specific time, 
+generally when the program has crashed or otherwise terminated abnormally. In practice, other key pieces of 
+program state are usually dumped at the same time, including the processor registers, which may include the 
+program counter and stack pointer, memory management information, and other processor and operating system 
+flags and information. Core dumps are often used to assist in diagnosing and debugging errors in computer programs."
+
+<41>        "This rule ensures there are no empty password 
+hashes in the /etc/shadow file. If empty passwords exist, someone could 
+successfully login without using having to enter a password."
+
+<43>        "This rule ensures that no '+' entries exist in the /etc/shadow, /etc/passwd, or 
+the /etc/group files. The '+' symbol was used by systems to include data from NIS maps into existing files. A certain 
+configuration error in which the NIS inclusion line appears in /etc/passwd but NIS is not running could lead to anyone being 
+able to access the system with the username '+' and no password."
+
+<42>        "***CANNOT BE UNDONE***
+
+This rule configures the password expiration settings for each entry in the shadow file, and any other files that 
+pertain to password expiration, length, warning time, etc."
+
+<31>        "This rule prevents the X server from being 
+network-aware (or 'listening' on the network). The X graphics display 
+server is, by default, network-aware. Due to security weaknesses in the 
+X server, the service should not be exposed to the external network."
+
+<151>        "***OPTIONAL RULE***
+
+This rule ensures that the sudoers file has a timeout value of 0 so that a password is required for every sudo call."
+
+<47>        "This rule will remove .netrc, .shosts, and .rhosts files located in user home 
+directories. 
+
+The .netrc file is used to automate connections via FTP. When present, the .netrc file frequently contains 
+plaintext passwords. The .shosts and .rhosts files are used in support of the 'R' commands and use an extremely weak form of 
+authentication. An option is given for disabling this rule but this rule should only be disabled after a thorough review of the 
+proposed use of .netrc, .shosts or .rhosts files to ensure that a potential security issue is not created by the use of the files."
+
+<91>        "***OPTIONAL RULE***
+
+This rule removes any unnecessary software installed on the system. 
+
+The detailed list of software to be removed is listed below, in the CI text box. You may customize this list, or leave the rule 
+disabled entirely."
+
+<5>		"This rule will remove 'Security Tool On Mac' (STOM). 
+
+This is done since STONIX is intended to be a replacement for both STOM and STOR."
+
+<244>        "This rule removes any games installed as SUID.
+
+SUID (Set owner User ID up on execution) is a special type of file permissions 
+given to a file. Normally in Linux/Unix when a program runs, it inherits access 
+permissions from the logged in user. SUID is defined as giving temporary permissions 
+to a user to run a program/file with the permissions of the file owner rather that 
+the user who runs it. On Linux systems, some games are installed as SUID for
+the purpose of storing high scores. Games are non-essential on business
+systems and should be removed."
+
+<94>        "This rule removes the 'Toor' user on FreeBSD systems. 
+'Toor' is the backward spelling of 'Root'. The 'Toor' user on FreeBSD systems 
+has the same UID of 0, and the same privileges as the root account and is used 
+as a backup account for the root user."
+
+<38>        "This rule checks if the system currently requires
+authentication for single-user mode or not, and if it does not then it makes
+the necessary config file changes to require authentication for single-user
+mode. Most systems, by default, do not require authentication when booting into 
+a single-user mode environment. This effectively means that anyone who had physical 
+access to a system would also have full control over it."
+
+<200>        "This rule ensures that the system requires a password in 
+order to unlock, and make changes to, 'System Preferences'. By requiring a password 
+to unlock 'System Preferences', it is less likely that a casual user can make changes 
+which could lead to the system being compromised." 
+
+<86>        "This rule restricts access to the kernel message buffer - to 
+only privileged accounts. Unprivileged access to the kernel syslog could expose sensitive 
+kernel address information."
+
+<269>        "This rule disables SSH root login access. Secure Shell (SSH) is a 
+cryptographic network protocol for operating network services securely over an unsecured 
+network. Users with a need to access privileged functions over SSH, should log in as a non-root 
+account with access to sudo privileges and then only escalate as needed."
+
+<112>        "***OPTIONAL RULE***
+
+This rule restricts access to device ownership and mounting, for console users, to root only. 
+It can also disable the autofs service, which is used to dynamically mount NFS filesystems. Additionally, 
+it can be configured to restrict the gnome-volume-manager (part of the GNOME Desktop Environment) from 
+automatically mounting devices and media."
+
+<251>        "**This rule requires YOUR INPUT.**
+
+This rule designates an alternate user account to send root mail to. Normally root mail is only sent to the 
+root user. However, actual root account use should be limited to recovery use only and it is therefore necessary 
+to send the mail to an alternate user so that it can still actually be read on a regular basis."
+
+<268>        "***CANNOT BE UNDONE***
+
+This rule will schedule a random time (after business hours) for STONIX to run in admin/root context, once per week, 
+and once per day in user context."
+
+<136>        "This rule will apply secure configurations to the Apache web server conf file 'httpd.conf' and 
+included files in conf.d directory, or other configuration directories. It also applies 
+secure configurations to the PHP interpreter's 'php.ini' file, if present. There 
+are a series of config options for this rule. In general, the Apache web server 
+should not be running on desktop systems and should be disabled by the 
+'MinimizeServices' rule. On servers and in the case where a developer needs a 
+local instance of the web server running, it should be properly configured.
+
+Server admins running web servers will want to review the actions taken by 
+this rule to ensure that it will not affect their deployed applications."
+
+<33>        "This rule restricts permissions on the files and directories, 
+associated with the AT and CRON daemons, to authorized users only. It also enables and configures 
+logging for these daemons. 'AT' and 'CRON' are used in Linux to schedule jobs to run 
+at a later date/time."
+
+<128>        "This rule can: 
+
+* Disable the CUPS service
+* Configure CUPS service
+* Disable Printer Browsing
+* Limit Printer Browsing
+* Disable Print Server Capabilities
+* Set the Default Authentication Type
+* Setup default policy blocks for CUPS.
+
+CUPS stands for 'Common UNIX Printing System', and is a modular printing system for Unix-like 
+computer operating systems which allows a computer to act as a print server.
+
+This rule is highly customisable, due to the widely varied sets of required or incompatible settings with 
+any one specific printing environment/network."
+
+<134>        "This rule configures the system's 'dhcpd.conf' file, to increase 
+the level of security of the DHCP daemon. If the 'dhcpd.conf' file is not found, the 
+system is considered compliant, as the DHCP daemon will not function without it."
+
+<32>        "This rule enables logging for all attempted FTP access and 
+FTP commands. It also restricts the set of users allowed to access FTP 
+and sets the default umask for FTP users. FTP stands for 'File Transfer Protocol' and is used 
+for the transfer of computer files between a client and server on a computer network."
+
+<45>        "This rule ensures that each user's home directory is not 
+group-writeable or world-readable."
+
+<15>        "***On Solaris: REQUIRES REBOOT***
+
+This rule configures the system's IPv4 network stack settings. The number of specific settings touched and their 
+meanings are too numerous and verbose to go into here. The configuration file being edited is 'sysctl.conf'. 
+If you wish to see the full list of specific settings, please feel free to examine the rule code for this rule."
+
+<124>        "This rule will configure IPv6 functionality by
+disabling automatic configuration, enabling privacy extensions for address
+generation, and limiting network-transmitted configuration information."
+
+<264>        "This rule disables automatic image loading and inline
+attachment viewing, and alert the user to non-local domains, in the 'Apple
+Mail Client'."
+
+<135>        "This rule makes a number of configuration changes to 
+the 'Avahi' service in order to secure it. The 'Avahi' daemon implements the 'DNS Service 
+Discovery and Multicast DNS' protocols, which provide service and host 
+discovery on a network. It allows a system to automatically identify 
+resources on the network, such as printers or web servers. This capability is 
+also known as 'mDNSresponder' and is a major part of 'Zeroconf' networking."
+
+<53>        "This rule ensures that systems are not running MTAs unnecessarily, 
+and configures needed MTAs as defensively as possible. Mail servers are used to send and receive 
+mail over a network on behalf of site users. Mail is a very common service, and
+'Mail Transfer Agents' (MTAs) are frequent targets of network attack.
+
+Please be advised, in one section of this rule, the
+/etc/mail/sendmail.cf is modified two different times. Because of this, the
+undo event that handles this file if a change is made will only revert one
+change, the change that is not reverted is the insertion or modification of
+the line that begins with DS. If you can't remember the original format of
+that line, take a look in the /usr/share/stonix folder for the original file
+before clicking undo."
+
+<39>        "This rule secures the 'Network File System' (NFS) server by configuring 
+NFS services to use fixed ports and checking the /etc/exports file for malformed export lines, export 
+lines that are too permissive, or lines that contain the 'no_root_squash', 'all_squash' or 'insecure_locks' options. 
+NFS is a distributed file system protocol originally developed by Sun Microsystems in 1984, allowing a user on a 
+client computer to access files over a computer network much like local storage is accessed."
+
+<141>        "**If both disable and secure options are selected, the disable option will take precedence.
+
+This rule will, by default, disable all POP and IMAP services 
+on this system. It may be configured (through the CIs) to instead secure these services, if 
+they are needed on this system. The package 'Dovecot' provides IMAP and POP3 services. It is not installed by default. 
+If this system does not need to operate as an IMAP or POP3 server, disable and remove Dovecot 
+if it is installed. If this system does need to operate as an IMAP or POP3 server, securely configure it instead.
+
+Note: this rule does not set up or install ssl certificates. This should still be done on your CA (certificate authority) system, 
+manually, by the administrator of that system."
+
+<144>        "This rule will, by default, disable 'Simple Network Management Protocol' (SNMP) on this system. 
+SNMP allows administrators to monitor the state of network devices, including computers. Older versions of SNMP were 
+well-known for weak security, such as plain text transmission of the 'community string' (used for authentication) and 
+also usage of easily guessable choices for the 'community string'. Disable SNMP if possible. Configure SNMP if necessary."
+
+<143>        "This rule secures 'Squid' proxy functionality. 
+Squid is a caching and forwarding HTTP web proxy. It has a wide variety of 
+uses, including speeding up a web server by caching repeated requests, 
+caching web, DNS and other computer network lookups for a group of people 
+sharing network resources."
+
+<8>        "This rule touches a number of configuration options in the ssh_config and/or sshd_config file(s). These options are 
+checked and then changed, if necessary to be more secure than the default configuration.
+
+The client options touched are:
+Host
+Protocol
+GSSAPIAuthentication
+GSSAPIDelegateCredentials
+
+The server options touched are:
+Protocol
+SyslogFacility
+PermitRootLogin
+MaxAuthTries
+RhostsRSAAuthentication
+HostbasedAuthentication
+IgnoreRhosts
+PermitEmptyPasswords
+PasswordAuthentication
+ChallengeResponseAuthentication
+KerberosAuthentication
+GSSAPIAuthentication
+GSSAPICleanupCredentials
+UsePAM
+Ciphers
+PermitUserEnvironment
+
+This rule will not install SSH if it is not already installed."
+
+<50>        "This rule secures access to the 'su' comand. The 'su' 
+command allows a user to gain the privileges of another user by entering the 
+password for that user's account. It is desirable to restrict the root user so that 
+only known administrators are ever allowed to access the root account. This restricts 
+password-guessing against the root account by unauthorized users or by accounts which 
+have been compromised. By convention, the group wheel contains all users who are
+allowed to run privileged commands. The PAM module pam_wheel.so is used to restrict root 
+access to this set of users.
+
+This rule will not configure su on Debian distributions."
+
+<142>        "This rule will secure 'Server Message Block' (SMB; aka 'samba') file sharing settings. 
+In computer networking, SMB operates as an application-layer network protocol mainly used for providing shared 
+access to files, printers, and serial ports and miscellaneous communications between nodes on a network."
+
+<68>        "This rule sets the process daemon umask to 022 (0022) to 
+prevent world writability/readability on the system. The settings file '/etc/sysconfig/init' 
+contains settings which apply to all processes started at boot time. The system 'umask' must 
+be set to at least 022, or daemon processes may create world-writable files. The more 
+restrictive umask setting 027 protects files, including temporary files and log files, 
+from unauthorized reading by unprivileged users on the system.  It is not recommended 
+to use any value more restrictive than 027 because this could cause issues with the normal 
+operation of the operating system."
+
+<48>        "This rule sets the default user umask to 027. The default 
+value of 027 can be customised. Mac OS X will have the umask set to 022 because it 
+a more restrictive setting will cause issues on Mac OS X. It is not recommended to 
+use any value more restrictive than 027, under any circumstance, as this could 
+interfere with normal/legitimate use of the system by users."
+
+<21>        "This rule sets the file system mount options for non-root, 
+local partitions and file systems mounted on removable media, removable storage 
+partitions, and temporary storage partitions such as /tmp and /dev/shm in order to help 
+protect against malicious code being run on the system."
+
+<96>        "This rule configures the 'Network Time Protocol' 
+(NTP) daemon to use the internal and external servers specified in localize.py 
+('NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL')."
+
+<77>        "This rule sets root's 'group id' (GID) to 0 and root's home 
+directory to /root."
+
+<188>        "***REQUIRES LOGOUT and LOGIN*** 
+
+This rule removes the functionality of using a 'hot corner' 
+to disable the screen saver. 
+
+The screen saver should be set to turn on after a
+period of inactivity, and should require a password to dismiss. Disabling the
+screen saver would disable the screen lock."
+
+<98>        "This rule ensures that the 'Trivial File Transfer Protocol' (TFTP) 
+daemon uses 'secure mode'. TFTP is an Internet software utility for transferring files 
+that is simpler to use than the File Transfer Protocol (FTP) but less capable. It is 
+used where user authentication and directory visibility are not required."
+
+<126>        "This rule installs 'Logwatch'. Logwatch is used for reporting 
+on unusual items in syslog. Logwatch is valuable because it provides a parser 
+for the syslog entry format and a number of signatures for types of lines which are 
+considered to be mundane or noteworthy. It is recommended that all Linux sites, which do 
+not have time to deploy a third-party log monitoring application, run Logwatch in its default 
+configuration. This provides some useful information about system activity in 
+exchange for very little administrator effort."
+
+<120>        "***OPTIONAL RULE***
+
+This rule will set up shell scripts in /etc/profile.d which will log a user out of a 'bash' or 'csh' 
+login shell after 15 minutes of inactivity. This is not practical for systems 
+which run X Windows, as it would close terminal windows in the X environment."
+
+<7>        "This rule will check to see if all software is patched, 
+if the computer is using local update sources (if available), and if the package 
+manager is using GPG-secured updates where applicable. This rule will 
+also ensure that the system has a scheduled CRON job to 
+install updates automatically on systems where that is feasible."
+
+<127>        "This rule sets an idle timeout threshold for 'Secure 
+Shell' (SSH) connections. The default timeout threshold is 15 minutes (900 seconds). 
+This value can be customized to fit your environment's needs."
+
+<364>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
+'Security Technical Implementation Guidance' (STIG) 'Application Restrictions' profile 
+if not already installed."
+
+<365>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
+'Security Technical Implementation Guidance' (STIG) 'Bluetooth' profile 
+if not already installed."
+
+<362>        "This rule configures the Mac OS X operating system's 'login window' profile 
+if not already installed."
+
+<361>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
+'Security Technical Implementation Guidance' (STIG) 'Password Policy' profile if not already installed."
+
+<363>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
+'Security Technical Implementation Guidance' (STIG) 'Restrictions' profile if not already installed."
+
+<366>        "This rule installs the 'Defense Information Systems Agency' (DISA) 
+'Security Technical Implementation Guidance' (STIG) 'Disable iCloud' profile 
+if not already installed."
+
+<52>        "***CANNOT BE UNDONE*** 
+
+This rule checks for the presence of certain files, such as: /root/.rhosts, /root/.shosts, /etc/hosts.eqiv and 
+/etc/shosts.equiv, and creates a 'symbolic link' (symlink) of them to /dev/null, in order 
+to prevent a potentially exploitable weak form of access control. A symlink is the nickname 
+for any file that contains a reference to another file or directory in the form of an absolute 
+or relative path and that affects pathname resolution."
+
+<9>        "***OPTIONAL RULE*** 
+
+This rule installs and configures 'System Accounting'. System Accounting is a process which gathers baseline system data 
+(CPU utilization, disk I/O, etc.) every 10 minutes, by default. The data may be accessed 
+with the 'sar' (System Activity Report) command, or by reviewing the nightly report files named 
+'/var/log/sa/sar*'. Once a normal baseline for the system has been established, with frequent 
+monitoring, unauthorized activity (password crackers and other CPU-intensive jobs, and
+activity outside of normal usage hours) may be detected due to the changes these activities 
+represent - from the normal system performance curve."
+
+<6>        "***AUDIT-ONLY; NO FIX*** 
+
+This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionality is enabled, by running and checking the 
+output to the following command: '/usr/bin/csrutil status'."
+
+<13>        "This rule will configure the '/etc/hosts.allow' and
+'/etc/hosts.deny' files for secure operation. 'TCP Wrappers' is a library which provides simple
+access control and standardized logging for supported applications which
+accept connections over a network. Historically, TCP Wrappers was used to
+support 'Internet Service Daemon' (inetd) services. Now that inetd is deprecated, TCP Wrappers 
+supports only those services which were built to make use of the 'libwrap' library."
+
+<24>        "This rule ensures that the user account databases (passwd, 
+shadow, group, gshadow) each have the correct (secure) permissions assigned to them."
+
+<227>        "This rule will use the 'diskutil repairPermissions' or 'repair_packages' 
+utilities (respectively, depending on OS version) to ensure that each package (and its associated files) 
+has the default ownership and access permissions assigned to it."
+
+<36>        "This rule will securely configure the 'Extended Internet Service Daemon' (xinetd) 
+access control mechanism, if it is present. xinetd is an open-source service dispatcher daemon, which runs on 
+many Unix-like systems and manages Internet-based connectivity. It offers a more secure alternative to the older inetd - 
+which most modern Linux distributions have deprecated."

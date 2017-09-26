@@ -49,15 +49,7 @@ class RemoveSoftware(Rule):
         self.rulenumber = 91
         self.rulename = "RemoveSoftware"
         self.mandatory = True
-        self.helptext = "The RemoveSoftware rule removes any unnecessary " + \
-            "software installed on the system.\n" + \
-            "****WARNING*****\n" + \
-            "This rule is optional for a reason.  This program removes " + \
-            "programs that may or may not be running during removal.  " + \
-            "This can cause adverse effects during run time for your " + \
-            "operating system.  Full knowledge and risk assessment is " + \
-            "assumed when running this rule.\n" + \
-            "*****************"
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',

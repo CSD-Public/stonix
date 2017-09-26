@@ -73,14 +73,7 @@ class SystemAccounting(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rootrequired = True
-        self.helptext = '''System accounting is an optional process which \
-gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 \
-minutes, by default. The data may be accessed with the sar command, or by \
-reviewing the nightly report files named /var/log/sa/sar*. Once a normal \
-baseline for the system has been established, with frequent monitoring, \
-unauthorized activity (password crackers and other CPU-intensive jobs, and \
-activity outside of normal usage hours) may be detected due to departures \
-from the normal system performance curve.'''
+        self.sethelptext()
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',

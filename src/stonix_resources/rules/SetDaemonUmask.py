@@ -70,13 +70,7 @@ writability/readability on the system.
         self.rulenumber = 68
         self.rulename = 'SetDaemonUmask'
         self.mandatory = True
-        self.helptext = 'The settings file /etc/sysconfig/init contains settings which apply to all \
-processes started at boot time. The system umask must be set to at least 022, \
-or daemon processes may create world-writable files. The more restrictive setting \
-027 protects files, including temporary files and log files, from unauthorized \
-reading by unprivileged users on the system. The SetDaemonUmask class searches \
-for each of the relevant config files and sets the process daemon umask to 022 \
-(0022) to prevent world writability/readability on the system.'
+        self.sethelptext()
         self.rootrequired = True
         self.detailedresults = 'The SetDaemonUmask rule has not yet been run'
         self.guidance = ['CCE 4220-0']

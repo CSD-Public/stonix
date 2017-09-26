@@ -74,18 +74,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.effectiveUserID = self.environ.geteuid()
-        if self.environ.getosfamily() == "darwin":
-            self.helptext = "This rule will configure screen saver " + \
-                            "settings."
-        else:
-            self.helptext = "This rule will configure screen locking " + \
-                "after 15 minutes of continuous inactivity.  This rule will " + \
-                "only configure screen locking for GNOME and KDE.  Other " + \
-                "desktop managers may be supported in the future. This rule " + \
-                "should work the same for all operating systems due to the " + \
-                "consistency of GNOME and KDE. If a desktop manager is not " + \
-                "installed, it is considered to be in compliance.\n***Please " + \
-                "be advised: there is no undo method for this rule***"
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.guidance = ["NSA 2.3.5.6.1"]
         if self.environ.getosfamily() == "darwin":

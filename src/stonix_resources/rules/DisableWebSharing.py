@@ -27,11 +27,11 @@ Web Sharing uses the Apache 2.2.x web server to turn the Mac into an HTTP/Web
 server. As with file sharing, web sharing is best left off and a dedicated,
 well-managed web server is recommended.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-'''
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods'''
 
 from __future__ import absolute_import
 import traceback
@@ -62,10 +62,6 @@ well-managed web server is recommended.
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.compliant = False
-        self.helptext = 'Web Sharing uses the Apache 2.2.x web server to ' + \
-        'turn the Mac into an HTTP/Web server. As with file sharing, web ' + \
-        'sharing is best left off and a dedicated, well-managed web ' + \
-        'server is recommended.'
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
@@ -83,13 +79,15 @@ well-managed web server is recommended.
         self.macshortname = 'org.apache.httpd'
         self.svchelper = ServiceHelper(self.environ, self.logger)
         self.cmhelper = CommandHelper(self.logger)
+        self.sethelptext()
 
     def report(self):
         '''
         Report status of web sharing and compliance
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -128,8 +126,9 @@ well-managed web server is recommended.
         '''
         Perform operations to disable web sharing
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -174,8 +173,9 @@ well-managed web server is recommended.
 
         @param: string/list val    given value or list of values to check
         @param: list output    given list of values to check against
-        @return: bool
-        @author: bemalmbe
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         retval = True

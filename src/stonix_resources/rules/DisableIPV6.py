@@ -35,6 +35,7 @@ Created on Apr 9, 2013
 @change: 2017/6/29  bgonz12 Added fix in ReportLinux for machines that have
                             deprecated "ifconfig"
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -59,8 +60,6 @@ class DisableIPV6(Rule):
         self.rulenumber = 123
         self.rulename = "DisableIPV6"
         self.formatDetailedResults("initialize")
-        self.helptext = "Disables IPV6 functionality. For Solaris " + \
-            "systems, only the report will be run."
         self.guidance = ["NSA 2.5.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -79,7 +78,7 @@ class DisableIPV6(Rule):
         self.created2 = False
         self.editor1, self.editor2, self.editor3 = "", "", ""
         self.sh = ServiceHelper(self.environ, self.logger)
-
+        self.sethelptext()
     def report(self):
         try:
             self.detailedresults = ""

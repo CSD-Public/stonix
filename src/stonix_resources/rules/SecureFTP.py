@@ -68,9 +68,7 @@ of users allowed to access ftp and set the default umask for ftp users.
         self.rulename = 'SecureFTP'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'Enable logging for all attempted access and ' + \
-        'ftp commands, restrict the set of users allowed to access ftp ' + \
-        'and set the default umask for ftp users.'
+        self.sethelptext()
         self.rootrequired = True
         self.detailedresults = 'The SecureFTP rule has not yet been run'
         self.compliant = True

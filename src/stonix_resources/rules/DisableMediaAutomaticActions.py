@@ -32,6 +32,7 @@ dictionary
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Fixed help text, which was for DisableInternetSharing
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -48,8 +49,6 @@ class DisableMediaAutomaticActions(RuleKVEditor):
         self.rulename = 'DisableMediaAutomaticActions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule disables automatic media actions, such \
-as those taken when an audio CD or video DVD is inserted."""
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
@@ -98,3 +97,4 @@ as those taken when an audio CD or video DVD is inserted."""
                          None,
                          False,
                          {})
+        self.sethelptext()

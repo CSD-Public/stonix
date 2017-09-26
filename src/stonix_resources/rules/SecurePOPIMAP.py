@@ -57,12 +57,7 @@ class SecurePOPIMAP(Rule):
         self.rulenumber = 141
         self.rulename = 'SecurePOPIMAP'
         self.mandatory = True
-        self.helptext = 'Dovecot provides IMAP and POP3 services. It is not installed by default. \
-If this system does not need to operate as an IMAP or POP3 server, disable and remove Dovecot \
-if it was installed. Otherwise securely configure it. The default setting for this rule is \
-to disable it entirely. Note: this rule does not set up or install ssl certificates. \
-This should still be done on your CA (certificate authority) system, manually, by the administrator of that system. \
-~~Please note that if you select both disable and secure options, the disable option will take priority!~~'
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black',
                            'family': ['darwin']}

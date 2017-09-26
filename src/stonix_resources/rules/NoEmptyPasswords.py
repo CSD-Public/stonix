@@ -53,10 +53,7 @@ class NoEmptyPasswords(Rule):
         self.rulenumber = 41
         self.rulename = "NoEmptyPasswords"
         self.mandatory = True
-        self.helptext = "This rule ensures there are no empty password " + \
-            "hashes in the /etc/shadow file. If empty passwords exist, a " + \
-            "login can occur without entering a password and being " + \
-            "authenticated."
+        self.sethelptext()
         self.rootrequired = True
         self.detailedresults = "NoEmptyPasswords rule has not yet been run"
         self.guidance = ["NSA 2.3.1.5"]
@@ -298,7 +295,7 @@ not continue to complete fix"
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
             tempfile = self.shadow + ".tmp"
-            if not writeFile(self.tempfile, config, self.logger):
+            if not writeFile(tempfile, config, self.logger):
                 success = False
             os.rename(tempfile, self.shadow)
             if permswrong:

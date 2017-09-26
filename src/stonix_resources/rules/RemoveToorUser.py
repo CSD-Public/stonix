@@ -44,7 +44,7 @@ class RemoveToorUser(Rule):
         self.rulenumber = 94
         self.rulename = "RemoveToorUser"
         self.mandatory = True
-        self.helptext = '''Removes the Toor user on FreeBSD systems'''
+        self.sethelptext()
         self.rootrequired = True
         self.formatDetailedResults("initialize")
         datatype = 'bool'

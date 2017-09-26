@@ -75,18 +75,7 @@ configure needed MTAs as defensively as possible.
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rulesuccess = True
-        self.helptext = '''Mail servers are used to send and receive mail \
-over a network on behalf of site users. Mail is a very common service, and \
-MTAs are frequent targets of network attack. Ensure that machines are not \
-running MTAs unnecessarily, and configure needed MTAs as defensively as \
-possible.
-Please be advised, in one section of this rule, the \
-/etc/mail/sendmail.cf is modified two different times.  Because of this, the \
-undo event that handles this file if a change is made will only revert one \
-change, the change that is not reverted is the insertion or modification of \
-the line that begins with DS.  If you can't remember the original format of \
-that line, take a look in the /usr/share/stonix folder for the original file \
-before clicking undo.'''
+        self.sethelptext()
         self.guidance = ['CCE 4416-4', 'CCE 4663-1', 'CCE 14495-6',
                          'CCE 14068-1', 'CCE 15018-5', 'CCE 4293-7']
         self.applicable = {'type': 'white',

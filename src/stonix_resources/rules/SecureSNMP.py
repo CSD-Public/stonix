@@ -68,12 +68,7 @@ class SecureSNMP(Rule):
         self.rulename = 'SecureSNMP'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The Simple Network Management Protocol allows \
-administrators to monitor the state of network devices, including computers. \
-Older versions of SNMP were well-known for weak security, such as plaintext \
-transmission of the community string (used for authentication) and also usage \
-of easily-guessable choices for community string. Disable SNMP if possible. \
-Configure SNMP if necessary.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['NSA 3.20', 'CCE 4540-1']
         self.applicable = {'type': 'white',

@@ -30,6 +30,7 @@ dictionary
 @change: 2014/10/20 ekkehard Artifact artf34318 : ConfigureNetworks(122)
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import traceback
@@ -62,13 +63,7 @@ class ConfigureNetworks(RuleKVEditor):
         self.rulename = 'ConfigureNetworks'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules set the network setup of your OS X " + \
-        "system. It disables bluetooth and disables the wireless " + \
-        "(WiFi/802.11) interface(s) in the Network System Preference " + \
-        "Panel unless the location name has 'wi-fi', 'wifi', 'wireless', " + \
-        "'airport', 'off-site', or 'offsite' (case insensitive) in the " + \
-        "location name. We recommend having one location for off-site " + \
-        "DHCP, and one for each static IP address."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',

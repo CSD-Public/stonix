@@ -34,6 +34,7 @@ Created on May 20, 2013
 @change: 2016/05/31 ekkehard Added OpenDirectory Logging
 @change: 2016/06/22 eball Improved report feedback for reportMac
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
@@ -63,22 +64,7 @@ class ConfigureLogging(RuleKVEditor):
         self.rulename = "ConfigureLogging"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule combines several tasks. Log Rotation \
-ensures that logs don't completely fill up disk space. It also configures \
-logwatch on the central log server.
-After the fix runs, you may want to reformat the configuration files that were \
-altered to line up correctly with columns (such as in newsyslog.conf in \
-FreeBSD). This is purely personal preference.
-For operating systems such as Linux, many log file entries may have their own \
-block as well, and many of the blocks may contain the same contents. Feel \
-free to combine all of these on one line.  If an entry in the Linux fix has \
-incorrect log specs inside the brackets, the log entry is removed where it \
-previously existed and then rewritten with the recommended specs. It does not \
-retain any of the user's previous specs.  However, where that log was \
-removed, the specs inside the brackets may remain with no log file to \
-accompany it.  Delete these, as they will make your configuration file \
-invalid."""
-
+        self.sethelptext()
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -220,6 +206,7 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         '''
         debug = ""
         compliant = True
+        self.fixables = []
         specs = ["rotate 4",
                  "weekly",
                  "missingok",
@@ -727,7 +714,7 @@ daemon config file: " + self.logpath
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     resetsecon(self.logpath)
-        if os.path.exists:
+        if os.path.exists(self.logpath):
             if self.logfiles:
                 contents = readFile(self.logpath, self.logger)
                 tempstring = ""

@@ -25,6 +25,7 @@ Created on May 15, 2017
 
 @author: Breen Malmberg
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg - Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -55,7 +56,7 @@ class DisableTouchID(Rule):
         self.mandatory = True
         self.rootrequired = True
         self.environ = environ
-        self.helptext = 'This rule disables touch ID authentication, staring in macOS 10.12'
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.12.3', '+']}}
         datatype = 'bool'

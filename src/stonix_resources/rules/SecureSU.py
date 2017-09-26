@@ -75,15 +75,7 @@ class SecureSU(Rule):
         self.compliant = False
         self.rulename = 'SecureSU'
         self.mandatory = True
-        self.helptext = """The su command allows a user to gain the \
-privileges of another user by entering the password for that user's account. \
-It is desirable to restrict the root user so that only known administrators \
-are ever allowed to access the root account. This restricts password-guessing \
-against the root account by unauthorized users or by accounts which have been \
-compromised. By convention, the group wheel contains all users who are \
-allowed to run privileged commands. The PAM module pam_wheel.so is used to \
-restrict root access to this set of users.
-This rule will not configure su on Debian distros"""
+        self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'
         key = 'SecureSU'

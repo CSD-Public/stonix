@@ -73,8 +73,7 @@ class InstallBanners(RuleKVEditor):
         self.rulename = 'InstallBanners'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Install and configure warning banners, to be " + \
-            "displayed when logging into this system."
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['CIS', 'NSA 2.3.7.2', 'CCE 4188-9', 'CCE 4431-3',

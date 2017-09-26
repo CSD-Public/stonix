@@ -75,11 +75,7 @@ class SecureATCRON(Rule):
         self.rulenumber = 33
         self.rulename = 'SecureATCRON'
         self.mandatory = True
-        self.helptext = '''The AT and CRON job schedulers are used to \
-schedule jobs for running at a later date/time. These daemons should be \
-configured defensively. The SecureATCRON rule restricts permissions on the \
-files and directories associated with these daemons to authorized users only, \
-and enables and configures logging for these daemons.'''
+        self.sethelptext()
         self.rootrequired = True
         self.formatDetailedResults("initialize")
         self.compliant = False
@@ -221,13 +217,13 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         self.reportcronchmodfiledict = {self.crontab: '0644',
                                         self.anacrontab: '0600',
                                         self.spoolcron: '0700',
-                                        self.cronlog: '0600',
+                                        self.cronlog: '0644',
                                         self.cronallow: '0400',
                                         self.atallow: '0400'}
         self.fixcronchmodfiledict = {self.crontab: 0644,
                                      self.anacrontab: 0600,
                                      self.spoolcron: 0700,
-                                     self.cronlog: 0600,
+                                     self.cronlog: 0644,
                                      self.cronallow: 0400,
                                      self.atallow: 0400}
         self.cronchownfilelist = [self.cronhourly, self.crondaily,

@@ -31,6 +31,7 @@ dictionary
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball PEP8 cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import re
@@ -61,11 +62,7 @@ class ConfigureSpotlight(Rule):
         self.rulename = 'ConfigureSpotlight'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The first configuration item of this rule " + \
-            "configures the SpotLight Preference Pane and the second " + \
-            "configuration item of this rule configures the Safari Spotlight " + \
-            "Search on your system both to prevent info from being sent to " + \
-            "Apple, Google, Microsoft, etc.  "
+        self.sethelptext()
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',

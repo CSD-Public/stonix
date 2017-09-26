@@ -33,6 +33,7 @@ are vulnerable to exploit and monitoring.
 @change: 2016/07/07 eball Converted to RuleKVEditor
 @change: 2017/06/16 Breen Malmberg Added ARD_AllLocalUsersPrivs kveditor
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -55,10 +56,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
         self.rulename = 'ConfigureRemoteManagement'
         self.compliant = True
         self.formatDetailedResults("initialize")
-        self.helptext = 'Remote management should only be enabled on ' + \
-            'trusted networks with strong user controls present in a ' + \
-            'Directory system. Mobile devices without strict controls are ' + \
-            'vulnerable to exploit and monitoring.'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS 2.4.9', 'Apple HT201710']
 

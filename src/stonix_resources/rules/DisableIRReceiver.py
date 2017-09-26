@@ -28,14 +28,14 @@ Created on Sep 5, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
+
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 
 
 class DisableIRReceiver(RuleKVEditor):
-
-###############################################################################
 
     def __init__(self, config, environ, logger, statechglogger):
         RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
@@ -43,8 +43,6 @@ class DisableIRReceiver(RuleKVEditor):
         self.rulename = "DisableIRReceiver"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule turns off the infrared receiver that \
-allows the user to remotely control their Mac with a remote control'''
         self.rootrequired = True
         self.guidance = ['CIS 2.4.13.7']
         self.applicable = {'type': 'white',
@@ -61,3 +59,4 @@ allows the user to remotely control their Mac with a remote control'''
                          None,
                          False,
                          {})
+        self.sethelptext()

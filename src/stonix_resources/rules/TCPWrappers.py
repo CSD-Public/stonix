@@ -77,16 +77,7 @@ class TCPWrappers(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''This rule will configure the /etc/hosts.allow and \
-/etc/hosts.deny files for secure operation.
-
-TCPWrappers is a library which provides simple \
-access control and standardized logging for supported applications which \
-accept connections over a network. Historically, TCPWrappers was used to \
-support inetd services. Now that inetd is deprecated, TCPWrappers supports \
-only services which were built to make use of the libwrap library.
-This rule will ensure a secure configuration for the hosts.allow and \
-hosts.deny files.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS', 'NSA(2.5.4)', '4434-7']
         self.applicable = {'type': 'white',

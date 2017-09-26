@@ -40,7 +40,7 @@ rule class
 @change: 2016/04/29 eball wwreport now checks ww dirs to make sure they are
     owned by a system account, per RHEL 7 STIG
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -84,21 +84,6 @@ class FilePermissions(Rule):
         self.rulename = 'FilePermissions'
         self.mandatory = True
         self.formatDetailedResults("initialize")
-        self.helptext = '''The File Permissions rule audits files and folders \
-on the system to check for world writable files, world writable folders, \
-SUID/SGID programs and files without known owners. It ensures that the \
-sticky-bit is set on world writable directories and will remove world write \
-permissions from files in the root user's execution PATH environment \
-variable. Note that file permission changes cannot be undone.
-When possible, files and folders will be checked with the package \
-manager records to see if their presence is authorized by belonging to an \
-installed package. Administrators should review the lists of world writable, \
-SUID and unowned files and folders carefully since these types of files and \
-programs may provide opportunities for attackers to abuse the system. Files \
-that contain the output of the search are located at /var/local/info and \
-should be reviewed to ensure that the files listed are expected to be in that \
-state for this system. Please note that this rule may take several minutes to \
-run.'''
         self.guidance = ['NSA 2.2.3.3', 'CCE-3795-2', 'CCE-4351-3',
                          'NSA 2.2.3.2', 'CCE-3399-3', 'NSA 2.2.3.4',
                          'CCE-4178-0', 'CCE-3324-1', 'CCE-4743-1',
@@ -182,6 +167,7 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
         self.gwfiles = []
         self.nrofiles = []
         random.seed()
+        self.sethelptext()
 
     def processconfig(self):
         """

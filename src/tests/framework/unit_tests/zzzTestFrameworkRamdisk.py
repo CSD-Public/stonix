@@ -9,7 +9,7 @@ import tempfile
 import ctypes as C
 from datetime import datetime
 
-from src.MacBuild.macRamdisk import RamDisk, detach 
+from src.MacBuild.ramdisk.macRamdisk import RamDisk, detach 
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 

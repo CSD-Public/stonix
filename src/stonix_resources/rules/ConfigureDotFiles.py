@@ -76,11 +76,7 @@ class ConfigureDotFiles(Rule):
         self.rulename = 'ConfigureDotFiles'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''A user who can modify another user's configuration \
-files can likely execute commands with the other user's privileges, including \
-stealing data, destroying files, or launching further attacks on the system. \
-This rule ensures that no dot files within users' home directories possess \
-the world/other - writable permission.'''
+        self.sethelptext()
         self.rootrequired = False
         self.compliant = False
         datatype = 'bool'

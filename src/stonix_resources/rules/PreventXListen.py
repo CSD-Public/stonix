@@ -51,9 +51,7 @@ class PreventXListen(Rule):
         self.rulename = "PreventXListen"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The X graphics display server is network aware. " + \
-        "Due to weaknesses in the X server the service should not be " + \
-        "exposed to the external network"
+        self.sethelptext()
         self.guidance = ["NSA 3.6.1.3.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],

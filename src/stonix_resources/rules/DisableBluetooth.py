@@ -36,6 +36,7 @@ Check to see if all of the above operations have been done or not - report()
 @change: 04/18/2014 dkennel Replaced old style CI with new
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -65,9 +66,6 @@ class DisableBluetooth(Rule):
         self.rulename = 'DisableBluetooth'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule will disable all Bluetooth services, " + \
-            "blacklist all Bluetooth drivers, and remove all Bluetooth " + \
-            "packages."
 
         # configuration item instantiation
         datatype = 'bool'
@@ -92,6 +90,7 @@ class DisableBluetooth(Rule):
                                          "bfusb"]}
         self.iditerator = 0
         self.created = False
+        self.sethelptext()
 
     def report(self):
         '''

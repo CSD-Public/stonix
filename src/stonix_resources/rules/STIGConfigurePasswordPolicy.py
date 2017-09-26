@@ -51,8 +51,7 @@ class STIGConfigurePasswordPolicy(Rule):
         self.rulenumber = 361
         self.rulename = "STIGConfigurePasswordPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigurePasswordPolicy rule installs the " + \
-            "DISA STIG Password Policy profile if not installed already."
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']},

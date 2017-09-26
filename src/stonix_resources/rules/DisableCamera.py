@@ -34,6 +34,7 @@ Created on Dec 10, 2013
         got rid of unused code blocks (previously commented out) and unused imports; updated the help text to
         include more detail
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -58,9 +59,7 @@ class DisableCamera(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rulesuccess = True
-        self.helptext = '''This rule disables the built-in iSight camera, by using the kextunload command to unload the
-        AppleCameraInterface driver. Please note that this rule is not enabled by default. Please enable it before running
-        Fix, if you wish to disable the camera.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',

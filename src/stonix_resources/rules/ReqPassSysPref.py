@@ -59,9 +59,7 @@ class ReqPassSysPref(Rule):
         self.compliant = True
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'By requiring a password to unlock System ' + \
-            'Preferences, a casual user is less likely to compromise the ' + \
-            'security of the Mac.'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS 1.4.13.3']
 
