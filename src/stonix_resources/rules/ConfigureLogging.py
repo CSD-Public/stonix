@@ -590,6 +590,8 @@ daemon config file: " + self.logpath
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
+                    for directory in self.directories:
+                        self.fixables.append(directory)
                     self.logs["rsyslog"] = True
                     self.logrotpath = self.checkLogRotation()
                     self.logd = "rsyslog"
