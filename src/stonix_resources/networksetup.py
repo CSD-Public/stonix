@@ -91,8 +91,8 @@ class networksetup():
             return None
 
         fullproxy = PROXY
-        self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
-        self.pp = fullproxy.split(":")[2]
+        self.ps = fullproxy.split(":")[-2].strip('//')
+        self.pp = fullproxy.split(":")[-1]
         self.pf = PROXYCONFIGURATIONFILE
         self.dns = DNS
         self.searchdomain = PROXYDOMAIN
