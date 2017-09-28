@@ -145,6 +145,8 @@ class SSHTimeout(Rule):
         try:
             if not self.boolCi.getcurrvalue():
                 return
+            debug = "inside fix method\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             created = False
             self.iditerator = 0
             success = True
@@ -162,7 +164,11 @@ class SSHTimeout(Rule):
                 else:
                     openssh = "openssh-server"
                 if not self.ph.check(openssh):
+                    debug = "openssh-server is not installed in fix\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     if self.ph.checkAvailable(openssh):
+                        debug = "openssh-server is not available in fix\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                         if not self.ph.install(openssh):
                             debug = "Unable to install openssh-server\n"
                             self.logger.log(LogPriority.DEBUG, debug)
