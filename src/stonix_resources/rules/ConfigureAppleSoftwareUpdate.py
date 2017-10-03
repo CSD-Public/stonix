@@ -250,13 +250,13 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                              "defaults",
                              "/Library/Preferences/com.apple.SoftwareUpdate",
                              "",
-                             {"SkipLocalCDN": ["0", "-bool no"]},
+                             {"SkipLocalCDN": ["1", "-bool yes"]},
                              "present",
                              "",
                              "Require the machine to check with the update server rather than caching servers.",
                              None,
                              False,
-                             {})
+                             {"SkipLocalCDN": ["0", "-bool no"]})
             self.addKVEditor("DisableAutomaticMacOSUpdates",
                              "defaults",
                              "/Library/Preferences/com.apple.commerce",
