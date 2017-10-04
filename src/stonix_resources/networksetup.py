@@ -482,21 +482,21 @@ class networksetup():
             servicename = ""
             noinfo = False
             for line in self.ch.getOutput():
+                lineprocessed = line.strip()
                 if newserviceonnexline:
                     newservice = True
                     newserviceonnexline = False
                 else:
                     newservice = False
                     newserviceonnexline = False
-                if line == "An asterisk (*) denotes that a network service is disabled.\n":
+                if lineprocessed == "An asterisk (*) denotes that a network service is disabled.":
                     infoOnThisLine = False
                     newserviceonnexline = True
-                elif line == "\n":
+                elif lineprocessed == "":
                     infoOnThisLine = False
                     newserviceonnexline = True
                 else:
                     infoOnThisLine = True
-                lineprocessed = line.strip()
                 if newservice and infoOnThisLine:
                     order = order + 1
 # see if network is enabled
