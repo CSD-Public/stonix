@@ -45,6 +45,7 @@ from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
 from ..logdispatcher import LogPriority
 from ..networksetup import networksetup
+from ..stonixutilityfunctions import iterate
 
 
 class ConfigureNetworks(RuleKVEditor):
@@ -66,6 +67,8 @@ class ConfigureNetworks(RuleKVEditor):
         self.sethelptext()
         self.rootrequired = True
         self.guidance = []
+        self.iditerator = 0
+        self.statechglogger = statechglogger
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
@@ -266,20 +269,41 @@ class ConfigureNetworks(RuleKVEditor):
         @author: ekkehard j. koch
         @change: Breen Malmberg - 12/20/2016 - added doc string; var init before
                 try
+        @change: ekkehard - 2017/10/04 - temporary launchctl fix
         '''
 
         afterfixsuccessful = True
 
         try:
-
-            service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
-            servicename = "com.apple.blued"
+# TODO: This code needs to be fixed after implementation [artf39626]: ServiceHelper Enhancement
+# FIXME: SystemHelper version 2 [artf39626]: ServiceHelper Enhancement
+#            service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
+            servicename = "system/com.apple.blued"
+#            if afterfixsuccessful:
+#                afterfixsuccessful = self.sh.auditservice(service, servicename)
+#            if afterfixsuccessful:
+#                afterfixsuccessful = self.sh.disableservice(service, servicename)
+#            if afterfixsuccessful:
+#                afterfixsuccessful = self.sh.enableservice(service, servicename)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.auditservice(service, servicename)
+                command = ["/bin/launchctl", "stop", servicename]
+                afterfixsuccessful = self.ch.executeCommand(command)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.disableservice(service, servicename)
+                command = ["/bin/launchctl", "disable", servicename]
+                afterfixsuccessful = self.ch.executeCommand(command)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.enableservice(service, servicename)
+                self.iditerator =+ 1
+                myID = iterate(self.iditerator, self.rulenumber)
+                command = ["/bin/launchctl", "enable", servicename]
+                event = {"eventtype": "comm",
+                         "command": command}
+                self.statechglogger.recordchgevent(myID, event)
+                self.iditerator =+ 1
+                myID = iterate(self.iditerator, self.rulenumber)
+                command = ["/bin/launchctl", "start", servicename]
+                event = {"eventtype": "comm",
+                         "command": command}
+                self.statechglogger.recordchgevent(myID, event)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
