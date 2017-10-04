@@ -29,6 +29,8 @@ This objects encapsulates the complexities of the networksetup command on OS X
 @change: 2016/03/23 Breen Malmberg wifi disablement fix
 @change: 2016/03/30 ekkehard setAdvancedNetworkSetup fix
 @change: 2016/03/30 ekkehard localize.py fix
+@change: 2017/09/23 ekkehard __init__ fix
+@change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
 '''
 import re
 import types
