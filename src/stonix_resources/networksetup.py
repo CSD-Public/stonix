@@ -203,10 +203,7 @@ class networksetup():
                 networktype = networkvalues["type"]
                 networkenabled = networkvalues["enabled"]
 
-                self.logdispatch.log(LogPriority.DEBUG, "key is " + str(key) + "\n")
-                self.logdispatch.log(LogPriority.DEBUG, "network is " + str(network) + "\n")
-                self.logdispatch.log(LogPriority.DEBUG, "networktype is " + str(networktype) + "\n")
-                self.logdispatch.log(LogPriority.DEBUG, "networkenabled is " + str(networkenabled) + "\n")
+                self.logdispatch.log(LogPriority.DEBUG, "ns(key, network, networktype, networkenabled) = (" + str(key) + ", " + str(network) + ", " + str(networktype) + ", " + str(networkenabled) + ")")
                 self.logdispatch.log(LogPriority.DEBUG, "self.locationIsValidWiFiLocation is " + str(self.locationIsValidWiFiLocation) + "\n")
 
                 if networktype == "bluetooth" and networkenabled:
