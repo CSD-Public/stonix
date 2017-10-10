@@ -254,580 +254,6 @@ class networksetup():
 
 ###############################################################################
 
-    def startup(self):
-        '''
-        startup is designed to implement the startup portion of the stonix rule
-        
-        @author: ekkehard j. koch
-        '''
-        disabled = True
-        self.initialize()
-        messagestring = "for location = " + str(self.location)
-        for key in sorted(self.nso):
-            network = self.nso[key]
-            networkvalues = self.ns[network]
-            networkname = networkvalues["name"]
-            networktype = networkvalues["type"]
-            networkenabled = networkvalues["enabled"]
-            if networktype == "bluetooth" and networkenabled:
-                fixedWorked = self.disableNetworkService(networkname)
-                if fixedWorked:
-                    networkvalues["compliant"] = True
-                    messagestring = str(networkname) + " fixed " + \
-                    ": " + str(networkvalues)
-                else:
-                    disabled = False
-            elif networktype == "wi-fi" and networkenabled:
-                fixedWorked = self.disableNetworkService(networkname)
-                if fixedWorked:
-                    networkvalues["compliant"] = True
-                    messagestring = str(networkname) + " fixed " + \
-                    ": " + str(networkvalues)
-                else:
-                    disabled = False
-            else:
-                networkvalues["compliant"] = True
-                messagestring = ""
-            if not messagestring == "":
-                self.resultAppend(messagestring)
-        return disabled
-
-###############################################################################
-
-    def getDetailedresults(self):
-        '''
-        get the detailed results text
-        
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pLocationName:location name
-        @return: string: detailedresults
-        @note: None
-        '''
-        return self.detailedresults
-
-###############################################################################
-
-    def getLocation(self):
-        '''
-        get the location used by on the mac
-        
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
-        @note: None
-        '''
-        try:
-            success = True
-            command = [self.nsc, "-getcurrentlocation"]
-            self.ch.executeCommand(command)
-            for line in self.ch.getOutput():
-                lineprocessed = line.strip()
-                self.location = lineprocessed
-                self.locationInitialized = True
-            self.locationIsValidWiFiLocation = self.isValidLocationName(self.location)
-
-            self.logdispatch.log(LogPriority.DEBUG, "Is this a valid WiFi location? " + str(self.locationIsValidWiFiLocation))
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            success = False
-            raise
-        return success
-    
-    def setAdvancedNetworkSetup(self, pHardwarePort = None) :
-        """
-        Set proxies up for normal first configuration that has a network
-        connection.
-        
-        @author: Roy Nielsen
-        @param self:essential if you override this definition
-        @param pNetworkName:name of the network to fix
-        @return: boolean - true
-        @note: None
-        """
-        success = True
-        if pHardwarePort == None:
-            self.initialize()
-            self.setNsoOrder()
-            for key in sorted(self.nso):
-                network = self.nso[key]
-                networkvalues = self.ns[network]
-                networkname = networkvalues["name"]
-                networktype = networkvalues["type"]
-                networkhardwarePort = networkvalues["hardware port"]
-                networkenabled = networkvalues["enabled"]
-                msg = "networkname " + str(networkname) + "; networktype " + str(networktype) + \
-                "; networkhardwarePort " + str(networkhardwarePort) + "; networkenabled " + \
-                str(networkenabled)
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                if networkenabled and (networktype == "wifi" or networktype == "ethernet"):
-                    msg = "Enabled Network Found; " + msg
-                    self.logdispatch.log(LogPriority.DEBUG, msg)
-                    break
-        else:
-            networkhardwarePort = pHardwarePort
-            networkenabled = True
-# Set the DNS servers
-        if not networkhardwarePort == "" and networkenabled:
-            command = self.nsc + " -setdnsservers '" + str(networkhardwarePort) + "' " + self.dns
-            self.ch.executeCommand(command)
-            if self.ch.getError():
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-# Set the Search Domain
-            command = self.nsc + " -setsearchdomains '" + str(networkhardwarePort) + "' " + self.searchdomain
-            self.ch.executeCommand(command)
-            if self.ch.getError():
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-# set up the auto proxy URL
-            command = self.nsc + " -setautoproxyurl '" + str(networkhardwarePort) + "' " + self.pf
-            self.ch.executeCommand(command)
-            if self.ch.getError():
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-# Set up the FTP proxy
-            command = self.nsc + " -setftpproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
-            self.ch.executeCommand(command)
-            if self.ch.getError():
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-# Set up the HTTPS proxy
-            command = self.nsc + " -setsecurewebproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
-            self.ch.executeCommand(command)
-            if self.ch.getError():
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-# Set up the web proxy
-            command = self.nsc + " -setwebproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
-            self.ch.executeCommand(command)
-            if self.ch.getError():
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-# Get current proxy bypass domains and add self.searchdomain
-            command = self.nsc + " -getproxybypassdomains '" + str(networkhardwarePort) + "' "
-            self.ch.executeCommand(command)
-            if not self.ch.getError():
-                command = self.nsc + " -setproxybypassdomains '" + str(networkhardwarePort) + "'"
-                for item in self.ch.getOutput() :
-                    if not re.match("^\s*$", item) :
-                        command = command + " " + str(item.strip())
-                if not self.searchdomain in command:
-                    command = command + " " + str(self.searchdomain)
-                    self.ch.executeCommand(command)
-                    if not self.ch.getError():
-                        success = False
-            else:
-                msg = command + " output: " + str(self.ch.getOutput())
-                self.logdispatch.log(LogPriority.DEBUG, msg)
-                success = False
-        return success
-
-###############################################################################
-
-    def initialize(self):
-        '''
-        initialize the object
-
-        @author: ekkehard j. koch
-        @return: self.initalized
-        @rtype: bool
-        @change: Breen Malmberg - 1/12/2017 doc string fix; default init self.initialized to False;
-                added try/except
-        '''
-
-        self.initialized = False
-
-        try:
-
-            if not self.initialized:
-                self.getLocation()
-                self.updateCurrentNetworkConfigurationDictionary()
-                self.initialized = True
-
-        except Exception:
-            raise
-        return self.initialized
-
-###############################################################################
-
-    def updateCurrentNetworkConfigurationDictionary(self):
-        '''
-        update the network configuration dictianry
-
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
-        @note: None
-        @change: Breen Malmberg - 3/23/2016 - added code to find and disable
-                wi-fi on el capitan, via hardware ports instead of just service
-        '''
-
-        self.logdispatch.log(LogPriority.DEBUG, "Entering updateCurrentNetworkConfigurationDictionary()...")
-
-        try:
-
-            success = True
-
-# issue networksetup -listallnetworkservices to get all network services
-            command = [self.nsc, "-listnetworkserviceorder"]
-            self.ch.executeCommand(command)
-            self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-            order = -1
-            newserviceonnexline = False
-            newservice = False
-            servicename = ""
-            noinfo = False
-            for line in self.ch.getOutput():
-                lineprocessed = line.strip()
-                if newserviceonnexline:
-                    newservice = True
-                    newserviceonnexline = False
-                else:
-                    newservice = False
-                    newserviceonnexline = False
-                if lineprocessed == "An asterisk (*) denotes that a network service is disabled.":
-                    infoOnThisLine = False
-                    newserviceonnexline = True
-                elif lineprocessed == "":
-                    infoOnThisLine = False
-                    newserviceonnexline = True
-                else:
-                    infoOnThisLine = True
-                if newservice and infoOnThisLine:
-                    self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
-                    order = order + 1
-# see if network is enabled
-                    if lineprocessed[:3] == "(*)":
-                        networkenabled = False
-                    else:
-                        networkenabled = True
-                    linearray = lineprocessed.split()
-                    linearray = linearray[1:]
-                    servicename = ""
-                    for item in linearray:
-                        if servicename == "":
-                            servicename = item
-                        else:
-                            servicename = servicename + " " + item
-                    self.ns[servicename] = {"name": servicename,
-                                            "enabled": networkenabled}
-# determine network type
-                elif infoOnThisLine:
-                    self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
-                    lineprocessed = lineprocessed.strip("(")
-                    lineprocessed = lineprocessed.strip(")")
-                    linearray = lineprocessed.split(",")
-                    for item in linearray:
-                        lineprocessed = item.strip()
-                        itemarray = lineprocessed.split(":")
-                        if servicename <> "":
-                            if len(itemarray) > 1:
-                                self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
-                    if servicename <> "":
-                        hardwareport = self.ns[servicename]["hardware port"].lower()
-                        splitline = hardwareport.split()
-                        networktype = ""
-                        for item in splitline:
-                            if item.lower() == "ethernet":
-                                networktype = item.lower()
-                            elif item.lower() == "bluetooth":
-                                networktype = item.lower()
-                            elif item.lower() == "usb":
-                                networktype = item.lower()
-                            elif item.lower() == "wi-fi":
-                                networktype = item.lower()
-                            elif item.lower() == "firewire":
-                                networktype = item.lower()
-                            elif item.lower() == "thunderbolt":
-                                networktype = item.lower()
-                        if networktype == "":
-                            networktype = "unknown"
-# update dictionary entry for network
-                        self.ns[servicename]["type"] = networktype
-                        self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype, hardwareport): (" + \
-                                             str(servicename) + ", " + str(networkenabled) + ", " + \
-                                             str(networktype) + "," + str(hardwareport) + ")")
-# create an ordered list to look up later
-                        orderkey = str(order).zfill(4)
-                        self.nso[orderkey] = servicename
-                        self.updateNetworkConfigurationDictionaryEntry(servicename)
-
-            ## this portion specifically for wi-fi on el capitan
-            xcommand = [self.nsc, "-listallhardwareports"]
-            nameonnextline = False
-            self.nameofdevice = ""
-            foundwifi = False
-            deviceenabled = False
-
-            # get a list of all hardware ports and look for wi-fi
-            self.ch.executeCommand(xcommand)
-            for line in self.ch.getOutput():
-                if nameonnextline:
-                    sline = line.split()
-                    self.nameofdevice = sline[1]
-                    nameonnextline = False
-                if re.search("Wi-Fi", line, re.IGNORECASE):
-                    nameonnextline = True
-            for sn in self.ns:
-                if self.ns[sn]["type"] == "wi-fi":
-                    foundwifi = True
-
-            getdevicestatuscommand = [self.nsc, "-getairportpower", self.nameofdevice]
-
-            # determine if the wi-fi device is on or off
-            self.ch.executeCommand(getdevicestatuscommand)
-            for line in self.ch.getOutput():
-                if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
-                    deviceenabled = True
-                    self.logdispatch.log(LogPriority.DEBUG, "WiFi device: " + str(self.nameofdevice) + " is On")
-                else:
-                    deviceenabled = False
-
-            # if a wi-fi device was found in the hardware ports, but not in the service list,
-            # then add it to the self.ns dict and add an entry for it in the self.nso dict as well
-            self.notinservicelist = False
-
-            self.logdispatch.log(LogPriority.DEBUG, "self.nameofdevice = " + str(self.nameofdevice))
-            self.logdispatch.log(LogPriority.DEBUG, "foundwifi = " + str(foundwifi))
-
-            if self.nameofdevice and not foundwifi:
-                self.logdispatch.log(LogPriority.DEBUG, "Updating self.ns wi-fi entry with enabled = " + str(deviceenabled))
-                self.notinservicelist = True
-                self.ns["Wi-Fi"] = {"name": self.nameofdevice,
-                                    "enabled": deviceenabled,
-                                    "type": "wi-fi"}
-                order += 1
-                orderkey = str(order).zfill(4)
-                self.nso[orderkey] = "Wi-Fi"
-                self.updateNetworkConfigurationDictionaryEntry("Wi-Fi")
-            else:
-                self.logdispatch.log(LogPriority.DEBUG, "Did NOT update self.ns wi-fi entry!!!")
-
-            # set ns init and nso init status
-            self.nsInitialized = True
-            self.nsoInitialized = True
-
-            self.logdispatch.log(LogPriority.DEBUG, "Exiting updateCurrentNetworkConfigurationDictionary()...")
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            success = False
-            raise
-        return success
-
-###############################################################################
-
-    def setNsoOrder(self):
-        '''
-        '''
-        #####
-        # Find the interface that needs to be at the top of the self.nso order        
-        cmd = ["/sbin/route", "get", "default"]
-        
-        self.ch.executeCommand(cmd)
-        
-        defaultInterface = None
-
-        for line in self.ch.getOutput():
-            try:
-                interface_match = re.match("\s+interface:\s+(\w+)", line)
-                defaultInterface = interface_match.group(1)
-            except (IndexError, KeyError, AttributeError), err:
-                self.logdispatch.log(LogPriority.DEBUG, str(line))
-            else:
-                break
-
-        #####
-        # Find the interface/service name via networksetup -listallhardwareports
-        cmd = ["/usr/sbin/networksetup", "-listallhardwareports"]
-
-        self.ch.executeCommand(cmd)
-
-        hardwarePort = ""
-        device = ""
-        enet = ""
-
-        for line in self.ch.getOutput():
-            try:
-                hw_match = re.match("^Hardware Port:\s+(.*)\s*$", line)
-                hardwarePort = hw_match.group(1)
-                #print hardwarePort
-            except AttributeError, err:
-                pass
-            try:
-                #print line
-                dev_match = re.match("^Device:\s+(.*)\s*$", line)
-                device = dev_match.group(1)
-                #print str(device)
-            except AttributeError, err:
-                pass
-            try:
-                enet_match = re.match("^Ethernet Address:\s+(\w+:\w+:\w+:\w+:\w+:\w+)\s*$", line)
-                enet = enet_match.group(1)
-                #print enet
-            except AttributeError, err:
-                pass
-
-            if re.match("^$", line) or re.match("^\s+$", line):
-                if re.match("^%s$"%device, defaultInterface):
-                    print device
-                    print defaultInterface
-                    break
-                hardwarePort = ""
-                device = ""
-                enet = ""
-
-        #####
-        # Reset NSO order if the defaultInterface is not at the top of the list
-        newnso = {}
-        i = 1
-        
-        print str(self.nso)
-        print "hardware port: " + hardwarePort
-                
-        for key, value in sorted(self.nso.iteritems()):
-            #print str(key) + " : " + str(value)
-            if re.match("^%s$"%hardwarePort.strip(), value.strip()):
-                key = re.sub("^\d\d\d\d$", "0000", key)
-                newnso[key] = value
-            else:
-                orderkey = str(i).zfill(4)
-                newnso[orderkey] = value
-                i = i + 1
-                print str(newnso)
-        #print str(newnso)
-        self.nso = newnso
-        print str(self.nso)
-        for key, value in sorted(self.nso.iteritems()):
-            print str(key) + " : " + str(value)
-
-        for item in self.ns: 
-            if re.match("^%s$"%hardwarePort.strip(), self.ns[item]["name"]) and self.ns[item]["type"] is "unknown" and re.match("^en", defaultInterface):
-                self.ns[item]["type"] = "ethernet"
-
-###############################################################################
-
-    def updateNetworkConfigurationDictionaryEntry(self, pKey):
-        '''
-        update a single network configuration dictionary entry 
-
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pkey:key for the dictinary entry
-        @return: boolean - true
-        @note: None
-        @change: Breen Malmberg - 1/12/2017 - doc string edit; added debug logging;
-                default var init success to True; added code to update the Wi-Fi entry;
-
-        '''
-
-        self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.updateNetworkConfigurationDictionaryEntry() with pKey=" + str(pKey) + "...")
-
-        success = True
-        key = pKey
-
-        try:
-            success = True
-            key = pKey
-            entry = self.ns[key]
-
-            if success:
-                if entry == None:
-                    success = False
-                    self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
-
-            if success:
-                command = [self.nsc, "-getmacaddress", key]
-                self.ch.executeCommand(command)
-                for line in self.ch.getOutput():
-                    try:
-                        macaddress = re.search("(\w\w:\w\w:\w\w:\w\w:\w\w:\w\w)",
-                                               line.strip()).group(1)
-                    except:
-                        macaddress = ""
-                    self.ns[key]["macaddress"] = macaddress
-
-            if success:
-                # added for disabling by device name 1/11/2017
-                if key == "Wi-Fi":
-                    self.logdispatch.log(LogPriority.DEBUG, "Updating Wi-Fi device entry for: " + str(self.ns[key]["name"]))
-                    command = [self.nsc, "-getairportpower", self.ns[key]["name"]]
-                    self.ch.executeCommand(command)
-                    for line in self.ch.getOutput():
-                        if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
-                            self.ns[key]["enabled"] = True
-                            self.logdispatch.log(LogPriority.DEBUG, "airportpower for device " + str(self.ns[key]["name"]) + " is: On")
-                        else:
-                            self.ns[key]["enabled"] = False
-                            self.logdispatch.log(LogPriority.DEBUG, "airportpower for device " + str(self.ns[key]["name"]) + " is: Off")
-                else:
-                    # original code (only for services)
-                    command = [self.nsc,
-                           "-getnetworkserviceenabled", key]
-                    self.ch.executeCommand(command)
-                    for line in self.ch.getOutput():
-                        lineprocessed = line.strip()
-                        if lineprocessed == "Enabled":
-                            self.ns[key]["enabled"] = True
-                        else:
-                            self.ns[key]["enabled"] = False
-
-            self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.updateNetworkConfigurationDictionaryEntry() and returning success=" + str(success))
-
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            success = False
-            raise
-
-        return success
-
-###############################################################################
-
-    def isValidLocationName(self, pLocationName=""):
-        '''
-        determine if this is a valid wifi location
-
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pLocationName:location name
-        @return: boolean - true
-        @note: None
-        '''
-        success = False
-        if pLocationName == "":
-            locationName = self.location.lower()
-        else:
-            locationName = pLocationName.lower()
-        if 'wi-fi' in locationName:
-            success = True
-        elif 'wifi' in locationName:
-            success = True
-        elif 'wireless' in locationName:
-            success = True
-        elif 'airport' in locationName:
-            success = True
-        elif 'off-site' in locationName:
-            success = True
-        elif 'offsite' in locationName:
-            success = True
-        else:
-            success = False
-        return success
-
-###############################################################################
-
     def disableNetworkService(self, pNetworkName):
         '''
         disable network service
@@ -959,6 +385,195 @@ class networksetup():
 
 ###############################################################################
 
+    def getDetailedresults(self):
+        '''
+        get the detailed results text
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pLocationName:location name
+        @return: string: detailedresults
+        @note: None
+        '''
+        return self.detailedresults
+
+###############################################################################
+
+    def getLocation(self):
+        '''
+        get the location used by on the mac
+        
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        '''
+        try:
+            success = True
+            command = [self.nsc, "-getcurrentlocation"]
+            self.ch.executeCommand(command)
+            for line in self.ch.getOutput():
+                lineprocessed = line.strip()
+                self.location = lineprocessed
+                self.locationInitialized = True
+            self.locationIsValidWiFiLocation = self.isValidLocationName(self.location)
+
+            self.logdispatch.log(LogPriority.DEBUG, "Is this a valid WiFi location? " + str(self.locationIsValidWiFiLocation))
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            success = False
+            raise
+        return success
+
+###############################################################################
+
+    def initialize(self):
+        '''
+        initialize the object
+
+        @author: ekkehard j. koch
+        @return: self.initalized
+        @rtype: bool
+        @change: Breen Malmberg - 1/12/2017 doc string fix; default init self.initialized to False;
+                added try/except
+        '''
+
+        self.initialized = False
+
+        try:
+
+            if not self.initialized:
+                self.getLocation()
+                self.updateCurrentNetworkConfigurationDictionary()
+                self.initialized = True
+
+        except Exception:
+            raise
+        return self.initialized
+
+###############################################################################
+
+    def networksetupoutputprocessing(self, outputLines):
+        success = True
+        order = -1
+        newserviceonnexline = False
+        newservice = False
+        servicename = ""
+        noinfo = False
+        for line in outputLines:
+            lineprocessed = line.strip()
+            if newserviceonnexline:
+                newservice = True
+                newserviceonnexline = False
+            else:
+                newservice = False
+                newserviceonnexline = False
+            if lineprocessed == "An asterisk (*) denotes that a network service is disabled.":
+                infoOnThisLine = False
+                newserviceonnexline = True
+            elif lineprocessed == "":
+                infoOnThisLine = False
+                newserviceonnexline = True
+            else:
+                infoOnThisLine = True
+            if newservice and infoOnThisLine:
+                self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
+                order = order + 1
+# see if network is enabled
+                if lineprocessed[:3] == "(*)":
+                    networkenabled = False
+                else:
+                    networkenabled = True
+                linearray = lineprocessed.split()
+                linearray = linearray[1:]
+                servicename = ""
+                for item in linearray:
+                    if servicename == "":
+                        servicename = item
+                    else:
+                        servicename = servicename + " " + item
+                self.ns[servicename] = {"name": servicename,
+                                        "enabled": networkenabled}
+# determine network type
+            elif infoOnThisLine:
+                self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
+                lineprocessed = lineprocessed.strip("(")
+                lineprocessed = lineprocessed.strip(")")
+                linearray = lineprocessed.split(",")
+                for item in linearray:
+                    lineprocessed = item.strip()
+                    itemarray = lineprocessed.split(":")
+                    if servicename <> "":
+                        if len(itemarray) > 1:
+                            self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
+                if servicename <> "":
+                    hardwareport = self.ns[servicename]["hardware port"].lower()
+                    splitline = hardwareport.split()
+                    networktype = ""
+                    for item in splitline:
+                        if item.lower() == "ethernet":
+                            networktype = item.lower()
+                        elif item.lower() == "bluetooth":
+                            networktype = item.lower()
+                        elif item.lower() == "usb":
+                            networktype = item.lower()
+                        elif item.lower() == "wi-fi":
+                            networktype = item.lower()
+                        elif item.lower() == "firewire":
+                            networktype = item.lower()
+                        elif item.lower() == "thunderbolt":
+                            networktype = item.lower()
+                    if networktype == "":
+                        networktype = "unknown"
+# update dictionary entry for network
+                    self.ns[servicename]["type"] = networktype
+                    self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype, hardwareport): (" + \
+                                         str(servicename) + ", " + str(networkenabled) + ", " + \
+                                         str(networktype) + "," + str(hardwareport) + ")")
+# create an ordered list to look up later
+                    orderkey = str(order).zfill(4)
+                    self.nso[orderkey] = servicename
+                    self.updateNetworkConfigurationDictionaryEntry(servicename)
+
+        return success
+
+###############################################################################
+
+    def isValidLocationName(self, pLocationName=""):
+        '''
+        determine if this is a valid wifi location
+
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pLocationName:location name
+        @return: boolean - true
+        @note: None
+        '''
+        success = False
+        if pLocationName == "":
+            locationName = self.location.lower()
+        else:
+            locationName = pLocationName.lower()
+        if 'wi-fi' in locationName:
+            success = True
+        elif 'wifi' in locationName:
+            success = True
+        elif 'wireless' in locationName:
+            success = True
+        elif 'airport' in locationName:
+            success = True
+        elif 'off-site' in locationName:
+            success = True
+        elif 'offsite' in locationName:
+            success = True
+        else:
+            success = False
+        return success
+
+###############################################################################
+
     def resultAppend(self, pMessage=""):
         '''
         reset the current kveditor values to their defaults.
@@ -1004,3 +619,402 @@ class networksetup():
         @note: kveditorName is essential
         '''
         self.detailedresults = ""
+
+###############################################################################
+
+    def setAdvancedNetworkSetup(self, pHardwarePort = None) :
+        """
+        Set proxies up for normal first configuration that has a network
+        connection.
+        
+        @author: Roy Nielsen
+        @param self:essential if you override this definition
+        @param pNetworkName:name of the network to fix
+        @return: boolean - true
+        @note: None
+        """
+        success = True
+        if pHardwarePort == None:
+            self.initialize()
+            self.setNetworkServiceOrder()
+            for key in sorted(self.nso):
+                network = self.nso[key]
+                networkvalues = self.ns[network]
+                networkname = networkvalues["name"]
+                networktype = networkvalues["type"]
+                networkhardwarePort = networkvalues["hardware port"]
+                networkenabled = networkvalues["enabled"]
+                msg = "networkname " + str(networkname) + "; networktype " + str(networktype) + \
+                "; networkhardwarePort " + str(networkhardwarePort) + "; networkenabled " + \
+                str(networkenabled)
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                if networkenabled and (networktype == "wifi" or networktype == "ethernet"):
+                    msg = "Enabled Network Found; " + msg
+                    self.logdispatch.log(LogPriority.DEBUG, msg)
+                    break
+        else:
+            networkhardwarePort = pHardwarePort
+            networkenabled = True
+# Set the DNS servers
+        if not networkhardwarePort == "" and networkenabled:
+            command = self.nsc + " -setdnsservers '" + str(networkhardwarePort) + "' " + self.dns
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+# Set the Search Domain
+            command = self.nsc + " -setsearchdomains '" + str(networkhardwarePort) + "' " + self.searchdomain
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+# set up the auto proxy URL
+            command = self.nsc + " -setautoproxyurl '" + str(networkhardwarePort) + "' " + self.pf
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+# Set up the FTP proxy
+            command = self.nsc + " -setftpproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+# Set up the HTTPS proxy
+            command = self.nsc + " -setsecurewebproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+# Set up the web proxy
+            command = self.nsc + " -setwebproxy '" + str(networkhardwarePort) + "' " + self.ps + " " + self.pp
+            self.ch.executeCommand(command)
+            if self.ch.getError():
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+# Get current proxy bypass domains and add self.searchdomain
+            command = self.nsc + " -getproxybypassdomains '" + str(networkhardwarePort) + "' "
+            self.ch.executeCommand(command)
+            if not self.ch.getError():
+                command = self.nsc + " -setproxybypassdomains '" + str(networkhardwarePort) + "'"
+                for item in self.ch.getOutput() :
+                    if not re.match("^\s*$", item) :
+                        command = command + " " + str(item.strip())
+                if not self.searchdomain in command:
+                    command = command + " " + str(self.searchdomain)
+                    self.ch.executeCommand(command)
+                    if not self.ch.getError():
+                        success = False
+            else:
+                msg = command + " output: " + str(self.ch.getOutput())
+                self.logdispatch.log(LogPriority.DEBUG, msg)
+                success = False
+        return success
+
+###############################################################################
+
+    def setNetworkServiceOrder(self):
+        '''
+        '''
+        #####
+        # Find the interface that needs to be at the top of the self.nso order        
+        cmd = ["/sbin/route", "get", "default"]
+        
+        self.ch.executeCommand(cmd)
+        
+        defaultInterface = None
+
+        for line in self.ch.getOutput():
+            try:
+                interface_match = re.match("\s+interface:\s+(\w+)", line)
+                defaultInterface = interface_match.group(1)
+            except (IndexError, KeyError, AttributeError), err:
+                self.logdispatch.log(LogPriority.DEBUG, str(line))
+            else:
+                break
+
+        #####
+        # Find the interface/service name via networksetup -listallhardwareports
+        cmd = ["/usr/sbin/networksetup", "-listallhardwareports"]
+
+        self.ch.executeCommand(cmd)
+
+        hardwarePort = ""
+        device = ""
+        enet = ""
+
+        for line in self.ch.getOutput():
+            try:
+                hw_match = re.match("^Hardware Port:\s+(.*)\s*$", line)
+                hardwarePort = hw_match.group(1)
+                #print hardwarePort
+            except AttributeError, err:
+                pass
+            try:
+                #print line
+                dev_match = re.match("^Device:\s+(.*)\s*$", line)
+                device = dev_match.group(1)
+                #print str(device)
+            except AttributeError, err:
+                pass
+            try:
+                enet_match = re.match("^Ethernet Address:\s+(\w+:\w+:\w+:\w+:\w+:\w+)\s*$", line)
+                enet = enet_match.group(1)
+                #print enet
+            except AttributeError, err:
+                pass
+
+            if re.match("^$", line) or re.match("^\s+$", line):
+                if re.match("^%s$"%device, defaultInterface):
+                    print device
+                    print defaultInterface
+                    break
+                hardwarePort = ""
+                device = ""
+                enet = ""
+
+        #####
+        # Reset NSO order if the defaultInterface is not at the top of the list
+        newnso = {}
+        i = 1
+        
+        print str(self.nso)
+        print "hardware port: " + hardwarePort
+                
+        for key, value in sorted(self.nso.iteritems()):
+            #print str(key) + " : " + str(value)
+            if re.match("^%s$"%hardwarePort.strip(), value.strip()):
+                key = re.sub("^\d\d\d\d$", "0000", key)
+                newnso[key] = value
+            else:
+                orderkey = str(i).zfill(4)
+                newnso[orderkey] = value
+                i = i + 1
+                print str(newnso)
+        #print str(newnso)
+        self.nso = newnso
+        print str(self.nso)
+        for key, value in sorted(self.nso.iteritems()):
+            print str(key) + " : " + str(value)
+
+        for item in self.ns: 
+            if re.match("^%s$"%hardwarePort.strip(), self.ns[item]["name"]) and self.ns[item]["type"] is "unknown" and re.match("^en", defaultInterface):
+                self.ns[item]["type"] = "ethernet"
+
+###############################################################################
+
+    def startup(self):
+        '''
+        startup is designed to implement the startup portion of the stonix rule
+        
+        @author: ekkehard j. koch
+        '''
+        disabled = True
+        self.initialize()
+        messagestring = "for location = " + str(self.location)
+        for key in sorted(self.nso):
+            network = self.nso[key]
+            networkvalues = self.ns[network]
+            networkname = networkvalues["name"]
+            networktype = networkvalues["type"]
+            networkenabled = networkvalues["enabled"]
+            if networktype == "bluetooth" and networkenabled:
+                fixedWorked = self.disableNetworkService(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    disabled = False
+            elif networktype == "wi-fi" and networkenabled:
+                fixedWorked = self.disableNetworkService(networkname)
+                if fixedWorked:
+                    networkvalues["compliant"] = True
+                    messagestring = str(networkname) + " fixed " + \
+                    ": " + str(networkvalues)
+                else:
+                    disabled = False
+            else:
+                networkvalues["compliant"] = True
+                messagestring = ""
+            if not messagestring == "":
+                self.resultAppend(messagestring)
+        return disabled
+
+###############################################################################
+
+    def updateCurrentNetworkConfigurationDictionary(self):
+        '''
+        update the network configuration dictianry
+
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @return: boolean - true
+        @note: None
+        @change: Breen Malmberg - 3/23/2016 - added code to find and disable
+                wi-fi on el capitan, via hardware ports instead of just service
+        '''
+
+        self.logdispatch.log(LogPriority.DEBUG, "Entering updateCurrentNetworkConfigurationDictionary()...")
+
+        try:
+
+            success = True
+
+# issue networksetup -listallnetworkservices to get all network services
+            if success:
+                command = [self.nsc, "-listnetworkserviceorder"]
+                self.ch.executeCommand(command)
+                self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
+                success = networksetupoutputprocessing(self.ch.getOutput())
+
+# issue networksetup -listallhardwareports to get all network services
+            if success: 
+                command = [self.nsc, "-listallhardwareports"]
+                self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
+                success = networksetupoutputprocessing(self.ch.getOutput())
+            nameonnextline = False
+            self.nameofdevice = ""
+            foundwifi = False
+            deviceenabled = False
+
+            # get a list of all hardware ports and look for wi-fi
+            self.ch.executeCommand(command)
+            for line in self.ch.getOutput():
+                if nameonnextline:
+                    sline = line.split()
+                    self.nameofdevice = sline[1]
+                    nameonnextline = False
+                if re.search("Wi-Fi", line, re.IGNORECASE):
+                    nameonnextline = True
+            for sn in self.ns:
+                if self.ns[sn]["type"] == "wi-fi":
+                    foundwifi = True
+
+            getdevicestatuscommand = [self.nsc, "-getairportpower", self.nameofdevice]
+
+            # determine if the wi-fi device is on or off
+            self.ch.executeCommand(getdevicestatuscommand)
+            for line in self.ch.getOutput():
+                if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
+                    deviceenabled = True
+                    self.logdispatch.log(LogPriority.DEBUG, "WiFi device: " + str(self.nameofdevice) + " is On")
+                else:
+                    deviceenabled = False
+
+            # if a wi-fi device was found in the hardware ports, but not in the service list,
+            # then add it to the self.ns dict and add an entry for it in the self.nso dict as well
+            self.notinservicelist = False
+
+            self.logdispatch.log(LogPriority.DEBUG, "self.nameofdevice = " + str(self.nameofdevice))
+            self.logdispatch.log(LogPriority.DEBUG, "foundwifi = " + str(foundwifi))
+
+            if self.nameofdevice and not foundwifi:
+                self.logdispatch.log(LogPriority.DEBUG, "Updating self.ns wi-fi entry with enabled = " + str(deviceenabled))
+                self.notinservicelist = True
+                self.ns["Wi-Fi"] = {"name": self.nameofdevice,
+                                    "enabled": deviceenabled,
+                                    "type": "wi-fi"}
+                order += 1
+                orderkey = str(order).zfill(4)
+                self.nso[orderkey] = "Wi-Fi"
+                self.updateNetworkConfigurationDictionaryEntry("Wi-Fi")
+            else:
+                self.logdispatch.log(LogPriority.DEBUG, "Did NOT update self.ns wi-fi entry!!!")
+
+            # set ns init and nso init status
+            self.nsInitialized = True
+            self.nsoInitialized = True
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting updateCurrentNetworkConfigurationDictionary()...")
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            success = False
+            raise
+        return success
+
+###############################################################################
+
+    def updateNetworkConfigurationDictionaryEntry(self, pKey):
+        '''
+        update a single network configuration dictionary entry 
+
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pkey:key for the dictinary entry
+        @return: boolean - true
+        @note: None
+        @change: Breen Malmberg - 1/12/2017 - doc string edit; added debug logging;
+                default var init success to True; added code to update the Wi-Fi entry;
+
+        '''
+
+        self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.updateNetworkConfigurationDictionaryEntry() with pKey=" + str(pKey) + "...")
+
+        success = True
+        key = pKey
+
+        try:
+            success = True
+            key = pKey
+            entry = self.ns[key]
+
+            if success:
+                if entry == None:
+                    success = False
+                    self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
+
+            if success:
+                command = [self.nsc, "-getmacaddress", key]
+                self.ch.executeCommand(command)
+                for line in self.ch.getOutput():
+                    try:
+                        macaddress = re.search("(\w\w:\w\w:\w\w:\w\w:\w\w:\w\w)",
+                                               line.strip()).group(1)
+                    except:
+                        macaddress = ""
+                    self.ns[key]["macaddress"] = macaddress
+
+            if success:
+                # added for disabling by device name 1/11/2017
+                if key == "Wi-Fi":
+                    self.logdispatch.log(LogPriority.DEBUG, "Updating Wi-Fi device entry for: " + str(self.ns[key]["name"]))
+                    command = [self.nsc, "-getairportpower", self.ns[key]["name"]]
+                    self.ch.executeCommand(command)
+                    for line in self.ch.getOutput():
+                        if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
+                            self.ns[key]["enabled"] = True
+                            self.logdispatch.log(LogPriority.DEBUG, "airportpower for device " + str(self.ns[key]["name"]) + " is: On")
+                        else:
+                            self.ns[key]["enabled"] = False
+                            self.logdispatch.log(LogPriority.DEBUG, "airportpower for device " + str(self.ns[key]["name"]) + " is: Off")
+                else:
+                    # original code (only for services)
+                    command = [self.nsc,
+                           "-getnetworkserviceenabled", key]
+                    self.ch.executeCommand(command)
+                    for line in self.ch.getOutput():
+                        lineprocessed = line.strip()
+                        if lineprocessed == "Enabled":
+                            self.ns[key]["enabled"] = True
+                        else:
+                            self.ns[key]["enabled"] = False
+
+            self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.updateNetworkConfigurationDictionaryEntry() and returning success=" + str(success))
+
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            success = False
+            raise
+
+        return success
