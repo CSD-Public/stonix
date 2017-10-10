@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +21,8 @@
 #                                                                             #
 ###############################################################################
 '''
-This objects encapsulates the complexities of the networksetup command on OS X
+This objects encapsulates the complexities of the networksetup command on 
+macOS (OS X) for use with stonix4mac.
 
 @author: ekkehard j. koch
 @change: 2015/05/07 ekkehard Original Implementation
@@ -31,6 +32,7 @@ This objects encapsulates the complexities of the networksetup command on OS X
 @change: 2016/03/30 ekkehard localize.py fix
 @change: 2017/09/23 ekkehard __init__ fix
 @change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
+@change: 2017/10/13 ekkehard re-factor updateCurrentNetworkConfigurationDictionary
 '''
 import re
 import types
@@ -45,7 +47,7 @@ from .logdispatcher import LogPriority
 class networksetup():
     '''
     This objects encapsulates the complexities of the networksetup command
-    on OS X
+    on macOS (OS X)
     
     @author: ekkehard j. koch
     '''
@@ -726,7 +728,7 @@ class networksetup():
         @note: None
         @change: Breen Malmberg - 1/12/2017 - doc string edit; added debug logging;
                 default var init success to True; added code to update the Wi-Fi entry;
-                
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.updateNetworkConfigurationDictionaryEntry() with pKey=" + str(pKey) + "...")
