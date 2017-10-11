@@ -455,6 +455,39 @@ class networksetup():
 
 ###############################################################################
 
+    def isValidLocationName(self, pLocationName=""):
+        '''
+        determine if this is a valid wifi location
+
+        @author: ekkehard j. koch
+        @param self:essential if you override this definition
+        @param pLocationName:location name
+        @return: boolean - true
+        @note: None
+        '''
+        success = False
+        if pLocationName == "":
+            locationName = self.location.lower()
+        else:
+            locationName = pLocationName.lower()
+        if 'wi-fi' in locationName:
+            success = True
+        elif 'wifi' in locationName:
+            success = True
+        elif 'wireless' in locationName:
+            success = True
+        elif 'airport' in locationName:
+            success = True
+        elif 'off-site' in locationName:
+            success = True
+        elif 'offsite' in locationName:
+            success = True
+        else:
+            success = False
+        return success
+
+###############################################################################
+
     def networksetupoutputprocessing(self, outputLines):
         success = True
         order = -1
@@ -537,39 +570,6 @@ class networksetup():
                     self.nso[orderkey] = servicename
                     self.updateNetworkConfigurationDictionaryEntry(servicename)
 
-        return success
-
-###############################################################################
-
-    def isValidLocationName(self, pLocationName=""):
-        '''
-        determine if this is a valid wifi location
-
-        @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pLocationName:location name
-        @return: boolean - true
-        @note: None
-        '''
-        success = False
-        if pLocationName == "":
-            locationName = self.location.lower()
-        else:
-            locationName = pLocationName.lower()
-        if 'wi-fi' in locationName:
-            success = True
-        elif 'wifi' in locationName:
-            success = True
-        elif 'wireless' in locationName:
-            success = True
-        elif 'airport' in locationName:
-            success = True
-        elif 'off-site' in locationName:
-            success = True
-        elif 'offsite' in locationName:
-            success = True
-        else:
-            success = False
         return success
 
 ###############################################################################
@@ -879,56 +879,8 @@ class networksetup():
                 command = [self.nsc, "-listallhardwareports"]
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
                 success = networksetupoutputprocessing(self.ch.getOutput())
-            nameonnextline = False
-            self.nameofdevice = ""
-            foundwifi = False
-            deviceenabled = False
 
-            # get a list of all hardware ports and look for wi-fi
-            self.ch.executeCommand(command)
-            for line in self.ch.getOutput():
-                if nameonnextline:
-                    sline = line.split()
-                    self.nameofdevice = sline[1]
-                    nameonnextline = False
-                if re.search("Wi-Fi", line, re.IGNORECASE):
-                    nameonnextline = True
-            for sn in self.ns:
-                if self.ns[sn]["type"] == "wi-fi":
-                    foundwifi = True
-
-            getdevicestatuscommand = [self.nsc, "-getairportpower", self.nameofdevice]
-
-            # determine if the wi-fi device is on or off
-            self.ch.executeCommand(getdevicestatuscommand)
-            for line in self.ch.getOutput():
-                if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
-                    deviceenabled = True
-                    self.logdispatch.log(LogPriority.DEBUG, "WiFi device: " + str(self.nameofdevice) + " is On")
-                else:
-                    deviceenabled = False
-
-            # if a wi-fi device was found in the hardware ports, but not in the service list,
-            # then add it to the self.ns dict and add an entry for it in the self.nso dict as well
-            self.notinservicelist = False
-
-            self.logdispatch.log(LogPriority.DEBUG, "self.nameofdevice = " + str(self.nameofdevice))
-            self.logdispatch.log(LogPriority.DEBUG, "foundwifi = " + str(foundwifi))
-
-            if self.nameofdevice and not foundwifi:
-                self.logdispatch.log(LogPriority.DEBUG, "Updating self.ns wi-fi entry with enabled = " + str(deviceenabled))
-                self.notinservicelist = True
-                self.ns["Wi-Fi"] = {"name": self.nameofdevice,
-                                    "enabled": deviceenabled,
-                                    "type": "wi-fi"}
-                order += 1
-                orderkey = str(order).zfill(4)
-                self.nso[orderkey] = "Wi-Fi"
-                self.updateNetworkConfigurationDictionaryEntry("Wi-Fi")
-            else:
-                self.logdispatch.log(LogPriority.DEBUG, "Did NOT update self.ns wi-fi entry!!!")
-
-            # set ns init and nso init status
+# set ns init and nso init status
             self.nsInitialized = True
             self.nsoInitialized = True
 
@@ -970,7 +922,7 @@ class networksetup():
             if success:
                 if entry == None:
                     success = False
-                    self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was None! success set to False.")
+                    self.logdispatch.log(LogPriority.DEBUG, "self.ns[" + str(key) + "] was not found! success set to False.")
 
             if success:
                 command = [self.nsc, "-getmacaddress", key]
