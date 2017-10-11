@@ -12,8 +12,8 @@ import os
 import re
 import sys
 
-from .run_commands import RunWith
-from .loggers import LogPriority as lp
+from .logdispatcher import LogPriority as lp
+from .CommandHelper import CommandHelper
 
 class LaunchCtl(object):
     """
@@ -88,12 +88,12 @@ class LaunchCtl(object):
     def __init__(self, logger):
         """
         Initialization Method
-        
+
         @author: Roy Nielsen
         """
         self.launchctl = "/bin/launchctl"
         self.logger = logger
-        self.rw = RunWith(self.logger)
+        self.ch = CommandHelper(self.logger)
 
     #----------------------------------------------------------------------
     # helper methods
@@ -102,12 +102,12 @@ class LaunchCtl(object):
     def isSaneFilePath(self, filepath):
         """
         Check for a good file path in the passed in string.
-        
+
         @author: Roy Nielsen
         """
         sane = False
         if isinstance(filepath, basestring):
-            if re.match("^[A-Za-z/\.][A-Za-z0-9/\.]*", filepath):
+            if re.match("^[A-Za-z/\.][A-Za-z0-9/\._-]*", filepath):
                 sane = True
             else:
                 self.logger.log(lp.DEBUG, "filepath: " + str(filepath) + " is not valid.")
@@ -119,14 +119,14 @@ class LaunchCtl(object):
         """
         Validate that we have a properly formatted command, and the subcommand
         is valid.
-        
+
         @param: the commandDict should be in the format below:
-        
+
         cmd = { "load" : [options, sessionType, launchJobPath] }
-        
+
         where the key is the launchctl 'subcommand' and the list is an ordered
         list of the arguments to give the subcommand.
-        
+
         @returns: success - whether the command was formatted correctly or not.
 
         @author: Roy Nielsen
@@ -183,16 +183,16 @@ class LaunchCtl(object):
         """
         Use the passed in dictionary to create a MacOS 'security' command
         and execute it.
-        
+
         @param: the commandDict should be in the format below:
-        
+
         cmd = { "bsexec" : [pid, command, arg1, arg2, ...] }
-        
+
         where the key is the security 'subcommand' and the list is an ordered
         list of the arguments to give the subcommand.
-        
+
         @returns: success - whether the command was successfull or not.
-        
+
         @author: Roy Nielsen
         """
         success = False
@@ -207,15 +207,19 @@ class LaunchCtl(object):
             #####
             # Command setup - note that the keychain deliberately has quotes
             # around it - there could be spaces in the path to the keychain,
-            # so the quotes are required to fully resolve the file path.  
-            # Note: this is done in the build of the command, rather than 
+            # so the quotes are required to fully resolve the file path.
+            # Note: this is done in the build of the command, rather than
             # the build of the variable.
             cmd = [self.launchctl] + subCmd
             self.logger.log(lp.DEBUG, 'cmd: ' + str(cmd))
             #####
             # set up and run the command
-            self.rw.setCommand(cmd)
-            output, error, returncode = self.rw.communicate()
+            self.ch.setCommand(cmd)
+            success = self.ch.executeCommand()
+            if success:
+                output = self.ch.getOutput()
+                error = self.ch.getError()
+                returncode = self.ch.getReturnCode()
 
             if not error:
                 success = True
@@ -305,7 +309,7 @@ class LaunchCtl(object):
             if re.match("[-wF]+", str(options)) and isinstance(options, basestring):
                 args.append(options)
             else:
-               self.logger.log(lp.INFO, "Need a the options to be a single string...")
+                self.logger.log(lp.INFO, "Need a the options to be a single string...")
 
             sessionTypes = ['Aqua', 'StandardIO', 'Background', 'LoginWindow']
             if sessionType in sessionTypes:
@@ -315,9 +319,9 @@ class LaunchCtl(object):
 
             if isinstance(domain, basestring):
                 args += ['-D', domain]
-            else: 
+            else:
                 self.logger.log(lp.INFO, "Need a the domain in: " + str(sessionTypes))
-            
+
             args.append(plist)
 
             cmd = { "load" : args }
@@ -404,7 +408,7 @@ class LaunchCtl(object):
             if re.match("[-wF]+", str(options)) and isinstance(options, basestring):
                 args.append(options)
             else:
-               self.logger.log(lp.INFO, "Need a the options to be a single string...")
+                self.logger.log(lp.INFO, "Need a the options to be a single string...")
 
             sessionTypes = ['Aqua', 'StandardIO', 'Background', 'LoginWindow']
             if sessionType in sessionTypes:
@@ -414,9 +418,9 @@ class LaunchCtl(object):
 
             if isinstance(domain, basestring):
                 args += ['-D', domain]
-            else: 
+            else:
                 self.logger.log(lp.INFO, "Need a the domain in: " + str(sessionTypes))
-            
+
             args.append(plist)
 
             cmd = { "unload" : args }
@@ -500,10 +504,14 @@ class LaunchCtl(object):
             cmd = [self.launchctl, 'list']
         else:
             return success
-        #####
-        # set up and run the command
-        self.rw.setCommand(cmd)
-        output, error, returncode = self.rw.communicate()
+            #####
+            # set up and run the command
+            self.ch.setCommand(cmd)
+            success = self.ch.executeCommand()
+            if success:
+                output = self.ch.getOutput()
+                error = self.ch.getError()
+                returncode = self.ch.getReturnCode()
 
         if not error:
             success = True
@@ -750,7 +758,7 @@ class LaunchCtl(object):
             if re.match("[-kp]+", str(options)) and isinstance(options, basestring):
                 args.append(options)
             else:
-               self.logger.log(lp.INFO, "Need a the options to be a single string...")
+                self.logger.log(lp.INFO, "Need a the options to be a single string...")
 
             args.append(service)
 
@@ -791,18 +799,18 @@ class LaunchCtl(object):
             args.append(signal)
         else:
             return success
-        
+
         #####
         # Service target, just check for string...
         if isinstance(service, basestring):
             args.append(service)
         else:
             return success
-        
-            args.append(service)
 
-            cmd = { "kill" : args }
-            success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        args.append(service)
+
+        cmd = { "kill" : args }
+        success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         return success
 
@@ -829,7 +837,7 @@ class LaunchCtl(object):
         # Input validatio.
         if not isinstance(serviceName, basestring):
             return success
-        
+
         cmd = { "blame" : [serviceName] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
@@ -860,7 +868,7 @@ class LaunchCtl(object):
         # Input validatio.
         if not isinstance(target, basestring):
             return success
-        
+
         cmd = { "print" : [target] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
@@ -877,7 +885,7 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
-        
+
         cmd = { "print-cache" : [] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
@@ -890,11 +898,11 @@ class LaunchCtl(object):
         @note: From the launchctl man page:
           print-disabled
               Prints the list of disabled services.
-        
+
         @author: Roy Nielsen
         '''
         success = False
-        
+
         cmd = { "print-disabled" : [] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
@@ -922,7 +930,7 @@ class LaunchCtl(object):
         # Input validatio.
         if not isinstance(pid, int):
             return success
-        
+
         cmd = { "procinfo" : [pid] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
@@ -941,7 +949,7 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
-        
+
         cmd = { "hostinfo" : [] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 

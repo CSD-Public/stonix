@@ -41,7 +41,7 @@ import types
 import time
 import sys
 
-from logdispatcher import LogPriority
+from .logdispatcher import LogPriority
 
 
 class CommandHelper(object):

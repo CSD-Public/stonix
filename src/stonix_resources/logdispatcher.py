@@ -41,9 +41,7 @@ Created on Aug 24, 2010
     reporterr method, and added debug output for both exceptions.
 '''
 
-from observable import Observable
 import logging
-import localize
 import logging.handlers
 import os.path
 import os
@@ -55,6 +53,9 @@ import smtplib
 import subprocess
 import xml.etree.ElementTree as ET
 from shutil import move
+
+import .localize
+from .observable import Observable
 
 
 def singleton_decorator(class_):

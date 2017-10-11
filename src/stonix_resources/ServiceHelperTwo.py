@@ -32,14 +32,16 @@ installed.
 '''
 import os
 import types
-import SHchkconfig
-import SHrcupdate
-import SHupdaterc
-import SHsystemctl
-import SHsvcadm
-import SHrcconf
-import SHlaunchd
-from logdispatcher import LogPriority
+import inspect
+
+import . SHchkconfig
+import . SHrcupdate
+import . SHupdaterc
+import . SHsystemctl
+import . SHsvcadm
+import . SHrcconf
+import . SHlaunchd
+from . logdispatcher import LogPriority
 
 
 class ServiceHelper(object):
@@ -64,7 +66,7 @@ class ServiceHelper(object):
         '''
         self.environ = environment
         self.logdispatcher = logdispatcher
-        self.ishybrid = False
+        self.isHybrid = False
         self.isdualparameterservice = False
         self.svchelper = None
         self.secondary = None
@@ -118,22 +120,22 @@ class ServiceHelper(object):
                                "programs")
         elif truecount == 1:
             if ischkconfig:
-                self.svchelper = SHchkconfigTwo.SHchkconfig(self.environ,
+                self.svchelper = SHchkconfig.SHchkconfig(self.environ,
                                                          self.logdispatcher)
             elif isrcupdate:
-                self.svchelper = SHrcupdateTwo.SHrcupdate(self.environ,
+                self.svchelper = SHrcupdate.SHrcupdate(self.environ,
                                                        self.logdispatcher)
             elif isupdaterc:
-                self.svchelper = SHupdatercTwo.SHupdaterc(self.environ,
+                self.svchelper = SHupdaterc.SHupdaterc(self.environ,
                                                        self.logdispatcher)
             elif issystemctl:
-                self.svchelper = SHsystemctlTwo.SHsystemctl(self.environ,
+                self.svchelper = SHsystemctl.SHsystemctl(self.environ,
                                                          self.logdispatcher)
             elif issvcadm:
-                self.svchelper = SHsvcadmTwo.SHsvcadm(self.environ,
+                self.svchelper = SHsvcadm.SHsvcadm(self.environ,
                                                    self.logdispatcher)
             elif isrcconf:
-                self.svchelper = SHrcconfTwo.SHrcconf(self.environ,
+                self.svchelper = SHrcconf.SHrcconf(self.environ,
                                                    self.logdispatcher)
             elif islaunchd:
                 self.svchelper = SHlaunchdTwo.SHlaunchd(self.environ,
@@ -145,48 +147,48 @@ class ServiceHelper(object):
             self.ishybrid = True
             count = 0
             if issystemctl:
-                self.svchelper = SHsystemctlTwo.SHsystemctl(self.environ,
+                self.svchelper = SHsystemctl.SHsystemctl(self.environ,
                                                          self.logdispatcher)
                 count = 1
             if ischkconfig:
                 if count == 0:
-                    self.svchelper = SHchkconfigTwo.SHchkconfig(self.environ,
+                    self.svchelper = SHchkconfig.SHchkconfig(self.environ,
                                                              self.logdispatcher)
                     count = 1
                 elif count == 1:
-                    self.secondary = SHchkconfigTwo.SHchkconfig(self.environ,
+                    self.secondary = SHchkconfig.SHchkconfig(self.environ,
                                                              self.logdispatcher)
             if isrcupdate:
                 if count == 0:
-                    self.svchelper = SHrcupdateTwo.SHrcupdate(self.environ,
+                    self.svchelper = SHrcupdate.SHrcupdate(self.environ,
                                                            self.logdispatcher)
                     count = 1
                 elif count == 1:
-                    self.secondary = SHrcupdateTwo.SHrcupdate(self.environ,
+                    self.secondary = SHrcupdate.SHrcupdate(self.environ,
                                                            self.logdispatcher)
             if isupdaterc:
                 if count == 0:
-                    self.svchelper = SHupdatercTwo.SHupdaterc(self.environ,
+                    self.svchelper = SHupdaterc.SHupdaterc(self.environ,
                                                            self.logdispatcher)
                     count = 1
                 elif count == 1:
-                    self.secondary = SHupdatercTwo.SHupdaterc(self.environ,
+                    self.secondary = SHupdaterc.SHupdaterc(self.environ,
                                                            self.logdispatcher)
             if issvcadm:
                 if count == 0:
-                    self.svchelper = SHsvcadmTwo.SHsvcadm(self.environ,
+                    self.svchelper = SHsvcadm.SHsvcadm(self.environ,
                                                        self.logdispatcher)
                     count = 1
                 elif count == 1:
-                    self.secondary = SHsvcadmTwo.SHsvcadm(self.environ,
+                    self.secondary = SHsvcadm.SHsvcadm(self.environ,
                                                        self.logdispatcher)
             if isrcconf:
                 if count == 0:
-                    self.svchelper = SHrcconfTwo.SHrcconf(self.environ,
+                    self.svchelper = SHrcconf.SHrcconf(self.environ,
                                                        self.logdispatcher)
                     count = 1
                 elif count == 1:
-                    self.secondary = SHrcconfTwo.SHrcconf(self.environ,
+                    self.secondary = SHrcconf.SHrcconf(self.environ,
                                                        self.logdispatcher)
             if islaunchd:
                 self.svchelper = SHlaunchdTwo.SHlaunchd(self.environ,
@@ -225,14 +227,6 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def getSpecificHelper(self):
-        """
-        Getter to acqure the specific keychain manager
-        """
-        return self.svchelper.getHelper(), self.secondary.getHelper()
-
-    #----------------------------------------------------------------------
-
     def __calledBy(self):
         """
         Log the caller of the method that calls this method
@@ -246,14 +240,47 @@ class ServiceHelper(object):
         except Exception, err:
             raise err
         else:
-            self.logger.log(lp.DEBUG, "called by: " + \
+            self.logger.log(LogPriority.DEBUG, "called by: " + \
                                       filename + ": " + \
                                       functionName + " (" + \
                                       lineNumber + ")")
 
     #----------------------------------------------------------------------
 
-    def setService(self, *args, **kwargs):
+    def isServiceVarValid(self, service):
+        """
+        Input validator for the service variable
+        
+        @author: Roy Nielsen
+        """
+        serviceValid = False
+        try:
+            #####
+            # Generic factory input validation, only for "service", the
+            # rest of the parameters need to be validated by the concrete
+            # service helper instance.
+            if not isinstance(service, basestring):
+                raise TypeError("Service: " + str(service) + \
+                                " is not a string as expected.")
+                serviceValid = False
+            elif not service:  # if service is an empty string
+                raise ValueError('service specified is blank. ' +\
+                                'No action will be taken!')
+                serviceValid = False
+            elif service : # service is a string of one or more characters
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                   '-- self.service set to: ' + service)
+                serviceValid = True
+
+        except Exception, err:
+            self.__calledBy()
+            raise err
+
+        return serviceValid
+
+    #----------------------------------------------------------------------
+
+    def setService(self, service, servicename, partition="", userid="", *args, **kwargs):
         '''
         Update the name of the service being worked with.
 
@@ -263,40 +290,54 @@ class ServiceHelper(object):
                                '--START SET(' + service + ', ' + servicename +
                                ')')
 
-        serviceSuccessAll = False
-        serviceSuccessAll = self.svchelper.setService(*args, **kwargs)
+        setServiceSuccess = False
 
+        if self.isServiceVarValid(service):
+            setServiceSuccess = self.svchelper.setService(service, **kwargs)
+        
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END SET(' + service + ', ' + servicename +
-                               ') = ' + str(setservicesuccessall))
+                               ') = ' + str(setServiceSuccess))
 
-        return setserviceSuccessAll
-
+        return setServiceSuccess
+        
     #----------------------------------------------------------------------
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, service, *args, **kwargs):
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START DISABLE(' + service + ', ' + servicename +
-                                ')')
+                               '--START DISABLE(' + service + ')')
 
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.disableService(*args, **kwargs)
+        disabled = False
+        
+        if self.setService(service):
+            chkSingle = False
+            chkSecond = False
+
+            chkSingle = self.svchelper.disableService(self.getService(), **kwargs)
+            if self.isHybrid:
+                chkSecond = self.secondary.disableService(self.getService, **kwargs)
+
+            if chkSingle or chkSecond:
+                disabled = True
+            else:
+                disabled=False
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END DISABLE(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
+                               '-- END DISABLE(' + service + \
+                               ') = ' + str(disabled))
+
+        return disabled
 
     #----------------------------------------------------------------------
 
-    def enableService(self, service, *args, **kwargs):
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -304,20 +345,33 @@ class ServiceHelper(object):
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START ENABLE(' + service + ', ' + servicename +
-                               ')')
+                               '--START ENABLE(' + service + ')')
 
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.enableService(*args, **kwargs)
+        enabledSuccess = False
+        
+        if self.setService(service):
+            enabledSingle = False
+            enabledSecondary = False
+
+            if not self.auditService(self.getService(), **kwargs):
+                if self.svchelper.enableService(self.getService(), **kwargs):
+                    enabledSingle = True
+                    
+                if self.isHybrid:
+                    if self.secondary.enableService(self.getService, **kwargs):
+                        enabledSecondary = True
+                    
+
+            enabledSuccess = enabledSingle or enabledSecondary
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END ENABLE(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
+                               '-- END ENABLE(' + service + \
+                               ') = ' + str(enabledSuccess))
+        return enabledSuccess
 
     #----------------------------------------------------------------------
 
-    def auditService(self, service, *args, **kwargs):
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -325,20 +379,37 @@ class ServiceHelper(object):
         @return: Bool, True if the service is configured to run
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START AUDIT(' + service + ', ' + servicename +
-                               ')')
+                               '--START AUDIT(' + service + ')')
 
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.auditService(*args, **kwargs)
+        auditSuccess = False
+        if self.setService(service):
+            singleSuccess = False
+            secondarySuccess = False
+            
+            try:
+                singleSuccess = self.svchelper.auditService(self.getService(), 
+                                                            **kwargs)
+            except OSError:
+                singleSuccess = False
+
+            if self.isHybrid:
+                try:
+                    secondarySuccess = self.secondary.auditService(self.getService(),
+                                                            **kwargs)
+                except OSError:
+                    secondarySuccess = False
+
+            if singleSuccess or secondarySuccess:
+                auditSuccess = True
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END AUDIT(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
+                               '-- END AUDIT(' + service + \
+                               ') = ' + str(auditSuccess))
+        return auditSuccess
 
     #----------------------------------------------------------------------
 
-    def isRunning(self, service, *args, **kwargs):
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -347,20 +418,35 @@ class ServiceHelper(object):
         @return: bool, True if the service is already running
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START ISRUNNING(' + service + ', ' +
-                               servicename + ')')
+                               '--START ISRUNNING(' + service + ')')
+        isRunning = False
+        if self.setService(service):
+            singleSuccess = False
+            secondarySuccess = False
 
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.isRunning(*args, **kwargs)
+            try:
+                singleSuccess = self.svchelper.isrunning(self.getService(), **kwargs)
+                if self.isHybrid:
+                    secondarySuccess = self.secondary.isrunning(self.getService(), **kwargs)
+            except:
+                self.__calledBy()
+                raise
+
+            isRunning = singleSuccess or secondarySuccess
+
+        if isRunning:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END ISRUNNING(' + service + ', ' +
-                               servicename + ') = ' + str(servicesuccess))
-        return serviceSuccess
+                               '-- END ISRUNNING(' + service + \
+                               ') = ' + str(isRunning))
+        return isRunning
 
     #----------------------------------------------------------------------
 
-    def reloadService(self, service, *args, **kwargs):
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -373,20 +459,32 @@ class ServiceHelper(object):
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START RELOAD(' + service + ', ' + servicename +
-                                ')')
+                               '--START RELOAD(' + service + ')')
 
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.reloadService(*args, **kwargs)
+        reloadSuccess = False
+        if self.setService(service):
+            singleSuccess = False
+            secondarySuccess = False
+            
+            try:
+                if self.isrunning(self.getService()):
+                    singleSuccess = self.svchelper.reloadservice(self.getService(), **kwargs)
+                    if self.isHybrid:
+                        secondarySuccess = self.secondary.reloadservice(self.getService(), **kwargs)
+            except:
+                self.__calledBy()
+                raise
+
+            reloadSuccess = singleSuccess and secondarySuccess
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END RELOAD(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
+                               '-- END RELOAD(' + service + \
+                               ') = ' + str(reloadSuccess))
+        return reloadSuccess
 
     #----------------------------------------------------------------------
 
-    def listServices(self):
+    def listServices(self, **kwargs):
         '''
         List the services installed on the system.
 
@@ -394,89 +492,20 @@ class ServiceHelper(object):
         '''
         self.logdispatcher.log(LogPriority.DEBUG, '--START')
 
-        serviceList = None
-        serviceList = self.svchelper.listServices(*args, **kwargs)
+        serviceList = []
+        secondaryList = []
+        try:
+            serviceList = self.svchelper.listServices(**kwargs)
+            
+            if self.isHybrid:
+                secondaryList = self.secondary.listservices()
+                if secondaryList:
+                    serviceList += secondaryList
 
+        except:
+            self.__calledBy()
+            raise
+            
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END = ' + str(serviceList))
         return serviceList
-
-    #----------------------------------------------------------------------
-
-    def kill(self, process, *args, **kwargs):
-        '''
-        Kills a process with a unix signal.
-
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START KILL(' + service + ', ' + servicename +
-                                ')')
-
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.kill(*args, **kwargs)
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END KILL(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
-
-    #----------------------------------------------------------------------
-
-    def start(self, service, *args, **kwargs):
-        '''
-        Start a service installed on the system.
-
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START START(' + service + ', ' + servicename +
-                                ')')
-
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.start(*args, **kwargs)
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END START(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
-
-    #----------------------------------------------------------------------
-
-    def stop(self, service, *args, **kwargs):
-        '''
-        Stop a service installed on the system.
-
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START STOP(' + service + ', ' + servicename +
-                                ')')
-
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.stop(*args, **kwargs)
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END STOP(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
-
-    #----------------------------------------------------------------------
-
-    def restart(self, service, *args, **kwargs):
-        '''
-        Restart a service installed on the system.
-
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START RESTART(' + service + ', ' + servicename +
-                                ')')
-
-        serviceSuccess = False
-        serviceSuccess = self.svchelper.restart(*args, **kwargs)
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END RESTART(' + service + ', ' + servicename +
-                               ') = ' + str(servicesuccess))
-        return serviceSuccess
