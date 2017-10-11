@@ -17,9 +17,9 @@
 		<key>PayloadVersion</key>
 		<integer>1</integer>
 		<key>PayloadDisplayName</key>
-		<string>Settings for engine.lanl.gov</string>
+		<string>stonix4mac FISMA High Passcode Configuration Profile for macOS Sierra 10.12</string>
 		<key>PayloadDescription</key>
-		<string>This LANL Passcode Profile implements controls required by the Level 2 Infrastructure and Services Unclassified Segment.</string>
+		<string>This Passcode Configuration Profile implements stonix4mac Passcode Configuration required for FISMA High Level.</string>
 		<key>PayloadContent</key>
 		<array>
 			<dict>
