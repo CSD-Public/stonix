@@ -3,7 +3,7 @@
 <plist version="1.0">
 	<dict>
 		<key>PayloadIdentifier</key>
-		<string>gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.low</string>
+		<string>gov.lanl.stonix4mac.macOS.High.Sierra.10.13.fisma.low</string>
 		<key>PayloadRemovalDisallowed</key>
 		<false/>
 		<key>PayloadScope</key>
@@ -17,7 +17,7 @@
 		<key>PayloadVersion</key>
 		<integer>1</integer>
 		<key>PayloadDisplayName</key>
-		<string>stonix4mac FISMA Low Passcode Configuration Profile for macOS Sierra 10.12</string>
+		<string>stonix4mac FISMA Low Passcode Configuration Profile for macOS High Sierra 10.13</string>
 		<key>PayloadDescription</key>
 		<string>This Passcode Configuration Profile implements stonix4mac Passcode Configuration required for FISMA Low Level.</string>
 		<key>PayloadContent</key>
@@ -28,7 +28,7 @@
 				<key>PayloadVersion</key>
 				<integer>1</integer>
 				<key>PayloadIdentifier</key>
-				<string>gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.low.1e035700-f858-0134-3668-003ee1c6943d</string>
+				<string>gov.lanl.stonix4mac.macOS.High.Sierra.10.13.fisma.low.1e035700-f858-0134-3668-003ee1c6943d</string>
 				<key>PayloadUUID</key>
 				<string>1e035700-f858-0134-3668-003ee1c6943d</string>
 				<key>PayloadEnabled</key>
