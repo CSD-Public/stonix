@@ -54,8 +54,8 @@ import subprocess
 import xml.etree.ElementTree as ET
 from shutil import move
 
-import .localize
-from .observable import Observable
+import localize
+from observable import Observable
 
 
 def singleton_decorator(class_):
