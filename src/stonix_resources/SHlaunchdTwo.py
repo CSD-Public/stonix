@@ -29,9 +29,9 @@ import os
 import types
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
-from ServiceHelperParent import ServiceHelperParent
+from ServiceHelperTemplate import ServiceHelperTemplate
 
-class ServiceHelper(ServiceHelperParent):
+class ServiceHelper(ServiceHelperTemplate):
     '''
     This concrete service helper serves as an interface between operating system
     specific code and the generic service helper class factory.
@@ -45,6 +45,7 @@ class ServiceHelper(ServiceHelperParent):
 
         @param environment: STONIX environment object
         '''
+        super(ServiceHelper, self).__init__(self, environment, logdispatcher)
         self.environ = environment
         self.logger = logdispatcher
         self.lCtl = LaunchCtl(logdispatcher)
@@ -73,14 +74,24 @@ class ServiceHelper(ServiceHelperParent):
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, domainTarget=None, servicePath=None, serviceTarget=None):
+    def disableService(self, domainTarget=None, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
         @return: Bool indicating success status
         '''
         success = False
-        
+
+        if 'servicePath' not in kwargs:
+            raise ValueError("Variable 'servicePath' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicePath = kwargs.get('servicePath')
+
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
+        else:
+            serviceTarget = kwargs.get('serviceTarget')
+
         successOne = self.lCtl.disable(serviceTarget)
         successTwo = self.lCtl.bootOut(domainTarget, servicePath)
 
@@ -91,7 +102,7 @@ class ServiceHelper(ServiceHelperParent):
 
     #----------------------------------------------------------------------
 
-    def enableService(self, domainTarget=None, servicePath=None, serviceTarget=None, options=None):
+    def enableService(self, domainTarget=None, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -100,9 +111,24 @@ class ServiceHelper(ServiceHelperParent):
         '''
         success = False
 
-        successOne = self.lCtl.bootstrap(domainTarget, servicePath)
+        if 'servicePath' not in kwargs:
+            raise ValueError("Variable 'servicePath' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicePath = kwargs.get('servicePath')
+
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
+        else:
+            serviceTarget = kwargs.get('serviceTarget')
+
+        if 'options' not in kwargs:
+            options = ""
+        else:
+            options = kwargs.get('options')
+
+        successOne = self.lCtl.bootStrap(domainTarget, servicePath)
         successTwo = self.lCtl.enable(serviceTarget)
-        successThree = self.lCtl.kickstart(serviceTarget, options)
+        successThree = self.lCtl.kickStart(serviceTarget, options)
 
         if successOne and successTwo and successThree:
             success = True
@@ -147,7 +173,7 @@ class ServiceHelper(ServiceHelperParent):
 
     #----------------------------------------------------------------------
 
-    def reloadService(self, serviceTarget, options='-k'):
+    def reloadService(self, serviceTarget, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -160,13 +186,18 @@ class ServiceHelper(ServiceHelperParent):
         '''
         success = False
 
-        success = self.lCtl.kickstart(serviceTarget, options)
+        if 'options' not in kwargs:
+            options = "-k"
+        else:
+            options = kwargs.get('options')
+
+        success = self.lCtl.kickStart(serviceTarget, options)
 
         return success
 
     #----------------------------------------------------------------------
 
-    def listServices(self, domainTarget):
+    def listServices(self, **kwargs):
         '''
         List the services in a specified domain per the launchctl man page
 
@@ -175,84 +206,11 @@ class ServiceHelper(ServiceHelperParent):
         success = False
         data = None
 
-        success, data = self.lCtl.printTarget(domainTarget)        
+        if 'domainTarget' not in kwargs:
+            domainTarget = ""
+        else:
+            domainTarget = kwargs.get('domainTarget')
 
-        return success, data
+        data = self.lCtl.printTarget(domainTarget)
 
-    #----------------------------------------------------------------------
-    # NON-Standard interface specific to this concrete service helper.
-    #----------------------------------------------------------------------
-
-    def kill(self, signal=None, serviceTarget=None):
-        '''
-        Kill the service target with a specified unix signal.  See the
-        launchctl manpage section on the kill sub command.
-
-        @author: Roy Nielsen
-        '''
-        success = False
-
-        self.lCtl.kill(signal, serviceTarget)
-
-        return success
-
-        #----------------------------------------------------------------------
-
-    def printCache(self):
-        '''
-        Prints the contents of the launchd service cache.
-
-        @author: Roy Nielsen
-        '''
-        success = False
-        data = None
-
-        success, data = self.lCtl.printCache()
-
-        return success, data
-
-    #----------------------------------------------------------------------
-
-    def printDisabled(self):
-        '''
-        Prints the list of disabled services.
-
-        @author: Roy Nielsen
-        '''
-        success = False
-        data = None
-
-        success, data = self.lCtl.printDisabled()        
-
-        return success, data
-
-    #----------------------------------------------------------------------
-
-    def procInfo(self, pid):
-        '''
-        Prints information about the execution context of the specified PID.
-
-        @author: Roy Nielsen
-        '''
-        success = False
-        data = None
-
-        success, data = self.lCtl.procInfo(pid)        
-
-        return success, data
-
-    #----------------------------------------------------------------------
-
-    def blame(self, serviceTarget):
-        '''
-        If the service is running, prints a human-readable string describing
-        why launchd launched the service.
-        
-        @author: Roy Nielsen
-        '''
-        success = False
-        data = None
-
-        success, data = self.lCtl.blame(serviceTarget)        
-
-        return success, data
+        return data

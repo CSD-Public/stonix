@@ -80,7 +80,6 @@ class DisableInactiveAccounts(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']},
                            'fisma': 'high'}
-
         self.initobjs()
 
     def initobjs(self):
@@ -103,14 +102,6 @@ class DisableInactiveAccounts(Rule):
         @rtype: bool
         @author: Breen Malmberg
         '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [EXCLUDEACCOUNTS]
-        if not self.checkConsts(constlist):
-            self.compliant = False
-            self.detailedresults = "\nPlease ensure that the constant: EXCLUDEACCOUNTS, in localize.py, is defined and is not None. This rule will not function without it."
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            return self.compliant
 
         # defaults
         self.compliant = True
@@ -252,13 +243,6 @@ class DisableInactiveAccounts(Rule):
         @rtype: bool
         @author: Breen Malmberg
         '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [EXCLUDEACCOUNTS]
-        if not self.checkConsts(constlist):
-            success = False
-            self.formatDetailedResults("fix", success, self.detailedresults)
-            return success
 
         # defaults
         fixsuccess = True

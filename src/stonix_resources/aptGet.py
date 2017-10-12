@@ -193,14 +193,14 @@ class AptGet(object):
             retval = call(["/usr/bin/apt-cache", "search", "^" + package + "$"],
                           stdout=PIPE, stderr=PIPE, shell=False)
             if retval == 0:
-                message = Popen(["/usr/bin/apt-cache", "search", "^" + package + "$"],
+                message = Popen(["/usr/bin/apt-cache", "search", package],
                                 stdout=PIPE, stderr=PIPE, shell=False)
                 info = message.stdout.readlines()
                 while message.poll() is None:
                     continue
                 message.stdout.close()
                 for line in info:
-                    if search("^" + package + " -", line):
+                    if search(package, line):
                         found = True
 
             if found:

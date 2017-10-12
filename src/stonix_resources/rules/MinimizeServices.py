@@ -159,7 +159,6 @@ class MinimizeServices(Rule):
                              'rmnologin',
                              'rpcgssd', 'rpcidmapd', 'rpcbind',
                              'rsyslog',
-                             'rsyslogd',
                              'sendmail',
                              'setroubleshoot',
                              'smartd',
@@ -286,8 +285,7 @@ class MinimizeServices(Rule):
                                'auditd.service',
                                'auth-rpcgss-module.service',
                                'brandbot.service',
-                               'chronyd.service', 'chronyd',
-                               'chrony.service', 'chrony',
+                               'chronyd.service',
                                'colord.service',
                                'cron', 'cron.service',
                                'crond.service', 'cups', 'cups.service',
@@ -346,7 +344,6 @@ class MinimizeServices(Rule):
                                'nfs-utils.service',
                                'nfs-lock.service', 'nslcd.service',
                                'ntpd.service', 'ntpdate.service',
-                               'ntp.service', 'ntp', 'ntpd',
                                'ondemand.service',
                                'pcscd', 'pcscd.service', 'postfix',
                                'polkit.service', 'purge-kernels.service',
@@ -371,15 +368,17 @@ class MinimizeServices(Rule):
                                'rhel-autorelabel-mark.service',
                                'rhel-autorelabel.service',
                                'rhsmcertd.service',
-                               'rsyslog.service', 'rsyslog', 'rsyslogd',
-                               'rtkit-daemon.service', 'rhnsd',
+                               'rsyslog.service', 'rtkit-daemon.service',
+                               'rhnsd',
                                'rngd.service', 'rpcbind.service',
                                'rpc-gssd.service', 'rpc-statd-notify.service',
                                'rpc-statd.service', 'rpc-svcgssd.service',
                                'sendmail.service', 'sm-client.service',
                                'spice-vdagentd.service',
-                               'ssh', 'ssh.service',
-                               'sshd', 'sshd.service',
+                               'ssh',
+                               'ssh.service',
+                               'sshd',
+                               'sshd.service',
                                'sshd-keygen.service',
                                'stonix-mute-mic.service',
                                'stonix-mute-mic',
@@ -471,28 +470,40 @@ False.'''
 run on this platform. If you need to run a service not currently in this \
 list, add the service to the list and STONIX will not disable it. List \
 elements should be space separated.'''
-
-        self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Starting platform detection"])
-
+        self.logger.log(LogPriority.DEBUG,
+                        ['MinimizeServices.__init__',
+                         "Starting platform detection"])
         if os.path.exists('/bin/systemctl'):
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found using systemd list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.systemddefault)
-
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                             "systemctl found using systemd list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                          self.systemddefault)
         elif self.environ.getosfamily() == 'linux':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Linux OS found using Linux default list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
-
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                             "Linux OS found using Linux default list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                          self.linuxdefault)
         elif self.environ.getosfamily() == 'solaris':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Solaris OS found using Solaris list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.soldefault)
-
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                             "Solaris OS found using Solaris list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                          self.soldefault)
         elif self.environ.getosfamily() == 'freebsd':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "FreeBSD OS found using BSD list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.bsddefault)
-
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                             "FreeBSD OS found using BSD list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                          self.bsddefault)
         else:
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
+            self.logger.log(LogPriority.DEBUG,
+                            ['MinimizeServices.__init__',
+                             "Detection fell through. Return from ENV:" +
+                             self.environ.getosfamily()])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2,
+                                          self.linuxdefault)
 
     def report(self):
         """
@@ -580,16 +591,10 @@ elements should be space separated.'''
             try:
                 servicelist = self.servicehelper.listservices()
                 allowedlist = self.svcslistci.getcurrvalue()
-
-                # make sure you're not dealing with any return garbage
-                # in the comparisons below
-                allowedlist = [i.rstrip() for i in allowedlist]
-                servicelist = [i.rstrip() for i in servicelist]
-
                 for service in servicelist:
                     if service in allowedlist:
                         continue
-                    elif re.search('user@[0-9]*.service', service):
+                    if re.search('user@[0-9]*.service', service):
                         # these are systemd usermanagers started by PAM
                         # they are OK.
                         continue

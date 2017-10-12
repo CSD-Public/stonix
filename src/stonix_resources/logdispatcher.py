@@ -81,7 +81,6 @@ class LogDispatcher (Observable):
         self.environment = environment
         self.debug = self.environment.getdebugmode()
         self.verbose = self.environment.getverbosemode()
-        self.constsrequired = [localize.REPORTSERVER, localize.STONIXDEVS, localize.STONIXERR, localize.MAILRELAYSERVER]
         reportfile = 'stonix-report.log'
         xmlfile = 'stonix-xmlreport.xml'
         self.logpath = self.environment.get_log_path()
@@ -125,19 +124,6 @@ class LogDispatcher (Observable):
 
         @author: dkennel
         """
-
-        constsmissing = False
-
-        for const in self.constsrequired:
-            if not const:
-                constsmissing = True
-            elif const == None:
-                constsmissing = True
-
-        if constsmissing:
-            print "\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n"
-            return
-
         if self.environment.geteuid() != 0:
             return
         self.xmlreport.closeReport()
@@ -277,18 +263,6 @@ class LogDispatcher (Observable):
         @param string: Error message
         @author: dkennel
         """
-
-        constsmissing = False
-
-        for const in self.constsrequired:
-            if not const:
-                constsmissing = True
-            elif const == None:
-                constsmissing = True
-
-        if constsmissing:
-            print "\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n"
-            return
 
         # Function wrapped in try/except to allow the program to keep running
         # when the mail server is unavailable.

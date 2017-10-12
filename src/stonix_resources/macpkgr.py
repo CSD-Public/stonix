@@ -100,10 +100,8 @@ class MacPkgr(object):
                is done performing a reverse lookup to find if a specific
                package is installed. I would love to use Greg Neagle's
                FoundationPlist.py, but licenses are not compatible.
-        @change: Breen Malmberg - 2/28/2017 - Made the missing macreporoot message more
-                clear and helpful; added logic to also check if it is 'None'
-        '''
 
+        '''
         self.environ = environ
 
         self.osfamily = self.environ.getosfamily()
@@ -120,11 +118,8 @@ class MacPkgr(object):
         self.logger = logger
         self.detailedresults = ""
         self.pkgUrl = ""
-        self.reporoot = ""
         if not MACREPOROOT:
-            raise NoRepoException("Please ensure that the constant, MACREPOROOT, is properly defined in localize.py and is not set to 'None'")
-        elif MACREPOROOT == None:
-            raise NoRepoException("Please ensure that the constant, MACREPOROOT, is properly defined in localize.py and is not set to 'None'")
+            raise NoRepoException("Where is the repo?")
         else:
             self.reporoot = MACREPOROOT
         self.dotmd5 = True
@@ -154,21 +149,11 @@ class MacPkgr(object):
         will be retrieved from the same REPOROOT.  If you need to use another
         REPOROOT, please use another instance of this class.
 
-        @return success
-        @rtype: bool
-        @author: dwalker, Roy Nielsen
-        @change: Breen Malmberg - 2/28/2017 - added logic to handle case where
-                self.reporoot is undefined; added logging; minor doc string edit
+        @return bool :
+        @author: dwalker, rsn
         '''
-
         success = False
-
-        if not self.reporoot:
-            self.logger.log(LogPriority.WARNING, "No MacRepoRoot defined! Unable to determine package URL!")
-            return success
-
         try:
-
             self.package = package
             #####
             # Create a class variable that houses the whole URL
@@ -451,22 +436,11 @@ class MacPkgr(object):
         """
         Check if a package is available at the "reporoot"
 
-        @return: success
-        @rtype: bool
         @author: Roy Nielsen
-        @change: Breen Malmberg - 2/28/2017 - added logic to handle case where
-                self.reporoot is undefined; added logging; minor doc string edit
         """
-
         success = False
         self.package = package
-
-        if not self.reporoot:
-            self.logger.log(LogPriority.WARNING, "No MacRepoRoot defined! Unable to determine package URL!")
-            return success
-
         try:
-
             self.logger.log(LogPriority.DEBUG, "Checking if: " +
                             str(package)) + " is available on the server..."
             self.logger.log(LogPriority.DEBUG, "From repo: " +

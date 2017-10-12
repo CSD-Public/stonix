@@ -155,25 +155,6 @@ class ConfigureKerberos(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        '''
-        run report actions for configure kerberos
-        determine compliance status of the current system
-        return True if compliant, False if non-compliant
-
-        @return: self.compliant
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 2/23/2017 - added doc string; added const checks preamble to report and fix methods
-        '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [MACKRB5, LINUXKRB5]
-        if not self.checkConsts(constlist):
-            self.compliant = False
-            self.detailedresults = "\nPlease ensure that the constants: MACKRB5, LINUXKRB5, in localize.py, are defined and are not None. This rule will not function without them."
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            return self.compliant
-
         try:
             compliant = True
             self.detailedresults = ""
@@ -214,23 +195,6 @@ class ConfigureKerberos(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        run fix actions
-
-        @return: fixsuccess
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 2/23/2017 - added doc string; added checkconsts preamble to ensure
-                the rule does not attempt to run without requied information (from localize.py)
-        '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [MACKRB5, LINUXKRB5]
-        if not self.checkConsts(constlist):
-            fixsuccess = False
-            self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
-            return fixsuccess
-
         try:
             fixsuccess = True
             self.detailedresults = ""

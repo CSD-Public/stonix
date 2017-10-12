@@ -60,9 +60,9 @@ class STIGConfigurePasswordPolicy(Rule):
         key = "STIGPWPOLICY"
         instructions = "To disable the installation of the password " + \
             "profile set the value of STIGPWPOLICY to False"
-        default = False
+        default = True
         self.pwci = self.initCi(datatype, key, instructions, default)
-
+        
         datatype = "bool"
         key = "STIGSECPOLICY"
         instructions = "To disable the installation of the security " + \
@@ -70,13 +70,11 @@ class STIGConfigurePasswordPolicy(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        self.passidentifier = "mil.disa.STIG.passwordpolicy.alacarte"
-        self.secidentifier = "mil.disa.STIG.Security_Privacy.alacarte"
         if search("10\.10.*", self.environ.getosver()):
-#             self.pwprofile = "/Users/username/stonix/src/" + \
+#             self.pwprofile = "/Users/username/src/" + \
 #                 "stonix_resources/files/" + \
 #                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
-#             self.secprofile = "/Users/username/stonix/src/" + \
+#             self.secprofile = "/Users/username/src/" + \
 #                 "stonix_resources/files/" + \
 #                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_privacy_Policy.mobileconfig"
             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
@@ -88,10 +86,10 @@ class STIGConfigurePasswordPolicy(Rule):
                               "stonix_resources/files/" + \
                               "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
         elif search("10\.11\.*", self.environ.getosver()):
-#             self.pwprofile = "/Users/username/stonix/src/" + \
+#             self.pwprofile = "/Users/username/src/" + \
 #                 "stonix_resources/files/" + \
 #                 "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
-#             self.secprofile = "/Users/username/stonix/src/" + \
+#             self.secprofile = "/Users/username/src/" + \
 #                 "stonix_resources/files/" + \
 #                 "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
             self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
@@ -186,13 +184,11 @@ class STIGConfigurePasswordPolicy(Rule):
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-R", "-p",
-                                   self.passidentifier]
+                            cmd = ["/usr/bin/profiles", "-I", "-F", self.pwprofile]
                             event = {"eventtype": "comm",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
                     else:
-                        success = False
                         self.detailedresults += "You do not have the password " + \
                             "profile needed to install\n"
             if self.sci.getcurrvalue():
@@ -204,13 +200,11 @@ class STIGConfigurePasswordPolicy(Rule):
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-R", "-p",
-                                   self.secidentifier]
+                            cmd = ["/usr/bin/profiles", "-I", "-F", self.secprofile]
                             event = {"eventtype": "comm",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
                     else:
-                        success = False
                         self.detailedresults += "You do not have the password " + \
                             "profile needed to install\n"
             self.rulesuccess = success

@@ -147,6 +147,7 @@ class Yum(object):
 
             self.ch.executeCommand(self.listinstalled + package)
             if self.ch.getReturnCode() == 0:
+
                 installed = True
 
             if installed:

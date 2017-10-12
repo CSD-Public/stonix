@@ -39,7 +39,6 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
-@change: 2017/03/07 dkennel - Added FISMA risk level support to isapplicable
 '''
 
 from observable import Observable
@@ -62,7 +61,7 @@ from ServiceHelper import ServiceHelper
 import traceback
 from CheckApplicable import CheckApplicable
 
-class Rule (Observable):
+class Rule (Observable, CheckApplicable):
 
     """
     Abstract class for all Rule objects.
@@ -76,6 +75,7 @@ class Rule (Observable):
 
     def __init__(self, config, environ, logger, statechglogger):
         Observable.__init__(self)
+        CheckApplicable.__init__(self, environ, logger)
         self.config = config
         self.environ = environ
         self.statechglogger = statechglogger
@@ -421,14 +421,6 @@ LANL-stonix."""
                             actually cause problems. If this option is set to
                             True (python bool) then this method will return
                             false if EUID == 0. The default is False.
-        fisma    low|med|high  This is the FISMA risk categorization that the
-                            rule should apply to. Under FIPS 199 systems are
-                            categorized for risk into low, medium (moderate),
-                            and high categories. Some controls are particularly
-                            impactful to operations and are only specified for
-                            FISMA medium or high systems. Rules are selected
-                            for low, medium or high applicability based on
-                            guidance from NIST 800-53 or the applicable STIG.
         default  default    This is the default value in the template class and
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
@@ -437,9 +429,7 @@ LANL-stonix."""
         An Example dictionary might look like this:
         self.applicable = {'type': 'white',
                            'family': Linux,
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5'],
-                           'fisma': 'high',
-                           'noroot': True}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}
         That example whitelists all Linux operating systems and Mac OS X from
         10.9.0 to 10.10.5.
 
@@ -571,63 +561,7 @@ LANL-stonix."""
                 if self.applicable['noroot'] == True:
                     applies = False
 
-        # Perform the FISMA categorization check
-        if applies:
-            rulefisma = ''
-            systemfismacat = ''
-            systemfismacat = self.environ.getsystemfismacat()
-            if systemfismacat not in ['high', 'med', 'low']:
-                raise ValueError('SystemFismaCat invalid: valid values are low, med, high')
-            if 'fisma' in self.applicable:
-                if self.applicable['fisma'] not in ['high', 'med', 'low']:
-                    raise ValueError('fisma value invalid: valid values are low, med, high')
-                else:
-                    rulefisma = self.applicable['fisma']
-            if systemfismacat == 'high' and rulefisma == 'high':
-                pass
-            elif systemfismacat == 'med' and rulefisma == 'high':
-                applies = False
-            elif systemfismacat == 'low' and \
-                 (rulefisma == 'med' or rulefisma == "high"):
-                applies = False
-
         return applies
-
-    def checkConsts(self, constlist=[]):
-        """
-        This method returns True or False depending
-        on whether the list of constants passed to it
-        are defined or not (if they are == None)
-        This method was implemented to handle the
-        default undefined state of constants in localize.py
-        when operating in the public environment
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        """
-
-        retval = True
-
-        # if there is nothing to check, return False
-        if not constlist:
-            retval = False
-            return retval
-
-        if not isinstance(constlist, list):
-            retval = False
-            return retval
-
-        try:
-
-            # If there is a None type variable, return False
-            for v in constlist:
-                if v == None:
-                    retval = False
-
-        except Exception:
-            raise
-        return retval
 
     def addresses(self):
         """

@@ -31,17 +31,16 @@ installed.
 @change: 2016/11/03 rsn upgrading the interface to allow for more flexibility.
 '''
 import os
-import types
 import inspect
 
-import . SHchkconfig
-import . SHrcupdate
-import . SHupdaterc
-import . SHsystemctl
-import . SHsvcadm
-import . SHrcconf
-import . SHlaunchd
-from . logdispatcher import LogPriority
+import SHchkconfig
+import SHrcupdate
+import SHupdaterc
+import SHsystemctl
+import SHsvcadm
+import SHrcconf
+import SHlaunchd
+from logdispatcher import LogPriority
 
 
 class ServiceHelper(object):
@@ -138,7 +137,7 @@ class ServiceHelper(object):
                 self.svchelper = SHrcconf.SHrcconf(self.environ,
                                                    self.logdispatcher)
             elif islaunchd:
-                self.svchelper = SHlaunchdTwo.SHlaunchd(self.environ,
+                self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
             else:
                 raise RuntimeError("Could not identify service management " +
@@ -191,7 +190,7 @@ class ServiceHelper(object):
                     self.secondary = SHrcconf.SHrcconf(self.environ,
                                                        self.logdispatcher)
             if islaunchd:
-                self.svchelper = SHlaunchdTwo.SHlaunchd(self.environ,
+                self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
                 count = 1
 
@@ -230,7 +229,7 @@ class ServiceHelper(object):
     def __calledBy(self):
         """
         Log the caller of the method that calls this method
-        
+
         @author: Roy Nielsen
         """
         try:
@@ -240,7 +239,7 @@ class ServiceHelper(object):
         except Exception, err:
             raise err
         else:
-            self.logger.log(LogPriority.DEBUG, "called by: " + \
+            self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \
                                       filename + ": " + \
                                       functionName + " (" + \
                                       lineNumber + ")")
@@ -250,7 +249,7 @@ class ServiceHelper(object):
     def isServiceVarValid(self, service):
         """
         Input validator for the service variable
-        
+
         @author: Roy Nielsen
         """
         serviceValid = False
@@ -280,27 +279,27 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def setService(self, service, servicename, partition="", userid="", *args, **kwargs):
+    def setService(self, service, **kwargs):
         '''
         Update the name of the service being worked with.
 
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START SET(' + service + ', ' + servicename +
-                               ')')
+                               '--START SET(' + service + ')')
 
         setServiceSuccess = False
 
         if self.isServiceVarValid(service):
-            setServiceSuccess = self.svchelper.setService(service, **kwargs)
-        
+            self.service = service
+            setServiceSuccess = True
+
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END SET(' + service + ', ' + servicename +
+                               '-- END SET(' + service + \
                                ') = ' + str(setServiceSuccess))
 
         return setServiceSuccess
-        
+
     #----------------------------------------------------------------------
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
@@ -309,13 +308,37 @@ class ServiceHelper(object):
         '''
         Disables the service and terminates it if it is running.
 
+        @param service string: Name of the service to be disabled
+
+        Note: for macOS-
+        @param: service: String bearing the full path to the service plist
+        @param: servicename: what launchctl would consider a service-target
+                or a domain-target.  See below:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                '--START DISABLE(' + service + ')')
 
         disabled = False
-        
+
         if self.setService(service):
             chkSingle = False
             chkSecond = False
@@ -342,13 +365,37 @@ class ServiceHelper(object):
         Enables a service and starts it if it is not running as long as we are
         not in install mode
 
+        @param service string: Name of the service to be disabled
+
+        Note: for macOS-
+        @param: service: String bearing the full path to the service plist
+        @param: servicename: what launchctl would consider a service-target
+                or a domain-target.  See below:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                '--START ENABLE(' + service + ')')
 
         enabledSuccess = False
-        
+
         if self.setService(service):
             enabledSingle = False
             enabledSecondary = False
@@ -356,11 +403,10 @@ class ServiceHelper(object):
             if not self.auditService(self.getService(), **kwargs):
                 if self.svchelper.enableService(self.getService(), **kwargs):
                     enabledSingle = True
-                    
+
                 if self.isHybrid:
                     if self.secondary.enableService(self.getService, **kwargs):
                         enabledSecondary = True
-                    
 
             enabledSuccess = enabledSingle or enabledSecondary
 
@@ -376,6 +422,30 @@ class ServiceHelper(object):
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
+        @param service string: Name of the service to be disabled
+
+        Note: for macOS-
+        @param: service: String bearing the full path to the service plist
+        @param: servicename: what launchctl would consider a service-target
+                or a domain-target.  See below:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: Bool, True if the service is configured to run
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -385,7 +455,7 @@ class ServiceHelper(object):
         if self.setService(service):
             singleSuccess = False
             secondarySuccess = False
-            
+
             try:
                 singleSuccess = self.svchelper.auditService(self.getService(), 
                                                             **kwargs)
@@ -415,6 +485,30 @@ class ServiceHelper(object):
         this so that we're not trying to start a service that is already
         running.
 
+        @param service string: Name of the service to be disabled
+
+        Note: for macOS-
+        @param: service: String bearing the full path to the service plist
+        @param: servicename: what launchctl would consider a service-target
+                or a domain-target.  See below:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: bool, True if the service is already running
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -425,9 +519,9 @@ class ServiceHelper(object):
             secondarySuccess = False
 
             try:
-                singleSuccess = self.svchelper.isrunning(self.getService(), **kwargs)
+                singleSuccess = self.svchelper.isRunning(self.getService(), **kwargs)
                 if self.isHybrid:
-                    secondarySuccess = self.secondary.isrunning(self.getService(), **kwargs)
+                    secondarySuccess = self.secondary.isRunning(self.getService(), **kwargs)
             except:
                 self.__calledBy()
                 raise
@@ -455,6 +549,30 @@ class ServiceHelper(object):
         being called due to a change in a conf file, and a service that isn't
         currently running will pick up the change when (if) it is started.
 
+        @param service string: Name of the service to be disabled
+
+        Note: for macOS-
+        @param: service: String bearing the full path to the service plist
+        @param: servicename: what launchctl would consider a service-target
+                or a domain-target.  See below:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: bool indicating success status
         '''
 
@@ -465,12 +583,12 @@ class ServiceHelper(object):
         if self.setService(service):
             singleSuccess = False
             secondarySuccess = False
-            
+
             try:
-                if self.isrunning(self.getService()):
-                    singleSuccess = self.svchelper.reloadservice(self.getService(), **kwargs)
+                if self.isRunning(self.getService()):
+                    singleSuccess = self.svchelper.reloadService(self.getService(), **kwargs)
                     if self.isHybrid:
-                        secondarySuccess = self.secondary.reloadservice(self.getService(), **kwargs)
+                        secondarySuccess = self.secondary.reloadService(self.getService(), **kwargs)
             except:
                 self.__calledBy()
                 raise
@@ -488,6 +606,8 @@ class ServiceHelper(object):
         '''
         List the services installed on the system.
 
+        @param:
+
         @return: list of strings
         '''
         self.logdispatcher.log(LogPriority.DEBUG, '--START')
@@ -498,7 +618,7 @@ class ServiceHelper(object):
             serviceList = self.svchelper.listServices(**kwargs)
             
             if self.isHybrid:
-                secondaryList = self.secondary.listservices()
+                secondaryList = self.secondary.listServices()
                 if secondaryList:
                     serviceList += secondaryList
 

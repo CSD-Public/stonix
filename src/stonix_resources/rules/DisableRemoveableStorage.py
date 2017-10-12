@@ -70,7 +70,7 @@ class DisableRemoveableStorage(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
-
+        
         self.logger = logger
         self.rulenumber = 29
         self.rulename = 'DisableRemoveableStorage'

@@ -92,39 +92,37 @@ class SetNTP(Rule):
         # init conf item dictionary
         self.confitemdict = {'restrict default ignore': False}
 
-        self.constlist = [NTPSERVERSEXTERNAL, NTPSERVERSINTERNAL]
-        if self.checkConsts(self.constlist):
-            # dynamically build conf item dictionary
-            if self.ismobile:
+        # dynamically build conf item dictionary
+        if self.ismobile:
+            for server in NTPSERVERSINTERNAL:
+                self.confitemdict['server ' + server] = False
+                self.confitemdict['restrict ' + server + \
+                                  ' mask 255.255.255.255 nomodify notrap noquery'] = False
+            for server in NTPSERVERSEXTERNAL:
+                self.confitemdict['server ' + server] = False
+
+        else:
+            if self.oncorporatenetwork:
                 for server in NTPSERVERSINTERNAL:
                     self.confitemdict['server ' + server] = False
                     self.confitemdict['restrict ' + server + \
                                       ' mask 255.255.255.255 nomodify notrap noquery'] = False
+            else:
                 for server in NTPSERVERSEXTERNAL:
                     self.confitemdict['server ' + server] = False
-    
-            else:
-                if self.oncorporatenetwork:
-                    for server in NTPSERVERSINTERNAL:
-                        self.confitemdict['server ' + server] = False
-                        self.confitemdict['restrict ' + server + \
-                                          ' mask 255.255.255.255 nomodify notrap noquery'] = False
-                else:
-                    for server in NTPSERVERSEXTERNAL:
-                        self.confitemdict['server ' + server] = False
-    
-            # get the correct set of host names, based on whether the
-            # machine is currently on the internal network or external
-            self.ntpservers = []
-            if self.ismobile:
+
+        # get the correct set of host names, based on whether the
+        # machine is currently on the internal network or external
+        self.ntpservers = []
+        if self.ismobile:
+            self.ntpservers = NTPSERVERSINTERNAL
+            for item in NTPSERVERSEXTERNAL:
+                self.ntpservers.append(item)
+        else:
+            if self.oncorporatenetwork:
                 self.ntpservers = NTPSERVERSINTERNAL
-                for item in NTPSERVERSEXTERNAL:
-                    self.ntpservers.append(item)
             else:
-                if self.oncorporatenetwork:
-                    self.ntpservers = NTPSERVERSINTERNAL
-                else:
-                    self.ntpservers = NTPSERVERSEXTERNAL
+                self.ntpservers = NTPSERVERSEXTERNAL
 
         self.ntppkg = 'ntp'
         self.chronypkg = 'chrony'
@@ -136,22 +134,12 @@ class SetNTP(Rule):
         determine whether the fix() method of this rule has run successfully
         yet or not
 
-        @return: self.compliant
-        @rtype: bool
+        @return: bool
         @author: Breen Malmberg
         '''
 
-        self.detailedresults = ""
-
-        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
-        if not self.checkConsts(self.constlist):
-            self.compliant = False
-            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: NTPSERVERSEXTERNAL, NTPSERVERSINTERNAL"
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            return self.compliant
-
         # defaults
-        self.compliant = True
+        self.detailedresults = ""
 
         try:
 
@@ -407,18 +395,10 @@ class SetNTP(Rule):
 ###############################################################################
     def fix(self):
         '''
-        Decide which fix sub method to run, and run it to configure ntp/chrony
+        Decide which fix sub method to run, and run it to configure ntp
 
-        @return: self.rulesuccess
-        @rtype: bool
         @author: Breen Malmberg
         '''
-
-        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
-        if not self.checkConsts(self.constlist):
-            self.rulesuccess = False
-            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-            return self.rulesuccess
 
         # defaults
         self.detailedresults = ""

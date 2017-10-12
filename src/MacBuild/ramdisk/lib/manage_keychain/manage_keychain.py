@@ -16,7 +16,6 @@ import inspect
 from ..loggers import LogPriority as lp
 from ..libHelperExceptions import UnsupportedOSError
 
-
 class ManageKeychain(object):
     """
     Factory object for acquiring the right keychain manager

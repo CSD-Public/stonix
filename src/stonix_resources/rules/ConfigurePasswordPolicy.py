@@ -30,10 +30,11 @@ Created on Feb 10, 2015
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
-import traceback
 import os
-from ..rule import Rule
+import traceback
 from re import search
+
+from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix

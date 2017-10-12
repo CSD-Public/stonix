@@ -29,6 +29,22 @@ Note: Each concrete helper will inherit this class, which will be the default
       behavior of all service helpers.
 '''
 from __builtin__ import False
+import inspect
+
+from logdispatcher import LogPriority
+
+
+class MethodNotImplementedError(Exception):
+    """
+    Meant for being thrown in the template, for when a class that 
+    inherits ServiceHelperTemplate does not implement a method, this
+    exception will be raised by default.
+
+    @author: Roy Nielsen
+    """
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
 
 class ServiceHelperTemplate(object):
     '''
@@ -37,21 +53,28 @@ class ServiceHelperTemplate(object):
     service status on various operating systems.
 
     @Note: Interface methods abstracted to allow for different parameter
-           lists for different helpers.  This moves the requirement for 
+           lists for different helpers.  This moves the requirement for
            input validation the the concrete helpers.
 
     @author: dkennel
     '''
 
-    def __init__(self, environment, logdispatcher):
+    def __init__(self, **kwargs):
         '''
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
 
         @param environment: STONIX environment object
         '''
-        self.environ = environment
-        self.logdispatcher = logdispatcher
+        if 'environment' not in kwargs:
+            raise ValueError("Variable 'logDispatcher' a required parameter for " + str(self.__class__.__name__))
+        else:
+            self.logger = kwargs.get('environment')
+
+        if 'logDispatcher' not in kwargs:
+            raise ValueError("Variable 'logDispatcher' a required parameter for " + str(self.__class__.__name__))
+        else:
+            self.logdispatcher = kwargs.get('logDispatcher')
 
     #----------------------------------------------------------------------
     # helper Methods
@@ -68,7 +91,7 @@ class ServiceHelperTemplate(object):
     def __calledBy(self):
         """
         Log the caller of the method that calls this method
-        
+
         @author: Roy Nielsen
         """
         try:
@@ -78,14 +101,14 @@ class ServiceHelperTemplate(object):
         except Exception, err:
             raise err
         else:
-            self.logger.log(lp.DEBUG, "called by: " + \
+            self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \
                                       filename + ": " + \
                                       functionName + " (" + \
                                       lineNumber + ")")
 
     #----------------------------------------------------------------------
 
-    def setService(self, *args, **kwargs):
+    def setService(self, service, **kwargs):
         '''
         Update the name of the service being worked with.
 
@@ -94,13 +117,13 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This service helper not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, service, *args, **kwargs):
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -109,11 +132,11 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
-    def enableService(self, service, *args, **kwargs):
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -123,11 +146,11 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
-    def auditService(self, service, *args, **kwargs):
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -137,11 +160,11 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
-    def isRunning(self, service, *args, **kwargs):
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
@@ -152,11 +175,11 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
-    def reloadService(self, service, *args, **kwargs):
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -170,11 +193,11 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
-    def listServices(self):
+    def listServices(self, **kwargs):
         '''
         List the services installed on the system.
 
@@ -183,20 +206,7 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
-
-    #----------------------------------------------------------------------
-
-    def kill(self, process, *args, **kwargs):
-        '''
-        Kills a process with a unix signal.
-
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.INFO,
-                               '--This method not yet in production.')
-        self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
@@ -209,7 +219,7 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
+        raise MethodNotImplementedError
 
     #----------------------------------------------------------------------
 
@@ -222,18 +232,4 @@ class ServiceHelperTemplate(object):
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
         self.__calledBy()
-        return False
-
-    #----------------------------------------------------------------------
-
-    def restart(self, service, *args, **kwargs):
-        '''
-        Restart a service installed on the system.
-
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.INFO,
-                               '--This method not yet in production.')
-        self.__calledBy()
-        return False
-
+        raise MethodNotImplementedError

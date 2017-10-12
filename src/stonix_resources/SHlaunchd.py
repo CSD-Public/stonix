@@ -38,9 +38,9 @@ This object encapsulates the /bin/launchctl command for Service Helper
 import re
 import CommandHelper
 from logdispatcher import LogPriority
+from ServiceHelperTemplate import ServiceHelperTemplate
 
-
-class SHlaunchd(object):
+class SHlaunchd(ServiceHelperTemplate):
     '''
     SHlaunchd is the Service Helper for systems using the launchd command to
     configure services. (Apple's OS X 10.6, 10.7, 10.8, 10.9, 10.10, etc.)
@@ -50,6 +50,7 @@ class SHlaunchd(object):
         '''
         Constructor
         '''
+        super(SHlaunchd, self).__init__(self, environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.launchd = "/bin/launchctl"
@@ -59,7 +60,7 @@ class SHlaunchd(object):
                            "launchctl list returned unknown response"]
         self.ch = CommandHelper.CommandHelper(logdispatcher)
 
-    def disableservice(self, service, servicename):
+    def disableservice(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -72,6 +73,11 @@ class SHlaunchd(object):
         '''
 
         servicesuccess = True
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
+
         command = [self.launchd, 'unload', service]
 
         try:
@@ -92,7 +98,7 @@ class SHlaunchd(object):
             raise
         return servicesuccess
 
-    def enableservice(self, service, servicename):
+    def enableservice(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -105,6 +111,11 @@ class SHlaunchd(object):
         try:
             servicesuccess = False
             servicecompleted = False
+            if 'servicename' not in kwargs:
+                raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+            else:
+                servicename = kwargs.get('servicename')
+
             command = [self.launchd, 'load', service]
             lastcommand = command
             servicesuccess = self.ch.executeCommand(command)
@@ -151,7 +162,7 @@ class SHlaunchd(object):
         except Exception:
             raise
 
-    def auditservice(self, service, servicename):
+    def auditservice(self, service, **kwargs):
         '''
         Use launchctl to determine if a given service is configured
         to run (aka currently loaded). Return True if so. Return
@@ -174,6 +185,11 @@ class SHlaunchd(object):
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.auditservice()...")
+
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
 
         isloaded = True
         command = [self.launchd, "list"]
@@ -226,7 +242,7 @@ class SHlaunchd(object):
             raise
         return isloaded
 
-    def isrunning(self, service, servicename):
+    def isrunning(self, service, **kwargs):
         '''
         Use launchctl to determine if the given service is currnetly
         running or not. Return True if it is. Return False if it is not.
@@ -243,6 +259,11 @@ class SHlaunchd(object):
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.isrunning()...")
+
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
 
         isrunning = True
         command = [self.launchd, "list"]
@@ -300,7 +321,7 @@ class SHlaunchd(object):
             raise
         return isrunning
 
-    def reloadservice(self, servicelong, serviceshort):
+    def reloadservice(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -308,8 +329,8 @@ class SHlaunchd(object):
 
         @return: reloadsuccess
         @rtype: bool
-        @param servicelong string: Name of the service to be reloaded
-        @param serviceshort string: Short Name of the service to be reloaded
+        @param (service) - servicelong string: Name of the service to be reloaded
+        @param (servicename) - serviceshort string: Short Name of the service to be reloaded
         @author: Breen Malmberg
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; refactor;
                 try/except; logging
@@ -322,6 +343,14 @@ class SHlaunchd(object):
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.reloadservice()...")
+
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
+
+        servicelong = service
+        serviceshort = servicename
 
         reloadsuccess = True
         unloadcmd = [self.launchd, "unload", servicelong]
@@ -357,7 +386,7 @@ class SHlaunchd(object):
             raise
         return reloadsuccess
 
-    def listservices(self):
+    def listservices(self, **kwargs):
         '''
         Return a list containing strings that are service names.
 
@@ -371,7 +400,7 @@ class SHlaunchd(object):
                                str(servicelist))
         return servicelist
 
-    def startservice(self, service, servicename):
+    def startService(self, service, **kwargs):
         '''
         start a service.
 
@@ -380,7 +409,12 @@ class SHlaunchd(object):
         @return: bool indicating success
         '''
         servicesuccess = True
-        if self.isrunning(service, servicename):
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
+
+        if self.isRunning(service, servicename=servicename):
             servicesuccess = True
         else:
             command = [self.launchd, 'start', 'job', servicename]
@@ -394,7 +428,7 @@ class SHlaunchd(object):
 
         return servicesuccess
 
-    def stopservice(self, service, servicename):
+    def stopService(self, service, **kwargs):
         '''
         stop a service.
 
@@ -403,7 +437,12 @@ class SHlaunchd(object):
         @return: bool indicating success
         '''
         servicesuccess = True
-        if self.isrunning(service, servicename):
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
+
+        if self.isRunning(service, servicename=servicename):
             command = [self.launchd, 'stop', 'job ', servicename]
             if self.ch.executeCommand(command):
                 if self.ch.getReturnCode == 0:

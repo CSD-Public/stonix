@@ -67,7 +67,7 @@ class SetTFTPDSecureMode(Rule):
         self.editor = ""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.10.10']}}
+                           'os': {'Mac OS X': ['10.10']}}
         
     def report(self):
         try:
