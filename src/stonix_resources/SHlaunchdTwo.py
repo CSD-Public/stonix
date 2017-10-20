@@ -103,9 +103,32 @@ class SHlaunchdTwo(ServiceHelperTemplate):
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, servicePath=None, **kwargs):
+    def disableService(self, service=None, **kwargs):
         '''
         Disables the service and terminates it if it is running.
+
+        @param: service: full path to the plist file used to manage
+                         the service.
+        @param: serviceName|serviceTarget|domainTarget can be used 
+                interchangably via key value pair in kwargs.  See 
+                description below for details on this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
 
         @return: Bool indicating success status
         '''
@@ -113,7 +136,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         target = self.targetValid(**kwargs)
         if target:
-            successTwo = self.lCtl.bootOut(target, servicePath)
+            successTwo = self.lCtl.bootOut(target, service)
             successOne = self.lCtl.disable(target)
 
             if successOne and successTwo:
@@ -183,6 +206,29 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
+        @param: service: full path to the plist file used to manage
+                         the service.
+        @param: serviceName|serviceTarget|domainTarget can be used 
+                interchangably via key value pair in kwargs.  See 
+                description below for details on this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: Bool, True if the service is configured to run
                  Data, Information about the process, if running
         '''
@@ -201,6 +247,29 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
+
+        @param: service: full path to the plist file used to manage
+                         the service.
+        @param: serviceName|serviceTarget|domainTarget can be used 
+                interchangably via key value pair in kwargs.  See 
+                description below for details on this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
 
         @Note: This concrete method implementation is the same as the auditService
                method
@@ -226,6 +295,29 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         self.isrunning() is called. The assumption being that this method is
         being called due to a change in a conf file, and a service that isn't
         currently running will pick up the change when (if) it is started.
+
+        @param: service: full path to the plist file used to manage
+                         the service.
+        @param: serviceName|serviceTarget|domainTarget can be used 
+                interchangably via key value pair in kwargs.  See 
+                description below for details on this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
 
         @return: bool indicating success status
         '''
