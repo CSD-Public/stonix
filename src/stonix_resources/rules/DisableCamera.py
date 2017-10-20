@@ -38,12 +38,11 @@ Created on Dec 10, 2013
 '''
 
 from __future__ import absolute_import
-
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-
-import re
+from ..KVEditorStonix import KVEditorStonix
+from ..stonixutilityfunctions import iterate
+import os
 import traceback
 
 
@@ -64,13 +63,21 @@ class DisableCamera(Rule):
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
-
+        self.logger = logger
+        self.iditerator = 0
         datatype = 'bool'
         key = 'DISABLECAMERA'
         instructions = "To disable the built-in iSight camera, set the value of DISABLECAMERA to True."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
-
+        self.camidentifier = "041AD784-F0E2-40F5-9433-08ED6B105DDA"
+        self.camprofile = "/Applications/stonix4mac.app/Contents/" + \
+                             "Resources/stonix.app/Contents/MacOS/" + \
+                             "stonix_resources/files/" + \
+                             "stonix4macCameraDisablement.mobileconfig"
+#         self.camprofile = "/Users/user/stonix/src/" + \
+#                          "stonix_resources/files/" + \
+#                          "stonix4macCameraDisablement.mobileconfig"
     def report(self):
         '''
         check for the existence of the AppleCameraInterface driver in the
@@ -82,37 +89,23 @@ class DisableCamera(Rule):
         @author: Breen Malmberg
         @change: dwalker - ??? - ???
         @change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
+        @change: dwalker 10/3/2017 updated to check for a profile value
         '''
-
-        self.detailedresults = ""
-        self.compliant = True
-        self.cmdhelper = CommandHelper(self.logdispatch)
-        found = False
-        cameradriver = "com.apple.driver.AppleCameraInterface"
-        cmd = ["/usr/sbin/kextstat"]
-
         try:
-
-            self.cmdhelper.executeCommand(cmd)
-            output = self.cmdhelper.getOutput()
-            retcode = self.cmdhelper.getReturnCode()
-
-            if retcode != 0:
-                self.detailedresults += "Command: " + str(cmd) + " failed with return code: " + str(retcode) + "\nUnable to determine status of camera!"
-                self.compliant = False
-
-            if output:
-                for line in output:
-                    if re.search(cameradriver, line):
-                        found = True
-                        break
+            self.detailedresults = ""
+            self.compliant = True
+            if os.path.exists(self.camprofile):
+                cameradict = {"com.apple.applicationaccess":
+                              {"allowCamera": ["0", "bool"]}}
+                self.cameditor = KVEditorStonix(self.statechglogger, self.logger,
+                                                       "profiles", self.camprofile, "",
+                                                       cameradict, "", "")
+                if not self.cameditor.report():
+                    self.detailedresults += "iSight camera is not disabled\n"
+                    self.compliant = False
             else:
-                self.logdispatch.log(LogPriority.DEBUG, "The kextstat command produced no output!")
-
-            if found:
-                self.detailedresults += "The rule is not compliant because: The camera is currently enabled."
+                self.detailedresults += self.camprofile + " doesn't exist\n"
                 self.compliant = False
-
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
@@ -137,35 +130,37 @@ class DisableCamera(Rule):
         @author: Breen Malmberg
         @change: dwalker - ??? - ???
         @change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
+        @change: dwalker 10/3/2017 updated to check for a profile value
         '''
 
-        success = True
-        self.detailedresults = ""
-        cmd = ["/sbin/kextunload", "-b", "com.apple.driver.AppleCameraInterface"]
-
         try:
-
+            success = True
+            self.detailedresults = ""
             # only run the fix actions if the CI has been enabled
-            if self.ci.getcurrvalue():
-
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
-
-                self.cmdhelper.executeCommand(cmd)
-                retcode = self.cmdhelper.getReturnCode()
-
-                if retcode != 0:
-                    self.detailedresults += "Command: " + str(cmd) + " failed with return code: " + str(retcode) + "\nFailed to disable camera!"
+            if not self.ci.getcurrvalue():
+                return
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            if os.path.exists(self.camprofile):
+                if not self.cameditor.fix():
+                    self.detailedresults += "Unable to install profile\n"
+                    success = False
+                elif not self.cameditor.commit():
+                    self.detailedresults += "Unable to install profile\n"
                     success = False
                 else:
-                    self.detailedresults += "Command succeeded: " + str(cmd)
-
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    cmd = ["/usr/bin/profiles", "-R", "-p",
+                           self.camidentifier]
+                    event = {"eventtype": "comm",
+                             "command": cmd}
+                    self.statechglogger.recordchgevent(myid, event) 
             else:
-                self.detailedresults += "\nThe configuration item for this rule was not enabled. Nothing was done."
-                self.logdispatch.log(LogPriority.DEBUG, "The fix method was run without the CI being enabled. Nothing was done.")
-
+                self.detailedresults += self.camprofile + " doesn't exist\n"
+                success = False
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:

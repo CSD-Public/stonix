@@ -43,7 +43,7 @@ class MethodNotImplementedError(Exception):
     @author: Roy Nielsen
     """
     def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+        super(MethodNotImplementedError, self).__init__(self, *args, **kwargs)
 
 
 class ServiceHelperTemplate(object):
@@ -71,7 +71,7 @@ class ServiceHelperTemplate(object):
         else:
             self.logger = kwargs.get('environment')
 
-        if 'logDispatcher' not in kwargs:
+        if 'logdispatcher' not in kwargs:
             raise ValueError("Variable 'logDispatcher' a required parameter for " + str(self.__class__.__name__))
         else:
             self.logdispatcher = kwargs.get('logDispatcher')

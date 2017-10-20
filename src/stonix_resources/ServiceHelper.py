@@ -29,8 +29,12 @@ Created on Aug 9, 2012
 @change: 2016/06/10 dkennel wrapped audit in try catch in case service is not
 installed.
 @change: 2016/11/03 rsn upgrading the interface to allow for more flexibility.
+@change: 2017/01/31 Breen Malmberg clarified the difference between auditservice
+        and isrunning methods in the documentation; clarified the nature of the
+        two parameters in each of those methods in the doc strings as well
 '''
 import os
+import re
 import inspect
 
 import SHchkconfig
@@ -40,6 +44,8 @@ import SHsystemctl
 import SHsvcadm
 import SHrcconf
 import SHlaunchd
+import SHlaunchdTwo
+
 from logdispatcher import LogPriority
 
 
@@ -56,15 +62,18 @@ class ServiceHelper(object):
     @author: dkennel
     '''
 
-    def __init__(self, environment, logdispatcher):
+    def __init__(self, **kwargs):
         '''
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
 
         @param environment: STONIX environment object
+        @param logdispatcher: STONIX logging object
+        @author: ???
+        @change: Breen Malmberg - 1/24/2017 - doc string edit
         '''
-        self.environ = environment
-        self.logdispatcher = logdispatcher
+        self.environ = kwargs.get("environment")
+        self.logdispatcher = kwargs.get("logdispatcher")
         self.isHybrid = False
         self.isdualparameterservice = False
         self.svchelper = None
@@ -137,13 +146,17 @@ class ServiceHelper(object):
                 self.svchelper = SHrcconf.SHrcconf(self.environ,
                                                    self.logdispatcher)
             elif islaunchd:
-                self.svchelper = SHlaunchd.SHlaunchd(self.environ,
+                if re.match("10.11", self.environ.getosver()):
+                     self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
+                else:
+                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(environment=self.environ,
+                                                     logdispatcher=self.logdispatcher)
             else:
                 raise RuntimeError("Could not identify service management " +
                                    "programs")
         elif truecount > 1:
-            self.ishybrid = True
+            self.isHybrid = True
             count = 0
             if issystemctl:
                 self.svchelper = SHsystemctl.SHsystemctl(self.environ,
@@ -207,7 +220,7 @@ class ServiceHelper(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'isrcconf:' + str(isrcconf))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'ishybrid:' + str(self.ishybrid))
+                               'ishybrid:' + str(self.isHybrid))
         self.logdispatcher.log(LogPriority.DEBUG,
                                'isdualparameterservice:' +
                                str(self.isdualparameterservice))
@@ -293,6 +306,13 @@ class ServiceHelper(object):
         if self.isServiceVarValid(service):
             self.service = service
             setServiceSuccess = True
+
+        if "serviceName" in kwargs:
+            self.servicename = kwargs.get("serviceName")
+        elif "servicename" in kwargs:
+            self.servicename = kwargs.get("servicename")
+        else:
+            self.servicename = ""
 
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END SET(' + service + \
@@ -457,15 +477,13 @@ class ServiceHelper(object):
             secondarySuccess = False
 
             try:
-                singleSuccess = self.svchelper.auditService(self.getService(), 
-                                                            **kwargs)
+                singleSuccess = self.svchelper.auditService(self.getService(), **kwargs)
             except OSError:
                 singleSuccess = False
 
             if self.isHybrid:
                 try:
-                    secondarySuccess = self.secondary.auditService(self.getService(),
-                                                            **kwargs)
+                    secondarySuccess = self.secondary.auditService(self.getService(), **kwargs)
                 except OSError:
                     secondarySuccess = False
 
@@ -526,7 +544,8 @@ class ServiceHelper(object):
                 self.__calledBy()
                 raise
 
-            isRunning = singleSuccess or secondarySuccess
+            if singleSuccess or secondarySuccess:
+                isRunning = True
 
         if isRunning:
             self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
@@ -579,21 +598,33 @@ class ServiceHelper(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                '--START RELOAD(' + service + ')')
 
+        if "serviceName" in kwargs:
+            self.servicename = kwargs.get("serviceName")
+        elif "servicename" in kwargs:
+            self.servicename = kwargs.get("servicename")
+        else:
+            self.servicename = ""
+
         reloadSuccess = False
-        if self.setService(service):
+        if self.setService(service, servicename=self.servicename):
             singleSuccess = False
             secondarySuccess = False
 
             try:
-                if self.isRunning(self.getService()):
+                if self.isRunning(self.getService(), **kwargs):
                     singleSuccess = self.svchelper.reloadService(self.getService(), **kwargs)
                     if self.isHybrid:
                         secondarySuccess = self.secondary.reloadService(self.getService(), **kwargs)
-            except:
+                    else:
+                        secondarySuccess = True
+            except Exception, err:
                 self.__calledBy()
-                raise
+                raise err
 
-            reloadSuccess = singleSuccess and secondarySuccess
+            if singleSuccess and secondarySuccess:
+                reloadSuccess = True
+        else:
+            raise ValueError("Problem with setService in the Factory...")
 
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END RELOAD(' + service + \

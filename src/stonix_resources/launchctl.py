@@ -7,13 +7,12 @@ Some methods might be useful in older Mac OS X operating systems.
 
 @author: Roy Nielsen
 '''
-from __future__ import absolute_import
 import os
 import re
 import sys
 
-from .logdispatcher import LogPriority as lp
-from .CommandHelper import CommandHelper
+from logdispatcher import LogPriority as lp
+from CommandHelper import CommandHelper
 
 class LaunchCtl(object):
     """
@@ -214,22 +213,32 @@ class LaunchCtl(object):
             self.logger.log(lp.DEBUG, 'cmd: ' + str(cmd))
             #####
             # set up and run the command
-            self.ch.setCommand(cmd)
-            success = self.ch.executeCommand()
-            if success:
-                output = self.ch.getOutput()
-                error = self.ch.getError()
-                returncode = self.ch.getReturnCode()
+            #self.ch.setCommand(cmd)
+            success = self.ch.executeCommand(cmd)
 
-            if not error:
+            output = self.ch.getOutput()
+            error = self.ch.getError()
+            returncode = self.ch.getReturnCode()
+            #####
+            # If the return code is 0, then we have success.
+            if not returncode:
                 success = True
-            else:
+                """
+                if "bootstrap" in subCmd:
+                    raise ValueError("cmd: " + str(cmd) + " output: " + str(output) + \
+                                     " error: " + str(error) + " retcode: " + str(returncode))
+                """
+
+            if error:
                 self.logger.log(lp.INFO, "Output: " + str(output))
                 self.logger.log(lp.INFO, "Error: " + str(error))
                 self.logger.log(lp.INFO, "Return code: " + str(returncode))
                 success = False
 
-            return success, str(output), str(error), str(returncode)
+        else:
+            raise(ValueError("Invalid subcommand: " + str(commandDict)))
+
+        return success, str(output), str(error), str(returncode)
 
     #----------------------------------------------------------------------
     # Legacy Subcommands
@@ -496,6 +505,9 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         """
         success = False
+        error = True
+        output = ""
+        returncode = 0
         #####
         # Input validatio.
         if label and isinstance(label, basestring):
@@ -585,7 +597,7 @@ class LaunchCtl(object):
     # Supported Subcommands
     #----------------------------------------------------------------------
 
-    def bootStrap(self, domainTarget="", servicePath=''):
+    def bootStrap(self, servicePath='', domainTarget=""):
         '''
         @note: From the launchctl man page:
           bootstrap | bootout domain-target [service-path service-path2 ...] |
@@ -612,8 +624,11 @@ class LaunchCtl(object):
            not isinstance(servicePath, basestring):
             return success
         
-        cmd = { "bootstrap" : [domainTarget, servicePath] }
+        cmd = { "bootstrap" : [domainTarget.split("/")[0], servicePath] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
+
+        if retcode != '0':
+            raise ValueError("cmd: " + str(cmd) + " domainTarget: " + str(domainTarget) + " servicePath: " + str(servicePath) + " success: " + str(success) + " stdout: " + str(stdout) + " stderr: " + str(stderr) + " retcode: " + str(retcode))
 
         return success
 
@@ -646,9 +661,13 @@ class LaunchCtl(object):
            not isinstance(servicePath, basestring):
             return success
         
-        cmd = { "bootout" : [domainTarget, servicePath] }
+        cmd = { "bootout" : [domainTarget] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
+        if retcode == '0':
+            success = True
+        elif re.search("No such process", stdout + stderr):
+            success = True
         return success
 
     #----------------------------------------------------------------------
@@ -674,7 +693,12 @@ class LaunchCtl(object):
         
         cmd = { "enable" : [serviceTarget] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
-
+        """
+        if retcode == '0':
+            success = True
+        else:
+            raise ValueError("success: " + str(success) + " stdout: " + str(stdout) + " stderr: " + str(stderr) + " retcode: " + str(retcode))
+        """
         return success
 
     #-------------------------------------------------------------------------
@@ -700,6 +724,9 @@ class LaunchCtl(object):
         
         cmd = { "disable" : [serviceTarget] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        
+        if retcode is '0':
+            success = True
 
         return success
 
@@ -752,22 +779,30 @@ class LaunchCtl(object):
         """
         success = False
         #####
-        # Input validatio.
-        if self.isSaneFilePath(service):
-            args = []
-            if re.match("[-kp]+", str(options)) and isinstance(options, basestring):
-                args.append(options)
-            else:
-                self.logger.log(lp.INFO, "Need a the options to be a single string...")
+        # Input validation.
+        args = []
+        if re.match("[-kp]+", str(options)) and isinstance(options, basestring):
+            args.append(options)
+        else:
+            self.logger.log(lp.INFO, "Need a the options to be a single string...")
 
-            args.append(service)
+        args.append(service)
 
-            self.logger.log(lp.DEBUG, "args: " + str(args))
+        self.logger.log(lp.DEBUG, "args: " + str(args))
 
-            cmd = { "kickstart" : args }
-            self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
-            success, stdout, stderr, retcode = self.runSubCommand(cmd)
-
+        cmd = { "kickstart" : args }
+        self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
+        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        #####
+        # If a '0' is returned
+        if retcode == '0':
+            success = True
+        else:
+            raise ValueError("kickstart - success: " + str(success) + \
+                             " stdout: " + str(stdout) + \
+                             " stderr: " + str(stderr) + \
+                             " retcode: " + str(retcode))
+            
         return success
 
     #-------------------------------------------------------------------------
@@ -871,6 +906,10 @@ class LaunchCtl(object):
 
         cmd = { "print" : [target] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
+
+        if re.search("Could not find service", stderr) and \
+           re.search("in domain for system", stderr):
+           success = False
 
         return success, stdout
 

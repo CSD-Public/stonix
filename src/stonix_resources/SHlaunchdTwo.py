@@ -30,29 +30,57 @@ import types
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
+from stonixutilityfunctions import reportStack
 
-class ServiceHelper(ServiceHelperTemplate):
+class SHlaunchdTwo(ServiceHelperTemplate):
     '''
     This concrete service helper serves as an interface between operating system
     specific code and the generic service helper class factory.
 
     @author: rsn
     '''
-    def __init__(self, environment, logdispatcher):
+    def __init__(self, **kwargs):
         '''
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
 
         @param environment: STONIX environment object
         '''
-        super(ServiceHelper, self).__init__(self, environment, logdispatcher)
-        self.environ = environment
-        self.logger = logdispatcher
-        self.lCtl = LaunchCtl(logdispatcher)
+        super(SHlaunchdTwo, self).__init__(**kwargs)
+        self.environ = kwargs.get("environment")
+        self.logger = kwargs.get("logdispatcher")
+        self.lCtl = LaunchCtl(self.logger)
 
     #----------------------------------------------------------------------
     # helper Methods
     #----------------------------------------------------------------------
+
+    def targetValid(self, **kwargs):
+        '''
+        Validate a service or domain target, possibly via servicename or
+        serviceName.
+        
+        @author: Roy Nielsen
+        '''
+        target = False
+        if 'servicename' in kwargs:
+            target = kwargs.get('servicename')
+        if 'serviceName' in kwargs:
+            target = kwargs.get('serviceName')
+        elif 'serviceTarget' in kwargs:
+            target = kwargs.get('serviceTarget')
+        elif 'domainTarget' in kwargs:
+            target = kwargs.get('domainTarget')
+        elif 'serviceTarget' in kwargs:
+            target = kwargs.get('servicetarget')
+        elif 'domainTarget' in kwargs:
+            target = kwargs.get('domaintarget')
+        else:
+            raise ValueError(reportStack(2) + "One of 'servicename', " + \
+                             "'serviceName', 'serviceTarget'" + \
+                             ", 'domainTarget', 'servicetarget', " + \
+                             "'domaintarget' are required for this method.")
+        return target
 
     def setService(self, *args, **kwargs):
         '''
@@ -74,7 +102,7 @@ class ServiceHelper(ServiceHelperTemplate):
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
 
-    def disableService(self, domainTarget=None, **kwargs):
+    def disableService(self, servicePath=None, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -82,62 +110,73 @@ class ServiceHelper(ServiceHelperTemplate):
         '''
         success = False
 
-        if 'servicePath' not in kwargs:
-            raise ValueError("Variable 'servicePath' a required parameter for " + str(self.__class__.__name__))
-        else:
-            servicePath = kwargs.get('servicePath')
-
-        if 'serviceTarget' not in kwargs:
-            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
-        else:
-            serviceTarget = kwargs.get('serviceTarget')
-
-        successOne = self.lCtl.disable(serviceTarget)
-        successTwo = self.lCtl.bootOut(domainTarget, servicePath)
-
-        if successOne and successTwo:
-            success = True
+        target = self.targetValid(**kwargs)
+        if target:
+            successOne = self.lCtl.disable(target)
+            successTwo = self.lCtl.bootOut(target, servicePath)
+    
+            if successOne and successTwo:
+                success = True
 
         return success
 
     #----------------------------------------------------------------------
 
-    def enableService(self, domainTarget=None, **kwargs):
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
 
+        @param: service - full path to the service to enable, eg:
+                          /System/Library/LaunchDaemons/tftp.plist
+        @param: servicename - the 'domainTarget' or 'serviceTarget', eg:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: Bool indicating success status
         '''
         success = False
+        successOne = False
+        successTwo = False
 
-        if 'servicePath' not in kwargs:
-            raise ValueError("Variable 'servicePath' a required parameter for " + str(self.__class__.__name__))
-        else:
-            servicePath = kwargs.get('servicePath')
-
-        if 'serviceTarget' not in kwargs:
-            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
-        else:
-            serviceTarget = kwargs.get('serviceTarget')
-
-        if 'options' not in kwargs:
-            options = ""
-        else:
-            options = kwargs.get('options')
-
-        successOne = self.lCtl.bootStrap(domainTarget, servicePath)
-        successTwo = self.lCtl.enable(serviceTarget)
-        successThree = self.lCtl.kickStart(serviceTarget, options)
-
-        if successOne and successTwo and successThree:
-            success = True
+        target = self.targetValid(**kwargs)
+        if target:
+        
+            if 'options' not in kwargs:
+                options = ""
+            else:
+                options = kwargs.get('options')
+    
+            successOne = self.lCtl.enable(target)
+            successTwo = self.lCtl.bootStrap(service, target)
+            #successThree = self.lCtl.kickStart(serviceTarget, options)
+    
+            if successOne and successTwo: # and successTwo and successThree:
+                success = True
+            else:
+                #raise ValueError("Problem enabling service: " + serviceTarget + " one=" + str(successOne) + ", two=" + str(successTwo) + " three: " + str(successThree))
+                raise ValueError("Problem enabling service: " + target + " one=" + str(successOne) + ", two=" + str(successTwo))
 
         return success
 
     #----------------------------------------------------------------------
 
-    def auditService(self, serviceTarget):
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -147,19 +186,21 @@ class ServiceHelper(ServiceHelperTemplate):
         '''
         success = False
 
-        success, data = self.lCtl.printTarget(serviceTarget)
+        target = self.targetValid(**kwargs)
+        if target:
+            success, data = self.lCtl.printTarget(target)
 
-        return success, data
+        return success
 
     #----------------------------------------------------------------------
 
-    def isRunning(self, serviceTarget):
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
 
-        @Note: This concrete method implementation is the samd as the auditService
+        @Note: This concrete method implementation is the same as the auditService
                method
 
         @return: bool, True if the service is already running
@@ -167,13 +208,15 @@ class ServiceHelper(ServiceHelperTemplate):
         success = False
         data = None
 
-        success, data = self.lCtl.printTarget(serviceTarget)
+        target = self.targetValid(**kwargs)
+        if target:
+            success, data = self.lCtl.printTarget(target)
 
-        return success, data
+        return success
 
     #----------------------------------------------------------------------
 
-    def reloadService(self, serviceTarget, **kwargs):
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -185,14 +228,28 @@ class ServiceHelper(ServiceHelperTemplate):
         @return: bool indicating success status
         '''
         success = False
+        target = self.targetValid(**kwargs)
+        if target:
 
-        if 'options' not in kwargs:
-            options = "-k"
-        else:
-            options = kwargs.get('options')
+            if 'options' not in kwargs:
+                options = "-k"
+            else:
+                options = kwargs.get('options')
+    
+            success = self.lCtl.kickStart(target, options)
+            '''
+            successOne = self.lCtl.bootOut(target)
+            #successTwo = self.lCtl.enable(target)
+            successThree = self.lCtl.bootStrap(service, target)
+            #
+            if successOne and successThree:
+                success = True
+            successOne = self.disableService(service, serviceTarget=target)
+            successTwo = self.enableService(service, serviceTarget=target)
 
-        success = self.lCtl.kickStart(serviceTarget, options)
-
+            if successOne and successTwo:
+                success = True
+            '''        
         return success
 
     #----------------------------------------------------------------------
@@ -206,11 +263,6 @@ class ServiceHelper(ServiceHelperTemplate):
         success = False
         data = None
 
-        if 'domainTarget' not in kwargs:
-            domainTarget = ""
-        else:
-            domainTarget = kwargs.get('domainTarget')
-
-        data = self.lCtl.printTarget(domainTarget)
+        data = self.lCtl.list()
 
         return data

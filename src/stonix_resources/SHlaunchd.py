@@ -108,6 +108,11 @@ class SHlaunchd(ServiceHelperTemplate):
         @return: Bool indicating success status
         '''
 
+        if 'servicename' not in kwargs:
+            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        else:
+            servicename = kwargs.get('servicename')
+
         try:
             servicesuccess = False
             servicecompleted = False

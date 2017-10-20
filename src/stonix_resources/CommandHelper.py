@@ -32,8 +32,11 @@
 @change: 2014/04/15 ekkehard made logging more intelligent
 @change: 2014/10/20 ekkehard fix pep8 violation
 @change: 2015/09/22 ekkehard Uniform logging
+@change: 2017/10/17 rsn Added __calledBy() method for determining the
+                        caller of command helper
 '''
 
+import inspect
 import re
 import subprocess
 import traceback
@@ -41,7 +44,7 @@ import types
 import time
 import sys
 
-from .logdispatcher import LogPriority
+from logdispatcher import LogPriority
 
 
 class CommandHelper(object):
@@ -77,6 +80,27 @@ class CommandHelper(object):
         # set this to False if you need to run a command that has no return code
         self.wait = True
         self.cmdtimeout = 0
+
+###############################################################################
+
+    def __calledBy(self):
+        """
+        Log the caller of the method that calls this method
+
+        @author: Roy Nielsen
+        """
+        try:
+            filename = inspect.stack()[3][1]
+            functionName = str(inspect.stack()[3][3])
+            lineNumber = str(inspect.stack()[3][2])
+        except Exception, err:
+            raise err
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \
+                                      filename + ": " + \
+                                      functionName + " (" + \
+                                      lineNumber + ")")
+        return " Filename: " + str(filename) + "Line: " + str(lineNumber) + " functionName: " + str(functionName)
 
 ###############################################################################
 
@@ -448,7 +472,8 @@ class CommandHelper(object):
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
                 raise TypeError(msg)
         except Exception:
-            raise
+            message = str(self.__calledBy()) + "\nInvalid command input: " + str(traceback.format_exc())
+            raise ValueError(str(message))
         return success
 
 ###############################################################################

@@ -29,6 +29,8 @@ This objects encapsulates the complexities of the networksetup command on OS X
 @change: 2016/03/23 Breen Malmberg wifi disablement fix
 @change: 2016/03/30 ekkehard setAdvancedNetworkSetup fix
 @change: 2016/03/30 ekkehard localize.py fix
+@change: 2017/09/23 ekkehard __init__ fix
+@change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
 '''
 import re
 import types
@@ -61,8 +63,8 @@ class networksetup():
         self.resultReset()
         self.nsc = "/usr/sbin/networksetup"
         fullproxy = PROXY
-        self.ps = fullproxy.split(":")[0] + ":" + fullproxy.split(":")[1]
-        self.pp = fullproxy.split(":")[2]
+        self.ps = fullproxy.split(":")[-2].strip('//')
+        self.pp = fullproxy.split(":")[-1]
         self.pf = PROXYCONFIGURATIONFILE
         self.dns = DNS
         self.searchdomain = PROXYDOMAIN
@@ -87,7 +89,9 @@ class networksetup():
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.report()...\n")
 
         compliant = True
-        self.initialize()
+        if not self.initialize():
+            self.logdispatch.log(LogPriority.DEBUG, "self.initialize() failed!")
+        self.resultReset()
 
         try:
 
@@ -159,6 +163,7 @@ class networksetup():
         self.logdispatch.log(LogPriority.DEBUG, "Running self.initialize()...")
         if not self.initialize():
             self.logdispatch.log(LogPriority.DEBUG, "self.initialize() failed!")
+        self.resultReset()
 
         messagestring = "for location = " + str(self.location)
 
@@ -171,10 +176,7 @@ class networksetup():
                 networktype = networkvalues["type"]
                 networkenabled = networkvalues["enabled"]
 
-                self.logdispatch.log(LogPriority.DEBUG, "key is " + str(key) + "\n")
-                self.logdispatch.log(LogPriority.DEBUG, "network is " + str(network) + "\n")
-                self.logdispatch.log(LogPriority.DEBUG, "networktype is " + str(networktype) + "\n")
-                self.logdispatch.log(LogPriority.DEBUG, "networkenabled is " + str(networkenabled) + "\n")
+                self.logdispatch.log(LogPriority.DEBUG, "ns(key, network, networktype, networkenabled) = (" + str(key) + ", " + str(network) + ", " + str(networktype) + ", " + str(networkenabled) + ")")
                 self.logdispatch.log(LogPriority.DEBUG, "self.locationIsValidWiFiLocation is " + str(self.locationIsValidWiFiLocation) + "\n")
 
                 if networktype == "bluetooth" and networkenabled:
@@ -447,28 +449,30 @@ class networksetup():
 # issue networksetup -listallnetworkservices to get all network services
             command = [self.nsc, "-listnetworkserviceorder"]
             self.ch.executeCommand(command)
+            self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
             order = -1
             newserviceonnexline = False
             newservice = False
             servicename = ""
             noinfo = False
             for line in self.ch.getOutput():
+                lineprocessed = line.strip()
                 if newserviceonnexline:
                     newservice = True
                     newserviceonnexline = False
                 else:
                     newservice = False
                     newserviceonnexline = False
-                if line == "An asterisk (*) denotes that a network service is disabled.\n":
+                if lineprocessed == "An asterisk (*) denotes that a network service is disabled.":
                     infoOnThisLine = False
                     newserviceonnexline = True
-                elif line == "\n":
+                elif lineprocessed == "":
                     infoOnThisLine = False
                     newserviceonnexline = True
                 else:
                     infoOnThisLine = True
-                lineprocessed = line.strip()
                 if newservice and infoOnThisLine:
+                    self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                     order = order + 1
 # see if network is enabled
                     if lineprocessed[:3] == "(*)":
@@ -487,6 +491,7 @@ class networksetup():
                                             "enabled": networkenabled}
 # determine network type
                 elif infoOnThisLine:
+                    self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
                     lineprocessed = lineprocessed.strip("(")
                     lineprocessed = lineprocessed.strip(")")
                     linearray = lineprocessed.split(",")
@@ -517,6 +522,9 @@ class networksetup():
                             networktype = "unknown"
 # update dictionary entry for network
                         self.ns[servicename]["type"] = networktype
+                        self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype, hardwareport): (" + \
+                                             str(servicename) + ", " + str(networkenabled) + ", " + \
+                                             str(networktype) + "," + str(hardwareport) + ")")
 # create an ordered list to look up later
                         orderkey = str(order).zfill(4)
                         self.nso[orderkey] = servicename

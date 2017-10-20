@@ -44,6 +44,7 @@ that access the version variable to use this copy.
 @change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
 @change: 2017/03/07 - dkennel add FISMACAT for FISMA/FIPS 199 risk category
 @change: 2017/07/07 - ekkehard - incremented STONIXVERSION = '0.9.10'
+@change: 2017/10/10 - ekkehard - incremented STONIXVERSION = '0.9.13'
 '''
 
 FISMACAT = 'low'
@@ -55,7 +56,7 @@ FISMACAT = 'low'
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
 # Variable Type: String
-STONIXVERSION = '0.9.12'
+STONIXVERSION = '0.9.13'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
