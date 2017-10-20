@@ -91,7 +91,7 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         #####
         # if it was off in the first place, and it's running, turn it off.
         if self.startStatus == 'off' and \
-           self.mysh.isRunning(self.myservice, serviceName=self.myservicename):
+           self.mysh.auditService(self.myservice, serviceName=self.myservicename):
             didDisable = self.mysh.disableService(self.myservice, serviceName=self.myservicename)
             self.assertTrue(didDisable, reportStack() + "Did not disable service: " + str(self.myservice) + " status: " + str(didDisable))
 
@@ -100,8 +100,9 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.assertTrue(len(svcslist) > 0)
 
     def testDisableEnable(self):
-        didDisable = self.mysh.disableService(self.myservice, serviceName=self.myservicename)
-        self.assertTrue(didDisable, reportStack() + "Did not disable service: " + str(self.myservice) + " status: " + str(didDisable))
+        if self.mysh.auditService(self.myservice, serviceName=self.myservicename):
+            didDisable = self.mysh.disableService(self.myservice, serviceName=self.myservicename)
+            self.assertTrue(didDisable, reportStack() + "Did not disable service: " + str(self.myservice) + " status: " + str(didDisable))
 
         auditresult = self.mysh.auditService(self.myservice, serviceName=self.myservicename)
         self.assertFalse(auditresult,

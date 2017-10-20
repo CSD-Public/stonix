@@ -13,6 +13,7 @@ import sys
 
 from logdispatcher import LogPriority as lp
 from CommandHelper import CommandHelper
+from stonixutilityfunctions import reportStack
 
 class LaunchCtl(object):
     """
@@ -591,6 +592,11 @@ class LaunchCtl(object):
         cmd = { "asuser" : [uid, command] + args }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
+        if retcode != '0':
+            raise ValueError(reportStack() + "- success: " + str(success) + \
+                             " stdout: " + str(stdout) + \
+                             " stderr: " + str(stderr) + \
+                             " retcode: " + str(retcode))
         return success
 
     #----------------------------------------------------------------------
@@ -628,8 +634,10 @@ class LaunchCtl(object):
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         if retcode != '0':
-            raise ValueError("cmd: " + str(cmd) + " domainTarget: " + str(domainTarget) + " servicePath: " + str(servicePath) + " success: " + str(success) + " stdout: " + str(stdout) + " stderr: " + str(stderr) + " retcode: " + str(retcode))
-
+            raise ValueError(reportStack() + "- success: " + str(success) + \
+                             " stdout: " + str(stdout) + \
+                             " stderr: " + str(stderr) + \
+                             " retcode: " + str(retcode))
         return success
 
     #----------------------------------------------------------------------
@@ -662,12 +670,21 @@ class LaunchCtl(object):
             return success
         
         cmd = { "bootout" : [domainTarget] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        
+        if self.printTarget(domainTarget):
+            success, stdout, stderr, retcode = self.runSubCommand(cmd)
+            #####
+            # errors that indicate the process is complete or in
+            # progress
+            if re.search("No such process", stderr) or \
+               re.search("Operation now in progress", stderr):
+                success = True
 
-        if retcode == '0':
-            success = True
-        elif re.search("No such process", stdout + stderr):
-            success = True
+        if retcode != '0'and not success:
+            raise ValueError(reportStack() + "- success: " + str(success) + \
+                             " stdout: " + str(stdout) + \
+                             " stderr: " + str(stderr) + \
+                             " retcode: " + str(retcode))
         return success
 
     #----------------------------------------------------------------------
@@ -693,12 +710,11 @@ class LaunchCtl(object):
         
         cmd = { "enable" : [serviceTarget] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
-        """
-        if retcode == '0':
-            success = True
-        else:
-            raise ValueError("success: " + str(success) + " stdout: " + str(stdout) + " stderr: " + str(stderr) + " retcode: " + str(retcode))
-        """
+        if retcode != '0':
+            raise ValueError(reportStack() + "- success: " + str(success) + \
+                             " stdout: " + str(stdout) + \
+                             " stderr: " + str(stderr) + \
+                             " retcode: " + str(retcode))
         return success
 
     #-------------------------------------------------------------------------
@@ -724,10 +740,12 @@ class LaunchCtl(object):
         
         cmd = { "disable" : [serviceTarget] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
-        
-        if retcode is '0':
-            success = True
 
+        if retcode != '0':
+            raise ValueError(reportStack() + "- success: " + str(success) + \
+                             " stdout: " + str(stdout) + \
+                             " stderr: " + str(stderr) + \
+                             " retcode: " + str(retcode))
         return success
 
     #-------------------------------------------------------------------------

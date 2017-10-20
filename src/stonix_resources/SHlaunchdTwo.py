@@ -26,6 +26,7 @@ Created on November 3, 2016
 @author: rsn
 '''
 import os
+import time
 import types
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
@@ -112,9 +113,9 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         target = self.targetValid(**kwargs)
         if target:
-            successOne = self.lCtl.disable(target)
             successTwo = self.lCtl.bootOut(target, servicePath)
-    
+            successOne = self.lCtl.disable(target)
+
             if successOne and successTwo:
                 success = True
 
@@ -163,6 +164,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 options = kwargs.get('options')
     
             successOne = self.lCtl.enable(target)
+            time.sleep(3)
             successTwo = self.lCtl.bootStrap(service, target)
             #successThree = self.lCtl.kickStart(serviceTarget, options)
     
@@ -237,19 +239,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 options = kwargs.get('options')
     
             success = self.lCtl.kickStart(target, options)
-            '''
-            successOne = self.lCtl.bootOut(target)
-            #successTwo = self.lCtl.enable(target)
-            successThree = self.lCtl.bootStrap(service, target)
-            #
-            if successOne and successThree:
-                success = True
-            successOne = self.disableService(service, serviceTarget=target)
-            successTwo = self.enableService(service, serviceTarget=target)
 
-            if successOne and successTwo:
-                success = True
-            '''        
         return success
 
     #----------------------------------------------------------------------
