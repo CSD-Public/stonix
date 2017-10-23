@@ -60,15 +60,18 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
     def targetValid(self, **kwargs):
         '''
-        Validate a service or domain target, possibly via servicename or
-        serviceName.
-        
+        Validate a service or domain target, possibly via 
+        servicename|serviceName|servicetarget|serviceTarget|domaintarget|domainTarget.
+
+        @return: the value of one of the above as "target", in the order
+                found below.
+
         @author: Roy Nielsen
         '''
         target = False
         if 'servicename' in kwargs:
             target = kwargs.get('servicename')
-        if 'serviceName' in kwargs:
+        elif 'serviceName' in kwargs:
             target = kwargs.get('serviceName')
         elif 'serviceTarget' in kwargs:
             target = kwargs.get('serviceTarget')
@@ -84,14 +87,6 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                              ", 'domainTarget', 'servicetarget', " + \
                              "'domaintarget' are required for this method.")
         return target
-
-    def setService(self, *args, **kwargs):
-        '''
-        Update the name of the service being worked with.
-
-        @return: Bool indicating success status
-        '''
-        return False, "Not implemented"
 
     def getLaunchCtl(self):
         '''

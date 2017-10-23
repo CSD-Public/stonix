@@ -33,6 +33,9 @@ This object encapsulates the /bin/launchctl command for Service Helper
         and isrunning methods in the documentation; clarified the nature of the
         two parameters in each of those methods in the doc strings as well;
         fixed a logic error in auditservice()
+@change: 2017/10/23 - rsn - switching service helper call interfaces to
+        service helper second generation, not second generation
+        functionality
 '''
 
 import re
@@ -67,16 +70,16 @@ class SHlaunchd(ServiceHelperTemplate):
         @return: servicesuccess
         @rtype: bool
         @param service string: Name of the service to be disabled
-        @param servicename string: Short Name of the service to be disabled
+        @param serviceTarget string: Short Name of the service to be disabled
         @author: ???
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; try/except
         '''
 
         servicesuccess = True
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
         command = [self.launchd, 'unload', service]
 
@@ -104,22 +107,22 @@ class SHlaunchd(ServiceHelperTemplate):
         not in install mode
 
         @param service string: Name of the service to be enabled
-        @param servicename string: Short Name of the service to be enabled
+        @param serviceTarget string: Short Name of the service to be enabled
         @return: Bool indicating success status
         '''
 
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
         try:
             servicesuccess = False
             servicecompleted = False
-            if 'servicename' not in kwargs:
-                raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+            if 'serviceTarget' not in kwargs:
+                raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
             else:
-                servicename = kwargs.get('servicename')
+                serviceTarget = kwargs.get('serviceTarget')
 
             command = [self.launchd, 'load', service]
             lastcommand = command
@@ -144,7 +147,7 @@ class SHlaunchd(ServiceHelperTemplate):
                     servicecompleted = True
                     self.logdispatcher.log(LogPriority.ERROR,
                                                "(" + str(service) + "," + \
-                                               str(servicename) + ") " + \
+                                               str(serviceTarget) + ") " + \
                                                str(command) + \
                                                " output = '" + \
                                                str(commandOutput) + \
@@ -153,7 +156,7 @@ class SHlaunchd(ServiceHelperTemplate):
                     servicecompleted = True
                     self.logdispatcher.log(LogPriority.ERROR,
                                                "(" + str(service) + "," + \
-                                               str(servicename) + ") " + \
+                                               str(serviceTarget) + ") " + \
                                                " had to issue " +\
                                                str(command) + \
                                                " output = '" + \
@@ -177,7 +180,7 @@ class SHlaunchd(ServiceHelperTemplate):
         @rtype: bool
         @param service string: Full path to the plist of the service to run
                 ex: /System/Library/LaunchDaemons/com.apple.someservice.plist
-        @param servicename: string; label of service in launchd (can be different
+        @param serviceTarget: string; label of service in launchd (can be different
                 from filename of service plist)
         @author: ???
         @change: 2014-11-24 - ekkehard - remove -x option no supported in
@@ -186,15 +189,15 @@ class SHlaunchd(ServiceHelperTemplate):
                 refactor; logging
         @change: Breen Malmberg - 1/31/2017 - doc string edit; minor refactor
         @change: Breen Malmberg - 5/11/2017 - doc string edit to explain that
-                servicename can be different from the filename in service
+                serviceTarget can be different from the filename in service
         '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.auditservice()...")
 
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
         isloaded = True
         command = [self.launchd, "list"]
@@ -219,7 +222,7 @@ class SHlaunchd(ServiceHelperTemplate):
             for line in cmdoutput:
                 if re.search(service, line, re.IGNORECASE):
                     found = True
-                if re.search(servicename, line, re.IGNORECASE):
+                if re.search(serviceTarget, line, re.IGNORECASE):
                     found = True
 
             # did we get any messages specifically stating the
@@ -255,7 +258,7 @@ class SHlaunchd(ServiceHelperTemplate):
         @return: isrunning
         @rtype: bool
         @param service string: Name of the service to be checked
-        @param servicename string: Short Name of the service to be checked
+        @param serviceTarget string: Short Name of the service to be checked
         @author: ???
         @change: 2014-12-22 - ekkehard - remove -x option no supported in
         OS X Yosemite 10.10
@@ -265,10 +268,10 @@ class SHlaunchd(ServiceHelperTemplate):
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.isrunning()...")
 
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
         isrunning = True
         command = [self.launchd, "list"]
@@ -293,7 +296,7 @@ class SHlaunchd(ServiceHelperTemplate):
             for line in cmdoutput:
                 if re.search(service, line, re.IGNORECASE):
                     found = True
-                if re.search(servicename, line, re.IGNORECASE):
+                if re.search(serviceTarget, line, re.IGNORECASE):
                     found = True
 
             # if found, is it configured to run or not?
@@ -301,7 +304,7 @@ class SHlaunchd(ServiceHelperTemplate):
             # specified service is not loaded or not configured
             # to run?
             for line in cmdoutput:
-                if re.search(servicename, line, re.IGNORECASE):
+                if re.search(serviceTarget, line, re.IGNORECASE):
                     sline = line.split()
                     if re.search('\-', sline[0], re.IGNORECASE):
                         isrunning = False
@@ -334,8 +337,9 @@ class SHlaunchd(ServiceHelperTemplate):
 
         @return: reloadsuccess
         @rtype: bool
-        @param (service) - servicelong string: Name of the service to be reloaded
-        @param (servicename) - serviceshort string: Short Name of the service to be reloaded
+        @param: service - servicelong string: Name of the service to be reloaded
+        @param: serviceTarget - serviceshort string: Short Name of the service to be reloaded
+
         @author: Breen Malmberg
         @change: Breen Malmberg - 1/20/2017 - minor doc string edit; refactor;
                 try/except; logging
@@ -349,13 +353,13 @@ class SHlaunchd(ServiceHelperTemplate):
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.reloadservice()...")
 
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
         servicelong = service
-        serviceshort = servicename
+        serviceshort = serviceTarget
 
         reloadsuccess = True
         unloadcmd = [self.launchd, "unload", servicelong]
@@ -410,25 +414,25 @@ class SHlaunchd(ServiceHelperTemplate):
         start a service.
 
         @param service string: Name of the service to be started
-        @param servicename string: Short Name of the service to be started
+        @param serviceTarget string: Short Name of the service to be started
         @return: bool indicating success
         '''
         servicesuccess = True
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
-        if self.isRunning(service, servicename=servicename):
+        if self.isRunning(service, serviceTarget=serviceTarget):
             servicesuccess = True
         else:
-            command = [self.launchd, 'start', 'job', servicename]
+            command = [self.launchd, 'start', 'job', serviceTarget]
             if self.ch.executeCommand(command):
                 if self.ch.getReturnCode == 0:
                     servicesuccess = True
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '(' + service + ', ' + servicename + \
+                               '(' + service + ', ' + serviceTarget + \
                                ') = ' + str(servicesuccess))
 
         return servicesuccess
@@ -437,18 +441,18 @@ class SHlaunchd(ServiceHelperTemplate):
         '''
         stop a service.
 
-        @param service string: Name of the service to be stopped
-        @param servicename string: Short Name of the service to be stopped
+        @param: service string: Name of the service to be stopped
+        @param: serviceTarget string: Short Name of the service to be stopped
         @return: bool indicating success
         '''
         servicesuccess = True
-        if 'servicename' not in kwargs:
-            raise ValueError("Variable 'servicename' a required parameter for " + str(self.__class__.__name__))
+        if 'serviceTarget' not in kwargs:
+            raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
         else:
-            servicename = kwargs.get('servicename')
+            serviceTarget = kwargs.get('serviceTarget')
 
-        if self.isRunning(service, servicename=servicename):
-            command = [self.launchd, 'stop', 'job ', servicename]
+        if self.isRunning(service, serviceTarget=serviceTarget):
+            command = [self.launchd, 'stop', 'job ', serviceTarget]
             if self.ch.executeCommand(command):
                 if self.ch.getReturnCode == 0:
                     servicesuccess = True
@@ -456,7 +460,7 @@ class SHlaunchd(ServiceHelperTemplate):
             servicesuccess = True
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               '(' + service + ', ' + servicename + \
+                               '(' + service + ', ' + serviceTarget + \
                                ') = ' + str(servicesuccess))
 
         return servicesuccess

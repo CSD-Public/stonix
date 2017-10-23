@@ -143,10 +143,6 @@ class SoftwarePatching(Rule):
         @author: dkennel
         '''
 
-<<<<<<< HEAD
-        self.caveats = ""
-        self.detailedresults = ""
-=======
         self.detailedresults = ""
         self.caveats = ""
 
@@ -156,7 +152,6 @@ class SoftwarePatching(Rule):
             self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: PROXY, UPDATESERVERS"
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
->>>>>>> develop
 
         try:
             
@@ -378,15 +373,12 @@ class SoftwarePatching(Rule):
         @return: bool
         @author: dkennel
         '''
-<<<<<<< HEAD
-=======
 
         if not self.checkConsts(self.constlist):
             self.rulesuccess = False
             self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
             return self.rulesuccess
 
->>>>>>> develop
         try:
 
             self.detailedresults = ""

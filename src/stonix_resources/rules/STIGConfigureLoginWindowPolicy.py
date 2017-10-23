@@ -24,11 +24,8 @@
 Created on Aug 25, 2016
 
 @author: dwalker
-<<<<<<< HEAD
 @change: 2017/03/30 dkennel Marked as FISMA high
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
-=======
->>>>>>> origin
 '''
 from __future__ import absolute_import
 import traceback

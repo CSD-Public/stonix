@@ -298,6 +298,32 @@ class ServiceHelper(object):
         '''
         Update the name of the service being worked with.
 
+        @param: service - Name of the service being audited or modified
+                    Mac - Full path to the service plist
+        @param: serviceTarget - should contain an empty string, unless the
+                              concrete service helper requires it
+        Note: for macOS-
+        @param: service: String bearing the full path to the service plist
+        @param: serviceTarget: what launchctl would consider a service-target
+                or a domain-target.  See below:
+
+                system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @return: Bool indicating success status
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -331,10 +357,12 @@ class ServiceHelper(object):
         Disables the service and terminates it if it is running.
 
         @param service string: Name of the service to be disabled
+        @param: serviceTarget - should contain an empty string, unless the
+                              concrete service helper requires it
 
         Note: for macOS-
         @param: service: String bearing the full path to the service plist
-        @param: servicename: what launchctl would consider a service-target
+        @param: serviceTarget: what launchctl would consider a service-target
                 or a domain-target.  See below:
 
                 system/[service-name]
@@ -388,10 +416,12 @@ class ServiceHelper(object):
         not in install mode
 
         @param service string: Name of the service to be disabled
+        @param: serviceTarget - should contain an empty string, unless the
+                              concrete service helper requires it
 
         Note: for macOS-
         @param: service: String bearing the full path to the service plist
-        @param: servicename: what launchctl would consider a service-target
+        @param: serviceTarget: what launchctl would consider a service-target
                 or a domain-target.  See below:
 
                 system/[service-name]
@@ -445,10 +475,12 @@ class ServiceHelper(object):
         not the service is configured to run or not.
 
         @param service string: Name of the service to be disabled
+        @param: serviceTarget - should contain an empty string, unless the
+                              concrete service helper requires it
 
         Note: for macOS-
         @param: service: String bearing the full path to the service plist
-        @param: servicename: what launchctl would consider a service-target
+        @param: serviceTarget: what launchctl would consider a service-target
                 or a domain-target.  See below:
 
                 system/[service-name]
@@ -506,10 +538,12 @@ class ServiceHelper(object):
         running.
 
         @param service string: Name of the service to be disabled
+        @param: serviceTarget - should contain an empty string, unless the
+                              concrete service helper requires it
 
         Note: for macOS-
         @param: service: String bearing the full path to the service plist
-        @param: servicename: what launchctl would consider a service-target
+        @param: serviceTarget: what launchctl would consider a service-target
                 or a domain-target.  See below:
 
                 system/[service-name]
@@ -571,10 +605,12 @@ class ServiceHelper(object):
         currently running will pick up the change when (if) it is started.
 
         @param service string: Name of the service to be disabled
+        @param: serviceTarget - should contain an empty string, unless the
+                              concrete service helper requires it
 
         Note: for macOS-
         @param: service: String bearing the full path to the service plist
-        @param: servicename: what launchctl would consider a service-target
+        @param: serviceTarget: what launchctl would consider a service-target
                 or a domain-target.  See below:
 
                 system/[service-name]

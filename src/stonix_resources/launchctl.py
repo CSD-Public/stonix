@@ -600,7 +600,7 @@ class LaunchCtl(object):
         return success
 
     #----------------------------------------------------------------------
-    # Supported Subcommands
+    # Supported Second generation subcommands
     #----------------------------------------------------------------------
 
     def bootStrap(self, servicePath='', domainTarget=""):
@@ -691,7 +691,7 @@ class LaunchCtl(object):
 
     def enable(self, serviceTarget):
         '''
-        @note: From the launchctl man page:
+        From the launchctl man page:
           enable | disable service-target
               Enables or disables the service in the requested domain. Once a
               service is disabled, it cannot be loaded in the specified
@@ -699,6 +699,26 @@ class LaunchCtl(object):
               across boots of the device. This subcommand may only target
               services within the system domain or user and user-login
               domains.
+
+        @param: serviceTarget - See description below for details on
+                this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
 
         @author: Roy Nielsen
         '''
@@ -721,7 +741,7 @@ class LaunchCtl(object):
 
     def disable(self, serviceTarget):
         '''
-        @note: From the launchctl man page:
+        From the launchctl man page:
           enable | disable service-target
               Enables or disables the service in the requested domain. Once a
               service is disabled, it cannot be loaded in the specified
@@ -729,6 +749,26 @@ class LaunchCtl(object):
               across boots of the device. This subcommand may only target
               services within the system domain or user and user-login
               domains.
+
+        @param: serviceTarget - See description below for details on
+                this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
 
         @author: Roy Nielsen
         '''
@@ -754,7 +794,8 @@ class LaunchCtl(object):
         '''
         Bypass the cache and read the service configuration from disk
         
-        @param: serviceName - name of the service to check (plist)
+        @param: serviceName - name of the service to check (plist), must
+                contain the full path to the service plist
         
         @note: From the launchctl man page:
           uncache service-name
@@ -781,17 +822,47 @@ class LaunchCtl(object):
 
     #-------------------------------------------------------------------------
 
-    def kickStart(self, service="", options='-k'):
+    def kickStart(self, serviceTarget="", options='-k'):
         """
-        @note: From the launchctl man page:
+        From the launchctl man page:
           kickstart [-kp] service-target
-              Instructs launchd to kickstart the specified service.
+              Instructs launchd to kickstart the specified service. 
+              Options can be one of:
 
               -k       If the service is already running, kill the running
                        instance before restarting the service.
-
+            
               -p       Upon success, print the PID of the new process or the
                        already-running process to stdout.
+            
+            High sierra options:
+              -s       Force the service to start.
+
+              -x       Attach to xpcproxy(3) before it execs and becomes the service
+                       process. This flag is generally not useful for anyone but the
+                       launchd maintainer.
+                       
+              (-p)     No longer available in High Sierra
+
+        @param: serviceTarget - See description below for details on
+                this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
 
         @author: Roy Nielsen
         """
@@ -825,13 +896,37 @@ class LaunchCtl(object):
 
     #-------------------------------------------------------------------------
 
-    def kill(self, signal="", service=""):
+    def kill(self, signal="", serviceTarget=""):
         """
-        @note: From the launchctl man page:
+        From the launchctl man page:
           kill signal-name | signal-number service-target
               Sends the specified signal to the specified service if it is
               running. The signal number or name (SIGTERM, SIGKILL, etc.) may
               be specified.
+              
+        @param: signal - Unix signals to be used can be found below in the 'signals'
+                variable.
+        @param: serviceTarget - See description below for details on
+                this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
+
 
         @author: Roy Nielsen
         """
@@ -855,12 +950,12 @@ class LaunchCtl(object):
 
         #####
         # Service target, just check for string...
-        if isinstance(service, basestring):
-            args.append(service)
+        if isinstance(serviceTarget, basestring):
+            args.append(serviceTarget)
         else:
             return success
 
-        args.append(service)
+        args.append(serviceTarget)
 
         cmd = { "kill" : args }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
@@ -869,9 +964,9 @@ class LaunchCtl(object):
 
     #-------------------------------------------------------------------------
 
-    def blame(self, serviceName):
+    def blame(self, serviceTarget):
         '''
-        @note: From the launchctl man page:
+        From the launchctl man page:
           blame service-target
               If the service is running, prints a human-readable string
               describing why launchd launched the service. Note that services
@@ -883,15 +978,35 @@ class LaunchCtl(object):
               profiling use and its output should not be relied upon in pro-
               duction scenarios.
 
+        @param: serviceTarget - See description below for details on
+                this variable.
+                
+               system/[service-name]
+                  Targets the system domain or a service within the system
+                  domain. The system domain manages the root Mach bootstrap
+                  and is considered a privileged execution context.
+                  Anyone may read or query the system domain, but root privileges
+                  are required to make modifications.
+
+                user/<uid>/[service-name]
+                  Targets the user domain for the given UID or a service
+                  within that domain. A user domain may exist independently
+                  of a logged-in user. User domains do not exist on iOS.
+
+                For instance, when referring to a service with the identifier
+                com.apple.example loaded into the GUI domain of a user with UID 501,
+                domain-target is gui/501/, service-name is com.apple.example,
+                and service-target is gui/501/com.apple.example.
+
         @author: Roy Nielsen
         '''
         success = False
         #####
         # Input validatio.
-        if not isinstance(serviceName, basestring):
+        if not isinstance(serviceTarget, basestring):
             return success
 
-        cmd = { "blame" : [serviceName] }
+        cmd = { "blame" : [serviceTarget] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         return success, stdout
