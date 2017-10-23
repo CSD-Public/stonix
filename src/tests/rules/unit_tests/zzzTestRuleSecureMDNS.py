@@ -31,6 +31,7 @@ This is a Unit Test for Rule SecureMDNS
 @change: 2016/05/10 eball Removed PListBuddy delete command, which was deleting
     important information from the plist. Also moved plist for Mac test to a
     temporary location, and copied it back after test is complete.
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import os
@@ -63,6 +64,7 @@ class zzzTestRuleSecureMDNS(RuleTest):
         self.plb = "/usr/libexec/PlistBuddy"
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.service = ""
+        self.serviceTarget=""
 
     def tearDown(self):
         if os.path.exists(self.service + ".stonixtmp"):
@@ -112,12 +114,12 @@ class zzzTestRuleSecureMDNS(RuleTest):
                                       "", "".join(plistText))
                 success = True
             self.service = service
-            if success and self.sh.auditservice(service, servicename):
+            if success and self.sh.auditservice(service, serviceTarget=servicename):
                 success = writeFile(service + ".stonixtmp", "".join(plistText),
                                     self.logdispatch)
                 success = writeFile(service, newPlistText, self.logdispatch)
-            if success and self.sh.auditservice(service, servicename):
-                success = self.sh.reloadservice(service, servicename)
+            if success and self.sh.auditservice(service, serviceTarget=servicename):
+                success = self.sh.reloadservice(service, serviceTarget=servicename)
         else:
             ph = Pkghelper(self.logdispatch, self.environ)
             package = "avahi-daemon"
@@ -142,8 +144,8 @@ class zzzTestRuleSecureMDNS(RuleTest):
                 package = "avahi"
             if not ph.check(package) and ph.checkAvailable(package):
                 success = ph.install(package)
-            if success and not self.sh.auditservice(service):
-                self.sh.enableservice(service)
+            if success and not self.sh.auditservice(service, serviceTarget=self.serviceTarget):
+                self.sh.enableservice(service, serviceTarget=self.serviceTarget)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

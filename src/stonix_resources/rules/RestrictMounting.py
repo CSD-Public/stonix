@@ -28,6 +28,7 @@ This rule restricts mounting rights and options.
 @change: 2016/04/22 eball Added GNOME 3 method for disabling GNOME mounting
 @change: 2016/08/01 eball Added "dbus-launch" before all gsettings commands,
     and fixed undos that were the same as the fix commands
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import os
@@ -114,7 +115,7 @@ class RestrictMounting(Rule):
                                             "the correct values\n"
 
             if self.ph.check("autofs"):
-                if self.sh.auditservice("autofs"):
+                if self.sh.auditservice("autofs", _="_"):
                     compliant = False
                     results += "autofs is installed and enabled\n"
 
@@ -239,8 +240,8 @@ class RestrictMounting(Rule):
                                 " properties could not be set\n"
 
             if self.autofsCi.getcurrvalue():
-                if self.ph.check("autofs") and self.sh.auditservice("autofs"):
-                    if self.sh.disableservice("autofs"):
+                if self.ph.check("autofs") and self.sh.auditservice("autofs", _="_"):
+                    if self.sh.disableservice("autofs", _="_"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.iditerator += 1

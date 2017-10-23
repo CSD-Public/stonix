@@ -545,7 +545,7 @@ elements should be space separated.'''
                                          'Non-core service running: ' +
                                          service])
                 else:
-                    if self.servicehelper.auditservice(service):
+                    if self.servicehelper.auditservice(service, _="_"):
                         running = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['MinimizeServices.report',
@@ -599,13 +599,13 @@ elements should be space separated.'''
                         # they are OK.
                         continue
                     else:
-                        running = self.servicehelper.auditservice(service)
+                        running = self.servicehelper.auditservice(service, _="_")
                         self.logger.log(LogPriority.DEBUG,
                                         ['MinimizeServices.fix',
                                          "Audit: " + service + str(running)])
                         if running and service not in self.specials:
                             changes.append(service)
-                            self.servicehelper.disableservice(service)
+                            self.servicehelper.disableservice(service, _="_")
                 mytype = 'command'
                 mystart = []
                 myend = changes
@@ -643,7 +643,7 @@ elements should be space separated.'''
         try:
             event1 = self.statechglogger.getchgevent('0013001')
             for service in event1['endstate']:
-                self.servicehelper.enableservice(service)
+                self.servicehelper.enableservice(service, _="_")
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.undo',

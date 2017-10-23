@@ -35,6 +35,7 @@ Created on Feb 19, 2013
 @change: 2017/01/04 Breen Malmberg - added more detail to the help text to make
         it more clear to the end user, what the rule actually does.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -121,7 +122,7 @@ class SecureSSH(Rule):
                     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return self.compliant
             else:
-                if self.sh.auditservice("/System/Library/LaunchDaemons/ssh.plist", "com.openssh.sshd"):
+                if self.sh.auditservice("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
                     self.macloaded = True
                 if not self.macloaded:
                     self.detailedresults += "\nSSH not installed/enabled. Nothing to configure."

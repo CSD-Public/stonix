@@ -26,6 +26,7 @@ This rule will enable process accounting, using the acct/psacct service.
 @author: Eric Ball
 @change: 2015/04/18 eball Original implementation
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import re
@@ -82,7 +83,7 @@ class ConfigureProcessAccounting(Rule):
                 else:
                     self.detailedresults += package + " is not available " + \
                         "for installation\n"
-            elif not self.sh.auditservice(package):
+            elif not self.sh.auditservice(package, _="_"):
                 compliant = False
                 self.detailedresults += package + " service is not enabled\n"
 
@@ -125,8 +126,8 @@ class ConfigureProcessAccounting(Rule):
                     self.detailedresults += package + " is not available " + \
                         "for installation\n"
 
-            if self.ph.check(package) and not self.sh.auditservice(package):
-                self.sh.enableservice(package)
+            if self.ph.check(package) and not self.sh.auditservice(package, _="_"):
+                self.sh.enableservice(package, _="_")
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "servicehelper", "servicename": package,

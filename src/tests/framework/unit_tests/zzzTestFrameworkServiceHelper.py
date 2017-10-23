@@ -29,7 +29,10 @@ Created on Oct 4, 2012
 @change: 2015/10/15 eball Updated deprecated unittest methods, added
     cron.service for openSUSE and Debian 8 compatibility
 @change: roy - adding sys.path.append for both test framework and individual
-               test runs.'''
+               test runs.
+@change: 2017/10/23 rsn - Adding asserts, and grooming for the second generation
+               service helper
+'''
 import os
 import pwd
 import sys

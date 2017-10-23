@@ -25,7 +25,7 @@ Created on May 27, 2016
 
 @author: dkennel
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
-
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 
@@ -121,7 +121,7 @@ CONFIGURELINUXFIREWALL to False.'''
         self.detailedresults = ""
         try:
             if self.isfirewalld:
-                if self.servicehelper.auditservice('firewalld.service'):
+                if self.servicehelper.auditservice('firewalld.service', _="_"):
                     compliant = True
                 else:
                     compliant = False
@@ -234,15 +234,15 @@ CONFIGURELINUXFIREWALL to False.'''
                                     ['ConfigureLinuxFirewall.report',
                                      "Debian type system. Check failed."])
             else:
-                if self.servicehelper.auditservice('iptables.service') or \
-                   self.servicehelper.auditservice('iptables'):
+                if self.servicehelper.auditservice('iptables.service', _="_") or \
+                   self.servicehelper.auditservice('iptables', _="_"):
                     iptablesrunning = True
                 self.logger.log(LogPriority.DEBUG,
                                 ['ConfigureLinuxFirewall.report',
                                  "RHEL 6 type system. iptables service: " +
                                  str(iptablesrunning)])
-                if self.servicehelper.auditservice('ip6tables.service') or \
-                   self.servicehelper.auditservice('ip6tables'):
+                if self.servicehelper.auditservice('ip6tables.service', _="_") or \
+                   self.servicehelper.auditservice('ip6tables', _="_"):
                     ip6tablesrunning = True
                 self.logger.log(LogPriority.DEBUG,
                                 ['ConfigureLinuxFirewall.report',
@@ -356,7 +356,7 @@ CONFIGURELINUXFIREWALL to False.'''
             success = True
             try:
                 if self.isfirewalld:
-                    self.servicehelper.enableservice('firewalld.service')
+                    self.servicehelper.enableservice('firewalld.service', _="_")
                     self.detailedresults += "Firewall configured.\n "
                 elif self.isufw:
                     cmdufw = '/usr/sbin/ufw status'
@@ -471,8 +471,8 @@ COMMIT
                     ip6whandle = open(ip6tPath, 'w')
                     ip6whandle.write(sysconfigip6tables)
                     ip6whandle.close()
-                    self.servicehelper.enableservice('iptables')
-                    self.servicehelper.enableservice('ip6tables')
+                    self.servicehelper.enableservice('iptables', _="_")
+                    self.servicehelper.enableservice('ip6tables', _="_")
                     # we restart iptables here because it doesn't respond
                     # to reload
                     proc = subprocess.Popen('/sbin/service iptables restart',
@@ -600,7 +600,7 @@ fw_custom_after_finished() {
         self.targetstate = 'notconfigured'
         try:
             if self.isfirewalld:
-                self.servicehelper.disableservice('firewalld.service')
+                self.servicehelper.disableservice('firewalld.service', _="_")
                 self.detailedresults += "Firewall disabled.\n "
             elif self.isufw:
                 ufwcmd = '/usr/sbin/ufw disable'
@@ -655,8 +655,8 @@ fw_custom_after_finished() {
                                  shell=True, close_fds=True)
                 # Sleep for a bit to let the restarts occur
                 time.sleep(3)
-                self.servicehelper.disableservice('iptables')
-                self.servicehelper.disableservice('ip6tables')
+                self.servicehelper.disableservice('iptables', _="_")
+                self.servicehelper.disableservice('ip6tables', _="_")
             elif os.path.exists(self.iprestore) and \
                  os.path.exists(self.ip6restore):
                 if os.path.exists(self.iptScriptPath + ".stonix.bak"):

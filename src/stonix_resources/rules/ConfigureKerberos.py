@@ -35,6 +35,7 @@ dictionary
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import os

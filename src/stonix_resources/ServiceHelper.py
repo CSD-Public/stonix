@@ -32,6 +32,8 @@ installed.
 @change: 2017/01/31 Breen Malmberg clarified the difference between auditservice
         and isrunning methods in the documentation; clarified the nature of the
         two parameters in each of those methods in the doc strings as well
+@author: 2017-23-2017 rsn modified/simplified to second generation 
+        service helper with **kwargs concept
 '''
 import os
 import re
@@ -62,7 +64,7 @@ class ServiceHelper(object):
     @author: dkennel
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, environ, logger):
         '''
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
@@ -72,8 +74,8 @@ class ServiceHelper(object):
         @author: ???
         @change: Breen Malmberg - 1/24/2017 - doc string edit
         '''
-        self.environ = kwargs.get("environment")
-        self.logdispatcher = kwargs.get("logdispatcher")
+        self.environ = environ
+        self.logdispatcher = logger
         self.isHybrid = False
         self.isdualparameterservice = False
         self.svchelper = None
@@ -633,7 +635,7 @@ class ServiceHelper(object):
 
     #----------------------------------------------------------------------
 
-    def listServices(self, **kwargs):
+    def listServices(self):
         '''
         List the services installed on the system.
 

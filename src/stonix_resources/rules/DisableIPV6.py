@@ -35,6 +35,7 @@ Created on Apr 9, 2013
                             deprecated "ifconfig"
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -397,7 +398,7 @@ and/or wasn't able to be created\n"
             ifacefile = "/etc/sysconfig/network/"
             if not os.path.exists(ifacefile):
                 ifacefile = ""
-        if self.sh.auditservice("ip6tables"):
+        if self.sh.auditservice("ip6tables", _="_"):
             compliant = False
             debug = "ip6tables is still set to run\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -733,11 +734,11 @@ contain the correct contents\n"
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
-        if self.sh.auditservice("ip6tables"):
+        if self.sh.auditservice("ip6tables", _="_"):
             debug = "auditservice returned: " + \
-                str(self.sh.auditservice("ip6tables")) + "\n\n\n"
+                str(self.sh.auditservice("ip6tables", _="_")) + "\n\n\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            if not self.sh.disableservice("ip6tables"):
+            if not self.sh.disableservice("ip6tables", _="_"):
                 success = False
                 debug = "Unable to disable ip6tables service\n"
                 self.logger.log(LogPriority.DEBUG, debug)

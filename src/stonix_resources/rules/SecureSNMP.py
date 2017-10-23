@@ -35,6 +35,7 @@ possible. Configure SNMP if necessary.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -205,7 +206,7 @@ class SecureSNMP(Rule):
 
         try:
 
-            svcenabled = self.svchelper.auditservice('snmpd')
+            svcenabled = self.svchelper.auditservice('snmpd', _="_")
 
             pkginstalled = self.pkghelper.check('net-snmpd')
 
@@ -387,7 +388,7 @@ class SecureSNMP(Rule):
 
             if not self.reportDisableSNMP():
 
-                self.svchelper.disableservice('snmpd')
+                self.svchelper.disableservice('snmpd', _="_")
 
                 self.pkghelper.remove('net-snmpd')
 

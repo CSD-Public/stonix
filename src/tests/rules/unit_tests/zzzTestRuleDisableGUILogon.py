@@ -35,6 +35,7 @@ This is a Unit Test for Rule DisableGUILogon
 @change: 2016/07/06 eball Bypassed simpleRuleTest, since this will always be
     false due to keeping REMOVEX CI disabled.
 @change: 2016/07/22 eball Added destructive testing
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import unittest
@@ -64,6 +65,7 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.destructive = self.runDestructive()
         self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.serviceTarget=""
         # The checkPackages list can be expanded if important packages are
         # found to be removed by REMOVEX fix
         checkPackages = ["dbus-x11", "gdm", "gdm3"]
@@ -102,16 +104,16 @@ class zzzTestRuleDisableGUILogon(RuleTest):
             if not self.ch.executeCommand(cmd):
                 success = False
         elif re.search("debian", self.myos):
-            if not self.sh.auditservice("gdm3") and \
-               not self.sh.enableservice("gdm3"):
-                if not self.sh.auditservice("gdm") and \
-                   not self.sh.enableservice("gdm"):
-                    if not self.sh.auditservice("kdm") and \
-                       not self.sh.enableservice("kdm"):
-                        if not self.sh.auditservice("xdm") and \
-                           not self.sh.enableservice("xdm"):
-                            if not self.sh.auditservice("lightdm") and \
-                               not self.sh.enableservice("lightdm"):
+            if not self.sh.auditservice("gdm3", serviceTarget=self.serviceTarget) and \
+               not self.sh.enableservice("gdm3", serviceTarget=self.serviceTarget):
+                if not self.sh.auditservice("gdm", serviceTarget=self.serviceTarget) and \
+                   not self.sh.enableservice("gdm", serviceTarget=self.serviceTarget):
+                    if not self.sh.auditservice("kdm", serviceTarget=self.serviceTarget) and \
+                       not self.sh.enableservice("kdm", serviceTarget=self.serviceTarget):
+                        if not self.sh.auditservice("xdm", serviceTarget=self.serviceTarget) and \
+                           not self.sh.enableservice("xdm", serviceTarget=self.serviceTarget):
+                            if not self.sh.auditservice("lightdm", serviceTarget=self.serviceTarget) and \
+                               not self.sh.enableservice("lightdm", serviceTarget=self.serviceTarget):
                                 success = False
                                 self.logdispatch.log(LogPriority.DEBUG,
                                                      "Could not find an " +

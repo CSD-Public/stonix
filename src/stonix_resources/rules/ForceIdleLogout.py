@@ -28,6 +28,7 @@ Created on May 31, 2016
     only occur if Gnome/KDE are installed. Did PEP8 and detailedresults cleanup.
 @change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
     desktop manager, SDDM.
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 
@@ -37,7 +38,6 @@ import re
 import subprocess
 
 from ..KVEditorStonix import KVEditorStonix
-from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -83,7 +83,6 @@ managers will not save work in progress when the logout occurs.
         self.applicable = {'type': 'white',
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
         datatype = 'bool'

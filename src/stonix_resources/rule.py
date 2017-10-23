@@ -39,6 +39,7 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from observable import Observable
@@ -104,6 +105,7 @@ LANL-stonix."""
         self.targetstate = "configured"
         self.guidance = []
         self.auditonly = False
+        self.serviceTarget=""
         self.sethelptext()
 
     def fix(self):
@@ -143,6 +145,10 @@ LANL-stonix."""
         self.rulesuccess will be updated if the rule does not succeed.
 
         @author D. Kennel & D. Walker
+        @change: - modified to new service helper interface - NOTE - 
+                   Mac rules will need to set the self.serviceTarget
+                   variable in their __init__ method after runing
+                   "super" on this parent class.
         """
         # pass
         if not self.environ.geteuid() == 0:
@@ -223,9 +229,9 @@ LANL-stonix."""
                     elif event["eventtype"] == "servicehelper":
                         sh = ServiceHelper(self.environ, self.logdispatch)
                         if event["startstate"] == "enabled":
-                            sh.enableservice(event["servicename"])
+                            sh.enableservice(event["servicename"], serviceTarget=self.serviceTarget)
                         elif event["startstate"] == "disabled":
-                            sh.disableservice(event["servicename"])
+                            sh.disableservice(event["servicename"], serviceTarget=self.serviceTarget)
                         else:
                             self.detailedresults = 'Invalid startstate for ' \
                                 + 'eventtype "servicehelper". startstate ' + \

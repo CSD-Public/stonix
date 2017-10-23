@@ -35,6 +35,7 @@ Created on May 20, 2013
 @change: 2016/06/22 eball Improved report feedback for reportMac
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
@@ -842,7 +843,7 @@ rotation config file: " + self.logrotpath + "\n"
                 os.chown(self.logrotpath, 0, 0)
             os.chmod(self.logrotpath, 420)
             resetsecon(self.logrotpath)
-        if not self.sh.reloadservice("rsyslog"):
+        if not self.sh.reloadservice("rsyslog", _="_"):
             debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
         if not self.ch.getReturnCode() != "0":
@@ -1122,7 +1123,7 @@ file: " + logpath + "\n"
             resetsecon(logrotpath)
 #-----------------------------------------------------------------------------#
         # restart log daemon
-        if not self.sh.reloadservice(self.service):
+        if not self.sh.reloadservice(self.service, _="_"):
             success = False
         return success
 
@@ -1716,7 +1717,7 @@ because these values are optional\n"
                 if not found:
                     self.missinglogrot = True
                     compliant = False
-        if not self.sh.isrunning(service, servicename):
+        if not self.sh.isrunning(service, servicename=servicename):
             compliant = False
             self.detailedresults += "syslogd is not running\n"
         if not compliant:
@@ -1959,7 +1960,7 @@ because these values are optional\n"
 will not attempt to create this file.\n"
             self.logger.log(LogPriority, debug)
 
-        if not self.sh.reloadservice(service, servicename):
+        if not self.sh.reloadservice(service, servicename=servicename):
             success = False
         return success
 

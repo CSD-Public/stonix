@@ -23,6 +23,8 @@
 ###############################################################################
 Created on November 3, 2016
 
+Second generation service helper.
+
 @author: rsn
 '''
 import os

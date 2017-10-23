@@ -34,6 +34,7 @@ dictionary
     the last one are not discarded. Also cleaned up help text (again!)
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -101,7 +102,7 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
         servicename = "com.apple.alf"
-        afterfixsuccessful &= self.sh.auditservice(service, servicename)
-        afterfixsuccessful &= self.sh.disableservice(service, servicename)
-        afterfixsuccessful &= self.sh.enableservice(service, servicename)
+        afterfixsuccessful &= self.sh.auditservice(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.disableservice(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.enableservice(service, servicename=servicename)
         return afterfixsuccessful

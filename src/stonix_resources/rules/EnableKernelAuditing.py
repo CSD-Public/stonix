@@ -32,6 +32,7 @@ account modifications, and authentication events.
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -776,12 +777,12 @@ this system, set the value of EnableKernelAuditing to False"""
 
                 # start/restart the audit service so it reads the new config
                 self.logger.log(LogPriority.DEBUG, "Checking 'auditd' service status...")
-                if self.svchelper.isrunning('auditd'):
+                if self.svchelper.isrunning('auditd', _="_"):
                     self.logger.log(LogPriority.DEBUG, "auditd service was running. Restarting the auditd service...")
-                    self.svchelper.reloadservice('auditd')
+                    self.svchelper.reloadservice('auditd', _="_")
                 else:
                     self.logger.log(LogPriority.DEBUG, "auditd service was not running. Attempting to start the auditd service...")
-                    self.svchelper.enableservice('auditd')
+                    self.svchelper.enableservice('auditd', _="_")
 
             else:
                 self.detailedresults += '\nRule was not enabled. Nothing was done...'

@@ -32,6 +32,7 @@ dictionary
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
