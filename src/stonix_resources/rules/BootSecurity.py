@@ -109,7 +109,7 @@ to False.'''
 
     def auditsystemd(self):
         try:
-            if self.servicehelper.auditservice('stonixBootSecurity.service', serviceTarget=self.launchdservicename):
+            if self.servicehelper.auditService('stonixBootSecurity.service', serviceTarget=self.launchdservicename):
                 return True
             else:
                 return False
@@ -215,7 +215,7 @@ WantedBy=multi-user.target
                                         stderr=subprocess.PIPE, shell=True)
             except Exception:
                 pass
-            self.servicehelper.enableservice('stonixBootSecurity', serviceTarget=self.launchdservicename)
+            self.servicehelper.enableService('stonixBootSecurity', serviceTarget=self.launchdservicename)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -336,7 +336,7 @@ WantedBy=multi-user.target
             if os.path.exists(oldservice):
                 self.logdispatch.log(LogPriority.DEBUG,
                                      str(oldservice) + " exists!")
-                self.servicehelper.disableservice(oldservice, servicename=oldservicename)
+                self.servicehelper.disableService(oldservice, servicename=oldservicename)
                 self.logdispatch.log(LogPriority.DEBUG,
                                      str(oldservice) + " disabled!")
                 os.remove(oldservice)
@@ -348,7 +348,7 @@ WantedBy=multi-user.target
                 if os.path.exists(self.launchdservice):
                     self.logdispatch.log(LogPriority.DEBUG,
                                          str(self.launchdservice) + " exists!")
-                    self.servicehelper.disableservice(self.launchdservice, serviceTarget=self.launchdservicename)
+                    self.servicehelper.disableService(self.launchdservice, serviceTarget=self.launchdservicename)
                     self.logdispatch.log(LogPriority.DEBUG,
                                          str(self.launchdservice) + " disabled!")
                     os.remove(self.launchdservice)

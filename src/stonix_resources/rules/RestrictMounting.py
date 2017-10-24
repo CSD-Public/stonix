@@ -115,7 +115,7 @@ class RestrictMounting(Rule):
                                             "the correct values\n"
 
             if self.ph.check("autofs"):
-                if self.sh.auditservice("autofs", _="_"):
+                if self.sh.auditService("autofs", _="_"):
                     compliant = False
                     results += "autofs is installed and enabled\n"
 
@@ -240,8 +240,8 @@ class RestrictMounting(Rule):
                                 " properties could not be set\n"
 
             if self.autofsCi.getcurrvalue():
-                if self.ph.check("autofs") and self.sh.auditservice("autofs", _="_"):
-                    if self.sh.disableservice("autofs", _="_"):
+                if self.ph.check("autofs") and self.sh.auditService("autofs", _="_"):
+                    if self.sh.disableService("autofs", _="_"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.iditerator += 1

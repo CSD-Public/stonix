@@ -238,7 +238,7 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
-                    if self.sh.auditservice('avahi-daemon', _="_"):
+                    if self.sh.auditService('avahi-daemon', _="_"):
                         compliant = False
                         self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
@@ -374,7 +374,7 @@ class SecureMDNS(Rule):
                 self.detailedresults += "Parameter: " + str(self.parameter) + \
                     " for service " + self.servicename + " is not set.\n"
             # see if service is running
-            servicesuccess = self.sh.auditservice(self.service,
+            servicesuccess = self.sh.auditService(self.service,
                                                   serviceTarget=self.servicename)
             if servicesuccess:
                 debug = "Service: " + str(self.service) + ", " + \
@@ -424,10 +424,10 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     avahi = self.package
                     avahid = 'avahi-daemon'
-                    if self.sh.auditservice(avahid, _="_"):
+                    if self.sh.auditService(avahid, _="_"):
                         debug = "Disabling " + avahid + " service"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.sh.disableservice(avahid, _="_")
+                        self.sh.disableService(avahid, _="_")
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",
@@ -591,7 +591,7 @@ class SecureMDNS(Rule):
                 self.logger.log(LogPriority.DEBUG, debug)
             # Reload Service
             if success:
-                success = self.sh.reloadservice(self.service, serviceTarget=self.servicename)
+                success = self.sh.reloadService(self.service, serviceTarget=self.servicename)
                 if success:
                     debug = "Service: " + str(self.service) + ", " + \
                         self.servicename + " was reloaded successfully."

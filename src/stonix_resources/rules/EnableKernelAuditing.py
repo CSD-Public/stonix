@@ -777,12 +777,12 @@ this system, set the value of EnableKernelAuditing to False"""
 
                 # start/restart the audit service so it reads the new config
                 self.logger.log(LogPriority.DEBUG, "Checking 'auditd' service status...")
-                if self.svchelper.isrunning('auditd', _="_"):
+                if self.svchelper.isRunning('auditd', _="_"):
                     self.logger.log(LogPriority.DEBUG, "auditd service was running. Restarting the auditd service...")
-                    self.svchelper.reloadservice('auditd', _="_")
+                    self.svchelper.reloadService('auditd', _="_")
                 else:
                     self.logger.log(LogPriority.DEBUG, "auditd service was not running. Attempting to start the auditd service...")
-                    self.svchelper.enableservice('auditd', _="_")
+                    self.svchelper.enableService('auditd', _="_")
 
             else:
                 self.detailedresults += '\nRule was not enabled. Nothing was done...'

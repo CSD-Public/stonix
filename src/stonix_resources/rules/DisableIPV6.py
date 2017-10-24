@@ -398,7 +398,7 @@ and/or wasn't able to be created\n"
             ifacefile = "/etc/sysconfig/network/"
             if not os.path.exists(ifacefile):
                 ifacefile = ""
-        if self.sh.auditservice("ip6tables", _="_"):
+        if self.sh.auditService("ip6tables", _="_"):
             compliant = False
             debug = "ip6tables is still set to run\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -734,11 +734,11 @@ contain the correct contents\n"
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
-        if self.sh.auditservice("ip6tables", _="_"):
+        if self.sh.auditService("ip6tables", _="_"):
             debug = "auditservice returned: " + \
-                str(self.sh.auditservice("ip6tables", _="_")) + "\n\n\n"
+                str(self.sh.auditService("ip6tables", _="_")) + "\n\n\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            if not self.sh.disableservice("ip6tables", _="_"):
+            if not self.sh.disableService("ip6tables", _="_"):
                 success = False
                 debug = "Unable to disable ip6tables service\n"
                 self.logger.log(LogPriority.DEBUG, debug)

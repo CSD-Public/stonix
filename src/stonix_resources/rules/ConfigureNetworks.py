@@ -254,11 +254,11 @@ class ConfigureNetworks(RuleKVEditor):
             service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
             servicename = "com.apple.blued"
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.auditservice(service, servicename=servicename)
+                afterfixsuccessful = self.sh.auditService(service, servicename=servicename)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.disableservice(service, servicename=servicename)
+                afterfixsuccessful = self.sh.disableService(service, servicename=servicename)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.enableservice(service, servicename=servicename)
+                afterfixsuccessful = self.sh.enableService(service, servicename=servicename)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:

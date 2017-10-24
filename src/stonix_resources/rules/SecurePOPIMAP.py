@@ -491,12 +491,12 @@ class SecurePOPIMAP(Rule):
 
         try:
 
-            if self.svch.auditservice(self.servicename, _="_"):
+            if self.svch.auditService(self.servicename, _="_"):
                 enabled = True
                 self.detailedresults += '\nThe ' + str(self.servicename) + ' service is still enabled'
             if enabled:
                 self.detailedresults += "\nThere are service(s) which need to be disabled"
-            if self.svch.isrunning(self.servicename, _="_"):
+            if self.svch.isRunning(self.servicename, _="_"):
                 running = False
                 self.detailedresults += '\nThe ' + str(self.servicename) + ' service is still running'
             if running:
@@ -635,13 +635,13 @@ class SecurePOPIMAP(Rule):
 
         try:
 
-            self.svch.disableservice(self.servicename, _="_")
+            self.svch.disableService(self.servicename, _="_")
 
-            if self.svch.auditservice(self.servicename, _="_"):
+            if self.svch.auditService(self.servicename, _="_"):
                 retval = False
                 self.logger.log(LogPriority.DEBUG, "Service is still enabled after executing disableservice!")
 
-            if self.svch.isrunning(self.servicename, _="_"):
+            if self.svch.isRunning(self.servicename, _="_"):
                 retval = False
                 self.logger.log(LogPriority.DEBUG, "Service is still running after executing disableservice!")
 

@@ -122,7 +122,7 @@ class SecureSSH(Rule):
                     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return self.compliant
             else:
-                if self.sh.auditservice("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
+                if self.sh.auditService("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
                     self.macloaded = True
                 if not self.macloaded:
                     self.detailedresults += "\nSSH not installed/enabled. Nothing to configure."

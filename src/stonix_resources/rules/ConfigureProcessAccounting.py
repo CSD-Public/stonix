@@ -83,7 +83,7 @@ class ConfigureProcessAccounting(Rule):
                 else:
                     self.detailedresults += package + " is not available " + \
                         "for installation\n"
-            elif not self.sh.auditservice(package, _="_"):
+            elif not self.sh.auditService(package, _="_"):
                 compliant = False
                 self.detailedresults += package + " service is not enabled\n"
 
@@ -126,8 +126,8 @@ class ConfigureProcessAccounting(Rule):
                     self.detailedresults += package + " is not available " + \
                         "for installation\n"
 
-            if self.ph.check(package) and not self.sh.auditservice(package, _="_"):
-                self.sh.enableservice(package, _="_")
+            if self.ph.check(package) and not self.sh.auditService(package, _="_"):
+                self.sh.enableService(package, _="_")
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "servicehelper", "servicename": package,

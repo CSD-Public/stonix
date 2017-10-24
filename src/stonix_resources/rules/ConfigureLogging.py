@@ -843,7 +843,7 @@ rotation config file: " + self.logrotpath + "\n"
                 os.chown(self.logrotpath, 0, 0)
             os.chmod(self.logrotpath, 420)
             resetsecon(self.logrotpath)
-        if not self.sh.reloadservice("rsyslog", _="_"):
+        if not self.sh.reloadService("rsyslog", _="_"):
             debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
         if not self.ch.getReturnCode() != "0":
@@ -1123,7 +1123,7 @@ file: " + logpath + "\n"
             resetsecon(logrotpath)
 #-----------------------------------------------------------------------------#
         # restart log daemon
-        if not self.sh.reloadservice(self.service, _="_"):
+        if not self.sh.reloadService(self.service, _="_"):
             success = False
         return success
 
@@ -1717,7 +1717,7 @@ because these values are optional\n"
                 if not found:
                     self.missinglogrot = True
                     compliant = False
-        if not self.sh.isrunning(service, servicename=servicename):
+        if not self.sh.isRunning(service, servicename=servicename):
             compliant = False
             self.detailedresults += "syslogd is not running\n"
         if not compliant:
@@ -1960,7 +1960,7 @@ because these values are optional\n"
 will not attempt to create this file.\n"
             self.logger.log(LogPriority, debug)
 
-        if not self.sh.reloadservice(service, servicename=servicename):
+        if not self.sh.reloadService(service, servicename=servicename):
             success = False
         return success
 

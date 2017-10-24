@@ -525,7 +525,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             for item in plistdict:
                 itemlong = item
                 itemshort = item.split('/')[3][:-6]
-                if not self.svchelper.auditservice(itemlong, serviceTarget=itemshort):
+                if not self.svchelper.auditService(itemlong, serviceTarget=itemshort):
                     retval = False
 
         except Exception:
@@ -783,7 +783,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             self.detailedresults += "Wrote the user plist\n"
 
             for item in servicedict:
-                self.svchelper.enableservice(item, serviceTarget=servicedict[item])
+                self.svchelper.enableService(item, serviceTarget=servicedict[item])
 
         except Exception:
             retval = False

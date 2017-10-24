@@ -102,7 +102,7 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
         servicename = "com.apple.alf"
-        afterfixsuccessful &= self.sh.auditservice(service, servicename=servicename)
-        afterfixsuccessful &= self.sh.disableservice(service, servicename=servicename)
-        afterfixsuccessful &= self.sh.enableservice(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.auditService(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.disableService(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.enableService(service, servicename=servicename)
         return afterfixsuccessful

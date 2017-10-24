@@ -206,7 +206,7 @@ class SecureSNMP(Rule):
 
         try:
 
-            svcenabled = self.svchelper.auditservice('snmpd', _="_")
+            svcenabled = self.svchelper.auditService('snmpd', _="_")
 
             pkginstalled = self.pkghelper.check('net-snmpd')
 
@@ -388,7 +388,7 @@ class SecureSNMP(Rule):
 
             if not self.reportDisableSNMP():
 
-                self.svchelper.disableservice('snmpd', _="_")
+                self.svchelper.disableService('snmpd', _="_")
 
                 self.pkghelper.remove('net-snmpd')
 

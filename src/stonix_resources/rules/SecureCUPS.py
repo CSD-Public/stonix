@@ -530,11 +530,11 @@ class SecureCUPS(Rule):
         try:
 
             if self.linux:
-                if self.sh.auditservice(self.svcname, _="_"):
+                if self.sh.auditService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname, _="_") + " service is still configured to run"
             elif self.darwin:
-                if self.sh.auditservice(self.svclongname, serviceTarget=self.svcname):
+                if self.sh.auditService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
 
@@ -699,9 +699,9 @@ class SecureCUPS(Rule):
                 # do not continue with rest of fix because that would save state for this fix run
                 self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
                 if self.darwin:
-                    self.sh.reloadservice(self.svclongname, serviceTarget=self.svcname)
+                    self.sh.reloadService(self.svclongname, serviceTarget=self.svcname)
                 else:
-                    self.sh.reloadservice(self.svcname, _="_")
+                    self.sh.reloadService(self.svcname, _="_")
                 self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
                 self.formatDetailedResults('fix', success, self.detailedresults)
                 return success
@@ -883,11 +883,11 @@ class SecureCUPS(Rule):
                 return retval
 
             if self.linux:
-                if not self.sh.reloadservice(self.svcname, _="_"):
+                if not self.sh.reloadService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
             elif self.darwin:
-                if not self.sh.reloadservice(self.svclongname, serviceTarget=self.svcname):
+                if not self.sh.reloadService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
 
@@ -910,13 +910,13 @@ class SecureCUPS(Rule):
 
             if self.linux:
 
-                if not self.sh.disableservice(self.svcname, _="_"):
+                if not self.sh.disableService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 
             elif self.darwin:
 
-                if not self.sh.disableservice(self.svclongname, serviceTarget=self.svcname):
+                if not self.sh.disableService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 

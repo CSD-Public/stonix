@@ -63,7 +63,7 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         self.svcEnabled = False
         if self.ph.check(package):
             self.pkgInstalled = True
-        if self.sh.auditservice(package, _="_"):
+        if self.sh.auditService(package, _="_"):
             self.svcEnabled = True
 
     def tearDown(self):
@@ -72,10 +72,10 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
             self.ph.install(package)
         elif not self.pkgInstalled and self.ph.check(package):
             self.ph.remove(package)
-        if self.svcEnabled and not self.sh.auditservice(package, _="_"):
-            self.sh.enableservice(package, _="_")
-        elif not self.svcEnabled and self.sh.auditservice(package, _="_"):
-            self.sh.disableservice(package, _="_")
+        if self.svcEnabled and not self.sh.auditService(package, _="_"):
+            self.sh.enableService(package, _="_")
+        elif not self.svcEnabled and self.sh.auditService(package, _="_"):
+            self.sh.disableService(package, _="_")
 
     def testPkghelperFunctions(self):
         self.logdispatch.log(LogPriority.DEBUG,
@@ -102,21 +102,21 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         package = self.package
         self.ph.install(package)
         if self.svcEnabled:
-            self.sh.disableservice(package, _="_")
-            self.assertFalse(self.sh.auditservice(package, _="_"),
+            self.sh.disableService(package, _="_")
+            self.assertFalse(self.sh.auditService(package, _="_"),
                              "ServiceHelper.auditservice is not False " +
                              "after ServiceHelper.disableservice")
-            self.sh.enableservice(package, _="_")
-            self.assertTrue(self.sh.auditservice(package, _="_"),
+            self.sh.enableService(package, _="_")
+            self.assertTrue(self.sh.auditService(package, _="_"),
                             "ServiceHelper.auditservice is not True after " +
                             "ServiceHelper.enableservice")
         else:
-            self.sh.enableservice(package, _="_")
-            self.assertTrue(self.sh.auditservice(package, _="_"),
+            self.sh.enableService(package, _="_")
+            self.assertTrue(self.sh.auditService(package, _="_"),
                             "ServiceHelper.auditservice is not True after " +
                             "ServiceHelper.enableservice")
-            self.sh.disableservice(package, _="_")
-            self.assertFalse(self.sh.auditservice(package, _="_"),
+            self.sh.disableService(package, _="_")
+            self.assertFalse(self.sh.auditService(package, _="_"),
                              "ServiceHelper.auditservice is not False " +
                              "after ServiceHelper.disableservice")
 
@@ -131,10 +131,10 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         self.ph.install(package)
         # Service may or may not be enabled at time of installation; should be
         # manually enabled to ensure correct setup
-        self.sh.enableservice(package, _="_")
+        self.sh.enableService(package, _="_")
         self.assertTrue(self.rule.report(), "Report was non-compliant, but " +
                         package + " shows as installed and enabled")
-        self.sh.disableservice(package, _="_")
+        self.sh.disableService(package, _="_")
         self.assertFalse(self.rule.report(), "Report was compliant, but " +
                          package + " was not enabled")
 
@@ -144,13 +144,13 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         package = self.package
         if not self.pkgInstalled:
             self.ph.install(package)
-        self.sh.disableservice(package, _="_")
+        self.sh.disableService(package, _="_")
         self.assertFalse(self.rule.report(), "Report was compliant, but " +
                          package + " was not enabled")
         originalResults = self.rule.detailedresults
         self.assertTrue(self.rule.fix(), "Fix was not successful with " +
                         package + " installed but not enabled")
-        self.assertTrue(self.sh.auditservice(package, _="_"),
+        self.assertTrue(self.sh.auditService(package, _="_"),
                         package + " service does not appear to be running")
         self.assertTrue(self.rule.report(), "Report was NCAF")
         self.assertTrue(self.rule.undo(), "Undo was not successful")
@@ -173,7 +173,7 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
                         package + " not installed")
         self.assertTrue(self.ph.check(package),
                         package + " does not appear to be installed")
-        self.assertTrue(self.sh.auditservice(package, _="_"),
+        self.assertTrue(self.sh.auditService(package, _="_"),
                         package + " service does not appear to be running")
         self.assertTrue(self.rule.report(), "Report was NCAF")
         self.assertTrue(self.rule.undo(), "Undo was not successful")

@@ -121,7 +121,7 @@ class DisableBluetooth(Rule):
                                 'ubthidhci', 'bthidd']
             # check whether bluetooth services are disabled
             for service in self.servicelist:
-                enabled = self.servicehelper.auditservice(service, _="_")
+                enabled = self.servicehelper.auditService(service, _="_")
                 if enabled:
                     self.detailedresults += service + " is enabled\n"
                     compliant = False
@@ -195,8 +195,8 @@ Bluetooth\n"
             debug = ""
             # disable bluetooth services
             for service in self.servicelist:
-                if self.servicehelper.auditservice(service, _="_"):
-                    if self.servicehelper.disableservice(service, _="_"):
+                if self.servicehelper.auditService(service, _="_"):
+                    if self.servicehelper.disableService(service, _="_"):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",

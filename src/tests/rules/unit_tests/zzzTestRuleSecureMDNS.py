@@ -114,12 +114,12 @@ class zzzTestRuleSecureMDNS(RuleTest):
                                       "", "".join(plistText))
                 success = True
             self.service = service
-            if success and self.sh.auditservice(service, serviceTarget=servicename):
+            if success and self.sh.auditService(service, serviceTarget=servicename):
                 success = writeFile(service + ".stonixtmp", "".join(plistText),
                                     self.logdispatch)
                 success = writeFile(service, newPlistText, self.logdispatch)
-            if success and self.sh.auditservice(service, serviceTarget=servicename):
-                success = self.sh.reloadservice(service, serviceTarget=servicename)
+            if success and self.sh.auditService(service, serviceTarget=servicename):
+                success = self.sh.reloadService(service, serviceTarget=servicename)
         else:
             ph = Pkghelper(self.logdispatch, self.environ)
             package = "avahi-daemon"
@@ -144,8 +144,8 @@ class zzzTestRuleSecureMDNS(RuleTest):
                 package = "avahi"
             if not ph.check(package) and ph.checkAvailable(package):
                 success = ph.install(package)
-            if success and not self.sh.auditservice(service, serviceTarget=self.serviceTarget):
-                self.sh.enableservice(service, serviceTarget=self.serviceTarget)
+            if success and not self.sh.auditService(service, serviceTarget=self.serviceTarget):
+                self.sh.enableService(service, serviceTarget=self.serviceTarget)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

@@ -125,7 +125,7 @@ class zzzTestRuleRestrictMounting(RuleTest):
         # If autofs is installed, enable and start it. If it is not
         # installed, it will not be tested.
         if self.ph.check("autofs"):
-            if not self.sh.enableservice("autofs", serviceTarget=self.serviceTarget):
+            if not self.sh.enableService("autofs", serviceTarget=self.serviceTarget):
                 debug = "Could not enable autofs\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 

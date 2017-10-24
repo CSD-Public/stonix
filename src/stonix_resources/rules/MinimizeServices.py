@@ -37,6 +37,7 @@ RHEL 7
 ubuntu 16.04.
 @change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
 @change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
+@change: 2017/10/24 rsn changing to use service helper, second gen
 '''
 from __future__ import absolute_import
 
@@ -521,7 +522,7 @@ elements should be space separated.'''
         try:
 
             self.detailedresults = ""
-            servicelist = self.servicehelper.listservices()
+            servicelist = self.servicehelper.listServices()
             allowedlist = self.svcslistci.getcurrvalue()
             corelist = self.svcslistci.getdefvalue()
             self.logger.log(LogPriority.DEBUG,
@@ -545,7 +546,7 @@ elements should be space separated.'''
                                          'Non-core service running: ' +
                                          service])
                 else:
-                    if self.servicehelper.auditservice(service, _="_"):
+                    if self.servicehelper.auditService(service, _="_"):
                         running = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['MinimizeServices.report',
@@ -589,7 +590,7 @@ elements should be space separated.'''
         fixed = True
         if self.minimizeci.getcurrvalue():
             try:
-                servicelist = self.servicehelper.listservices()
+                servicelist = self.servicehelper.listServices()
                 allowedlist = self.svcslistci.getcurrvalue()
                 for service in servicelist:
                     if service in allowedlist:
@@ -599,13 +600,13 @@ elements should be space separated.'''
                         # they are OK.
                         continue
                     else:
-                        running = self.servicehelper.auditservice(service, _="_")
+                        running = self.servicehelper.auditService(service, _="_")
                         self.logger.log(LogPriority.DEBUG,
                                         ['MinimizeServices.fix',
                                          "Audit: " + service + str(running)])
                         if running and service not in self.specials:
                             changes.append(service)
-                            self.servicehelper.disableservice(service, _="_")
+                            self.servicehelper.disableService(service, _="_")
                 mytype = 'command'
                 mystart = []
                 myend = changes
@@ -643,7 +644,7 @@ elements should be space separated.'''
         try:
             event1 = self.statechglogger.getchgevent('0013001')
             for service in event1['endstate']:
-                self.servicehelper.enableservice(service, _="_")
+                self.servicehelper.enableService(service, _="_")
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.undo',

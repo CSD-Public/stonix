@@ -229,9 +229,9 @@ LANL-stonix."""
                     elif event["eventtype"] == "servicehelper":
                         sh = ServiceHelper(self.environ, self.logdispatch)
                         if event["startstate"] == "enabled":
-                            sh.enableservice(event["servicename"], serviceTarget=self.serviceTarget)
+                            sh.enableService(event["servicename"], serviceTarget=self.serviceTarget)
                         elif event["startstate"] == "disabled":
-                            sh.disableservice(event["servicename"], serviceTarget=self.serviceTarget)
+                            sh.disableService(event["servicename"], serviceTarget=self.serviceTarget)
                         else:
                             self.detailedresults = 'Invalid startstate for ' \
                                 + 'eventtype "servicehelper". startstate ' + \

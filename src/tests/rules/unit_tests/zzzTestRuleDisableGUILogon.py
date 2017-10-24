@@ -104,16 +104,16 @@ class zzzTestRuleDisableGUILogon(RuleTest):
             if not self.ch.executeCommand(cmd):
                 success = False
         elif re.search("debian", self.myos):
-            if not self.sh.auditservice("gdm3", serviceTarget=self.serviceTarget) and \
-               not self.sh.enableservice("gdm3", serviceTarget=self.serviceTarget):
-                if not self.sh.auditservice("gdm", serviceTarget=self.serviceTarget) and \
-                   not self.sh.enableservice("gdm", serviceTarget=self.serviceTarget):
-                    if not self.sh.auditservice("kdm", serviceTarget=self.serviceTarget) and \
-                       not self.sh.enableservice("kdm", serviceTarget=self.serviceTarget):
-                        if not self.sh.auditservice("xdm", serviceTarget=self.serviceTarget) and \
-                           not self.sh.enableservice("xdm", serviceTarget=self.serviceTarget):
-                            if not self.sh.auditservice("lightdm", serviceTarget=self.serviceTarget) and \
-                               not self.sh.enableservice("lightdm", serviceTarget=self.serviceTarget):
+            if not self.sh.auditService("gdm3", serviceTarget=self.serviceTarget) and \
+               not self.sh.enableService("gdm3", serviceTarget=self.serviceTarget):
+                if not self.sh.auditService("gdm", serviceTarget=self.serviceTarget) and \
+                   not self.sh.enableService("gdm", serviceTarget=self.serviceTarget):
+                    if not self.sh.auditService("kdm", serviceTarget=self.serviceTarget) and \
+                       not self.sh.enableService("kdm", serviceTarget=self.serviceTarget):
+                        if not self.sh.auditService("xdm", serviceTarget=self.serviceTarget) and \
+                           not self.sh.enableService("xdm", serviceTarget=self.serviceTarget):
+                            if not self.sh.auditService("lightdm", serviceTarget=self.serviceTarget) and \
+                               not self.sh.enableService("lightdm", serviceTarget=self.serviceTarget):
                                 success = False
                                 self.logdispatch.log(LogPriority.DEBUG,
                                                      "Could not find an " +

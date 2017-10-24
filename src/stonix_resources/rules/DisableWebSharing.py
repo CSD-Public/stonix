@@ -103,7 +103,7 @@ well-managed web server is recommended.
             return False
 
         try:
-            if not self.svchelper.auditservice(self.maclongname, serviceTarget=self.macshortname):
+            if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
                     output = self.cmhelper.getOutput()
                     if self.checkPlistVal('1', output):
@@ -142,7 +142,7 @@ well-managed web server is recommended.
             if self.disableWebSharing.getcurrvalue():
                 if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
                     self.rulesuccess = False
-                if not self.svchelper.disableservice(self.maclongname, serviceTarget=self.macshortname):
+                if not self.svchelper.disableService(self.maclongname, serviceTarget=self.macshortname):
                     self.rulesuccess = False
 
                 self.id += 1
