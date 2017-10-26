@@ -30,7 +30,7 @@ import re
 
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
-from stonixutilityfunctions import validateParam
+from StonixExceptions import repoError
 
 
 class Dnf(object):
@@ -54,13 +54,12 @@ class Dnf(object):
         self.install = self.dnfloc + " install -yq "
         self.remove = self.dnfloc + " remove -yq "
         self.search = self.dnfloc + " search "
-        self.checkinstalled = self.dnfloc + " list installed "
-        self.chavailable = self.dnfloc + " list available "
+        self.checkinstalled = self.dnfloc + " list --installed "
+        self.chavailable = self.dnfloc + " list --available "
         self.checkupdate = self.dnfloc + " check-update "
         self.rpm = "/bin/rpm -qf "
         self.updatepackage = self.dnfloc + " -yq upgrade " 
 
-###############################################################################
     def installpackage(self, package):
         '''
         Install a package. Return a bool indicating success or failure.
@@ -73,22 +72,20 @@ class Dnf(object):
         @change: Breen Malmberg - 4/18/2017
         '''
 
-        installed = False
+        installed = True
 
         try:
 
-            # parameter validation
-            if not package:
-                self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
-                return installed
-            if not isinstance(package, basestring):
-                self.logger.log(LogPriority.DEBUG, "Parameter: package needs to be of type string. Got: " + str(type(package)))
-                return installed
+            try:
+                self.ch.executeCommand(self.install + package)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    raise repoError('dnf', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    installed = False
 
-            self.ch.executeCommand(self.install + package)
-
-            if self.ch.getReturnCode() == 0:
-                installed = True
+            if installed:
                 self.logger.log(LogPriority.DEBUG, "Successfully installed package " + str(package))
             else:
                 self.logger.log(LogPriority.DEBUG, "Failed to install package " + str(package))
@@ -97,7 +94,6 @@ class Dnf(object):
             raise
         return installed
 
-###############################################################################
     def removepackage(self, package):
         '''
         Remove a package. Return a bool indicating success or failure.
@@ -110,21 +106,20 @@ class Dnf(object):
         @change: Breen Malmberg - 4/18/2017
         '''
 
-        removed = False
+        removed = True
 
         try:
 
-            # parameter validation
-            if not package:
-                self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
-                return removed
-            if not isinstance(package, basestring):
-                self.logger.log(LogPriority.DEBUG, "Parameter: package needs to be of type string. Got: " + str(type(package)))
-                return removed
+            try:
+                self.ch.executeCommand(self.remove + package)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    raise repoError('dnf', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    removed = False
 
-            self.ch.executeCommand(self.remove + package)
-            if self.ch.getReturnCode() == 0:
-                removed = True
+            if removed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully removed")
             else:
                 self.logger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
@@ -133,7 +128,6 @@ class Dnf(object):
             raise
         return removed
 
-###############################################################################
     def checkInstall(self, package):
         '''
         Check the installation status of a package. Return a bool; True if
@@ -152,17 +146,37 @@ class Dnf(object):
 
         try:
 
-            # parameter validation
-            if not package:
-                self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
-                return installed
-            if not isinstance(package, basestring):
-                self.logger.log(LogPriority.DEBUG, "Parameter: package needs to be of type string. Got: " + str(type(package)))
-                return installed
+            try:
+                # There is no dnf search command which will only return an 
+                # "installed" result set. Therefore we must parse the output 
+                # to determine if the package is installed or just available.
+                # The below command string will produce stdout with only the 
+                # installed result set of packages 
+                self.ch.executeCommand(self.checkinstalled + package + " | grep -iA 1 installed")
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                outputstr = self.ch.getOutputString()
+                # With this command specifically, in this package manager, we 
+                # can't count exit code 1 as being an error because the check installed 
+                # command (with dnf) will return an error (1) exit code if no results are 
+                # returned, even if there is no error. We also can't use error or output strings 
+                # to parse because it is possible for this command to also return no output of any 
+                # kind, in addition to returning a 1 exit code... Therefore we must exempt exit 
+                # code 1 for this command specifically...
+                if retcode != 0|1:
+                    raise repoError('dnf', retcode, str(errstr))
+                else:
+                    if re.search(package, outputstr, re.IGNORECASE):
+                        installed = True
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    installed = False
+                else:
+                    if re.search(package, outputstr, re.IGNORECASE):
+                        installed = True
 
-            self.ch.executeCommand(self.checkinstalled + package)
-            if self.ch.getReturnCode() == 0:
-                installed = True
+            if installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
             else:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is NOT installed")
@@ -171,7 +185,6 @@ class Dnf(object):
             raise
         return installed
 
-###############################################################################
     def checkAvailable(self, package):
         '''
         check if the given package is available to install
@@ -187,13 +200,22 @@ class Dnf(object):
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return found
-
-            self.ch.executeCommand(self.chavailable + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                found = True
+            try:
+                self.ch.executeCommand(self.chavailable + package)
+                retcode = self.ch.getReturnCode()
+                outputstr = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('dnf', retcode, str(errstr))
+                else:
+                    if re.search(package, outputstr, re.IGNORECASE):
+                        found = True
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                else:
+                    if re.search(package, outputstr, re.IGNORECASE):
+                        found = True
 
             if found:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
@@ -222,14 +244,18 @@ class Dnf(object):
 
         try:
 
-            # parameter validation
-            if not validateParam(self.logger, package, basestring, "package"):
-                return updatesavail
-
-            self.ch.executeCommand(self.checkupdate + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 100:
-                updatesavail = True
+            try:
+                self.ch.executeCommand(self.checkupdate + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('dnf', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    return False
+                else:
+                    updatesavail = True
 
             if package:
                 if updatesavail:
@@ -241,11 +267,6 @@ class Dnf(object):
                     self.logger.log(LogPriority.DEBUG, "Updates are available for package " + str(package))
                 else:
                     self.logger.log(LogPriority.DEBUG, "No updates are available for package " + str(package))
-
-            if retcode not in [0, 100]:
-                errmsg = self.ch.getErrorString()
-                self.logger.log(LogPriority.DEBUG, "dnf encountered an error while checking for updates. Error code: " + str(retcode))
-                self.logger.log(LogPriority.DEBUG, "Error message: " + str(errmsg))
 
         except Exception:
             raise
@@ -267,35 +288,36 @@ class Dnf(object):
 
         try:
 
-            # parameter validation
-            if not validateParam(self.logger, package, basestring, "package"):
-                updated = False
-                return updated
-
-            self.ch.executeCommand(self.updatepackage + package)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                updated = False
-                errmsg = self.ch.getErrorString()
+            try:
+                self.ch.executeCommand(self.updatepackage + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('dnf', retcode)
+                else:
+                    updated = True
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    return False
+                else:
+                    updated = True
 
             if package:
-                if retcode != 0:
-                    self.logger.log(LogPriority.DEBUG, "dnf encountered an error while trying to update package " + str(package) + ". Error code: " + str(retcode))
-                    self.logger.log(LogPriority.DEBUG, "Error message: " + str(errmsg))
-                else:
+                if updated:
                     self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " successfully updated")
-            else:
-                if retcode != 0:
-                    self.logger.log(LogPriority.DEBUG, "dnf encountered an error while trying to update packages. Error code: " + str(retcode))
-                    self.logger.log(LogPriority.DEBUG, "Error message: " + str(errmsg))
                 else:
+                    self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was NOT updated")
+            else:
+                if updated:
                     self.logger.log(LogPriority.DEBUG, "All packages updated successfully")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "One or more packages failed to update properly")
 
         except Exception:
             raise
         return updated
 
-###############################################################################
     def getPackageFromFile(self, filename):
         '''
         return a string with the name of the parent package
@@ -312,21 +334,28 @@ class Dnf(object):
 
         try:
 
-            self.ch.executeCommand(self.rpm + filename)
-            if self.ch.getReturnCode() == 0:
-                packagename = self.ch.getOutputString()
-            else:
-                self.logger.log(LogPriority.DEBUG, "Failed to get the package for the given filename")
+            try:
+                self.ch.executeCommand(self.rpm + filename)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                outputstr = self.ch.getOutputString()
+                if retcode != 0:
+                    raise repoError('dnf', retcode, str(errstr))
+                else:
+                    packagename = outputstr
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                else:
+                    packagename = outputstr
 
         except Exception:
             raise
         return packagename
 
-###############################################################################
     def getInstall(self):
         return self.install
 
-###############################################################################
     def getRemove(self):
         return self.remove
 
