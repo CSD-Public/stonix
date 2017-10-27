@@ -872,13 +872,13 @@ class networksetup():
                 command = [self.nsc, "-listnetworkserviceorder"]
                 self.ch.executeCommand(command)
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-                success = networksetupoutputprocessing(self.ch.getOutput())
+                success = self.networksetupoutputprocessing(self.ch.getOutput())
 
 # issue networksetup -listallhardwareports to get all network services
             if success: 
                 command = [self.nsc, "-listallhardwareports"]
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-                success = networksetupoutputprocessing(self.ch.getOutput())
+                success = self.networksetupoutputprocessing(self.ch.getOutput())
 
 # set ns init and nso init status
             self.nsInitialized = True
