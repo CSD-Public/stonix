@@ -64,13 +64,13 @@ class SecurePOPIMAP(Rule):
         self.guidance = ['NSA(3.17)', 'cce-4384-4', '3887-7', '4530-2', '4547-6', '4552-6', '4371-1', '4410-7']
 
         data1 = 'bool'
-        key1 = 'DisablePOPIMAP'
+        key1 = 'DISABLEPOPIMAP'
         instructions1 = 'To prevent POP/IMAP services from being disabled entirely, set the value of DisablePOPIMAP to False.'
         default1 = True
         self.disableci = self.initCi(data1, key1, instructions1, default1)
 
         data2 = 'bool'
-        key2 = 'SecurePOPIMAP'
+        key2 = 'SECUREPOPIMAP'
         instructions2 = 'To securely configure POP/IMAP services, set the value of SecurePOPIMAP to True.'
         default2 = False
         self.secureci = self.initCi(data2, key2, instructions2, default2)

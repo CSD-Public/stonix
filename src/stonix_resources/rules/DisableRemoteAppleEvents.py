@@ -79,13 +79,13 @@ class DisableRemoteAppleEvents(Rule):
 
         # set up CIs
         datatype = 'bool'
-        key = 'DisableRemoteAppleEvents'
+        key = 'DISABLEREMOTEAPPLEEVENTS'
         instructions = 'To allow the use of remote apple events on this system, set the value of DisableRemoteAppleEvents to False.'
         default = True
         self.disableremoteevents = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
-        key2 = 'RemoteAppleEventsUsers'
+        key2 = 'REMOTEAPPLEEVENTSUSERS'
         instructions2 = 'If you have a business requirement to have remote apple events turned on, enter a list of users who will be allowed access to remote apple events on this system'
         default2 = []
         self.secureremoteevents = self.initCi(datatype2, key2, instructions2, default2)

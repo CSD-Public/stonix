@@ -77,7 +77,7 @@ dictionary
 
         # init CIs
         datatype = 'bool'
-        key = 'DisableCloudServices'
+        key = 'DISABLECLOUDSERVICES'
         instructions = "To prevent cloud services from being disabled, " + \
             "set the value of DisableCloudServices to False."
         default = True

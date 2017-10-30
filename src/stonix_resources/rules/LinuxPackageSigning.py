@@ -68,7 +68,7 @@ class LinuxPackageSigning(RuleKVEditor):
 
         # init CIs
         datatype = 'bool'
-        key = 'LinuxPackageSigning'
+        key = 'LINUXPACKAGESIGNING'
         instructions = 'If you wish to disable this rule, set the value ' + \
             'of LinuxPackageSigning to False.'
         default = True

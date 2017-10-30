@@ -76,7 +76,7 @@ class BootloaderPerms(Rule):
 
         # init CIs
         datatype = 'bool'
-        key = 'BootLoaderPerms'
+        key = 'BOOTLOADERPERMS'
         instructions = 'To prevent setting of permissions on the grub ' + \
             'bootloader file, set the value of BootLoaderPerms to False'
         default = True

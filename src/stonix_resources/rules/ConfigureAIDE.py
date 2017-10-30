@@ -69,7 +69,7 @@ class ConfigureAIDE(Rule):
 
         # init CIs
         datatype = 'bool'
-        key = 'configureaide'
+        key = 'CONFIGUREAIDE'
         instructions = 'If you set the ConfigureAIDE variable to yes, or ' + \
             'true, ConfigureAIDE will install and set up the Advanced ' + \
             'Intrusion Detection Environment on this system.'
@@ -79,7 +79,7 @@ class ConfigureAIDE(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'AIDEJobTime'
+        key2 = 'AIDEJOBTIME'
         instructions2 = '''This string contains the time when the cron job for
         /usr/sbin/aide --check will run in /etc/crontab. The default value is
         05 04 * * * (which means 4:05am daily)'''

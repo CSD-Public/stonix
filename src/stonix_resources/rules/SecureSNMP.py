@@ -75,7 +75,7 @@ class SecureSNMP(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         datatype = 'bool'
-        key = 'DisableSNMP'
+        key = 'DISABLESNMP'
         instructions = "If there is a mission-critical need for hosts at" + \
                        "this site to be remotely monitored by a SNMP " + \
                        "tool, then prevent the disabling and removal " + \
@@ -85,7 +85,7 @@ class SecureSNMP(Rule):
         self.disablesnmp = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'bool'
-        key2 = 'ConfigureSNMP'
+        key2 = 'CONFIGURESNMP'
         instructions2 = "To configure SNMP on this system, make sure " + \
                         "you have the value for DisableSNMP set to " + \
                         "False, and set the value of ConfigureSNMP to True."
@@ -361,7 +361,7 @@ class SecureSNMP(Rule):
             defaults = '/usr/bin/defaults '
             operation = 'write '
             filepath = '/System/Library/LaunchDaemons/org.net-snmp.snmpd.plist '
-            key = 'Disabled'
+            key = 'DISABLED'
             val = ' -bool true'
 
             cmd = defaults + operation + filepath + key + val

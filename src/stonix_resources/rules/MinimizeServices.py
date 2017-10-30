@@ -458,7 +458,7 @@ class MinimizeServices(Rule):
                                'sysstat-summary.service']
 
         datatype = 'bool'
-        key = 'minimizesvcs'
+        key = 'MINIMIZESVCS'
         instructions = '''To disable this rule set the value of MINIMIZESVCS to
 False.'''
         default = True
@@ -466,7 +466,7 @@ False.'''
 
         # self.svcslistci = self.__initializeenablelist()
         datatype2 = 'list'
-        key2 = 'serviceenable'
+        key2 = 'SERVICEENABLE'
         instructions2 = '''This list contains services that are permitted to \
 run on this platform. If you need to run a service not currently in this \
 list, add the service to the list and STONIX will not disable it. List \

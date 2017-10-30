@@ -69,7 +69,7 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
 
         # set up CI
         datatype = "bool"
-        key = "EnablePAEandNX"
+        key = "ENABLEPAEANDNX"
         instructions = "If you want to prevent this rule from running, set the value of EnablePAEandNX to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

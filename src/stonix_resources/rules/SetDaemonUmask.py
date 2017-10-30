@@ -77,14 +77,14 @@ writability/readability on the system.
 
         # init CIs
         datatype = 'bool'
-        key = 'SetDaemonUmask'
+        key = 'SETDAEMONUMASK'
         instructions = 'To prevent stonix from setting the umask for system services, \
 set the value of SetDaemonUmask to False.'
         default = True
         self.SetDaemonUmask = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'Umask'
+        key2 = 'UMASK'
         instructions2 = 'Set the umask value you wish to use for daemon processes.'
         default2 = '022'
         self.umaskvalue = self.initCi(datatype2, key2, instructions2, default2)
