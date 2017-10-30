@@ -84,20 +84,20 @@ of users allowed to access ftp and set the default umask for ftp users.
 
         # init CI(s)
         datatype = 'bool'
-        key = 'SecureFTP'
+        key = 'SECUREFTP'
         instructions = 'To prevent the secure configuration of FTPD, set ' + \
         'the value of SecureFTP to False'
         default = True
         self.SecureFTP = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'bool'
-        key2 = 'AllowLocalFTP'
+        key2 = 'ALLOWLOCALFTP'
         instructions2 = 'To allow local FTP account access, set the value of AllowLocalFTP to True. (Not Recommended. Use SSH or SCP instead)'
         default2 = False
         self.AllowLocalFTP = self.initCi(datatype2, key2, instructions2, default2)
 
         datatype3 = 'list'
-        key3 = 'AllowUsersList'
+        key3 = 'ALLOWUSERSLIST'
         instructions3 = '(Only use this if you set AllowLocalFTP to True) Enter single-space-delimited list of user account names to allow access to FTP.'
         default3 = []
         self.AllowUsersList = self.initCi(datatype3, key3, instructions3, default3)

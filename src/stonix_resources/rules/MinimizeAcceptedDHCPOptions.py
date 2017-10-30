@@ -71,7 +71,7 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                            'family': ['linux']}
         # init CIs
         datatype = 'bool'
-        key = 'MinimizeAcceptedDHCPOptions'
+        key = 'MINIMIZEACCEPTEDDHCPOPTIONS'
         instructions = "To prevent the MinimizeAcceptedDHCPOptions rule from being run, set the value of MinimizeAcceptedDHCPOptions to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

@@ -59,7 +59,7 @@ class RemoveBadDotFiles(Rule):
         self.sethelptext()
         self.rootrequired = False
         datatype = 'bool'
-        key = 'removebaddotfiles'
+        key = 'REMOVEBADDOTFILES'
         instructions = "To disable this rule set the value of " + \
         "REMOVEBADDOTFILES to False"
         default = True

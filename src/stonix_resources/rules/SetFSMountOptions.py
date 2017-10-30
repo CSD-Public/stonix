@@ -83,12 +83,12 @@ class SetFSMountOptions(Rule):
 
         # set up CI's
         datatype = "bool"
-        key = "SetFSMountOptions"
+        key = "SETFSMOUNTOPTIONS"
         instructions = "To prevent the configuration of mount options, set the value of SetFSMountOptions to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         datatype2 = 'bool'
-        key2 = 'NFSRoot'
+        key2 = 'NFSROOT'
         instructions2 = 'If this system uses an NFS mounted root, set the value of NFSRoot to True.'
         default2 = False
         self.NFSRootci = self.initCi(datatype2, key2, instructions2, default2)

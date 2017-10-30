@@ -78,7 +78,7 @@ class SecureSU(Rule):
         self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'
-        key = 'SecureSU'
+        key = 'SECURESU'
         instructions = "To prevent the configuration of " + \
                        "access to the su command, set the value of " + \
                        "SecureSU to False."

@@ -56,6 +56,7 @@ class InstallVLock(Rule):
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
+
         # Configuration item instantiation
         datatype = 'bool'
         key = 'INSTALLVLOCK'
@@ -63,6 +64,7 @@ class InstallVLock(Rule):
             "screen lock program vlock set the value of INSTALLVLOCK to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
+
         self.sethelptext()
 
     def report(self):

@@ -79,13 +79,13 @@ class RootMailAlias(Rule):
         self.guidance = ['none']
 
         datatype = 'bool'
-        key = 'Root Mail Alias'
-        instructions = 'To prevent the setting of an alias for root mail, set the value of Root Mail Alias to False.'
+        key = 'ROOTMAILALIAS'
+        instructions = 'To prevent the setting of an alias for root mail, set the value of ROOTMAILALIAS to False.'
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'Root Alias Address'
+        key2 = 'ROOTALIASADDRESS'
         instructions2 = 'Please specify the email address which should receive root mail for this system.'
         default2 = ''
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)

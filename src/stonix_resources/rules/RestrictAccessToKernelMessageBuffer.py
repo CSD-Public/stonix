@@ -60,7 +60,7 @@ class RestrictAccessToKernelMessageBuffer(Rule):
         self.applicable = {"type": "white",
                            "family": "linux"}
         datatype = "bool"
-        key = "RestrictAccessToKernelMessageBuffer"
+        key = "RESTRICTACCESSTOKERNELMESSAGEBUFFER"
         instructions = "To prevent this rule from running, set the value of RestrictAccessToKernelMessageBuffer to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

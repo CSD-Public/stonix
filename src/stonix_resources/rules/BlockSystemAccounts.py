@@ -76,7 +76,7 @@ class BlockSystemAccounts(Rule):
         self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'
-        key = 'blocksysaccounts'
+        key = 'BLOCKSYSACCOUNTS'
         instructions = '''If you have system accounts that need to have valid \
 shells set the value of this to False, or No.'''
         default = True
