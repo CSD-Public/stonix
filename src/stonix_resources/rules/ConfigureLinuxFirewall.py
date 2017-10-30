@@ -82,7 +82,7 @@ class ConfigureLinuxFirewall(Rule):
                          'DISA RHEL 7 STIG 2.5.8.2.3',
                          'DISA RHEL 7 STIG 2.5.8.2.4']
         datatype = 'bool'
-        key = 'configurelinuxfirewall'
+        key = 'CONFIGURELINUXFIREWALL'
         instructions = '''To disable this rule set the value of \
 CONFIGURELINUXFIREWALL to False.'''
         default = False

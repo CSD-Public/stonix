@@ -66,7 +66,7 @@ class SetSSCorners(Rule):
 
         # set up configuration items for this rule
         datatype = 'bool'
-        key = 'SetSSCorners'
+        key = 'SETSSCORNERS'
         instructions = 'To disable this rule, set the value of ' + \
             'SetSSCorners to False'
         default = True

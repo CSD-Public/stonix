@@ -156,8 +156,8 @@ class SecureMDNS(Rule):
             self.ismac = False
             # init CIs
             datatype = 'bool'
-            mdnskey = 'SecureMDNS'
-            avahikey = 'DisableAvahi'
+            mdnskey = 'SECUREMDNS'
+            avahikey = 'DISABLEAVAHI'
             mdnsinstructions = 'To configure the Avahi server daemon ' + \
                 'securely set the value of SECUREMDNS to True and the ' + \
                 'value of DISABLEAVAHI to False.'

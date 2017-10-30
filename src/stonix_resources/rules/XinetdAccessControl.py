@@ -71,7 +71,7 @@ class XinetdAccessControl(Rule):
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'XinetdAccessControl'
+        key = 'XINETDACCESSCONTROL'
         instructions = "To disable the configuring of the xinetd access " + \
             "control mechanism, set the value of XinetdAccessControl to False."
         default = True

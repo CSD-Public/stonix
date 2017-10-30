@@ -58,7 +58,7 @@ class SetupLogwatch(Rule):
         self.sethelptext()
         self.guidance = ['NSA(2.6.1.6)', 'CCE 4323-2']
         self.ci = self.initCi("bool",
-                              "SetupLogwatch",
+                              "SETUPLOGWATCH",
                               "To prevent logwatch from being " +
                               "installed, set the value of " +
                               "SetupLogwatch to False.",

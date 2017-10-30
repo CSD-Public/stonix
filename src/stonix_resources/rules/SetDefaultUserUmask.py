@@ -100,11 +100,11 @@ class SetDefaultUserUmask(Rule):
 
         # init CIs
         self.userUmask = \
-        self.initCi("string", "DefaultUserUmask",
+        self.initCi("string", "DEFAULTUSERUMASK",
                     "Set the default user umask value. Correct format is " + \
                     "a 3-digit, 0-padded integer.", defaultumask)
 
-        self.rootUmask = self.initCi("string", "DefaultRootUmask",
+        self.rootUmask = self.initCi("string", "DEFAULTROOTUMASK",
                                      "Set the default root umask value. " + \
                                      "Correct format is 3-digit, 0-padded " + \
                                      "integer. Setting this to a value " + \

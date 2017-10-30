@@ -80,7 +80,7 @@ class ConfigureDotFiles(Rule):
         self.rootrequired = False
         self.compliant = False
         datatype = 'bool'
-        key = 'ConfigureDotFiles'
+        key = 'CONFIGUREDOTFILES'
         instructions = '''To prevent dot files in user home directories from \
 being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         default = True

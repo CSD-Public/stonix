@@ -159,7 +159,7 @@ class SecureApacheWebserver(Rule):
         @return: configuration object instance
         @author: dkennel
         '''
-        conf = 'secureapache'
+        conf = 'SECUREAPACHE'
         confinst = '''If set to yes or true the SECUREAPACHE variable will set
 the basic security settings for the Apache Webserver. This should be safe for
 all systems.'''
@@ -189,7 +189,7 @@ all systems.'''
         @author: dkennel
         '''
         myci = ConfigurationItem('bool')
-        key = 'secureapachemods'
+        key = 'SECUREAPACHEMODS'
         myci.setkey(key)
         confinst = '''If set to yes or true the SECUREAPACHEMODS variable will
 minimize the installed Apache modules. Apache modules provide increased
@@ -223,7 +223,7 @@ modules.'''
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'secureapachessl'
+        key = 'SECUREAPACHESSL'
         instructions = '''If set to yes or true the SECUREAPACHESSL variable will prevent
 the Apache server from using weak crypto for SSL sessions. This should be safe
 unless the client population includes browsers restricted to US export level
@@ -240,7 +240,7 @@ crypto.'''
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'securephp'
+        key = 'SECUREPHP'
         instructions = '''If set to yes or true the SECUREPHP action will secure the
 configuration in the php.ini file. This is generally safe for new PHP
 development but some existing applications may use insecure side effects.'''

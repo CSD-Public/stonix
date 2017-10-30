@@ -27,7 +27,9 @@ This rule will enable process accounting, using the acct/psacct service.
 @change: 2015/04/18 eball Original implementation
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
+
 from __future__ import absolute_import
+
 import re
 import traceback
 from ..stonixutilityfunctions import iterate
