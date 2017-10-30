@@ -87,7 +87,7 @@ class InstallBanners(RuleKVEditor):
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'InstallBanners'
+        key = 'INSTALLBANNERS'
         instructions = "To prevent the installation of warning banners, " + \
             "set the value of InstallBanners to False.\n\n!DEBIAN USERS! Due to " + \
             "a bug in gdm3 (gnome 3) which has not been patched on debian, we are forced to " + \

@@ -64,7 +64,7 @@ class ReqPassSysPref(Rule):
         self.guidance = ['CIS 1.4.13.3']
 
         datatype = 'bool'
-        key = 'ReqPassSysPref'
+        key = 'REQPASSYSPREF'
         instructions = 'To disable this rule, set the value of ' + \
             'ReqPassSysPref to False.'
         default = True

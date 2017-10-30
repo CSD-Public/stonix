@@ -67,14 +67,14 @@ class DisableUnusedFs(Rule):
         self.blacklistfile = '/etc/modprobe.d/usgcb-blacklist.conf'
 
         datatype = 'bool'
-        key = 'disablefs'
+        key = 'DISABLEFS'
         instructions = '''To disable this rule set the value of DISABLEFS to \
 False.'''
         default = True
         self.disablefs = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
-        key2 = 'fslist'
+        key2 = 'FSLIST'
         instructions2 = '''This list contains file system types that will be \
 disabled. If you need to use a file system currently listed, remove it and \
 the support for that file system type will not be disabled. This list should \

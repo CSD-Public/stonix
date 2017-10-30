@@ -86,7 +86,7 @@ class MuteMic(Rule):
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'mutemicrophone'
+        key = 'MUTEMICROPHONE'
         instructions = 'If set to yes or true the MUTEMICROPHONE action \
 will mute the microphone. This rule should always be set to TRUE with few \
 valid exceptions.'

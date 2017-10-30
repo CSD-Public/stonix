@@ -85,7 +85,7 @@ class TCPWrappers(Rule):
 
         # init CIs
         self.ci = self.initCi("bool",
-                              "TCPWrappers",
+                              "TCPWRAPPERS",
                               "To prevent TCP Wrappers from being " +
                               "configured on this system, set the " +
                               "value of TCPWrappers to False.",

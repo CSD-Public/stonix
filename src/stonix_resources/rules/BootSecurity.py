@@ -100,7 +100,7 @@ class BootSecurity(Rule):
 </plist>'''
 
         datatype = 'bool'
-        key = 'bootsecurity'
+        key = 'BOOTSECURITY'
         instructions = '''To disable this rule set the value of BOOTSECURITY \
 to False.'''
         default = True

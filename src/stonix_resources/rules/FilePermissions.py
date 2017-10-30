@@ -114,15 +114,17 @@ class FilePermissions(Rule):
         self.noorigin = os.path.join(self.noownerdir,
                                      'no-owners-at-install.db')
         self.nolast = os.path.join(self.noownerdir, 'no-owners-previous.db')
+
         datatype = 'bool'
-        key = 'setsticky'
+        key = 'SETSTICKY'
         instructions = '''If set to yes or true the WorldWritables rule will \
 attempt to set the sticky bit on any world writable directories the do not \
 currently have the sticky bit set. SETSTICKY cannot be undone.'''
         default = True
         self.setsticky = self.initCi(datatype, key, instructions, default)
+
         datat = 'list'
-        keyname = 'bypassfs'
+        keyname = 'BYPASSFS'
         instr = '''Because this rule performs a full file system scan you may \
 not want it to scan very large directly attached file systems (especially file \
 systems on USB media). Any file systems listed in a space separated list after \
@@ -130,8 +132,9 @@ the BYPASSFS variable will not be scanned. N.B. This list does not handle \
 file system names with spaces.'''
         defval = ['/run/media', '/media']
         self.bypassfs = self.initCi(datat, keyname, instr, defval)
+
         ww_datatype = 'bool'
-        ww_key = 'fixww'
+        ww_key = 'FIXWW'
         ww_instructions = '''To prevent the FilePermissions rule from removing \
 the world write permissions of files in the root user's path, set the value of \
 FIXWW to False. You should not need to do this; World Writable files in the \
@@ -140,7 +143,7 @@ root user's path are very dangerous.'''
         self.fixww = self.initCi(ww_datatype, ww_key, ww_instructions,
                                  ww_default)
         datatype = 'bool'
-        key = 'fixgw'
+        key = 'FIXGW'
         instructions = '''To prevent the FilePermissions rule from removing \
 the group write permissions of files in the lib and bin directories, set the \
 value of FIXGW to False. The affected directories are: /bin, /usr/bin, \
@@ -148,8 +151,9 @@ value of FIXGW to False. The affected directories are: /bin, /usr/bin, \
 /usr/lib64, /lib/modules.'''
         default = True
         self.fixgw = self.initCi(datatype, key, instructions, default)
+
         datatype = 'bool'
-        key = 'fixrootownership'
+        key = 'FIXROOTOWNERSHIP'
         instructions = '''To prevent the FilePermissions rule from setting \
 ownership on all files in the lib and bin directories to root, set the \
 value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
@@ -157,6 +161,7 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
 /usr/lib, /usr/lib64, /lib/modules.'''
         default = True
         self.fixroot = self.initCi(datatype, key, instructions, default)
+
         self.hasrunalready = False
         self.wwresults = ''
         self.gwresults = ''

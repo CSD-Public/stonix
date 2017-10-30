@@ -86,18 +86,21 @@ managers will not save work in progress when the logout occurs.
         self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
+
         datatype = 'bool'
-        key = 'forceidlelogout'
+        key = 'FORCEIDLELOGOUT'
         instructions = '''To disable this rule set the value of \
 FORCEIDLELOGOUT to False.'''
         default = False
         self.filci = self.initCi(datatype, key, instructions, default)
+
         datatype2 = 'int'
-        key2 = 'forceidlelogouttimeout'
+        key2 = 'FORCEIDLELOGOUTTIMEOUT'
         instructions2 = '''To customize the timeout period set the \
 FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         default2 = 240
         self.timeoutci = self.initCi(datatype2, key2, instructions2, default2)
+
         self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
         self.gnomelockpath = "/etc/dconf/db/local.d/locks/autologout"
 

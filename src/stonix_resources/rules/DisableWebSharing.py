@@ -69,7 +69,7 @@ well-managed web server is recommended.
 
         # set up CIs
         datatype = 'bool'
-        key = 'DisableWebSharing'
+        key = 'DISABLEWEBSHARING'
         instructions = 'To prevent web sharing from being disabled, set the value of DisableWebSharing to False.'
         default = True
         self.disableWebSharing = self.initCi(datatype, key, instructions, default)

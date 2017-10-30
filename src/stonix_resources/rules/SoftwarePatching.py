@@ -84,7 +84,7 @@ class SoftwarePatching(Rule):
         # until the fixes can be implemented
 
         data = "bool"
-        key = "ScheduleUpdate"
+        key = "SCHEDULEUPDATE"
         instructions = "To disable creation of a scheduled " + \
                           "update job set the value of this " + \
                           "setting to no or false. Doing so " + \
