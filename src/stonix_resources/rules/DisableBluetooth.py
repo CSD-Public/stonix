@@ -37,6 +37,7 @@ Check to see if all of the above operations have been done or not - report()
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -120,7 +121,7 @@ class DisableBluetooth(Rule):
                                 'ubthidhci', 'bthidd']
             # check whether bluetooth services are disabled
             for service in self.servicelist:
-                enabled = self.servicehelper.auditservice(service)
+                enabled = self.servicehelper.auditService(service, _="_")
                 if enabled:
                     self.detailedresults += service + " is enabled\n"
                     compliant = False
@@ -194,8 +195,8 @@ Bluetooth\n"
             debug = ""
             # disable bluetooth services
             for service in self.servicelist:
-                if self.servicehelper.auditservice(service):
-                    if self.servicehelper.disableservice(service):
+                if self.servicehelper.auditService(service, _="_"):
+                    if self.servicehelper.disableService(service, _="_"):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",

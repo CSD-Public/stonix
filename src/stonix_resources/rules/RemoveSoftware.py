@@ -25,11 +25,11 @@ Created on Apr 5, 2016
 
 @author: dwalker
 @change: 2016/07/06 eball Added undo events to fix
+@change: 2017/10/23 rsn removed unused service helper
 '''
 from __future__ import absolute_import
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 import traceback
@@ -56,7 +56,6 @@ class RemoveSoftware(Rule):
                            'family': ['linux', 'freebsd']}
         self.iditerator = 0
         self.ph = Pkghelper(self.logger, self.environ)
-        self.sh = ServiceHelper(self.environ, self.logger)
         # Configuration item instantiation
         datatype = "bool"
         key = "REMOVESOFTWARE"

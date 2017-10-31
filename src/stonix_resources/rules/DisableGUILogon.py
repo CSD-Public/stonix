@@ -29,6 +29,7 @@ Created on 2015/07/01
 @change: 2017/06/02 bgonz12 Changed a conditional in reportUbuntu to search for
                     "manual" using regex instead of direct comparison
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 
@@ -127,7 +128,7 @@ class DisableGUILogon(Rule):
             # NSA guidance specifies disabling of X Font Server (xfs),
             # however, this guidance seems to be obsolete as of RHEL 6,
             # and does not apply to the Debian family.
-            if self.sh.auditservice("xfs"):
+            if self.sh.auditService("xfs", _="_"):
                 compliant = False
                 results += "xfs is currently enabled\n"
 
@@ -225,7 +226,7 @@ class DisableGUILogon(Rule):
         results = ""
         dmlist = ["gdm", "gdm3", "lightdm", "xdm", "kdm"]
         for dm in dmlist:
-            if self.sh.auditservice(dm):
+            if self.sh.auditService(dm, _="_"):
                 compliant = False
                 results = dm + \
                     " is still in init folders; GUI logon is enabled\n"
@@ -462,7 +463,7 @@ class DisableGUILogon(Rule):
 
     def fixLockdownX(self):
         success = True
-        if self.sh.disableservice("xfs"):
+        if self.sh.disableService("xfs", _="_"):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype":   "servicehelper",

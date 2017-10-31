@@ -48,6 +48,7 @@ configuration changes to the avahi service
 @change: 2016/02/11 eball Added NOZEROCONF=yes KVEditor for Red Hat systems
     to comply with CCE-RHEL7-CCE-TBD 2.5.2
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -237,7 +238,7 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
-                    if self.sh.auditservice('avahi-daemon'):
+                    if self.sh.auditService('avahi-daemon', _="_"):
                         compliant = False
                         self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
@@ -373,8 +374,8 @@ class SecureMDNS(Rule):
                 self.detailedresults += "Parameter: " + str(self.parameter) + \
                     " for service " + self.servicename + " is not set.\n"
             # see if service is running
-            servicesuccess = self.sh.auditservice(self.service,
-                                                  self.servicename)
+            servicesuccess = self.sh.auditService(self.service,
+                                                  serviceTarget=self.servicename)
             if servicesuccess:
                 debug = "Service: " + str(self.service) + ", " + \
                     self.servicename + " audit successful."
@@ -423,10 +424,10 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     avahi = self.package
                     avahid = 'avahi-daemon'
-                    if self.sh.auditservice(avahid):
+                    if self.sh.auditService(avahid, _="_"):
                         debug = "Disabling " + avahid + " service"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.sh.disableservice(avahid)
+                        self.sh.disableService(avahid, _="_")
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",
@@ -590,7 +591,7 @@ class SecureMDNS(Rule):
                 self.logger.log(LogPriority.DEBUG, debug)
             # Reload Service
             if success:
-                success = self.sh.reloadservice(self.service, self.servicename)
+                success = self.sh.reloadService(self.service, serviceTarget=self.servicename)
                 if success:
                     debug = "Service: " + str(self.service) + ", " + \
                         self.servicename + " was reloaded successfully."

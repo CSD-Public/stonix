@@ -27,6 +27,7 @@ This is a Unit Test for Rule EnableKernelAuditing
 @author: Breen Malmberg
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 import unittest
@@ -37,7 +38,6 @@ import sys
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
@@ -54,7 +54,6 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
     def tearDown(self):
         # restore backups of original files, made before testing

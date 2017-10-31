@@ -35,6 +35,7 @@ removed unnecessary return call (return success) - in fix method - which was at 
 method's return self.rulesuccess call, but before it, so it was always being called instead of
 return self.rulesuccess. self.rulesuccess will now return instead of success.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -414,7 +415,7 @@ class SecureNFS(Rule):
                 if createFile(nfsfile, self.logger):
                     nfstemp = nfsfile + ".tmp"
                     if self.environ.getostype() == "Mac OS X":
-                        if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                        if not self.sh.auditService('/System/Library/LaunchDaemons/com.apple.nfsd.plist', serviceTarget='com.apple.nfsd'):
                             success = True
                             self.formatDetailedResults("fix", success,
                                                        self.detailedresults)
@@ -498,7 +499,7 @@ class SecureNFS(Rule):
                 # service and related ports if the file /etc/exports
                 # is created
                 if self.environ.getostype() == "Mac OS X":
-                    if not self.sh.auditservice('/System/Library/LaunchDaemons/com.apple.nfsd.plist', 'com.apple.nfsd'):
+                    if not self.sh.auditService('/System/Library/LaunchDaemons/com.apple.nfsd.plist', serviceTarget='com.apple.nfsd'):
                         success = True
                         self.formatDetailedResults("fix", success,
                                                    self.detailedresults)
@@ -587,8 +588,8 @@ class SecureNFS(Rule):
                 # (aka a full reload), so this decision should be made at
                 # the rule-level.
                 ##
-                if self.sh.isrunning(nfsservice, nfsservice):
-                    self.sh.reloadservice(nfsservice, nfsservice)
+                if self.sh.isRunning(nfsservice, serviceTarget=nfsservice):
+                    self.sh.reloadService(nfsservice, serviceTarget=nfsservice)
 
             self.logdispatch.log(LogPriority.DEBUG, "Exiting SecureNFS.fix()...")
 

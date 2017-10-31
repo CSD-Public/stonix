@@ -31,6 +31,7 @@ prompt and wait issues during undo.
 @change: 2015/11/18 eball - Fixed recording of deletion event
 @change: 2016/06/10 dkennel - Updated recordfilechange to handle case where
 oldfile does not exist
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 import shelve
 import shutil
