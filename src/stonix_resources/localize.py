@@ -142,6 +142,8 @@ PROXY = None
 PROXYCONFIGURATIONFILE = None
 # Variable Type: String
 PROXYDOMAIN = None
+# Variable Type: String
+PROXYDOMAINBYPASS = None
 
 # Domain Name Server (DNS) defaults
 # Variable Type: String
