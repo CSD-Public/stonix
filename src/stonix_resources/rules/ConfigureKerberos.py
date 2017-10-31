@@ -35,6 +35,7 @@ dictionary
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/24 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 import os
@@ -44,7 +45,6 @@ from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
 from ..localize import MACKRB5, LINUXKRB5
 
@@ -126,7 +126,6 @@ class ConfigureKerberos(Rule):
                            "group": "root",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"}}
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
         if self.environ.getosfamily() == 'linux':
                 self.ph = Pkghelper(self.logdispatch, self.environ)

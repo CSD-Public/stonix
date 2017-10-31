@@ -36,6 +36,7 @@ With this rule, you can:
 @change: Breen Malmberg - 2/8/2017 - set the default value of the self.DisableGenericPort CI to False;
         fixed a typo with the data2 dict var name for cupsdconf; KVcupsdrem will now only be processed if
         the value of the self.DisableGenericPort CI is True; added some inline comments
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -532,11 +533,11 @@ class SecureCUPS(Rule):
         try:
 
             if self.linux:
-                if self.sh.auditservice(self.svcname):
+                if self.sh.auditService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
             elif self.darwin:
-                if self.sh.auditservice(self.svclongname, self.svcname):
+                if self.sh.auditService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
 
@@ -701,9 +702,9 @@ class SecureCUPS(Rule):
                 # do not continue with rest of fix because that would save state for this fix run
                 self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
                 if self.darwin:
-                    self.sh.reloadservice(self.svclongname, self.svcname)
+                    self.sh.reloadService(self.svclongname, serviceTarget=self.svcname)
                 else:
-                    self.sh.reloadservice(self.svcname)
+                    self.sh.reloadService(self.svcname, _="_")
                 self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
                 self.formatDetailedResults('fix', success, self.detailedresults)
                 return success
@@ -885,11 +886,11 @@ class SecureCUPS(Rule):
                 return retval
 
             if self.linux:
-                if not self.sh.reloadservice(self.svcname):
+                if not self.sh.reloadService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
             elif self.darwin:
-                if not self.sh.reloadservice(self.svclongname, self.svcname):
+                if not self.sh.reloadService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
 
@@ -912,13 +913,13 @@ class SecureCUPS(Rule):
 
             if self.linux:
 
-                if not self.sh.disableservice(self.svcname):
+                if not self.sh.disableService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 
             elif self.darwin:
 
-                if not self.sh.disableservice(self.svclongname, self.svcname):
+                if not self.sh.disableService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 
