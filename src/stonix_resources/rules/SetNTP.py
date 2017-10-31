@@ -71,7 +71,7 @@ class SetNTP(Rule):
 
         # init CI
         self.ci = self.initCi("bool",
-                              "SetNTP",
+                              "SETNTP",
                               "To prevent STONIX from setting a time " +
                               "server, set the value of SetNTP to False",
                               True)

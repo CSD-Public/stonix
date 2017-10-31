@@ -62,7 +62,7 @@ class VerifySysFilePerms(Rule):
         self.guidance = ['']
 
         datatype = 'bool'
-        key = 'VerifySysFilePerms'
+        key = 'VERIFYSYSFILEPERMS'
         instructions = 'To disable this rule, set the value of ' + \
         'VerifySysFilePerms to False'
         default = True

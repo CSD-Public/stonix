@@ -72,7 +72,7 @@ class SecureWinFileSharing(RuleKVEditor):
 
         # init CIs
         datatype = 'bool'
-        key = 'SecureWinFileSharing'
+        key = 'SECUREWINFILESHARING'
         instructions = '''To disable the configuration of samba file sharing on this system, set the
 value of SecureWinFileSharing to False.'''
         default = True

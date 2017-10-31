@@ -35,8 +35,10 @@ per day
 @change: 2014/09/02 ekkehard self.rootrequired = True & OS X 10.10 compliant
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
-@change: 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
-         within ServiceHelper and SHlaunchd)
+
+@change 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
+        within ServiceHelper and SHlaunchd)
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -524,7 +526,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             for item in plistdict:
                 itemlong = item
                 itemshort = item.split('/')[3][:-6]
-                if not self.svchelper.auditservice(itemlong, itemshort):
+                if not self.svchelper.auditService(itemlong, serviceTarget=itemshort):
                     retval = False
 
         except Exception:
@@ -782,7 +784,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             self.detailedresults += "Wrote the user plist\n"
 
             for item in servicedict:
-                self.svchelper.enableservice(item, servicedict[item])
+                self.svchelper.enableService(item, serviceTarget=servicedict[item])
 
         except Exception:
             retval = False

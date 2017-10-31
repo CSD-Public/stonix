@@ -66,7 +66,7 @@ class VerifyAccPerms(Rule):
         self.rootrequired = True
         self.compliant = False
         self.ci = self.initCi("bool",
-                              "VerifyAccPerms",
+                              "VERIFYACCPERMS",
                               "To prevent the setting of user account db " + \
                               "permissions, set the value of " + \
                               "VerifyAccPerms to False.",

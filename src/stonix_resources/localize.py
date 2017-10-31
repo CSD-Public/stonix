@@ -1,5 +1,3 @@
-'''
-Created on Oct 18, 2012
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -22,6 +20,8 @@ Created on Oct 18, 2012
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
+Created on Oct 18, 2012
 
 This module contains variables used to localize STONIX behavior for a given
 site. It is intended to be edited by the personnel packaging STONIX for use and
@@ -160,6 +160,7 @@ STONIXDEVS = 'stonix-dev@lanl.gov'
 PROXY = 'http://proxyout.lanl.gov:8080'
 PROXYCONFIGURATIONFILE = "http://wpad.lanl.gov/wpad.dat"
 PROXYDOMAIN = "lanl.gov"
+PROXYDOMAINBYPASS = "*.lanl.gov"
 
 # Domain Name Server (DNS) defaults
 DNS = "128.165.4.4 128.165.4.33"

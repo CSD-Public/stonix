@@ -60,7 +60,7 @@ class DisableTouchID(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.12.3', '+']}}
         datatype = 'bool'
-        key = 'DisableTouchID'
+        key = 'DISABLETOUCHID'
         instructions = "To prevent this rule from running, set the value of DisableTouchID to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

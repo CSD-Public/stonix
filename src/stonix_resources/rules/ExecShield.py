@@ -90,7 +90,7 @@ class ExecShield(Rule):
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'execshield'
+        key = 'EXECSHIELD'
         instructions = 'If set to yes or true the EXECSHIELD action will, ' + \
             'if needed correct the kernel settings for the ExecShield and ' + \
             'virtual address randomization functions. This should be safe ' + \

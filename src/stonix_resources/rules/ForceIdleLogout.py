@@ -30,6 +30,7 @@ Created on May 31, 2016
     installed before running gconf configuration in fixgnome3
 @change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
     desktop manager, SDDM.
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 
@@ -39,7 +40,6 @@ import re
 import subprocess
 
 from ..KVEditorStonix import KVEditorStonix
-from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -85,21 +85,23 @@ managers will not save work in progress when the logout occurs.
         self.applicable = {'type': 'white',
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-        self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
+
         datatype = 'bool'
-        key = 'forceidlelogout'
+        key = 'FORCEIDLELOGOUT'
         instructions = '''To disable this rule set the value of \
 FORCEIDLELOGOUT to False.'''
         default = False
         self.filci = self.initCi(datatype, key, instructions, default)
+
         datatype2 = 'int'
-        key2 = 'forceidlelogouttimeout'
+        key2 = 'FORCEIDLELOGOUTTIMEOUT'
         instructions2 = '''To customize the timeout period set the \
 FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         default2 = 240
         self.timeoutci = self.initCi(datatype2, key2, instructions2, default2)
+
         self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
         self.gnomelockpath = "/etc/dconf/db/local.d/locks/autologout"
 

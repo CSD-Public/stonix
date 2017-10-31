@@ -78,7 +78,7 @@ class EnableKernelAuditing(Rule):
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'EnableKernelAuditing'
+        key = 'ENABLEKERNELAUDITING'
         instructions = """To prevent kernel auditing from being enabled on \
 this system, set the value of EnableKernelAuditing to False"""
         default = True

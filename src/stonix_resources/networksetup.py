@@ -40,6 +40,7 @@ from .localize import DNS
 from .localize import PROXY
 from .localize import PROXYCONFIGURATIONFILE
 from .localize import PROXYDOMAIN
+from .localize import PROXYDOMAINBYPASS
 from .CommandHelper import CommandHelper
 from .logdispatcher import LogPriority
 
@@ -100,6 +101,7 @@ class networksetup():
         self.pf = PROXYCONFIGURATIONFILE
         self.dns = DNS
         self.searchdomain = PROXYDOMAIN
+        self.domainByPass = PROXYDOMAINBYPASS
         self.ch = CommandHelper(self.logdispatch)
         self.initialized = False
 
@@ -488,7 +490,10 @@ class networksetup():
 
 ###############################################################################
 
-    def networksetupoutputprocessing(self, outputLines):
+    def networksetupoutputprocessing(self, outputLines, commandType):
+        
+        if not commandType in ["-listallhardwareports", "-listnetworkserviceorder"]:
+            raise
         success = True
         order = -1
         newserviceonnexline = False
@@ -511,7 +516,12 @@ class networksetup():
                 newserviceonnexline = True
             else:
                 infoOnThisLine = True
-            if newservice and infoOnThisLine:
+            if newservice and infoOnThisLine and commandType == "-listallhardwareports":
+                self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
+                networkenabled = False
+                linearray = lineprocessed.split(":")
+                linearray = linearray[1:]
+            elif newservice and infoOnThisLine:
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 order = order + 1
 # see if network is enabled
@@ -521,6 +531,7 @@ class networksetup():
                     networkenabled = True
                 linearray = lineprocessed.split()
                 linearray = linearray[1:]
+            if newservice and infoOnThisLine:
                 servicename = ""
                 for item in linearray:
                     if servicename == "":
@@ -706,8 +717,8 @@ class networksetup():
                 for item in self.ch.getOutput() :
                     if not re.match("^\s*$", item) :
                         command = command + " " + str(item.strip())
-                if not self.searchdomain in command:
-                    command = command + " " + str(self.searchdomain)
+                if not self.domainByPass in command:
+                    command = command + " " + str(self.domainByPass)
                     self.ch.executeCommand(command)
                     if not self.ch.getError():
                         success = False
@@ -867,18 +878,19 @@ class networksetup():
 
             success = True
 
+# issue networksetup -listallhardwareports to get all network services
+            if success: 
+                command = [self.nsc, "-listallhardwareports"]
+                self.ch.executeCommand(command)
+                self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
+                success = self.networksetupoutputprocessing(self.ch.getOutput(), "-listallhardwareports")
+
 # issue networksetup -listallnetworkservices to get all network services
             if success:
                 command = [self.nsc, "-listnetworkserviceorder"]
                 self.ch.executeCommand(command)
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-                success = self.networksetupoutputprocessing(self.ch.getOutput())
-
-# issue networksetup -listallhardwareports to get all network services
-            if success: 
-                command = [self.nsc, "-listallhardwareports"]
-                self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-                success = self.networksetupoutputprocessing(self.ch.getOutput())
+                success = self.networksetupoutputprocessing(self.ch.getOutput(),"-listnetworkserviceorder")
 
 # set ns init and nso init status
             self.nsInitialized = True

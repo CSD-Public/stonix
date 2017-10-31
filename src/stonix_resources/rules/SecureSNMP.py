@@ -35,6 +35,7 @@ possible. Configure SNMP if necessary.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -75,7 +76,7 @@ class SecureSNMP(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         datatype = 'bool'
-        key = 'DisableSNMP'
+        key = 'DISABLESNMP'
         instructions = "If there is a mission-critical need for hosts at" + \
                        "this site to be remotely monitored by a SNMP " + \
                        "tool, then prevent the disabling and removal " + \
@@ -85,7 +86,7 @@ class SecureSNMP(Rule):
         self.disablesnmp = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'bool'
-        key2 = 'ConfigureSNMP'
+        key2 = 'CONFIGURESNMP'
         instructions2 = "To configure SNMP on this system, make sure " + \
                         "you have the value for DisableSNMP set to " + \
                         "False, and set the value of ConfigureSNMP to True."
@@ -205,7 +206,7 @@ class SecureSNMP(Rule):
 
         try:
 
-            svcenabled = self.svchelper.auditservice('snmpd')
+            svcenabled = self.svchelper.auditService('snmpd', _="_")
 
             pkginstalled = self.pkghelper.check('net-snmpd')
 
@@ -361,7 +362,7 @@ class SecureSNMP(Rule):
             defaults = '/usr/bin/defaults '
             operation = 'write '
             filepath = '/System/Library/LaunchDaemons/org.net-snmp.snmpd.plist '
-            key = 'Disabled'
+            key = 'DISABLED'
             val = ' -bool true'
 
             cmd = defaults + operation + filepath + key + val
@@ -387,7 +388,7 @@ class SecureSNMP(Rule):
 
             if not self.reportDisableSNMP():
 
-                self.svchelper.disableservice('snmpd')
+                self.svchelper.disableService('snmpd', _="_")
 
                 self.pkghelper.remove('net-snmpd')
 

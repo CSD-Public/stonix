@@ -73,7 +73,7 @@ class ReduceSudoTimeout(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         datatype = 'bool'
-        key = 'ReduceSudoTimeout'
+        key = 'REDUCESUDOTIMEOUT'
         instructions = "If set to true, the REDUCESUDOTIMEOUT " + \
             "variable will set the sudo timeout to 0, requiring a password " + \
             "for each sudo call."

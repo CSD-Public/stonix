@@ -31,7 +31,9 @@ well-managed web server is recommended.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods'''
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
+@change: 2017/10/23 rsn - Changing for new service helper interface
+'''
 
 from __future__ import absolute_import
 import traceback
@@ -69,7 +71,7 @@ well-managed web server is recommended.
 
         # set up CIs
         datatype = 'bool'
-        key = 'DisableWebSharing'
+        key = 'DISABLEWEBSHARING'
         instructions = 'To prevent web sharing from being disabled, set the value of DisableWebSharing to False.'
         default = True
         self.disableWebSharing = self.initCi(datatype, key, instructions, default)
@@ -100,9 +102,9 @@ well-managed web server is recommended.
             return False
 
         try:
-            if self.disableWebSharing.getcurrvalue():
-                if not self.svchelper.auditservice(self.maclongname, self.macshortname):
-                    self.comliance = True
+
+            if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
+
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
                     output = self.cmhelper.getOutput()
                     if self.checkPlistVal('1', output[0].strip()):
@@ -139,9 +141,11 @@ well-managed web server is recommended.
         try:
 
             if self.disableWebSharing.getcurrvalue():
+
                 #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
                 #    self.rulesuccess = False
                 if not self.svchelper.disableservice(self.maclongname, self.macshortname):
+
                     self.rulesuccess = False
 
                 self.id += 1

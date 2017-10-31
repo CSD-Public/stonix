@@ -81,7 +81,7 @@ class SymlinkDangerFiles(Rule):
 
         # init CIs
         self.ci = self.initCi("bool",
-                              "SymlinkDangerFiles",
+                              "SYMLINKDANGERFILES",
                               "Execute Symlink Danger Files fix.",
                               True)
         self.symlinkfiles = ['/root/.rhosts', '/root/.shosts', '/etc/shosts.equiv']

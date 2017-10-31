@@ -39,6 +39,7 @@ fixed bug where CI was not referenced before performing Fix() actions.
 parts of the code as well
 @change: 2016/08/30 eball Refactored fixLinux() method, PEP8 cleanup
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 
 from __future__ import absolute_import
@@ -49,7 +50,6 @@ import stat
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
 from ..stonixutilityfunctions import iterate, setPerms, resetsecon
 from pwd import getpwuid
@@ -289,7 +289,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         @author: Breen Malmberg
         '''
 
-        self.sh = ServiceHelper(self.environ, self.logger)
         self.ch = CommandHelper(self.logger)
 
     def report(self):

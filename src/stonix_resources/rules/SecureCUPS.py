@@ -36,6 +36,7 @@ With this rule, you can:
 @change: Breen Malmberg - 2/8/2017 - set the default value of the self.DisableGenericPort CI to False;
         fixed a typo with the data2 dict var name for cupsdconf; KVcupsdrem will now only be processed if
         the value of the self.DisableGenericPort CI is True; added some inline comments
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -90,21 +91,21 @@ class SecureCUPS(Rule):
 
         # init CIs
         datatype1 = 'bool'
-        key1 = 'SecureCUPS'
+        key1 = 'SECURECUPS'
         instructions1 = 'To prevent to STONIX from securing the CUPS service, set the value of ' + \
         'SecureCUPS to False.'
         default1 = True
         self.SecureCUPS = self.initCi(datatype1, key1, instructions1, default1)
 
         datatype2 = 'bool'
-        key2 = 'DisableCUPS'
+        key2 = 'DISABLECUPS'
         instructions2 = 'To have STONIX completely disable the CUPS service on this system, set ' + \
         'the value of DisableCUPS to True.'
         default2 = False
         self.DisableCUPS = self.initCi(datatype2, key2, instructions2, default2)
 
         datatype3 = 'bool'
-        key3 = 'DisablePrintBrowsing'
+        key3 = 'DISABLEPRINTBROWSING'
         instructions3 = 'To prevent STONIX from disabling print browsing, set the value of ' + \
         'DisablePrintBrowsing to False. ! This option is mutually exclusive with PrintBrowseSubnet ! ' + \
         'If both PrintBrowseSubnet and DisablePrintBrowsing are checked/enabled, DisablePrintBrowsing ' + \
@@ -113,7 +114,7 @@ class SecureCUPS(Rule):
         self.DisablePrintBrowsing = self.initCi(datatype3, key3, instructions3, default3)
 
         datatype4 = 'bool'
-        key4 = 'PrintBrowseSubnet'
+        key4 = 'PRINTBROWSESUBNET'
         instructions4 = 'To allow printer browsing on a specific subnet, set ' + \
         'the value of PrintBrowseSubnet to True. The subnet to allow printer ' + \
         'browsing for is specified in localize by setting the value of ' + \
@@ -125,7 +126,7 @@ class SecureCUPS(Rule):
         self.PrintBrowseSubnet = self.initCi(datatype4, key4, instructions4, default4)
 
         datatype5 = 'bool'
-        key5 = 'DisableGenericPort'
+        key5 = 'DISABLEGENERICPORT'
         instructions5 = 'To prevent remote users from potentially connecting ' + \
         'to and using locally configured printers by disabling the CUPS print ' + \
         'server sharing capabilities, set the value of DisableGenericPort to ' + \
@@ -134,14 +135,14 @@ class SecureCUPS(Rule):
         self.DisableGenericPort = self.initCi(datatype5, key5, instructions5, default5)
 
         datatype6 = 'bool'
-        key6 = 'SetDefaultAuthType'
+        key6 = 'SETDEFAULTAUTHTYPE'
         instructions6 = 'To prevent the defaultauthtype for cups from being ' + \
         'set to Digest, set the value of SetDefaultAuthType to False.'
         default6 = True
         self.SetDefaultAuthType = self.initCi(datatype6, key6, instructions6, default6)
 
         datatype7 = 'bool'
-        key7 = 'SetupDefaultPolicyBlocks'
+        key7 = 'SETUPDEFAULTPOLICYBLOCKS'
         instructions7 = "To prevent default policy blocks for cups from " + \
         "being defined in the cups config file, set the value of " + \
         "SetupDefaultPolicyBlocks to False. Note that if you choose to setup " + \
@@ -532,11 +533,11 @@ class SecureCUPS(Rule):
         try:
 
             if self.linux:
-                if self.sh.auditservice(self.svcname):
+                if self.sh.auditService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
             elif self.darwin:
-                if self.sh.auditservice(self.svclongname, self.svcname):
+                if self.sh.auditService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
 
@@ -701,9 +702,9 @@ class SecureCUPS(Rule):
                 # do not continue with rest of fix because that would save state for this fix run
                 self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
                 if self.darwin:
-                    self.sh.reloadservice(self.svclongname, self.svcname)
+                    self.sh.reloadService(self.svclongname, serviceTarget=self.svcname)
                 else:
-                    self.sh.reloadservice(self.svcname)
+                    self.sh.reloadService(self.svcname, _="_")
                 self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
                 self.formatDetailedResults('fix', success, self.detailedresults)
                 return success
@@ -885,11 +886,11 @@ class SecureCUPS(Rule):
                 return retval
 
             if self.linux:
-                if not self.sh.reloadservice(self.svcname):
+                if not self.sh.reloadService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
             elif self.darwin:
-                if not self.sh.reloadservice(self.svclongname, self.svcname):
+                if not self.sh.reloadService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
 
@@ -912,13 +913,13 @@ class SecureCUPS(Rule):
 
             if self.linux:
 
-                if not self.sh.disableservice(self.svcname):
+                if not self.sh.disableService(self.svcname, _="_"):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 
             elif self.darwin:
 
-                if not self.sh.disableservice(self.svclongname, self.svcname):
+                if not self.sh.disableService(self.svclongname, serviceTarget=self.svcname):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 

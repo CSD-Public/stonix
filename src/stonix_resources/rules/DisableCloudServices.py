@@ -32,11 +32,11 @@ dictionary
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/24 rsn - removed unused ServiceHelper reference
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..stonixutilityfunctions import iterate
 from ..logdispatcher import LogPriority
@@ -73,11 +73,10 @@ dictionary
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10'],
                                   'Ubuntu': ['12.04', '+']}}
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
         # init CIs
         datatype = 'bool'
-        key = 'DisableCloudServices'
+        key = 'DISABLECLOUDSERVICES'
         instructions = "To prevent cloud services from being disabled, " + \
             "set the value of DisableCloudServices to False."
         default = True

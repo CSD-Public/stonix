@@ -67,6 +67,7 @@ Miscellaneous utility functions.
 
 import os
 import grp
+import inspect
 import pwd
 import re
 import subprocess
@@ -954,19 +955,18 @@ def findUserLoggedIn(logger):
 
         matchpat = re.compile("^(\w+)\s+")
 
-        (retval, reterr) = Popen(["/usr/bin/stat", "-f", "'%Su'", "/dev/console"],
+        (myuser, reterr) = Popen(["/usr/bin/stat", "-f", "'%Su'", "/dev/console"],
                                                stdout=PIPE, stderr=PIPE,
-                                               shell=False)
-
-        theuser = matchpat.match(retval)
-        myuser = theuser.group(1)
+                                               shell=False).communicate()
         if myuser:
-            logger.log(LogPriority.DEBUG, "User name is: " + myuser, "verbose")
+            logger.log(LogPriority.DEBUG, "User name is: " + myuser.strip())
         else:
-            logger.log(LogPriority.DEBUG, "User name NOT FOUND", "verbose")
+            logger.log(LogPriority.DEBUG, "User name NOT FOUND")
 
     except Exception:
         raise
+    myuser = myuser.strip()
+    myuser = myuser.strip("'")
     return myuser
 
 def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger=None):

@@ -71,7 +71,7 @@ class DisableInactiveAccounts(Rule):
         self.guidance = ['CNSSI 1253', 'DISA STIG']
 
         datatype = 'bool'
-        key = 'DisableInactiveAccounts'
+        key = 'DISABLEINACTIVEACCOUNTS'
         instructions = 'To disable this rule, set the value of ' + \
             'DisableInactiveAccounts to False.'
         default = True

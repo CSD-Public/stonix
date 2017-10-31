@@ -31,6 +31,7 @@ Created on Mar 12, 2013
 @change: 2015/09/09 eball Improved feedback
 @change: 2016/06/29 eball Fixed Mac path, added timeout as a CI
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
@@ -39,7 +40,6 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
 import traceback
 import os
 import re
@@ -152,7 +152,6 @@ class SSHTimeout(Rule):
             success = True
             self.detailedresults = ""
             debug = ""
-            self.sh = ServiceHelper(self.environ, self.logger)
             # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)

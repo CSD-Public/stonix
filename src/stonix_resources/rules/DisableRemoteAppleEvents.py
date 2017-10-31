@@ -33,6 +33,7 @@ possible.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change 2017/08/28 Breen Malmberg Fixing to use new help text methods
+@change: 2017/10/23 rsn - remove unused service helper
 '''
 
 from __future__ import absolute_import
@@ -44,7 +45,6 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
 
 
 class DisableRemoteAppleEvents(Rule):
@@ -79,13 +79,13 @@ class DisableRemoteAppleEvents(Rule):
 
         # set up CIs
         datatype = 'bool'
-        key = 'DisableRemoteAppleEvents'
+        key = 'DISABLEREMOTEAPPLEEVENTS'
         instructions = 'To allow the use of remote apple events on this system, set the value of DisableRemoteAppleEvents to False.'
         default = True
         self.disableremoteevents = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
-        key2 = 'RemoteAppleEventsUsers'
+        key2 = 'REMOTEAPPLEEVENTSUSERS'
         instructions2 = 'If you have a business requirement to have remote apple events turned on, enter a list of users who will be allowed access to remote apple events on this system'
         default2 = []
         self.secureremoteevents = self.initCi(datatype2, key2, instructions2, default2)
@@ -106,7 +106,6 @@ class DisableRemoteAppleEvents(Rule):
 
         self.detailedresults = ''
         self.cmhelper = CommandHelper(self.logger)
-        self.svchelper = ServiceHelper(self.environ, self.logger)
         self.compliant = False
         secure = True
         disabled = False
