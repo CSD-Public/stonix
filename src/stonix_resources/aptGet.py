@@ -20,12 +20,17 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
+Created on Aug 06, 2012
+
+@author: Derek T. Walker
+'''
+
+import re
 
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
-from stonixutilityfunctions import validateParam
-from subprocess import Popen, PIPE, call
-from re import search
+from StonixExceptions import repoError
 
 
 class AptGet(object):
@@ -46,18 +51,32 @@ class AptGet(object):
             can potentially destroy your system!)
     @change: 2017/08/16 bgonz12 - Added DEBIAN_FRONTEND=noninteractive env var
             to remove function
+    @change: 2017/10/18 Breen Malmberg - changed class var names to be more self-explanatory;
+            changed command to check whether there are available packages to use the canonical 
+            debian/ubuntu method; added calls to repoError exception to determine exact nature 
+            and cause of any errors with querying or calling repositories on the system (this adds 
+            logging of the nature and cause(s) as well); changed log messaging to be more consistent 
+            in style/format; removed calls to validateParam due to concerns about the stability and 
+            reliability of that method
     '''
 
     def __init__(self, logger):
+
         self.logger = logger
         self.ch = CommandHelper(self.logger)
+
         self.aptgetloc = "/usr/bin/apt-get"
-        self.install = "sudo DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y --assume-yes install "
-        self.remove = "sudo DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y remove "
+        self.aptcacheloc = "/usr/bin/apt-cache"
         self.dpkgloc = "/usr/bin/dpkg"
-        self.checkinstalled = self.dpkgloc + " -l "
-        self.checkupdates = self.aptgetloc + " -u upgrade --assume-no "
-        self.updatepkg = self.aptgetloc + " -u upgrade --assume-yes "
+
+        self.aptinstall = "DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y --assume-yes install "
+        self.aptremove = "DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y remove "
+
+        self.dpkgsearch = self.dpkgloc + " -S "
+        self.dpkgchkinstalled = self.dpkgloc + " -l "
+        self.aptchkupdates = self.aptgetloc + " -u upgrade --assume-no "
+        self.aptupgrade = self.aptgetloc + " -u upgrade --assume-yes "
+        self.aptchkavail = self.aptcacheloc +  " policy "
 
     def installpackage(self, package):
         '''
@@ -73,20 +92,23 @@ class AptGet(object):
                 detailedresults replaced with logging
         '''
 
-        installed = False
+        installed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return installed
-
-            self.ch.executeCommand(self.install + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                installed = True
+            try:
+                self.ch.executeCommand(self.aptinstall + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    installed = False
+                    self.logger.log(LogPriority.WARNING, str(errstr))
 
             if installed:
-                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was installed successfully")
+                self.logger.log(LogPriority.DEBUG, "Successfully installed package " + str(package))
             else:
                 self.logger.log(LogPriority.DEBUG, "Failed to install package " + str(package))
 
@@ -105,17 +127,20 @@ class AptGet(object):
         @author: Derek T. Walker
         '''
 
-        removed = False
+        removed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return removed
-
-            self.ch.executeCommand(self.remove + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                removed = True
+            try:
+                self.ch.executeCommand(self.aptremove + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    removed = False
+                    self.logger.log(LogPriority.WARNING, str(errstr))
 
             if removed:
                 self.logger.log(LogPriority.DEBUG, "Successfully removed package " + str(package))
@@ -143,27 +168,29 @@ class AptGet(object):
         '''
 
         installed = False
+        stringToMatch = "ii\s+" + str(package)
 
         try:
 
-            stringToMatch = "(.*)" + package + "(.*)"
-            self.ch.executeCommand(self.checkinstalled + package)
-            info = self.ch.getOutput()
-            match = False
-            for line in info:
-                if search(stringToMatch, line):
-                    parts = line.split()
-                    if parts[0] == "ii":
-                        match = True
-                        break
-                else:
-                    continue
+            try:
+                self.ch.executeCommand(self.dpkgchkinstalled + package)
+                retcode = self.ch.getReturnCode()
+                outputstr = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    return False
 
-            if match:
-                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
+            if re.search(stringToMatch, outputstr, re.IGNORECASE):
                 installed = True
-            else:
+
+            if not installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is NOT installed")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
 
         except Exception:
             raise
@@ -178,33 +205,27 @@ class AptGet(object):
         @rtype: bool
         @author: Derek T. Walker
         @change: Breen Malmberg - 4/27/2017 - created doc string;
-                pulled result logging out of conditional; added
-                parameter validation
-                
+                pulled result logging out of conditional 
         '''
 
         found = False
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return found
+            try:
+                self.ch.executeCommand(self.aptchkavail + package)
+                retcode = self.ch.getReturnCode()
+                outputstr = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    return False
 
-            retval = call(["/usr/bin/apt-cache", "search", "^" + package + "$"],
-                          stdout=PIPE, stderr=PIPE, shell=False)
-            if retval == 0:
-                message = Popen(["/usr/bin/apt-cache", "search",
-                                 "^" + package + "$"], stdout=PIPE,
-                                stderr=PIPE,
-                                shell=False)
-
-                info = message.stdout.readlines()
-                while message.poll() is None:
-                    continue
-                message.stdout.close()
-                for line in info:
-                    if search("^" + package + " -", line):
-                        found = True
+            if re.search(package, outputstr, re.IGNORECASE):
+                found = True
 
             if found:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
@@ -222,23 +243,26 @@ class AptGet(object):
         if no package is specified, apply
         all available updates for the system
 
-        @param package: string; name of package to update
+        @param package: string; (OPTIONAL) name of package to update
         @return: updated
         @rtype: bool
         @author: Breen Malmberg
         '''
 
-        updated = False
+        updated = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return updated
-
-            self.ch.executeCommand(self.updatepkg + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                updated = True
+            try:
+                self.ch.executeCommand(self.aptupgrade + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    updated = False
 
             if package:
                 if updated:
@@ -261,7 +285,7 @@ class AptGet(object):
         if no package is specified, then check
         for updates for the entire system
 
-        @param package: string; Name of package to check
+        @param package: string; (OPTIONAL) Name of package to check
         @return: updatesavail
         @rtype: bool
         @author: Breen Malmberg
@@ -271,13 +295,18 @@ class AptGet(object):
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return updatesavail
-
-            self.ch.executeCommand(self.checkupdates + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                updatesavail = True
+            try:
+                self.ch.executeCommand(self.aptchkupdates + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    return False
+                else:
+                    updatesavail = True
 
             if package:
                 if updatesavail:
@@ -307,17 +336,23 @@ class AptGet(object):
                 method now returns a variable; added param validation
         '''
 
-        packagename =  ""
+        packagename = ""
 
         try:
 
-            if not validateParam(self.logger, filename, basestring, "filename"):
-                return packagename
-
-            self.ch.executeCommand("dpkg -S " + filename)
-            if self.ch.getReturnCode() == 0:
-                output = self.ch.getOutputString()
-                packagename = output.split(":")[0]
+            try:
+                self.ch.executeCommand(self.dpkgsearch + filename)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('apt', retcode, str(errstr))
+                if self.ch.getReturnCode() == 0:
+                    output = self.ch.getOutputString()
+                    packagename = output.split(":")[0]
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    pass
 
         except Exception:
             raise

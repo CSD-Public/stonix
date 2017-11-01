@@ -20,13 +20,17 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
+Created on Aug 08, 2012
 
-import traceback
+@author: Derek T. Walker
+'''
 
-from re import search
+import re
+
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
-from stonixutilityfunctions import validateParam
+from StonixExceptions import repoError
 
 
 class Zypper(object):
@@ -60,8 +64,8 @@ class Zypper(object):
         self.updates = self.zyploc + " lu "
         self.upzypp = self.zyploc + " up "
         self.rpm = "/bin/rpm -q "
+        self.pkgtype = "zypper"
 
-###############################################################################
     def installpackage(self, package):
         '''
         Install a package. Return a bool indicating success or failure.
@@ -74,31 +78,28 @@ class Zypper(object):
         @change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting
         '''
 
-        installed = False
+        installed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return installed
-
-            self.ch.executeCommand(self.install + package)
-
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-
-                installed = True
+            try:
+                self.ch.executeCommand(self.install + package)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    raise repoError('zypper', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    installed = False
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " installed successfully")
             else:
-
                 self.logger.log(LogPriority.DEBUG, "Failed to install package " + str(package))
 
         except Exception:
             raise
         return installed
 
-###############################################################################
     def removepackage(self, package):
         '''
         Remove a package. Return a bool indicating success or failure.
@@ -113,29 +114,28 @@ class Zypper(object):
                 being initialized before it was called
         '''
 
-        removed = False
+        removed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return removed
-
-            self.ch.executeCommand(self.remove + package)
-            if self.ch.getReturnCode() == 0:
-
-                removed = True
+            try:
+                self.ch.executeCommand(self.remove + package)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    raise repoError('zypper', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    removed = False
 
             if removed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was removed successfully")
             else:
-
                 self.logger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
 
         except Exception:
             raise
         return removed
 
-###############################################################################
     def checkInstall(self, package):
         '''
         Check the installation status of a package. Return a bool; True if
@@ -154,31 +154,19 @@ class Zypper(object):
             'found but not installed' as this no longer applies to this method
         '''
 
-        installed = False
+        installed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return installed
-
-            self.ch.executeCommand(self.searchi + package)
-            if self.ch.getReturnCode() == 0:
-                output = self.ch.getOutput()
-                outputStr = self.ch.getOutputString()
-                if search("Abort, retry, ignore", outputStr):
-                    self.detailedresults = "There is an error contacting " + \
-                        "one or more repos, aborting\n"
-                    return False
-                for line in output:
-                    if search(package, line):
-                        installed = True
-                        break
-
-            elif self.ch.getReturnCode() == 106:
-                for line in output:
-                    if search(package, line):
-                        installed = True
-                        break
+            try:
+                self.ch.executeCommand(self.searchi + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('zypper', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    installed = False
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, " Package " + str(package) + " is installed")
@@ -189,7 +177,6 @@ class Zypper(object):
             raise
         return installed
 
-###############################################################################
     def checkAvailable(self, package):
         '''
         check if given package is available to install on the current system
@@ -206,19 +193,25 @@ class Zypper(object):
                 added parameter validation
         '''
 
-        available = False
+        available = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return available
-
-            self.ch.executeCommand(self.searchu + package)
-            output = self.ch.getOutput()
-            if self.ch.getReturnCode() == 0:
-                for line in output:
-                    if search(package, line):
-                        available = True
+            try:
+                self.ch.executeCommand(self.searchu + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                output = self.ch.getOutput()
+                if retcode != 0:
+                    raise repoError('zypper', retcode, str(errstr))
+                else:
+                    for line in output:
+                        if re.search(package, line):
+                            available = True
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    return False
 
                 if available:
                     self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
@@ -249,32 +242,36 @@ class Zypper(object):
 
         try:
 
-            if package:
-                self.ch.executeCommand(self.updates + " | grep " + package)
-            else:
-                self.ch.executeCommand(self.updates)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0|100:
-                updatesavail = False
+            try:
+                if package:
+                    self.ch.executeCommand(self.updates + " | grep " + package)
+                else:
+                    self.ch.executeCommand(self.updates)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('zypper', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    updatesavail = False
 
             if package:
-
                 if not updatesavail:
                     self.logger.log(LogPriority.DEBUG, "No updates are available for package " + str(package))
                 else:
-                        self.logger.log(LogPriority.DEBUG, "Updates are available for package " + str(package))
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for package " + str(package))
 
             else:
                 if not updatesavail:
                     self.logger.log(LogPriority.DEBUG, "No updates are available")
                 else:
-                        self.logger.log(LogPriority.DEBUG, "Updates are available")
+                    self.logger.log(LogPriority.DEBUG, "Updates are available")
 
         except Exception:
-
             raise
         return updatesavail
-            
+
     def Update(self, package=""):
         '''
         update a specified package
@@ -291,17 +288,21 @@ class Zypper(object):
 
         try:
 
-            self.ch.executeCommand(self.upzypp + package)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                updated = False
-                self.logger.log(LogPriority.DEBUG, "Unable to update package " + str(package))
+            try:
+                self.ch.executeCommand(self.upzypp + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('zypper', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    updated = False
 
         except Exception:
             raise
         return updated
 
-###############################################################################
     def getPackageFromFile(self, filename):
         '''Returns the name of the package that provides the given
         filename/path.
@@ -310,20 +311,31 @@ class Zypper(object):
         @return: string name of package if found, None otherwise
         @author: Eric Ball
         '''
-        try:
-            self.ch.executeCommand(self.rpm + "-f " + filename)
-            if self.ch.getReturnCode() == 0:
-                return self.ch.getOutputString()
-            else:
-                return None
-        except(KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
 
-###############################################################################
+        packagename = ""
+
+        try:
+
+            try:
+                self.ch.executeCommand(self.rpm + "-f " + filename)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                outputstr = self.ch.getOutputString()
+                if retcode != 0:
+                    raise repoError('zypper', retcode, str(errstr))
+                else:
+                    packagename = outputstr
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                else:
+                    packagename = outputstr
+
+        except Exception:
+            raise
+
+        return packagename
+
     def getInstall(self):
         '''
         return the install command string for the zypper pkg manager
@@ -335,7 +347,6 @@ class Zypper(object):
 
         return self.install
 
-###############################################################################
     def getRemove(self):
         '''
         return the uninstall/remove command string for the zypper pkg manager

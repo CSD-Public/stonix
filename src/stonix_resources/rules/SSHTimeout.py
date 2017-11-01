@@ -237,14 +237,14 @@ class SSHTimeout(Rule):
 
                         else:
                             debug += "Unable to complete kveditor commit\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                     else:
                         debug += "Unable to complete kveditor fix\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     
                 self.rulesuccess = success
+            if debug:
+                self.logger.log(LogPriority.DEBUG, debug)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
