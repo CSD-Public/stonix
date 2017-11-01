@@ -357,3 +357,9 @@ class AptGet(object):
         except Exception:
             raise
         return packagename
+
+    def getInstall(self):
+        return self.install
+
+    def getRemove(self):
+        return self.remove

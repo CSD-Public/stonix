@@ -77,7 +77,7 @@ class ConfigureLogging(RuleKVEditor):
             "CONFIGURELOGGING to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
+        self.rootrequired = True
         self.service = ""
         self.logd = ""
         self.iditerator = 0

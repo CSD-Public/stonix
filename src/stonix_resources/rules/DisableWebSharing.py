@@ -103,10 +103,12 @@ well-managed web server is recommended.
             return False
 
         try:
+
             if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
+
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
                     output = self.cmhelper.getOutput()
-                    if self.checkPlistVal('1', output):
+                    if self.checkPlistVal('1', output[0].strip()):
                         self.compliant = True
             else:
                 self.detailedresults += '\n' + self.maclongname + ' is still loaded/enabled'
@@ -140,9 +142,11 @@ well-managed web server is recommended.
         try:
 
             if self.disableWebSharing.getcurrvalue():
-                if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
-                    self.rulesuccess = False
-                if not self.svchelper.disableService(self.maclongname, serviceTarget=self.macshortname):
+
+                #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
+                #    self.rulesuccess = False
+                if not self.svchelper.disableservice(self.maclongname, self.macshortname):
+
                     self.rulesuccess = False
 
                 self.id += 1
@@ -213,3 +217,9 @@ well-managed web server is recommended.
         except Exception:
             raise
         return retval
+
+###############################################################################
+    def afterfix(self):
+        afterfixsuccessful = True
+        afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
+        return afterfixsuccessful
