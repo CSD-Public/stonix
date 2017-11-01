@@ -144,7 +144,7 @@ class Connectivity(object):
         @parameter: timeout - how fast to timeout the connection.
         """
         url = url.strip()
-        self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
+        self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")
         self.logger.log(LogPriority.DEBUG, "timeout: " + str(timeout))
 
         success = False
