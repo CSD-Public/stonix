@@ -104,6 +104,7 @@ def writeInit(pathToRules, logger):
             fp.close()
         except:
             pass
+
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
@@ -113,6 +114,7 @@ def writeInit(pathToRules, logger):
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
+
     return success
 
 if __name__ == "__main__":

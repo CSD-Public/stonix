@@ -30,10 +30,9 @@ curl -o downloads/PyInstaller-3.2.1.tar.bz2  -L https://github.com/pyinstaller/p
 tar xjvf downloads/PyInstaller-3.2.1.tar.bz2
 
 #####
-# Clone the pyinstaller-snapshot repository:
-
-git clone https://github.com/roynielsen17/pyinstaller-snapshot.git 
-
+# Get pyinstaller
+curl -o downloads/PyInstaller-3.2.1.tar.bz2  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.2.1/PyInstaller-3.2.1.tar.bz2
+tar xjvf downloads/PyInstaller-3.2.1.tar.bz2
 
 #####
 # Build Qt
