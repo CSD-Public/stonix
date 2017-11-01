@@ -189,6 +189,7 @@ class SSHTimeout(Rule):
                             self.editor.report()
                     else:
                         debug += "openssh-server not available to install\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                         self.rulesuccess = False
                         return
             if not os.path.exists(self.path):
@@ -217,7 +218,9 @@ class SSHTimeout(Rule):
                     else:
                         if not setPerms(self.path, [0, 0, 0o644], self.logger):
                             success = False
+
                 if self.editor.fixables:
+
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
@@ -226,10 +229,12 @@ class SSHTimeout(Rule):
                         debug += "kveditor fix ran successfully\n"
                         if self.editor.commit():
                             debug += "kveditor commit ran successfully\n"
+
                             os.chown(self.path, 0, 0)
                             os.chmod(self.path, 0o644)
                             if re.search("linux", self.environ.getosfamily()):
                                 resetsecon(self.path)
+
                         else:
                             debug += "Unable to complete kveditor commit\n"
                             success = False

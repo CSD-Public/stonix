@@ -26,6 +26,8 @@ Created on May 31, 2016
 @author: dkennel
 @change: 2016/10/18 eball Added conditionals so that Gnome and KDE checks will
     only occur if Gnome/KDE are installed. Did PEP8 and detailedresults cleanup.
+@change: 2017/7/3 bgonz12 Added check to make sure that gconf2 for Gnome is
+    installed before running gconf configuration in fixgnome3
 @change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
     desktop manager, SDDM.
 @change: 2017/10/23 rsn - removed unused service helper
@@ -201,9 +203,14 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                         "/etc/dconf/db/local.d/locks/autologout\n"
                 return False
         else:
+            self.ph = Pkghelper(self.logger, self.environ)
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__chkgnome3',
                                   'Checking GNOME with gconf'])
+            if not self.ph.check("gconf2"):
+                self.detailedresults += "gconf2 is not installed\n\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                return False
             gconftimeout = False
             gconfaction = False
             prefix = '/usr/bin/gconftool-2 --direct --config-source ' + \
@@ -236,9 +243,9 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 if not gconfaction:
                     self.detailedresults += "GNOME 3 autologout settings " + \
                         "not found.\n"
-                if not gconftimeout:
-                    self.detailedresults += "GNOME 3 autologout time not " + \
-                        "found or not correct.\n"
+                    if not gconftimeout:
+                        self.detailedresults += "GNOME 3 autologout time not " + \
+                            "found or not correct.\n"
             return False
 
     def chkkde4(self):
@@ -478,6 +485,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
 
         @author: d.kennel
         """
+        self.ph = Pkghelper(self.logger, self.environ)
         if not self.environ.geteuid() == 0:
             return
         if os.path.exists('/etc/dconf/db/local.d'):
@@ -547,7 +555,13 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixgnome3',
                                   'Working GNOME with gconf'])
-
+            if not self.ph.check("gconf2"):
+                if not self.ph.checkAvailable("gconf2"):
+                    self.detailedresults += "Unable to install gconf2 so " + \
+                        "this rule is unable to complete\n"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                else:
+                    self.ph.install("gconf2")
             setprefix = '/usr/bin/gconftool-2 --direct --config-source ' + \
                 'xml:readwrite:/etc/gconf/gconf.xml.mandatory --set '
             settime = setprefix + \
