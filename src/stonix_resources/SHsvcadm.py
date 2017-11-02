@@ -42,7 +42,7 @@ class SHsvcadm(ServiceHelperTemplate):
         '''
         Constructor
         '''
-        super(SHsvcadm, self).__init__(self, environment, logdispatcher)
+        super(SHsvcadm, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/usr/sbin/svcadm '

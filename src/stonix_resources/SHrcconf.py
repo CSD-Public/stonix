@@ -42,7 +42,7 @@ class SHrcconf(object):
         '''
         Constructor
         '''
-        super(SHrcconf, self).__init__(self, environment, logdispatcher)
+        super(SHrcconf, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.svc = '/etc/rc.d/'
