@@ -45,7 +45,7 @@ class SHchkconfig(ServiceHelperTemplate):
         '''
         Constructor
         '''
-        super(SHchkconfig, self).__init__(self, environment, logdispatcher)
+        super(SHchkconfig, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/sbin/chkconfig '

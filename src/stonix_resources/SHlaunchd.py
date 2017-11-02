@@ -53,7 +53,7 @@ class SHlaunchd(ServiceHelperTemplate):
         '''
         Constructor
         '''
-        super(SHlaunchd, self).__init__(self, environment, logdispatcher)
+        super(SHlaunchd, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.launchd = "/bin/launchctl"
