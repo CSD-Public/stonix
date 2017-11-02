@@ -1283,3 +1283,16 @@ def validateParam(logger, param, ptype, pname):
         else:
             print str(errmsg)
     return valid
+
+def reportStack(level=1):
+    filename = inspect.stack()[level][1]
+    functionName = str(inspect.stack()[level][3])
+    lineNumber = str(inspect.stack()[level][2])
+    '''  
+    print("----------------")
+    print(filename)
+    print(functionName) 
+    print(lineNumber)   
+    '''
+    return filename + " : " + functionName + " : " + lineNumber + " : "
+
