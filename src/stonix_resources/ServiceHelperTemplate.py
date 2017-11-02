@@ -59,22 +59,15 @@ class ServiceHelperTemplate(object):
     @author: dkennel
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, environment, logger):
         '''
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
 
         @param environment: STONIX environment object
         '''
-        if 'environment' not in kwargs:
-            raise ValueError("Variable 'logDispatcher' a required parameter for " + str(self.__class__.__name__))
-        else:
-            self.logger = kwargs.get('environment')
-
-        if 'logdispatcher' not in kwargs:
-            raise ValueError("Variable 'logDispatcher' a required parameter for " + str(self.__class__.__name__))
-        else:
-            self.logdispatcher = kwargs.get('logDispatcher')
+        self.environ = environment
+        self.logdispatcher = logger
 
     #----------------------------------------------------------------------
     # helper Methods

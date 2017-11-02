@@ -44,7 +44,7 @@ class SHsystemctl(ServiceHelperTemplate):
         '''
         Constructor
         '''
-        super(SHsystemctl, self).__init__(self, environment, logdispatcher)
+        super(SHsystemctl, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.ch = CommandHelper(self.logdispatcher)

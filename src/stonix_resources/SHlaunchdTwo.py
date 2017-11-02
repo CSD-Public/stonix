@@ -49,9 +49,11 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @param environment: STONIX environment object
         '''
-        super(SHlaunchdTwo, self).__init__(**kwargs)
-        self.environ = kwargs.get("environment")
-        self.logger = kwargs.get("logdispatcher")
+        super(SHlaunchdTwo, self).__init__(environment, logdispatcher)
+        #self.environ = kwargs.get("environment")
+        #self.logger = kwargs.get("logdispatcher")
+        self.environ = environment
+        self.logger = logdispatcher
         self.lCtl = LaunchCtl(self.logger)
 
     #----------------------------------------------------------------------

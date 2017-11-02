@@ -43,7 +43,7 @@ class SHupdaterc(ServiceHelperTemplate):
         '''
         Constructor
         '''
-        super(SHupdaterc, self).__init__(self, environment, logdispatcher)
+        super(SHupdaterc, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/usr/sbin/update-rc.d '

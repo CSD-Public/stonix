@@ -44,7 +44,7 @@ class SHrcupdate(ServiceHelperTemplate):
         '''
         Constructor
         '''
-        super(SHrcupdate, self).__init__(self, environment, logdispatcher)
+        super(SHrcupdate, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/sbin/rc-update '
