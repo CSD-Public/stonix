@@ -90,6 +90,7 @@ class SecureMDNS(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.compliant = False
+        self.rulesuccess = True
         self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',
                          'CCE 4426-3', 'CCE 4193-9', 'CCE 4444-6',
                          'CCE 4352-1', 'CCE 4433-9', 'CCE 4451-1',
@@ -222,6 +223,7 @@ class SecureMDNS(Rule):
             # defaults
             compliant = True
             self.detailedresults = ''
+            self.rulesuccess = True
 
             # if system is a mac, run reportmac
             if self.ismac:
