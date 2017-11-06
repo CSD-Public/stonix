@@ -240,7 +240,7 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
-                    if self.sh.auditService('avahi-daemon', _="_"):
+                    if self.sh.auditService('avahi-daemon', serviceTarget=self.serviceTarget):
                         compliant = False
                         self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
@@ -426,10 +426,10 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     avahi = self.package
                     avahid = 'avahi-daemon'
-                    if self.sh.auditService(avahid, _="_"):
+                    if self.sh.auditService(avahid, serviceTarget=self.serviceTarget):
                         debug = "Disabling " + avahid + " service"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.sh.disableService(avahid, _="_")
+                        self.sh.disableService(avahid, serviceTarget=self.serviceTarget)
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",
