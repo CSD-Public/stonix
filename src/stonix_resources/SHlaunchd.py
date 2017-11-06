@@ -63,7 +63,7 @@ class SHlaunchd(ServiceHelperTemplate):
                            "launchctl list returned unknown response"]
         self.ch = CommandHelper.CommandHelper(logdispatcher)
 
-    def disableservice(self, service, **kwargs):
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -101,7 +101,7 @@ class SHlaunchd(ServiceHelperTemplate):
             raise
         return servicesuccess
 
-    def enableservice(self, service, **kwargs):
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -170,7 +170,7 @@ class SHlaunchd(ServiceHelperTemplate):
         except Exception:
             raise
 
-    def auditservice(self, service, **kwargs):
+    def auditService(self, service, **kwargs):
         '''
         Use launchctl to determine if a given service is configured
         to run (aka currently loaded). Return True if so. Return
@@ -250,7 +250,7 @@ class SHlaunchd(ServiceHelperTemplate):
             raise
         return isloaded
 
-    def isrunning(self, service, **kwargs):
+    def isRunning(self, service, **kwargs):
         '''
         Use launchctl to determine if the given service is currnetly
         running or not. Return True if it is. Return False if it is not.
@@ -329,7 +329,7 @@ class SHlaunchd(ServiceHelperTemplate):
             raise
         return isrunning
 
-    def reloadservice(self, service, **kwargs):
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -395,7 +395,7 @@ class SHlaunchd(ServiceHelperTemplate):
             raise
         return reloadsuccess
 
-    def listservices(self, **kwargs):
+    def listServices(self, **kwargs):
         '''
         Return a list containing strings that are service names.
 
