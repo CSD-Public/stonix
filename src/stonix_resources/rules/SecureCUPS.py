@@ -533,7 +533,7 @@ class SecureCUPS(Rule):
         try:
 
             if self.linux:
-                if self.sh.auditService(self.svcname, _="_"):
+                if self.sh.auditService(self.svcname, serviceTarget=self.serviceTarget):
                     retval = False
                     self.detailedresults += "\nThe " + str(self.svcname) + " service is still configured to run"
             elif self.darwin:
@@ -704,7 +704,7 @@ class SecureCUPS(Rule):
                 if self.darwin:
                     self.sh.reloadService(self.svclongname, serviceTarget=self.svcname)
                 else:
-                    self.sh.reloadService(self.svcname, _="_")
+                    self.sh.reloadService(self.svcname, serviceTarget=self.serviceTarget)
                 self.logger.log(LogPriority.DEBUG, "Removed bad configuration options from cups config files. Exiting...")
                 self.formatDetailedResults('fix', success, self.detailedresults)
                 return success
@@ -886,7 +886,7 @@ class SecureCUPS(Rule):
                 return retval
 
             if self.linux:
-                if not self.sh.reloadService(self.svcname, _="_"):
+                if not self.sh.reloadService(self.svcname, serviceTarget=self.serviceTarget):
                     retval = False
                     self.detailedresults += "|nThere was a problem reloading the " + str(self.svcname) + " service"
             elif self.darwin:
@@ -913,7 +913,7 @@ class SecureCUPS(Rule):
 
             if self.linux:
 
-                if not self.sh.disableService(self.svcname, _="_"):
+                if not self.sh.disableService(self.svcname, serviceTarget=self.serviceTarget):
                     retval = False
                     self.detailedresults += "\nThere was a problem disabling the " + str(self.svcname) + " service"
 
