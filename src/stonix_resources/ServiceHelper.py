@@ -684,7 +684,7 @@ class ServiceHelper(object):
         serviceList = []
         secondaryList = []
         try:
-            serviceList = self.svchelper.listServices(**kwargs)
+            serviceList = self.svchelper.listServices()
             
             if self.isHybrid:
                 secondaryList = self.secondary.listServices()
