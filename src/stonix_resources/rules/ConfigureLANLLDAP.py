@@ -36,6 +36,8 @@ from LANL-stor.
     localization into individual methods
 @change: 2017/01/12 eball - Modified __checkconf to read file contents within
     the method. This allows for more specific feedback on file content issues.
+@change: 2017/11/06 bgonz12 - Changed service helper function calls to use
+    camel case instead of all lowercase. 
 '''
 from __future__ import absolute_import
 import os
@@ -248,7 +250,7 @@ effect."""
                                 "krb5_server": "kerberos.lanl.gov," +
                                 "kerberos-slaves.lanl.gov"}
                 self.sssdconfdict = sssdconfdict
-                if not self.sh.auditservice("sssd"):
+                if not self.sh.auditService("sssd"):
                     compliant = False
                     self.detailedresults += "sssd service is not activated\n"
                 if os.path.exists(sssdconfpath):
@@ -286,7 +288,7 @@ effect."""
                     compliant = False
                     self.detailedresults += nsswitchpath + " does not exist\n"
             else:
-                if not self.sh.auditservice("nslcd"):
+                if not self.sh.auditService("nslcd"):
                     compliant = False
                     self.detailedresults += "nslcd service is not activated\n"
   
@@ -608,7 +610,7 @@ effect."""
                             "system should be rebooted to finalize the " + \
                             "configuration."
                         self.logger.log(LogPriority.WARNING, warning)
-                if not self.sh.auditservice("sssd"):
+                if not self.sh.auditService("sssd"):
                     if not self.sh.enableservice("sssd"):
                         success = False
                         self.detailedresults += "Failed to enable sssd service\n"
