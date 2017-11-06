@@ -473,6 +473,8 @@ run on this platform. If you need to run a service not currently in this \
 list, add the service to the list and STONIX will not disable it. List \
 elements should be space separated.'''
 
+        self.serviceTarget = ""
+
         self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Starting platform detection"])
 
         if os.path.exists('/bin/systemctl'):
@@ -535,7 +537,7 @@ elements should be space separated.'''
                                          'Non-core service running: ' +
                                          service])
                 else:
-                    if self.servicehelper.auditService(service, _="_"):
+                    if self.servicehelper.auditService(service, serviceTarget = self.serviceTarget):
                         running = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['MinimizeServices.report',
@@ -595,13 +597,13 @@ elements should be space separated.'''
                         # they are OK.
                         continue
                     else:
-                        running = self.servicehelper.auditService(service, _="_")
+                        running = self.servicehelper.auditService(service, serviceTarget=self.serviceTarget)
                         self.logger.log(LogPriority.DEBUG,
                                         ['MinimizeServices.fix',
                                          "Audit: " + service + str(running)])
                         if running and service not in self.specials:
                             changes.append(service)
-                            self.servicehelper.disableService(service, _="_")
+                            self.servicehelper.disableService(service, serviceTarget=self.serviceTarget)
                 mytype = 'command'
                 mystart = []
                 myend = changes
@@ -639,7 +641,7 @@ elements should be space separated.'''
         try:
             event1 = self.statechglogger.getchgevent('0013001')
             for service in event1['endstate']:
-                self.servicehelper.enableService(service, _="_")
+                self.servicehelper.enableService(service, serviceTarget=self.serviceTarget)
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.undo',
