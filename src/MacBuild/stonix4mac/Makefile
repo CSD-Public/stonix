@@ -37,7 +37,12 @@ pack-stonix: l_Applications
 	@-sudo /usr/bin/xattr -dr com.apple.quarantine ${WORK_D}/Applications/${TITLE}.app
 
 pack-stonix-manpage: l_usr_man_man8
-	@sudo ${INSTALL} -m 644  ${MANPG} ${MAN8PATH}/stonix.8
+	@sudo ${INSTALL} -m 644  ${MANPG} ${WORK_D}/${MAN8PATH}/stonix.8
+	@chmod 644 ${WORK_D}/${MAN8PATH}/stonix.8
+	@sync
+	@sleep 4
+	@sync
+	@sync
 
 pack-stonix4mac-install :
 	@sudo ${INSTALL} -m 755 ${PI} ${SCRIPT_D}/postinstall
