@@ -38,7 +38,7 @@ pack-stonix: l_Applications
 
 pack-stonix-manpage: l_usr_man_man8
 	@sudo ${INSTALL} -m 644  ${MANPG} ${WORK_D}/${MAN8PATH}/stonix.8
-	@chmod 644 i${WORK_D}/${MAN8PATH}/stonix.8
+	@chmod 644 ${WORK_D}/${MAN8PATH}/stonix.8
 	@sync
 	@sleep 4
 	@sync
