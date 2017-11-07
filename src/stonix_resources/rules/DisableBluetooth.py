@@ -77,7 +77,7 @@ class DisableBluetooth(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
-        self.servicehelper = ServiceHelper(self.environ, self.logger)
+        self.servicehelper = ServiceHelper(self.environ, self.logger).svchelper
         self.guidance = ["NSA(3.3.14)", "CCE 14948-4", "CCE 4377-8",
                          "CCE 4355-4"]
         self.driverdict = {"blacklist": ["bluetooth", "btusb", "bcm203x",
