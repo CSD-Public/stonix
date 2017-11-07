@@ -647,7 +647,7 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                     if groupwrite:
                         gwfiles.append(fpath)
                     if fmode.st_uid != 0:
-                        if self.environ.getosfamily == 'darwin':
+                        if self.environ.getosfamily() == 'darwin':
                             macuucpfiles = ['/usr/lib/cron', '/usr/bin/cu',
                                             '/usr/bin/uucp', '/usr/bin/uuname',
                                             '/usr/bin/uustat', '/usr/bin/uux',
