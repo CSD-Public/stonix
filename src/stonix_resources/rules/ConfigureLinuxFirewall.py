@@ -71,6 +71,7 @@ class ConfigureLinuxFirewall(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux']}
         self.servicehelper = ServiceHelper(self.environ, self.logger)
+        self.serviceTarget = ""
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-4', 'DISA RHEL 7 STIG 2.5.7.1',
                          'DISA RHEL 7 STIG 2.5.7.1.1',
