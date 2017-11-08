@@ -395,7 +395,7 @@ class ServiceHelper(object):
 
             chkSingle = self.svchelper.disableService(self.getService(), **kwargs)
             if self.isHybrid:
-                chkSecond = self.secondary.disableService(self.getService, **kwargs)
+                chkSecond = self.secondary.disableService(self.getService(), **kwargs)
 
             if chkSingle or chkSecond:
                 disabled = True
