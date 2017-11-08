@@ -187,6 +187,7 @@ class SecureCUPS(Rule):
         if self.darwin:
             pass
         self.sh = ServiceHelper(self.environ, self.logger)
+        self.serviceTarget = ""
         self.ch = CommandHelper(self.logger)
 
     def setVars(self):
