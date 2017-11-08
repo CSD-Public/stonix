@@ -58,8 +58,8 @@ class InstalledSoftwareVerification(Rule):
                          'CCE-RHEL7-CCE-TBD 2.1.3.2.1']
         self.applicable = {'type': 'white',
                            'os': {'Red Hat Enterprise Linux': ['6.0', '+'],
-                                  'CentOS Linux': ['7.0', '+'],
-                                  'Fedora': ['21', '+']}}
+                                  'CentOS Linux': ['7.0', '+']}}
+                                  #'Fedora': ['21', '+']}}
 
         datatype = 'bool'
         key = 'FIXPERMISSIONS'
