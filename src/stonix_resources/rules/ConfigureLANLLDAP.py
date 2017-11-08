@@ -111,7 +111,7 @@ effect."""
 
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
-        self.sh = ServiceHelper(self.environ, self.logger)
+        self.sh = ServiceHelper(self.environ, self.logger).svchelper
         self.iditerator = 0
         self.nslcd = False
         self.pwcompliant = True
@@ -604,14 +604,14 @@ effect."""
                              "startstate": "enabled",
                              "endstate": "disabled"}
                     self.statechglogger.recordchgevent(myid, event)
-                if self.sh.isrunning("sssd"):
-                    if not self.sh.reloadservice("sssd"):
+                if self.sh.isRunning("sssd"):
+                    if not self.sh.reloadService("sssd"):
                         warning = "Failed to reload sssd service; the " + \
                             "system should be rebooted to finalize the " + \
                             "configuration."
                         self.logger.log(LogPriority.WARNING, warning)
                 if not self.sh.auditService("sssd"):
-                    if not self.sh.enableservice("sssd"):
+                    if not self.sh.enableService("sssd"):
                         success = False
                         self.detailedresults += "Failed to enable sssd service\n"
                     else:
@@ -715,8 +715,8 @@ effect."""
                     self.ch.executeCommand(cmd)
                 cmd = ["/etc/init.d/nslcd", "restart"]
                 self.ch.executeCommand(cmd)
-                self.sh.enableservice("nscd")
-                self.sh.enableservice("nslcd")
+                self.sh.enableService("nscd")
+                self.sh.enableService("nslcd")
             self.rulesuccess = success
         except AssertionError:
             if not self.ci.getcurrvalue():

@@ -104,6 +104,7 @@ class SecureMDNS(Rule):
 
 # init helper classes
         self.sh = ServiceHelper(self.environ, self.logger)
+        self.serviceTarget = ""
 
         if self.environ.getostype() == "Mac OS X":
             self.ismac = True
