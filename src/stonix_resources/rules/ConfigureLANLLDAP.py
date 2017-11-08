@@ -591,7 +591,7 @@ effect."""
                     success = False
                     self.detailedresults += "Failed to write good configuration to " + \
                         self.sssdconfpath + "\n"
-                if not self.sh.disableservice("nscd"):
+                if not self.sh.disableService("nscd"):
                     warning = "Failed to disable nscd. This may require " + \
                         "an administrator to disable this service after a " + \
                         "reboot."
