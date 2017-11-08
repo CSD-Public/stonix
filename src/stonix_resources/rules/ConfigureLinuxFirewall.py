@@ -151,7 +151,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                 compliant = False
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
-            elif "iptables" not in self.servicehelper.listservices():
+            elif "iptables" not in self.servicehelper.listServices():
                 # Debian systems do not provide a service for iptables
                 cmd = [self.iptables, "-L"]
                 if not self.cmdhelper.executeCommand(cmd):
