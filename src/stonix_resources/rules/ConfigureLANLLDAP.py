@@ -36,6 +36,8 @@ from LANL-stor.
     localization into individual methods
 @change: 2017/01/12 eball - Modified __checkconf to read file contents within
     the method. This allows for more specific feedback on file content issues.
+@change: 2017/11/06 bgonz12 - Changed service helper function calls to use
+    camel case instead of all lowercase. 
 '''
 from __future__ import absolute_import
 import os
@@ -109,7 +111,7 @@ effect."""
 
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
-        self.sh = ServiceHelper(self.environ, self.logger)
+        self.sh = ServiceHelper(self.environ, self.logger).svchelper
         self.iditerator = 0
         self.nslcd = False
         self.pwcompliant = True
@@ -248,7 +250,7 @@ effect."""
                                 "krb5_server": "kerberos.lanl.gov," +
                                 "kerberos-slaves.lanl.gov"}
                 self.sssdconfdict = sssdconfdict
-                if not self.sh.auditservice("sssd"):
+                if not self.sh.auditService("sssd"):
                     compliant = False
                     self.detailedresults += "sssd service is not activated\n"
                 if os.path.exists(sssdconfpath):
@@ -286,7 +288,7 @@ effect."""
                     compliant = False
                     self.detailedresults += nsswitchpath + " does not exist\n"
             else:
-                if not self.sh.auditservice("nslcd"):
+                if not self.sh.auditService("nslcd"):
                     compliant = False
                     self.detailedresults += "nslcd service is not activated\n"
   
@@ -589,7 +591,7 @@ effect."""
                     success = False
                     self.detailedresults += "Failed to write good configuration to " + \
                         self.sssdconfpath + "\n"
-                if not self.sh.disableservice("nscd"):
+                if not self.sh.disableService("nscd"):
                     warning = "Failed to disable nscd. This may require " + \
                         "an administrator to disable this service after a " + \
                         "reboot."
@@ -602,14 +604,14 @@ effect."""
                              "startstate": "enabled",
                              "endstate": "disabled"}
                     self.statechglogger.recordchgevent(myid, event)
-                if self.sh.isrunning("sssd"):
-                    if not self.sh.reloadservice("sssd"):
+                if self.sh.isRunning("sssd"):
+                    if not self.sh.reloadService("sssd"):
                         warning = "Failed to reload sssd service; the " + \
                             "system should be rebooted to finalize the " + \
                             "configuration."
                         self.logger.log(LogPriority.WARNING, warning)
-                if not self.sh.auditservice("sssd"):
-                    if not self.sh.enableservice("sssd"):
+                if not self.sh.auditService("sssd"):
+                    if not self.sh.enableService("sssd"):
                         success = False
                         self.detailedresults += "Failed to enable sssd service\n"
                     else:
@@ -713,8 +715,8 @@ effect."""
                     self.ch.executeCommand(cmd)
                 cmd = ["/etc/init.d/nslcd", "restart"]
                 self.ch.executeCommand(cmd)
-                self.sh.enableservice("nscd")
-                self.sh.enableservice("nslcd")
+                self.sh.enableService("nscd")
+                self.sh.enableService("nslcd")
             self.rulesuccess = success
         except AssertionError:
             if not self.ci.getcurrvalue():
