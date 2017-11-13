@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -25,6 +25,7 @@ Created on Jun 25, 2015
 
 @author: dwalker
 @change: 2015/10/07 eball Help text cleanup, added copyright notice
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import traceback
@@ -47,8 +48,7 @@ class NoCachedFDEKeys(Rule):
         self.rulenumber = 271
         self.rulename = "NoCachedFDEKeys"
         self.formatDetailedResults("initialize")
-        self.helptext = "This rule prevents the Mac from saving FileVault " + \
-            "encryption keys on the system."
+        self.sethelptext()
         self.rootrequired = True
         datatype = "bool"
         key = "NOCACHEDFDEKEYS"
@@ -56,7 +56,7 @@ class NoCachedFDEKeys(Rule):
             "NOCACHEDFDEKEYS to False"
         default = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):

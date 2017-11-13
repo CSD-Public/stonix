@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -68,12 +68,7 @@ class SoftwarePatching(Rule):
         self.rulename = 'SoftwarePatching'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The SoftwarePatching rule will check to see if " + \
-            "all software is patched, if the computer is using local " + \
-            "update sources (if available), and if the package manager is " + \
-            "using GPG secured updates where applicable. This rule will " + \
-            "also ensure that the system has a scheduled (cron) job to " + \
-            "install updates automatically on systems where that is feasible. "
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
 
@@ -86,7 +81,7 @@ class SoftwarePatching(Rule):
         # until the fixes can be implemented
 
         data = "bool"
-        key = "ScheduleUpdate"
+        key = "SCHEDULEUPDATE"
         instructions = "To disable creation of a scheduled " + \
                           "update job set the value of this " + \
                           "setting to no or false. Doing so " + \
@@ -147,11 +142,6 @@ class SoftwarePatching(Rule):
         @return: bool
         @author: dkennel
         '''
-
-<<<<<<< HEAD
-        self.caveats = ""
-        self.detailedresults = ""
-=======
         self.detailedresults = ""
         self.caveats = ""
 
@@ -161,7 +151,6 @@ class SoftwarePatching(Rule):
             self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: PROXY, UPDATESERVERS"
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
->>>>>>> develop
 
         try:
             
@@ -383,15 +372,11 @@ class SoftwarePatching(Rule):
         @return: bool
         @author: dkennel
         '''
-<<<<<<< HEAD
-=======
-
         if not self.checkConsts(self.constlist):
             self.rulesuccess = False
             self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
             return self.rulesuccess
 
->>>>>>> develop
         try:
 
             self.detailedresults = ""

@@ -29,17 +29,39 @@ Primary purpose is to create a link from /etc/stonix ->
 
 @author: Roy Nielsen
 """
+#--- Native python libraries
 import os
 import re
 import sys
 import time
 import errno
+import ctypes
 import shutil
 import random
 import inspect
+from subprocess import call, Popen, PIPE, STDOUT
 
-from subprocess import call
+def getLibc():
+    """
+    Acquire a reference to the system libc, initially to access the
+    filesystem "sync" function.
 
+    @returns: python reference to the C libc object, or False, if it can't
+              find libc on the system.
+
+    @author: Roy Nielsen
+    """
+    try:
+        #temp_dir = sys._MEIPASS
+        #libc_path = os.path.join(temp_dir, "libc.dylib")
+        #libc = ctypes.CDLL("libSystem.dylib")
+        libc = ctypes.CDLL("/usr/lib/libc.dylib")
+    except:
+        raise Exception("DAMN IT JIM!!!")
+    else:
+        print "Loading Mac dylib......................................"
+
+    return libc
 
 def log_message(message="", level="normal", priority="debug",
                 syslog_level=None):
@@ -88,8 +110,7 @@ def log_message(message="", level="normal", priority="debug",
             retcode = call(cmd_string, shell=True)
             if retcode < 0:
                 print >> sys.stderr, \
-                    "logger Child was terminated by signal", \
-                    -retcode
+                    "logger Child was terminated by signal", retcode
             else:
                 pass
 
@@ -393,33 +414,82 @@ def make_files_executable():
         os.chmod(myfile, 0775)
 
 
+def make_whatis(message_level):
+    """
+    reindex the man page database
+    """
+    out = ""
+    err = ""
+    try:
+        out, err = Popen("/usr/libexec/makewhatis", stdout=PIPE, stderr=PIPE).communicate()
+    except Exception, err:
+        log_message("error trying to re-index the man page database...", "normal", message_level)
+
+    log_message("output: " + str(out), "normal", message_level)
+    log_message("error: " + str(err), "normal", message_level)
+
+def touch_stonix_conf(message_level):
+    """
+    If the stonix.conf file doesn't exist, "touch" the file..
+    """
+    stonix_conf = "/etc/stonix.conf"
+    if not os.path.exists(stonix_conf):
+        touch(stonix_conf, message_level)
+        libc = getLibc()
+        libc.sync()
+        time.sleep(1)
+        libc.sync()
+        time.sleep(1)
+        libc.sync()
+        time.sleep(1)
+        try:
+            os.chmod(stonix_conf, 0o644)
+        except Exception, err:
+            log_message("Could not chmod file: " + str(stonix_conf))
+            log_message("Associated exception: " + str(err))
+        try:
+            os.chown(stonix_conf, 0, 0)
+        except Exception, err:
+            log_message("Could not chown file: " + str(stonix_conf))
+            log_message("Associated exception: " + str(err))
+
+ 
 def main():
     """
     Main function...
     """
     message_level = "debug"
-
     log_message("Starting stonix4mac package postflight...", "normal",
                 message_level)
 
+    libc = getLibc()
     etcMove("/Applications/stonix4mac.app/Contents/Resources", message_level)
 
-    #####
-    # Decision to remove code not currently working on 9/28/2015
-    # install_launchd_job(SOURCE_DIR, TARGET_DIR, message_level)
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
+
+    touch_stonix_conf(message_level)
 
     fix_app_perms()
 
     make_files_executable()
 
     stonix = "/usr/local/bin/stonix"
-    #stonix4mac = "/usr/local/bin/stonix4mac"
+    stonix4mac = "/usr/local/bin/stonix4mac"
 
-    # make_valid_link(my_link, my_link_source, message_level="normal"):
-    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" +
-                    "Resources/stonix.app/Contents/MacOS/stonix")
-    #make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" +
-    #                "MacOS/stonix4mac")
+    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" + "Resources/stonix.app/Contents/MacOS/stonix")
+    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" + "MacOS/stonix4mac")
+
+    make_whatis(message_level)
+
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
+    time.sleep(3)
+    libc.sync()
 
     log_message("Finished stonix4mac package postflight...", "normal",
                 message_level)

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -28,6 +28,7 @@ Created on Jul 13, 2012
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 dkennel Replace old-style CI invocation
 @change: 2015/04/16 dkennel upate for new isApplicable
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import pwd
@@ -55,19 +56,10 @@ class RemoveBadDotFiles(Rule):
         self.rulename = 'RemoveBadDotFiles'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The Remove Bad Dot Files rule will remove " + \
-        ".netrc, .shosts, and .rhosts files located in user home " + \
-        "directories. The .netrc file is used to automate connections " + \
-        "via FTP. When present the .netrc file frequently contains " + \
-        "plaintext passwords. The .shosts and .rhosts files are used in " + \
-        "support of the R commands and use an extremely weak form of " + \
-        "authentication. An option is given for disabling this rule but " + \
-        "this rule should only be disabled after a thorough review of the " + \
-        "proposed use of .netrc, .shosts or .rhosts files to ensure that " + \
-        "a potential security issue is not created by the use of the files."
+        self.sethelptext()
         self.rootrequired = False
         datatype = 'bool'
-        key = 'removebaddotfiles'
+        key = 'REMOVEBADDOTFILES'
         instructions = "To disable this rule set the value of " + \
         "REMOVEBADDOTFILES to False"
         default = True
@@ -75,7 +67,7 @@ class RemoveBadDotFiles(Rule):
         self.guidance = ['NSA 2.3.4.5', 'cce-4578-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.homelist = ['/', '/root']
         try:
             mypwd = pwd.getpwall()

@@ -41,8 +41,6 @@ import plistlib as pl
 from glob import glob
 from subprocess import Popen, STDOUT, PIPE
 
-sys.path.append("/usr/local/lib/python2.7/site-packages/PyInstaller.egg")
-
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
@@ -52,6 +50,13 @@ from ramdisk.lib.manage_user.manage_user import ManageUser
 from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 from ramdisk.lib.run_commands import RunWith
 
+
+def BadBuildError(Exception):
+    """
+    Custom Exception
+    """
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 class MacBuildLib(object):
     def __init__(self, logger, pypaths=None):
@@ -151,13 +156,15 @@ class MacBuildLib(object):
                                      pathex=pathex, specpath=specpath, 
                                      hiddenmports=hiddenImports,
                                      runtime_hooks=runtime_hooks,
-                                     bundle_identifier=bundle_identifier)
+                                     bundle_identifier=bundle_identifier,
+                                     excludes=["PyQt4"])
             else:
                 return makespec.main(scripts, noupx=noupx, strip=strip,
                                      console=console, icon_file=icon_file,
                                      pathex=pathex, hiddenimports=hiddenImports,
                                      runtime_hooks=runtime_hooks,
-                                     bundle_identifier=bundle_identifier)
+                                     bundle_identifier=bundle_identifier,
+                                     excludes=["PyQt4"])
         except Exception:
             raise
 
@@ -439,12 +446,12 @@ class MacBuildLib(object):
                 cmd += ['-' + verbose]
             if deep:
                 cmd += ['--deep']
-            cmd += ['-f', '-s', "'" + sig + "'", '--keychain', signingKeychain, itemName]
+            cmd += ['-f', '-s', sig, '--keychain', signingKeychain, itemName]
             self.rw.setCommand(cmd)
 
             #####
             # Check the UID and run the command appropriately
-            output, error, retcode = self.rw.communicate()
+            output, error, retcode = self.rw.waitNpassThruStdout()
 
             #####
             # Return to the working directory
@@ -607,6 +614,8 @@ class MacBuildLib(object):
         
         if not error:
             success = True
+        else:
+            raise BadBuildError("Error building program: " + str(retcode))
         
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
@@ -621,16 +630,16 @@ class MacBuildLib(object):
 
         return success
 
-    def buildPackageInit(self, builderScpt="", pkgLocation=''):
+    def buildPackageInit(self, builderScpt="", rulesLocation=''):
         '''
         Create an init for a package that contains basic imports for all of the
         files in the package.  Written to support including normally dynamically
         loaded modules in a frozen python module.
-        
+
         @author: Roy Nielsen
         '''
         try:
-            cmd = [builderScpt, "-d", "-p", pkgLocation]
+            cmd = [builderScpt, "-d", "-r", rulesLocation]
             stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
         except Exception, err:
             trace = traceback.format_exc()
@@ -640,4 +649,84 @@ class MacBuildLib(object):
         self.logger.log(lp.DEBUG, "stdout: " + str(stdout))
         self.logger.log(lp.DEBUG, "stderr: " + str(stderr))
         self.logger.log(lp.DEBUG, "///////")
+
+    def writeInit(self, pathToDir):
+        '''
+        Create an __init__.py file, based on all the files in that directory
+
+        @param: pathToDir - path to a directory to process
+
+        @return: success - whether or not this process was a success
+
+        @author: Roy Nielsen
+        '''
+        success = False
+        header = '''###############################################################################
+#                                                                             #
+# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
+# National Laboratory (LANL), which is operated by Los Alamos National        #
+# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
+# rights to use, reproduce, and distribute this software.  NEITHER THE        #
+# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
+# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
+# If software is modified to produce derivative works, such modified software #
+# should be clearly marked, so as not to confuse it with the version          #
+# available from LANL.                                                        #
+#                                                                             #
+# Additionally, this program is free software; you can redistribute it and/or #
+# modify it under the terms of the GNU General Public License as published by #
+# the Free Software Foundation; either version 2 of the License, or (at your  #
+# option) any later version. Accordingly, this program is distributed in the  #
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
+# See the GNU General Public License for more details.                        #
+#                                                                             #
+###############################################################################
+'''
+
+        if self.isSaneFilePath(pathToDir):
+            rulesList = []
+        
+            allFilesList = os.listdir(pathToDir)
+        
+            for rule in allFilesList:
+                if re.search("\.py$", rule) and not re.match("__init__\.py", rule):
+                    ruleClass = re.sub("\.py$", "", rule)
+                    rulesList.append(ruleClass)
+        
+            try:
+                initPath = os.path.join(pathToDir, "__init__.py")
+                self.logger.log(lp.DEBUG, "initPath: " + str(initPath))
+                fp = open(initPath, 'w')
+                fp.write(header)
+                for rule in rulesList:
+                    fp.write("import " + rule + "\n")
+                fp.write("\n")
+            except OSError, err:
+                trace = traceback.format_exc() 
+                self.logger.log(lp.DEBUG, "Traceback: " + trace)
+                raise err
+            else:
+                success = True
+                self.logger.log(lp.DEBUG, "Done writing init.")
+            finally:
+                try:
+                    fp.close()
+                except:
+                    pass
+
+        return success
+
+    def isSaneFilePath(self, filepath):
+        """
+        Check for a good file path in the passed in string.
+
+        @author: Roy Nielsen
+        """
+        sane = False
+        if isinstance(filepath, basestring):
+            if re.match("^[A-Za-z/][A-Za-z0-9/]*", filepath):
+                sane = True
+        return sane
 

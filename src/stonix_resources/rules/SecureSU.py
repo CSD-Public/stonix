@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2013-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Apr 25, 2013
 
 The su command allows a user to gain the privileges of another user by entering
@@ -76,18 +75,10 @@ class SecureSU(Rule):
         self.compliant = False
         self.rulename = 'SecureSU'
         self.mandatory = True
-        self.helptext = """The su command allows a user to gain the \
-privileges of another user by entering the password for that user's account. \
-It is desirable to restrict the root user so that only known administrators \
-are ever allowed to access the root account. This restricts password-guessing \
-against the root account by unauthorized users or by accounts which have been \
-compromised. By convention, the group wheel contains all users who are \
-allowed to run privileged commands. The PAM module pam_wheel.so is used to \
-restrict root access to this set of users.
-This rule will not configure su on Debian distros"""
+        self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'
-        key = 'SecureSU'
+        key = 'SECURESU'
         instructions = "To prevent the configuration of " + \
                        "access to the su command, set the value of " + \
                        "SecureSU to False."

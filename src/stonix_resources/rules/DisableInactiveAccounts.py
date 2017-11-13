@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Jan 21, 2016
 
 This rule will set the global policy for inactive accounts so that any account,
@@ -30,6 +29,9 @@ password, will be disabled.
 
 @author: Breen Malmberg
 @change: 2016/09/08 eball Added loop to append EXCLUDEACCOUNTS items
+@change: 2017/03/30 dkennel Marked as FISMA high until Apple resolves bugs
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -65,20 +67,19 @@ class DisableInactiveAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will set the global policy for inactive accounts so that any account, \
-which goes 35 days beyond the password expiration date without updating its \
-password, will be disabled.'
+        self.sethelptext()
         self.guidance = ['CNSSI 1253', 'DISA STIG']
 
         datatype = 'bool'
-        key = 'DisableInactiveAccounts'
+        key = 'DISABLEINACTIVEACCOUNTS'
         instructions = 'To disable this rule, set the value of ' + \
             'DisableInactiveAccounts to False.'
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']},
+                           'fisma': 'high'}
 
         self.initobjs()
 

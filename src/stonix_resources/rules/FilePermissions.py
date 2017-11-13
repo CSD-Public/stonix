@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -39,7 +39,8 @@ rule class
     root owned files in lib and bin paths.
 @change: 2016/04/29 eball wwreport now checks ww dirs to make sure they are
     owned by a system account, per RHEL 7 STIG
-
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -83,21 +84,6 @@ class FilePermissions(Rule):
         self.rulename = 'FilePermissions'
         self.mandatory = True
         self.formatDetailedResults("initialize")
-        self.helptext = '''The File Permissions rule audits files and folders \
-on the system to check for world writable files, world writable folders, \
-SUID/SGID programs and files without known owners. It ensures that the \
-sticky-bit is set on world writable directories and will remove world write \
-permissions from files in the root user's execution PATH environment \
-variable. Note that file permission changes cannot be undone.
-When possible, files and folders will be checked with the package \
-manager records to see if their presence is authorized by belonging to an \
-installed package. Administrators should review the lists of world writable, \
-SUID and unowned files and folders carefully since these types of files and \
-programs may provide opportunities for attackers to abuse the system. Files \
-that contain the output of the search are located at /var/local/info and \
-should be reviewed to ensure that the files listed are expected to be in that \
-state for this system. Please note that this rule may take several minutes to \
-run.'''
         self.guidance = ['NSA 2.2.3.3', 'CCE-3795-2', 'CCE-4351-3',
                          'NSA 2.2.3.2', 'CCE-3399-3', 'NSA 2.2.3.4',
                          'CCE-4178-0', 'CCE-3324-1', 'CCE-4743-1',
@@ -108,7 +94,7 @@ run.'''
                          "CCE-RHEL7-CCE-TBD 2.2.3.9"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # The vars below are local to this rule and are not overrides of the
         # base class
         self.infodir = '/var/local/info'
@@ -128,15 +114,17 @@ run.'''
         self.noorigin = os.path.join(self.noownerdir,
                                      'no-owners-at-install.db')
         self.nolast = os.path.join(self.noownerdir, 'no-owners-previous.db')
+
         datatype = 'bool'
-        key = 'setsticky'
+        key = 'SETSTICKY'
         instructions = '''If set to yes or true the WorldWritables rule will \
 attempt to set the sticky bit on any world writable directories the do not \
 currently have the sticky bit set. SETSTICKY cannot be undone.'''
         default = True
         self.setsticky = self.initCi(datatype, key, instructions, default)
+
         datat = 'list'
-        keyname = 'bypassfs'
+        keyname = 'BYPASSFS'
         instr = '''Because this rule performs a full file system scan you may \
 not want it to scan very large directly attached file systems (especially file \
 systems on USB media). Any file systems listed in a space separated list after \
@@ -144,8 +132,9 @@ the BYPASSFS variable will not be scanned. N.B. This list does not handle \
 file system names with spaces.'''
         defval = ['/run/media', '/media']
         self.bypassfs = self.initCi(datat, keyname, instr, defval)
+
         ww_datatype = 'bool'
-        ww_key = 'fixww'
+        ww_key = 'FIXWW'
         ww_instructions = '''To prevent the FilePermissions rule from removing \
 the world write permissions of files in the root user's path, set the value of \
 FIXWW to False. You should not need to do this; World Writable files in the \
@@ -154,7 +143,7 @@ root user's path are very dangerous.'''
         self.fixww = self.initCi(ww_datatype, ww_key, ww_instructions,
                                  ww_default)
         datatype = 'bool'
-        key = 'fixgw'
+        key = 'FIXGW'
         instructions = '''To prevent the FilePermissions rule from removing \
 the group write permissions of files in the lib and bin directories, set the \
 value of FIXGW to False. The affected directories are: /bin, /usr/bin, \
@@ -162,8 +151,9 @@ value of FIXGW to False. The affected directories are: /bin, /usr/bin, \
 /usr/lib64, /lib/modules.'''
         default = True
         self.fixgw = self.initCi(datatype, key, instructions, default)
+
         datatype = 'bool'
-        key = 'fixrootownership'
+        key = 'FIXROOTOWNERSHIP'
         instructions = '''To prevent the FilePermissions rule from setting \
 ownership on all files in the lib and bin directories to root, set the \
 value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
@@ -171,6 +161,7 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
 /usr/lib, /usr/lib64, /lib/modules.'''
         default = True
         self.fixroot = self.initCi(datatype, key, instructions, default)
+
         self.hasrunalready = False
         self.wwresults = ''
         self.gwresults = ''
@@ -181,6 +172,7 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
         self.gwfiles = []
         self.nrofiles = []
         random.seed()
+        self.sethelptext()
 
     def processconfig(self):
         """
@@ -655,7 +647,7 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
                     if groupwrite:
                         gwfiles.append(fpath)
                     if fmode.st_uid != 0:
-                        if self.environ.getosfamily == 'darwin':
+                        if self.environ.getosfamily() == 'darwin':
                             macuucpfiles = ['/usr/lib/cron', '/usr/bin/cu',
                                             '/usr/bin/uucp', '/usr/bin/uuname',
                                             '/usr/bin/uustat', '/usr/bin/uux',

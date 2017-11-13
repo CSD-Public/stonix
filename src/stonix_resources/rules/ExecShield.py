@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -28,6 +28,7 @@ ExecShield overflow prevention and the randomize_va_space ASLR mechanism.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2016/04/26 ekkehard Results Formatting
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -59,12 +60,6 @@ class ExecShield(Rule):
         self.rulename = 'ExecShield'
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The ExecShield rule will audit, and if needed \
-correct the settings of the kernel functions that provide protection against \
-memory corruption attacks such as buffer overflows. These features include \
-ExecShield, which prevents execution of memory locations that should only \
-hold data, and va_randomize, which randomizes the locations of various memory \
-regions.'''
         self.rootrequired = True
         self.rulesuccess = True
         self.comment = re.compile('^#|^;')
@@ -85,6 +80,7 @@ regions.'''
             self.directives = {'kernel.randomize_va_space': '2'}
         self.execshieldcompliant = False
         self.ExecCI = self.__initializeExecShield()
+        self.sethelptext()
 
     def __initializeExecShield(self):
         '''
@@ -94,7 +90,7 @@ regions.'''
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'execshield'
+        key = 'EXECSHIELD'
         instructions = 'If set to yes or true the EXECSHIELD action will, ' + \
             'if needed correct the kernel settings for the ExecShield and ' + \
             'virtual address randomization functions. This should be safe ' + \

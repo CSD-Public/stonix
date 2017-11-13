@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -42,6 +42,7 @@ was not checked before exectuing fix()
 @change: Breen Malmberg, 9/3/2015, re-write of report and fix methods; added helper methods; added/fixed doc strings;
             removed unused imports
 @change: eball 2015/09/24 Stopped Pkghelper calls from being made in OS X
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -74,17 +75,17 @@ class RootMailAlias(Rule):
         self.rulename = 'RootMailAlias'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'Set an alias for root mail on the system so that it is read by an actual human.'
+        self.sethelptext()
         self.guidance = ['none']
 
         datatype = 'bool'
-        key = 'Root Mail Alias'
-        instructions = 'To prevent the setting of an alias for root mail, set the value of Root Mail Alias to False.'
+        key = 'ROOTMAILALIAS'
+        instructions = 'To prevent the setting of an alias for root mail, set the value of ROOTMAILALIAS to False.'
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'Root Alias Address'
+        key2 = 'ROOTALIASADDRESS'
         instructions2 = 'Please specify the email address which should receive root mail for this system.'
         default2 = ''
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
@@ -92,7 +93,7 @@ class RootMailAlias(Rule):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.localization()
         self.myos = self.environ.getostype().lower()

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,6 +33,7 @@ Created on Sep 11, 2013
 @change: 2016/01/25 eball Changed pw policies to meet RHEL 7 STIG and
     CNSSI standards
 @change: 2016/11/14 eball Updated for PAM configurations in localize.py
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 
@@ -60,22 +61,7 @@ class ConfigureSystemAuthentication(Rule):
         self.rulename = "ConfigureSystemAuthentication"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule configures the PAM stack for password \
-requirements and failed login attempts. It also ensures the system uses \
-SHA512 encryption.
-There are three configuration items. Two of these \
-involve configuring PAM, PASSWORDREQ and PASSWORDFAIL. Please \
-be advised, due to the complexity and sensitivity of PAM, portions of the PAM \
-files that these two CIs configure will be completely overwritten, therefore \
-if you have configured PAM with other modules, you may want to avoid enabling \
-these two items and configure them by hand. Also, if on a yum-based package \
-manager system such as Red Hat, Fedora, or CentOS, both PAM files have to \
-receive the same contents. Due to this, no undo events will be recorded for \
-the first two configuration items. However, backups will be made in the \
-/etc/pam.d directory to restore them back to the way before the rule was run. \
-Run these rules at your own risk. If your system uses portage for a package \
-manager (e.g. Gentoo), you will need to do fix manually for all files except \
-for the login.defs file"""
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd']}
         datatype = "bool"

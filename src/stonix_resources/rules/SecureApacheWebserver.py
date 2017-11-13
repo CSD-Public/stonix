@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,7 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2015/04/17 updated for new isApplicable
 @change: 2015/09/24 eball Fixed potential missing file error in fix()
 @change: 2015/10/08 eball Help text cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import os
@@ -63,20 +64,11 @@ class SecureApacheWebserver(Rule):
         self.rulename = 'SecureApacheWebserver'
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The Secure Apache Webserver rule will apply secure \
-configurations to the Apache webserver configuration file httpd.conf and \
-included files in conf.d or other configuration directories. It also applies \
-secure configurations to the PHP interpreter's php.ini file if present. There \
-are a series of config options for this rule. In general the Apache webserver \
-should not be running on desktop systems and should be disabled by the \
-Minimize Services rule. On servers and in the case where a developer needs a \
-local instance of the web server running it should be properly configured. \
-Server admins running webservers will want to review the actions taken by \
-this rule to ensure that it will not affect their deployed applications.'''
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.comment = re.compile('^#|^;')
         conflocations = ['/etc/httpd/conf/httpd.conf',
                          '/etc/apache2/apache2.conf',
@@ -167,7 +159,7 @@ this rule to ensure that it will not affect their deployed applications.'''
         @return: configuration object instance
         @author: dkennel
         '''
-        conf = 'secureapache'
+        conf = 'SECUREAPACHE'
         confinst = '''If set to yes or true the SECUREAPACHE variable will set
 the basic security settings for the Apache Webserver. This should be safe for
 all systems.'''
@@ -197,7 +189,7 @@ all systems.'''
         @author: dkennel
         '''
         myci = ConfigurationItem('bool')
-        key = 'secureapachemods'
+        key = 'SECUREAPACHEMODS'
         myci.setkey(key)
         confinst = '''If set to yes or true the SECUREAPACHEMODS variable will
 minimize the installed Apache modules. Apache modules provide increased
@@ -231,7 +223,7 @@ modules.'''
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'secureapachessl'
+        key = 'SECUREAPACHESSL'
         instructions = '''If set to yes or true the SECUREAPACHESSL variable will prevent
 the Apache server from using weak crypto for SSL sessions. This should be safe
 unless the client population includes browsers restricted to US export level
@@ -248,7 +240,7 @@ crypto.'''
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'securephp'
+        key = 'SECUREPHP'
         instructions = '''If set to yes or true the SECUREPHP action will secure the
 configuration in the php.ini file. This is generally safe for new PHP
 development but some existing applications may use insecure side effects.'''

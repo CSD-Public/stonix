@@ -39,6 +39,8 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
+@change: 2017/03/07 dkennel - Added FISMA risk level support to isapplicable
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from observable import Observable
@@ -65,8 +67,12 @@ class Rule (Observable, CheckApplicable):
 
     """
     Abstract class for all Rule objects.
-    :version: 1.0
-    :author: D. Kennel
+
+    @version: 1.0
+    @author:  D. Kennel
+    @change: Breen Malmberg - 7/18/2017 - added method getauditonly();
+            added and initialized variable self.auditonly to False (default);
+            fixed doc string
     """
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -99,6 +105,8 @@ LANL-stonix."""
         self.currstate = "notconfigured"
         self.targetstate = "configured"
         self.guidance = []
+        self.auditonly = False
+        self.sethelptext()
 
     def fix(self):
         """
@@ -137,6 +145,10 @@ LANL-stonix."""
         self.rulesuccess will be updated if the rule does not succeed.
 
         @author D. Kennel & D. Walker
+        @change: - modified to new service helper interface - NOTE - 
+                   Mac rules will need to set the self.serviceTarget
+                   variable in their __init__ method after runing
+                   "super" on this parent class.
         """
         # pass
         if not self.environ.geteuid() == 0:
@@ -217,9 +229,9 @@ LANL-stonix."""
                     elif event["eventtype"] == "servicehelper":
                         sh = ServiceHelper(self.environ, self.logdispatch)
                         if event["startstate"] == "enabled":
-                            sh.enableservice(event["servicename"])
+                            sh.enableService(event["servicename"], serviceTarget=self.serviceTarget)
                         elif event["startstate"] == "disabled":
-                            sh.disableservice(event["servicename"])
+                            sh.disableService(event["servicename"], serviceTarget=self.serviceTarget)
                         else:
                             self.detailedresults = 'Invalid startstate for ' \
                                 + 'eventtype "servicehelper". startstate ' + \
@@ -698,3 +710,69 @@ LANL-stonix."""
             formattedDetailedResults = ""
             raise
         return formattedDetailedResults
+
+    def getauditonly(self):
+        '''
+        Return the audit only status boolean.
+        This class variable (self.auditonly) is
+        meant to indicate whether a particular
+        rule is intended to be audit-only or not.
+        Default = False.
+
+        @return: self.auditonly
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        return self.auditonly
+
+    def sethelptext(self):
+        '''
+        Set the help text for the current rule.
+        Help text is retrieved from help/stonix_helptext.
+
+        The help text blocks within stonix_helptext must
+        always follow 4 basic rules in formatting:
+
+        1) Each new help text block must begin with the
+        rule's rulenumber in diamond brackets - e.g. <123>
+        2) Each help text block must end with ." (period
+        followed by double quote)
+        3) Each help text block must not contain any "
+        (double quotes) other than starting and ending
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        # change helpdir variable if you change where the help text is stored!
+        helpdir = self.environ.resources_path + '/help/stonix_helptext'
+        contents = ''
+        bstring = ''
+        rulenum = self.getrulenum()
+
+        try:
+
+            if os.path.exists(helpdir):
+                f = open(helpdir, 'r')
+                contents = f.read()
+                f.close()
+            else:
+                self.logdispatch.log(LogPriority.DEBUG, "Could not find help text file at: " + helpdir)
+            
+            b=re.findall(r'(?<=\<' + str(rulenum) + '\>).+?(?=\.\")', contents, re.DOTALL)
+            if b:
+                if isinstance(b, list):
+                    if len(b) > 0:
+                        bstring = b[0]
+                bstring = bstring.strip()
+                if re.search('^\"', bstring, re.IGNORECASE):
+                    bstring = bstring[1:]
+            if not bstring:
+                self.logdispatch.log(LogPriority.DEBUG, "Failed to get help text for rulenumber = " + str(self.rulenumber))
+                self.helptext = "Could not locate help text for this rule."
+            else:
+                self.helptext = bstring
+
+        except Exception:
+            raise

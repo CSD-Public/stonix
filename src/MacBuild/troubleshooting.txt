@@ -1,0 +1,9 @@
+##
+# eclipse, pydev, and pylint are unable to resolve PyQt Libraries.
+##
+If adding these libraries to the PYTHONPATH external libraries list
+doesn't work, try the following fix:
+
+1. Right-click on the project folder and open "Properties".
+
+2. Select "PyDev" > "Remove PyDev Project Config".

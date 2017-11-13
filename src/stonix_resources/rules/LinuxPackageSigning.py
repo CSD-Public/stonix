@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -63,14 +63,12 @@ class LinuxPackageSigning(RuleKVEditor):
         self.mandatory = True
         self.rulename = 'LinuxPackageSigning'
         self.formatDetailedResults("initialize")
-        self.helptext = 'Package signing should always be enabled. On ' + \
-            'yum-based systems, this can be checked by ensuring that all ' + \
-            'repos have gpgcheck=1 set.'
+        self.sethelptext()
         self.guidance = ['CNSSI 1253: cm-5(3)']
 
         # init CIs
         datatype = 'bool'
-        key = 'LinuxPackageSigning'
+        key = 'LINUXPACKAGESIGNING'
         instructions = 'If you wish to disable this rule, set the value ' + \
             'of LinuxPackageSigning to False.'
         default = True

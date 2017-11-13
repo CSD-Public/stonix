@@ -1,9 +1,9 @@
 #####
 # If on proxied network, set the proxies:
 
-export HTTPS_PROXY=https://proxyout.lanl.gov:8080
+export HTTPS_PROXY=http://proxyout.lanl.gov:8080
 export HTTP_PROXY=http://proxyout.lanl.gov:8080
-export https_proxy=https://proxyout.lanl.gov:8080
+export https_proxy=http://proxyout.lanl.gov:8080
 export http_proxy=http://proxyout.lanl.gov:8080
 
 #####
@@ -30,38 +30,37 @@ curl -o downloads/PyInstaller-3.2.1.tar.bz2  -L https://github.com/pyinstaller/p
 tar xjvf downloads/PyInstaller-3.2.1.tar.bz2
 
 #####
-# Clone the pyinstaller-snapshot repository:
-
-git clone https://github.com/roynielsen17/pyinstaller-snapshot.git 
-
+# Get pyinstaller
+curl -o downloads/PyInstaller-3.2.1.tar.bz2  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.2.1/PyInstaller-3.2.1.tar.bz2
+tar xjvf downloads/PyInstaller-3.2.1.tar.bz2
 
 #####
 # Build Qt
 cd qt-everywhere-opensource-src-5.8.0
 
-./configure -opensource -confirm-license -release -no-rpath -prefix /opt/tools/lib/Qt5.8.0 -libdir /opt/tools/lib/Qt5.8.0/lib -nomake examples -nomake tests -bindir /opt/tools/lib/Qt5.8.0/bin -headerdir /opt/tools/lib/Qt5.8.0/includes -plugindir /opt/tools/lib/Qt5.8.0/plugins -importdir /opt/tools/lib/Qt5.8.0/qmlOne -qmldir /opt/tools/lib/Qt5.8.0/qmlTwo -datadir /opt/tools/lib/Qt5.8.0/data -docdir /opt/tools/lib/Qt5.8.0/doc -continue -silent -archdatadir /opt/tools/lib/Qt5.8.0/arch  -no-pkg-config -sdk macosx10.12 &> ../logs/qt-configure-out.txt
-make -j 4 &> ../logs/qt-make.log
+./configure -opensource -confirm-license -release -no-rpath -prefix /opt/tools/lib/Qt5.8.0 -libdir /opt/tools/lib/Qt5.8.0/lib -nomake examples -nomake tests -bindir /opt/tools/lib/Qt5.8.0/bin -headerdir /opt/tools/lib/Qt5.8.0/includes -plugindir /opt/tools/lib/Qt5.8.0/plugins -importdir /opt/tools/lib/Qt5.8.0/qmlOne -qmldir /opt/tools/lib/Qt5.8.0/qmlTwo -datadir /opt/tools/lib/Qt5.8.0/data -docdir /opt/tools/lib/Qt5.8.0/doc -continue -silent -archdatadir /opt/tools/lib/Qt5.8.0/arch  -no-pkg-config -sdk macosx10.12 | tee ../logs/qt-configure-out.txt
+make -j 4 | tee ../logs/qt-make.log
 
-sudo make install &> ../logs/qt-make-install.log
+sudo make install | tee ../logs/qt-make-install.log
 
 #####
 # Build SIP
 cd /opt/tools/sip-4.19.2
 
-python ./configure.py --bindir /opt/tools/bin --destdir /opt/tools/lib/Python/2.7/site-packages --incdir /opt/tools/lib/Python/2.7/site-packages/sip/includes --sipdir /opt/tools/lib/Python/2.7/site-packages/sip/sips --pyidir /opt/tools/lib/Python/2.7/site-packages/sip/pyis --sdk MacOSX10.12.sdk &> ../logs/sip-configure.log
+python ./configure.py --bindir /opt/tools/bin --destdir /opt/tools/lib/Python/2.7/site-packages --incdir /opt/tools/lib/Python/2.7/site-packages/sip/includes --sipdir /opt/tools/lib/Python/2.7/site-packages/sip/sips --pyidir /opt/tools/lib/Python/2.7/site-packages/sip/pyis --sdk MacOSX10.12.sdk | tee ../logs/sip-configure.log
 
-make &> ../logs/sip-make.log
-sudo make install &> ../logs/sip-make-install.log
+make | tee ../logs/sip-make.log
+sudo make install | tee ../logs/sip-make-install.log
 
 
 #####
 # Build PyQt
 cd /opt/tools/PyQt5_gpl-5.8.2
 
-python ./configure.py --confirm-license --bindir=/opt/tools/bin --destdir=/opt/tools/lib/Python/2.7/site-packages --no-designer-plugin --no-qml-plugin --no-qsci-api --qmake=/opt/tools/lib/Qt5.8.0/bin/qmake --sip=/opt/tools/bin/sip --sip-incdir=/opt/tools/lib/Python/2.7/site-packages/sip/includes -v /opt/tools/lib/Python/2.7/site-packages/PyQt5/sips --verbose &> ../logs/pyqt-configure.log
+python ./configure.py --confirm-license --bindir=/opt/tools/bin --destdir=/opt/tools/lib/Python/2.7/site-packages --no-designer-plugin --no-qml-plugin --no-qsci-api --qmake=/opt/tools/lib/Qt5.8.0/bin/qmake --sip=/opt/tools/bin/sip --sip-incdir=/opt/tools/lib/Python/2.7/site-packages/sip/includes -v /opt/tools/lib/Python/2.7/site-packages/PyQt5/sips --verbose | tee ../logs/pyqt-configure.log
 
-make -j 4 &> ../logs/pyqt-make.log
-sudo make install &> ../logs/pyqt-make-install.log
+make -j 4 | tee ../logs/pyqt-make.log
+sudo make install | tee ../logs/pyqt-make-install.log
 
 cd ..
 

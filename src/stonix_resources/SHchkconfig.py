@@ -30,10 +30,10 @@ Created on Aug 9, 2012
 import subprocess
 import os
 import re
-from logdispatcher import LogPriority
+from . logdispatcher import LogPriority
+from ServiceHelperTemplate import ServiceHelperTemplate
 
-
-class SHchkconfig(object):
+class SHchkconfig(ServiceHelperTemplate):
     '''
     SHchkconfig is the Service Helper for systems using the chkconfig command to
     configure services. (RHEL up to 6, SUSE, Centos up to 6, etc)
@@ -45,6 +45,7 @@ class SHchkconfig(object):
         '''
         Constructor
         '''
+        super(SHchkconfig, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/sbin/chkconfig '
@@ -53,7 +54,7 @@ class SHchkconfig(object):
         else:
             self.svc = '/etc/init.d/'
 
-    def disableservice(self, service):
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -71,7 +72,7 @@ class SHchkconfig(object):
                               stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
-        if self.isrunning(service):
+        if self.isRunning(service):
             ret2 = subprocess.call(self.svc + service + ' stop',
                                    shell=True, close_fds=True,
                                    stdout=subprocess.PIPE,
@@ -85,7 +86,7 @@ class SHchkconfig(object):
         else:
             return False
 
-    def enableservice(self, service):
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -120,7 +121,7 @@ class SHchkconfig(object):
         else:
             return False
 
-    def auditservice(self, service):
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -144,7 +145,7 @@ class SHchkconfig(object):
                                'SHchkconfig.auditservice: ' + service + ' False')
         return False
 
-    def isrunning(self, service):
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running.
 
@@ -160,7 +161,7 @@ class SHchkconfig(object):
                                close_fds=True)
         message = chk.stdout.readlines()
         if len(message) == 0:
-            running = self.auditservice(service)
+            running = self.auditService(service)
         for line in message:
             if re.search('running', line):
                 running = True
@@ -168,7 +169,7 @@ class SHchkconfig(object):
                                'SHchkconfig.isrunning: ' + service + ' ' + str(running))
         return running
 
-    def reloadservice(self, service):
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -193,7 +194,7 @@ class SHchkconfig(object):
             else:
                 return True
 
-    def listservices(self):
+    def listServices(self, **kwargs):
         '''
         Return a list containing strings that are service names.
 

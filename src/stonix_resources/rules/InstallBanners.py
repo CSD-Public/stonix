@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -37,6 +37,7 @@ Install and configure warning banners, to be displayed at startup.
 @change: 2015/05/11 breen complete re-write
 @change: 2016/08/10 eball Added "dbus-launch" to gsettings commands, major PEP8
     cleanup.
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -72,8 +73,7 @@ class InstallBanners(RuleKVEditor):
         self.rulename = 'InstallBanners'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Install and configure warning banners, to be " + \
-            "displayed when logging into this system."
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['CIS', 'NSA 2.3.7.2', 'CCE 4188-9', 'CCE 4431-3',
@@ -84,10 +84,10 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'InstallBanners'
+        key = 'INSTALLBANNERS'
         instructions = "To prevent the installation of warning banners, " + \
             "set the value of InstallBanners to False.\n\n!DEBIAN USERS! Due to " + \
             "a bug in gdm3 (gnome 3) which has not been patched on debian, we are forced to " + \
@@ -782,11 +782,8 @@ class InstallBanners(RuleKVEditor):
                 contentlines = self.getFileContents(filepath)
                 for key in contentdict:
                     for line in contentlines:
-                        if re.search(key, line):
-                            contentlines = [c.replace(line,
-                                                      contentdict[key] +
-                                                      '\n')
-                                            for c in contentlines]
+                        if re.search('^' + key, line):
+                            contentlines = [c.replace(line, contentdict[key] + '\n') for c in contentlines]
                             replacedict[contentdict[key]] = True
                 for item in replacedict:
                     if not replacedict[item]:

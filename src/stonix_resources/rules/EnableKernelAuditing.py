@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -30,6 +30,8 @@ account modifications, and authentication events.
 @author: Breen Malmberg
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -63,9 +65,7 @@ class EnableKernelAuditing(Rule):
         self.rulename = 'EnableKernelAuditing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """The kernel auditing service is provided for system \
-auditing. By default, the service audits certain types of security-relevant \
-events such as system logins, account modifications, and authentication events."""
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['CIS', 'NSA 2.6.2', 'CCE-4665-5', 'CCE-4679-7',
@@ -75,10 +75,10 @@ events such as system logins, account modifications, and authentication events."
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'EnableKernelAuditing'
+        key = 'ENABLEKERNELAUDITING'
         instructions = """To prevent kernel auditing from being enabled on \
 this system, set the value of EnableKernelAuditing to False"""
         default = True

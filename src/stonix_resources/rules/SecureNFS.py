@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Mar 11, 2015
 
 @author: dwalker
@@ -35,6 +34,8 @@ added 3 new imports: listdir, isfile, join; added check for nfs exports in repor
 removed unnecessary return call (return success) - in fix method - which was at the same tab level as the
 method's return self.rulesuccess call, but before it, so it was always being called instead of
 return self.rulesuccess. self.rulesuccess will now return instead of success.
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -60,13 +61,10 @@ class SecureNFS(Rule):
         self.rulenumber = 39
         self.rulename = "SecureNFS"
         self.formatDetailedResults("initialize")
-        self.helptext = """This rule secures the NFS server by configuring \
-NFS services to use fixed ports and checking the /etc/exports file for \
-malformed export lines, export lines that are too permissive, and lines that \
-contain the no_root_squash, all_squash or insecure_locks options."""
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.guidance = ["NSA(3.13.4)", "cce-4241-6", "cce-4465-1",
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]
@@ -338,8 +336,10 @@ contain the no_root_squash, all_squash or insecure_locks options."""
         @rtype: bool
         @author: dwalker
         @change: Breen Malmberg - 4/26/2016 - changed location of defaults variables in method;
-        added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
-        changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
+                added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
+                changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
+        @change: Breen Malmberg - 7/11/2017 - added another service check on mac os x; no files will be created on mac if the service is not
+                enabled
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering SecureNFS.fix()...")
@@ -415,10 +415,7 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                 if createFile(nfsfile, self.logger):
                     nfstemp = nfsfile + ".tmp"
                     if self.environ.getostype() == "Mac OS X":
-                        if not self.sh.auditservice('/System/Library/' +
-                                                    'LaunchDaemons/' +
-                                                    'com.apple.nfsd.plist',
-                                                    'com.apple.nfsd'):
+                        if not self.sh.auditService('/System/Library/LaunchDaemons/com.apple.nfsd.plist', serviceTarget='com.apple.nfsd'):
                             success = True
                             self.formatDetailedResults("fix", success,
                                                        self.detailedresults)
@@ -495,8 +492,20 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                                     self.statechglogger, myid):
                         debug = "Unable to set permissions on " + nfsfile
                         self.logger.log(LogPriority.DEBUG, debug)
+
             export = "/etc/exports"
             if not os.path.exists(export):
+                # mac os x will automatically enable the nfs
+                # service and related ports if the file /etc/exports
+                # is created
+                if self.environ.getostype() == "Mac OS X":
+                    if not self.sh.auditService('/System/Library/LaunchDaemons/com.apple.nfsd.plist', serviceTarget='com.apple.nfsd'):
+                        success = True
+                        self.formatDetailedResults("fix", success,
+                                                   self.detailedresults)
+                        self.logdispatch.log(LogPriority.INFO,
+                                             self.detailedresults)
+                        return success
                 if createFile(export, self.logger):
                     extemp = export + ".tmp"
                     data2 = {"all_squash": "",
@@ -579,8 +588,8 @@ contain the no_root_squash, all_squash or insecure_locks options."""
                 # (aka a full reload), so this decision should be made at
                 # the rule-level.
                 ##
-                if self.sh.isrunning(nfsservice, nfsservice):
-                    self.sh.reloadservice(nfsservice, nfsservice)
+                if self.sh.isRunning(nfsservice, serviceTarget=nfsservice):
+                    self.sh.reloadService(nfsservice, serviceTarget=nfsservice)
 
             self.logdispatch.log(LogPriority.DEBUG, "Exiting SecureNFS.fix()...")
 

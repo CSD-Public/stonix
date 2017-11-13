@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -53,49 +53,19 @@ class InstalledSoftwareVerification(Rule):
         self.rulename = 'InstalledSoftwareVerification'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will check the integrity of \
-the installed software on this system. Since the results of these tests are \
-heavily dependent on user configuration, the only changes made to the \
-system are to correct permissions.
-
-PLEASE NOTE: This rule invokes the "rpm -Va" command, which can take several \
-minutes to complete.
-
-SUGGESTED CORRECTIVE ACTIONS:
-For files with bad user/group ownership:
-For each file listed in the report output, run the following command as root:
-# rpm --setugids `rpm -qf [filename]`
-This will attempt to return the user and group ownership to the package \
-defaults.
-
-For files with changed permissions:
-The Fix for this rule will automatically change the permissions for the \
-package that each file is a part of back to the vendor defaults.
-
-For files with changed hashes:
-If you believe that the file's hash has changed due to corruption or \
-malicious activity, begin by running the following command as root:
-# rpm -qf [filename]
-This will output the [package] name. It can also be run in backticks \
-(`rpm -qf [filename]`) in place of [package] in the following commands.
-Next, run:
-# rpm -Uvh [package]
-OR
-# yum reinstall [package]
-'''
         self.rootrequired = True
         self.guidance = ['NSA 2.1.3.2', 'CCE 14931-0',
                          'CCE-RHEL7-CCE-TBD 2.1.3.2.1']
         self.applicable = {'type': 'white',
                            'os': {'Red Hat Enterprise Linux': ['6.0', '+'],
-                                  'CentOS Linux': ['7.0', '+'],
-                                  'Fedora': ['21', '+']}}
+                                  'CentOS Linux': ['7.0', '+']}}
+                                  #'Fedora': ['21', '+']}}
 
         datatype = 'bool'
         key = 'FIXPERMISSIONS'
-        instructions = '''If set to True, this rule will fix the permissions \
+        instructions = 'If set to True, this rule will fix the permissions \
 of the package for any file which has a permission deviation from the vendor \
-default.'''
+default.'
         default = True
         self.fixPermsCi = self.initCi(datatype, key, instructions, default)
 
@@ -106,6 +76,7 @@ default.'''
         self.permErr = []
         self.hashErr = []
         self.packagesFixed = []
+        self.sethelptext()
 
     def report(self):
         '''

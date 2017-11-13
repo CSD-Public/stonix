@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -63,12 +63,7 @@ class PasswordExpiration(Rule):
         self.rulename = "PasswordExpiration"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures the password configuration " + \
-            "for each entry in the shadow file, and any other files that " + \
-            "pertain to password expiration, length, warning time, etc.\n" + \
-            "***For Solaris, please be aware that there is no undo for the " + \
-            "content change of the shadow file. Any permissions change " + \
-            "can still be undone."
+        self.sethelptext()
         self.iditerator = 0
         self.guidance = ["2.3.1.7"]
         self.applicable = {'type': 'black', 'family': ['darwin']}

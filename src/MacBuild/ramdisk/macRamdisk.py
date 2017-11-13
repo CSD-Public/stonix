@@ -321,6 +321,8 @@ class RamDisk(RamDiskTemplate) :
         @parameter: nosuid - from the mount manpage: "Do not allow
                              set-user-identifier bits to take effect.
 
+        @parameter: fstype - What supported filesystem to use.
+
         @parameter: noowners - From the mount manpage: "Ignore the ownership
                                field for the entire volume.  This causes all
                                objects to appear as owned by user ID 99 and

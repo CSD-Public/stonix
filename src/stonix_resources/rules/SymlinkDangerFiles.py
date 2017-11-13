@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Oct 24, 2012
 The Symlink Dangerous Files class checks for the presence of certain files -
 namely /root/.rhosts, /root/.shosts, and /etc/hosts.equiv, and symlinks them to
@@ -36,6 +35,7 @@ control.
 @change: 2014/08/11 ekkehard fixed isApplicable
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -72,21 +72,16 @@ class SymlinkDangerFiles(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = "This rule checks for the presence of certain " + \
-            "files (/root/.rhosts, /root/.shosts, /etc/hosts.eqiv, and " + \
-            "/etc/shosts.equiv), and symlinks them to /dev/null in order " + \
-            "to prevent a potentially exploitable weak form of access " + \
-            "control. \nNote that no undo operation is permitted for " + \
-            "this rule due to security reasons."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS RHEL 5 Benchmark Appendix A SN.1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # init CIs
         self.ci = self.initCi("bool",
-                              "SymlinkDangerFiles",
+                              "SYMLINKDANGERFILES",
                               "Execute Symlink Danger Files fix.",
                               True)
         self.symlinkfiles = ['/root/.rhosts', '/root/.shosts', '/etc/shosts.equiv']

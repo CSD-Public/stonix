@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,6 +26,8 @@ Created on Feb 10, 2015
 @author: dwalker
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2016/04/06 eball Changed rule name to ConfigureProfileManagement
+@change: 2017/03/30 dkennel Setting this to FISMA high until Apple fixes bugs
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import traceback
@@ -55,9 +57,7 @@ class ConfigurePasswordPolicy(Rule):
         self.rulenumber = 106
         self.rulename = "ConfigurePasswordPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureProfileManagement rule configures the " + \
-            "macOS (OS X) operating system's password policy according to LANL " + \
-            "standards and practices."
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.12.4', '+']}}

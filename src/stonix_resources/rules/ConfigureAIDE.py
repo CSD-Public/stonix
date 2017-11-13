@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -35,6 +35,7 @@ This rule is optional and will install and configure AIDE when it is run.
 CI was not referenced in the fix and report method.
 @change: 2015/04/14 dkennel updated to use new is applicable
 @change: 2015/10/07 eball PEP8 cleanup
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -63,14 +64,12 @@ class ConfigureAIDE(Rule):
         self.rulenumber = 110
         self.rulename = 'ConfigureAIDE'
         self.formatDetailedResults("initialize")
-        self.helptext = 'Install and configure Advanced Intrusion Detection ' + \
-            'Environment (AIDE). This rule is optional and will install and ' + \
-            'configure AIDE when it is run.'
+        self.sethelptext()
         self.guidance = ['NSA(2.1.3)', 'cce-4209-3']
 
         # init CIs
         datatype = 'bool'
-        key = 'configureaide'
+        key = 'CONFIGUREAIDE'
         instructions = 'If you set the ConfigureAIDE variable to yes, or ' + \
             'true, ConfigureAIDE will install and set up the Advanced ' + \
             'Intrusion Detection Environment on this system.'
@@ -80,7 +79,7 @@ class ConfigureAIDE(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'AIDEJobTime'
+        key2 = 'AIDEJOBTIME'
         instructions2 = '''This string contains the time when the cron job for
         /usr/sbin/aide --check will run in /etc/crontab. The default value is
         05 04 * * * (which means 4:05am daily)'''

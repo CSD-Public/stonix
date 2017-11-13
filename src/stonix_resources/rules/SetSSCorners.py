@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ to disable the screen saver.
 @author: Breen Malmberg
 @change: 2015/10/08 eball Help text/PEP8 cleanup
 @change: 2016/02/02 ekkehard Enable for OS X El Capitan 10.11
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -57,22 +58,15 @@ class SetSSCorners(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = False
-        self.helptext = """The screen saver should be set to turn on after a \
-period of inactivity, and should require a password to dismiss. Disabling the \
-screen saver would disable the screen lock. This rule removes the \
-functionality of using a 'hot corner' to disable the screen saver.
-Note: the fix for this rule will not take effect immediately. If you log out \
-or restart it will take effect. It will also take effect automatically, after \
-the fix is run, but you may have to wait a few minutes for Mac OS X to reload \
-the process."""
+        self.sethelptext()
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']},
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']},
                            'noroot': True}
 
         # set up configuration items for this rule
         datatype = 'bool'
-        key = 'SetSSCorners'
+        key = 'SETSSCORNERS'
         instructions = 'To disable this rule, set the value of ' + \
             'SetSSCorners to False'
         default = True

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -35,6 +35,9 @@ Created on May 20, 2013
 @change: 2016/01/22 eball Changed daemon log level from daemon.info to daemon.*
 @change: 2016/05/31 ekkehard Added OpenDirectory Logging
 @change: 2016/06/22 eball Improved report feedback for reportMac
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
@@ -64,26 +67,11 @@ class ConfigureLogging(RuleKVEditor):
         self.rulename = "ConfigureLogging"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule combines several tasks. Log Rotation \
-ensures that logs don't completely fill up disk space. It also configures \
-logwatch on the central log server.
-After the fix runs, you may want to reformat the configuration files that were \
-altered to line up correctly with columns (such as in newsyslog.conf in \
-FreeBSD). This is purely personal preference.
-For operating systems such as Linux, many log file entries may have their own \
-block as well, and many of the blocks may contain the same contents. Feel \
-free to combine all of these on one line.  If an entry in the Linux fix has \
-incorrect log specs inside the brackets, the log entry is removed where it \
-previously existed and then rewritten with the recommended specs. It does not \
-retain any of the user's previous specs.  However, where that log was \
-removed, the specs inside the brackets may remain with no log file to \
-accompany it.  Delete these, as they will make your configuration file \
-invalid."""
-
+        self.sethelptext()
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         datatype = 'bool'
         key = 'CONFIGURELOGGING'
@@ -91,7 +79,7 @@ invalid."""
             "CONFIGURELOGGING to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
+        self.rootrequired = True
         self.service = ""
         self.logd = ""
         self.iditerator = 0
@@ -245,7 +233,8 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         '''
         debug = ""
         compliant = True
-        self.directories.append("/var/log/messages")
+        self.fixables = []
+        fixables = []
         specs = ["rotate 4",
                  "weekly",
                  "missingok",
@@ -424,14 +413,130 @@ daemon config file: " + self.logpath
                     compliant = False
 
                 contents = readFile(self.logrotpath, self.logger)
-                contentstring = ""
-
-                for line in contents:
-                    contentstring += line
-                if not re.search(self.expression, contentstring):
-                    self.detailedresults = "logrotate file doesn't " + \
-                        "contain the correct log contents\n"
-                    compliant = False
+                for directory in self.directories:
+                    found = False
+                    i = 0
+                    for line in contents:
+                        contents2 = []
+                        if re.search("^#", line.strip()) or re.match("^\s*$",
+                                                                 line.strip()):
+                            i += 1
+                            continue
+                        if re.search("\s+", line):
+                            line = re.sub("\s", " ", line)
+                            '''found the directory to rotate we're looking for'''
+                            if re.search("^" + directory + " ", line) or \
+                                re.search(" " + directory + " ", line) or \
+                                re.search(" " + directory + " {", line) or \
+                                re.search(" " + directory + "{", line) or \
+                                re.search("^" + directory + "{", line) :
+                                found = True
+                                '''contents2 list will contain current line 
+                                containing directory and rest of file'''
+                                contents2 = contents[i:]
+                                contents3 = []
+                                j = 0
+                                '''finished variable to be an indicator while going
+                                through contents2 so that we don't continue to
+                                traverse contents2 even after finding the specs
+                                for the directory once'''
+                                finished = False
+                                '''traverse through contents 2 and look for
+                                opening bracket that shall contain the log
+                                rotation specifications'''
+                                for line2 in contents2:
+                                    if re.search("^#", line2.strip()) or re.match("^\s*$",
+                                                                 line2.strip()):
+                                        j += 1
+                                        continue
+                                    '''found the first opening bracket in
+                                    contents2 list'''
+                                    if finished:
+                                        break
+                                    if re.search("{$", line2.strip()):
+                                        finished = True
+                                        j += 1
+                                        '''contents3 list will contain next line
+                                        after line with bracket and then rest
+                                        of file'''
+                                        contents3 = contents2[j:]
+                                        k = 0
+                                        unwantedspecs = False
+                                        '''traverse through contents3 list until
+                                        reaching } which will indicate the end
+                                        of log rotation specifications for
+                                        current directory'''
+                                        try:
+                                            specstemp = ["rotate 4",
+                                                         "weekly",
+                                                         "missingok",
+                                                         "notifempty",
+                                                         "compress",
+                                                         "delaycompress",
+                                                         "sharedscripts",
+                                                         "postrotate",
+                                                         "/bin/kill -HUP `/bin/cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true",
+                                                         "/bin/kill -HUP `/bin/cat /var/run/syslog.pid 2> /dev/null` 2> /dev/null || true",
+                                                         "/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true",
+                                                         "endscript"]
+                                            unwantedspecs = False
+                                            while not re.search("^}$", contents3[k].strip()):
+                                                if re.search("^#", contents3[k].strip()) or re.match("^\s*$",
+                                                                     contents3[k].strip()):
+                                                    k += 1
+                                                    continue
+                                                if re.search("}$", contents3[k].strip()):
+                                                    line = re.sub("}", "", contents3[k].strip())
+                                                    if re.search("^\s*$", line):
+                                                        break
+                                                    if line in specstemp:
+                                                        specstemp.remove(line)
+                                                    elif line not in specstemp:
+                                                        unwantedspecs = True
+                                                    break
+                                                '''we found a spec that we want in
+                                                between the braces.  Remove from 
+                                                specs list as found'''
+                                                if contents3[k].strip() in specstemp:
+                                                    specstemp.remove(contents3[k].strip())
+                                                    '''we found a spec that we don't
+                                                    want in between the braces.  Set
+                                                    variable unwantedspecs True'''
+                                                elif contents3[k].strip() not in specstemp:
+                                                    unwantedspecs = True
+                                                    break
+                                                k += 1
+                                        except IndexError:
+                                            self.detailedresults += self.logrotpath + \
+                                                " is in bad format\n"
+                                            unwantedspecs = True
+                                        '''If there were any specs left in list
+                                        then we didn't find all the specs inside
+                                        braces we desired or if unwantedspecs
+                                        variable is True then we found specs
+                                        inside braces that were undesired so
+                                        break out of for loop'''
+                                        if specstemp or unwantedspecs:
+                                            break
+                                    else:
+                                        j += 1
+                                if specstemp or unwantedspecs:
+                                    self.detailedresults += directory + \
+                                        " has incorrect log rotation " + \
+                                        "specifications\n"
+                                    fixables.append(directory)
+                                    break
+                            else:
+                                i += 1
+                        else:
+                            i += 1
+                    if not found:
+                        self.detailedresults += directory + " was " + \
+                            "not found in logrotate file\n"
+                        fixables.append(directory)
+        if fixables:
+            self.fixables = fixables
+            compliant = False
         return compliant
 
 ###############################################################################
@@ -488,6 +593,8 @@ daemon config file: " + self.logpath
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
+                    for directory in self.directories:
+                        self.fixables.append(directory)
                     self.logs["rsyslog"] = True
                     self.logrotpath = self.checkLogRotation()
                     self.logd = "rsyslog"
@@ -594,6 +701,36 @@ daemon config file: " + self.logpath
                 if not createFile(self.logpath, self.logger):
                     debug = "Unable to create missing log daemon config " + \
                         "file: " + self.logpath + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+            else:
+                self.created1 = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": self.logpath}
+                self.statechglogger.recordchgevent(myid, event)
+                debug = "successfully create log daemon config file: " + \
+                    self.logpath + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                if not checkPerms(self.logpath, [0, 0, 420], self.logger):
+                    if not setPerms(self.logpath, [0, 0, 420], self.logger):
+                        debug = "Unable to set " + \
+                            "permissions on " + self.logpath + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                    resetsecon(self.logpath)
+        if os.path.exists(self.logpath):
+            if self.logfiles:
+                contents = readFile(self.logpath, self.logger)
+                tempstring = ""
+                tmpfile = self.logpath + '.tmp'
+                for line in contents:
+                    tempstring += line
+                for item in self.logfiles:
+                    tempstring += item + "\n"
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    debug = "Unable to write to file " + tmpfile + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     return False
                 else:
@@ -695,31 +832,55 @@ rotation config file: " + self.logrotpath + "\n"
                 debug = "Unable to set " + "permissions on " + self.logrotpath + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
-        contentstring = ""
-        contents = readFile(self.logrotpath, self.logger)
-        for line in contents:
-            contentstring += line
-        if not re.search(self.expression, contentstring):
-            contentstring += addon
-        tmpfile = self.logrotpath + ".tmp"
-        if not writeFile(tmpfile, contentstring, self.logger):
-            return False
-        if not self.created2:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf",
-                     "filepath": self.logrotpath}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(self.logrotpath, tmpfile, myid)
-        os.rename(tmpfile, self.logrotpath)
-        if re.search("^Red Hat", self.environ.getostype().strip()) and \
-                re.search("^6", self.environ.getosver()):
-            os.chown(self.logrotpath, 0, gid)
-        else:
-            os.chown(self.logrotpath, 0, 0)
-        os.chmod(self.logrotpath, 420)
-        resetsecon(self.logrotpath)
-        if not self.sh.reloadservice("rsyslog"):
+        if self.fixables:
+            contents = readFile(self.logrotpath, self.logger)
+            tempstring = ""
+            tempcontents = []
+            for line in contents:
+                templine = re.sub("[ \t\r\f\v]", " ", line)
+                tempcontents.append(templine)
+            for directory in self.fixables:
+                tempcontents2 = []
+                for line in tempcontents:
+                    if re.search("^" + directory + " ", line) or \
+                        re.search(" " + directory + " ", line) or \
+                        re.search(" " + directory + " {", line) or \
+                        re.search(" " + directory + "{", line) or \
+                        re.search("^" + directory + "{", line) or \
+                        re.search("^" + directory + "\n", line) or \
+                        re.search(" " + directory + "\n", line):
+                        templine = re.sub(directory, "", line)
+                        tempcontents2.append(templine)
+                    else:
+                        tempcontents2.append(line)
+                tempcontents = tempcontents2
+            for item in tempcontents:
+                tempstring += item
+            for item in self.fixables:
+                tempstring += item + "\n"
+            tempstring += "{\n"
+            for spec in specs:
+                tempstring += spec + "\n"
+            tempstring += "}\n"
+            tmpfile = self.logrotpath + ".tmp"
+            if not writeFile(tmpfile, tempstring, self.logger):
+                return False
+            if not self.created2:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": self.logrotpath}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(self.logrotpath, tmpfile, myid)
+            os.rename(tmpfile, self.logrotpath)
+            if re.search("^Red Hat", self.environ.getostype().strip()) and \
+                    re.search("^6", self.environ.getosver()):
+                os.chown(self.logrotpath, 0, gid)
+            else:
+                os.chown(self.logrotpath, 0, 0)
+            os.chmod(self.logrotpath, 420)
+            resetsecon(self.logrotpath)
+        if not self.sh.reloadService("rsyslog", _="_"):
             debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
         if not self.ch.getReturnCode() != "0":
@@ -999,7 +1160,7 @@ file: " + logpath + "\n"
             resetsecon(logrotpath)
 #-----------------------------------------------------------------------------#
         # restart log daemon
-        if not self.sh.reloadservice(self.service):
+        if not self.sh.reloadService(self.service, _="_"):
             success = False
         return success
 
@@ -1518,7 +1679,7 @@ because these values are optional\n"
                 if not found:
                     self.missinglogrot = True
                     compliant = False
-        if not self.sh.isrunning(service, servicename):
+        if not self.sh.isRunning(service, servicename=servicename):
             compliant = False
             self.detailedresults += "syslogd is not running\n"
         if not compliant:
@@ -1704,7 +1865,7 @@ because these values are optional\n"
 will not attempt to create this file.\n"
             self.logger.log(LogPriority, debug)
 
-        if not self.sh.reloadservice(service, servicename):
+        if not self.sh.reloadService(service, servicename=servicename):
             success = False
         return success
 

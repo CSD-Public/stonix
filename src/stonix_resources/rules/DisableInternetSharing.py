@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,8 @@ Created on 09/17/2013
 @change: 2013/09/17 ekkehard Original Implementation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -52,17 +54,10 @@ class DisableInternetSharing(RuleKVEditor):
         self.rulenumber = 215
         self.rulename = 'DisableInternetSharing'
         self.formatDetailedResults("initialize")
-        self.helptext = "Internet Sharing uses the open source natd " + \
-        "process to share an internet connection with other computers " + \
-        "and devices on a local network. Unless specifically required, " + \
-        "Internet Sharing should be turned off. If used, it should only " + \
-        "be turned on when actual sharing is needed. A much better " + \
-        "solution is a dedicated router. Apple makes a number of " + \
-        "certified compatible routers."
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("DisabledInternetSharing",
                          "defaults",
                          "/Library/Preferences/SystemConfiguration/com.apple.nat",
@@ -74,3 +69,4 @@ class DisableInternetSharing(RuleKVEditor):
                          None,
                          False,
                          {})
+        self.sethelptext()

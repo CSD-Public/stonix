@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -55,12 +55,12 @@ class RestrictAccessToKernelMessageBuffer(Rule):
         self.rootrequired = True
         self.rulesuccess = True
         self.formatDetailedResults("initialize")
-        self.helptext = "Unprivileged access to the kernel syslog can expose sensitive kernel address information."
+        self.sethelptext()
         self.guidance = ["CCE-RHEL7-CCE-TBD 2.2.4.5"]
         self.applicable = {"type": "white",
                            "family": "linux"}
         datatype = "bool"
-        key = "RestrictAccessToKernelMessageBuffer"
+        key = "RESTRICTACCESSTOKERNELMESSAGEBUFFER"
         instructions = "To prevent this rule from running, set the value of RestrictAccessToKernelMessageBuffer to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

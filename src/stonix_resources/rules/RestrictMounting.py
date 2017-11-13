@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -28,6 +28,7 @@ This rule restricts mounting rights and options.
 @change: 2016/04/22 eball Added GNOME 3 method for disabling GNOME mounting
 @change: 2016/08/01 eball Added "dbus-launch" before all gsettings commands,
     and fixed undos that were the same as the fix commands
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import os
@@ -52,14 +53,7 @@ class RestrictMounting(Rule):
         self.rulename = "RestrictMounting"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This optional rule can be used to restrict access \
-and permissions related to disk mounts.\nRESTRICTCONSOLEACCESS will restrict \
-device ownership for console users to root only.\nDISABLEAUTOFS disables the \
-autofs service, which is used to dynamically mount NFS filesystems. Even if \
-NFS in needed, NFS filesystems can usually be statically mounted through
-/etc/fstab.\nDISABLEGNOMEAUTOMOUNT will restrict the gnome-volume-manager \
-(part of the GNOME Desktop Environment) from automatically mounting devices \
-and media.'''
+        self.sethelptext()
 
         # Configuration item instantiation
         datatype = "bool"
@@ -121,7 +115,7 @@ and media.'''
                                             "the correct values\n"
 
             if self.ph.check("autofs"):
-                if self.sh.auditservice("autofs"):
+                if self.sh.auditService("autofs", _="_"):
                     compliant = False
                     results += "autofs is installed and enabled\n"
 
@@ -246,8 +240,8 @@ and media.'''
                                 " properties could not be set\n"
 
             if self.autofsCi.getcurrvalue():
-                if self.ph.check("autofs") and self.sh.auditservice("autofs"):
-                    if self.sh.disableservice("autofs"):
+                if self.ph.check("autofs") and self.sh.auditService("autofs", _="_"):
+                    if self.sh.disableService("autofs", _="_"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.iditerator += 1

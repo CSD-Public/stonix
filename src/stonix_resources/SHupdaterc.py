@@ -30,9 +30,10 @@ import subprocess
 import re
 import os
 from logdispatcher import LogPriority
+from ServiceHelperTemplate import ServiceHelperTemplate
 
 
-class SHupdaterc(object):
+class SHupdaterc(ServiceHelperTemplate):
     '''
     SHupdaterc is the Service Helper for systems using the rcupdate command to
     configure services. (Debian, Ubuntu and variants)
@@ -42,12 +43,13 @@ class SHupdaterc(object):
         '''
         Constructor
         '''
+        super(SHupdaterc, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/usr/sbin/update-rc.d '
         self.svc = '/usr/sbin/service '
 
-    def disableservice(self, service):
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
 
@@ -65,7 +67,7 @@ class SHupdaterc(object):
                               stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
-        if self.isrunning(service):
+        if self.isRunning(service):
             ret2 = subprocess.call(self.svc + service + ' stop',
                                    shell=True, close_fds=True,
                                    stdout=subprocess.PIPE,
@@ -80,7 +82,7 @@ class SHupdaterc(object):
         else:
             return False
 
-    def enableservice(self, service):
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
@@ -116,7 +118,7 @@ class SHupdaterc(object):
         else:
             return False
 
-    def auditservice(self, service):
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
@@ -138,7 +140,7 @@ class SHupdaterc(object):
                                str(running))
         return running
 
-    def isrunning(self, service):
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running.
 
@@ -158,7 +160,7 @@ class SHupdaterc(object):
         message = chk.stdout.readlines()
         # some services don't return any output (sysstat) so we call audit
         if len(message) == 0:
-            running = self.auditservice(service)
+            running = self.auditService(service)
         for line in message:
             if re.search('running', line) and chk.returncode == 0:
                 running = True
@@ -167,7 +169,7 @@ class SHupdaterc(object):
                                str(running))
         return running
 
-    def reloadservice(self, service):
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
@@ -192,7 +194,7 @@ class SHupdaterc(object):
             else:
                 return True
 
-    def listservices(self):
+    def listServices(self, **kwargs):
         '''
         Return a list containing strings that are service names.
 

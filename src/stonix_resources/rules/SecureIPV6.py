@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -30,6 +30,7 @@ Created on Jan 14, 2014
 @change: 2016/04/26 ekkehard Results Formatting
 @change: 2016/06/23 dwalker adding mac os x configuration
 @change: 2016/07/07 ekkehard added net.inet6.ip6.maxifdefrouters = 1
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -54,9 +55,7 @@ class SecureIPV6(Rule):
         self.rulename = "SecureIPV6"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will configure IPv6 functionality by \
-disabling automatic configuration, enabling privacy extensions for address \
-generation, and limiting network-transmitted configuration information.'''
+        self.sethelptext()
         datatype = "bool"
         key = "SECUREIPV6"
         instructions = '''To disable this rule set the value of SECUREIPV6 to \
@@ -70,7 +69,7 @@ False.'''
                          "CCE 4128-5"]
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.iditerator = 0
         self.created = False
 

@@ -454,7 +454,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         use the following command on the Mac:
         security set-keychain-password -o <oldpassword> -p <newpassword> <file.keychain>
 
-        Most used keychain is the login.keychain.
+        Most used keychain is the login.keychain-db.
 
         @author: Roy Nielsen
         """

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -38,6 +38,8 @@ fixed bug where CI was not referenced before performing Fix() actions.
 @change: 2016/08/09 Breen Malmberg Added os x implementation; refactored large
 parts of the code as well
 @change: 2016/08/30 eball Refactored fixLinux() method, PEP8 cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 
 from __future__ import absolute_import
@@ -48,7 +50,6 @@ import stat
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
 from ..CommandHelper import CommandHelper
 from ..stonixutilityfunctions import iterate, setPerms, resetsecon
 from pwd import getpwuid
@@ -74,11 +75,7 @@ class SecureATCRON(Rule):
         self.rulenumber = 33
         self.rulename = 'SecureATCRON'
         self.mandatory = True
-        self.helptext = '''The AT and CRON job schedulers are used to \
-schedule jobs for running at a later date/time. These daemons should be \
-configured defensively. The SecureATCRON rule restricts permissions on the \
-files and directories associated with these daemons to authorized users only, \
-and enables and configures logging for these daemons.'''
+        self.sethelptext()
         self.rootrequired = True
         self.formatDetailedResults("initialize")
         self.compliant = False
@@ -87,7 +84,7 @@ and enables and configures logging for these daemons.'''
                          'CCE-4230-9', 'CCE-4445-3']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # init CIs
         datatype = 'bool'
@@ -220,13 +217,13 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         self.reportcronchmodfiledict = {self.crontab: '0644',
                                         self.anacrontab: '0600',
                                         self.spoolcron: '0700',
-                                        self.cronlog: '0600',
+                                        self.cronlog: '0644',
                                         self.cronallow: '0400',
                                         self.atallow: '0400'}
         self.fixcronchmodfiledict = {self.crontab: 0644,
                                      self.anacrontab: 0600,
                                      self.spoolcron: 0700,
-                                     self.cronlog: 0600,
+                                     self.cronlog: 0644,
                                      self.cronallow: 0400,
                                      self.atallow: 0400}
         self.cronchownfilelist = [self.cronhourly, self.crondaily,
@@ -292,7 +289,6 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         @author: Breen Malmberg
         '''
 
-        self.sh = ServiceHelper(self.environ, self.logger)
         self.ch = CommandHelper(self.logger)
 
     def report(self):

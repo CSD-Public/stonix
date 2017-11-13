@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -40,6 +40,9 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2016/03/01 ekkehard cgi default value set to False
+@change: 2017/03/30 dkennel Added fisma = high to applicable dictionary
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -73,16 +76,11 @@ class DisableRemoveableStorage(Rule):
         self.rulename = 'DisableRemoveableStorage'
         self.mandatory = False
         self.formatDetailedResults("initialize")
-        self.helptext = "This optional rule disables USB, Firewire, " + \
-            "thunderbolt, and SD cards (if applicable) " + \
-            "from accessing or being accessed from the system.  " + \
-            "This rule will be mandatory for those who work on the red " + \
-            "network.  This rule will also require a full reboot to fully " + \
-            "take effect\n"
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']},
+                           'fisma': 'high'}
 
         # configuration item instantiation
         datatype = "bool"
@@ -96,6 +94,7 @@ class DisableRemoveableStorage(Rule):
         self.iditerator = 0
         self.created = False
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+        self.sethelptext()
 
     def report(self):
         '''

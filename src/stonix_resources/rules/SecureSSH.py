@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Feb 19, 2013
 
 @author: Breen Malmberg, dwalker
@@ -35,6 +34,8 @@ Created on Feb 19, 2013
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/01/04 Breen Malmberg - added more detail to the help text to make
         it more clear to the end user, what the rule actually does.
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -71,41 +72,10 @@ class SecureSSH(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.environ = environ
-        self.helptext = '''This rule will not install SSH if it does
-not already exist on the system.
-
-This rule touches a number of configuration
-options in the ssh_config and/or sshd_config file(s).
-These options are checked and then changed, if necessary
-to be more secure than the default configuration.
-
-The client options touched are:
-Host
-Protocol
-GSSAPIAuthentication
-GSSAPIDelegateCredentials
-
-The server options touched are:
-Protocol
-SyslogFacility
-PermitRootLogin
-MaxAuthTries
-RhostsRSAAuthentication
-HostbasedAuthentication
-IgnoreRhosts
-PermitEmptyPasswords
-PasswordAuthentication
-ChallengeResponseAuthentication
-KerberosAuthentication
-GSSAPIAuthentication
-GSSAPICleanupCredentials
-UsePAM
-Ciphers
-PermitUserEnvironment'''
-
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         datatype = 'bool'
         key = 'SECURESSH'
         instructions = "To disable this rule set the value " + \
@@ -152,7 +122,7 @@ PermitUserEnvironment'''
                     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return self.compliant
             else:
-                if self.sh.auditservice("/System/Library/LaunchDaemons/ssh.plist", "com.openssh.sshd"):
+                if self.sh.auditService("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
                     self.macloaded = True
                 if not self.macloaded:
                     self.detailedresults += "\nSSH not installed/enabled. Nothing to configure."

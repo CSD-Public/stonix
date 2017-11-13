@@ -30,6 +30,7 @@ This is a Unit Test for Rule RestrictMounting
                         file as well as with the test harness.
 @change: 2016/08/01 eball Removed testFixAndUndo, replaced with checkUndo flag.
     Also simplified setting of CIs.
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import os
@@ -56,6 +57,7 @@ class zzzTestRuleRestrictMounting(RuleTest):
         self.ph = Pkghelper(self.logdispatch, self.environ)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.checkUndo = True
+        self.serviceTarget = ""
 
     def tearDown(self):
         # Cleanup: put original perms files back
@@ -123,7 +125,7 @@ class zzzTestRuleRestrictMounting(RuleTest):
         # If autofs is installed, enable and start it. If it is not
         # installed, it will not be tested.
         if self.ph.check("autofs"):
-            if not self.sh.enableservice("autofs"):
+            if not self.sh.enableService("autofs", serviceTarget=self.serviceTarget):
                 debug = "Could not enable autofs\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 

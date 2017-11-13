@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,6 +33,9 @@ dictionary
 @change: 2015/10/07 eball - Help text cleanup
 @change: 2015/11/02 eball - Added undo events to package installation
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/24 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 import os
@@ -42,7 +45,6 @@ from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
 from ..localize import MACKRB5, LINUXKRB5
 
@@ -61,12 +63,11 @@ class ConfigureKerberos(Rule):
         self.rulename = 'ConfigureKerberos'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures Kerberos on your system, " + \
-            "based on the settings in the localize.py file."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -125,7 +126,6 @@ class ConfigureKerberos(Rule):
                            "group": "root",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"}}
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
         if self.environ.getosfamily() == 'linux':
                 self.ph = Pkghelper(self.logdispatch, self.environ)

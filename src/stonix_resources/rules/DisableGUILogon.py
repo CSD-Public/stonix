@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -28,6 +28,8 @@ Created on 2015/07/01
 @change: 2016/07/06 eball Separated fix into discrete methods
 @change: 2017/06/02 bgonz12 Changed a conditional in reportUbuntu to search for
                     "manual" using regex instead of direct comparison
+@change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 
@@ -53,14 +55,6 @@ class DisableGUILogon(Rule):
         self.rulename = "DisableGUILogon"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This rule will disable, secure, or entirely remove \
-the X11/X Windows GUI.
-
-Please note that enabling the REMOVEX configuration item below will COMPLETELY \
-remove X Windows from the system. On most platforms, this will also disable \
-any currently running display manager. It is therefore recommended that this \
-rule be run from a console session rather than from the GUI if REMOVEX is \
-enabled.'''
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 
@@ -106,6 +100,7 @@ enabled.'''
         self.ch = CommandHelper(self.logger)
         self.sh = ServiceHelper(self.environ, self.logger)
         self.myos = self.environ.getostype().lower()
+        self.sethelptext()
 
     def report(self):
         '''
@@ -133,7 +128,7 @@ enabled.'''
             # NSA guidance specifies disabling of X Font Server (xfs),
             # however, this guidance seems to be obsolete as of RHEL 6,
             # and does not apply to the Debian family.
-            if self.sh.auditservice("xfs"):
+            if self.sh.auditService("xfs", _="_"):
                 compliant = False
                 results += "xfs is currently enabled\n"
 
@@ -231,7 +226,7 @@ enabled.'''
         results = ""
         dmlist = ["gdm", "gdm3", "lightdm", "xdm", "kdm"]
         for dm in dmlist:
-            if self.sh.auditservice(dm):
+            if self.sh.auditService(dm, _="_"):
                 compliant = False
                 results = dm + \
                     " is still in init folders; GUI logon is enabled\n"
@@ -447,7 +442,7 @@ enabled.'''
             self.ch.executeCommand(cmd)
         elif re.search("debian|ubuntu", self.myos):
             cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
-                   "xserver-xorg-core", "lightdm.*", "libx11.*"]
+                   "xserver-xorg-core", "xserver-xorg", "lightdm.*", "libx11-data"]
             self.ch.executeCommand(cmd)
         elif re.search("fedora", self.myos):
             # Fedora does not use the same group packages as other
@@ -468,7 +463,7 @@ enabled.'''
 
     def fixLockdownX(self):
         success = True
-        if self.sh.disableservice("xfs"):
+        if self.sh.disableService("xfs", _="_"):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype":   "servicehelper",

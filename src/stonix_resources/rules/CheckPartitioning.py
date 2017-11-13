@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ have been followed. The class is audit only.
 @change: 02/12/2014 ekkehard Implemented isapplicable
 @change: 2015/04/14 dkennel updated to use new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -59,17 +60,14 @@ class CheckPartitioning(Rule):
         self.rulename = 'CheckPartitioning'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The check for partitioning is an audit only rule \
-that will not change system settings. Best *NIX partitioning practices \
-recommend that the following areas of the filesystem, if present, be placed \
-on their own partitions: /home, /tmp, ,/var, /var/tmp, /var/log, \
-/var/log/audit.'''
+        self.sethelptext()
         self.rootrequired = False
         self.guidance = ['CCE 14161-4', 'CCE 14777-7', 'CCE 14011-1',
                          'CCE 14171-3', 'CCE 14559-9']
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
         self.hasrunalready = False
+        self.auditonly = True
 
     def report(self):
         '''CheckPartitioning.report(): produce a report on whether or not the

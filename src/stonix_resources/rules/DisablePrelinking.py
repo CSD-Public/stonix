@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -25,6 +25,7 @@ This rule disables the prelinking of executable binaries.
 
 @author: Eric Ball
 @change: 2016/02/09 eball Original implementation
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -46,9 +47,6 @@ class DisablePrelinking(Rule):
         self.rulename = "DisablePrelinking"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule disables the prelinking of executable \
-binaries. The prelinking feature changes binaries in an attempt to decrease \
-their startup time.'''
         self.applicable = {'type': 'white',
                            'family': ['linux']}
 
@@ -68,6 +66,7 @@ their startup time.'''
             self.isDebian = True
         else:
             self.isDebian = False
+        self.sethelptext
 
     def report(self):
         try:

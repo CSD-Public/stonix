@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -70,13 +70,13 @@ class BootloaderPerms(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = 'This rule will ensure the ownership and permissions on the boot loader config file to be root:root and 600'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['NSA(2.3.5.2)', 'cce-4144-2', '3923-0, 4197-0']
 
         # init CIs
         datatype = 'bool'
-        key = 'BootLoaderPerms'
+        key = 'BOOTLOADERPERMS'
         instructions = 'To prevent setting of permissions on the grub ' + \
             'bootloader file, set the value of BootLoaderPerms to False'
         default = True

@@ -171,7 +171,7 @@ class Ui_MainWindow(object):
         self.rule_desc_label.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.rule_desc_label.setObjectName("rule_desc_label")
         self.verticalLayout_2.addWidget(self.rule_desc_label)
-        self.rule_instructions_text = QtGui.QPlainTextEdit(self.rule_desc_scrollAreaWidgetContents)
+        self.rule_instructions_text = QtGui.QTextEdit(self.rule_desc_scrollAreaWidgetContents)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
