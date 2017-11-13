@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -31,6 +31,8 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Fixed help text, which was for DisableInternetSharing
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -47,12 +49,10 @@ class DisableMediaAutomaticActions(RuleKVEditor):
         self.rulename = 'DisableMediaAutomaticActions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule disables automatic media actions, such \
-as those taken when an audio CD or video DVD is inserted."""
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("DisableAutoCDAction", "defaults",
                          "/Library/Preferences/com.apple.digihub",
                          "",
@@ -97,3 +97,4 @@ as those taken when an audio CD or video DVD is inserted."""
                          None,
                          False,
                          {})
+        self.sethelptext()

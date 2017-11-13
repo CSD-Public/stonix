@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -66,18 +66,13 @@ class MuteMic(Rule):
         self.logger = logger
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''The MuteMic rule will mute or set the microphone \
-input levels to zero. This can help prevent a compromised computer from being \
-used as a listening device. On most platforms input volume changes require no \
-privileges so this setting can be easily undone. If you are not running STONIX with elevated privileges, \
-some fix functionality will be disabled for this rule. This will probably \
-result in the rule being not compliant after being run.'''
+        self.sethelptext()
         self.rootrequired = False
         self.mutemicrophone = self.__initializeMuteMicrophone()
         self.guidance = ['CIS']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.setPaths()
 
@@ -91,7 +86,7 @@ result in the rule being not compliant after being run.'''
         @author: dkennel
         '''
         datatype = 'bool'
-        key = 'mutemicrophone'
+        key = 'MUTEMICROPHONE'
         instructions = 'If set to yes or true the MUTEMICROPHONE action \
 will mute the microphone. This rule should always be set to TRUE with few \
 valid exceptions.'

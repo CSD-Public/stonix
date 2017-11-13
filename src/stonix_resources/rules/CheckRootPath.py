@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,8 @@ world-writable files or directories in any of the path directories.
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/04/01 eball Updated rule per RHEL 7 STIG, fixed inaccurate
     documentation and help text
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 from __future__ import absolute_import
@@ -65,17 +67,13 @@ class CheckRootPath(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''This rule ensures that the root user's PATH \
-environment variable is set to the vendor default, and checks all directories \
-in the PATH for user/world-writable entries. If user/world-writable entries \
-are found, it is left up to the system administrator to correct these \
-entries.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['NSA RHEL 2.3.4.1, 2.3.4.1.1, 2.3.4.1.2',
                          "CCE-RHEL7-CCE-TBD 2.4.1.1.7"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # Configuration item instantiation
         datatype = "bool"

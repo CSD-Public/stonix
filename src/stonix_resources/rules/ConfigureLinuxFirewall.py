@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,7 +24,8 @@
 Created on May 27, 2016
 
 @author: dkennel
-
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 
@@ -65,18 +66,12 @@ class ConfigureLinuxFirewall(Rule):
         self.rulename = 'ConfigureLinuxFirewall'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The ConfigureLinuxFirewall rule will configure \
-the firewalld or iptables firewall for a Linux host in an appropriate manner \
-for typical enterprise workstation usage. This will allow most client activity \
-but prevent network access to most services other than SSH. \
-Most workstations will leave this rule enabled but some server \
-administrators may want to disable this rule or customize the firewall after \
-STONIX has done the baseline configuration.
-'''
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux']}
         self.servicehelper = ServiceHelper(self.environ, self.logger)
+        self.serviceTarget = ""
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-4', 'DISA RHEL 7 STIG 2.5.7.1',
                          'DISA RHEL 7 STIG 2.5.7.1.1',
@@ -88,7 +83,7 @@ STONIX has done the baseline configuration.
                          'DISA RHEL 7 STIG 2.5.8.2.3',
                          'DISA RHEL 7 STIG 2.5.8.2.4']
         datatype = 'bool'
-        key = 'configurelinuxfirewall'
+        key = 'CONFIGURELINUXFIREWALL'
         instructions = '''To disable this rule set the value of \
 CONFIGURELINUXFIREWALL to False.'''
         default = False
@@ -127,7 +122,7 @@ CONFIGURELINUXFIREWALL to False.'''
         self.detailedresults = ""
         try:
             if self.isfirewalld:
-                if self.servicehelper.auditservice('firewalld.service'):
+                if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
                     compliant = True
                 else:
                     compliant = False
@@ -156,7 +151,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                 compliant = False
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
-            elif "iptables" not in self.servicehelper.listservices():
+            elif "iptables" not in self.servicehelper.listServices():
                 # Debian systems do not provide a service for iptables
                 cmd = [self.iptables, "-L"]
                 if not self.cmdhelper.executeCommand(cmd):
@@ -240,15 +235,15 @@ CONFIGURELINUXFIREWALL to False.'''
                                     ['ConfigureLinuxFirewall.report',
                                      "Debian type system. Check failed."])
             else:
-                if self.servicehelper.auditservice('iptables.service') or \
-                   self.servicehelper.auditservice('iptables'):
+                if self.servicehelper.auditService('iptables.service', serviceTarget=self.serviceTarget) or \
+                   self.servicehelper.auditService('iptables', serviceTarget=self.serviceTarget):
                     iptablesrunning = True
                 self.logger.log(LogPriority.DEBUG,
                                 ['ConfigureLinuxFirewall.report',
                                  "RHEL 6 type system. iptables service: " +
                                  str(iptablesrunning)])
-                if self.servicehelper.auditservice('ip6tables.service') or \
-                   self.servicehelper.auditservice('ip6tables'):
+                if self.servicehelper.auditService('ip6tables.service', serviceTarget=self.serviceTarget) or \
+                   self.servicehelper.auditService('ip6tables', serviceTarget=self.serviceTarget):
                     ip6tablesrunning = True
                 self.logger.log(LogPriority.DEBUG,
                                 ['ConfigureLinuxFirewall.report',
@@ -362,7 +357,7 @@ CONFIGURELINUXFIREWALL to False.'''
             success = True
             try:
                 if self.isfirewalld:
-                    self.servicehelper.enableservice('firewalld.service')
+                    self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget)
                     self.detailedresults += "Firewall configured.\n "
                 elif self.isufw:
                     cmdufw = '/usr/sbin/ufw status'
@@ -477,8 +472,8 @@ COMMIT
                     ip6whandle = open(ip6tPath, 'w')
                     ip6whandle.write(sysconfigip6tables)
                     ip6whandle.close()
-                    self.servicehelper.enableservice('iptables')
-                    self.servicehelper.enableservice('ip6tables')
+                    self.servicehelper.enableService('iptables', serviceTarget=self.serviceTarget)
+                    self.servicehelper.enableService('ip6tables', serviceTarget=self.serviceTarget)
                     # we restart iptables here because it doesn't respond
                     # to reload
                     proc = subprocess.Popen('/sbin/service iptables restart',
@@ -606,7 +601,7 @@ fw_custom_after_finished() {
         self.targetstate = 'notconfigured'
         try:
             if self.isfirewalld:
-                self.servicehelper.disableservice('firewalld.service')
+                self.servicehelper.disableService('firewalld.service', serviceTarget=self.serviceTarget)
                 self.detailedresults += "Firewall disabled.\n "
             elif self.isufw:
                 ufwcmd = '/usr/sbin/ufw disable'
@@ -661,8 +656,8 @@ fw_custom_after_finished() {
                                  shell=True, close_fds=True)
                 # Sleep for a bit to let the restarts occur
                 time.sleep(3)
-                self.servicehelper.disableservice('iptables')
-                self.servicehelper.disableservice('ip6tables')
+                self.servicehelper.disableService('iptables', serviceTarget=self.serviceTarget)
+                self.servicehelper.disableService('ip6tables', serviceTarget=self.serviceTarget)
             elif os.path.exists(self.iprestore) and \
                  os.path.exists(self.ip6restore):
                 if os.path.exists(self.iptScriptPath + ".stonix.bak"):

@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,11 +20,12 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Apr 22, 2015
 
 @author: dwalker
 @change: 2015/10/07 eball Help text cleanup
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate
@@ -51,8 +51,6 @@ class DisableThumbnailers(Rule):
         self.guidance = ["NSA 2.2.2.6"]
         self.rulename = "DisableThumbnailers"
         datatype = 'bool'
-        self.helptext = '''This rule disables file thumbnail creation in \
-the GNOME environment.'''
         key = 'DISABLETHUMBNAILERS'
         instructions = "To disable this rule set the value of " + \
             "DISABLETHUMBNAILERS to False."
@@ -60,6 +58,7 @@ the GNOME environment.'''
         self.ci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         self.gconf = "/usr/bin/gconftool-2"
+        self.sethelptext()
 
     def report(self):
 

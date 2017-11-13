@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -32,6 +32,9 @@ bluetooth, microphones, and cameras.
 @change: 2016/04/26 ekkehard Results Formatting
 /Library/LaunchDaemons/stonixBootSecurity.plist to
 /Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 - ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -61,15 +64,12 @@ class BootSecurity(Rule):
         self.rulename = 'BootSecurity'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The BootSecurity rule configures the system to run \
-a job at system boot time that ensures that WiFi and Bluetooth are turned off, \
-and that microphone inputs are muted. This helps ensure that the system is in \
-a secure state at initial startup.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.servicehelper = ServiceHelper(environ, logger)
         self.type = 'rclocal'
         self.rclocalpath = '/etc/rc.local'
@@ -101,7 +101,7 @@ a secure state at initial startup.'''
 </plist>'''
 
         datatype = 'bool'
-        key = 'bootsecurity'
+        key = 'BOOTSECURITY'
         instructions = '''To disable this rule set the value of BOOTSECURITY \
 to False.'''
         default = True
@@ -109,7 +109,7 @@ to False.'''
 
     def auditsystemd(self):
         try:
-            if self.servicehelper.auditservice('stonixBootSecurity.service'):
+            if self.servicehelper.auditService('stonixBootSecurity.service', serviceTarget=self.launchdservicename):
                 return True
             else:
                 return False
@@ -215,7 +215,7 @@ WantedBy=multi-user.target
                                         stderr=subprocess.PIPE, shell=True)
             except Exception:
                 pass
-            self.servicehelper.enableservice('stonixBootSecurity')
+            self.servicehelper.enableService('stonixBootSecurity', serviceTarget=self.launchdservicename)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -336,7 +336,7 @@ WantedBy=multi-user.target
             if os.path.exists(oldservice):
                 self.logdispatch.log(LogPriority.DEBUG,
                                      str(oldservice) + " exists!")
-                self.servicehelper.disableservice(oldservice, oldservicename)
+                self.servicehelper.disableService(oldservice, servicename=oldservicename)
                 self.logdispatch.log(LogPriority.DEBUG,
                                      str(oldservice) + " disabled!")
                 os.remove(oldservice)
@@ -348,7 +348,7 @@ WantedBy=multi-user.target
                 if os.path.exists(self.launchdservice):
                     self.logdispatch.log(LogPriority.DEBUG,
                                          str(self.launchdservice) + " exists!")
-                    self.servicehelper.disableservice(self.launchdservice, self.launchdservicename)
+                    self.servicehelper.disableService(self.launchdservice, serviceTarget=self.launchdservicename)
                     self.logdispatch.log(LogPriority.DEBUG,
                                          str(self.launchdservice) + " disabled!")
                     os.remove(self.launchdservice)

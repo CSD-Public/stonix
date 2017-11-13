@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -30,6 +30,8 @@ This is a rule to disable password hints, specifically started for the Mac.
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -50,12 +52,8 @@ class DisablePasswordHints(RuleKVEditor):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "This rule determines how may login attempts " + \
-                        "until password hints will be displayed.  Default " + \
-                        "is 0, indicating password hints will never be " + \
-                        "displayed."
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("DisablePasswordHints",
                          "defaults",
                          "/Library/Preferences/com.apple.loginwindow",
@@ -70,3 +68,5 @@ class DisablePasswordHints(RuleKVEditor):
                          None,
                          False,
                          {})
+        self.sethelptext()
+

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,7 @@ Install PAE Kernel on Supported 32-bit x86 Systems. If the system is 32-bit and 
 and NX features, the kernel-PAE package should be installed to enable XD or NX support.
 
 @author: Breen Malmberg
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -62,14 +63,13 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         self.mandatory = True
         self.rootrequired = True
         self.guidance = ["CCE-RHEL7-CCE-TBD 2.2.4.4.1"]
-        self.helptext = '''Install PAE Kernel on Supported 32-bit x86 Systems. If the system is 32-bit and also supports the PAE
-and NX features, the kernel-PAE package should be installed to enable XD or NX support.'''
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': 'linux'}
 
         # set up CI
         datatype = "bool"
-        key = "EnablePAEandNX"
+        key = "ENABLEPAEANDNX"
         instructions = "If you want to prevent this rule from running, set the value of EnablePAEandNX to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

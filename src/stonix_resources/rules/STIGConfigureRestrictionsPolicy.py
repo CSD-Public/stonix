@@ -1,7 +1,6 @@
-
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -25,6 +24,8 @@
 Created on Oct 20, 2016
 
 @author: dwalker
+@change: 2017/03/30 dkennel Marked as FISMA High
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import traceback
@@ -47,11 +48,10 @@ class STIGConfigureRestrictionsPolicy(Rule):
         self.rulenumber = 363
         self.rulename = "STIGConfigureRestrictionsPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureRestrictionsPolicy rule installs the " +\
-            "DISA STIG Restrictions profile if not installed already."
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']},
+                           'fisma': 'high'}
         datatype = "bool"
         key = "RESTRICTIONS"
         instructions = "To disable the installation of the restrictions " + \
@@ -77,7 +77,16 @@ class STIGConfigureRestrictionsPolicy(Rule):
 #             self.profile = "/Users/username/src/" + \
 #                          "stonix_resources/files/" + \
 #                          "U_Apple_OS_X_10-11_V1R1_STIG_Restrictions_Policy.mobileconfig"
-    
+        else:
+            self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Restrictions_Policy.mobileconfig"
+#             self.profile = "/Users/username/stonix/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_macOS_10-12_V1R1_STIG_Restrictions_Policy.mobileconfig"
+        self.sethelptext()
+
     def report(self):
         try:
             compliant = False

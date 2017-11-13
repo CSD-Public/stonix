@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Oct 15, 2013
 
 @author: bemalmbe
@@ -56,18 +55,10 @@ class SetupLogwatch(Rule):
         self.rulename = 'SetupLogwatch'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Logwatch is used for reporting on unusual items " + \
-            "in syslog. Logwatch is valuable because it provides a parser " + \
-            "for the syslog entry format and a number of signatures for " + \
-            "types of lines which are considered to be mundane or " + \
-            "noteworthy. It is recommended that all Linux sites which do " + \
-            "not have time to deploy a third-party log monitoring " + \
-            "application run Logwatch in its default configuration. This " + \
-            "provides some useful information about system activity in " + \
-            "exchange for very little administrator effort."
+        self.sethelptext()
         self.guidance = ['NSA(2.6.1.6)', 'CCE 4323-2']
         self.ci = self.initCi("bool",
-                              "SetupLogwatch",
+                              "SETUPLOGWATCH",
                               "To prevent logwatch from being " +
                               "installed, set the value of " +
                               "SetupLogwatch to False.",

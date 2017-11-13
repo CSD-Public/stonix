@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -32,6 +32,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2016/09/09 eball Refactored reports and fixes to remove file creation
     from reports.
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
@@ -55,13 +56,10 @@ class NoCoreDumps(Rule):
         self.rulename = "NoCoreDumps"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables the ability of the system to " + \
-            "produce core dump images.  A reboot is required or Mac OS X " + \
-            "for this rule to take effect."
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         datatype = 'bool'
         key = 'NOCOREDUMPS'
@@ -73,6 +71,7 @@ class NoCoreDumps(Rule):
         self.iditerator = 0
         self.created1 = False
         self.created2 = False
+        self.sethelptext()
 
 ###############################################################################
 
@@ -449,9 +448,10 @@ class NoCoreDumps(Rule):
                          "filepath": path}
                 self.statechglogger.recordchgevent(myid, event)
             if self.editor.fixables or self.editor.removeables:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
+                if not self.created1:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
                 if not self.editor.fix():
                     success = False
                     self.logger.log(LogPriority.DEBUG, "kveditor fix() failed.\n")
@@ -462,15 +462,19 @@ class NoCoreDumps(Rule):
                     return success
             if not checkPerms(path, perms, self.logger):
                 self.logger.log(LogPriority.DEBUG, "Fixing permissions and ownership on file: " + str(path) + "\n")
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, perms, self.logger,
-                                self.statechglogger, myid):
-                    success = False
-                    self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
-                    return success
-
-            resetsecon(path)
+                if not self.created1:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(path, perms, self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
+                        return success
+                else:
+                    if not setPerms(path, perms, self.logger):
+                        success = False
+                        self.logger.log(LogPriority.DEBUG, "setPerms() failed.\n")
+                        return success
 
             # restart/reload the sysctl with the updated values
             if self.environ.getostype() != "Mac OS X":

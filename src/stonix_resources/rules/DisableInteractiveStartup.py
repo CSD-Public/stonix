@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -56,9 +56,6 @@ class DisableInteractiveStartup(Rule):
         self.rulename = 'DisableInteractiveStartup'
         self.mandatory = True
         self.formatDetailedResults("initialize")
-        self.helptext = "The DisableInteractiveStartup rule disables " + \
-            "interactive startup/boot mode. This may also be known as " + \
-            "recovery mode."
         self.guidance = ['CCE 4245-7']
         self.applicable = {'type': 'white',
                            'family': ['linux']}
@@ -75,6 +72,7 @@ class DisableInteractiveStartup(Rule):
         self.ch = CommandHelper(self.logger)
         self.restart = ""
         self.created = False
+        self.sethelptext()
 
     def report(self):
         '''

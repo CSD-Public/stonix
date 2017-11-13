@@ -72,6 +72,7 @@ def getHeader(initFp=None):
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+# from __future__ import absolute_import
 '''
     return header
 
@@ -84,7 +85,9 @@ def writeInit(pathToRules, logger):
     success = False
     try:
         header = getHeader()
-        fp = open(os.path.join(pathToRules, "__init__.py"), 'w')
+        initPath = os.path.join(pathToRules, "__init__.py")
+        logger.log(lp.DEBUG, "initPath: " + str(initPath))
+        fp = open(initPath, 'w')
         fp.write(header)
         for rule in getRulesList(pathToRules):
             fp.write("import " + rule + "\n")
@@ -101,6 +104,17 @@ def writeInit(pathToRules, logger):
             fp.close()
         except:
             pass
+
+    logger.log(lp.DEBUG, "\t\t.")
+    logger.log(lp.DEBUG, "\t\t.")
+    logger.log(lp.DEBUG, "\t\t.")
+    logger.log(lp.DEBUG, "\t\t.")
+    print "Attempted init creation....."
+    logger.log(lp.DEBUG, "\t\t.")
+    logger.log(lp.DEBUG, "\t\t.")
+    logger.log(lp.DEBUG, "\t\t.")
+    logger.log(lp.DEBUG, "\t\t.")
+
     return success
 
 if __name__ == "__main__":
@@ -109,14 +123,14 @@ if __name__ == "__main__":
 
     @author: Roy Nielsen
     '''
-    pkgPath=''
+    rulesPath = ''
     #####
     # Parse command line options
     parser = optparse.OptionParser()
     parser.add_option("-d", "--debug", action="store_true", dest="debug",
                       default=False, help="debug mode, on or off.  Default off.")
-    parser.add_option("-p", "--pkg-path", action="store_true", dest="pkgPath",
-                      default=False, help="debug mode, on or off.  Default off.")
+    parser.add_option("-r", "--rules-path", action="store_true", dest="rulesPath",
+                      default=False, help="Path to rules, for making rules init.")
     options, __ = parser.parse_args()
     #####
     # Instanciate and initialize a logger
@@ -125,11 +139,13 @@ if __name__ == "__main__":
     
     #####
     # Get the path to the rules directory
-    if not pkgPath:
+    if not rulesPath:
         pathToRules = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules")
     else:
         pathToRules = options.pkgPath
     
+    logger.log(lp.DEBUG, "rulesPath: " + str(rulesPath))
+
     #####
     # Run the controller for this script
     writeInit(pathToRules, logger)

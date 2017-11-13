@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2016.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,8 @@ dictionary
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/04/28 ekkehard test enhancements
 @change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import re
@@ -62,7 +64,11 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate DisableCriticalUpdateInstall -bool no
     6. Disables ability to install PreReleases:
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate AllowPreReleaseInstallation -bool no
-    7. Disables automatic macOS (OS X) updates
+    7. Disables ability to install PreReleases:
+    defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates 
+    8. Disables ability to install PreReleases:
+    defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate SkipLocalCDN -bool no
+    9. Disables automatic macOS (OS X) updates
     defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool no
 
     1. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate CatalogURL
@@ -72,7 +78,8 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     5. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate DisableCriticalUpdateInstall
     6. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AllowPreReleaseInstallation
     7. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates
-    8. defaults -currentHost read /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired
+    8. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate SkipLocalCDN
+    9. defaults -currentHost read /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired
 
     OS X Yosemite considerations:
     defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
@@ -89,20 +96,12 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.rulename = 'ConfigureAppleSoftwareUpdate'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule will set the default to get software \
-updates from """ + str(APPLESOFTUPDATESERVER) + """, and disables the "Check \
-for Updates" option in the Software Update System Preference Panel for most \
-users. Does not disable this option when the account is an admin account and \
-the update server is set to our ASUS server.
-This rule will also disable the "Download Updates in Background" option of \
-the Software Update System Preference Panel for most users. Does not disable \
-this option when the account is an admin account and the update server is set \
-to our ASUS server."""
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("ConfigureCatalogURL",
@@ -244,6 +243,17 @@ to our ASUS server."""
                              None,
                              True,
                              {})
+            self.addKVEditor("SkipLocalCDN",
+                             "defaults",
+                             "/Library/Preferences/com.apple.SoftwareUpdate",
+                             "",
+                             {"SkipLocalCDN": ["1", "-bool yes"]},
+                             "present",
+                             "",
+                             "Require the machine to check with the update server rather than caching servers.",
+                             None,
+                             False,
+                             {"SkipLocalCDN": ["0", "-bool no"]})
             self.addKVEditor("DisableAutomaticMacOSUpdates",
                              "defaults",
                              "/Library/Preferences/com.apple.commerce",

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -72,10 +72,7 @@ class ReqAuthSingleUserMode(Rule):
         self.rulename = 'ReqAuthSingleUserMode'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule checks if the system currently requires \
-authentication for single-user mode or not, and if it does not then it makes \
-the necessary config file changes to require authentication for single-user \
-mode.'''
+        self.sethelptext()
         self.guidance = ['CIS, NSA(2.3.5.3)']
         self.applicable = {'type': 'black',
                            'family': ['darwin']}

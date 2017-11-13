@@ -40,7 +40,7 @@ import traceback
 import getpass
 from glob import glob
 from tempfile import mkdtemp
-from time import time
+from time import time, sleep
 from subprocess import Popen, STDOUT, PIPE, call
 from shutil import rmtree, copy2
 from ConfigParser import SafeConfigParser
@@ -74,18 +74,18 @@ class SoftwareBuilder():
     '''
     def __init__(self,
                  options=optparse.Values({"compileGui": False, "version": "0",
-                                          "clean": False, "test": False, 
+                                          "clean": False, "test": False,
                                           "debug":False, "sig":False,
                                           "hiddenImports":False,
                                           "keychain":''}),
                  ramdisk_size=1600):
         '''
         Initialization routine.
-        @param: compileGui - bool to determine if the gui should be compiled 
+        @param: compileGui - bool to determine if the gui should be compiled
                              or not
         @param: version - if passed in, the version to use for app and package
                           creation.
-        @param: clean - bool to determine whether or not to clean artifacts 
+        @param: clean - bool to determine whether or not to clean artifacts
                         from previous builds
         @param: test - Don't run the driver - specifically for unit testing
         @param: debug - bool to determine whether or not to log in debug mode
@@ -96,7 +96,7 @@ class SoftwareBuilder():
             debug = 20
         else:
             debug = 40
-        
+
         #####
         # helper class initialization
         self.logger = CyLogger(level=debug)
@@ -174,7 +174,7 @@ class SoftwareBuilder():
             #####
             # Get a translated password
             self.ordPass = self.getOrdPass(self.keypass)
-    
+
         else:
             self.keyuser = getpass.getuser()
             self.keypass = False
@@ -265,7 +265,7 @@ class SoftwareBuilder():
             self.STONIXVERSION = self.APPVERSION
             self.STONIX4MAC = "stonix4mac"
             self.STONIX4MACICON = "stonix_icon"
-            self.STONIX4MACVERSION = self.APPVERSION                
+            self.STONIX4MACVERSION = self.APPVERSION
             self.mbl = MacBuildLib(self.logger)
             self.PYUIC = self.mbl.getpyuicpath()
             self.codesignVerbose = 'vvvv'
@@ -310,21 +310,21 @@ class SoftwareBuilder():
     def getOrdPass(self, passwd=''):
         '''
         Get the password translated to a direct ascii pattern of:
-        
+
             "[\d+:]\d+"
-        
+
         for use when in the need of passing it via self.rw.liftDown()
-        
+
         #####
         # Prepare for transport of the password to the xcodebuild.py
         # builder.  This is not encryption, this is just encoding, using
         # similar to UTF encoding of various languages.
-        # The standard python 'ord' function, to allow for special 
+        # The standard python 'ord' function, to allow for special
         # characters to be passed, that may be consumed by a shell in
         # the process of passing the password to the other python script.
 
         @param: password to translate
-        
+
         @returns: translated password
         '''
         i = 0
@@ -396,14 +396,14 @@ class SoftwareBuilder():
         try:
             # Check that user building stonix has uid 0
             current_user, _ = self.mbl.checkBuildUser()
-    
+
             # Create temp home directory for building with pyinstaller
             self.buildHome = os.getcwd()
             self.directory = os.environ["HOME"]
-            self.tmphome = mkdtemp(prefix=current_user + ".")
+            self.tmphome = mkdtemp(prefix=current_user + ".", dir="/tmp")
             os.environ["HOME"] = self.tmphome
             os.chmod(self.tmphome, 0755)
-    
+
             # Create a ramdisk and mount it to the tmphome
             self.ramdisk = self._setupRamdisk(self.ramdisk_size, self.tmphome)
             os.mkdir("/tmp/the_luggage")
@@ -426,7 +426,7 @@ class SoftwareBuilder():
 
             output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
             print "\t\trsync output: " + str(output)
-        
+
             print "."
             print "."
             print "."
@@ -444,11 +444,15 @@ class SoftwareBuilder():
         '''
         success = False
         self.libc.sync()
+        sleep(1)
         self.libc.sync()
+        sleep(1)
         returnDir = os.getcwd()
         os.chdir(prepPath)
         self.libc.sync()
+        sleep(1)
         self.libc.sync()
+        sleep(1)
         try:
             if appName == 'stonix':
                 #####
@@ -459,7 +463,7 @@ class SoftwareBuilder():
                 else:
                     self.hiddenImports = []
                 self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenImports))
-    
+
                 # Copy src dir to /tmp/<username> so shutil doesn't freak about
                 # long filenames.
                 # ONLY seems to be a problem on Mavericks
@@ -474,9 +478,7 @@ class SoftwareBuilder():
                 # together and create the stonix.app
                 if os.path.islink(self.tmphome + "/src/MacBuild/stonix"):
                     os.unlink(self.tmphome + "/src/MacBuild/stonix")
-                if not os.path.isdir(self.tmphome + "/src/MacBuild/stonix"):
-                    os.mkdir(self.tmphome + "/src/MacBuild/stonix")
-                else:
+                elif os.path.isfile(self.tmphome + "/src/MacBuild/stonix"):
                     #####
                     # Cannot use mkdtmp here because it will make the directory on
                     # the root filesystem instead of the ramdisk, then it will try
@@ -484,13 +486,13 @@ class SoftwareBuilder():
                     tmpdir = self.tmphome + "/src/MacBuild/stonix." + str(time())
                     os.rename(self.tmphome + "/src/MacBuild/stonix", tmpdir)
                     os.mkdir(self.tmphome + "/src/MacBuild/stonix")
+                elif not os.path.isdir(self.tmphome + "/src/MacBuild/stonix"):
+                    os.mkdir(self.tmphome + "/src/MacBuild/stonix")
 
                 #####
                 # Set up stonix for a build
                 copy2(self.tmphome + "/src/stonix.py", self.tmphome + "/src/MacBuild/stonix")
-                #copy2(self.tmphome + "/src/__init__.py", self.tmphome + "/src/MacBuild/stonix")
-                #copy2(self.tmphome + "/src/MacBuild/pyi_rth_stonix_resources.py", self.tmphome + "/src/MacBuild/stonix")
-                
+
                 #####
                 # Sync the stonix_resources directory, ready for the build.
                 rsync = [self.RSYNC, "-ap", "--exclude=\".svn\"",
@@ -499,22 +501,26 @@ class SoftwareBuilder():
                          self.tmphome + "/src/stonix_resources",
                          self.tmphome + "/src/MacBuild/stonix"]
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
-                
+
+                self.libc.sync()
+                sleep(1)
+                self.libc.sync()
+                sleep(1)
+                self.libc.sync()
+                sleep(1)
+
                 #####
                 # Build an __init__.py for the rules directory with all of the
                 # rules imported, so they get included in the python frozen
                 # package
-                self.mbl.buildPackageInit(self.tmphome + \
-                                          "/src/Macbuild/stonix/stonix_resources/create_rules_init.py",
-                                          self.tmphome + \
-                                          "/src/MacBuild/stonix/stonix_resrouces/rules")
+                success = self.mbl.writeInit(self.tmphome + "/src/MacBuild/stonix/stonix_resources/rules")
 
                 print str(output)
             elif appName == 'stonix4mac':
                 #####
                 # Change the Info.plist with the new version string
                 plist = self.tmphome + "/src/MacBuild/" + appName + "/" + appName + "/Info.plist"
-    
+
                 # Change version string of the app
                 print "Changing .app version string..."
                 self.mbl.modplist(plist, "CFBundleShortVersionString", self.APPVERSION)
@@ -523,7 +529,7 @@ class SoftwareBuilder():
             print traceback.format_exc()
             raise
         else:
-            success = True            
+            success = True
         return success
 
     def compile(self, appName, appVersion, appIcon, appPath):
@@ -564,26 +570,31 @@ class SoftwareBuilder():
 
                     #####
                     # Run the xcodebuild script to build stonix4mac
-                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', 
-                           '-p', self.ordPass, '-u', self.keyuser, 
-                           '-i', appName, 
-                           '-d', 
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                           '-p', self.ordPass, '-u', self.keyuser,
+                           '-i', appName,
+                           '-d',
                            '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
                            '--keychain', self.keychain]
 
                     self.rw.setCommand(cmd)
-                    self.rw.liftDown(self.keyuser, appPath)
+                    output, error, retcode = self.rw.waitNpassThruStdout()
+                    print "Output: " + output
+                    print "Error: " + error
+                    print "Return Code: " + str(retcode)
                 else:
                     cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', 
-                           '-u', self.keyuser, 
-                           '-a', appName, 
-                           '-d', 
+                           '-u', self.keyuser,
+                           '-a', appName,
+                           '-d',
                            '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
                            '--keychain', self.keychain]
                     self.rw.setCommand(cmd)
                     workingDir = os.getcwd()
-                    self.rw.liftDown(self.keyuser, appPath)
-
+                    output, error, retcode = self.rw.waitNpassThruStdout()
+                    print "Output: " + output
+                    print "Error: " + error
+                    print "Return Code: " + str(retcode)
             elif appName == "stonix":
                 #####
                 # Perform pyinstaller build
@@ -591,12 +602,12 @@ class SoftwareBuilder():
                     rmtree(self.tmphome + "/src/MacBuild/stonix/build")
                 if os.path.isdir(self.tmphome + "/src/MacBuild/stonix/dist"):
                     rmtree(self.tmphome + "/src/MacBuild/stonix/dist")
-    
+
                 self.logger.log(lp.DEBUG, "Hidden imports: " + str(self.hiddenImports))
-    
+
                 #hdnimports = self.hiddenImports + ['ctypes', '_ctypes', 'ctypes._endian', 'decimal', 'numbers']
                 hdnimports = self.hiddenImports + ['ctypes', '_ctypes', 'ctypes._endian', 'decimal', 'numbers']
-    
+
                 # to compile a pyinstaller spec file for app creation:
                 print "Creating a pyinstaller spec file for the project..."
 
@@ -612,10 +623,10 @@ class SoftwareBuilder():
                 print output
                 # to build:
                 print "Building the app..."
-                self.mbl.pyinstBuild(appName + ".spec", 
+                self.mbl.pyinstBuild(appName + ".spec",
                                      "private/tmp",
-                                     appPath + "/dist", 
-                                     True, 
+                                     appPath + "/dist",
+                                     True,
                                      True)
 
         except Exception:
@@ -648,21 +659,21 @@ class SoftwareBuilder():
                 # Change icon name in the app
                 print "Changing .app icon..."
                 self.mbl.modplist(plist, "CFBundleIconFile", self.STONIXICON + ".icns")
-    
+
                 # Copy icons to the resources directory
                 copy2(self.tmphome + "/src/MacBuild/" + self.STONIXICON + ".icns",
                       self.tmphome + "/src/MacBuild/stonix/dist/" + appName + ".app/Contents/Resources")
-    
+
                 # Change mode of Info.plist to 0o664
                 os.chmod(plist, 0o664)
 
                 #####
-                # Copy the stonix_resources directory into the 
+                # Copy the stonix_resources directory into the
                 # stonix.app/Contents/MacOS directory
                 rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
                          "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
                          "--exclude=\".git*\"", self.tmphome + \
-                         "/src/stonix_resources", 
+                         "/src/stonix_resources",
                          self.tmphome + "/src/MacBuild/stonix" + "/dist/" + \
                          appName + ".app/Contents/MacOS"]
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
@@ -680,6 +691,7 @@ class SoftwareBuilder():
                 self.libc.sync()
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
+                os.chdir(self.tmphome + "/src/MacBuild/stonix4mac/build/Release")
 
             os.chdir(returnDir)
         except Exception:
@@ -689,7 +701,7 @@ class SoftwareBuilder():
 
     def makeInstaller(self, appName, appVersion, appPath):
         '''
-        Create an installer.  As of Nov 2016, use luggage to create a 
+        Create an installer.  As of Nov 2016, use luggage to create a
        <appName>.pkg
 
         @param appName: Name of application as it should appear on OS X systems
@@ -700,7 +712,7 @@ class SoftwareBuilder():
         '''
         #####
         # run make to create a pkg installer
-        print "Started buildStonix4MacAppPkg..."
+        self.logger.log(lp.DEBUG, "Started buildStonix4MacAppPkg...")
         try:
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
@@ -710,7 +722,11 @@ class SoftwareBuilder():
             self.libc.sync()
             self.libc.sync()
             if self.doCodesign and self.signature:
-
+                self.logger.log(lp.DEBUG, "#########################")
+                self.logger.log(lp.DEBUG, "#########################")
+                self.logger.log(lp.DEBUG, "Proceeding with signing!")
+                self.logger.log(lp.DEBUG, "#########################")
+                self.logger.log(lp.DEBUG, "#########################")
                 os.chdir(self.tmphome + '/src/Macbuild/stonix4mac')
                 buildDir = os.getcwd()
                 print buildDir
@@ -721,11 +737,11 @@ class SoftwareBuilder():
 
                 #####
                 # Perform a codesigning on the stonix4mac application
-                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py', 
+                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
                        '--psd', self.tmphome + '/src/MacBuild/stonix4mac/build/Release',
                        '-c',
-                       '-p', self.ordPass, '-u', self.keyuser, 
-                       '-i', appName + '.app', 
+                       '-p', self.ordPass, '-u', self.keyuser,
+                       '-i', appName + '.app',
                        '-d',
                        '-v', self.codesignVerbose,
                        '-s', '"' + self.signature + '"',
@@ -740,15 +756,18 @@ class SoftwareBuilder():
                 #####
                 # Run the xcodebuild script to codesign the mac installer package
                 self.rw.setCommand(cmd)
-                output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
-
+                #output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
+                output, error, retcode = self.rw.communicate()
+                self.logger.log(lp.DEBUG, "Codesign returns: " + str(retcode))
                 for line in output.split('\n'):
                     self.logger.log(lp.DEBUG, line)
                 for line in error.split('\n'):
                     self.logger.log(lp.DEBUG, line)
 
                 self.libc.sync()
+                sleep(1)
                 self.libc.sync()
+                sleep(3)
 
             #####
             # Processing makefile to create a package
@@ -756,7 +775,6 @@ class SoftwareBuilder():
 
             self.mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
                                   "PACKAGE_VERSION=" + self.APPVERSION)
-
 
             dmgsPath = self.tmphome + "/src/MacBuild/dmgs"
 
@@ -779,6 +797,46 @@ class SoftwareBuilder():
             output = Popen(makepkg, stdout=PIPE, stderr=STDOUT).communicate()[0]
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
+
+            self.libc.sync()
+            sleep(1)
+            self.libc.sync()
+            sleep(1)
+            self.libc.sync()
+            sleep(1)
+
+            #####
+            # Perform a codesigning on the stonix4mac application
+            cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                   '--psd', self.tmphome + '/src/MacBuild/stonix4mac/build/Release',
+                   '-c',
+                   '-p', self.ordPass, '-u', self.keyuser,
+                   '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
+                   '-d',
+                   '-v', self.codesignVerbose,
+                   '-s', '"' + self.signature + '"',
+                   '--keychain', self.keychain]
+
+            self.logger.log(lp.DEBUG, '.')
+            self.logger.log(lp.DEBUG, '.')
+            self.logger.log(lp.DEBUG, "Working dir: " + buildDir)
+            self.logger.log(lp.DEBUG, '.')
+            self.logger.log(lp.DEBUG, '.')
+
+            #####
+            # Run the xcodebuild script to codesign the mac installer package
+            self.rw.setCommand(cmd)
+            output, error, retcode = self.rw.communicate()
+
+            for line in output.split('\n'):
+                self.logger.log(lp.DEBUG, line)
+            for line in error.split('\n'):
+                self.logger.log(lp.DEBUG, line)
+
+            self.libc.sync()
+            sleep(3)
+            self.libc.sync()
+            sleep(5)
 
             print "Moving dmg and pkg to the dmgs directory."
             #dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"
@@ -811,7 +869,11 @@ class SoftwareBuilder():
         call([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome])
         call([self.RSYNC, "-aqp", self.tmphome + "/src", self.buildHome])
         self.libc.sync()
+        sleep(1)
         self.libc.sync()
+        sleep(1)
+        self.libc.sync()
+        sleep(3)
 
         os.chdir(self.buildHome)
         self._exit(self.ramdisk, self.luggage, 0)

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,7 @@ variable.
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2016/05/23 eball Improvements to feedback and workflow
 @change: 2016/07/08 ekkehard complete renaming to SecureIPV4
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -64,18 +65,7 @@ class SecureIPV4(Rule):
         self.rulename = "SecureIPV4"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures the system's network stack " + \
-            "settings.\nFor Solaris systems, this rule requires a full " + \
-            "system reboot to take effect, and may show up as non-compliant " + \
-            "until the system is rebooted. Also for Solaris systems, if you " + \
-            "have a startup script that configures your network stack, " + \
-            "this file should appear in /etc/init.d " + \
-            "and, in order to pass compliance, it will check for " + \
-            "the existence for a file named S70ndd-nettune. Of course, " + \
-            "this may not be the name of your file that controls your " + \
-            "network parameter tuning, so the system may fail compliance " + \
-            "due to this issue."
-
+        self.sethelptext()
         if self.environ.getostype() == "Mac OS X":
             self.networkTuning2 = self.__InitializeNetworkTuning2()
         else:
@@ -84,7 +74,7 @@ class SecureIPV4(Rule):
         self.guidance = ["NSA 2.5.1.1", "NSA 2.5.1.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.iditerator = 0
         self.rep1success = True
         self.rep2success = True

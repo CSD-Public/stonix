@@ -541,8 +541,8 @@ class MacOSUser(ParentManageUser):
             self.logger.log(lp.INFO, "user = \"" + str(user) + "\"")
             self.logger.log(lp.INFO, "check password...")
         else:
-            
-            self.runWith.setCommand(['/bin/echo', 'hello world'])
+            self.runner.setCommand(['/bin/echo', 'HelloWorld'])
+            output, error, retcode = self.runner.runAs(user.strip(), password.strip())
             
             output, error, retcode = self.runWith.communicate()
             
@@ -899,7 +899,7 @@ class MacOSUser(ParentManageUser):
     # Mac OS Specific Methods
     #----------------------------------------------------------------------
 
-    def setDscl(self, directory=".", action="", object="", property="", value=""):
+    def setDscl(self, directory=".", action="", dirObject="", dirProperty="", value=""):
         """
         Using dscl to set a value in a directory...
 
@@ -913,9 +913,9 @@ class MacOSUser(ParentManageUser):
         # a regular user.
         if directory and action and object and property:
             if directory and action and object and property and value:
-                cmd = [self.dscl, directory, action, object, property, value]
+                cmd = [self.dscl, directory, action, dirObject, dirProperty, value]
             else:
-                cmd = [self.dscl, directory, action, object, property]
+                cmd = [self.dscl, directory, action, dirObject, dirProperty]
 
             self.runWith.setCommand(cmd)
             if re.match("^%0$", str(os.getuid()).strip()):

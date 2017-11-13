@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -25,6 +25,7 @@ This rule disables support for several uncommon network protocols.
 
 @author: Eric Ball
 @change: 2015/09/10 eball - Original implementation
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -45,8 +46,6 @@ class DisableUncommonProtocols(Rule):
         self.rulename = "DisableUncommonProtocols"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This rule disables support for several uncommon \
-network protocols.'''
         self.applicable = {'type': 'white',
                            "family": ["linux"]}
 
@@ -69,6 +68,7 @@ network protocols.'''
                          "CCE-27106-4"]
         self.iditerator = 0
         self.ch = CommandHelper(self.logger)
+        self.sethelptext()
 
     def report(self):
         try:

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -39,6 +39,7 @@ due to departures from the normal system performance curve.
 @change: 2016/05/19 Breen Malmberg - added docstrings to every method; added a check in reporting to see if rule is enabled or not;
 added some in-line comments to several methods, where needed; changed the CI instructions to be more clear to the end user; added
 messaging to indicate to the user whether the method will run or not, based on current CI status
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -72,18 +73,11 @@ class SystemAccounting(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rootrequired = True
-        self.helptext = '''System accounting is an optional process which \
-gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 \
-minutes, by default. The data may be accessed with the sar command, or by \
-reviewing the nightly report files named /var/log/sa/sar*. Once a normal \
-baseline for the system has been established, with frequent monitoring, \
-unauthorized activity (password crackers and other CPU-intensive jobs, and \
-activity outside of normal usage hours) may be detected due to departures \
-from the normal system performance curve.'''
+        self.sethelptext()
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # set up configuration items for this rule
         datatype = 'bool'

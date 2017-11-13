@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,6 +24,7 @@
 Created on Nov 9, 2015
 
 @author: Breen Malmberg
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -57,25 +58,20 @@ class SecurePOPIMAP(Rule):
         self.rulenumber = 141
         self.rulename = 'SecurePOPIMAP'
         self.mandatory = True
-        self.helptext = 'Dovecot provides IMAP and POP3 services. It is not installed by default. \
-If this system does not need to operate as an IMAP or POP3 server, disable and remove Dovecot \
-if it was installed. Otherwise securely configure it. The default setting for this rule is \
-to disable it entirely. Note: this rule does not set up or install ssl certificates. \
-This should still be done on your CA (certificate authority) system, manually, by the administrator of that system. \
-~~Please note that if you select both disable and secure options, the disable option will take priority!~~'
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
         self.guidance = ['NSA(3.17)', 'cce-4384-4', '3887-7', '4530-2', '4547-6', '4552-6', '4371-1', '4410-7']
 
         data1 = 'bool'
-        key1 = 'DisablePOPIMAP'
+        key1 = 'DISABLEPOPIMAP'
         instructions1 = 'To prevent POP/IMAP services from being disabled entirely, set the value of DisablePOPIMAP to False.'
         default1 = True
         self.disableci = self.initCi(data1, key1, instructions1, default1)
 
         data2 = 'bool'
-        key2 = 'SecurePOPIMAP'
+        key2 = 'SECUREPOPIMAP'
         instructions2 = 'To securely configure POP/IMAP services, set the value of SecurePOPIMAP to True.'
         default2 = False
         self.secureci = self.initCi(data2, key2, instructions2, default2)
@@ -495,12 +491,12 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         try:
 
-            if self.svch.auditservice(self.servicename):
+            if self.svch.auditService(self.servicename, _="_"):
                 enabled = True
                 self.detailedresults += '\nThe ' + str(self.servicename) + ' service is still enabled'
             if enabled:
                 self.detailedresults += "\nThere are service(s) which need to be disabled"
-            if self.svch.isrunning(self.servicename):
+            if self.svch.isRunning(self.servicename, _="_"):
                 running = False
                 self.detailedresults += '\nThe ' + str(self.servicename) + ' service is still running'
             if running:
@@ -639,13 +635,13 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         try:
 
-            self.svch.disableservice(self.servicename)
+            self.svch.disableService(self.servicename, _="_")
 
-            if self.svch.auditservice(self.servicename):
+            if self.svch.auditService(self.servicename, _="_"):
                 retval = False
                 self.logger.log(LogPriority.DEBUG, "Service is still enabled after executing disableservice!")
 
-            if self.svch.isrunning(self.servicename):
+            if self.svch.isRunning(self.servicename, _="_"):
                 retval = False
                 self.logger.log(LogPriority.DEBUG, "Service is still running after executing disableservice!")
 

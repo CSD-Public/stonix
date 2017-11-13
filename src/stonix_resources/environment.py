@@ -39,6 +39,9 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: 2014/05/29 - ekkehard j. koch - pep8 and comment updates
+@change: 2017/03/07 - dkennel - added fisma risk level support
+@change: 2017/09/20 - bgonz12 - updated the implementation of getdefaultip and
+            getallips.
 '''
 import os
 import re
@@ -436,10 +439,12 @@ class Environment:
 
         @return: string - ipaddress
         @author: dkennel
+        @change: 2017/9/20 - bgonz12 - Changed implementation to not branch
+                    conditionally by OS, but to branch by file system searches.
         """
         ipaddr = '127.0.0.1'
         gateway = ''
-        if sys.platform == 'linux2':
+        if os.path.exists('/usr/bin/lsb_release'):
             try:
                 routecmd = subprocess.Popen('/sbin/route -n', shell=True,
                                             stdout=subprocess.PIPE,
@@ -448,7 +453,7 @@ class Environment:
             except(OSError):
                 return ipaddr
             for line in routedata:
-                if re.search('^default', line):
+                if re.search('^default|^0.0.0.0|^\*', line):
                     line = line.split()
                     try:
                         gateway = line[1]
@@ -518,46 +523,46 @@ class Environment:
 
         @return: list of strings
         @author: dkennel
+        @change: 2017/9/22 - bgonz12 - Changed implementation to use the ip
+                    command before trying to use the ifconfig command.
         """
         iplist = []
-        if sys.platform == 'linux2':
-            try:
-                ifcmd = subprocess.Popen('/sbin/ifconfig', shell=True,
-                                         stdout=subprocess.PIPE,
-                                         close_fds=True)
-                ifdata = ifcmd.stdout.readlines()
-            except(OSError):
-                return iplist
-            for line in ifdata:
-                if re.search('inet addr:', line):
-                    try:
-                        line = line.split()
-                        addr = line[1]
-                        addr = addr.split(':')
-                        addr = addr[1]
-                        iplist.append(addr)
-                    except(IndexError):
-                        continue
-        else:
-            try:
-                if os.path.exists('/usr/sbin/ifconfig'):
-                    cmd = '/usr/sbin/ifconfig -a'
-                else:
-                    cmd = '/sbin/ifconfig -a'
-                ifcmd = subprocess.Popen(cmd, shell=True,
-                                         stdout=subprocess.PIPE,
-                                         close_fds=True)
-                ifdata = ifcmd.stdout.readlines()
-            except(OSError):
-                return iplist
-            for line in ifdata:
-                if re.search('inet ', line):
-                    try:
-                        line = line.split()
-                        addr = line[1]
-                        iplist.append(addr)
-                    except(IndexError):
-                        continue
+        cmd = ''
+        if os.path.exists('/usr/sbin/ip'):
+            cmd = '/usr/sbin/ip address'
+        elif os.path.exists('/sbin/ip'):
+            cmd = '/sbin/ip address'
+        elif os.path.exists('/usr/sbin/ifconfig'):
+            cmd = '/usr/sbin/ifconfig -a'
+        elif os.path.exists('/sbin/ifconfig'):
+            cmd = '/sbin/ifconfig -a'
+        try:
+            ifcmd = subprocess.Popen(cmd, shell=True,
+                                     stdout=subprocess.PIPE,
+                                     close_fds=True)
+            ifdata = ifcmd.stdout.readlines()
+        except(OSError):
+            # TODO - Need error handler
+            raise
+        for line in ifdata:
+            if re.search('inet addr:', line):
+                try:
+                    line = line.split()
+                    addr = line[1]
+                    addr = addr.split(':')
+                    addr = addr[1]
+                    iplist.append(addr)
+                except(IndexError):
+                    continue
+            elif re.search('inet ', line):
+                try:
+                    line = line.split()
+                    addr = line[1]
+                    addr = addr.split('/')
+                    addr = addr[0]
+                    iplist.append(addr)
+                except(IndexError):
+                    continue
         return iplist
 
     def get_property_number(self):

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,8 @@ This method disables AFP file sharing on mac os x systems
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/07/07 ekkehard converted to RuleKVEditor
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -73,13 +75,12 @@ $ sudo serveradmin settings afp:setting
         self.rulename = 'DisableAFPFileSharing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables AFP file sharing."
         self.logger = logger
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.3']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("DisableAFPFileSharing",
@@ -96,6 +97,7 @@ $ sudo serveradmin settings afp:setting
 
         self.initObjs()
         self.determineOrigAFPstatus()
+        self.sethelptext()
 
     def initObjs(self):
         '''

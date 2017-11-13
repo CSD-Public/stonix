@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ Created on Feb 12, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/16 dkennel Updated for new isApplicable
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import checkPerms, setPerms, readFile, writeFile
@@ -50,13 +51,11 @@ class PreventXListen(Rule):
         self.rulename = "PreventXListen"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "The X graphics display server is network aware. " + \
-        "Due to weaknesses in the X server the service should not be " + \
-        "exposed to the external network"
+        self.sethelptext()
         self.guidance = ["NSA 3.6.1.3.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         datatype = 'bool'
         key = 'PREVENTXLISTEN'

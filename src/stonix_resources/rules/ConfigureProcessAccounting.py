@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -25,8 +25,11 @@ This rule will enable process accounting, using the acct/psacct service.
 
 @author: Eric Ball
 @change: 2015/04/18 eball Original implementation
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
+
 import re
 import traceback
 from ..stonixutilityfunctions import iterate
@@ -45,8 +48,7 @@ class ConfigureProcessAccounting(Rule):
         self.rulename = "ConfigureProcessAccounting"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will enable process accounting, using \
-the acct/psacct service.'''
+        self.sethelptext()
         self.applicable = {"type": "white",
                            "family": ["linux"]}
 
@@ -82,7 +84,7 @@ the acct/psacct service.'''
                 else:
                     self.detailedresults += package + " is not available " + \
                         "for installation\n"
-            elif not self.sh.auditservice(package):
+            elif not self.sh.auditService(package, _="_"):
                 compliant = False
                 self.detailedresults += package + " service is not enabled\n"
 
@@ -125,8 +127,8 @@ the acct/psacct service.'''
                     self.detailedresults += package + " is not available " + \
                         "for installation\n"
 
-            if self.ph.check(package) and not self.sh.auditservice(package):
-                self.sh.enableservice(package)
+            if self.ph.check(package) and not self.sh.auditService(package, _="_"):
+                self.sh.enableService(package, _="_")
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "servicehelper", "servicename": package,

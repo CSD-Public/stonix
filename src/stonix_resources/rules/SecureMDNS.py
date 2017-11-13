@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Jul 22, 2013
 
 The Avahi daemon implements the DNS Service Discovery and Multicast DNS
@@ -48,6 +47,8 @@ configuration changes to the avahi service
 @change: 2016/02/11 eball PEP8 cleanup
 @change: 2016/02/11 eball Added NOZEROCONF=yes KVEditor for Red Hat systems
     to comply with CCE-RHEL7-CCE-TBD 2.5.2
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -86,28 +87,24 @@ class SecureMDNS(Rule):
         self.rulename = 'SecureMDNS'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The Avahi daemon implements the DNS Service \
-Discovery and Multicast DNS protocols, which provide service and host \
-discovery on a network. It allows a system to automatically identify \
-resources on the network, such as printers or web servers. This capability is \
-also known as mDNSresponder and is a major part of Zeroconf networking. By \
-default, it is enabled. This rule makes a number of configuration changes to \
-the Avahi service in order to secure it.'''
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
+        self.rulesuccess = True
         self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',
                          'CCE 4426-3', 'CCE 4193-9', 'CCE 4444-6',
                          'CCE 4352-1', 'CCE 4433-9', 'CCE 4451-1',
                          'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
 
 # init helper classes
         self.sh = ServiceHelper(self.environ, self.logger)
+        self.serviceTarget = ""
 
         if self.environ.getostype() == "Mac OS X":
             self.ismac = True
@@ -162,8 +159,8 @@ the Avahi service in order to secure it.'''
             self.ismac = False
             # init CIs
             datatype = 'bool'
-            mdnskey = 'SecureMDNS'
-            avahikey = 'DisableAvahi'
+            mdnskey = 'SECUREMDNS'
+            avahikey = 'DISABLEAVAHI'
             mdnsinstructions = 'To configure the Avahi server daemon ' + \
                 'securely set the value of SECUREMDNS to True and the ' + \
                 'value of DISABLEAVAHI to False.'
@@ -227,6 +224,7 @@ the Avahi service in order to secure it.'''
             # defaults
             compliant = True
             self.detailedresults = ''
+            self.rulesuccess = True
 
             # if system is a mac, run reportmac
             if self.ismac:
@@ -243,7 +241,7 @@ the Avahi service in order to secure it.'''
                 if self.DisableAvahi.getcurrvalue():
                     self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
-                    if self.sh.auditservice('avahi-daemon'):
+                    if self.sh.auditService('avahi-daemon', serviceTarget=self.serviceTarget):
                         compliant = False
                         self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
@@ -379,8 +377,8 @@ the Avahi service in order to secure it.'''
                 self.detailedresults += "Parameter: " + str(self.parameter) + \
                     " for service " + self.servicename + " is not set.\n"
             # see if service is running
-            servicesuccess = self.sh.auditservice(self.service,
-                                                  self.servicename)
+            servicesuccess = self.sh.auditService(self.service,
+                                                  serviceTarget=self.servicename)
             if servicesuccess:
                 debug = "Service: " + str(self.service) + ", " + \
                     self.servicename + " audit successful."
@@ -429,10 +427,10 @@ the Avahi service in order to secure it.'''
                 if self.DisableAvahi.getcurrvalue():
                     avahi = self.package
                     avahid = 'avahi-daemon'
-                    if self.sh.auditservice(avahid):
+                    if self.sh.auditService(avahid, serviceTarget=self.serviceTarget):
                         debug = "Disabling " + avahid + " service"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.sh.disableservice(avahid)
+                        self.sh.disableService(avahid, serviceTarget=self.serviceTarget)
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",
@@ -596,7 +594,7 @@ the Avahi service in order to secure it.'''
                 self.logger.log(LogPriority.DEBUG, debug)
             # Reload Service
             if success:
-                success = self.sh.reloadservice(self.service, self.servicename)
+                success = self.sh.reloadService(self.service, serviceTarget=self.servicename)
                 if success:
                     debug = "Service: " + str(self.service) + ", " + \
                         self.servicename + " was reloaded successfully."

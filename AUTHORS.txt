@@ -4,6 +4,7 @@ Ekkehard Koch <ekkehard@lanl.gov>
 Roy Nielsen <rsn@lanl.gov>
 Breen Malmberg <bemalmbe@lanl.gov>
 Eric Ball <eball@lanl.gov>
+Brandon Gonzales <bgonz12@lanl.gov>
 
 The program authors stand on the shoulders of those who work on the various 
 guidance sources referenced: CIS, DISA STIGs, USGCB, and the NSA.

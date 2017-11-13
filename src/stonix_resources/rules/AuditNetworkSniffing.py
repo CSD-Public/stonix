@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ Check to see if any network interface on the current system is running
 in promiscuous mode or not.
 
 @author: Breen Malmberg
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -61,16 +62,14 @@ in promiscuous mode or not.
         self.rulename = 'AuditNetworkSniffing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'The system should not be acting as a network sniffer, which can capture \
-all traffic on the network to which it is connected. \
-Check to see if any network interface on the current system is running \
-in promiscuous mode or not.'
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE-RHEL7-CCE-TBD 2.5.3']
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
+        self.auditonly = True
         # set up class var's and objects
         self.setup()
 
@@ -261,16 +260,6 @@ in promiscuous mode or not.'
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-    def fix(self):
-        '''
-        there is no fix for this rule. inform the user.
-
-        @author: Breen Malmberg
-        '''
-
-        self.detailedresults += "\nThere is no fix action for this rule."
-        self.logger.log(LogPriority.DEBUG, "The fix method was run but there is no fix action for this rule.")
 
     def undo(self):
         '''

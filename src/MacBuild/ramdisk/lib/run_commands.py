@@ -270,11 +270,22 @@ class RunWith(object):
                              close_fds=self.cfds)
                 if proc:
                     while True:
+                        #####
+                        # process stdout
                         myout = proc.stdout.readline()
                         if myout == '' and proc.poll() != None: 
                             break
-                        tmpline = myout.strip("\n")
-                        self.output += myout
+                        tmpline = myout
+                        self.output += tmpline
+                        #####
+                        # process stderr
+                        try:
+                            myerr = proc.stderr.readline()
+                            tmperr = myerr
+                            self.error += tmperr
+                        except:
+                            pass
+
                         self.logger.log(lp.DEBUG, str(tmpline))
         
                         if isinstance(chk_string, str) :
@@ -314,7 +325,9 @@ class RunWith(object):
                 self.logger.log(lp.WARNING, str(trace))
                 raise
             else :
-                #self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                self.logger.log(lp.DEBUG, self.printcmd + " Returned with output: " + str(self.output))
+                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error: " + str(self.error))
                 self.retcode = str(proc.returncode)
                 proc.stdout.close()
             finally:

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,7 +26,9 @@ Created on 2016/05/04
 Checks the root user's Firefox history for non-local browsing. The root user
 should only use the browser for administration tasks.
 @author: Eric Ball
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
+
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
 from ..localize import LOCALDOMAINS
@@ -52,10 +54,8 @@ class AuditFirefoxUsage(Rule):
         self.rulenumber = 84
         self.rulename = "AuditFirefoxUsage"
         self.mandatory = True
-        self.helptext = """This audit-only rule checks the root user's \
-Firefox history for non-local browsing. The root user should only use the \
-browser for administration tasks."""
         self.rootrequired = True
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.guidance = []
         self.applicable = {'type': 'white',
@@ -78,6 +78,7 @@ DISABLEPROXY to True."""
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.ph = Pkghelper(self.logger, self.environ)
+        self.auditonly = True
 
     def report(self):
         '''

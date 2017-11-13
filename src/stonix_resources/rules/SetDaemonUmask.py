@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Nov 8, 2012
 
 The settings file /etc/sysconfig/init contains settings which apply to all
@@ -37,6 +36,7 @@ writability/readability on the system.
 @change: 04/21/2014 dkennel Updated CI invocation, fixed bug where CI was not
 referenced in fix.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -70,27 +70,21 @@ writability/readability on the system.
         self.rulenumber = 68
         self.rulename = 'SetDaemonUmask'
         self.mandatory = True
-        self.helptext = 'The settings file /etc/sysconfig/init contains settings which apply to all \
-processes started at boot time. The system umask must be set to at least 022, \
-or daemon processes may create world-writable files. The more restrictive setting \
-027 protects files, including temporary files and log files, from unauthorized \
-reading by unprivileged users on the system. The SetDaemonUmask class searches \
-for each of the relevant config files and sets the process daemon umask to 022 \
-(0022) to prevent world writability/readability on the system.'
+        self.sethelptext()
         self.rootrequired = True
         self.detailedresults = 'The SetDaemonUmask rule has not yet been run'
         self.guidance = ['CCE 4220-0']
 
         # init CIs
         datatype = 'bool'
-        key = 'SetDaemonUmask'
+        key = 'SETDAEMONUMASK'
         instructions = 'To prevent stonix from setting the umask for system services, \
 set the value of SetDaemonUmask to False.'
         default = True
         self.SetDaemonUmask = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'Umask'
+        key2 = 'UMASK'
         instructions2 = 'Set the umask value you wish to use for daemon processes.'
         default2 = '022'
         self.umaskvalue = self.initCi(datatype2, key2, instructions2, default2)
@@ -103,7 +97,7 @@ set the value of SetDaemonUmask to False.'
 
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
     def fix(self):
         """

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,6 +26,7 @@ Created on Jul 6, 2016
 This class audits for passwordless ssh keys on the system.
 
 @author: Breen Malmberg
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -57,17 +58,12 @@ class AuditSSHKeys(Rule):
         self.rulename = 'AuditSSHKeys'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "SSH can be configured to use PKI keys for authentication, commonly referred to as SSH Keys. SSH keys are a good \
-authenticator and are very useful for denying brute force password guessing attacks. There is a potential weakness in \
-SSH keys in that it is possible to create the private key without a password. These passwordless, unencrypted keys can \
-then be used to move laterally by any user with read access to the key. To prevent this sort of exploitation all private \
-keys used for SSH should have a password and be protected by file permissions that limit read access to the owner.\
-*This rule's fix only changes permissions on insecure keys. We cannot fix keys which were made without a password.*"
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['LANL CAP', 'OpenSSH Security Best Practices']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.localize()
 

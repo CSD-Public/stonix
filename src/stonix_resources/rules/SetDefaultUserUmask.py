@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Dec 11, 2012
 The SetDefaultUserUmask class sets the default user umask to 077. Also accepts
 user input of alternate 027 umask.
@@ -37,6 +36,7 @@ user input of alternate 027 umask.
 @change: 08/27/2014 bemalmbe added documentation, cleaned up some existing
         documentation
 @change: 2015/04/17 dkennel updated for new isApplicable. Tuned text.
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -75,10 +75,7 @@ class SetDefaultUserUmask(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = "The SetDefaultUserUmask class sets the default " + \
-        "user umask to 027. Also accepts user input of alternate 077 umask." + \
-        " Mac OS X will have the umask set to 022 because it breaks with " + \
-        "stricter settings."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS', 'NSA(2.3.4.4)', 'CCE-3844-8', 'CCE-4227-5',
                          'CCE-3870-3', 'CCE-4737-6']
@@ -86,7 +83,7 @@ class SetDefaultUserUmask(Rule):
         # set up which system types this rule will be applicable to
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # decide what the default umask value should be, based on osfamily
         if self.environ.getosfamily() == 'darwin':
@@ -103,11 +100,11 @@ class SetDefaultUserUmask(Rule):
 
         # init CIs
         self.userUmask = \
-        self.initCi("string", "DefaultUserUmask",
+        self.initCi("string", "DEFAULTUSERUMASK",
                     "Set the default user umask value. Correct format is " + \
                     "a 3-digit, 0-padded integer.", defaultumask)
 
-        self.rootUmask = self.initCi("string", "DefaultRootUmask",
+        self.rootUmask = self.initCi("string", "DEFAULTROOTUMASK",
                                      "Set the default root umask value. " + \
                                      "Correct format is 3-digit, 0-padded " + \
                                      "integer. Setting this to a value " + \

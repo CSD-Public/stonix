@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,8 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/10/20 ekkehard Artifact artf34318 : ConfigureNetworks(122)
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import traceback
@@ -37,6 +39,7 @@ from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
 from ..logdispatcher import LogPriority
 from ..networksetup import networksetup
+from ..stonixutilityfunctions import iterate
 
 
 class ConfigureNetworks(RuleKVEditor):
@@ -55,17 +58,33 @@ class ConfigureNetworks(RuleKVEditor):
         self.rulename = 'ConfigureNetworks'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rules set the network setup of your OS X " + \
-        "system. It disables bluetooth and disables the wireless " + \
-        "(WiFi/802.11) interface(s) in the Network System Preference " + \
-        "Panel unless the location name has 'wi-fi', 'wifi', 'wireless', " + \
-        "'airport', 'off-site', or 'offsite' (case insensitive) in the " + \
-        "location name. We recommend having one location for off-site " + \
-        "DHCP, and one for each static IP address."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
+        self.iditerator = 0
+        self.statechglogger = statechglogger
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+
+        ## this section added to prevent code, which relies on constants in localize.py,
+        # from running if those constants are not defined or are set to 'None'
+#         if DNS == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+#         if PROXY == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+#         if PROXYCONFIGURATIONFILE == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+#         if PROXYDOMAIN == None:
+#             self.logdispatch.log(LogPriority.DEBUG, "Please ensure that the following constants, in localize.py, are correctly defined and are not None: DNS, PROXY, PROXYCONFIGURATIONFILE, PROXYDOMAIN. ConfigureNetworks will not function without these!")
+#             exit
+        # this section added to prevent code, which relies on constants in localize.py,
+        ## from running if those constants are not defined or are set to 'None'
+
+        self.nsobject = None
+
         self.nsobject = networksetup(self.logdispatch)
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
@@ -228,20 +247,41 @@ class ConfigureNetworks(RuleKVEditor):
         @author: ekkehard j. koch
         @change: Breen Malmberg - 12/20/2016 - added doc string; var init before
                 try
+        @change: ekkehard - 2017/10/04 - temporary launchctl fix
         '''
 
         afterfixsuccessful = True
 
         try:
-
-            service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
-            servicename = "com.apple.blued"
+# TODO: This code needs to be fixed after implementation [artf39626]: ServiceHelper Enhancement
+# FIXME: SystemHelper version 2 [artf39626]: ServiceHelper Enhancement
+#            service = "/System/Library/LaunchDaemons/com.apple.blued.plist"
+            servicename = "system/com.apple.blued"
+#            if afterfixsuccessful:
+#                afterfixsuccessful = self.sh.auditservice(service, servicename)
+#            if afterfixsuccessful:
+#                afterfixsuccessful = self.sh.disableservice(service, servicename)
+#            if afterfixsuccessful:
+#                afterfixsuccessful = self.sh.enableservice(service, servicename)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.auditservice(service, servicename)
+                command = ["/bin/launchctl", "stop", servicename]
+                afterfixsuccessful = self.ch.executeCommand(command)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.disableservice(service, servicename)
+                command = ["/bin/launchctl", "disable", servicename]
+                afterfixsuccessful = self.ch.executeCommand(command)
             if afterfixsuccessful:
-                afterfixsuccessful = self.sh.enableservice(service, servicename)
+                self.iditerator =+ 1
+                myID = iterate(self.iditerator, self.rulenumber)
+                command = ["/bin/launchctl", "enable", servicename]
+                event = {"eventtype": "comm",
+                         "command": command}
+                self.statechglogger.recordchgevent(myID, event)
+                self.iditerator =+ 1
+                myID = iterate(self.iditerator, self.rulenumber)
+                command = ["/bin/launchctl", "start", servicename]
+                event = {"eventtype": "comm",
+                         "command": command}
+                self.statechglogger.recordchgevent(myID, event)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:

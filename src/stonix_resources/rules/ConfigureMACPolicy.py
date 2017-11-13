@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -64,10 +64,7 @@ class ConfigureMACPolicy(Rule):
         self.rulename = 'ConfigureMACPolicy'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The ConfigureMACPolicy rule configures either \
-SELinux or AppArmor, based on the OS platform. These programs are called \
-Mandatory Access Control programs and are essential for enforcing what \
-certain programs are allowed and not allowed to do.'''
+        self.sethelptext()
         self.guidance = ['NSA(2.1.1.6)(2.4.2)', 'CCE-3977-6', 'CCE-3999-0',
                          'CCE-3624-4', 'CIS 1.7']
         self.setype = "targeted"

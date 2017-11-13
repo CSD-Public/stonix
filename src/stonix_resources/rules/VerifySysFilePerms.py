@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Mar 2, 2015
 
 This rule will check the default owners and access permissions for all system
@@ -59,13 +58,11 @@ class VerifySysFilePerms(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = 'This rule will check the default owners and ' + \
-        'access permissions for all system packages and their associated ' + \
-        'files as well as the file contents. NOTE: There is no undo function for this rule!'
+        self.sethelptext()
         self.guidance = ['']
 
         datatype = 'bool'
-        key = 'VerifySysFilePerms'
+        key = 'VERIFYSYSFILEPERMS'
         instructions = 'To disable this rule, set the value of ' + \
         'VerifySysFilePerms to False'
         default = True

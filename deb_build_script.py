@@ -50,16 +50,16 @@ stonixversion = STONIXVERSION
 controltext = '''Package: stonix
 Version: ''' + str(stonixversion) + '''
 Architecture: all
-Maintainer: Breen Malmberg <bemalmbe@lanl.gov>
-Depends: python-appindicator
+Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
+Depends: python2.7
 Section: python
 Priority: extra
 Description: ''' + str(stonixversion) + ''' release of STONIX hardening tool for Ubuntu
 X-Python-Version: = 2.7
 '''
 
-changelogtext = str(stonixversion) + ''' ALPHA release notes:
-[Packager needs to modify these to reflect current release notes]
+changelogtext = str(stonixversion) + ''' BETA release notes:
+http://trac.lanl.gov/cgi-bin/external/trac.cgi/wiki/STONIXreleaseNotes
 '''
 
 copyrighttext = '''###############################################################################

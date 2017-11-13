@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,6 +24,7 @@
 Created on Apr 20, 2017
 
 @author: dwalker
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import traceback
@@ -46,9 +47,6 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.rulenumber = 310
         self.rulename = "DisableSIRIandContinuityFeatures"
         self.formatDetailedResults("initialize")
-        self.helptext = "Disables Siri assistant/turns off voice " + \
-            "recognition and disables universal clipboard across iPhone " + \
-            "and desktop/laptop."
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.12', '+']},
@@ -69,13 +67,13 @@ class DisableSIRIandContinuityFeatures(Rule):
         default = ""
         self.homeci = self.initCi(datatype, key, instructions, default)
         '''Directory location for testing only'''
-        self.profile = "/Users/dwalker/stonix/src/" + \
-                       "stonix_resources/files/" + \
-                       "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
-#         self.profile = "/Applications/stonix4mac.app/Contents/" + \
-#                        "Resources/stonix.app/Contents/MacOS/" + \
+#         self.profile = "/Users/username/stonix/src/" + \
 #                        "stonix_resources/files/" + \
 #                        "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
+        self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                       "Resources/stonix.app/Contents/MacOS/" + \
+                       "stonix_resources/files/" + \
+                       "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
         self.identifier = "097AD858-A863-4130-989F-D87CCE7E393A"
         self.home = ""
         self.ch = CommandHelper(self.logger)
@@ -85,6 +83,7 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.siripath2 = "/Library/Preferences/com.apple.assistant.support" + \
             ".plist"
         self.siriparams2 = "Assistant\ Enabled"
+        self.sethelptext()
 
     def setupHomeDir(self):
         home = ""

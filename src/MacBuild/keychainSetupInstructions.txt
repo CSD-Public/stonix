@@ -18,4 +18,10 @@ As the users apple id, download the certificate and drag it directly into the us
 
 Click on the private key in the keychain, then “Get Info” -> “Access Control” tab.  Select “Confirm before allowing access”.  In “Always allow access by these applications”, click “+”.  In the dialog press “Cmd+Shift+G”, enter /usr/bin/codesign, press “Add”.  Do the same for /usr/bin/xcodebuild.  Save the changes.  While still here, go to the keychain’s settings and increase the lock timeout from 5 to 15 minutes, depending on the build time of the job.  If the timeout is too small, you may get weird errors.  If the timeout is too small, you might get weird errors; the web page author learned that the hard way: “User interaction is not allowed”.
 
+Run the following command:
+
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k keychainPass keychainName
+
+using the correct keychain password and keychain name.
+
 

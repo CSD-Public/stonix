@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ present.
 @author: Breen malmberg
 @change: 2015/10/08 eball Help text/PEP8 cleanup
 @change: 2016/06/21 eball Fixed perm undo event, full PEP8 compliance
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -60,18 +61,17 @@ class XinetdAccessControl(Rule):
         self.rulename = 'XinetdAccessControl'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule will securely configure the xinetd " + \
-            "access control mechanism, if xinetd is present."
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['']
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'XinetdAccessControl'
+        key = 'XINETDACCESSCONTROL'
         instructions = "To disable the configuring of the xinetd access " + \
             "control mechanism, set the value of XinetdAccessControl to False."
         default = True

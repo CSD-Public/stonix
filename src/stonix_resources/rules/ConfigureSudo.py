@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -35,6 +35,8 @@ Created on Mar 7, 2013
                         fixed search string and stopped removing lines.
 @change: Breen Malmberg - 2/13/2017 - set the default group name to sudo on ubuntu and debian
         systems; set a default initialization of the group name variable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 
@@ -56,22 +58,11 @@ class ConfigureSudo(Rule):
         self.rulename = "ConfigureSudo"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule will check for proper settings for \
-"wheel" (or another administrative group, if specified below) in the sudoers \
-file.
-If the rule is non-compliant after you have run the fix, ensure that the \
-group entered in the text field exists, and that the usernames of all \
-administrators who should be allowed to execute commands as root are members \
-of that group. This rule will not be applicable to Solaris.
-This rule does not remove any lines from the sudoers file.
-***Please be aware that the default group for this rule is wheel or if on a Mac, it is admin. If you \
-would like to change the group, enter the desired group in the text field \
-below and hit save before running.***"""
-
+        self.sethelptext()
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
 # set up CI's
         #configuration item instantiation

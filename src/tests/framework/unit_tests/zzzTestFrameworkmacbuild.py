@@ -39,7 +39,7 @@ from shutil import rmtree
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.stonix_resources.environment import Environment
-from src.MacBuild import macbuild
+from src.MacBuild import build
 
 
 class zzzTestFrameworkmacbuild(unittest.TestCase):
@@ -56,7 +56,7 @@ class zzzTestFrameworkmacbuild(unittest.TestCase):
             os.chdir("src/Macbuild")
             self.changedDir = True    # Cannot guarantee that test will end in
             self.myDir = os.getcwd()  # this dir, so we record it first
-        self.mb = macbuild.MacBuilder(options=optparse.Values({"compileGui":
+        self.mb = build.SoftwareBuilder(options=optparse.Values({"compileGui":
                                                                True,
                                                                "version": "0.dev-UT",
                                                                "clean": False,
@@ -65,7 +65,7 @@ class zzzTestFrameworkmacbuild(unittest.TestCase):
     def tearDown(self):
         if self.changedDir:
             os.chdir(self.myDir)
-            self.ch.executeCommand(["./macbuild.py", "-c"])
+            self.ch.executeCommand(["./build.py", "-c"])
             os.chdir("../..")
 
     def testSetupAndDetachRamdisk(self):

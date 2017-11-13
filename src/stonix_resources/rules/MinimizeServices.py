@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -37,6 +37,7 @@ RHEL 7
 ubuntu 16.04.
 @change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
 @change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
+@change: 2017/10/24 rsn changing to use service helper, second gen
 '''
 from __future__ import absolute_import
 
@@ -68,17 +69,11 @@ class MinimizeServices(Rule):
         self.rulename = 'MinimizeServices'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''The MinimizeServices rule will minimize the \
-services that the system is running. Each running service is a potential \
-avenue for exploitation by an attacker or malicious software. Running only a \
-minimum of services reduces vulnerability and helps preserve system \
-resources. Most workstations will leave this rule enabled but some server \
-administrators may want to disable this rule.
-'''
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
-        self.servicehelper = ServiceHelper(self.environ, self.logger)
+        self.servicehelper = ServiceHelper(self.environ, self.logger).svchelper
         self.guidance = ['NSA 2.1.2.2', 'NSA 2.2.2.3', 'NSA 2.4.3', 'NSA 3.1',
                          'CCE-3416-5', 'CCE-4218-4', 'CCE-4072-5', 'CCE-4254-9',
                          'CCE-3668-1', 'CCE-4129-3', 'CCE-3679-8', 'CCE-4292-9',
@@ -463,7 +458,7 @@ administrators may want to disable this rule.
                                'sysstat-summary.service']
 
         datatype = 'bool'
-        key = 'minimizesvcs'
+        key = 'MINIMIZESVCS'
         instructions = '''To disable this rule set the value of MINIMIZESVCS to
 False.'''
         default = True
@@ -471,14 +466,16 @@ False.'''
 
         # self.svcslistci = self.__initializeenablelist()
         datatype2 = 'list'
-        key2 = 'serviceenable'
+        key2 = 'SERVICEENABLE'
         instructions2 = '''This list contains services that are permitted to \
 run on this platform. If you need to run a service not currently in this \
 list, add the service to the list and STONIX will not disable it. List \
 elements should be space separated.'''
-        self.logger.log(LogPriority.DEBUG,
-                        ['MinimizeServices.__init__',
-                         "Starting platform detection"])
+
+        self.serviceTarget = ""
+
+        self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Starting platform detection"])
+
         if os.path.exists('/bin/systemctl'):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',
@@ -527,7 +524,7 @@ elements should be space separated.'''
         try:
 
             self.detailedresults = ""
-            servicelist = self.servicehelper.listservices()
+            servicelist = self.servicehelper.listServices()
             allowedlist = self.svcslistci.getcurrvalue()
             corelist = self.svcslistci.getdefvalue()
             self.logger.log(LogPriority.DEBUG,
@@ -551,7 +548,7 @@ elements should be space separated.'''
                                          'Non-core service running: ' +
                                          service])
                 else:
-                    if self.servicehelper.auditservice(service):
+                    if self.servicehelper.auditService(service, serviceTarget = self.serviceTarget):
                         running = True
                     self.logger.log(LogPriority.DEBUG,
                                     ['MinimizeServices.report',
@@ -595,7 +592,7 @@ elements should be space separated.'''
         fixed = True
         if self.minimizeci.getcurrvalue():
             try:
-                servicelist = self.servicehelper.listservices()
+                servicelist = self.servicehelper.listServices()
                 allowedlist = self.svcslistci.getcurrvalue()
                 for service in servicelist:
                     if service in allowedlist:
@@ -605,13 +602,13 @@ elements should be space separated.'''
                         # they are OK.
                         continue
                     else:
-                        running = self.servicehelper.auditservice(service)
+                        running = self.servicehelper.auditService(service, serviceTarget=self.serviceTarget)
                         self.logger.log(LogPriority.DEBUG,
                                         ['MinimizeServices.fix',
                                          "Audit: " + service + str(running)])
                         if running and service not in self.specials:
                             changes.append(service)
-                            self.servicehelper.disableservice(service)
+                            self.servicehelper.disableService(service, serviceTarget=self.serviceTarget)
                 mytype = 'command'
                 mystart = []
                 myend = changes
@@ -649,7 +646,7 @@ elements should be space separated.'''
         try:
             event1 = self.statechglogger.getchgevent('0013001')
             for service in event1['endstate']:
-                self.servicehelper.enableservice(service)
+                self.servicehelper.enableService(service, serviceTarget=self.serviceTarget)
         except(IndexError, KeyError):
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.undo',

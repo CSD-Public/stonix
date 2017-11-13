@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2017.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,6 +24,8 @@
 Created on May 15, 2017
 
 @author: Breen Malmberg
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg - Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -54,11 +56,11 @@ class DisableTouchID(Rule):
         self.mandatory = True
         self.rootrequired = True
         self.environ = environ
-        self.helptext = 'This rule disables touch ID authentication, staring in Mac OS X 10.12'
+        self.sethelptext()
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12.0', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.12.3', '+']}}
         datatype = 'bool'
-        key = 'DisableTouchID'
+        key = 'DISABLETOUCHID'
         instructions = "To prevent this rule from running, set the value of DisableTouchID to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)

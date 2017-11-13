@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,6 +24,8 @@
 Created on Aug 25, 2016
 
 @author: dwalker
+@change: 2017/03/30 dkennel Marked as FISMA high
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import traceback
@@ -48,12 +50,11 @@ class STIGConfigureLoginWindowPolicy(Rule):
         self.rulenumber = 362
         self.rulename = "STIGConfigureLoginWindowPolicy"
         self.formatDetailedResults("initialize")
-        self.helptext = "STIGConfigureLoginWindow rule configures the " + \
-            "Mac OSX operating system's login window profile " + \
-            "if not installed already."
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10', 'r', '10.11']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']},
+                           'fisma': 'high'}
         datatype = "bool"
         key = "STIGLOGINCONFIG"
         instructions = "To disable the installation of the login window " + \
@@ -77,7 +78,14 @@ class STIGConfigureLoginWindowPolicy(Rule):
                          "Resources/stonix.app/Contents/MacOS/" + \
                          "stonix_resources/files/" + \
                          "U_Apple_OS_X_10-11_V1R1_STIG_Login_Window_Policy.mobileconfig"
-
+        else:
+#             self.profile = "/Users/username/stonix/src/" + \
+#                 "stonix_resources/files/" + \
+#                 "U_Apple_macOS_10-12_V1R1_STIG_Login_Window_Policy.mobileconfig "
+            self.profile = "/Applications/stonix4mac.app/Contents/" + \
+                         "Resources/stonix.app/Contents/MacOS/" + \
+                         "stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Login_Window_Policy.mobileconfig"
     def report(self):
         try:
             compliant = False

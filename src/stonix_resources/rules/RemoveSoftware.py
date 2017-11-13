@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -25,11 +25,11 @@ Created on Apr 5, 2016
 
 @author: dwalker
 @change: 2016/07/06 eball Added undo events to fix
+@change: 2017/10/23 rsn removed unused service helper
 '''
 from __future__ import absolute_import
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 import traceback
@@ -49,22 +49,13 @@ class RemoveSoftware(Rule):
         self.rulenumber = 91
         self.rulename = "RemoveSoftware"
         self.mandatory = True
-        self.helptext = "The RemoveSoftware rule removes any unnecessary " + \
-            "software installed on the system.\n" + \
-            "****WARNING*****\n" + \
-            "This rule is optional for a reason.  This program removes " + \
-            "programs that may or may not be running during removal.  " + \
-            "This can cause adverse effects during run time for your " + \
-            "operating system.  Full knowledge and risk assessment is " + \
-            "assumed when running this rule.\n" + \
-            "*****************"
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
         self.iditerator = 0
         self.ph = Pkghelper(self.logger, self.environ)
-        self.sh = ServiceHelper(self.environ, self.logger)
         # Configuration item instantiation
         datatype = "bool"
         key = "REMOVESOFTWARE"

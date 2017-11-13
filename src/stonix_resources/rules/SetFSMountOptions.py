@@ -1,7 +1,7 @@
 '''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -79,21 +79,17 @@ class SetFSMountOptions(Rule):
         self.rulename = 'SetFSMountOptions'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "SetFSMountOptions sets the file system mount " + \
-        "options for non-Root local partitions, file systems mounted on " + \
-        "removable media, removable storage partitions, and temporary " + \
-        "storage partitions such as /tmp and /dev/shm in order to help " + \
-        "protect against malicious code being run on the system."
+        self.sethelptext()
         self.rootrequired = True
 
         # set up CI's
         datatype = "bool"
-        key = "SetFSMountOptions"
+        key = "SETFSMOUNTOPTIONS"
         instructions = "To prevent the configuration of mount options, set the value of SetFSMountOptions to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
         datatype2 = 'bool'
-        key2 = 'NFSRoot'
+        key2 = 'NFSROOT'
         instructions2 = 'If this system uses an NFS mounted root, set the value of NFSRoot to True.'
         default2 = False
         self.NFSRootci = self.initCi(datatype2, key2, instructions2, default2)

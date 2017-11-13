@@ -20,12 +20,17 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
+Created on Aug 06, 2012
+
+@author: Derek T. Walker
+'''
 
 import re
 
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
-from stonixutilityfunctions import validateParam
+from StonixExceptions import repoError
 
 
 class Yum(object):
@@ -54,7 +59,6 @@ class Yum(object):
         self.provides = self.rpmloc + " -qf "
         self.query = self.rpmloc + " -qa "
 
-###############################################################################
     def installpackage(self, package):
         '''
         Install a package. Return a bool indicating success or failure.
@@ -68,16 +72,21 @@ class Yum(object):
                 detailedresults with logging
         '''
 
-        installed = False
+        installed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return installed
+            try:
 
-            self.ch.executeCommand(self.install + package)
-            if self.ch.getReturnCode() == 0:
-                installed = True
+                self.ch.executeCommand(self.install + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    installed = False
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was installed successfully")
@@ -88,7 +97,6 @@ class Yum(object):
             raise
         return installed
 
-###############################################################################
     def removepackage(self, package):
         '''
         Remove a package. Return a bool indicating success or failure.
@@ -102,16 +110,20 @@ class Yum(object):
                 detailedresults with logging
         '''
 
-        removed = False
+        removed = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return removed
-
-            self.ch.executeCommand(self.remove + package)
-            if self.ch.getReturnCode() == 0:
-                removed = True
+            try:
+                self.ch.executeCommand(self.remove + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    removed = False
 
             if removed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully installed")
@@ -122,7 +134,6 @@ class Yum(object):
             raise
         return removed
 
-###############################################################################
     def checkInstall(self, package):
         '''
         Check the installation status of a package. Return a bool; True if
@@ -138,17 +149,19 @@ class Yum(object):
                 detailedresults with logging
         '''
 
-        installed = False
+        installed = True
 
         try:
-
-            if not validateParam(self.logger, package, basestring, "package"):
-                return installed
-
-            self.ch.executeCommand(self.listinstalled + package)
-            if self.ch.getReturnCode() == 0:
-
-                installed = True
+            try:
+                self.ch.executeCommand(self.listinstalled + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    installed = False
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
@@ -172,17 +185,20 @@ class Yum(object):
         @author: Breen Malmberg
         '''
 
-        updated = False
+        updated = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return updated
-
-            self.ch.executeCommand(self.updatepkg + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                updated = True
+            try:
+                self.ch.executeCommand(self.updatepkg + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    updated = False
 
             if package:
                 if updated:
@@ -216,13 +232,22 @@ class Yum(object):
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return updatesavail
-
-            self.ch.executeCommand(self.checkupdates + package)
-            output = self.ch.getOutputString()
-            if re.search("Updated packages", output, re.IGNORECASE):
-                updatesavail = True
+            try:
+                self.ch.executeCommand(self.checkupdates + package)
+                retcode = self.ch.getReturnCode()
+                output = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+                else:
+                    if re.search("Updated packages", output, re.IGNORECASE):
+                        updatesavail = True
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                else:
+                    if re.search("Updated packages", output, re.IGNORECASE):
+                        updatesavail = True
 
             if package:
                 if updatesavail:
@@ -239,10 +264,9 @@ class Yum(object):
             raise
         return updatesavail
 
-###############################################################################
     def checkAvailable(self, package):
         '''
-        check if specified package is availabe to install
+        check if specified package is available to install
         return True if it is
         return False if not
 
@@ -252,17 +276,20 @@ class Yum(object):
         @author: Breen Malmberg
         '''
 
-        available = False
+        available = True
 
         try:
 
-            if not validateParam(self.logger, package, basestring, "package"):
-                return available
-
-            self.ch.executeCommand(self.listavail + package)
-            retcode = self.ch.getReturnCode()
-            if retcode == 0:
-                available = True
+            try:
+                self.ch.executeCommand(self.listavail + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.DEBUG, str(errstr))
+                    available = False
 
             if available:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
@@ -273,7 +300,6 @@ class Yum(object):
             raise
         return available
 
-###############################################################################
     def getPackageFromFile(self, filename):
         '''
         Returns the name of the package that provides the given
@@ -291,23 +317,25 @@ class Yum(object):
 
         try:
 
-            if not validateParam(self.logger, filename, basestring, "filename"):
-                return packagename
-
-            self.ch.executeCommand(self.provides + filename)
-            if self.ch.getReturnCode() == 0:
-                packagename = self.ch.getOutputString()
-            else:
-                self.logger.log(LogPriority.DEBUG, "rpm encountered a problem while searching for the package associated with " + filename)
+            try:
+                self.ch.executeCommand(self.provides + filename)
+                retcode = self.ch.getReturnCode()
+                outputstr = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+                else:
+                    packagename = outputstr
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
 
         except Exception:
             raise
         return packagename
 
-###############################################################################
     def getInstall(self):
         return self.install
 
-###############################################################################
     def getRemove(self):
         return self.remove

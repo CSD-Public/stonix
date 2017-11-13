@@ -33,6 +33,8 @@ class Xcodebuild(MacBuildLib):
             self.logger.log(lp.DEBUG, "setUpForSigning failed...")
             raise Exception(traceback.format_exc())
 
+        xb.sign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+
     def sign(self, psd, itemName, username, password, signature, verbose, keychain):
         self.setUpForSigning(username, password, keychain)
         self.codeSign(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)
@@ -86,6 +88,8 @@ if __name__ == '__main__':
     
     logger.initializeLogs()
 
+    logger.log(lp.DEBUG, "Logger initialized")
+
     os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
 
     if opts.password:
@@ -102,6 +106,11 @@ if __name__ == '__main__':
     else:
         keychainPass = False
     
+    if keychainPass:
+        logger.log(lp.DEBUG, "Pass grokked...")
+    else:
+        logger.log(lp.DEBUG, "Pass NOT grokked...")
+        
     xb = Xcodebuild(logger)
     if opts.codesign:
         xb.sign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)

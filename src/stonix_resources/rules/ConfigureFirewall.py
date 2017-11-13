@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -32,6 +32,9 @@ dictionary
 @change: 2016/05/31 ekkehard fix help text
 @change: 2016/06/22 eball Added &= to afterfix checks so that all checks before
     the last one are not discarded. Also cleaned up help text (again!)
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -54,11 +57,11 @@ class ConfigureFirewall(RuleKVEditor):
         self.rulename = 'ConfigureFirewall'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures the OS X firewall."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.addKVEditor("FirewallOn",
@@ -99,7 +102,7 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
         servicename = "com.apple.alf"
-        afterfixsuccessful &= self.sh.auditservice(service, servicename)
-        afterfixsuccessful &= self.sh.disableservice(service, servicename)
-        afterfixsuccessful &= self.sh.enableservice(service, servicename)
+        afterfixsuccessful &= self.sh.auditService(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.disableService(service, servicename=servicename)
+        afterfixsuccessful &= self.sh.enableService(service, servicename=servicename)
         return afterfixsuccessful

@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,9 +27,12 @@ Web Sharing uses the Apache 2.2.x web server to turn the Mac into an HTTP/Web
 server. As with file sharing, web sharing is best left off and a dedicated,
 well-managed web server is recommended.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
+@change: 2017/10/23 rsn - Changing for new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -61,18 +64,14 @@ well-managed web server is recommended.
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.compliant = False
-        self.helptext = 'Web Sharing uses the Apache 2.2.x web server to ' + \
-        'turn the Mac into an HTTP/Web server. As with file sharing, web ' + \
-        'sharing is best left off and a dedicated, well-managed web ' + \
-        'server is recommended.'
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # set up CIs
         datatype = 'bool'
-        key = 'DisableWebSharing'
+        key = 'DISABLEWEBSHARING'
         instructions = 'To prevent web sharing from being disabled, set the value of DisableWebSharing to False.'
         default = True
         self.disableWebSharing = self.initCi(datatype, key, instructions, default)
@@ -80,13 +79,15 @@ well-managed web server is recommended.
         # set up class var's
         self.maclongname = '/System/Library/LaunchDaemons/org.apache.httpd.plist'
         self.macshortname = 'org.apache.httpd'
+        self.sethelptext()
 
     def report(self):
         '''
         Report status of web sharing and compliance
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -102,10 +103,12 @@ well-managed web server is recommended.
             return False
 
         try:
-            if not self.svchelper.auditservice(self.maclongname, self.macshortname):
+
+            if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
+
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
                     output = self.cmhelper.getOutput()
-                    if self.checkPlistVal('1', output):
+                    if self.checkPlistVal('1', output[0].strip()):
                         self.compliant = True
             else:
                 self.detailedresults += '\n' + self.maclongname + ' is still loaded/enabled'
@@ -126,8 +129,9 @@ well-managed web server is recommended.
         '''
         Perform operations to disable web sharing
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -138,9 +142,11 @@ well-managed web server is recommended.
         try:
 
             if self.disableWebSharing.getcurrvalue():
-                if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
-                    self.rulesuccess = False
+
+                #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
+                #    self.rulesuccess = False
                 if not self.svchelper.disableservice(self.maclongname, self.macshortname):
+
                     self.rulesuccess = False
 
                 self.id += 1
@@ -172,8 +178,9 @@ well-managed web server is recommended.
 
         @param: string/list val    given value or list of values to check
         @param: list output    given list of values to check against
-        @return: bool
-        @author: bemalmbe
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         retval = True
@@ -210,3 +217,9 @@ well-managed web server is recommended.
         except Exception:
             raise
         return retval
+
+###############################################################################
+    def afterfix(self):
+        afterfixsuccessful = True
+        afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
+        return afterfixsuccessful
