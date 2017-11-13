@@ -45,7 +45,7 @@ that access the version variable to use this copy.
 @change: 2017/03/07 - dkennel add FISMACAT for FISMA/FIPS 199 risk category
 @change: 2017/07/07 - ekkehard - incremented STONIXVERSION = '0.9.10'
 @change: 2017/10/10 - ekkehard - incremented STONIXVERSION = '0.9.13'
-@change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.13'
+@change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.14'
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
