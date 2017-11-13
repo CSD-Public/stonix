@@ -90,6 +90,7 @@ class SecureMDNS(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.compliant = False
+        self.rulesuccess = True
         self.guidance = ['NSA(3.7.2)', 'CCE 4136-8', 'CCE 4409-9',
                          'CCE 4426-3', 'CCE 4193-9', 'CCE 4444-6',
                          'CCE 4352-1', 'CCE 4433-9', 'CCE 4451-1',
@@ -103,6 +104,7 @@ class SecureMDNS(Rule):
 
 # init helper classes
         self.sh = ServiceHelper(self.environ, self.logger)
+        self.serviceTarget = ""
 
         if self.environ.getostype() == "Mac OS X":
             self.ismac = True
@@ -222,6 +224,7 @@ class SecureMDNS(Rule):
             # defaults
             compliant = True
             self.detailedresults = ''
+            self.rulesuccess = True
 
             # if system is a mac, run reportmac
             if self.ismac:
@@ -238,7 +241,7 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
-                    if self.sh.auditService('avahi-daemon', _="_"):
+                    if self.sh.auditService('avahi-daemon', serviceTarget=self.serviceTarget):
                         compliant = False
                         self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
@@ -424,10 +427,10 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     avahi = self.package
                     avahid = 'avahi-daemon'
-                    if self.sh.auditService(avahid, _="_"):
+                    if self.sh.auditService(avahid, serviceTarget=self.serviceTarget):
                         debug = "Disabling " + avahid + " service"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.sh.disableService(avahid, _="_")
+                        self.sh.disableService(avahid, serviceTarget=self.serviceTarget)
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",

@@ -71,8 +71,7 @@ class repoError(Exception):
                            "repositories failed": False,
                            "doesn't have enough cached data to continue": False,
                            "Abort, retry, ignore": False,
-                           "System management is locked": False,
-                           "Error: No matching packages to list": True}
+                           "System management is locked": False}
 
         try:
 

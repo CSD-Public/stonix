@@ -46,6 +46,13 @@ import re
 
 
 class SSHTimeout(Rule):
+    '''
+    This rule will configure the ssh timeout period for 
+    ssh sessions, if ssh is installed.
+
+    @author: dwalker
+    '''
+
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
@@ -71,8 +78,6 @@ class SSHTimeout(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
-###############################################################################
-
     def report(self):
         '''SSHTimeout.report(): produce a report on whether or not a valid
         time for timing out of ssh is set.
@@ -80,6 +85,7 @@ class SSHTimeout(Rule):
         '''
 
         try:
+            self.detailedresults = ""
             compliant = True
             results = ""
             timeout = self.intCi.getcurrvalue()
@@ -99,9 +105,13 @@ class SSHTimeout(Rule):
                     openssh = "openssh"
                 else:
                     openssh = "openssh-server"
-                if not self.ph.check(openssh):
-                    compliant = False
-                    results += "Package " + openssh + " is not installed\n"
+
+            if not self.ph.check(openssh):
+                self.compliant = True
+                self.detailedresults += "Package " + openssh + " is not installed.\nNothing to configure."
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                return self.compliant
+
             self.ssh = {"ClientAliveInterval": str(timeout),
                         "ClientAliveCountMax": "0"}
             if os.path.exists(self.path):
@@ -134,7 +144,6 @@ class SSHTimeout(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
 
     def fix(self):
         '''SSHTimeout.fix(): set the correct values in /etc/ssh/sshd_config
@@ -255,4 +264,3 @@ class SSHTimeout(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-    

@@ -359,7 +359,7 @@ class AptGet(object):
         return packagename
 
     def getInstall(self):
-        return self.install
+        return self.aptinstall
 
     def getRemove(self):
-        return self.remove
+        return self.aptremove
