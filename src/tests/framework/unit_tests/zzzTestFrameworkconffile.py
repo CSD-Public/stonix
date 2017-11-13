@@ -28,9 +28,14 @@ Created on Dec 14, 2011
 
 @author: dkennel
 @change: 2015-02-26 - Reformatted to work with stonixtest
+@change: 2016-02-10 roy - adding sys.path.append for both test framework and 
+                          individual test runs.
 '''
 import os
+import sys
 import unittest
+
+sys.path.append("../../../..")
 import src.stonix_resources.environment as environment
 import src.stonix_resources.conffile as conffile
 import src.tests.lib.logdispatcher_lite as logdispatcher

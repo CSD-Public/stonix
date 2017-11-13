@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,9 @@ file system support from the kernel.
 @change: dkennel 04/18/2014 Replaced old style CI with new
 @change: 2015/04/15 dkennel updated for new style isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/05/26 ekkehard Results Formatting
+@change: 2016/10/20 eball Results Formatting
+@change: 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -58,25 +61,20 @@ class DisableUnusedFs(Rule):
         self.statechglogger = statechglogger
         self.rulenumber = 256
         self.rulename = 'DisableUnusedFs'
+        self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule will remove \
-support for uncommon filesystems on this platform. Unused file system \
-support increases the system attack profile while providing no benefit \
-to the system operators. Options are given for disabling this rule or \
-tuning the list of filesystems that should be disabled. Tuning is \
-preferable to disabling the rule.'''
         self.rootrequired = True
         self.blacklistfile = '/etc/modprobe.d/usgcb-blacklist.conf'
 
         datatype = 'bool'
-        key = 'disablefs'
+        key = 'DISABLEFS'
         instructions = '''To disable this rule set the value of DISABLEFS to \
 False.'''
         default = True
         self.disablefs = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
-        key2 = 'fslist'
+        key2 = 'FSLIST'
         instructions2 = '''This list contains file system types that will be \
 disabled. If you need to use a file system currently listed, remove it and \
 the support for that file system type will not be disabled. This list should \
@@ -87,12 +85,14 @@ be space separated.'''
         self.guidance = ['NSA 2.2.2.5']
         self.applicable = {'type': 'white',
                            'family': ['linux']}
+        self.sethelptext()
 
     def report(self):
         '''Fssupport.report() Public method to report on the status of the
         uncommon filesystem support.'''
         compliant = True
         try:
+            self.detailedresults = ""
             if not os.path.exists(self.blacklistfile):
                 compliant = False
                 self.logger.log(LogPriority.DEBUG,
@@ -126,19 +126,23 @@ be space separated.'''
             self.rulesuccess = False
 
         if compliant:
-            self.detailedresults = """DisableUnusedFs: All unused filesystem
+            self.detailedresults = """DisableUnusedFs: All unused filesystem \
 support appears to be disabled."""
             self.currstate = 'configured'
             self.compliant = True
         else:
-            self.detailedresults = """DisableUnusedFs: One or more unused filesystem
-support modules are not disabled."""
+            self.detailedresults = """DisableUnusedFs: One or more unused \
+filesystem support modules are not disabled."""
             self.currstate = 'notconfigured'
             self.compliant = False
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def fix(self):
         '''Fssupport.fix() Public method to set the uncommon fs support.'''
+        self.detailedresults = ""
         if not self.disablefs.getcurrvalue():
             return True
         if not self.compliant:
@@ -224,6 +228,9 @@ followed by /bin/true: ''' + fsstring
                                 ['DisableUnusedFs.fix',
                                  self.detailedresults])
                 return False
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
         return self.report()
 

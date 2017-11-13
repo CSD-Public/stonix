@@ -24,10 +24,14 @@
 Created on Feb 10, 2015
 
 @author: root
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
+import sys
 
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureRemoteManagement import ConfigureRemoteManagement

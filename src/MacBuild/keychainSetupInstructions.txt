@@ -1,0 +1,27 @@
+Setting up MacOS Code Signing
+
+Adapted from: http://www.egeek.me/2015/04/12/jenkins-setting-up-ios-code-signing/
+
+Creating developer certificate
+
+Open the “Keychain Access” app, as your normal user on your Mac. Create new keychain, call it <user-email>, enter a password. Select the keychain, then “within the Keychain Access drop down menu, select Keychain Access > Certificate Assistant > Request a Certificate from a Certificate Authority.” Enter email (the above email), name <developers full name), save the CSR to disk. Move the generated public and private keys from the login keychain to the email above.
+
+While still in the developer.apple.com site, under “Certificates”, “Pending”, click on “Certificate Signing Request”.  At the bottom of the page, download the two intermediate certificates.  Double click on the downloaded certs to load them in to your keychain.
+
+Create an apple id for your user and invite him to the team. If you upload the CSR from your own account, the generated certificate will have your name, regardless of what name you used on the previous step.
+
+Go to users’ Apple Developer Portal, the “Certificates, Identifiers & Profiles” section, click on Certificates link, then Development on the left, add a new one, type “macOS App Development”, now upload the generated CSR. Login as your primary account and approve the new developer certificate.
+
+As the users apple id, download the certificate and drag it directly into the users keychain.
+
+“allow access” instructions to signing cert.
+
+Click on the private key in the keychain, then “Get Info” -> “Access Control” tab.  Select “Confirm before allowing access”.  In “Always allow access by these applications”, click “+”.  In the dialog press “Cmd+Shift+G”, enter /usr/bin/codesign, press “Add”.  Do the same for /usr/bin/xcodebuild.  Save the changes.  While still here, go to the keychain’s settings and increase the lock timeout from 5 to 15 minutes, depending on the build time of the job.  If the timeout is too small, you may get weird errors.  If the timeout is too small, you might get weird errors; the web page author learned that the hard way: “User interaction is not allowed”.
+
+Run the following command:
+
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k keychainPass keychainName
+
+using the correct keychain password and keychain name.
+
+

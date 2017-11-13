@@ -26,9 +26,14 @@
 Created on 11/27/2012
 
 @author: ekkehard
+@change: roy - adding sys.path.append for both test framework and individual
+               test runs.
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.logdispatcher_lite import LogPriority
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment

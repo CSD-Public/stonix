@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>PayloadIdentifier</key>
+		<string>gov.lanl.stonix4mac.macOS.High.Sierra.10.13.fisma.low</string>
+		<key>PayloadRemovalDisallowed</key>
+		<false/>
+		<key>PayloadScope</key>
+		<string>System</string>
+		<key>PayloadType</key>
+		<string>Configuration</string>
+		<key>PayloadUUID</key>
+		<string>f51a8380-f856-0134-3667-003ee1c6943d</string>
+		<key>PayloadOrganization</key>
+		<string>Los Alamos National Laboratory</string>
+		<key>PayloadVersion</key>
+		<integer>1</integer>
+		<key>PayloadDisplayName</key>
+		<string>stonix4mac FISMA Low Passcode Configuration Profile for macOS High Sierra 10.13</string>
+		<key>PayloadDescription</key>
+		<string>This Passcode Configuration Profile implements stonix4mac Passcode Configuration required for FISMA Low Level.</string>
+		<key>PayloadContent</key>
+		<array>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.mobiledevice.passwordpolicy</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>gov.lanl.stonix4mac.macOS.High.Sierra.10.13.fisma.low.1e035700-f858-0134-3668-003ee1c6943d</string>
+				<key>PayloadUUID</key>
+				<string>1e035700-f858-0134-3668-003ee1c6943d</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadDisplayName</key>
+				<string>Passcode</string>
+				<key>allowSimple</key>
+				<true/>
+				<key>forcePIN</key>
+				<true/>
+				<key>requireAlphanumeric</key>
+				<true/>
+				<key>minLength</key>
+				<integer>8</integer>
+				<key>minComplexChars</key>
+				<integer>1</integer>
+				<key>maxPINAgeInDays</key>
+				<integer>180</integer>
+				<key>pinHistory</key>
+				<integer>5</integer>
+				<key>maxGracePeriod</key>
+				<integer>15</integer>
+				<key>maxFailedAttempts</key>
+				<integer>5</integer>
+				<key>minutesUntilFailedLoginReset</key>
+				<integer>15</integer>
+			</dict>
+		</array>
+	</dict>
+</plist>

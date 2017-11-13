@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,21 +33,23 @@ dictionary
 @change: 2015/10/07 eball - Help text cleanup
 @change: 2015/11/02 eball - Added undo events to package installation
 @change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
+@change: 2017/10/24 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 import os
 import traceback
-from ..ruleKVEditor import RuleKVEditor
+from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
 from ..localize import MACKRB5, LINUXKRB5
 
 
-class ConfigureKerberos(RuleKVEditor):
+class ConfigureKerberos(Rule):
     '''
     @author: ekkehard j. koch
     '''
@@ -55,18 +57,17 @@ class ConfigureKerberos(RuleKVEditor):
 ###############################################################################
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logdispatcher,
+        Rule.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 255
         self.rulename = 'ConfigureKerberos'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule configures Kerberos on your system, " + \
-            "based on the settings in the localize.py file."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -78,7 +79,7 @@ class ConfigureKerberos(RuleKVEditor):
                            "permissions": 0644,
                            "owner": os.getuid(),
                            "group": "wheel",
-                           "eventid": str(self.rulenumber).zfill(4) + "kerb5"},
+                           "eventid": str(self.rulenumber).zfill(4) + "krb5"},
                           "edu.mit.Kerberos":
                           {"path": "/Library/Preferences/edu.mit.Kerberos",
                            "remove": True,
@@ -125,13 +126,16 @@ class ConfigureKerberos(RuleKVEditor):
                            "group": "root",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"}}
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fh = FileHelper(self.logdispatch, self.statechglogger)
         if self.environ.getosfamily() == 'linux':
                 self.ph = Pkghelper(self.logdispatch, self.environ)
         self.filepathToConfigure = []
         for filelabel, fileinfo in sorted(self.files.items()):
-            self.filepathToConfigure.append(fileinfo["path"])
+            if fileinfo["remove"]:
+                msg = "Remove if present " + str(fileinfo["path"])
+            else:
+                msg = "Add or update if needed " + str(fileinfo["path"])
+            self.filepathToConfigure.append(msg)
             self.fh.addFile(filelabel,
                             fileinfo["path"],
                             fileinfo["remove"],
@@ -144,12 +148,31 @@ class ConfigureKerberos(RuleKVEditor):
         # Configuration item instantiation
         datatype = "bool"
         key = "CONFIGUREFILES"
-        instructions = "When Enabled Add/Remove/Update these files: " + \
+        instructions = "When Enabled will fix these files: " + \
             str(self.filepathToConfigure)
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
+        '''
+        run report actions for configure kerberos
+        determine compliance status of the current system
+        return True if compliant, False if non-compliant
+
+        @return: self.compliant
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 2/23/2017 - added doc string; added const checks preamble to report and fix methods
+        '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [MACKRB5, LINUXKRB5]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constants: MACKRB5, LINUXKRB5, in localize.py, are defined and are not None. This rule will not function without them."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         try:
             compliant = True
             self.detailedresults = ""
@@ -190,6 +213,23 @@ class ConfigureKerberos(RuleKVEditor):
 ###############################################################################
 
     def fix(self):
+        '''
+        run fix actions
+
+        @return: fixsuccess
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 2/23/2017 - added doc string; added checkconsts preamble to ensure
+                the rule does not attempt to run without requied information (from localize.py)
+        '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [MACKRB5, LINUXKRB5]
+        if not self.checkConsts(constlist):
+            fixsuccess = False
+            self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+            return fixsuccess
+
         try:
             fixsuccess = True
             self.detailedresults = ""
@@ -199,24 +239,27 @@ class ConfigureKerberos(RuleKVEditor):
                 self.statechglogger.deleteentry(event)
 
             if self.ci.getcurrvalue():
+                pkgsToInstall = []
                 if self.environ.getosfamily() == 'linux':
                     for package in self.packages:
                         if not self.ph.check(package):
                             if self.ph.checkAvailable(package):
-                                if self.ph.install(package):
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator,
-                                                   self.rulenumber)
-                                    event = {"eventtype": "pkghelper",
-                                             "pkgname": package,
-                                             "startstate": "removed",
-                                             "endstate": "installed"}
-                                    self.statechglogger.recordchgevent(myid,
-                                                                       event)
-                                else:
-                                    fixsuccess = False
-                                    self.detailedresults += "Installation of " + \
-                                        package + " did not succeed.\n"
+                                pkgsToInstall.append(package)
+                    for package in pkgsToInstall:
+                        if self.ph.install(package):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator,
+                                           self.rulenumber)
+                            event = {"eventtype": "pkghelper",
+                                     "pkgname": package,
+                                     "startstate": "removed",
+                                     "endstate": "installed"}
+                            self.statechglogger.recordchgevent(myid,
+                                                               event)
+                        else:
+                            fixsuccess = False
+                            self.detailedresults += "Installation of " + \
+                                package + " did not succeed.\n"
                 if not self.fh.fixFiles():
                     fixsuccess = False
                     self.detailedresults += self.fh.getFileMessage()

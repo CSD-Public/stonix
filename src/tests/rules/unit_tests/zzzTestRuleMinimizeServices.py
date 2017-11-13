@@ -26,9 +26,15 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
+import re
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
@@ -51,7 +57,19 @@ class zzzTestRuleMinimizeServices(RuleTest):
         pass
 
     def runTest(self):
-        self.simpleRuleTest()
+        if re.search("opensuse", self.environ.getostype().lower()):
+            self.rule.report()
+            self.assertTrue(self.rule.fix(), "MinimizeServices.fix failed")
+            self.rule.report()
+            if not self.rule.compliant:
+                match = re.search("services detected: (.*?)avahi-daemon(.*)",
+                                  self.rule.detailedresults)
+                for group in match.groups():
+                    self.assertTrue(re.search("^\s*$", group),
+                                    "Unauthorized running service detected: " +
+                                    group.strip())
+        else:
+            self.simpleRuleTest()
 
     def setConditionsForRule(self):
         '''
@@ -72,9 +90,9 @@ class zzzTestRuleMinimizeServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -87,7 +105,7 @@ class zzzTestRuleMinimizeServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -100,11 +118,10 @@ class zzzTestRuleMinimizeServices(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

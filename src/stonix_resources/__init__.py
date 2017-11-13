@@ -43,6 +43,7 @@ import stonixutilityfunctions
 import view
 import stonixexp
 import program_arguments
+import rules
 try:
     import gui
 except(ImportError):

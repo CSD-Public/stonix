@@ -27,48 +27,55 @@ Created on Nov 24, 2015
 '''
 import os
 import re
-import time
 import hashlib
-import httplib
-import urllib
 import urllib2
 import shutil
 import plistlib
 import tempfile
 import traceback
+import ctypes as C
+
 from localize import MACREPOROOT
-from re import search
 from logdispatcher import LogPriority
-from subprocess import Popen, call, PIPE, STDOUT
 from CommandHelper import CommandHelper
-from stonixutilityfunctions import set_no_proxy, has_connection_to_server
 from Connectivity import Connectivity
-from urllib2 import URLError
+from ssl import SSLError
 
-def NoRepoException(Exception):
-    """
-    Custom Exception    
-    """
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
 
-def InvalidURL(Exception):
+class NoRepoException(Exception):
     """
-    Custom Exception    
+    Custom Exception
     """
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
+
+class InvalidURL(Exception):
+    """
+    Custom Exception
+    """
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
+
+class NotApplicableToThisOS(Exception):
+    """
+    Custom Exception
+    """
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+
 
 class MacPkgr(object):
-    
+
     def __init__(self, environ, logger):
         '''
         Mac package manager based on other stonix package managers.
-        
+
         Uses the stonix IHmac and InstallingHelper Libraries.  They can
         install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
         https URL
-        
+
         @parameter: Instanciated stonix Environment object
         @parameter: Instanciated stonix LogDispatcher object
         @parameter: Takes an https link as a repository.
@@ -77,34 +84,52 @@ class MacPkgr(object):
         @method: removepackage(package) - remove a package
         @method: checkInstall(package) - is the package installed?
         @method: checkAvailable(package) - is it available on the repository?
-        @method: getInstall(package) - 
-        @method: getRemove(package) - 
-        
+        @method: getInstall(package) -
+        @method: getRemove(package) -
+
         # Methods specific to Mac.
         @method: findDomain(package) - see docstring
-        
+
         @note: Uses the stonix IHmac and InstallingHelper Libraries.  They can
                install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
                https URL
-        
-        @note: WARNING: To use checkInstall or removepackage, this package 
-               manager converts all of the plists in the /var/db/receipts 
-               directory to text, then converts they all back to binary when it
-               is done performing a reverse lookup to find if a specific package
-               is installed. I would love to use Greg Neagle's 
-               FoundationPlist.py, but licenses are not compatible.
 
+        @note: WARNING: To use checkInstall or removepackage, this package
+               manager converts all of the plists in the /var/db/receipts
+               directory to text, then converts they all back to binary when it
+               is done performing a reverse lookup to find if a specific
+               package is installed. I would love to use Greg Neagle's
+               FoundationPlist.py, but licenses are not compatible.
+        @change: Breen Malmberg - 2/28/2017 - Made the missing macreporoot message more
+                clear and helpful; added logic to also check if it is 'None'
         '''
+
         self.environ = environ
+
+        self.osfamily = self.environ.getosfamily()
+        if not re.match("^darwin$", self.osfamily.strip()):
+            return
+
+        #####
+        # setting up to call ctypes to do a filesystem sync
+        if self.environ.getosfamily() == "darwin":
+            self.libc = C.CDLL("/usr/lib/libc.dylib")
+        else:
+            self.libc = None
+
         self.logger = logger
         self.detailedresults = ""
         self.pkgUrl = ""
+        self.reporoot = ""
         if not MACREPOROOT:
-            raise NoRepoException
+            raise NoRepoException("Please ensure that the constant, MACREPOROOT, is properly defined in localize.py and is not set to 'None'")
+        elif MACREPOROOT == None:
+            raise NoRepoException("Please ensure that the constant, MACREPOROOT, is properly defined in localize.py and is not set to 'None'")
         else:
             self.reporoot = MACREPOROOT
         self.dotmd5 = True
-        self.logger.log(LogPriority.DEBUG, "Done initializing MacPkgr class...")
+        self.logger.log(LogPriority.DEBUG,
+                        "Done initializing MacPkgr class...")
         self.ch = CommandHelper(self.logger)
         self.connection = Connectivity(self.logger)
 
@@ -115,25 +140,35 @@ class MacPkgr(object):
         Install a package. Return a bool indicating success or failure.
 
         @param string package : Path to the package past the REPOROOT
-        
+
         IE. package would be: QuickAdd.Stonix.pkg rather than:
-            https://jss.lanl.gov/CasperShare/QuickAdd.Stonix.pkg 
+            https://jss.lanl.gov/CasperShare/QuickAdd.Stonix.pkg
             \_____________________________/ \________________/
                             |                        |
                         REPOROOT                  package
-                        
-        Where REPOROOT is initialized in the class __init__, and package is 
+
+        Where REPOROOT is initialized in the class __init__, and package is
         passed in to this method
-        
+
         This assumes that all packages installed via an instance of this class
         will be retrieved from the same REPOROOT.  If you need to use another
         REPOROOT, please use another instance of this class.
-        
-        @return bool :
-        @author: dwalker, rsn
+
+        @return success
+        @rtype: bool
+        @author: dwalker, Roy Nielsen
+        @change: Breen Malmberg - 2/28/2017 - added logic to handle case where
+                self.reporoot is undefined; added logging; minor doc string edit
         '''
+
         success = False
+
+        if not self.reporoot:
+            self.logger.log(LogPriority.WARNING, "No MacRepoRoot defined! Unable to determine package URL!")
+            return success
+
         try:
+
             self.package = package
             #####
             # Create a class variable that houses the whole URL
@@ -145,8 +180,6 @@ class MacPkgr(object):
             self.logger.log(LogPriority.DEBUG, message)
 
             if re.search("://", self.pkgUrl):
-                        
-
                 if self.connection.isPageAvailable(self.pkgUrl):
                     #####
                     # Download into a temporary directory
@@ -156,47 +189,52 @@ class MacPkgr(object):
                         # Apple operating systems have a lazy attitude towards
                         # writing to disk - the package doesn't get fully
                         # written to disk until the following method is called.
-                        # Otherwise when the downloaded package is further 
-                        # manipulated, (uncompressed or installed) the 
-                        # downloaded file is not there.  There may be other 
+                        # Otherwise when the downloaded package is further
+                        # manipulated, (uncompressed or installed) the
+                        # downloaded file is not there.  There may be other
                         # ways to get python to do the filesystem sync...
-                        self.fssync()
+                        try:
+                            self.libc.sync()
+                        except:
+                            pass
                         #####
-                        # Make sure the md5 of the file matches that of the 
+                        # Make sure the md5 of the file matches that of the
                         # server
                         if self.checkMd5():
                             #####
                             # unarchive if necessary
-                            compressed = [".tar", ".tar.gz", ".tgz", 
+                            compressed = [".tar", ".tar.gz", ".tgz",
                                           ".tar.bz", ".tbz", ".zip"]
                             for extension in compressed:
                                 if self.tmpLocalPkg.endswith(extension):
                                     self.unArchive()
-                                    self.fssync()
+                                try:
+                                    self.libc.sync()
+                                except:
+                                    pass
                             #####
-                            # The unArchive renames self.tmpLocalPkg to the 
+                            # The unArchive renames self.tmpLocalPkg to the
                             # actual software to install that is inside the
                             # package.
                             #
-                            # install - if extension is .app, copy to the 
+                            # install - if extension is .app, copy to the
                             #           /Applications folder, otherwise if it
-                            #           is a .pkg or .mpkg use the installer 
+                            #           is a .pkg or .mpkg use the installer
                             #           command
                             if self.tmpLocalPkg.endswith(".app"):
                                 success = self.copyInstall()
-                                
-                            elif self.tmpLocalPkg.endswith (".pkg") or \
-                                 self.tmpLocalPkg.endswith (".mpkg"):
+
+                            elif self.tmpLocalPkg.endswith(".pkg") or \
+                                 self.tmpLocalPkg.endswith(".mpkg"):
                                 success = self.installPkg()
             else:
                 #####
                 # Otherwise the repository is on a mounted filesystem
-                self.logger.log(LogPriority.DEBUG, "Looking for a local " + \
+                self.logger.log(LogPriority.DEBUG, "Looking for a local " +
                                                    "filesystem repo...")
                 self.tmpLocalPkg = self.reporoot + self.package
-                
 
-        except(KeyboardInterrupt,SystemExit):
+        except (KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
@@ -204,15 +242,18 @@ class MacPkgr(object):
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             raise err
         if success:
-            self.fssync()
+            try:
+                self.libc.sync()
+            except:
+                pass
         return success
-            
+
     ###########################################################################
 
     def getPkgUrl(self):
         """
         Setter for the class varialbe pkgUrl
-        
+
         @author: Roy Nielsen
         """
         return self.pkgUrl
@@ -222,7 +263,7 @@ class MacPkgr(object):
     def setPkgUrl(self, pkgUrl=""):
         """
         Setter for the class varialbe pkgUrl
-        
+
         @author: Roy Nielsen
         """
         self.pkgUrl = pkgUrl
@@ -233,12 +274,12 @@ class MacPkgr(object):
         '''
         Remove a package domain. Return a bool indicating success or failure.
         Not yet implemented...
-        
+
         Will use pkgutil to determine domain, then delete files in receipt..
-        
-        @param string package : Name of the package to be removed, must be 
+
+        @param string package : Name of the package to be removed, must be
             recognizable to the underlying package manager.
-            
+
         @return bool :
         @author: rsn
         '''
@@ -248,111 +289,122 @@ class MacPkgr(object):
             self.logger.log(LogPriority.DEBUG, "Package: " + str(package))
             domain = None
             domain = self.findDomain(package)
-            self.logger.log(LogPriority.DEBUG, "removePackage - Domain: " + domain)
+            self.logger.log(LogPriority.DEBUG,
+                            "removePackage - Domain: " + domain)
             if domain:
-                cmd_one = ["/usr/sbin/pkgutil", 
-                           "--only-files", 
-                           "--files", 
+                cmd_one = ["/usr/sbin/pkgutil",
+                           "--only-files",
+                           "--files",
                            domain]
-                cmd_two = ["/usr/sbin/pkgutil", 
-                           "--only-dirs", 
-                           "--files", 
+                cmd_two = ["/usr/sbin/pkgutil",
+                           "--only-dirs",
+                           "--files",
                            domain]
-        
+
                 #####
-                # Use the pkgutil command to get a list of files in the package 
+                # Use the pkgutil command to get a list of files in the package
                 # receipt
                 count = 0
                 self.ch.executeCommand(cmd_one)
                 files2remove = self.ch.getOutputString().split("\n")
                 print "Files to remove: " + str(files2remove)
                 self.logger.log(LogPriority.DEBUG, files2remove)
-                if self.ch.getReturnCode() == 0:
+                if str(self.ch.getReturnCode()) == str(0):
                     for file in files2remove:
                         if file:
                             try:
                                 #####
-                                # Make sure "/" is prepended to the file as pkgutil
-                                # does not report the first "/" in the file path
+                                # Make sure "/" is prepended to the file as
+                                # pkgutil does not report the first "/" in the
+                                # file path
                                 os.remove(install_root + file)
                                 count = count + 1
                             except OSError, err:
-                                self.logger.log(LogPriority.DEBUG, 
-                                                "Error trying to remove: " + \
+                                self.logger.log(LogPriority.DEBUG,
+                                                "Error trying to remove: " +
                                                 str(file))
-                                self.logger.log(LogPriority.DEBUG, 
-                                                "With Exception: " + \
+                                self.logger.log(LogPriority.DEBUG,
+                                                "With Exception: " +
                                                 str(err))
                         else:
                             #####
                             # Potentially empty filename in the list, need to
                             # bump the count to match.
                             count = count + 1
-        
+
                     #####
                     # Directory list will include directories such as /usr
-                    # and /usr/local... Sucess is obtained only if all of 
+                    # and /usr/local... Sucess is obtained only if all of
                     # the files (not directories) are deleted.
                     if count == len(files2remove):
                         success = True
                     else:
-                        self.logger.log(LogPriority.WARNING, "Count: " + str(count))
-                        self.logger.log(LogPriority.WARNING, "Files removed: " + str(len(files2remove)))
-        
+                        self.logger.log(LogPriority.WARNING,
+                                        "Count: " + str(count))
+                        self.logger.log(LogPriority.WARNING,
+                                        "Files removed: " +
+                                        str(len(files2remove)))
+
                     #####
-                    # Use the pkgutil command to get a list of directories 
+                    # Use the pkgutil command to get a list of directories
                     # in the package receipt
                     self.ch.executeCommand(cmd_two)
                     dirs2remove = self.ch.getOutputString().split("\n")
                     #####
-                    # Reverse list as list is generated with parents first 
+                    # Reverse list as list is generated with parents first
                     # rather than children first.
                     dirs2remove.reverse()
-                    self.logger.log(LogPriority.DEBUG, files2remove)
-                    if self.ch.getReturnCode() == 0:
+                    self.logger.log(LogPriority.DEBUG, dirs2remove)
+                    if str(self.ch.getReturnCode()) == str(0):
                         for dir in dirs2remove:
                             if dir:
                                 try:
                                     #####
-                                    # Make sure "/" is prepended to the directory 
+                                    # Make sure "/" is prepended to the directory
                                     # tree as pkgutil does not report the first "/"
                                     # in the file path
                                     os.rmdir(install_root + dir)
                                     #####
                                     # We don't care if any of the child directories
-                                    # still have files, as directories such as 
-                                    # /usr/bin, /usr/local/bin are reported by 
-                                    # pkgutil in the directory listing, which is 
+                                    # still have files, as directories such as
+                                    # /usr/bin, /usr/local/bin are reported by
+                                    # pkgutil in the directory listing, which is
                                     # why we use os.rmdir rather than shutil.rmtree
                                     # and we don't report on the success or failure
                                     # of removing directories.
                                 except OSError, err:
-                                    self.logger.log(LogPriority.DEBUG, 
-                                                    "Error trying to remove: " + \
-                                                    str(dir))
-                                    self.logger.log(LogPriority.DEBUG, 
-                                                    "With Exception: " + str(err))
+                                    self.logger.log(LogPriority.DEBUG,
+                                                    "Error trying to remove: "
+                                                    + str(dir))
+                                    self.logger.log(LogPriority.DEBUG,
+                                                    "With Exception: " +
+                                                    str(err))
                                     pass
-                    
+
                         #####
                         # Make the system package database "forget" the package
                         # was installed.
                         cmd_three = ["/usr/sbin/pkgutil", "--forget", domain]
                         self.ch.executeCommand(cmd_three)
-                        if re.match("^%s$"%str(self.ch.getReturnCode()).strip(), str(0)):
+                        if re.match("^%s$" %
+                                    str(self.ch.getReturnCode()).strip(),
+                                    str(0)):
                             success = True
                 else:
-                    self.logger.log(LogPriority.DEBUG, "Page: \"" + \
+                    self.logger.log(LogPriority.DEBUG, "Page: \"" +
                                     str(package) + "\" Not found")
-                    
-        except(KeyboardInterrupt,SystemExit):
+
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         if success:
-            self.fssync()
+            try:
+                self.libc.sync()
+            except:
+                pass
         print "Remove Package success: " + str(success)
         return success
 
@@ -360,15 +412,15 @@ class MacPkgr(object):
 
     def checkInstall(self, package):
         '''
-        Check the installation status of a package. Return a bool; True if 
+        Check the installation status of a package. Return a bool; True if
         the package is installed.
 
         Use pkgutil to determine if package has been installed or not.
 
-        @param string package : Name of the package whose installation status 
-            is to be checked, must be recognizable to the underlying package 
+        @param string package : Name of the package whose installation status
+            is to be checked, must be recognizable to the underlying package
             manager.
-            
+
         @return bool :
         @author: rsn
         '''
@@ -381,16 +433,16 @@ class MacPkgr(object):
             self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
             if domain:
                 success = True
-                self.logger.log(LogPriority.DEBUG, 
+                self.logger.log(LogPriority.DEBUG,
                                 "Domain: " + str(domain) + " found")
 
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)   
-        
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+
         return success
 
     ###########################################################################
@@ -398,50 +450,61 @@ class MacPkgr(object):
     def checkAvailable(self, package):
         """
         Check if a package is available at the "reporoot"
-        
+
+        @return: success
+        @rtype: bool
         @author: Roy Nielsen
+        @change: Breen Malmberg - 2/28/2017 - added logic to handle case where
+                self.reporoot is undefined; added logging; minor doc string edit
         """
+
         success = False
         self.package = package
+
+        if not self.reporoot:
+            self.logger.log(LogPriority.WARNING, "No MacRepoRoot defined! Unable to determine package URL!")
+            return success
+
         try:
-            self.logger.log(LogPriority.DEBUG, "Checking if: " +\
+
+            self.logger.log(LogPriority.DEBUG, "Checking if: " +
                             str(package)) + " is available on the server..."
-            self.logger.log(LogPriority.DEBUG, "From repo: " + \
+            self.logger.log(LogPriority.DEBUG, "From repo: " +
                             str(self.reporoot))
-            
+
             self.pkgUrl = self.reporoot + "/" + package
-            
+
             # If there network, install, else no network, log
             if self.connection.isPageAvailable(self.pkgUrl):
-                self.logger.log(LogPriority.DEBUG, "There is a connection to" + \
-                                                  " the server...")
+                self.logger.log(LogPriority.DEBUG, "There is a connection to" +
+                                                   " the server...")
                 #####
                 # Download the file
                 self.downloadPackage()
-                
+
                 #####
-                # Perform a md5 checksum - if there is a match, return 
+                # Perform a md5 checksum - if there is a match, return
                 # success = True
                 if self.checkMd5():
                     success = True
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)   
-        
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+
         return success
 
     ###########################################################################
 
-    def getInstall(self):
-        return self.install
+    def getInstall(self, package):
+        return self.installPackage(package)
 
     ###########################################################################
 
-    def getRemove(self):
-        return self.remove
+    def getRemove(self, package):
+        return self.removePackage(package)
 
     ###########################################################################
 
@@ -451,21 +514,21 @@ class MacPkgr(object):
         a domain.  Apple stores package information in "domain" format, rather
         than a package name format. Accessing the package name means we need to
         look through all the ".plist" files in /var/db/receipts to find the
-        package name, then we can return the domain so that can be used for 
+        package name, then we can return the domain so that can be used for
         package management.
-        
+
         Install package receipts can be found in /var/db/receipts.
-        
+
         A domain is the filename in the receipts database without the ".plist"
         or ".bom".
-        
+
         An example is org.macports.MacPorts
-        
+
         @parameters: pkg - the name of the install package that we need the
                      domain for.
         @returns: domains - the first domain in a possible list of domains.
-        
-        @author: Roy Nielsen 
+
+        @author: Roy Nielsen
         """
         try:
             self.logger.log(LogPriority.DEBUG, "Looking for: " + str(pkg))
@@ -477,101 +540,66 @@ class MacPkgr(object):
                    os.path.isfile(os.path.join(path, name)) and \
                    name.endswith(".plist"):
                     files.append(name)
-    
+
             unwrap = "/usr/bin/plutil -convert xml1 /var/db/receipts/*.plist"
             wrap = "/usr/bin/plutil -convert binary1 /var/db/receipts/*.plist"
-    
+
             self.ch.executeCommand(unwrap)
-            
-            if not re.match("^%s$"%self.ch.getReturnCode(), str(0)):
+
+            if not re.match("^%s$" % str(self.ch.getReturnCode()), str(0)):
                 #####
                 # Unwrap command didn't work... return None
                 domain = None
             else:
-                self.fssync()
+                try:
+                    self.libc.sync()
+                except:
+                    pass
                 #####
                 # Unwrap command worked, process the receipt plists
                 for afile in files:
+                    if re.match("^\..+.plist", afile):
+                        continue
+                    self.logger.log(LogPriority.DEBUG, "afile: " + str(afile))
                     #####
                     # Get the path without the plist file extension.
                     afile_path = os.path.join(path, afile)
                     #####
-                    # Make sure we have a valid file on the filesystem 
+                    # Make sure we have a valid file on the filesystem
                     if os.path.isfile(afile_path):
                         try:
                             plist = plistlib.readPlist(afile_path)
                         except Exception, err:
-                            self.logger.log(LogPriority.DEBUG, "Exception " + \
-                                                               "trying to use" + \
-                                                               " plistlib: " + \
+                            self.logger.log(LogPriority.DEBUG, "Exception " +
+                                                               "trying to use" +
+                                                               " plistlib: " +
                                                                str(err))
                             raise err
                         else:
-                            if re.match("^%s$"%plist['PackageFileName'], pkg):
+                            if re.match("^%s$" % plist['PackageFileName'],
+                                        pkg):
                                 #####
-                                # Find the first instance of the PackageFileName
-                                # ... without the .plist..
+                                # Find the first instance of the
+                                # PackageFileName without the .plist.
                                 domain = ".".join(afile.split(".")[:-1])
                                 break
                 #####
                 # Make the plists binary again...
                 self.ch.executeCommand(wrap)
-    
+
                 #####
                 # Log the domain...
                 self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
             print "findDomain: " + str(domain)
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)   
-        
-        return domain
-    
-###############################################################################
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
-    def fssync(self):
-        """
-        The changes to the plists in findDomain are not being sync'd to the
-        filesystem before they are changed back.  PERFORMING A FILESYSTEM
-        SYNC before trying to read the plists after converting them to xml1
-        IS REQUIRED. (Operating system filesystem write buffers need to be
-        flushed to disk before the changed files have the new meaning)
-        
-        @author: Roy Nielsen
-        """
-        try:
-            synccmd = []
-            
-            self.ch.executeCommand("/bin/sync")
-            if self.ch.getReturnCode() != 0:
-                self.logger.log(LogPriority.DEBUG, "Problem trying to perform " + \
-                                                   "filesystem sync...")
-                print "Problem Jim............."
-            else:
-                time.sleep(1)
-                self.ch.executeCommand("/bin/sync")
-                if self.ch.getReturnCode() != 0:
-                    self.logger.log(LogPriority.DEBUG, "Problem trying to " + \
-                                                       "perform filesystem sync...")
-                else:
-                    time.sleep(1)
-                    self.ch.executeCommand("/bin/sync")
-                    if self.ch.getReturnCode() != 0:
-                        self.logger.log(LogPriority.DEBUG, "Problem trying to " + \
-                                                           "perform filesystem" + \
-                                                           " sync...")
-                    else:
-                        time.sleep(1)
-        except(KeyboardInterrupt,SystemExit):
-            raise
-        except Exception, err:
-            print err
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.INFO, self.detailedresults)   
-        
+        return domain
+
     ###########################################################################
 
     def downloadPackage(self):
@@ -591,100 +619,121 @@ class MacPkgr(object):
             if self.pkgUrl:
                 #####
                 # Make a temporary directory to download the package
-                try :
+                try:
                     self.tmpDir = tempfile.mkdtemp()
-                    self.logger.log(LogPriority.DEBUG, "tmpDir: " + \
+                    self.logger.log(LogPriority.DEBUG, "tmpDir: " +
                                                        str(self.tmpDir))
-                except Exception, err :
+                except Exception, err:
                     message = "Problem creating temporary directory: " + \
                               str(err)
                     self.logger.log(LogPriority.WARNING, message)
                     raise err
-                else:                 
+                else:
                     #####
                     # First try to open the URL
                     if self.connection.isPageAvailable(self.pkgUrl):
-                        urlfile = urllib2.urlopen(self.pkgUrl)
+                        urlfile = urllib2.urlopen(self.pkgUrl, timeout=10)
                         #####
                         # Get just the package name out of the "package" url
                         urlList = self.pkgUrl.split("/")
                         self.pkgName = urlList[-1]
-                        self.tmpLocalPkg = os.path.join(self.tmpDir, 
+                        self.tmpLocalPkg = os.path.join(self.tmpDir,
                                                         self.pkgName)
-                        try :
+                        try:
                             #####
                             # Next try to open a file for writing the local file
                             f = open(str(self.tmpLocalPkg).strip(), "w")
-                        except IOError, err :
+                        except IOError, err:
                             message = "Error opening file - err: " + str(err)
                             self.logger.log(LogPriority.INFO, message)
                             raise err
-                        except Exception, err :
+                        except Exception, err:
                             message = "Generic exception opening file - err: " + \
                                       str(err)
                             self.logger.log(LogPriority.INFO, message)
                             raise err
-                        else :
-                            self.logger.log(LogPriority.DEBUG, "..................")
+                        else:
+                            self.logger.log(LogPriority.DEBUG,
+                                            "..................")
                             #####
-                            # take data out of the url stream and put it in the file
-                            # a chunk at a time - more sane for large files
+                            # take data out of the url stream and put it in the
+                            # file a chunk at a time - more sane for large files
                             chunk = 16 * 1024 * 1024
-                            try:
-                                while 1 :
+                            counter = 0
+                            while 1:
+                                try:
                                     if urlfile:
                                         data = urlfile.read(chunk)
-                                        if not data :
+                                        if not data:
                                             message = "Done reading file: " + \
                                                       self.pkgUrl
-                                            self.logger.log(LogPriority.DEBUG, message)
+                                            self.logger.log(LogPriority.DEBUG,
+                                                            message)
                                             break
                                         f.write(data)
-                                        message = "Read " + str(len(data)) + " bytes"
-                                        self.logger.log(LogPriority.DEBUG, message)
+                                        message = "Read " + str(len(data)) + \
+                                            " bytes"
+                                        self.logger.log(LogPriority.DEBUG,
+                                                        message)
                                     else:
                                         raise IOError("What file???")
-                            except (OSError or IOError), err:
-                                #####
-                                # Catch in case we run out of space on the 
-                                # local system during the download process
-                                message = "IO error: " + str(err)
-                                self.logger.log(LogPriority.INFO, message)
-                                raise err
-                            else:
-                                success = True
+                                except (OSError or IOError), err:
+                                    #####
+                                    # Catch in case we run out of space on the
+                                    # local system during the download process
+                                    message = "IO error: " + str(err)
+                                    self.logger.log(LogPriority.INFO, message)
+                                    raise err
+                                except SSLError:
+                                    # This will catch timeouts. Due to a bug in
+                                    # the urlfile object, it will sometimes not
+                                    # read, and will need to be recreated. The
+                                    # counter ensures that if the error is not
+                                    # a simple timeout, it will not get stuck
+                                    # in an infinite loop.
+                                    counter += 1
+                                    if counter > 3:
+                                        raise
+                                    self.logger.log(LogPriority.DEBUG,
+                                                    "Connection timed out. " +
+                                                    "Creating new urlfile " +
+                                                    "object.")
+                                    urlfile = urllib2.urlopen(self.pkgUrl,
+                                                              timeout=10)
+                                else:
+                                    success = True
                             f.close()
                         urlfile.close()
                     else:
                         message = "Error opening the URL: " + str(self.pkgUrl)
-                        self.logger.log(LogPriority.DEBUG, message)                        
+                        self.logger.log(LogPriority.DEBUG, message)
             else:
                 message = "Need a valid package url. Can't download nothing..."
                 self.logger.log(LogPriority.DEBUG, message)
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.INFO, self.detailedresults)   
+            self.logger.log(LogPriority.INFO, self.detailedresults)
         return success
-                    
+
     ###########################################################################
 
     def checkMd5(self):
         """
         Validate that the MD5 of the file is the same as the one on the server,
         for consistency's sake, ie we got a good download.
-        
-        Takes an MD5 of the local file, then appends it to the filename with a 
-        ".", then does a request and getreqpose and checks for a "200 in the 
+
+        Takes an MD5 of the local file, then appends it to the filename with a
+        ".", then does a request and getreqpose and checks for a "200 in the
         response.status field.
-        
+
         .<filename>.<UPPER-md5sum>
-        
-        Specific to the Casper server for Macs.  If you want to override this 
+
+        Specific to the Casper server for Macs.  If you want to override this
         method for another OS, subclass this class, or rewrite the function.
-        
+
         @author: Roy Nielsen
         """
         success = False
@@ -695,7 +744,7 @@ class MacPkgr(object):
                 # Generate the name of the hash using the generated md5
                 hashname = "." + self.package + \
                            "." + str(myhash).upper().strip()
-                
+
                 message = "Hashname: " + str(hashname).strip()
                 self.logger.log(LogPriority.DEBUG, message)
 
@@ -705,22 +754,22 @@ class MacPkgr(object):
                 del hashUrlList[-1]
                 hashUrlList.append(str(hashname))
                 self.hashUrl = "/".join(hashUrlList)
-                
+
                 self.logger.log(LogPriority.DEBUG, "Page: " + self.hashUrl)
-                
+
                 if self.connection.isPageAvailable(self.hashUrl):
                     success = True
                     message = "Found url: " + str(self.hashUrl)
                 else:
                     message = "Did NOT find url: " + str(self.hashUrl)
                 self.logger.log(LogPriority, message)
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
-        
+
         return success
 
     ###########################################################################
@@ -729,39 +778,40 @@ class MacPkgr(object):
         """
         Get the md5sum of a file on the local filesystem.  Calculate the data
         in chunks in case of large files.
-    
+
         @param: filename - filename to check integrity of
-    
+
         @returns: retval - the md5sum of the file, or -1 if unsuccessful in
                            getting the md5sum
-                       
+
         @author: Roy Nielsen
         """
         success = False
         try:
             retval = None
-            try :
+            try:
                 if os.path.exists(self.tmpLocalPkg):
                     fh = open(self.tmpLocalPkg, 'r')
                 else:
                     raise Exception("Cannot open a non-existing file...")
-            except Exception, err :
-                message = "Cannot open file: " + self.tmpLocalPkg + " for reading."
+            except Exception, err:
+                message = "Cannot open file: " + self.tmpLocalPkg + \
+                    " for reading."
                 self.logger.log(LogPriority.WARNING, message)
                 self.logger.log(LogPriority.WARNING, "Exception : " + str(err))
                 success = False
                 retval = '0'
-            else :
+            else:
                 chunk = 16 * 1024 * 1024
                 m = hashlib.md5()
-                while True :
+                while True:
                     data = fh.read(chunk)
-                    if not data :
+                    if not data:
                         break
                     m.update(data)
                 retval = m.hexdigest()
-    
-        except(KeyboardInterrupt,SystemExit):
+
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
@@ -769,23 +819,23 @@ class MacPkgr(object):
             self.logger.log(LogPriority.INFO, self.detailedresults)
         else:
             success = True
-        
+
         return success, str(retval).strip()
 
     ###########################################################################
 
-    def unArchive(self) :
+    def unArchive(self):
         """
         Unarchive tar, tar.gz, tgz, tar.bz, and zip files.  Using tarfile and
         zipfile libraries
 
-        @Note: Will look for the first "*.app" or "*.pkg", and use that as the 
-               self.tmpLocalPkg that the rest of the class will use to try to 
-               install.  This way the compressed file can be named something 
+        @Note: Will look for the first "*.app" or "*.pkg", and use that as the
+               self.tmpLocalPkg that the rest of the class will use to try to
+               install.  This way the compressed file can be named something
                different than the actual package to install.  This means that
                the compressed package can be named generically and a specified
                version is in the compressed file.
-               
+
                Caution - This means when removing the package means you need to
                know the name of the package inside the compressed file to
                remove the installed file.
@@ -801,94 +851,99 @@ class MacPkgr(object):
             for extension in tars:
                 if filename.endswith(extension):
                     inTarList = True
-                
-            if re.match("^\s*$", filename) :
-                self.logger.log(LogPriority.DEBUG, \
+
+            if re.match("^\s*$", filename):
+                self.logger.log(LogPriority.DEBUG,
                                 "Emtpy archive name, cannot uncompress.")
                 retval = -1
-            elif inTarList :
+            elif inTarList:
                 import tarfile
-                try :
+                try:
                     #####
                     # Open the tar file to prepare for extraction
                     tar = tarfile.open(filename)
-                    try :
+                    try:
                         message = "file: " + filename + ", dest: " + destination
                         self.logger.log(LogPriority.DEBUG, message)
                         #####
                         # Extract the tarball at the "destination" location
                         tar.extractall(destination)
-                    except (OSError|IOError), err :
+                    except (OSError | IOError), err:
                         message = "Error extracting archive: " + str(err)
                         self.logger.log(LogPriority.WARNING, message)
                         raise err
-                except Exception, err :
+                except Exception, err:
                     message = "Error opening archive: " + str(err)
                     self.logger.log(LogPriority.DEBUG, message)
                     raise err
-                else :
+                else:
                     tar.close()
                     retval = 0
-    
-            elif filename.endswith("zip") :
+
+            elif filename.endswith("zip"):
                 ###############################################
                 # Process if it a zip file.
                 #
-                # partial reference at: http://stackoverflow.com/questions/279945/set-permissions-on-a-compressed-file-in-python
+                # partial reference at:
+                # http://stackoverflow.com/questions/279945/set-permissions-on-a-compressed-file-in-python
                 import zipfile
                 #####
                 # create a zipfile object, method for python 2.5:
                 # http://docs.python.org/release/2.5.2/lib/module-zipfile.html
-                # Use this type of method as without it the unzipped permissions
-                # aren't what they are supposed to be.
+                # Use this type of method as without it the unzipped
+                # permissions aren't what they are supposed to be.
                 uzfile = zipfile.ZipFile(filename, "r")
-                if zipfile.is_zipfile(filename) :
+                if zipfile.is_zipfile(filename):
                     #####
                     # if the file is a zipfile
                     #
-                    #list the files inside the zipfile
-                    #for internal_filename in uzfile.namelist():
-                    for ifilename in uzfile.filelist :
+                    # list the files inside the zipfile
+                    # for internal_filename in uzfile.namelist():
+                    for ifilename in uzfile.filelist:
                         perm = ((ifilename.external_attr >> 16L) & 0777)
                         internal_filename = ifilename.filename
                         message = "extracting file: " + str(internal_filename)
                         self.logger.log(LogPriority.DEBUG, message)
                         #####
                         # Process directories first
-                        if internal_filename.endswith("/") :
+                        if internal_filename.endswith("/"):
                             #####
-                            # if a directory is found, create it (zipfile doesn't)
-                            try :
-                                os.makedirs(os.path.join(destination, internal_filename.strip("/")), perm)
-                            except OSError, err :
+                            # if a directory is found, create it (zipfile
+                            # doesn't)
+                            try:
+                                os.makedirs(os.path.join(destination,
+                                                         internal_filename.strip("/")),
+                                            perm)
+                            except OSError, err:
                                 message = "Error making directory: " + str(err)
                                 self.logger.log(LogPriority.DEBUG, message)
                                 raise err
-                            else :
+                            else:
                                 continue
                         #####
                         # Now process if it is not a directoy
-                        try :
+                        try:
                             contents = uzfile.read(internal_filename)
-                        except RuntimeError, err :
+                        except RuntimeError, err:
                             #####
-                            # Calling read() on a closed ZipFile will raise a 
+                            # Calling read() on a closed ZipFile will raise a
                             # RuntimeError
-                            self.logger.log(LogPriority.DEBUG, 
-                                        ["InstallingHelper.un_archive",
-                                            "Called read on a closed ZipFile: " + str(err)])
+                            self.logger.log(LogPriority.DEBUG,
+                                            ["InstallingHelper.un_archive",
+                                             "Called read on a closed ZipFile: "
+                                             + str(err)])
                             raise err
-                        else :
-                            try :
+                        else:
+                            try:
                                 #####
-                                # using os.open as regular open doesn't give the 
-                                # ability to set permissions on a file.
-                                unzip_file = os.path.join(destination, 
+                                # using os.open as regular open doesn't give
+                                # the ability to set permissions on a file.
+                                unzip_file = os.path.join(destination,
                                                           internal_filename)
-                                target = os.open(unzip_file, os.O_CREAT | \
-                                                             os.O_WRONLY, 
-                                                             perm)
-                                try :
+                                target = os.open(unzip_file,
+                                                 os.O_CREAT | os.O_WRONLY,
+                                                 perm)
+                                try:
                                     #####
                                     # when an exception is thrown in the try block, the
                                     # execution immediately passes to the finally block
@@ -897,28 +952,29 @@ class MacPkgr(object):
                                     # handled in the except statements if present in
                                     # the next higher layer of the try-except statement
                                     os.write(target, contents)
-                                finally :
+                                finally:
                                     os.close(target)
-                            except OSError, err :
+                            except OSError, err:
                                 message = "Error opening file for writing: " + \
                                           str(err)
                                 self.logger.log(LogPriority.WARNING, message)
                                 raise err
                     uzfile.close()
-                    if not retval < -1 :
-                        # if there was not an error creating a directory as part of
-                        # the unarchive process
+                    if not retval < -1:
+                        # if there was not an error creating a directory as
+                        # part of the unarchive process
                         retval = 0
-                else :
+                else:
                     # Not a zipfile based on the file's "magic number"
-                    self.logger.log(LogPriority.DEBUG, 
-                                        ["InstallingHelper.un_archive",
-                                    "file: " + filename + " is not a zipfile."])
+                    self.logger.log(LogPriority.DEBUG,
+                                    ["InstallingHelper.un_archive",
+                                     "file: " + filename +
+                                     " is not a zipfile."])
                     retval = -1
             #####
             # Find the first item in the directory that is a .app | .pkg | .mpkg
             # Use that as the self.tmpLocalPkg that the rest of the class will
-            # use to try to install.  This way the compressed file can be 
+            # use to try to install.  This way the compressed file can be
             # named something different than the actual package to install.
             # This means that the compressed package can be named generically
             # and a specified version is in the compressed file.
@@ -932,26 +988,26 @@ class MacPkgr(object):
                    re.search(".mpkg", myfile):
                     self.tmpLocalPkg = self.tmpDir + "/" + str(myfile)
                     break
-    
-        except(KeyboardInterrupt,SystemExit):
+
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.INFO, self.detailedresults)   
-        
+            self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return retval
 
     ###########################################################################
 
     def copyInstall(self, dest="/Applications", isdir=True, mode=0775,
-                     owner="root", group="admin"):
+                    owner="root", group="admin"):
         """
         Copies a directory tree, or contents of a directory to "dest"
         destination.
 
         @param: dest - the destination to copy to
-        @param: isdir - do we recursively copy the source directory, or the 
+        @param: isdir - do we recursively copy the source directory, or the
                         files inside the source directory (not including
                         recursive directories)
         @param: mode - the mode of the destination directory (it is assumed
@@ -965,8 +1021,8 @@ class MacPkgr(object):
                        correct permissions) - only valid if isdir=True
 
         local vars:
-        self.tmpDir = the temporary directory that is created for the downloaded
-                      file, and to unarchive it into.
+        self.tmpDir = the temporary directory that is created for the
+                      downloaded file, and to unarchive it into.
         self.sig_match = A variable that tells if the signature of the
                          downloaded file and the server string match.  Set
                          in the download_and_prepare method of the parent
@@ -975,13 +1031,13 @@ class MacPkgr(object):
         @author: Roy Nielsen
         """
         try:
-            if re.match("^\s*$", self.tmpDir) :
+            if re.match("^\s*$", self.tmpDir):
                 self.tmpDir = "."
-            
+
             src_path = self.tmpDir + "/" + self.pkgName
-    
+
             self.logger.log(LogPriority.DEBUG, "New src_path: " + src_path)
-    
+
             if isdir:
                 try:
                     shutil.copytree(src_path, dest)
@@ -990,13 +1046,13 @@ class MacPkgr(object):
                               " error: " + str(err)
                     self.logger.log(LogPriority.ERROR, message)
                     raise Exception(message)
-                else :
+                else:
                     success = True
                     #####
                     # try to chmod the directory (not recursively)
-                    try :
+                    try:
                         os.chmod(dest, mode)
-                    except OSError, err :
+                    except OSError, err:
                         success = False
                         message = "Unable to change mode: " + str(err)
                         self.logger.log(LogPriority.ERROR, message)
@@ -1005,59 +1061,59 @@ class MacPkgr(object):
                     # UID & GID needed to chown the directory
                     uid = 0
                     gid = 80
-                    try :
+                    try:
                         uid = pwd.getpwnam(owner)[2]
-                    except KeyError, err :
+                    except KeyError, err:
                         success = False
                         message = "Error: " + str(err)
                         self.logger.log(LogPriority.DEBUG, message)
                         raise Exception(message)
-                    try :
+                    try:
                         gid = grp.getgrnam(group)[2]
-                    except KeyError, err :
+                    except KeyError, err:
                         success = False
                         message = "Error: " + str(err)
                         self.logger.log(LogPriority.DEBUG, message)
                         raise Exception(message)
                     #####
                     # Can only chown if uid & gid are int's
-                    if ((type(uid) == type(int())) and \
-                        (type(gid) == type(int()))) :
-                        try :
+                    if ((type(uid) == type(int())) and
+                        (type(gid) == type(int()))):
+                        try:
                             os.chown(dest, uid, gid)
-                        except OSError, err :
+                        except OSError, err:
                             success = False
                             message = "Error: " + str(err)
                             self.logger.log(LogPriority.DEBUG, message)
                             raise Exception(message)
-            else :
-                try :
+            else:
+                try:
                     dir_list = os.listdir(src_path)
-                except OSError, err :
+                except OSError, err:
                     message = "Error listing files from: " + src_path + \
                               " error: " + str(err)
                     self.logger.log(LogPriority.ERROR, message)
                     raise Exception(message)
-                else :
-                    for myfile in dir_list :
-                        try :
+                else:
+                    for myfile in dir_list:
+                        try:
                             shutil.copy2(myfile, dest)
-                        except Exception, err :
+                        except Exception, err:
                             message = "Error copying file: " + myfile + \
                                       " error: " + str(err)
                             self.logger.log(LogPriority.DEBUG, message)
                             raise
                         else:
                             success = True
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.INFO, self.detailedresults)   
+            self.logger.log(LogPriority.INFO, self.detailedresults)
 
         return success
-    
+
     ##########################################################################
 
     def installPkg(self):
@@ -1092,10 +1148,10 @@ class MacPkgr(object):
                self.tmpLocalPkg.endswith(".mpkg"):
                 #####
                 # set up the install package command string
-                cmd = ["/usr/bin/sudo", "/usr/sbin/installer", "-verboseR", 
+                cmd = ["/usr/bin/sudo", "/usr/sbin/installer", "-verboseR",
                        "-pkg", self.tmpLocalPkg, "-target", "/"]
                 self.ch.executeCommand(cmd)
-                self.logger.log(LogPriority.DEBUG, 
+                self.logger.log(LogPriority.DEBUG,
                                 self.ch.getOutputString())
                 if self.ch.getReturnCode() == 0:
                     success = True
@@ -1111,15 +1167,14 @@ class MacPkgr(object):
                     else:
                         success = True
             else:
-                self.logger.log(LogPriority.ERROR, "Valid package " + \
-                                "extension not found, cannot install:" + \
+                self.logger.log(LogPriority.ERROR, "Valid package " +
+                                "extension not found, cannot install:" +
                                 " " + self.tmpLocalPkg)
-        except(KeyboardInterrupt,SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
             print err
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.INFO, self.detailedresults)   
-        
-        return success
+            self.logger.log(LogPriority.INFO, self.detailedresults)
 
+        return success

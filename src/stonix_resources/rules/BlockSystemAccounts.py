@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -42,6 +42,7 @@ by administrators in certain situations.
 mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -72,22 +73,16 @@ class BlockSystemAccounts(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''The BlockSystemAccounts rule will search through \
-/etc/passwd to determine if there are any system accounts which currently \
-allow login. If any are found which do allow login, the fix method will \
-append :/dev/null to the end of the entry in /etc/passwd preventing future \
-login from them. One exception is the 'root' account which will not be \
-blocked due access to it being required by administrators in certain \
-situations and local user accounts will not be blocked.'''
+        self.sethelptext()
         self.rootrequired = True
         datatype = 'bool'
-        key = 'blocksysaccounts'
+        key = 'BLOCKSYSACCOUNTS'
         instructions = '''If you have system accounts that need to have valid \
 shells set the value of this to False, or No.'''
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.ci = self.initCi(datatype, key, instructions,
                                                default)
         self.guidance = ['CIS', 'NSA(2.3.1.4)', 'cce-3987-5', '4525-2',

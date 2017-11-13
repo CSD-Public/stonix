@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,17 +20,18 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Jan 14, 2013
 
 The SetNTP class configures ntp for each client.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2014/04/18 ekkehard ci updates and ci fix method implementation
 @change: 2014/08/27 - ekkehard - added self.ss = "/usr/sbin/systemsetup" to make sure we use the full path
-@change: 08/27/2014 bemalmbe added colons after each docblock parameter
+@change: 08/27/2014 Breen Malmberg added colons after each docblock parameter
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/10/08 eball Help text cleanup
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -62,9 +62,7 @@ class SetNTP(Rule):
         self.rulename = 'SetNTP'
         self.formatDetailedResults("initialize")
         self.logger = logger
-        self.helptext = """This rule configures the Network Time Protocol \
-(NTP) to use the internal and external servers specified in localize.py \
-(NTPSERVERSINTERNAL and NTPSERVERSEXTERNAL)."""
+        self.sethelptext()
         self.compliant = False
         self.mandatory = True
         self.rootrequired = True
@@ -73,14 +71,14 @@ class SetNTP(Rule):
 
         # init CI
         self.ci = self.initCi("bool",
-                              "SetNTP",
+                              "SETNTP",
                               "To prevent STONIX from setting a time " +
                               "server, set the value of SetNTP to False",
                               True)
 
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.ismobile = self.environ.ismobile()
         self.oncorporatenetwork = self.environ.oncorporatenetwork()
@@ -94,37 +92,42 @@ class SetNTP(Rule):
         # init conf item dictionary
         self.confitemdict = {'restrict default ignore': False}
 
-        # dynamically build conf item dictionary
-        if self.ismobile:
-            for server in NTPSERVERSINTERNAL:
-                self.confitemdict['server ' + server] = False
-                self.confitemdict['restrict ' + server + \
-                                  ' mask 255.255.255.255 nomodify notrap noquery'] = False
-            for server in NTPSERVERSEXTERNAL:
-                self.confitemdict['server ' + server] = False
-
-        else:
-            if self.oncorporatenetwork:
+        self.constlist = [NTPSERVERSEXTERNAL, NTPSERVERSINTERNAL]
+        if self.checkConsts(self.constlist):
+            # dynamically build conf item dictionary
+            if self.ismobile:
                 for server in NTPSERVERSINTERNAL:
                     self.confitemdict['server ' + server] = False
                     self.confitemdict['restrict ' + server + \
                                       ' mask 255.255.255.255 nomodify notrap noquery'] = False
-            else:
                 for server in NTPSERVERSEXTERNAL:
                     self.confitemdict['server ' + server] = False
-
-        # get the correct set of host names, based on whether the
-        # machine is currently on the internal network or external
-        self.ntpservers = []
-        if self.ismobile:
-            self.ntpservers = NTPSERVERSINTERNAL
-            for item in NTPSERVERSEXTERNAL:
-                self.ntpservers.append(item)
-        else:
-            if self.oncorporatenetwork:
-                self.ntpservers = NTPSERVERSINTERNAL
+    
             else:
-                self.ntpservers = NTPSERVERSEXTERNAL
+                if self.oncorporatenetwork:
+                    for server in NTPSERVERSINTERNAL:
+                        self.confitemdict['server ' + server] = False
+                        self.confitemdict['restrict ' + server + \
+                                          ' mask 255.255.255.255 nomodify notrap noquery'] = False
+                else:
+                    for server in NTPSERVERSEXTERNAL:
+                        self.confitemdict['server ' + server] = False
+    
+            # get the correct set of host names, based on whether the
+            # machine is currently on the internal network or external
+            self.ntpservers = []
+            if self.ismobile:
+                self.ntpservers = NTPSERVERSINTERNAL
+                for item in NTPSERVERSEXTERNAL:
+                    self.ntpservers.append(item)
+            else:
+                if self.oncorporatenetwork:
+                    self.ntpservers = NTPSERVERSINTERNAL
+                else:
+                    self.ntpservers = NTPSERVERSEXTERNAL
+
+        self.ntppkg = 'ntp'
+        self.chronypkg = 'chrony'
 
 ###############################################################################
 
@@ -133,12 +136,22 @@ class SetNTP(Rule):
         determine whether the fix() method of this rule has run successfully
         yet or not
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
-        # defaults
         self.detailedresults = ""
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.compliant = False
+            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: NTPSERVERSEXTERNAL, NTPSERVERSINTERNAL"
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
+        # defaults
+        self.compliant = True
 
         try:
 
@@ -168,7 +181,7 @@ class SetNTP(Rule):
 
         @return: bool
         @author: ekkehard j. koch
-        @change: 08/26/2014 bemalmbe added detailedresults message updates to
+        @change: 08/26/2014 Breen Malmberg added detailedresults message updates to
                 indicate which config items are missing/incorrect
         '''
 
@@ -226,7 +239,7 @@ class SetNTP(Rule):
         determine rule compliance status for linux based systems
 
         @return: bool
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -248,16 +261,27 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_chrony(self):
+        '''
+        '''
+
+        # defaults
+        conffile = '/etc/chrony/chrony.conf'
+        conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf']
+        for f in conffiles:
+            if os.path.exists(f):
+                conffile = f
+        confitemsdict = {'^cmddeny\s*all': False}
+        confitems = True
+        retval = False
 
         try:
 
-            if os.path.exists('/etc/chrony.conf'):
-
-                # defaults
-                conffile = '/etc/chrony.conf'
-                confitemsdict = {'^cmddeny\s*all': False}
-                confitems = True
+            if not self.ph.check(self.chronypkg):
                 retval = False
+                self.detailedresults += "\nchrony is not installed"
+
+            if os.path.exists('/etc/chrony.conf')|os.path.exists('/etc/chrony/chrony.conf'):
+
                 timeserversdict = {}
                 for server in self.ntpservers:
                     timeserversdict[server] = False
@@ -294,7 +318,8 @@ class SetNTP(Rule):
                     retval = True
 
             else:
-                self.detailedresults += '\nNo chrony.conf file found.'
+                self.detailedresults += '\nNo chrony.conf file found'
+                retval = False
 
         except Exception:
             raise
@@ -302,15 +327,21 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_ntp(self):
+        '''
+        '''
+
+        # defaults
+        retval = False
+        timeservers = True
+        confitems = True
+        confitemdict = {'restrict\s*default\s*ignore': False,
+                        'disable\s*monitor': False}
 
         try:
 
-            # defaults
-            retval = False
-            timeservers = True
-            confitems = True
-            confitemdict = {'restrict\s*default\s*ignore': False,
-                            'disable\s*monitor': False}
+            if not self.ph.check(self.ntppkg):
+                retval = False
+                self.detailedresults += "\nntp is not installed"
 
             if os.path.exists('/etc/ntp.conf'):
 
@@ -336,11 +367,11 @@ class SetNTP(Rule):
                     timeservers = False
                     self.detailedresults += '\ntime servers not set correctly in conf file'
 
+                if confitems and timeservers:
+                    retval = True
             else:
-                self.detailedresults += '\nno ntp.conf file found'
-
-            if confitems and timeservers:
-                retval = True
+                self.detailedresults += '\nNo ntp.conf file found'
+                retval = False
 
         except Exception:
             raise
@@ -376,10 +407,18 @@ class SetNTP(Rule):
 ###############################################################################
     def fix(self):
         '''
-        Decide which fix sub method to run, and run it to configure ntp
+        Decide which fix sub method to run, and run it to configure ntp/chrony
 
-        @author: bemalmbe
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
 
         # defaults
         self.detailedresults = ""
@@ -419,7 +458,7 @@ class SetNTP(Rule):
         '''
         private method to perform fix operations for mac os x machines
 
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -562,8 +601,8 @@ class SetNTP(Rule):
         configure it.
 
         @return: bool
-        @author: bemalmbe
-        @change: 08/27/2014 bemalmbe added blank line to bottom in accordance
+        @author: Breen Malmberg
+        @change: 08/27/2014 Breen Malmberg added blank line to bottom in accordance
                 with pep8
         '''
 
@@ -571,22 +610,27 @@ class SetNTP(Rule):
 
             # defaults
             fixresult = True
+            conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf', '/etc/ntp.conf']
 
             if self.useschrony:
 
                 confoptions = {'cmddeny all': False}
-                conffile = '/etc/chrony.conf'
-                package = 'chrony'
+                conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf']
+                package = self.chronypkg
             else:
 
                 confoptions = {'restrict default ignore': False,
                                'disable monitor': False}
                 conffile = '/etc/ntp.conf'
-                package = 'ntp'
+                package = self.ntppkg
 
             # check for installation of package
             if not self.ph.check(package):
                 self.ph.install(package)
+
+            for f in conffiles:
+                if os.path.exists(f):
+                    conffile = f
 
             # check for existence and correct configuration of conf file
             if os.path.exists(conffile):
@@ -647,10 +691,9 @@ class SetNTP(Rule):
             else:
 
                 fixresult = False
-                self.detailedresults += '\nNTP installation failed. No config file to check'
+                self.detailedresults += '\nNetwork time package installation failed'
 
         except Exception:
-            fixresult = False
             raise
         return fixresult
 
@@ -661,22 +704,29 @@ class SetNTP(Rule):
         is using chrony or openNTPD by default.
         
         @return: Bool True if the system uses chrony
-        @author: B. Malmberg
+        @author: Breen Malmberg
         @change: Modified to correct for bugs in Environment object by D. Kennel
+        @change: Breen Malmberg - 2/1/2017 - fixed bug with variable osname being
+                referenced before assignment if the osname was not found in the osversion
+                dictionary
         '''
 
         # defaults
         useschrony = False
+        osname = ''
 
         try:
 
             # the minimum version number of each distro which uses chrony instead of ntp
+            # suse still uses ntp
             osversion = {'red': 7,
                          'fedora': 20,
-                         'centos': 7}
+                         'centos': 7,
+                         'debian': 8,
+                         'ubuntu': 16}
 
             # get the os distro name to use in comparison with the dictionary version values above
-            filedict = ['/etc/redhat-release', '/etc/SuSE-release']
+            filedict = ['/etc/redhat-release', '/etc/SuSE-release', '/etc/os-release']
             relfile = ''
             for path in filedict:
                 if os.path.exists(path):
@@ -684,20 +734,24 @@ class SetNTP(Rule):
             if not os.path.exists(relfile):
                 self.detailedresults += '\nparseVersion(): could not locate an os version release file to parse'
                 return False
+
             f = open(relfile, 'r')
             contentline = f.readline()
             f.close()
-            sline = contentline.split()
-            key = sline[0].lower()
-            if key not in osversion:
-                return False
+
+            for key in osversion:
+                if re.search(key, contentline, re.IGNORECASE):
+                    osname = key
 
             # compare the os version to the minimum chrony version number of each os in osversion dict above
             osver = self.environ.getosver()
             element = osver.split('.')
             majorver = element[0]
-            if int(majorver) >= osversion[key]:
-                useschrony = True
+
+            # if this is an os that uses chrony (in any version)
+            if osname:
+                if int(majorver) >= osversion[osname]:
+                    useschrony = True
 
         except Exception:
             raise

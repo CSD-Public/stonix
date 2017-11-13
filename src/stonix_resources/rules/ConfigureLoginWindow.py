@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -30,6 +30,8 @@ This is a rule for Verifying and/or setting the state of the LoginWindow.
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 2015/04/14 dkennel updated for new stype isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 
@@ -52,15 +54,11 @@ class ConfigureLoginWindow(RuleKVEditor):
         self.rulename = 'ConfigureLoginWindow'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule sets the login window to no longer " + \
-                        "display the names of the accounts on the computer, " + \
-                        "since this may make breaking in easier. This " + \
-                        "forces the user to enter a login name and password " + \
-                        "to log in."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CCE-28310-1']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.addKVEditor("LoginNamePassword",
                          "defaults",
                          "/Library/Preferences/com.apple.loginwindow",

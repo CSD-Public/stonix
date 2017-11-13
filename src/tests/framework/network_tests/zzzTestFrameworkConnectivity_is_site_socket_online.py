@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -20,13 +21,18 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+"""
+@note: This test is not set up to use proxies.
+@author: Roy Nielsen
+@change 2016/02/10 roy Added sys.path.append for being able to unit test this
+                       file as well as with the test harness.
+"""
 import re
 import sys
 import unittest
 
 ### for importing support libraries
-sys.path.append("..")
+sys.path.append("../../../..")
 
 from src.stonix_resources.Connectivity import Connectivity
 from src.tests.lib.logdispatcher_lite import LogDispatcher

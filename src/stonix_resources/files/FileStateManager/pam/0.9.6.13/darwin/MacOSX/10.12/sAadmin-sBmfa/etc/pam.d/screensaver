@@ -1,0 +1,7 @@
+# screensaver: auth account
+auth       optional       pam_krb5.so use_first_pass use_kcminit
+auth       required       pam_opendirectory.so use_first_pass nullok
+account    required       pam_opendirectory.so
+account    sufficient     pam_self.so
+account    required       pam_group.so no_warn group=wheel fail_safe
+account    required       pam_group.so no_warn deny group=admin,wheel ruser fail_safe

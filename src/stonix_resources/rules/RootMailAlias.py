@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -42,6 +42,7 @@ was not checked before exectuing fix()
 @change: Breen Malmberg, 9/3/2015, re-write of report and fix methods; added helper methods; added/fixed doc strings;
             removed unused imports
 @change: eball 2015/09/24 Stopped Pkghelper calls from being made in OS X
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -74,17 +75,17 @@ class RootMailAlias(Rule):
         self.rulename = 'RootMailAlias'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'Set an alias for root mail on the system so that it is read by an actual human.'
+        self.sethelptext()
         self.guidance = ['none']
 
         datatype = 'bool'
-        key = 'Root Mail Alias'
-        instructions = 'To prevent the setting of an alias for root mail, set the value of Root Mail Alias to False.'
+        key = 'ROOTMAILALIAS'
+        instructions = 'To prevent the setting of an alias for root mail, set the value of ROOTMAILALIAS to False.'
         default = True
         self.ci1 = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'string'
-        key2 = 'Root Alias Address'
+        key2 = 'ROOTALIASADDRESS'
         instructions2 = 'Please specify the email address which should receive root mail for this system.'
         default2 = ''
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
@@ -92,7 +93,7 @@ class RootMailAlias(Rule):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.localization()
         self.myos = self.environ.getostype().lower()
@@ -128,13 +129,17 @@ class RootMailAlias(Rule):
 
         try:
 
-            self.logger.log(LogPriority.DEBUG, "Configuring class variables for Linux systems...")
+            self.logger.log(LogPriority.DEBUG,
+                            "Configuring class variables for Linux systems...")
             self.aliasfile = ''
             aliasfilelocs = ['/etc/mail/aliases', '/etc/aliases']
             aliasfiledefault = '/etc/aliases'
             for loc in aliasfilelocs:
                 if os.path.exists(loc):
-                    self.aliasfile = loc
+                    if os.path.islink(loc):
+                        self.aliasfile = os.path.realpath(loc)
+                    else:
+                        self.aliasfile = loc
             if not self.aliasfile:
                 self.aliasfile = aliasfiledefault
 
@@ -148,13 +153,18 @@ class RootMailAlias(Rule):
 
         try:
 
-            self.logger.log(LogPriority.DEBUG, "Configuring class variables for Mac OS X systems...")
+            self.logger.log(LogPriority.DEBUG, "Configuring class " +
+                            "variables for Mac OS X systems...")
             self.aliasfile = ''
             aliasfiledefault = '/private/etc/aliases'
-            aliasfilelocs = ['/private/etc/aliases', '/private/etc/postfix/aliases']
+            aliasfilelocs = ['/private/etc/aliases',
+                             '/private/etc/postfix/aliases']
             for loc in aliasfilelocs:
                 if os.path.exists(loc):
-                    self.aliasfile = loc
+                    if os.path.islink(loc):
+                        self.aliasfile = os.path.realpath(loc)
+                    else:
+                        self.aliasfile = loc
             if not self.aliasfile:
                 self.aliasfile = aliasfiledefault
 
@@ -246,11 +256,17 @@ class RootMailAlias(Rule):
 
         try:
 
-            # check format of user-entered root mail alias address
-            self.logger.log(LogPriority.DEBUG, "Checking user-entered value for root mail alias for correct format...")
-            if not re.search(self.aliasformat, str(self.ci2.getcurrvalue())):
+            # check if user-entered root mail alias is blank
+            self.logger.log(LogPriority.DEBUG, "Checking if there is a non-blank value for root mail alias...")
+            if str(self.ci2.getcurrvalue()) == "":
                 self.compliant = False
-                self.detailedresults += '\nUser-entered root mail alias is not a valid email address format'
+                self.detailedresults += "User must enter a value for root mail alias. Currently there is no value entered (it is blank)."
+            else:
+                # check format of user-entered root mail alias address
+                self.logger.log(LogPriority.DEBUG, "Checking user-entered value for root mail alias for correct format...")
+                if not re.search(self.aliasformat, str(self.ci2.getcurrvalue())):
+                    self.compliant = False
+                    self.detailedresults += '\nUser-entered root mail alias is not a valid email address format'
 
             # check if the alias file has the correct configuration entry
             self.logger.log(LogPriority.DEBUG, "Checking root mail alias file for correct configuration...")
@@ -371,6 +387,9 @@ class RootMailAlias(Rule):
 
             contentlines = self.getFileContents(filepath)
             for line in contentlines:
+                if re.search("Added by STONIX", line, re.IGNORECASE):
+                    contentlines = [c.replace(line, '') for c in contentlines]
+            for line in contentlines:
                 if re.search(self.partialstring, line):
                     contentlines = [c.replace(line, '# Added by STONIX\n' + self.fixstring + '\n') for c in contentlines]
                     replaced = True
@@ -421,6 +440,9 @@ class RootMailAlias(Rule):
                 appended = True
             else:
                 contentlines = self.getFileContents(filepath)
+                for line in contentlines:
+                    if re.search("# Added by STONIX", line, re.IGNORECASE):
+                        contentlines = [c.replace(line, '') for c in contentlines]
                 contentlines.append('\n# Added by STONIX\n' + self.fixstring + '\n')
 
                 f = open(tmppath, 'w')

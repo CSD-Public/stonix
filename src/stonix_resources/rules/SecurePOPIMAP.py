@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,6 +24,7 @@
 Created on Nov 9, 2015
 
 @author: Breen Malmberg
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -57,24 +58,20 @@ class SecurePOPIMAP(Rule):
         self.rulenumber = 141
         self.rulename = 'SecurePOPIMAP'
         self.mandatory = True
-        self.helptext = 'Dovecot provides IMAP and POP3 services. It is not installed by default. \
-If this system does not need to operate as an IMAP or POP3 server, disable and remove Dovecot \
-if it was installed. Otherwise securely configure it. The default setting for this rule is \
-to disable it entirely. Note: this rule does not set up or install ssl certificates. \
-This should still be done on your CA (certificate authority) system, manually, by the administrator of that system.'
+        self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
         self.guidance = ['NSA(3.17)', 'cce-4384-4', '3887-7', '4530-2', '4547-6', '4552-6', '4371-1', '4410-7']
 
         data1 = 'bool'
-        key1 = 'DisablePOPIMAP'
+        key1 = 'DISABLEPOPIMAP'
         instructions1 = 'To prevent POP/IMAP services from being disabled entirely, set the value of DisablePOPIMAP to False.'
         default1 = True
         self.disableci = self.initCi(data1, key1, instructions1, default1)
 
         data2 = 'bool'
-        key2 = 'SecurePOPIMAP'
+        key2 = 'SECUREPOPIMAP'
         instructions2 = 'To securely configure POP/IMAP services, set the value of SecurePOPIMAP to True.'
         default2 = False
         self.secureci = self.initCi(data2, key2, instructions2, default2)
@@ -99,16 +96,15 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         self.setcommon()
 
-        if self.pkgh.manager not in ['apt-get', 'yum', 'zypper']:
+        if self.pkgh.manager not in ['apt-get', 'yum', 'zypper', 'dnf']:
             self.logger.log(LogPriority.DEBUG, "Could not identify OS type or OS not supported!")
 
         if self.pkgh.manager == 'apt-get':
             self.setdebian()
         if self.pkgh.manager == 'yum':
             self.setredhat()
-#        uncomment this if fedora needs a separate set up section
-#        if self.pkgh.manager == 'dnf':
-#            self.setfedora()
+        if self.pkgh.manager == 'dnf':
+            self.setredhat()
         if self.pkgh.manager == 'zypper':
             self.setsuse()
 
@@ -212,7 +208,7 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         self.suse = True
         self.osdetected = True
-        self.pkgdict = {'dovecot21': False}
+        self.pkgdict = {'dovecot': False}
 
         # the following dictionary is of the format:
         # {configfilepath1: {partialmatch1: fullreplacement1,
@@ -361,40 +357,47 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         self.compliant = True
         self.detailedresults = ''
-        self.logger.log(LogPriority.DEBUG, "inside report. self.compliant has been set to " + str(self.compliant))
-        self.reqprots = self.reqprotocols.getcurrvalue()
-        if self.suse:
-            self.setsuse()
-        if self.debian:
-            self.setdebian()
-        if self.redhat:
-            self.setredhat()
-
-        if not self.checkinitobjs():
-            self.logger.log(LogPriority.DEBUG, "checking init objects...")
-            self.logger.log(LogPriority.DEBUG, 'One or more class properties were not initialized or set correctly.')
-            self.rulesuccess = False
-            self.compliant = False
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-            return self.compliant
-
-        self.logger.log(LogPriority.DEBUG, "finished checking init objects. all were OK")
+        self.logger.log(LogPriority.DEBUG, "Entering SecurePOPIMAP.report()...")
 
         try:
 
+            self.reqprots = self.reqprotocols.getcurrvalue()
+
+            if self.suse:
+                self.setsuse()
+            if self.debian:
+                self.setdebian()
+            if self.redhat:
+                self.setredhat()
+
+            self.logger.log(LogPriority.DEBUG, "Checking init objects...")
+            if not self.checkinitobjs():
+                self.logger.log(LogPriority.DEBUG, 'One or more class properties were not initialized or set correctly.')
+                self.rulesuccess = False
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
+            self.logger.log(LogPriority.DEBUG, "Finished checking init objects. all were OK")
+
+            # disable stuff
             if self.disableci.getcurrvalue():
-                self.logger.log(LogPriority.DEBUG, "disableci was set. checking dovecot service...")
+                self.logger.log(LogPriority.DEBUG, "The disable POP/IMAP option is set. Checking if POP/IMAP is disabled...")
+                self.logger.log(LogPriority.DEBUG, "Checking for running service...")
                 if not self.checksvc():
                     self.compliant = False
-                self.logger.log(LogPriority.DEBUG, "service check finished. self.compliant is " + str(self.compliant))
+                    self.detailedresults += "\nRule is not compliant because: The " + str(self.servicename) + " service is either running or enabled."
+                self.logger.log(LogPriority.DEBUG, "Service check finished.")
 
-                self.logger.log(LogPriority.DEBUG, "checking packages...")
-                if self.checkpkg():
+                self.logger.log(LogPriority.DEBUG, "Checking packages...")
+                if not self.checkpkgs(False):
                     self.compliant = False
-                self.logger.log(LogPriority.DEBUG, "package check is finished. self.compliant is " + str(self.compliant))
+                    self.detailedresults += "\nRule is not compliant because one or more of the packages is still installed."
+                self.logger.log(LogPriority.DEBUG, "Package check finished.")
 
-            if self.secureci.getcurrvalue():
+            # secure stuff
+            elif self.secureci.getcurrvalue():
+                self.logger.log(LogPriority.DEBUG, "The secure POP/IMAP option is set. Checking if POP/IMAP is secured...")
                 if not self.reqprots:
                     self.detailedresults += '\nRequired protocols were not specified. Cannot securely configure POP/IMAP without them.'
                     self.compliant = False
@@ -402,20 +405,21 @@ This should still be done on your CA (certificate authority) system, manually, b
                 if slist:
                     for prot in slist:
                         if prot.strip() != '' and prot.strip() not in self.protocollist:
-                            self.detailedresults += '\n' + str(prot) + ' is not a valid protocol'
+                            self.detailedresults += "\nRule is not compliant because: The specified protocol: " + str(prot) + " is not a valid protocol."
                             self.compliant = False
                 else:
-                    self.detailedresults += '\nPlease use a space-delimited list when specifying your required protocols.'
-                self.logger.log(LogPriority.DEBUG, "secureci was set. checking packages...")
-                if self.checkpkg():
-                    self.logger.log(LogPriority.DEBUG, "required dovecot packages were installed. checking file configuration...")
+                    self.detailedresults += '\nUnable to read protocol list. Please use a space-delimited list when specifying your required protocols.'
+                self.logger.log(LogPriority.DEBUG, "The secure POP/IMAP option is set. Checking if POP/IMAP is secured...")
+                if self.checkpkgs(True):
+                    self.logger.log(LogPriority.DEBUG, "Required packages are installed.")
+                    self.logger.log(LogPriority.DEBUG, " Checking file configuration...")
                     if not self.checkconfig():
                         self.compliant = False
-                    self.logger.log(LogPriority.DEBUG, "file configuration check finished. self.compliant is " + str(self.compliant))
+                    self.logger.log(LogPriority.DEBUG, "File configuration check finished.")
                 else:
-                    self.logger.log(LogPriority.DEBUG, "one or more required dovecot packages is not installed.")
+                    self.logger.log(LogPriority.DEBUG, "One or more required packages are not installed.")
                     self.compliant = False
-                    self.detailedresults += "\nCannot yet verify secure configuration of Dovecot since not all of its packages are installed yet"
+                    self.detailedresults += "\nRule is not compliant because one or more of the required packages are not installed."
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -487,12 +491,12 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         try:
 
-            if self.svch.auditservice(self.servicename):
+            if self.svch.auditService(self.servicename, _="_"):
                 enabled = True
                 self.detailedresults += '\nThe ' + str(self.servicename) + ' service is still enabled'
             if enabled:
                 self.detailedresults += "\nThere are service(s) which need to be disabled"
-            if self.svch.isrunning(self.servicename):
+            if self.svch.isRunning(self.servicename, _="_"):
                 running = False
                 self.detailedresults += '\nThe ' + str(self.servicename) + ' service is still running'
             if running:
@@ -505,72 +509,15 @@ This should still be done on your CA (certificate authority) system, manually, b
             raise
         return retval
 
-    def checkpkg(self):
+    def checkpkgs(self, desired):
         '''
-        if disableci is checked/enabled, then check to see if any of the listed packages is installed
-        if disableci is not checked/enabled and secureci is checked/enabled, check to see if all of the listed packages are installed
-        if both disableci and secureci are checked/enabled, check to see if any of the listed packages is installed
-        if neither disableci nor secureci are checked/enabled, simply return False
+        check compliance of packages portion of rule
 
-        @return: allinstalled | anyinstalled | False
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
+        if desired, check if all required packages are installed:
+            True if yes, False if no
 
-        allinstalled = False
-        anyinstalled = True
-
-        try:
-
-            if self.disableci.getcurrvalue():
-                if not self.anyInstalled():
-                    anyinstalled = False
-                return anyinstalled
-
-            elif self.secureci.getcurrvalue():
-                if self.allInstalled():
-                    allinstalled = True
-                return allinstalled
-            else:
-                self.logger.log(LogPriority.DEBUG, "No option was enabled for this rule. Returning False...")
-                return False
-
-        except Exception:
-            raise
-
-    def anyInstalled(self):
-        '''
-        returns True if any of the listed packages are installed
-        returns False if none of the listed packages are installed
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = False
-
-        try:
-
-            for pkg in self.pkgdict:
-                if self.pkgh.check(pkg):
-                    self.pkgdict[pkg] = True
-
-            for pkg in self.pkgdict:
-                if self.pkgdict[pkg]:
-                    retval = True
-                    self.detailedresults += "\nPackage: " + str(pkg) + " is currently installed"
-            if not retval:
-                self.detailedresults += "\nNone of the dovecot packages is currently installed on this system"
-
-        except Exception:
-            raise
-        return retval
-
-    def allInstalled(self):
-        '''
-        returns True if all listed packages are installed
-        returns False if any of the listed packages are not installed
+        if not desired, check if any packages are installed:
+            True if no, False if yes
 
         @return: retval
         @rtype: bool
@@ -581,17 +528,17 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         try:
 
-            for pkg in self.pkgdict:
-                if self.pkgh.check(pkg):
-                    self.pkgdict[pkg] = True
+            if not desired:
+                for pkg in self.pkgdict:
+                    if self.pkgh.check(pkg):
+                        self.pkgdict[pkg] = True
+                        retval = False
+            else:
+                for pkg in self.pkgdict:
+                    if not self.pkgh.check(pkg):
+                        self.pkgdict[pkg] = False
+                        retval = False
 
-            for pkg in self.pkgdict:
-                if not self.pkgdict[pkg]:
-                    retval = False
-                    self.detailedresults += "\nPackage: " + str(pkg) + " is not currently installed"
-            if retval:
-                self.detailedresults += "\nAll required dovecot packages are currently installed"
- 
         except Exception:
             raise
         return retval
@@ -612,12 +559,18 @@ This should still be done on your CA (certificate authority) system, manually, b
 
             for path in self.confpathdict:
                 contents = self.getFileContents(path)
-                for confitem in self.confpathdict[path]:
-                    if not self.searchContents(str(self.confpathdict[path][confitem]), contents):
-                        retval = False
-                        self.detailedresults += "\nRequired configuration option: " + str(self.confpathdict[path][confitem]) + " was not found in file: " + str(path)
+                if contents:
+                    for confitem in self.confpathdict[path]:
+                        if not self.searchContents(str(self.confpathdict[path][confitem]), contents):
+                            retval = False
+                            self.detailedresults += "\nRequired configuration option: " + str(self.confpathdict[path][confitem]) + " was not found in file: " + str(path)
+
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Unable to check contents of file: " + str(path))
+
                 if retval:
                     self.detailedresults += "\nAll required configuration options have been found in file: " + str(path)
+
             if retval:
                 self.detailedresults += "\nAll required configuration options have been found in all required configuration files"
 
@@ -646,7 +599,7 @@ This should still be done on your CA (certificate authority) system, manually, b
                 self.detailedresults += '\nYou have selected the DisablePOPIMAP option. It will now be disabled/removed from this system.'
                 if not self.turnoffsvc():
                     fixsuccess = False
-                if not self.uninstallpkg():
+                if not self.removePackages():
                     fixsuccess = False
             elif self.secureci.getcurrvalue():
                 self.detailedresults += '\nYou have selected the SecurePOPIMAP option. It will now be installed (if it is not already installed) and then securely configured.'
@@ -676,22 +629,32 @@ This should still be done on your CA (certificate authority) system, manually, b
         @author: Breen Malmberg
         '''
 
+        self.logger.log(LogPriority.DEBUG, "Attempting to disable service: " + str(self.servicename))
+
         retval = True
 
         try:
 
-            if not self.svch.auditservice(self.servicename):
-                return retval
-            if not self.svch.disableservice(self.servicename):
+            self.svch.disableService(self.servicename, _="_")
+
+            if self.svch.auditService(self.servicename, _="_"):
                 retval = False
-                self.detailedresults += '\nUnable to disable service: ' + str(self.servicename)
-                self.logger.log(LogPriority.DEBUG, "Unable to disable service: " + str(self.servicename))
+                self.logger.log(LogPriority.DEBUG, "Service is still enabled after executing disableservice!")
+
+            if self.svch.isRunning(self.servicename, _="_"):
+                retval = False
+                self.logger.log(LogPriority.DEBUG, "Service is still running after executing disableservice!")
+
+            if retval:
+                self.logger.log(LogPriority.DEBUG, "Successfully disabled service: " + str(self.servicename))
+            else:
+                self.logger.log(LogPriority.DEBUG, "Failed to disable service: " + str(self.servicename))
 
         except Exception:
             raise
         return retval
 
-    def uninstallpkg(self):
+    def removePackages(self):
         '''
         Remove all packages in self.pkgdict, which are currently installed
         return True if all installed packages were successfully removed
@@ -713,6 +676,11 @@ This should still be done on your CA (certificate authority) system, manually, b
                         self.detailedresults += '\nFailed to remove package: ' + str(pkg)
                     else:
                         self.pkgdict[pkg] = False
+
+            if not retval:
+                self.logger.log(LogPriority.DEBUG, "Failed to remove packages")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Successfully removed all packages")
 
         except Exception:
             raise
@@ -746,6 +714,8 @@ This should still be done on your CA (certificate authority) system, manually, b
 
         retval = True
 
+        self.logger.log(LogPriority.DEBUG, "Attempting to install all necessary packages...")
+
         try:
 
             for pkg in self.pkgdict:
@@ -753,6 +723,12 @@ This should still be done on your CA (certificate authority) system, manually, b
                     if not self.pkgh.install(pkg):
                         retval = False
                         self.detailedresults += '\nFailed to install package ' + str(pkg)
+                        self.logger.log(LogPriority.DEBUG, "Failed to install package: " + str(pkg))
+
+            if not retval:
+                self.logger.log(LogPriority.DEBUG, "Failed to install one or more required packages. Please check your connection to the network and ensure that your package repositories are correctly configured.")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Successfully installed all required packages")
 
         except Exception:
             raise

@@ -37,6 +37,8 @@
 Created on Aug 24, 2010
 
 @author: dkennel
+@change: 2016/07/18 eball Added smtplib.SMTPRecipientsRefused to try/except for
+    reporterr method, and added debug output for both exceptions.
 '''
 
 from observable import Observable
@@ -55,6 +57,15 @@ import xml.etree.ElementTree as ET
 from shutil import move
 
 
+def singleton_decorator(class_):
+  instances = {}
+  def getinstance(*args, **kwargs):
+    if class_ not in instances:
+        instances[class_] = class_(*args, **kwargs)
+    return instances[class_]
+  return getinstance
+
+@singleton_decorator
 class LogDispatcher (Observable):
 
     """
@@ -69,6 +80,7 @@ class LogDispatcher (Observable):
         self.environment = environment
         self.debug = self.environment.getdebugmode()
         self.verbose = self.environment.getverbosemode()
+        self.constsrequired = [localize.REPORTSERVER, localize.STONIXDEVS, localize.STONIXERR, localize.MAILRELAYSERVER]
         reportfile = 'stonix-report.log'
         xmlfile = 'stonix-xmlreport.xml'
         self.logpath = self.environment.get_log_path()
@@ -112,6 +124,19 @@ class LogDispatcher (Observable):
 
         @author: dkennel
         """
+
+        constsmissing = False
+
+        for const in self.constsrequired:
+            if not const:
+                constsmissing = True
+            elif const == None:
+                constsmissing = True
+
+        if constsmissing:
+            print "\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n"
+            return
+
         if self.environment.geteuid() != 0:
             return
         self.xmlreport.closeReport()
@@ -252,6 +277,18 @@ class LogDispatcher (Observable):
         @author: dkennel
         """
 
+        constsmissing = False
+
+        for const in self.constsrequired:
+            if not const:
+                constsmissing = True
+            elif const == None:
+                constsmissing = True
+
+        if constsmissing:
+            print "\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n"
+            return
+
         # Function wrapped in try/except to allow the program to keep running
         # when the mail server is unavailable.
         try:
@@ -274,7 +311,11 @@ Subject: STONIX Error Report: ''' + prefix + '''
             server.sendmail(frm, to, message)
             server.quit()
         except socket.error:
-            pass
+            self.log(LogPriority.DEBUG, "Could not send error e-mail: " +
+                     "error contacting e-mail server")
+        except smtplib.SMTPRecipientsRefused:
+            self.log(LogPriority.DEBUG, "Could not send error e-mail: " +
+                     "bad e-mail address in localize.STONIXDEVS")
 
     def format_message_data(self, msg_data):
         """

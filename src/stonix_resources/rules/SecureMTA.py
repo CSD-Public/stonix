@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
 Created on Aug 8, 2013
 
 Mail servers are used to send and receive mail over a network on behalf of site
@@ -43,6 +43,7 @@ reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/07/30 eball Changed where setPerms occurs in fix
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -74,23 +75,12 @@ configure needed MTAs as defensively as possible.
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rulesuccess = True
-        self.helptext = '''Mail servers are used to send and receive mail \
-over a network on behalf of site users. Mail is a very common service, and \
-MTAs are frequent targets of network attack. Ensure that machines are not \
-running MTAs unnecessarily, and configure needed MTAs as defensively as \
-possible.
-Please be advised, in one section of this rule, the \
-/etc/mail/sendmail.cf is modified two different times.  Because of this, the \
-undo event that handles this file if a change is made will only revert one \
-change, the change that is not reverted is the insertion or modification of \
-the line that begins with DS.  If you can't remember the original format of \
-that line, take a look in the /usr/share/stonix folder for the original file \
-before clicking undo.'''
+        self.sethelptext()
         self.guidance = ['CCE 4416-4', 'CCE 4663-1', 'CCE 14495-6',
                          'CCE 14068-1', 'CCE 15018-5', 'CCE 4293-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.postfixfoundlist = []
         self.sendmailfoundlist = []
@@ -129,6 +119,14 @@ agent, set the value of SECUREMTA to False.'''
         @change: dwalker - ??? - ???
         @change: Breen Malmberg - 12/22/2015 - full refactor
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [MAILRELAYSERVER]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constant: MAILRELAYSERVER, in localize.py, is defined and is not None. This rule will not function without it."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
 
         self.compliant = True
         self.postfixfoundlist = []
@@ -313,6 +311,13 @@ agent, set the value of SECUREMTA to False.'''
         @change: dwalker - ??? - ???
         @change: Breen Malmberg - 12/22/2015 - refactored method
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [MAILRELAYSERVER]
+        if not self.checkConsts(constlist):
+            fixsuccess = False
+            self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+            return fixsuccess
 
         self.logger.log(LogPriority.DEBUG, "Inside main fix() method")
         self.logger.log(LogPriority.DEBUG, "Setting method variable defaults...")

@@ -26,10 +26,15 @@
 @change: 2014/01/06 Original implementation
 @change: 2015/10/26 eball Fixed logic errors, cleaned up code
 @change: 2016/01/05 eball Added a test for removal of a non-existent file
+@change: 2016-02-10 roy adding sys.path.append for both test framework and 
+                        individual test runs.
 '''
 import unittest
 import os
 from shutil import rmtree
+import sys
+
+sys.path.append("../../../..")
 from src.stonix_resources.filehelper import FileHelper as FileHelper
 import src.stonix_resources.environment as environment
 import src.tests.lib.logdispatcher_lite as logdispatcher

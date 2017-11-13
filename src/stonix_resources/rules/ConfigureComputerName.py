@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,7 +26,8 @@ Created on Dec 3, 2014
 @author: dwalker
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
-@change: 2015/11/05 ekkehard Added LDAP Entry reporting if not compliant 
+@change: 2015/11/05 ekkehard Added LDAP Entry reporting if not compliant
+@change: 2017/07/26 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -42,7 +43,7 @@ class ConfigureComputerName(Rule):
         self.rulenumber = 260
         self.rulename = "ConfigureComputerName"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.formatDetailedResults("initialize")
         self.mil = None
         self.mandatory = True

@@ -22,13 +22,18 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule SoftwarePatching
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: Eric Ball
+@change: 2016/07/12 Original Implementation (replacing placeholder)
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
@@ -45,13 +50,20 @@ class zzzTestRuleSoftwarePatching(RuleTest):
                                      self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
 
     def runTest(self):
-        self.simpleRuleTest()
+        compliant = self.rule.report()
+        if not compliant:
+            self.assertTrue(self.rule.fix(), "Fix was not successful")
+            # The fix for this rule only fixes the cron job, though the report
+            # checks several other factors that need to be administratively
+            # fixed. We will therefore only run the cronsconfigured() reporting
+            # method after the fix.
+            self.assertTrue(self.rule.cronsconfigured(), "cron job is not " +
+                            "scheduled after fix has run")
 
     def setConditionsForRule(self):
         '''
@@ -72,9 +84,9 @@ class zzzTestRuleSoftwarePatching(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -87,7 +99,7 @@ class zzzTestRuleSoftwarePatching(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -100,11 +112,10 @@ class zzzTestRuleSoftwarePatching(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

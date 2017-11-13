@@ -27,12 +27,17 @@ Created on Jul 13, 2011
 
 @author: dkennel
 @change: 2015/10/23 eball Updated deprecated unit test methods, added dummy
-    PN file creation
+                          PN file creation
+@change: 2016-02-10 roy  adding sys.path.append for both test framework and 
+                         individual test runs.
 '''
 import os
 import re
 import pwd
+import sys
 import unittest
+
+sys.path.append("../../../..")
 import src.stonix_resources.environment as environment
 
 

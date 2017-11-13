@@ -1,5 +1,6 @@
 ###############################################################################
 #                                                                             #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
@@ -31,6 +32,11 @@ Created on Apr 9, 2013
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/16 eball Moved all file creation from report to fix
+@change: 2017/6/29  bgonz12 Added fix in ReportLinux for machines that have
+                            deprecated "ifconfig"
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -55,12 +61,10 @@ class DisableIPV6(Rule):
         self.rulenumber = 123
         self.rulename = "DisableIPV6"
         self.formatDetailedResults("initialize")
-        self.helptext = "Disables IPV6 functionality. For Solaris " + \
-            "systems, only the report will be run."
         self.guidance = ["NSA 2.5.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # configuration item instantiation
         datatype = 'bool'
@@ -75,7 +79,7 @@ class DisableIPV6(Rule):
         self.created2 = False
         self.editor1, self.editor2, self.editor3 = "", "", ""
         self.sh = ServiceHelper(self.environ, self.logger)
-
+        self.sethelptext()
     def report(self):
         try:
             self.detailedresults = ""
@@ -366,6 +370,24 @@ and/or wasn't able to be created\n"
         sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
                    "net.ipv6.conf.default.disable_ipv6": "1"}
         self.helper = Pkghelper(self.logger, self.environ)
+
+        #stig portion
+        if self.helper.manager == "apt-get":
+            nfspkg = "nfs-common"
+        else:
+            nfspkg = "nfs-utils.x86_64"
+        if self.helper.check(nfspkg):
+            if os.path.exists("/etc/netconfig"):
+                item1 = "udp6 tpi_clts v inet6 udp - -"
+                item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
+                contents = readFile("/etc/netconfig", self.logger)
+                for line in contents:
+                    line = re.sub("\s+", " ", line.strip())
+                    if re.search(item1, line) or re.search(item2, line):
+                        self.detailedresults += "/etc/netconfig file contains " + \
+                            "lines we don't want present\n"
+                        compliant = False
+                
         if self.helper.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             if not os.path.exists(ifacefile):
@@ -377,7 +399,7 @@ and/or wasn't able to be created\n"
             ifacefile = "/etc/sysconfig/network/"
             if not os.path.exists(ifacefile):
                 ifacefile = ""
-        if self.sh.auditservice("ip6tables"):
+        if self.sh.auditService("ip6tables", _="_"):
             compliant = False
             debug = "ip6tables is still set to run\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -387,7 +409,11 @@ and/or wasn't able to be created\n"
         self.modprobes2 = {"options ipv6 disable": "1"}
         remove1 = []
         remove2 = []
-        cmd = ["/sbin/ifconfig"]
+        # "ifconfig"has been deprecated on Debian9 so use "ip addr" instead
+        if os.path.exists("/sbin/ifconfig"):
+            cmd = ["/sbin/ifconfig"]
+        else:
+            cmd = ["/sbin/ip", "addr"]
         cmdhelper = CommandHelper(self.logger)
         if not cmdhelper.executeCommand(cmd):
             compliant = False
@@ -642,6 +668,38 @@ contain the correct contents\n"
         modprobedir = "/etc/modprobe.d/"
         interface = {"IPV6INIT": "no",
                      "NETWORKING_IPV6": "no"}
+        #stig stuff
+        if self.helper.manager == "apt-get":
+            nfspkg = "nfs-common"
+        else:
+            nfspkg = "nfs-utils.x86_64"
+        if self.helper.check(nfspkg):
+            if os.path.exists("/etc/netconfig"):
+                filestring = ""
+                item1 = "udp6 tpi_clts v inet6 udp - -"
+                item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
+                contents = readFile("/etc/netconfig", self.logger)
+                for line in contents:
+                    templine = re.sub("\s+", " ", line.strip())
+                    if re.search(item1, templine) or re.search(item2, templine):
+                        continue
+                    else:
+                        filestring += line
+                tmpfile = "/etc/netconfig.tmp"
+                if not writeFile(tmpfile, filestring, self.logger):
+                    success = False
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": "/etc/netconfig"}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange("/etc/netconfig",
+                                                         tmpfile, myid)
+                    os.rename(tmpfile, "/etc/netconfig")
+                    os.chown("/etc/netconfig", 0, 0)
+                    os.chmod("/etc/netconfig", 420)
+                    resetsecon("/etc/netconfig")
         if self.helper.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             netwrkfile = "/etc/sysconfig/network"
@@ -677,11 +735,11 @@ contain the correct contents\n"
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
-        if self.sh.auditservice("ip6tables"):
+        if self.sh.auditService("ip6tables", _="_"):
             debug = "auditservice returned: " + \
-                str(self.sh.auditservice("ip6tables")) + "\n\n\n"
+                str(self.sh.auditService("ip6tables", _="_")) + "\n\n\n"
             self.logger.log(LogPriority.DEBUG, debug)
-            if not self.sh.disableservice("ip6tables"):
+            if not self.sh.disableService("ip6tables", _="_"):
                 success = False
                 debug = "Unable to disable ip6tables service\n"
                 self.logger.log(LogPriority.DEBUG, debug)

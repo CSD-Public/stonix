@@ -58,7 +58,7 @@ class RemoveSTOM(Rule):
         self.guidance = []
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.12.10']}}
 
         self.files = {"stom2.conf": {"path": "/Library/Preferences/stom2.conf",
                                      "remove": True,
@@ -116,7 +116,7 @@ class RemoveSTOM(Rule):
                          "gov.lanl.STOM2":
                          "/Library/LaunchDaemons/gov.lanl.STOM2.plist"
                          }
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
         for filelabel, fileinfo in sorted(self.files.items()):
             addfilereturn = self.fh.addFile(filelabel,
                                             fileinfo["path"],

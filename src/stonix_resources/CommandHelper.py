@@ -1,4 +1,3 @@
-'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
@@ -22,6 +21,7 @@
 #                                                                             #
 ###############################################################################
 
+'''
 @author: ekkehard
 @author: rsn
 @author: dwalker
@@ -30,13 +30,20 @@
 @change: 2014/04/01 dwalker added setRegexFlag & enhanced findInOutput
 @change: 2014/04/15 ekkehard enhance documentation & pep8 compliance
 @change: 2014/04/15 ekkehard made logging more intelligent
-@change: 2014/10/20 ekkehard fix pep8 viloation
+@change: 2014/10/20 ekkehard fix pep8 violation
 @change: 2015/09/22 ekkehard Uniform logging
+@change: 2017/10/17 rsn Added __calledBy() method for determining the
+                        caller of command helper
 '''
+
+import inspect
 import re
 import subprocess
 import traceback
 import types
+import time
+import sys
+
 from logdispatcher import LogPriority
 
 
@@ -72,6 +79,28 @@ class CommandHelper(object):
 
         # set this to False if you need to run a command that has no return code
         self.wait = True
+        self.cmdtimeout = 0
+
+###############################################################################
+
+    def __calledBy(self):
+        """
+        Log the caller of the method that calls this method
+
+        @author: Roy Nielsen
+        """
+        try:
+            filename = inspect.stack()[3][1]
+            functionName = str(inspect.stack()[3][3])
+            lineNumber = str(inspect.stack()[3][2])
+        except Exception, err:
+            raise err
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \
+                                      filename + ": " + \
+                                      functionName + " (" + \
+                                      lineNumber + ")")
+        return " Filename: " + str(filename) + "Line: " + str(lineNumber) + " functionName: " + str(functionName)
 
 ###############################################################################
 
@@ -230,13 +259,18 @@ class CommandHelper(object):
 
             if self.stdout:
                 if not isinstance(self.stdout, list):
-                    self.logdispatcher.log(LogPriority.DEBUG, "Parameter self.stdout is not a list. Cannot compile stdout string. Returning blank stdout string...")
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Parameter self.stdout is not a " +
+                                           "list. Cannot compile stdout " +
+                                           "string. Returning blank stdout " +
+                                           "string...")
                     return stdstring
 
                 for line in self.stdout:
-                    stdstring += line
+                    stdstring += line + "\n"
             else:
-                self.logdispatcher.log(LogPriority.DEBUG, "No stdout string to display")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "No stdout string to display")
 
         except Exception:
             raise
@@ -260,13 +294,18 @@ class CommandHelper(object):
 
             if self.stderr:
                 if not isinstance(self.stderr, list):
-                    self.logdispatcher.log(LogPriority.DEBUG, "Parameter self.stderr is not a list. Cannot compile error string. Returning blank error string...")
+                    self.logdispatcher.log(LogPriority.DEBUG,
+                                           "Parameter self.stderr is not a " +
+                                           "list. Cannot compile error " +
+                                           "string. Returning blank error " +
+                                           "string...")
                     return errstring
 
                 for line in self.stderr:
-                    errstring += line
+                    errstring += line + "\n"
             else:
-                self.logdispatcher.log(LogPriority.DEBUG, "No error string to display")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "No error string to display")
 
         except Exception:
             raise
@@ -291,11 +330,17 @@ class CommandHelper(object):
         try:
 
             if not isinstance(stdoutstring, basestring):
-                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stdoutstring is not in string format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "Content of parameter stdoutstring " +
+                                       "is not in string format. Will not " +
+                                       "include content in output!")
                 stdoutstring = ""
 
             if not isinstance(stderrstring, basestring):
-                self.logdispatcher.log(LogPriority.DEBUG, "Content of parameter stderrstring is not in string format. Will not include content in output!")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "Content of parameter stderrstring " +
+                                       "is not in string format. Will not " +
+                                       "include content in output!")
                 stderrstring = ""
 
             if stderrstring:
@@ -306,7 +351,8 @@ class CommandHelper(object):
                 allstring += stdoutstring
 
             if not allstring:
-                self.logdispatcher.log(LogPriority.DEBUG, "There was no output to return")
+                self.logdispatcher.log(LogPriority.DEBUG,
+                                       "There was no output to return")
 
         except Exception:
             raise
@@ -426,7 +472,8 @@ class CommandHelper(object):
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
                 raise TypeError(msg)
         except Exception:
-            raise
+            message = str(self.__calledBy()) + "\nInvalid command input: " + str(traceback.format_exc())
+            raise ValueError(str(message))
         return success
 
 ###############################################################################
@@ -479,6 +526,8 @@ class CommandHelper(object):
         @author: ekkehard j. koch
         '''
 
+        commandaborted = False
+
         try:
             commandobj = None
             success = True
@@ -497,21 +546,36 @@ class CommandHelper(object):
                                      "".join(self.command) + ")")
 
             if (success):
+                time_start = time.time()
                 commandobj = subprocess.Popen(self.command,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, 
-                               shell=self.shell)
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE,
+                                              shell=self.shell)
+                if self.cmdtimeout:
+                    while commandobj.poll() is None:
+                        if time.time() - time_start >= self.cmdtimeout:
+                            commandobj.terminate()
+                            commandobj.returncode = -1
+                            self.logdispatcher.log(LogPriority.DEBUG, "Command exceeded specified max. run time of: " + str(self.cmdtimeout) + " seconds! Command aborted!")
+                            commandaborted
+                            break
+                        else:
+                            continue
+
+                if commandaborted:
+                    success = False
+                    self.returncode = commandobj.returncode
+                    return success
+
                 outlines = []
                 errlines = []
-                for line in iter(commandobj.stdout.readline, ''):
-                    outlines.append(line)
-                commandobj.stdout.close()
-                for line in iter(commandobj.stderr.readline, ''):
-                    errlines.append(line)
-                commandobj.stderr.close()
-
+                # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
-                    commandobj.wait()
+
+                    if commandobj is not None:
+                        outs, errs = commandobj.communicate()
+                        outlines = str(outs).splitlines()
+                        errlines = str(errs).splitlines()
 
                 if commandobj is not None:
                     self.stdout = outlines

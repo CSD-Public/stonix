@@ -29,6 +29,9 @@ Created on Aug 22, 2012
 prompt and wait issues during undo.
 @change: 2015/07/08 eball - Updated documentation for recordchgevent method
 @change: 2015/11/18 eball - Fixed recording of deletion event
+@change: 2016/06/10 dkennel - Updated recordfilechange to handle case where
+oldfile does not exist
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 import shelve
 import shutil
@@ -154,11 +157,14 @@ are an end user please report a bug.''')
                         ['StateChgLogger',
                          "Recording changes in %s" % oldfile])
         self.archivefile(oldfile)
-        oldfilehandle = open(oldfile, 'r')
+        if os.path.exists(oldfile):
+            oldfilehandle = open(oldfile, 'r')
+            oldfiledata = oldfilehandle.readlines()
+            oldfilehandle.close()
+        else:
+            oldfiledata = []
         newfilehandle = open(newfile, 'r')
-        oldfiledata = oldfilehandle.readlines()
         newfiledata = newfilehandle.readlines()
-        oldfilehandle.close()
         newfilehandle.close()
         path, filename = os.path.split(oldfile)
         self.logger.log(LogPriority.DEBUG,
@@ -368,7 +374,10 @@ are an end user please report a bug.''')
         eventtype: conf | creation | deletion
         filepath: string
         ==========================================
-        eventtype: perms
+        eventtype: comm | commandstring (same function)
+        command: string | list
+        ==========================================
+        eventtype: perm
         filepath: string
         startstate: [owner_uid, group_gid, mode]
         endstate: [owner_uid, group_gid, mode]
@@ -391,6 +400,8 @@ are an end user please report a bug.''')
 If you are a rule developer you should guard against this. If you
 are an end user please report a bug.''')
         self.eventlog[eventcode] = eventdict
+        debug = "Recorded new change event with event code " + eventcode
+        self.logger.log(LogPriority.DEBUG, debug)
         self.eventlog.sync()
 
     def getchgevent(self, eventcode):

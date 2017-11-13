@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,7 +24,8 @@
 This rule removes all detected games.
 
 @author: Eric Ball
-@change: 2015-08-20 eball - Original implementation
+@change: 2015/08/20 eball Original implementation
+@change: 2016/09/14 eball Added autoremove command to apt-get systems fix
 '''
 from __future__ import absolute_import
 import os
@@ -44,11 +45,7 @@ class RemoveSUIDGames(Rule):
         self.rulename = "RemoveSUIDGames"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''On Linux systems some games are installed SUID for \
-the purpose of storing high scores. Games are non-essential on business \
-systems and should be removed. This rule will attempt to uninstall all games \
-from a known list for RHEL 6 systems, and anything present in the /usr/games \
-directory.'''
+        self.sethelptext()
         self.applicable = {'type': 'white', 'family': 'linux'}
 
         # Configuration item instantiation
@@ -141,7 +138,7 @@ directory.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-    def __cleandir(self, directory):
+    def __cleandir(self, directory, depth=0):
         '''Recursively finds the package name for each file in a directory,
         and all child directories, and uninstalls the package. Ignores links.
         This is best-effort; no error checking is done for the uninstall
@@ -179,7 +176,15 @@ directory.'''
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
             elif os.path.isdir(path):
-                success &= self.__cleandir(path)
+                if depth < 6:
+                    success &= self.__cleandir(path, depth+1)
+        dirlist = os.listdir(directory)
+        if dirlist:
+            # There is a possibility that removing some packages will result in
+            # other packages being installed. We will attempt to remove these
+            # additional packages, but limit this to avoid infinite loops.
+            if depth < 6:
+                success &= self.__cleandir(directory, depth+1)
         return success
 
     def fix(self):

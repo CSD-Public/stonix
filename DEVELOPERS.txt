@@ -222,7 +222,7 @@ Developers Information for STONIX
   removal and checking packages. There are some important limitations with the
   Package Helper that have to do with the underlying packaging systems, or lack
   thereof on some platforms. This helper is far more effective with Linux OS
-  systems than it is with OS X or Solaris.
+  systems than it is with macOS (OS X) or Solaris.
   
   The StateChgLogger assists rules that wish to have undo functionality to
   record their changes and unwind them. To make effective use of the

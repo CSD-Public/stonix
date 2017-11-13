@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -31,9 +31,13 @@ on a system must have unique UIDs.
 @change: 2015/04/14 dkennel updated to use new style isApplicable
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/28 ekkehard fix name and file name
+@change: 2016/04/26 rsn add group checks per RHEL 7 STIG
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 import os
+import re
 import traceback
 
 # The period was making python complain. Adding the correct paths to PyDev
@@ -48,6 +52,20 @@ class CheckDupIDs(Rule):
     This class checks the local accounts database for duplicate IDs. All
     accounts on a system must have unique UIDs. This class inherits the base
     Rule class, which in turn inherits observable.
+
+    @note: Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+
+       All GIDs referenced in /etc/passwd must be defined in /etc/group
+
+       Add a group to the system for each GID referenced without a
+       corresponding group. Inconsistency in GIDs between /etc/passwd and
+       /etc/group could lead to a user having unintended rights.
+
+       Watch for LDAP issues (e.g. user default group changed to a group
+       coming from LDAP).
+
+       For Mac, also check that all the user's primary group ID's are in the
+       local directory.
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -65,14 +83,12 @@ class CheckDupIDs(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
-        self.helptext = "This rule is an audit-only rule that will " + \
-            "examine local account databases for accounts that " + \
-            "have duplicate UID values. All accounts must be unique for " + \
-            "accountability purposes."
+        self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.issuelist = []
+        self.auditonly = True
 
     def report(self):
         '''CheckDuplicateIds.report(): produce a report on whether or not local
@@ -241,3 +257,98 @@ class CheckDupIDs(Rule):
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             return False
+
+    def getcolumn(self, file_to_read="", column=0, separator=":"):
+        """
+        Get the data out of <file_to_read> column <column> using <separator>
+
+        Intended for use with the /etc/group and /etc/password files for getting
+        and comparing group information.
+
+        @author: Roy Nielsen
+        """
+        if file_to_read and isinstance(column, int) and separator:
+            reading = open(file_to_read, "r")
+
+            for line in reading.readlines():
+                try:
+                    column_data = line.split(separator)[column]
+                except IndexError:
+                    continue
+            return column_data
+
+    def checkgrouprefs(self):
+        """
+        Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+
+        All GIDs referenced in /etc/passwd must be defined in /etc/group
+
+        Add a group to the system for each GID referenced without a
+        corresponding group. Inconsistency in GIDs between /etc/passwd and
+        /etc/group could lead to a user having unintended rights.
+
+        Watch for LDAP issues (e.g. user default group changed to a group
+        coming from LDAP).
+
+        @author: Roy Nielsen
+        """
+        group_groups = self.getcolumn("/etc/group", 2)
+        pwd_groups = self.getcolumn("/etc/passwd", 3)
+
+        for group in pwd_groups:
+            if not group in group_groups:
+                message = "Group: " + str(group) + " is not in the passwd file."
+                self.logger.log(LogPriority.INFO, message)
+                self.issuelist.append(message)
+
+    def checkmacgrouprefs(self):
+        """
+        Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+
+           All GIDs referenced in /etc/passwd must be defined in /etc/group
+
+           Add a group to the system for each GID referenced without a
+           corresponding group. Inconsistency in GIDs between /etc/passwd and
+           /etc/group could lead to a user having unintended rights.
+
+           Watch for LDAP issues (e.g. user default group changed to a group
+           coming from LDAP).
+
+        For Mac, check that al the user's primary group ID's are in the local
+        directory.
+
+        @author: Roy Nielsen
+        """
+        self.dscl = "/usr/bin/dscl"
+        user_groups = []
+        dscl_users = [self.dscl, ".", "list", "/users"]
+        self.commandhelper.executeCommand(dscl_users)
+        output = self.commandhelper.getOutput()
+        dscl_users = output
+
+        system_users = ["avahi", "daemon", "nobody", "root" ]
+
+        for user in dscl_users:
+            if re.match("^_", user) or user in system_users:
+                continue
+
+            dscl_user_group = [self.dscl, ".", "read", "/Users/" + str(user), "gid"]
+            self.commandhelper.executeCommand(dscl_user_group)
+            output = self.commandhelper.getOutput()
+            self.logger.log(LogPriority.INFO, "output: " + str(output))
+            try:
+                mygroup = output[0].split()[1]
+                user_groups.append(mygroup)
+            except KeyError, IndexError:
+                pass
+
+        dscl_groups = [self.dscl, ".", "list", "/Groups"]
+        self.commandhelper.executeCommand(dscl_groups)
+        output = self.commandhelper.getOutput()
+        group_groups = output
+
+        for group in user_groups:
+            if not group in group_groups:
+                message = "Group: " + str(group) + " is not in the passwd file."
+                self.logger.log(LogPriority.INFO, message)
+                self.issuelist.append(message)

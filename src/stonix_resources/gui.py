@@ -255,12 +255,15 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         appropriate to the selected rule.
 
         @author: D. Kennel
+        @change: Breen Malmberg - 7/18/2017 - added code to check if rule is audit only
+                and set fix button enabled = False if it is audit only
         """
         if len(self.rule_list_widget.selectedItems()) > 0:
             if self.environ.geteuid() == 0:
                 self.revert_button.setEnabled(True)
             else:
                 self.revert_button.setEnabled(False)
+                self.save_cancel_frame.hide()
             self.fix_button.setEnabled(True)
             self.report_button.setEnabled(True)
 
@@ -269,7 +272,16 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                                          self.rule_list_widget.selectedItems()[0].text())
             rule_name = self.rule_list_widget.selectedItems()[0].text()
             rule_num = self.controller.getrulenumbyname(rule_name)
-            self.rule_instructions_text.setPlainText(QApplication.translate("MainWindow",
+
+            # check whether the currently selected rule is audit only
+            auditonly = self.controller.getruleauditonly(rule_num)
+            # disable or enable the fix button, based on audit only status
+            if auditonly:
+                self.fix_button.setEnabled(False)
+            else:
+                self.fix_button.setEnabled(True)
+
+            self.rule_instructions_text.setText(QApplication.translate("MainWindow",
                                                                             self.rule_data[rule_num][1],
                                                                             None,
                                                                             QApplication.UnicodeUTF8))
@@ -281,7 +293,9 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             for rulename in self.ruleci:
                 self.ruleci[rulename].hide()
             rulename = self.rule_list_widget.selectedItems()[0].text()
-            self.ruleci[rulename].show()
+            # Only show CIs when running in root context
+            if self.environ.geteuid() == 0:
+                self.ruleci[rulename].show()
             self.frame_rule_details.show()
         else:
             self.frame_rule_details.hide()

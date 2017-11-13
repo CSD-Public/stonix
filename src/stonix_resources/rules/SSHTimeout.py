@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Mar 12, 2013
 
 @author: dwalker
@@ -30,6 +29,9 @@ Created on Mar 12, 2013
 @change: 04/18/2014 ekkehard ci updates
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/09 eball Improved feedback
+@change: 2016/06/29 eball Fixed Mac path, added timeout as a CI
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
@@ -40,11 +42,17 @@ from ..KVEditorStonix import KVEditorStonix
 from ..pkghelper import Pkghelper
 import traceback
 import os
+import re
 
 
 class SSHTimeout(Rule):
+    '''
+    This rule will configure the ssh timeout period for 
+    ssh sessions, if ssh is installed.
 
-###############################################################################
+    @author: dwalker
+    '''
+
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
@@ -53,22 +61,22 @@ class SSHTimeout(Rule):
         self.rulename = 'SSHTimeout'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''SSH allows administrators to set an idle timeout \
-interval. After this interval has passed, the idle user will be \
-automatically logged out. '''
-        self.ci = self.initCi("bool",
-                              "SSHTIMEOUT",
-                              "To disable this rule set the value " + \
-                              "of SSHTIMEOUT to False",
-                              True)
+        self.sethelptext()
+        self.boolCi = self.initCi("bool",
+                                  "SSHTIMEOUTON",
+                                  "To disable this rule set the value " +
+                                  "of SSHTIMEOUTON to False",
+                                  True)
+        self.intCi = self.initCi("int", "SSHTIMEOUT",
+                                 "Set your preferred timeout value here, " +
+                                 "in seconds. Default is 900 (15 minutes).",
+                                 900)
         self.guidance = ['NSA 3.5.2.3']
         self.iditerator = 0
         self.editor = ""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
-
-###############################################################################
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
     def report(self):
         '''SSHTimeout.report(): produce a report on whether or not a valid
@@ -77,11 +85,17 @@ automatically logged out. '''
         '''
 
         try:
+            self.detailedresults = ""
             compliant = True
             results = ""
+            timeout = self.intCi.getcurrvalue()
             if self.environ.getostype() == "Mac OS X":
-                self.path = '/private/etc/sshd_config'
-                self.tpath = '/private/etc/sshd_config.tmp'
+                if re.search("10\.11\.*|10\.12\.*", self.environ.getosver()):
+                    self.path = '/private/etc/ssh/sshd_config'
+                    self.tpath = '/private/etc/ssh/sshd_config.tmp'
+                else:
+                    self.path = "/private/etc/sshd_config"
+                    self.tpath = "/private/etc/sshd_config.tmp"
             else:
                 self.path = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
@@ -91,10 +105,14 @@ automatically logged out. '''
                     openssh = "openssh"
                 else:
                     openssh = "openssh-server"
-                if not self.ph.check(openssh):
-                    compliant = False
-                    results += "Package " + openssh + " is not installed\n"
-            self.ssh = {"ClientAliveInterval": "900",
+
+            if not self.ph.check(openssh):
+                self.compliant = True
+                self.detailedresults += "Package " + openssh + " is not installed.\nNothing to configure."
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                return self.compliant
+
+            self.ssh = {"ClientAliveInterval": str(timeout),
                         "ClientAliveCountMax": "0"}
             if os.path.exists(self.path):
                 compliant = True
@@ -107,7 +125,7 @@ automatically logged out. '''
                     compliant = False
                     results += "Settings in " + self.path + " are not " + \
                         "correct\n"
-                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     compliant = False
                     results += self.path + " permissions are incorrect\n"
             else:
@@ -126,7 +144,6 @@ automatically logged out. '''
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
 
     def fix(self):
         '''SSHTimeout.fix(): set the correct values in /etc/ssh/sshd_config
@@ -135,15 +152,16 @@ automatically logged out. '''
         '''
 
         try:
-            if not self.ci.getcurrvalue():
+            if not self.boolCi.getcurrvalue():
                 return
+            debug = "inside fix method\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             created = False
             self.iditerator = 0
             success = True
             self.detailedresults = ""
             debug = ""
-
-            #clear out event history so only the latest fix is recorded
+            # clear out event history so only the latest fix is recorded
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
@@ -154,7 +172,11 @@ automatically logged out. '''
                 else:
                     openssh = "openssh-server"
                 if not self.ph.check(openssh):
+                    debug = "openssh-server is not installed in fix\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     if self.ph.checkAvailable(openssh):
+                        debug = "openssh-server is not available in fix\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                         if not self.ph.install(openssh):
                             debug = "Unable to install openssh-server\n"
                             self.logger.log(LogPriority.DEBUG, debug)
@@ -163,17 +185,20 @@ automatically logged out. '''
                         else:
                             cmd = self.ph.getRemove() + openssh
                             event = {"eventtype": "commandstring",
-                                     "command":cmd}
+                                     "command": cmd}
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             self.statechglogger.recordchgevent(myid, event)
                             self.detailedresults += "Installed openssh-server\n"
-                            self.editor = KVEditorStonix(self.statechglogger, 
-                                self.logger,"conf", self.path, self.tpath, 
-                                                      self.ssh, "present", "space")
+                            self.editor = KVEditorStonix(self.statechglogger,
+                                                         self.logger, "conf",
+                                                         self.path, self.tpath,
+                                                         self.ssh, "present",
+                                                         "space")
                             self.editor.report()
                     else:
                         debug += "openssh-server not available to install\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                         self.rulesuccess = False
                         return
             if not os.path.exists(self.path):
@@ -184,25 +209,27 @@ automatically logged out. '''
                 event = {"eventtype": "creation",
                          "filepath": self.path}
                 self.statechglogger.recordchgevent(myid, event)
-                self.editor = KVEditorStonix(self.statechglogger, 
-                    self.logger, "conf", self.path, self.tpath, self.ssh, 
-                                                            "present", "space")
+                self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                             "conf", self.path, self.tpath,
+                                             self.ssh, "present", "space")
                 self.editor.report()
 
             if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 420], self.logger):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path, [0, 0, 420], self.logger,
+                        if not setPerms(self.path, [0, 0, 0o644], self.logger,
                                         self.statechglogger, myid):
                             debug += "Unable to set Permissions \
     for: " + self.editor.getPath() + "\n"
                             success = False
                     else:
-                        if not setPerms(self.path, [0, 0, 420], self.logger):
+                        if not setPerms(self.path, [0, 0, 0o644], self.logger):
                             success = False
-                if self.editor.fixables or self.editor.removeables:
+
+                if self.editor.fixables:
+
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
@@ -211,16 +238,19 @@ automatically logged out. '''
                         debug += "kveditor fix ran successfully\n"
                         if self.editor.commit():
                             debug += "kveditor commit ran successfully\n"
+
+                            os.chown(self.path, 0, 0)
+                            os.chmod(self.path, 0o644)
+                            if re.search("linux", self.environ.getosfamily()):
+                                resetsecon(self.path)
+
                         else:
                             debug += "Unable to complete kveditor commit\n"
                             success = False
                     else:
                         debug += "Unable to complete kveditor fix\n"
                         success = False
-                        success = False
-                    os.chown(self.path, 0, 0)
-                    os.chmod(self.path, 420)
-                    resetsecon(self.path)
+                    
                 self.rulesuccess = success
             if debug:
                 self.logger.log(LogPriority.DEBUG, debug)
@@ -231,7 +261,6 @@ automatically logged out. '''
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+                                   self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-    

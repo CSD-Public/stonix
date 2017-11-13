@@ -27,12 +27,17 @@ This is a Unit Test for Rule ConfigureLANLLDAP
 @author: Eric Ball
 @change: 2015/08/11 - Original Implementation
 @change: 2015/11/16 - Updated for Ubuntu/RHEL6 nslcd, all else sssd
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
 import os
 import re
+import sys
 import traceback
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
@@ -184,11 +189,7 @@ aliases:    files nisplus
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
-        success = False
-        cmd = ["getent", "passwd", "eball"]
-        self.ch.executeCommand(cmd)
-        if re.search("26446", self.ch.getOutputString()):
-            success = True
+        success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):

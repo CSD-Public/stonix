@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,6 +24,7 @@
 Created on Aug 4, 2015
 
 @author: dwalker
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
 
@@ -50,10 +51,7 @@ class ConfigureLDAPServer(Rule):
         self.rulename = "ConfigureLDAPServer"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = '''This rule ensures that any ldap files present \
-have the correct permissions.  However this rule only checks locations of \
-files that LANL believes them to be in.  If your files and certificates \
-are not in those locations, stonix will report compliance'''
+        self.sethelptext()
         datatype = "bool"
         key = "CONFIGURELDAPSERV"
         instructions = '''To disable this rule set the value of \

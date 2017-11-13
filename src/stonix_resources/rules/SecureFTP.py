@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,6 +33,8 @@ copy of Environment was instantiated, fixed bug where CI was not referenced in
 the Fix method.
 @change: 2014/08/26 Multiple bugs on RHEL 7 fixed.
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2015/04/26 ekkehard Results Formatting
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -64,10 +66,9 @@ of users allowed to access ftp and set the default umask for ftp users.
         self.statechglogger = statechglogger
         self.rulenumber = 32
         self.rulename = 'SecureFTP'
+        self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = 'Enable logging for all attempted access and ' + \
-        'ftp commands, restrict the set of users allowed to access ftp ' + \
-        'and set the default umask for ftp users.'
+        self.sethelptext()
         self.rootrequired = True
         self.detailedresults = 'The SecureFTP rule has not yet been run'
         self.compliant = True
@@ -79,24 +80,24 @@ of users allowed to access ftp and set the default umask for ftp users.
                          'CCE 4549-2', 'CCE 4554-2', 'CCE 4443-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # init CI(s)
         datatype = 'bool'
-        key = 'SecureFTP'
+        key = 'SECUREFTP'
         instructions = 'To prevent the secure configuration of FTPD, set ' + \
         'the value of SecureFTP to False'
         default = True
         self.SecureFTP = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'bool'
-        key2 = 'AllowLocalFTP'
+        key2 = 'ALLOWLOCALFTP'
         instructions2 = 'To allow local FTP account access, set the value of AllowLocalFTP to True. (Not Recommended. Use SSH or SCP instead)'
         default2 = False
         self.AllowLocalFTP = self.initCi(datatype2, key2, instructions2, default2)
 
         datatype3 = 'list'
-        key3 = 'AllowUsersList'
+        key3 = 'ALLOWUSERSLIST'
         instructions3 = '(Only use this if you set AllowLocalFTP to True) Enter single-space-delimited list of user account names to allow access to FTP.'
         default3 = []
         self.AllowUsersList = self.initCi(datatype3, key3, instructions3, default3)
@@ -390,6 +391,10 @@ of users allowed to access ftp and set the default umask for ftp users.
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, ['SecureFTP.fix ',
                                                 self.detailedresults])
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
 
 ###############################################################################
     def fixLinux(self):

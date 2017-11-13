@@ -24,11 +24,17 @@
 Created on Mar 19, 2015
 
 @author: Breen Malmberg
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
+@change: 2016/10/24 breen Changed the command for setConditionsForRule to be
+compatible with 10.11 and 10.12
 '''
 from __future__ import absolute_import
 
 import unittest
+import sys
 
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableAFPFileSharing import DisableAFPFileSharing
@@ -65,14 +71,16 @@ class zzzTestDisableAFPFileSharing(RuleTest):
         success = True
 
         try:
-            afpfile = '/System/Library/LaunchDaemons/com.apple.AppleFileSharing.plist'
-            cmd = 'defaults write ' + afpfile + ' Disabled -bool False'
+
+            cmd = 'launchctl enable system/com.apple.AppleFileServer'
 
             self.cmdhelper.executeCommand(cmd)
-            errout = self.cmdhelper.getErrorString()
-
-            if errout:
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                errstr = self.cmdhelper.getErrorString()
+                self.logdispatcher.log(LogPriority.DEBUG, errstr)
                 success = False
+
         except Exception:
             raise
         return success

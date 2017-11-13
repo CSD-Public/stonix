@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,13 +24,14 @@
 Created on Aug 12, 2015
 
 The kernel auditing service is provided for system auditing. By default, the
-service audits about SELinux AVC denials and certain types of
-security-relevant events such as system logins, account modifications, and
-authentication events.
+service audits certain types of security-relevant events such as system logins,
+account modifications, and authentication events.
 
 @author: Breen Malmberg
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
@@ -39,6 +40,7 @@ from ..logdispatcher import LogPriority
 from ..rule import Rule
 from ..KVEditorStonix import KVEditorStonix
 from ..CommandHelper import CommandHelper
+from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..stonixutilityfunctions import resetsecon
 from ..stonixutilityfunctions import iterate
@@ -63,10 +65,7 @@ class EnableKernelAuditing(Rule):
         self.rulename = 'EnableKernelAuditing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """The kernel auditing service is provided for system \
-auditing. By default, the service audits about SELinux AVC denials and \
-certain types of security-relevant events such as system logins, account \
-modifications, and authentication events."""
+        self.sethelptext()
         self.rootrequired = True
         self.compliant = False
         self.guidance = ['CIS', 'NSA 2.6.2', 'CCE-4665-5', 'CCE-4679-7',
@@ -76,10 +75,10 @@ modifications, and authentication events."""
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
-        key = 'EnableKernelAuditing'
+        key = 'ENABLEKERNELAUDITING'
         instructions = """To prevent kernel auditing from being enabled on \
 this system, set the value of EnableKernelAuditing to False"""
         default = True
@@ -101,23 +100,16 @@ this system, set the value of EnableKernelAuditing to False"""
 
         found = False
 
-        self.logger.log(LogPriority.DEBUG, "Executing searchFileContents()...")
-
         try:
 
             if not contents:
-                self.logger.log(LogPriority.DEBUG, "Contents parameter " +
-                                "provided was blank/empty. Nothing to " +
-                                "search. Returning False...")
                 return found
+
             if not searchstring:
-                self.logger.log(LogPriority.DEBUG, "Searchstring parameter " +
-                                "provided was blank/empty. Nothing to " +
-                                "search for. Returning False...")
                 return found
 
             for line in contents:
-                if re.search(searchstring, line):
+                if re.search(searchstring, line, re.IGNORECASE):
                     found = True
 
         except Exception:
@@ -136,13 +128,10 @@ this system, set the value of EnableKernelAuditing to False"""
 
         contentlines = []
 
-        self.logger.log(LogPriority.DEBUG, "Executing getFileContents()...")
-
         try:
 
             if not os.path.exists(filepath):
-                self.logger.log(LogPriority.DEBUG, "Specified filepath does " +
-                                "not exist! Returning empty list...")
+                self.logger.log(LogPriority.DEBUG, "Specified filepath does not exist! Returning empty list...")
                 return contentlines
 
             if os.path.exists(filepath):
@@ -165,48 +154,52 @@ this system, set the value of EnableKernelAuditing to False"""
 
         try:
 
-            self.logger.log(LogPriority.DEBUG, 'Executing localization()...')
+            self.logger.log(LogPriority.DEBUG, 'Starting localization()...')
 
-            self.logger.log(LogPriority.DEBUG, "Determining OS...")
-            # DETERMINE OS
-            releasefilelocs = ['/etc/os-release', '/etc/redhat-release']
-            self.releasefile = ''
-            for loc in releasefilelocs:
-                if os.path.exists(loc):
-                    self.releasefile = loc
-            if not self.releasefile:
-                self.logger.log(LogPriority.DEBUG,
-                                "Couldn't determine the OS type")
-            self.logger.log(LogPriority.DEBUG, "releasefile = " +
-                            str(self.releasefile))
-            releasecontents = self.getFileContents(self.releasefile)
-            osdict = {'Fedora': 'Fedora',
-                      'Red Hat.*release 6.*': 'Redhat 6',
-                      'Red Hat.*release 7.*': 'Redhat 7',
-                      'CentOS': 'CentOS',
-                      'openSUSE': 'OpenSuSE',
-                      'Debian': 'Debian',
-                      'Ubuntu': 'Ubuntu'}
-            self.osname = ''
-            for item in osdict:
-                if self.searchFileContents(releasecontents, item):
-                    self.osname = osdict[item]
-            if not self.osname:
-                self.logger.log(LogPriority.DEBUG, "Couldn't determine " +
-                                "the OS type")
-            self.logger.log(LogPriority.DEBUG, "osname = " + str(self.osname))
+# DETERMINE OS DISTRIBUTION
+            self.logger.log(LogPriority.DEBUG, "Determining OS distribution/type...")
+            # for now, common will refer to: fedora, rhel, centos, ubuntu
+            self.osname = 'common'
+            relfile = '/etc/os-release'
+            relfiles = ['/etc/os-release', '/etc/redhat-release']
+            if not os.path.exists(relfile):
+                for rf in relfiles:
+                    if os.path.exists(rf):
+                        relfile = rf
+            if relfile:
+                if os.path.exists(relfile):
+                    f = open(relfile, 'r')
+                    contentlines = f.readlines()
+                    f.close()
+                    if contentlines:
+                        for line in contentlines:
+                            if re.search('debian', line, re.IGNORECASE):
+                                self.osname = 'debian'
+                            elif re.search('opensuse', line, re.IGNORECASE):
+                                self.osname = 'opensuse'
+            else:
+                self.logger.log(LogPriority.DEBUG, "Could not determine OS distro")
 
-            self.logger.log(LogPriority.DEBUG, "Setting up Audit daemon " +
-                            "configuration variables...")
-            # AUDIT DAEMON CONFIGURATION SECTION
+# SET AUDITD RESTART COMMAND
+            if self.osname == 'common':
+                self.auditrestart = 'service auditd restart'
+            elif self.osname == 'debian':
+                self.auditrestart = '/etc/init.d/auditd restart'
+            elif self.osname == 'opensuse':
+                self.auditrestart = 'systemctl restart auditd'
+
+# SET AUDITD PACKAGES
+            self.auditpkgs = ['auditd', 'audit']
+
+# AUDIT DAEMON CONFIGURATION SECTION
+            self.logger.log(LogPriority.DEBUG, "Setting up Audit Daemon variables...")
             auditconflocs = ['/etc/audit/auditd.conf', '/etc/auditd.conf']
             self.auditconffile = ''
             for loc in auditconflocs:
                 if os.path.exists(loc):
                     self.auditconffile = loc
             if not self.auditconffile:
-                self.logger.log(LogPriority.DEBUG, "Couldn't locate audit " +
-                                "configuration file")
+                self.logger.log(LogPriority.DEBUG, "Couldn't locate audit configuration file")
             self.auditconftmp = self.auditconffile + '.stonixtmp'
             self.auditconfoptions = {'log_file': '/var/log/audit/audit.log',
                                      'log_format': 'RAW',
@@ -223,30 +216,9 @@ this system, set the value of EnableKernelAuditing to False"""
                                      'admin_space_left_action': 'HALT',
                                      'disk_full_action': 'HALT',
                                      'disk_error_action': 'SINGLE'}
-            auditdcmddict = {'Fedora': '/usr/bin/systemctl enable ' +
-                             str(self.auditdpkg),
-                             'Redhat 6': '/usr/sbin/chkconfig ' +
-                             str(self.auditdpkg) + ' on',
-                             'Redhat 7': '/usr/bin/systemctl enable ' +
-                             str(self.auditdpkg),
-                             'CentOS': '/usr/bin/systemctl enable ' +
-                             str(self.auditdpkg),
-                             'Ubuntu': '/usr/sbin/update-rc.d ' +
-                             str(self.auditdpkg) + ' enable',
-                             'Debian': '/usr/bin/systemctl enable ' +
-                             str(self.auditdpkg),
-                             'OpenSuSE': '/usr/bin/systemctl enable ' +
-                             str(self.auditdpkg)}
-            if self.osname:
-                self.auditenablecmd = auditdcmddict[self.osname]
-            else:
-                self.logger.log(LogPriority.DEBUG, "Unable to set audit " +
-                                "enable command, due to osname being " +
-                                "unspecified")
 
-            self.logger.log(LogPriority.DEBUG, "Setting up Audit Dispatcher " +
-                            "variables...")
-            # AUDIT DISPATCHER SECTION
+# AUDIT DISPATCHER SECTION
+            self.logger.log(LogPriority.DEBUG, "Setting up Audit Dispatcher variables...")
             auditdispconflocs = ['/etc/audisp/audispd.conf']
             self.auditdispconffile = ''
             for loc in auditdispconflocs:
@@ -258,21 +230,18 @@ this system, set the value of EnableKernelAuditing to False"""
             self.audisptmp = self.auditdispconffile + '.stonixtmp'
             self.auditdispconfoptions = {'q_depth': '1024'}
 
-            self.logger.log(LogPriority.DEBUG, "Setting up Audit Rules " +
-                            "variables...")
-            # AUDIT RULES SECTION
-            auditruleslocs = ['/etc/audit/audit.rules',
-                              '/etc/audit/rules.d/audit.rules']
-            self.auditrulesfile = ''
-            for loc in auditruleslocs:
-                if os.path.exists(loc):
-                    self.auditrulesfile = loc
-            if not self.auditrulesfile:
-                self.logger.log(LogPriority.DEBUG,
-                                "Couldn't locate audit rules file")
+# AUDIT RULES SECTION
+            self.logger.log(LogPriority.DEBUG, "Setting up Audit Rules variables...")
+            self.auditrulesfiles = []
+            self.auditrulesbasedir = '/etc/audit/rules.d/'
+            if os.path.exists(self.auditrulesbasedir):
+                self.auditrulesfile = self.auditrulesbasedir + 'audit.rules'
+                self.auditrulesfiles = [f for f in os.listdir(self.auditrulesbasedir) if os.path.isfile(os.path.join(self.auditrulesbasedir, f))]
+            else:
+                self.auditrulesfile = '/etc/audit/audit.rules'
 
+# GRUB SECTION
             self.logger.log(LogPriority.DEBUG, "Setting up Grub variables...")
-            # GRUB SECTION
             grubconflocs = ['/boot/grub/grub.conf', '/etc/default/grub']
             self.grubconffile = ''
             for loc in grubconflocs:
@@ -297,7 +266,7 @@ this system, set the value of EnableKernelAuditing to False"""
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Setting Grub v1 variables")
+        self.logger.log(LogPriority.DEBUG, "Setting Grub v1 variables...")
 
         self.grubver = 1
 
@@ -308,7 +277,7 @@ this system, set the value of EnableKernelAuditing to False"""
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables")
+        self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables...")
         self.grubver = 2
         self.grubcfgloc = ''
         grubcfglocs = ['/boot/grub/grub.cfg', '/boot/grub2/grub.cfg']
@@ -339,38 +308,66 @@ this system, set the value of EnableKernelAuditing to False"""
         self.grubstatus = True
         self.auditpkgstatus = False
         self.detailedresults = ""
-        self.auditrulesoptions = {'-w /etc/localtime -p wa -k time-change':
-                                  True,
-                                  '-w /etc/group -p wa -k identity': True,
-                                  '-w /etc/passwd -p wa -k identity': True,
-                                  '-w /etc/gshadow -p wa -k identity': True,
-                                  '-w /etc/shadow -p wa -k identity': True,
-                                  '-w /etc/security/opasswd -p wa -k identity':
-                                  True,
-                                  '-w /etc/issue -p wa -k system-locale': True,
-                                  '-w /etc/issue.net -p wa -k system-locale':
-                                  True,
-                                  '-w /etc/hosts -p wa -k system-locale': True,
-                                  '-w /etc/sysconfig/network -p wa -k ' +
-                                  'system-locale': True,
-                                  '-w /etc/selinux/ -p wa -k MAC-policy': True,
-                                  '-w /var/log/faillog -p wa -k logins': True,
-                                  '-w /var/log/lastlog -p wa -k logins': True,
-                                  '-w /var/run/utmp -p wa -k session': True,
-                                  '-w /var/log/btmp -p wa -k session': True,
-                                  '-w /var/log/wtmp -p wa -k session': True,
-                                  '-w /etc/sudoers -p wa -k actions': True,
-                                  '-w /sbin/insmod -p x -k modules': True,
-                                  '-w /sbin/rmmod -p x -k modules': True,
-                                  '-w /sbin/modprobe -p x -k modules': True,
-                                  '-a always,exit -S init_module -S ' +
-                                  'delete_module -k modules': True,
-                                  '-e 2': True}
+        suidfiles = []
         self.cmdhelper = CommandHelper(self.logger)
+        self.svchelper = ServiceHelper(self.environ, self.logger)
+        self.pkghelper = Pkghelper(self.logger, self.environ)
 
         try:
 
+            self.arch = ''
+            # get the system's architecture type (32 or 64)
+            self.cmdhelper.executeCommand('uname -m')
+            outputlines = self.cmdhelper.getOutput()
+            errout = self.cmdhelper.getErrorString()
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                self.detailedresults += '\nCould not determine this system\'s architecture (32/64).'
+                self.logger.log(LogPriority.DEBUG, errout)
+            if outputlines:
+                for line in outputlines:
+                    if re.search('x86\_64', line):
+                        self.arch = '64'
+    
+            if not self.arch:
+                self.arch = '32'
+            uidstart = ''
+            self.auditrulesoptions = {'-w /etc/selinux/ -p wa -k MAC-policy': True,
+                                      '-w /etc/sudoers -p wa -k actions': True,
+                                      '-w /etc/localtime -p wa -k time-change': True,
+                                      '-w /etc/group -p wa -k identity': True,
+                                      '-w /etc/passwd -p wa -k identity': True,
+                                      '-w /etc/gshadow -p wa -k identity': True,
+                                      '-w /etc/shadow -p wa -k identity': True,
+                                      '-w /etc/security/opasswd -p wa -k identity': True,
+                                      '-w /etc/issue -p wa -k audit_rules_networkconfig_modification': True,
+                                      '-w /etc/issue.net -p wa -k audit_rules_networkconfig_modification': True,
+                                      '-w /etc/hosts -p wa -k audit_rules_networkconfig_modification': True,
+                                      '-w /etc/sysconfig/network -p wa -k audit_rules_networkconfig_modification': True,
+                                      '-w /etc/localtime -p wa -k audit_time_rules': True,
+                                      '-w /var/log/faillog -p wa -k logins': True,
+                                      '-w /var/log/lastlog -p wa -k logins': True,
+                                      '-w /var/run/utmp -p wa -k session': True,
+                                      '-w /var/log/btmp -p wa -k session': True,
+                                      '-w /var/log/wtmp -p wa -k session': True,
+                                      '-w /sbin/insmod -p x -k modules': True,
+                                      '-w /sbin/rmmod -p x -k modules': True,
+                                      '-w /sbin/modprobe -p x -k modules': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S chmod -S lchown -S fsetxattr -S fremovexattr -S fchownat -S fchown -S fchmodat -S fchmod -S chown -S lremovexattr -S lsetxattr -S setxattr -F auid>=1000 -F auid!=4294967295 -k perm_mod': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S creat -S open -S openat -S open_by_handle_at -S truncate -S ftruncate -F exit=-EACCES -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S mount -F auid>=1000 -F auid!=4294967295 -k export': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete': True,
+                                      # the following rule commented out due to the massive log spam it creates (system-killer)
+                                      # this is due primarily to cache and temp files management by java, browsers, and other applications as well
+                                      # '-a always,exit -F ' + str(self.arch) + ' -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S init_module -S delete_module -k modules': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S settimeofday -S adjtimex -S clock_settime -k audit_time_rules': True,
+                                      '-a always,exit -F arch=b32 -S stime -k audit_time_rules': True,
+                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S sethostname -S setdomainname -k audit_rules_networkconfig_modification': True,
+                                      '-a always,exit -F perm=x -F euid=0 -F auid>=1000 -F auid!=4294967295 -k privileged': True}
+
             if self.environ.getosfamily() == 'darwin':
+                self.localization()
                 if not self.reportmac():
                     self.compliant = False
                 self.formatDetailedResults("report", self.compliant,
@@ -378,25 +375,67 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
 
-            self.pkghelper = Pkghelper(self.logger, self.environ)
-            self.auditpkgs = ['auditd', 'audit']
+            outputlines = []
+
+            # GET LIST OF SETUID & SETGID FILES ON SYSTEM
+            self.logger.log(LogPriority.DEBUG, "Getting list of setuid and setgid files on this system...")
+            self.cmdhelper.executeCommand('find / -xdev -type f -perm -4000 -o -type f -perm -2000')
+            outputlines = self.cmdhelper.getOutput()
+            errout = self.cmdhelper.getErrorString()
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                self.detailedresults += "\nCommand to get setuid and setgid files failed with error code: " + str(retcode)
+                self.logger.log(LogPriority.DEBUG, errout)
+            if outputlines:
+                for line in outputlines:
+                    if re.search('^/', line):
+                        suidfiles.append(line.strip())
+
+            # ADD PRIVILEGED ACCESS RULES FOR ALL SETUID/SETGID FILES FOUND ON THIS SYSTEM
+            if suidfiles:
+                self.logger.log(LogPriority.DEBUG, "Found setuid/setgid files on the system; Adding audit rules for them...")
+                for sf in suidfiles:
+                    self.auditrulesoptions['-a always,exit -S all -F path=' + str(sf) + ' -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged'] = True
+                self.logger.log(LogPriority.DEBUG, "Finished adding audit rules for setuid/setgid files")
+            else:
+                self.logger.log(LogPriority.DEBUG, "No setuid or setgid files were found in root (/)")
+
+            # if the system starts issuing user id's at 500 instead of the newer 1000
+            # then change all auid>=1000 entries, in auditrulesoptions dict, to auid>=500
+            # first find whether the system starts issuing uid's at 500 or 1000
+            if os.path.exists('/etc/login.defs'):
+                f = open('/etc/login.defs')
+                contentlines = f.readlines()
+                f.close()
+                for line in contentlines:
+                    if re.search('^UID\_MIN\s+500', line):
+                        uidstart = '500'
+                    if re.search('^UID\_MIN\s+1000', line):
+                        uidstart = '1000'
+            else:
+                self.logger.log(LogPriority.DEBUG, "Could not locate login.defs file. Cannot determine uid start number.")
+
+            # if this system starts uid's for users at 500, then replace all instances of auid>=1000
+            if uidstart == '500':
+                for item in self.auditrulesoptions:
+                    if re.search('auid>=1000', item):
+                        newitem = item.replace('auid>=1000', 'auid>=500')
+                        self.auditrulesoptions[newitem] = self.auditrulesoptions.pop(item)
+
+            self.localization()
 
             # check if the auditing package is installed
             for pkg in self.auditpkgs:
                 if self.pkghelper.check(pkg):
                     self.auditpkgstatus = True
-                    self.auditdpkg = pkg
+
             # if we have no audit installation to report on, we cannot continue
             if not self.auditpkgstatus:
                 self.compliant = False
-                self.detailedresults += '\nKernel auditing package is not ' + \
-                    'installed'
-                self.formatDetailedResults("report", self.compliant,
-                                           self.detailedresults)
+                self.detailedresults += '\nKernel auditing package is not installed'
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
-
-            self.localization()
 
             self.auditdeditor = KVEditorStonix(self.statechglogger,
                                                self.logger, "conf",
@@ -420,7 +459,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.detailedresults += '\nThe following required options ' + \
                     'are missing (or incorrect) from ' + \
                     str(self.auditdispconffile) + ':\n' + \
-                    '\n'.join(str(f) for f in self.audispeditor.fixables)
+                    '\n'.join(str(f) for f in self.audispeditor.fixables) + '\n'
                 self.audispstatus = False
 
             if not self.auditdeditor.report():
@@ -428,39 +467,37 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.detailedresults += '\nThe following required options ' + \
                     'are missing (or incorrect) from ' + \
                     str(self.auditconffile) + ':\n' + \
-                    '\n'.join(str(f) for f in self.auditdeditor.fixables)
+                    '\n'.join(str(f) for f in self.auditdeditor.fixables) + '\n'
                 self.auditdstatus = False
 
             if self.grubver == 1:
                 if not self.report_grub_one():
                     self.detailedresults += '\nThe required audit=1 ' + \
                         'configuration option was missing from the grub ' + \
-                        'conf file'
+                        'conf file\n'
                     self.compliant = False
                     self.grubstatus = False
             elif self.grubver == 2:
                 if not self.report_grub_two():
                     self.detailedresults += '\nThe required audit=1 ' + \
                         'configuration option was missing from the grub ' + \
-                        'conf file'
+                        'conf file\n'
                     self.compliant = False
                     self.grubstatus = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def reportmac(self):
         '''
-        run report actions for Mac OS X systems
+        run report actions for Mac OS systems
 
         @return: retval
         @rtype: bool
@@ -475,6 +512,21 @@ this system, set the value of EnableKernelAuditing to False"""
 
             self.audituserfile = '/etc/security/audit_user'
             self.auditcontrolfile = '/etc/security/audit_control'
+            self.accontrolopts = {'dir:/var/audit': True,
+                                'flags:lo,aa': True,
+                                'minfree:20': True,
+                                'naflags:lo,aa': True,
+                                'policy:ahlt': True,
+                                'filesz:2M': True,
+                                'expire-after:300d': True,
+                                'superuser-set-sflags-mask:has_authenticated,has_console_access': True,
+                                'superuser-clear-sflags-mask:has_authenticated,has_console_access': True,
+                                'member-set-sflags-mask:': True,
+                                'member-clear-sflags-mask:has_authenticated': True}
+            self.useropts = {'root:lo,ad:no': True}
+            self.auditinitcmd = ''
+            if os.path.exists('/usr/sbin/audit'):
+                self.auditinitcmd = '/usr/sbin/audit -i'
 
             if not os.path.exists(self.auditcontrolfile):
                 retval = False
@@ -486,37 +538,26 @@ this system, set the value of EnableKernelAuditing to False"""
                 return retval
 
             # audit_control section
-            contentlines = self.getFileContents(self.auditcontrolfile)
-            self.controlopts = {'dir:/var/audit': True,
-                                'flags:lo,aa': True,
-                                'minfree:20': True,
-                                'naflags:lo,aa': True,
-                                'policy:ahlt': True,
-                                'filesz:2M': True,
-                                'expire-after:10M': True,
-                                'superuser-set-sflags-mask:has_' +
-                                'authenticated,has_console_access': True,
-                                'superuser-clear-sflags-mask:has_' +
-                                'authenticated,has_console_access': True,
-                                'member-set-sflags-mask:': True,
-                                'member-clear-sflags-mask:has_authenticated':
-                                True}
-            for opt in self.controlopts:
-                if not self.searchFileContents(contentlines, opt):
+            accontentlines = self.getFileContents(self.auditcontrolfile)
+            missingacopts = []
+            for opt in self.accontrolopts:
+                if not self.searchFileContents(accontentlines, opt):
                     retval = False
-                    self.controlopts[opt] = False
-                    self.detailedresults += '\nRequired config option ' + \
-                        'missing: ' + str(opt)
+                    self.accontrolopts[opt] = False
+                    missingacopts.append(opt)
+            if missingacopts:
+                self.detailedresults += "\nFollowing required audit_control options missing:\n" + "\n".join(missingacopts)
 
             # audit_user section
-            self.useropts = {'root:lo:no': True}
-            contentlines = self.getFileContents(self.audituserfile)
+            missingauopts = []
+            aucontentlines = self.getFileContents(self.audituserfile)
             for opt in self.useropts:
-                if not self.searchFileContents(contentlines, opt):
+                if not self.searchFileContents(aucontentlines, opt):
                     retval = False
                     self.useropts[opt] = False
-                    self.detailedresults += '\nRequired config option ' + \
-                        'missing: ' + str(opt)
+                    missingauopts.append(opt)
+            if missingauopts:
+                self.detailedresults += "\nFollowing required audit_user options missing:\n" + "\n".join(missingauopts)
 
         except Exception:
             raise
@@ -537,7 +578,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             contentlines = self.getFileContents(self.grubconffile)
             for line in contentlines:
-                if re.search('^kernel\s+.*audit=1', line):
+                if re.search('kernel\s+.*audit=1', line):
                     retval = True
 
         except Exception:
@@ -591,23 +632,125 @@ this system, set the value of EnableKernelAuditing to False"""
                 retval = False
                 return retval
 
-            contentlines = self.getFileContents(self.auditrulesfile)
-            for item in self.auditrulesoptions:
-                if not self.searchFileContents(contentlines, item):
+            if self.auditrulesfiles:
+                if not self.reportAURulesParts():
                     retval = False
-                    self.auditrulesoptions[item] = False
-                    self.detailedresults += '\nRequired configuration ' + \
-                        'option: "' + str(item) + '\" was not found in ' + \
-                        str(self.auditrulesfile)
+
+            else:
+                if not self.reportAURulesSingle():
+                    retval = False
+
+            # check to see if all of the audit rules are loaded (running)
+#             command = '/usr/sbin/auditctl -l'
+#             self.cmdhelper.executeCommand(command)
+#             outlines = self.cmdhelper.getOutput()
+#             retcode = self.cmdhelper.getReturnCode()
+#             if retcode != 0:
+#                 retval = False
+#                 errmsg = self.cmdhelper.getErrorString()
+#                 self.logger.log(LogPriority.DEBUG, "Command auditctl -l failed, with return code: " + str(retcode))
+#                 self.logger.log(LogPriority.DEBUG, errmsg)
+#             elif outlines:
+#                 outlines = map(str.strip, outlines)
+#                 notloaded = []
+#                 checkdict = self.auditrulesoptions
+#                 for ar in checkdict:
+#                     # auditctl -l interprets this number as -1 in the
+#                     # output of the command so this is what we have to
+#                     # actually check for
+#                     ar = ar.replace("auid!=4294967295", "auid!=-1")
+#                     ar = ar.replace("-k ", "-F k=" )
+#                     print "\n\nChecking for : " + str(ar) + "\n\n"
+#                     if ar not in outlines:
+#                         retval = False
+#                         notloaded.append(ar)
+#                 if notloaded:
+#                     self.detailedresults += "\nThe following required Audit Rules are NOT loaded:\n" + "\n".join(notloaded)
 
         except Exception:
             raise
         return retval
 
+    def reportAURulesSingle(self):
+        '''
+        check audit rules which are stored only in a single
+        file (audit.rules)
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        configoptsnotfound = []
+
+        self.logger.log(LogPriority.DEBUG, "Running reportAURulesSingle()...")
+
+        try:
+
+            contentlines = self.getFileContents('/etc/audit/audit.rules')
+            for item in self.auditrulesoptions:
+                if not self.searchFileContents(contentlines, '^' + item):
+                    retval = False
+                    self.auditrulesoptions[item] = False
+            for ar in self.auditrulesoptions:
+                if not self.auditrulesoptions[ar]:
+                    configoptsnotfound.append(ar)
+
+            if configoptsnotfound:
+                self.detailedresults += "\nFollowing required audit rule entries not found:\n" + "\n".join(configoptsnotfound)
+
+        except Exception:
+            raise
+
+        return retval
+
+    def reportAURulesParts(self):
+        '''
+        check audit rules which are stored in multiple files
+        within rules.d/ directory on systems which use this
+        structure
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        configoptsnotfound = []
+
+        self.logger.log(LogPriority.DEBUG, "Running reportAURulesParts()...")
+
+        try:
+
+            for ar in self.auditrulesoptions:
+                self.auditrulesoptions[ar] = False
+
+            for arf in self.auditrulesfiles:
+                contentlines = self.getFileContents(self.auditrulesbasedir + arf)
+                for ar in self.auditrulesoptions:
+                    if self.searchFileContents(contentlines, ar):
+                        self.auditrulesoptions[ar] = True
+
+            for ar in self.auditrulesoptions:
+                if self.auditrulesoptions[ar] == False:
+                    retval = False
+                    configoptsnotfound.append(ar)
+
+            if configoptsnotfound:
+                self.detailedresults += "\nFollowing required audit rule entries not found:\n" + "\n".join(configoptsnotfound)
+
+        except Exception:
+            raise
+
+        return retval
+
     def fix(self):
         '''
-        run general fix actions, and call fix sub-methods based on system-type
-        decision logic
+        fix audit rules
+        ensure audit package is installed
+        ensure audit daemon is configured and running
+        ensure audit dispatcher is configured
 
         @author: Breen Malmberg
         '''
@@ -618,23 +761,29 @@ this system, set the value of EnableKernelAuditing to False"""
 
         try:
 
+            # only run fix actions if the CI is enabled
             if self.ci.getcurrvalue():
 
+                self.logger.log(LogPriority.DEBUG, "Entering fix()...")
+
+                # run fix actions for mac os x systems
                 if self.environ.getosfamily() == 'darwin':
+                    self.logger.log(LogPriority.DEBUG, "System detected as Mac OS")
                     if not self.fixmac():
                         fixsuccess = False
-                    self.formatDetailedResults("fix", fixsuccess,
-                                               self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO,
-                                         self.detailedresults)
+                    self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return fixsuccess
 
                 if not self.auditpkgstatus:
+                    self.logger.log(LogPriority.DEBUG, "Audit package is not installed")
+                    self.logger.log(LogPriority.DEBUG, "Attempting to install audit package...")
                     for pkg in self.auditpkgs:
                         if self.pkghelper.install(pkg):
+                            self.logger.log(LogPriority.DEBUG, "Audit package: " + str(pkg) + " installed successfully")
                             self.auditpkgstatus = True
-                            self.auditdpkg = pkg
                             self.report()
+                            self.fix()
                 # if we have no installation upon which to act, we cannot continue
                 if not self.auditpkgstatus:
                     fixsuccess = False
@@ -647,24 +796,38 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.fixAuditRules():
                     fixsuccess = False
 
-                if not self.audispeditor.fix():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit dispatcher editor ' + \
-                        'fix failed'
-                if not self.audispeditor.commit():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit dispatcher editor ' + \
-                        'commit failed'
+                self.logger.log(LogPriority.DEBUG, "Running kveditor fix for audit dispatcher...")
+                if self.audispeditor.fixables:
+                    if not self.audispeditor.fix():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit dispatcher editor fix failed'
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.auditdeditor.setEventID(myid)
+                    if not self.audispeditor.commit():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit dispatcher editor commit failed'
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing to fix for audit dispatcher")
 
-                if not self.auditdeditor.fix():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit daemon editor fix failed'
-                if not self.auditdeditor.commit():
-                    fixsuccess = False
-                    self.detailedresults += '\nAudit daemon editor ' + \
-                        'commit failed'
+                self.logger.log(LogPriority.DEBUG, "Running kveditor fix for audit daemon...")
+                if self.auditdeditor.fixables:
+                    if not self.auditdeditor.fix():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit daemon fix failed'
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.auditdeditor.setEventID(myid)
+                    if not self.auditdeditor.commit():
+                        fixsuccess = False
+                        self.detailedresults += '\nAudit daemon commit failed'
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing to fix for audit daemon")
 
                 if not self.grubstatus:
+                    self.logger.log(LogPriority.DEBUG, "Fixing grub config...")
                     if self.grubver == 1:
                         if not self.fix_grub_one():
                             fixsuccess = False
@@ -672,16 +835,38 @@ this system, set the value of EnableKernelAuditing to False"""
                         if not self.fix_grub_two():
                             fixsuccess = False
 
+                # start/restart the audit service so it reads the new config
+                self.cmdhelper.executeCommand(self.auditrestart)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
+                    self.logger.log(LogPriority.DEBUG, "Failed to restart auditd service. Command failed with error code: " + str(retcode))
+                    errmsg = self.cmdhelper.getErrorString()
+                    self.logger.log(LogPriority.DEBUG, errmsg)
+
+                # re-read all of the new rules into the audit daemon
+                if os.path.exists("/etc/audit/audit.rules"):
+                    if os.path.exists("/usr/sbin/auditctl"):
+                        aureread = "/usr/sbin/auditctl -R /etc/audit/audit.rules"
+                        self.cmdhelper.executeCommand(aureread)
+                        retcode = self.cmdhelper.getReturnCode()
+                        if retcode != 0:
+                            errmsg = self.cmdhelper.getErrorString()
+                            fixsuccess = False
+                            self.detailedresults += "\nThere was a problem reloading the audit rules from file: /etc/audit/audit.rules"
+                            self.logger.log(LogPriority.DEBUG, errmsg)
+                        else:
+                            self.logger.log(LogPriority.DEBUG, "Audit rules successfully reloaded from file: /etc/audit/audit.rules")
+
             else:
                 self.detailedresults += '\nRule was not enabled. Nothing was done...'
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            fixsuccess = False
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -698,79 +883,366 @@ this system, set the value of EnableKernelAuditing to False"""
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Executing fixAuditRules()...")
+        self.logger.log(LogPriority.DEBUG, "Fixing audit rules...")
 
         retval = True
+        owner = [0, 0]
+        perms = 0640
 
         try:
 
             if not self.auditrulesfile:
-                self.detailedresults += '\nAudit rules configuration file ' + \
-                    'path undefined. Returning False...'
+                self.detailedresults += '\nFailed to fix audit rules'
+                self.logger.log(LogPriority.DEBUG, "The audit rules file path was undefined. Did not fix audit rules.")
                 retval = False
                 return retval
 
         except AttributeError:
-            self.detailedresults += '\nAudit rules configuration file ' + \
-                'path undefined. Returning False...'
+            self.detailedresults += '\nFailed to fix audit rules'
+            self.logger.log(LogPriority.DEBUG, "The audit rules file path was undefined. Did not fix audit rules.")
             retval = False
             return retval
 
         try:
 
+            contentlines = []
+
             if os.path.exists(self.auditrulesfile):
-                self.logger.log(LogPriority.DEBUG,
-                                str(self.auditrulesfile) + " path exists")
+                self.logger.log(LogPriority.DEBUG, str(self.auditrulesfile) + " path exists")
 
-                f = open(self.auditrulesfile, 'r')
-                contentlines = f.readlines()
-                f.close()
+                contentlines = self.getFileContents(self.auditrulesfile)
 
-                aurulestmp = self.auditrulesfile + '.stonixtmp'
-
-                for item in self.auditrulesoptions:
-                    if not self.auditrulesoptions[item]:
-                        contentlines.append(item + '\n')
-
-                self.logger.log(LogPriority.DEBUG,
-                                "Writing contentlines to " +
-                                str(self.auditrulesfile))
-                f = open(aurulestmp, 'w')
-                f.writelines(contentlines)
-                f.close()
-
-                os.rename(aurulestmp, self.auditrulesfile)
-                os.chown(self.auditrulesfile, 0, 0)
-                os.chmod(self.auditrulesfile, 0640)
-                resetsecon(self.auditrulesfile)
-
+            if not contentlines:
+                contentlines.append('-D\n')
+                contentlines.append('-b 320\n')
             else:
+                # find -e 2 line if it already exists, remove it
+                # and move it to the end of the file
+                for line in contentlines:
+                    if re.search('^-e 2', line):
+                        contentlines.remove(line)
 
-                self.logger.log(LogPriority.DEBUG,
-                                str(self.auditrulesfile) +
-                                " path does not exist")
-                contentlines = []
-                for item in self.auditrulesoptions:
+            # append all missing audit rules options
+            for item in self.auditrulesoptions:
+                if item not in map(str.strip, contentlines):
                     contentlines.append(item + '\n')
 
-                self.logger.log(LogPriority.DEBUG,
-                                "Creating " + str(self.auditrulesfile) +
-                                " and writing to it...")
-                f = open(self.auditrulesfile, 'w')
-                f.writelines(contentlines)
-                f.close()
+            # fix arch= flags
+            contentlines = self.fixArches(contentlines)
 
-                os.chown(self.auditrulesfile, 0, 0)
-                os.chmod(self.auditrulesfile, 0640)
-                resetsecon(self.auditrulesfile)
+            # append -e 2 (to lock audit rules) last
+            contentlines.append('-e 2\n')
+
+            # remove any duplicate entries
+            contentlines = self.fixDuplicates(contentlines)
+
+            # the line -a task,never (added by default on some distro's)
+            # would nullify the logging of all syscalls added by this rule
+            for line in contentlines:
+                if re.search("^-a\s+task,never", line, re.IGNORECASE):
+                    contentlines = [c.replace(line, '') for c in contentlines]
+
+            # write file contents
+            if not self.writeFileContents(contentlines, self.auditrulesfile, owner, perms):
+                retval = False
+
+            # also write the contents to the primary audit rule file
+            if os.path.exists('/etc/audit/audit.rules'):
+                primcontentlines = self.getFileContents('/etc/audit/audit.rules')
+                primcontentlines.extend(contentlines)
+                for line in primcontentlines:
+                    if re.search('(^-D|^-b|^-e)', line, re.IGNORECASE):
+                        primcontentlines.remove(line)
+                primcontentlines.insert(0, "-b 320\n")
+                primcontentlines.insert(0, "-D\n")
+                primcontentlines = self.fixArches(primcontentlines)
+                primcontentlines.append('-e 2\n')
+                primcontentlines = self.fixDuplicates(primcontentlines)
+                # the line '-a task,never' (added by default on some distro's)
+                # would nullify the logging of all syscalls added by this rule
+                for line in primcontentlines:
+                    if re.search("^-a\s+task,never", line, re.IGNORECASE):
+                        primcontentlines = [c.replace(line, '') for c in primcontentlines]
+                if not self.writeFileContents(primcontentlines, '/etc/audit/audit.rules', owner, perms):
+                    retval = False
+
+            if not self.remBadRules():
+                self.detailedresults += "\nFailed to remove potentially disruptive and unwanted audit rules"
 
         except Exception:
             raise
         return retval
 
+    def fixArches(self, contentlines):
+        '''
+        fix any arch flags to be appropriate to the current
+        system's arch (64 or 32)
+        cannot have rule entries for both 64 and 32 of the
+        same sys calls, because audit control reads them as
+        duplicates and will not load the rules file if it
+        detects duplicates
+
+        @param: contentlines: list; list of strings to search and
+                replace
+        @return: contentlines
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Fixing arches...")
+
+        linefixedcount = 0
+
+        if not contentlines:
+            return contentlines
+        if not isinstance(contentlines, list):
+            return contentlines
+
+        try:
+
+            if self.arch == '64':
+                for line in contentlines:
+                    if re.search("arch=b32", line, re.IGNORECASE):
+                        # stime only has a 32 bit call, even on 64 bit systems
+                        if not re.search("stime", line, re.IGNORECASE):
+                            fixedline = line.replace("arch=b32", "arch=b64")
+                            linefixedcount += 1
+                            contentlines = [c.replace(line, fixedline) for c in contentlines]
+            elif self.arch == '32':
+                for line in contentlines:
+                    if re.search("arch=b64", line, re.IGNORECASE):
+                        fixedline = line.replace("arch=b64", "arch=b32")
+                        linefixedcount += 1
+                        contentlines = [c.replace(line, fixedline) for c in contentlines]
+
+            if linefixedcount > 0:
+                self.logger.log(LogPriority.DEBUG, "Fixed " + str(linefixedcount) + " arch lines")
+                self.detailedresults += "\nFixed " + str(linefixedcount) + " arch flags in audit rules"
+            else:
+                self.logger.log(LogPriority.DEBUG, "Nothing was changed")
+
+        except Exception:
+            raise
+        return contentlines
+
+    def fixDuplicates(self, contentlines):
+        '''
+        build a new list which is a copy of contentlines
+        except for removing all duplicate entries
+
+        @param contentlines: list; list of strings to search
+                through and remove duplicates from
+        @return: fixedlist
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Fixing duplicate audit rules entries...")
+        linesfixed = 0
+
+        # got nothing, return nothing
+        if not contentlines:
+            return contentlines
+        # not a list, can't do anything
+        if not isinstance(contentlines, list):
+            return contentlines
+
+        fixedlist = []
+
+        try:
+
+            for i in contentlines:
+                if i not in fixedlist:
+                    fixedlist.append(i)
+
+            linesfixed = (len(contentlines) - len(fixedlist))
+
+            if linesfixed > 0:
+                self.logger.log(LogPriority.DEBUG, "Removed " + str(linesfixed) + " duplicate entries")
+                self.detailedresults += "\nRemoved " + str(linesfixed) + " duplicate entries in audit rules"
+            else:
+                self.logger.log(LogPriority.DEBUG, "Nothing was changed")
+
+            # don't want to erase anything by accident
+            if not fixedlist:
+                fixedlist = contentlines
+
+        except Exception:
+            raise
+        return fixedlist
+
+    def remBadRules(self):
+        '''
+        look for, and remove any unwanted or "bad" audit
+        rules (rules which may be disruptive or harmful to
+        the normal operation of a system)
+        simply add the correct regex to find the rule you
+        want to remove, to the badrules list below
+
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        success = True
+        linesfixedcount = 0
+
+        self.logger.log(LogPriority.DEBUG, "Removing bad/unwanted audit rules...")
+
+        # the unlink and rename encorporates all temp file and cache
+        # management for all applications, which is EXTREMELY verbose
+        # in logging
+        badrules = ["^-a.*-S\s+(unlink|rename).*-k\s+delete"]
+        repdict = {}
+        for br in badrules:
+            repdict[br] = ''
+
+        # all files in rules.d/ have these
+        # as well as audit.rules in /etc/audit/
+        owner = [0, 0]
+        perms = 0640
+
+        try:
+
+            # if we are using a rules.d/ dir with multiple files
+            if self.auditrulesfiles:
+                for arf in self.auditrulesfiles:
+                    replaced = False
+                    contentlines = self.getFileContents(self.auditrulesbasedir + arf)
+                    for br in badrules:
+                        for line in contentlines:
+                            if re.search(br, line, re.IGNORECASE):
+                                contentlines = [c.replace(line, '') for c in contentlines]
+                                linesfixedcount += 1
+                                replaced = True
+                    if replaced:
+                        if not self.writeFileContents(contentlines, self.auditrulesbasedir + arf, owner, perms):
+                            success = False
+            # or if we are using a single audit.rules file
+            if os.path.exists('/etc/audit/audit.rules'):
+                replaced = False
+                contentlines = self.getFileContents('/etc/audit/audit.rules')
+                for br in badrules:
+                        for line in contentlines:
+                            if re.search(br, line, re.IGNORECASE):
+                                contentlines = [c.replace(line, '') for c in contentlines]
+                                linesfixedcount += 1
+                                replaced = True
+                if replaced:
+                    if not self.writeFileContents(contentlines, '/etc/audit/audit.rules', owner, perms):
+                        success = False
+
+            if linesfixedcount > 0:
+                self.logger.log(LogPriority.DEBUG, "Removed " + str(linesfixedcount) + " potentially disruptive audit rule entries")
+                self.detailedresults += "\nRemoved " + str(linesfixedcount) + " audit rules which would have an unacceptable impact on system resources"
+            else:
+                self.logger.log(LogPriority.DEBUG, "Nothing was changed")
+
+        except Exception:
+            raise
+        return success
+
+    def writeFileContents(self, contents, filepath, owner, perms):
+        '''
+        write new contents to a temp file then rename it to the
+        intended/original file name
+        set the given ownership and permissions to the renamed file
+        reset the security context of the renamed file
+        record a statechglogger change event
+        return True if method successfully writes contents
+        return False if failed to write contents
+
+        @param contents: list; string list of contents to write to filepath
+        @param filepath: string; full path to file to write to (will write to
+                a temp file first, then rename to filepath)
+        @param owner: list; integer list of owner (first) and group (second) permissions
+                ex: [0, 0]
+        @param perms: int; integer representation of file permissions to be applied to filepath
+                (will use OCTAL form of this int!) ex: 0640 = rw, r, none
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        success = True
+        eventtype = 'conf'
+        if not os.path.exists(filepath):
+            eventtype = 'creation'
+
+        # we will not attempt to create base directories
+        # if they do not already exist
+        # that usually means that something else is wrong
+        # or needs to be done first
+        if not os.path.exists(os.path.dirname(filepath)):
+            success = False
+            self.logger.log(LogPriority.DEBUG, "The base directory for the specified filepath does not exist!")
+            return success
+
+        if not isinstance(filepath, basestring):
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Parameter: filepath must be type: string. Got: " + str(type(filepath)))
+            return success
+
+        if not isinstance(contents, list):
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Parameter: contents must be type: list. Got: " + str(type(contents)))
+            return success
+
+        if not owner:
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Parameter: owner was empty!")
+            return success
+
+        if not isinstance(owner, list):
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Parameter: owner must be type: list. Got: " + str(type(owner)))
+            return success
+
+        if not perms:
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Parameter: perms was empty!")
+            return success
+
+        if not isinstance(perms, int):
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Parameter: perms must be type: int. Got: " + str(type(perms)))
+            return success
+
+        # set the temporary file path to write to
+        tmpfile = filepath + '.stonixtmp'
+
+        self.logger.log(LogPriority.DEBUG, "Writing new contents to file: " + str(filepath) + " ...")
+
+        try:
+
+            # to let the end user know this file was created
+            # because the path passed in did not exist
+            if eventtype == 'creation':
+                contents.insert(0, "# This file created by STONIX\n\n")
+
+            f = open(tmpfile, 'w')
+            f.writelines(contents)
+            f.close()
+
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': eventtype,
+                     'filepath': filepath}
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(filepath, tmpfile, myid)
+
+            os.rename(tmpfile, filepath)
+            os.chown(filepath, owner[0], owner[1])
+            os.chmod(filepath, perms)
+            resetsecon(filepath)
+
+        except Exception:
+            raise
+        return success
+
     def fixmac(self):
         '''
-        run fix actions for Mac OS X systems
+        run fix actions for Mac OS systems
 
         @return: retval
         @rtype: bool
@@ -778,7 +1250,8 @@ this system, set the value of EnableKernelAuditing to False"""
         '''
 
         retval = True
-        contentlines = []
+        accontentlines = []
+        aucontentlines = []
 
         self.logger.log(LogPriority.DEBUG, "Executing fixmac()...")
 
@@ -786,109 +1259,44 @@ this system, set the value of EnableKernelAuditing to False"""
 
             # audit_control section
             self.logger.log(LogPriority.DEBUG, "Fixing audit_control...")
-            if not os.path.exists(self.auditcontrolfile):
-                f = open(self.auditcontrolfile, 'w')
-                contentlines.append('# This file created by STONIX\n')
-                for opt in self.controlopts:
-                    contentlines.append(opt + '\n')
-                f.writelines(contentlines)
-                f.close()
-                os.chmod(self.auditcontrolfile, 0400)
-                os.chown(self.auditcontrolfile, 0, 0)
+            if os.path.exists(self.auditcontrolfile):
+                accontentlines = self.getFileContents(self.auditcontrolfile)
+                accontentlines.append("\n")
 
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'creation',
-                         'filepath': self.auditcontrolfile}
+            for aco in self.accontrolopts:
+                if not self.searchFileContents(accontentlines, aco):
+                    accontentlines.append(aco + "\n")
 
-                self.statechglogger.recordchgevent(myid, event)
-            else:
-                contentlines = self.getFileContents(self.auditcontrolfile)
-                tmpauditcontrolfile = self.auditcontrolfile + '.stonixtmp'
-                for opt in self.controlopts:
-                    optsplit = opt.split(':')
-                    for line in contentlines:
-                        if re.search('^' + str(optsplit[0]), line):
-                            contentlines = [c.replace(line, opt + '\n')
-                                            for c in contentlines]
-                            self.controlopts[opt] = True
-                for opt in self.controlopts:
-                    if not self.controlopts[opt]:
-                        contentlines.append(opt + '\n')
-                tf = open(tmpauditcontrolfile, 'w')
-                tf.writelines(contentlines)
-                tf.close()
-
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.auditcontrolfile}
-
-                self.statechglogger.recordfilechange(self.auditcontrolfile,
-                                                     tmpauditcontrolfile, myid)
-                self.statechglogger.recordchgevent(myid, event)
-
-                os.rename(tmpauditcontrolfile, self.auditcontrolfile)
-                os.chmod(self.auditcontrolfile, 0400)
-                os.chown(self.auditcontrolfile, 0, 0)
+            if not self.writeFileContents(accontentlines, self.auditcontrolfile, [0, 0], 0400):
+                    retval = False
 
             # audit_user section
             self.logger.log(LogPriority.DEBUG, "Fixing audit_user...")
-            if not os.path.exists(self.audituserfile):
-                f = open(self.audituserfile, 'w')
-                contentlines.append('# This file created by STONIX\n')
-                for opt in self.useropts:
-                    contentlines.append(opt + '\n')
-                f.writelines(contentlines)
-                f.close()
-                os.chmod(self.audituserfile, 0400)
-                os.chown(self.audituserfile, 0, 0)
+            if os.path.exists(self.audituserfile):
+                aucontentlines = self.getFileContents(self.audituserfile)
+                aucontentlines.append("\n")
 
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'creation',
-                         'filepath': self.audituserfile}
+            for auo in self.useropts:
+                if not self.searchFileContents(aucontentlines, auo):
+                    aucontentlines.append(auo + '\n')
 
-                self.statechglogger.recordchgevent(myid, event)
-            else:
-                contentlines = self.getFileContents(self.audituserfile)
-                tmpaudituserfile = self.audituserfile + '.stonixtmp'
-                for opt in self.useropts:
-                    optsplit = opt.split(':')
-                    for line in contentlines:
-                        if re.search('^' + str(optsplit[0]), line):
-                            contentlines = [c.replace(line, opt + '\n')
-                                            for c in contentlines]
-                            self.useropts[opt] = True
-                for opt in self.useropts:
-                    if not self.useropts[opt]:
-                        contentlines.append(opt + '\n')
-                tf = open(tmpaudituserfile, 'w')
-                tf.writelines(contentlines)
-                tf.close()
+            if not self.writeFileContents(aucontentlines, self.audituserfile, [0, 0], 0400):
+                retval = False
 
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.audituserfile}
-
-                self.statechglogger.recordfilechange(self.audituserfile,
-                                                     tmpaudituserfile, myid)
-                self.statechglogger.recordchgevent(myid, event)
-
-                os.rename(tmpaudituserfile, self.audituserfile)
-                os.chmod(self.auditcontrolfile, 0400)
-                os.chown(self.auditcontrolfile, 0, 0)
-
-                auditinitcmd = '/usr/sbin/audit -i'
-                self.logger.log(LogPriority.DEBUG, "Executing command: " +
-                                str(auditinitcmd) + ' ...')
-                self.cmdhelper.executeCommand(auditinitcmd)
-                errout = self.cmdhelper.getErrorString()
-                if errout:
+            # restart audit service
+            self.logger.log(LogPriority.DEBUG, "Attempting to restart audit service...")
+            if self.auditinitcmd:
+                self.cmdhelper.executeCommand(self.auditinitcmd)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
+                    errout = self.cmdhelper.getErrorString()
                     retval = False
-                    self.detailedresults += '\nUnable to successfully ' + \
-                        'complete command: ' + str(auditinitcmd)
+                    self.detailedresults += "\nFailed to restart audit service"
+                    self.logger.log(LogPriority.DEBUG, errout)
+                else:
+                    self.logger.log(LogPriority.DEBUG, "\nSuccessfully restarted audit service")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Could not detect command to restart audit service")
 
         except Exception:
             raise
@@ -906,47 +1314,29 @@ this system, set the value of EnableKernelAuditing to False"""
 
         try:
 
+            self.logger.log(LogPriority.DEBUG, "Entering fix_grub_one()...")
+
             if not self.grubconffile:
                 retval = False
                 self.detailedresults += '\nUnable to locate grub conf file'
                 return retval
 
-            tmpgrubconf = self.grubconffile + '.stonixtmp'
-
             contentlines = self.getFileContents(self.grubconffile)
 
             if not contentlines:
                 retval = False
-                self.detailedresults += '\nUnable to get contents from ' + \
-                    'grub conf file'
+                self.detailedresults += '\nUnable to get contents from grub conf file'
                 return retval
 
             for line in contentlines:
-                if re.search('^kernel\s+.*', line):
-                    if re.search('audit=1', line):
-                        continue
-                    else:
-                        contentlines = [c.replace(line, line + ' audit=1\n')
-                                        for c in contentlines]
+                if re.search('kernel\s+.*', line):
+                    if not re.search('audit=1', line):
+                        contentlines = [c.replace(line, line.rstrip() + ' audit=1\n') for c in contentlines]
                         replaced = True
 
             if replaced:
-                tf = open(tmpgrubconf, 'w')
-                tf.writelines(contentlines)
-                tf.close()
-
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.grubconffile}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.grubconffile,
-                                                     tmpgrubconf, myid)
-
-                os.rename(tmpgrubconf, self.grubconffile)
-                os.chown(self.grubconffile, 0, 0)
-                os.chmod(self.grubconffile, 0644)
-                resetsecon(self.grubconffile)
+                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0644):
+                    retval = False
 
         except Exception:
             raise
@@ -965,12 +1355,12 @@ this system, set the value of EnableKernelAuditing to False"""
 
         try:
 
+            self.logger.log(LogPriority.DEBUG, "Entering fix_grub_two()...")
+
             if not self.grubconffile:
                 retval = False
                 self.detailedresults += '\nUnable to locate grub conf file'
                 return retval
-
-            tmpgrubconf = self.grubconffile + '.stonixtmp'
 
             contentlines = self.getFileContents(self.grubconffile)
 
@@ -995,50 +1385,31 @@ this system, set the value of EnableKernelAuditing to False"""
                         replaced = True
 
             if not replaced:
-                self.logger.log(LogPriority.DEBUG,
-                                "Grub audit configuration line not found in " +
-                                "grub conf file. Appending it to grub conf " +
+                self.logger.log(LogPriority.DEBUG, "Grub audit configuration line not found in grub conf file. Appending it to grub conf " +
                                 "file...")
-                contentlines.append('GRUB_CMDLINE_LINUX_DEFAULT="quiet ' +
-                                    'splash audit=1"\n')
+                contentlines.append('GRUB_CMDLINE_LINUX_DEFAULT="quiet splash audit=1"\n')
                 appended = True
 
             if replaced or appended:
 
-                self.logger.log(LogPriority.DEBUG, "The grub conf file " +
-                                "contents have been edited. Saving those " +
-                                "changes to the file now...")
-                tf = open(tmpgrubconf, 'w')
-                tf.writelines(contentlines)
-                tf.close()
+                self.logger.log(LogPriority.DEBUG, "The grub conf file contents have been edited. Saving those changes to the file now...")
 
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {'eventtype': 'conf',
-                         'filepath': self.grubconffile}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.grubconffile,
-                                                     tmpgrubconf, myid)
-
-                os.rename(tmpgrubconf, self.grubconffile)
-                os.chown(self.grubconffile, 0, 0)
-                os.chmod(self.grubconffile, 0644)
-                resetsecon(self.grubconffile)
+                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0644):
+                    retval = False
 
                 if not self.grubupdatecmd:
                     retval = False
-                    self.detailedresults += '\ngrub update command was ' + \
-                        'not correctly set and could not be run'
+                    self.detailedresults += '\ngrub update command was not correctly set and could not be run'
                     return retval
 
-                self.logger.log(LogPriority.DEBUG, "Executing grub update " +
-                                "command, to update the grub.cfg file...")
+                self.logger.log(LogPriority.DEBUG, "Executing grub update command, to update the grub.cfg file...")
                 self.cmdhelper.executeCommand(self.grubupdatecmd)
                 errout = self.cmdhelper.getErrorString()
-                if errout:
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
                     retval = False
-                    self.detailedresults += '\n' + str(self.grubupdatecmd) + \
-                        ' command had error output: ' + str(errout)
+                    self.detailedresults += '\nThe grub update command failed with error code: ' + str(retcode)
+                    self.logger.log(LogPriority.DEBUG, errout)
 
         except Exception:
             raise

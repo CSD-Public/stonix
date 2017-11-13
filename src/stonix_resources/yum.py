@@ -20,16 +20,22 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+'''
+Created on Aug 06, 2012
 
-import traceback
+@author: Derek T. Walker
+'''
+
+import re
+
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
-import re
+from StonixExceptions import repoError
 
 
 class Yum(object):
-
-    '''The template class that provides a framework that must be implemented by
+    '''
+    The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
 
     @author: Derek T Walker
@@ -39,136 +45,298 @@ class Yum(object):
 
     def __init__(self, logger):
         self.logger = logger
-        self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
-        self.install = "/usr/bin/yum install -y "
-        self.remove = "/usr/bin/yum remove -y "
-        self.search = "/usr/bin/yum search "
-        self.rpm = "/bin/rpm -q "
-###############################################################################
+        self.yumloc = "/usr/bin/yum"
+        self.install = self.yumloc + " install -y "
+        self.remove = self.yumloc + " remove -y "
+        self.search = self.yumloc + " list "
+        self.checkupdates = self.search + "updates "
+        self.listavail = self.search + "available "
+        self.listinstalled = self.search + "installed "
+        self.updatepkg = self.yumloc + " update -y --obsoletes "
+
+        self.rpmloc = "/usr/bin/rpm"
+        self.provides = self.rpmloc + " -qf "
+        self.query = self.rpmloc + " -qa "
 
     def installpackage(self, package):
-        '''Install a package. Return a bool indicating success or failure.
-        @param string package : Name of the package to be installed, must be
-        recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        '''
+        Install a package. Return a bool indicating success or failure.
+
+        @param package: string; Name of the package to be installed, must be
+                recognizable to the underlying package manager.
+        @return: installed
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        '''
+
+        installed = True
+
         try:
-            installed = False
-            self.ch.executeCommand(self.install + package)
-            if self.ch.getReturnCode() == 0:
-                installed = True
-                self.detailedresults = package + \
-                    " pkg installed successfully\n"
+
+            try:
+
+                self.ch.executeCommand(self.install + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    installed = False
+
+            if installed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was installed successfully")
             else:
-                self.detailedresults = package + " pkg not able to install\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return installed
-        except(KeyboardInterrupt, SystemExit):
-            raise
+                self.logger.log(LogPriority.DEBUG, "Failed to install package " + str(package))
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+            raise
+        return installed
 
     def removepackage(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
-        @param string package : Name of the package to be removed, must be
-        recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        '''
+        Remove a package. Return a bool indicating success or failure.
+
+        @param package: string; Name of the package to be removed, must be
+                recognizable to the underlying package manager.
+        @return: removed
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        '''
+
+        removed = True
+
         try:
-            removed = False
-            self.ch.executeCommand(self.remove + package)
-            if self.ch.getReturnCode() == 0:
-                removed = True
-                self.detailedresults += package + " pkg removed successfully\n"
+
+            try:
+                self.ch.executeCommand(self.remove + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode)
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    removed = False
+
+            if removed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully installed")
             else:
-                self.detailedresults += package + \
-                    " pkg not able to be removed\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return removed
-        except(KeyboardInterrupt, SystemExit):
-            raise
+                self.logger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+            raise
+        return removed
 
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if
+        '''
+        Check the installation status of a package. Return a bool; True if
         the package is installed.
-        @param string package : Name of the package whose installation status
+
+        @param package: string; Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-        @return bool :
-        @author'''
+        @return: found
+        @rtype: bool
+        @author: Derek T. Walker
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        '''
+
+        installed = True
+
         try:
-            found = False
-            self.ch.executeCommand(self.rpm + package)
-            if self.ch.getReturnCode() == 0:
-                found = True
-                self.detailedresults += package + " pkg found\n"
+
+            try:
+                self.ch.executeCommand(self.listinstalled + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    installed = False
+
+            if installed:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
             else:
-                self.detailedresults += package + " pkg not found\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return found
-        except(KeyboardInterrupt, SystemExit):
-            raise
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is NOT installed")
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+            raise
+        return installed
+
+    def Update(self, package=""):
+        '''
+        update specified package if any updates
+        are available for it
+        if no package is specified, update all
+        packages which can be updated on the system
+
+        @param package: string; name of package to update
+        @return: updated
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updated = True
+
+        try:
+
+            try:
+                self.ch.executeCommand(self.updatepkg + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    updated = False
+
+            if package:
+                if updated:
+                    self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully updated")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates were found for package " + str(package))
+            else:
+                if updated:
+                    self.logger.log(LogPriority.DEBUG, "All packages were successfully updated")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates were found for this system")
+
+        except Exception:
+            raise
+        return updated
+
+    def checkUpdate(self, package=""):
+        '''
+        check if there are any updates available for
+        specified package
+        if no package is specified, check if any updates
+        are available for the current system
+
+        @param package: string; name of package to check
+        @return: updatesavail
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        updatesavail = False
+
+        try:
+
+            try:
+                self.ch.executeCommand(self.checkupdates + package)
+                retcode = self.ch.getReturnCode()
+                output = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+                else:
+                    if re.search("Updated packages", output, re.IGNORECASE):
+                        updatesavail = True
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+                else:
+                    if re.search("Updated packages", output, re.IGNORECASE):
+                        updatesavail = True
+
+            if package:
+                if updatesavail:
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for package " + str(package))
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates are available for package " + str(package))
+            else:
+                if updatesavail:
+                    self.logger.log(LogPriority.DEBUG, "Updates are available for this system")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No updates are available for this system")
+
+        except Exception:
+            raise
+        return updatesavail
 
     def checkAvailable(self, package):
+        '''
+        check if specified package is available to install
+        return True if it is
+        return False if not
+
+        @param package: string; name of package to check
+        @return: available
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        available = True
+
         try:
-            found = False
-            self.ch.executeCommand(self.search + package)
-            output = self.ch.getOutputString()
-            if re.search("no matches found", output.lower()):
-                self.detailedresults += package + " pkg is not available " + \
-                    " or may be misspelled\n"
-            elif re.search("matched", output.lower()):
-                self.detailedresults += package + " pkg is available\n"
-                found = True
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return found
-        except(KeyboardInterrupt, SystemExit):
-            raise
+
+            try:
+                self.ch.executeCommand(self.listavail + package)
+                retcode = self.ch.getReturnCode()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.DEBUG, str(errstr))
+                    available = False
+
+            if available:
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
+            else:
+                self.logger.log(LogPriority.DEBUG, "No package " + str(package) + " was found to install")
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+            raise
+        return available
 
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        '''
+        Returns the name of the package that provides the given
         filename/path.
 
-        @param: string filename : The name or path of the file to resolve
-        @return: string name of package if found, None otherwise
+        @param filename: string; The name or path of the file to resolve
+        @return: packagename
+        @rtype: string
         @author: Eric Ball
+        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+                detailedresults with logging
         '''
+
+        packagename = ""
+
         try:
-            self.ch.executeCommand(self.rpm + "-f " + filename)
-            if self.ch.getReturnCode() == 0:
-                return self.ch.getOutputString()
-            else:
-                return None
-        except(KeyboardInterrupt, SystemExit):
-            raise
+
+            try:
+                self.ch.executeCommand(self.provides + filename)
+                retcode = self.ch.getReturnCode()
+                outputstr = self.ch.getOutputString()
+                errstr = self.ch.getErrorString()
+                if retcode != 0:
+                    raise repoError('yum', retcode, str(errstr))
+                else:
+                    packagename = outputstr
+            except repoError as repoerr:
+                if not repoerr.success:
+                    self.logger.log(LogPriority.WARNING, str(errstr))
+
         except Exception:
-            self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
-###############################################################################
+            raise
+        return packagename
 
     def getInstall(self):
         return self.install
-###############################################################################
 
     def getRemove(self):
         return self.remove

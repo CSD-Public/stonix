@@ -39,6 +39,8 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
+@change: 2017/03/07 dkennel - Added FISMA risk level support to isapplicable
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from observable import Observable
@@ -59,14 +61,18 @@ from CommandHelper import CommandHelper
 from pkghelper import Pkghelper
 from ServiceHelper import ServiceHelper
 import traceback
-
+from CheckApplicable import CheckApplicable
 
 class Rule (Observable):
 
     """
     Abstract class for all Rule objects.
-    :version: 1.0
-    :author: D. Kennel
+
+    @version: 1.0
+    @author:  D. Kennel
+    @change: Breen Malmberg - 7/18/2017 - added method getauditonly();
+            added and initialized variable self.auditonly to False (default);
+            fixed doc string
     """
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -98,6 +104,8 @@ LANL-stonix."""
         self.currstate = "notconfigured"
         self.targetstate = "configured"
         self.guidance = []
+        self.auditonly = False
+        self.sethelptext()
 
     def fix(self):
         """
@@ -136,6 +144,10 @@ LANL-stonix."""
         self.rulesuccess will be updated if the rule does not succeed.
 
         @author D. Kennel & D. Walker
+        @change: - modified to new service helper interface - NOTE - 
+                   Mac rules will need to set the self.serviceTarget
+                   variable in their __init__ method after runing
+                   "super" on this parent class.
         """
         # pass
         if not self.environ.geteuid() == 0:
@@ -179,15 +191,23 @@ LANL-stonix."""
                     elif event["eventtype"] == "creation":
                         try:
                             os.remove(event["filepath"])
+                            debug = "Successfully deleted " + event["filepath"]
+                            self.logdispatch.log(LogPriority.DEBUG, debug)
                         except OSError as oser:
                             if oser.errno == 21:
                                 try:
                                     os.rmdir(event["filepath"])
                                 except OSError as oserr:
                                     if oserr.errno == 39:
-                                        self.logdispatch.log(LogPriority.DEBUG, "Cannot remove file path: " + str(event["filepath"]) + " because it is a non-empty directory.")
+                                        self.logdispatch.log(LogPriority.DEBUG,
+                                                             "Cannot remove file path: " +
+                                                             str(event["filepath"]) +
+                                                             " because it is a non-empty directory.")
                             elif oser.errno == 2:
-                                self.logdispatch.log(LogPriority.DEBUG, "Cannot remove file path: " + str(event["filepath"]) + " because it does not exist.")
+                                self.logdispatch.log(LogPriority.DEBUG,
+                                                     "Cannot remove file path: " +
+                                                     str(event["filepath"]) +
+                                                     " because it does not exist.")
 
                     elif event["eventtype"] == "deletion":
                         self.statechglogger.revertfiledelete(event["filepath"])
@@ -208,9 +228,9 @@ LANL-stonix."""
                     elif event["eventtype"] == "servicehelper":
                         sh = ServiceHelper(self.environ, self.logdispatch)
                         if event["startstate"] == "enabled":
-                            sh.enableservice(event["servicename"])
+                            sh.enableService(event["servicename"], serviceTarget=self.serviceTarget)
                         elif event["startstate"] == "disabled":
-                            sh.disableservice(event["servicename"])
+                            sh.disableService(event["servicename"], serviceTarget=self.serviceTarget)
                         else:
                             self.detailedresults = 'Invalid startstate for ' \
                                 + 'eventtype "servicehelper". startstate ' + \
@@ -406,6 +426,14 @@ LANL-stonix."""
                             actually cause problems. If this option is set to
                             True (python bool) then this method will return
                             false if EUID == 0. The default is False.
+        fisma    low|med|high  This is the FISMA risk categorization that the
+                            rule should apply to. Under FIPS 199 systems are
+                            categorized for risk into low, medium (moderate),
+                            and high categories. Some controls are particularly
+                            impactful to operations and are only specified for
+                            FISMA medium or high systems. Rules are selected
+                            for low, medium or high applicability based on
+                            guidance from NIST 800-53 or the applicable STIG.
         default  default    This is the default value in the template class and
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
@@ -414,7 +442,9 @@ LANL-stonix."""
         An Example dictionary might look like this:
         self.applicable = {'type': 'white',
                            'family': Linux,
-                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.10.5'],
+                           'fisma': 'high',
+                           'noroot': True}
         That example whitelists all Linux operating systems and Mac OS X from
         10.9.0 to 10.10.5.
 
@@ -546,7 +576,63 @@ LANL-stonix."""
                 if self.applicable['noroot'] == True:
                     applies = False
 
+        # Perform the FISMA categorization check
+        if applies:
+            rulefisma = ''
+            systemfismacat = ''
+            systemfismacat = self.environ.getsystemfismacat()
+            if systemfismacat not in ['high', 'med', 'low']:
+                raise ValueError('SystemFismaCat invalid: valid values are low, med, high')
+            if 'fisma' in self.applicable:
+                if self.applicable['fisma'] not in ['high', 'med', 'low']:
+                    raise ValueError('fisma value invalid: valid values are low, med, high')
+                else:
+                    rulefisma = self.applicable['fisma']
+            if systemfismacat == 'high' and rulefisma == 'high':
+                pass
+            elif systemfismacat == 'med' and rulefisma == 'high':
+                applies = False
+            elif systemfismacat == 'low' and \
+                 (rulefisma == 'med' or rulefisma == "high"):
+                applies = False
+
         return applies
+
+    def checkConsts(self, constlist=[]):
+        """
+        This method returns True or False depending
+        on whether the list of constants passed to it
+        are defined or not (if they are == None)
+        This method was implemented to handle the
+        default undefined state of constants in localize.py
+        when operating in the public environment
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        """
+
+        retval = True
+
+        # if there is nothing to check, return False
+        if not constlist:
+            retval = False
+            return retval
+
+        if not isinstance(constlist, list):
+            retval = False
+            return retval
+
+        try:
+
+            # If there is a None type variable, return False
+            for v in constlist:
+                if v == None:
+                    retval = False
+
+        except Exception:
+            raise
+        return retval
 
     def addresses(self):
         """
@@ -689,3 +775,69 @@ LANL-stonix."""
             formattedDetailedResults = ""
             raise
         return formattedDetailedResults
+
+    def getauditonly(self):
+        '''
+        Return the audit only status boolean.
+        This class variable (self.auditonly) is
+        meant to indicate whether a particular
+        rule is intended to be audit-only or not.
+        Default = False.
+
+        @return: self.auditonly
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        return self.auditonly
+
+    def sethelptext(self):
+        '''
+        Set the help text for the current rule.
+        Help text is retrieved from help/stonix_helptext.
+
+        The help text blocks within stonix_helptext must
+        always follow 4 basic rules in formatting:
+
+        1) Each new help text block must begin with the
+        rule's rulenumber in diamond brackets - e.g. <123>
+        2) Each help text block must end with ." (period
+        followed by double quote)
+        3) Each help text block must not contain any "
+        (double quotes) other than starting and ending
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        # change helpdir variable if you change where the help text is stored!
+        helpdir = self.environ.resources_path + '/help/stonix_helptext'
+        contents = ''
+        bstring = ''
+        rulenum = self.getrulenum()
+
+        try:
+
+            if os.path.exists(helpdir):
+                f = open(helpdir, 'r')
+                contents = f.read()
+                f.close()
+            else:
+                self.logdispatch.log(LogPriority.DEBUG, "Could not find help text file at: " + helpdir)
+            
+            b=re.findall(r'(?<=\<' + str(rulenum) + '\>).+?(?=\.\")', contents, re.DOTALL)
+            if b:
+                if isinstance(b, list):
+                    if len(b) > 0:
+                        bstring = b[0]
+                bstring = bstring.strip()
+                if re.search('^\"', bstring, re.IGNORECASE):
+                    bstring = bstring[1:]
+            if not bstring:
+                self.logdispatch.log(LogPriority.DEBUG, "Failed to get help text for rulenumber = " + str(self.rulenumber))
+                self.helptext = "Could not locate help text for this rule."
+            else:
+                self.helptext = bstring
+
+        except Exception:
+            raise

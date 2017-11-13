@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -24,7 +24,11 @@
 This rule restricts mounting rights and options.
 
 @author: Eric Ball
-@change: 2015-07-06 eball Original implementation
+@change: 2015/07/06 eball Original implementation
+@change: 2016/04/22 eball Added GNOME 3 method for disabling GNOME mounting
+@change: 2016/08/01 eball Added "dbus-launch" before all gsettings commands,
+    and fixed undos that were the same as the fix commands
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 from __future__ import absolute_import
 import os
@@ -49,14 +53,7 @@ class RestrictMounting(Rule):
         self.rulename = "RestrictMounting"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This optional rule can be used to restrict access \
-and permissions related to disk mounts.\nRESTRICTCONSOLEACCESS will restrict \
-device ownership for console users to root only.\nDISABLEAUTOFS disables the \
-autofs service, which is used to dynamically mount NFS filesystems. Even if \
-NFS in needed, NFS filesystems can usually be statically mounted through
-/etc/fstab.\nDISABLEGNOMEAUTOMOUNT will restrict the gnome-volume-manager \
-(part of the GNOME Desktop Environment) from automatically mounting devices \
-and media.'''
+        self.sethelptext()
 
         # Configuration item instantiation
         datatype = "bool"
@@ -78,7 +75,8 @@ and media.'''
         self.gnomeCi = self.initCi(datatype, key, instructions, default)
 
         self.guidance = ["NSA 2.2.2.1", "NSA 2.2.2.3", "NSA 2.2.2.4",
-                         "CCE 3685-5", "CCE 4072-5", "CCE 4231-7"]
+                         "CCE 3685-5", "CCE 4072-5", "CCE 4231-7",
+                         "CCE-RHEL7-CCE-TBD 2.2.2.6"]
         self.applicable = {"type": "white",
                            "family": ["linux"]}
         self.iditerator = 0
@@ -117,25 +115,55 @@ and media.'''
                                             "the correct values\n"
 
             if self.ph.check("autofs"):
-                if self.sh.auditservice("autofs"):
+                if self.sh.auditService("autofs", _="_"):
                     compliant = False
                     results += "autofs is installed and enabled\n"
 
-            if os.path.exists("/usr/bin/gconftool-2"):
+            if os.path.exists("/usr/bin/gsettings"):
+                automountOff = False
+                autorunNever = False
+                cmd = ["gsettings", "get", "org.gnome.desktop.media-handling",
+                       "automount"]
+                self.ch.executeCommand(cmd)
+                if re.search("false", self.ch.getOutputString()):
+                    automountOff = True
+
+                cmd = ["gsettings", "get", "org.gnome.desktop.media-handling",
+                       "autorun-never"]
+                self.ch.executeCommand(cmd)
+                if re.search("true", self.ch.getOutputString()):
+                    autorunNever = True
+                    debug = "autorun-never is enabled"
+                    self.logger.log(LogPriority.DEBUG, debug)
+
+                self.automountOff = automountOff
+                self.autorunNever = autorunNever
+
+                if not automountOff or not autorunNever:
+                    compliant = False
+                    results += "GNOME automounting is enabled\n"
+
+            elif os.path.exists("/usr/bin/gconftool-2"):
+                automountMedia = True
+                automountDrives = True
+
                 cmd = ["gconftool-2", "-R", "/desktop/gnome/volume_manager"]
                 self.ch.executeCommand(cmd)
                 gconf = self.ch.getOutputString()
-                if len(re.findall("automount_[media|drives]+ = false", gconf)) < 2:
-                    compliant = False
-                    results += "GNOME automounting is not disabled\n"
+                if re.search("automount_media = false", gconf):
+                    automountMedia = False
+                if re.search("automount_drives = false", gconf):
+                    automountDrives = False
 
+                self.automountMedia = automountMedia
+                self.automountDrives = automountDrives
+
+                if automountMedia or automountDrives:
+                    compliant = False
+                    results += "GNOME automounting is enabled\n"
+
+            self.detailedresults = results
             self.compliant = compliant
-            if self.compliant:
-                self.detailedresults = "RestrictMounting report has been " + \
-                    "run and is compliant"
-            else:
-                self.detailedresults = "RestrictMounting report has been " + \
-                    "run and is not compliant\n" + results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -181,7 +209,7 @@ and media.'''
                                    "temporary file"
                 if os.path.exists(self.path2):
                     self.tmppath = self.path2 + ".tmp"
-                    self.editor = KVEditorStonix(self.statechglogger, 
+                    self.editor = KVEditorStonix(self.statechglogger,
                                                  self.logger,
                                                  "conf", self.path2,
                                                  self.tmppath,
@@ -190,9 +218,12 @@ and media.'''
                     self.editor.report()
                     if self.editor.fixables:
                         if self.editor.fix():
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            self.editor.setEventID(myid)
                             if self.editor.commit():
                                 debug = self.path2 + "'s contents have been " \
-                                        + "corrected\n"
+                                    + "corrected\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 resetsecon(self.path2)
                             else:
@@ -200,17 +231,17 @@ and media.'''
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 success = False
                                 results += self.path2 + \
-                                           " properties could not be set\n"
+                                    " properties could not be set\n"
                         else:
                             debug = "kveditor fix not successful\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                             results += self.path2 + \
-                                       " properties could not be set\n"
+                                " properties could not be set\n"
 
             if self.autofsCi.getcurrvalue():
-                if self.ph.check("autofs"):
-                    if self.sh.disableservice("autofs"):
+                if self.ph.check("autofs") and self.sh.auditService("autofs", _="_"):
+                    if self.sh.disableService("autofs", _="_"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.iditerator += 1
@@ -224,30 +255,92 @@ and media.'''
                         debug = "Unable to disable autofs service\n"
                         self.logger.log(LogPriority.DEBUG, debug)
 
+            returnCode = 0
             if self.gnomeCi.getcurrvalue():
-                cmd = ["gconftool-2", "--direct", "--config-source",
-                       "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
-                       "--type", "bool", "--set",
-                       "/desktop/gnome/volume_manager/automount_media",
-                       "false"]
-                cmdSuccess = self.ch.executeCommand(cmd)
-                cmd = ["gconftool-2", "--direct", "--config-source",
-                       "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
-                       "--type", "bool", "--set",
-                       "/desktop/gnome/volume_manager/automount_drives",
-                       "false"]
-                cmdSuccess &= self.ch.executeCommand(cmd)
-                if not cmdSuccess:
+                if os.path.exists("/usr/bin/gsettings") and \
+                   os.path.exists("/usr/bin/dbus-launch"):
+                    if not self.automountOff:
+                        cmd = ["dbus-launch", "gsettings", "set",
+                               "org.gnome.desktop.media-handling",
+                               "automount", "false"]
+                        self.ch.executeCommand(cmd)
+                        returnCode = self.ch.getReturnCode()
+
+                        if not returnCode:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "comm", "command":
+                                     ["dbus-launch", "gsettings", "set",
+                                      "org.gnome.desktop.media-handling",
+                                      "automount", "true"]}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                    if not self.autorunNever:
+                        cmd = ["dbus-launch", "gsettings", "set",
+                               "org.gnome.desktop.media-handling",
+                               "autorun-never", "true"]
+                        self.ch.executeCommand(cmd)
+                        returnCode += self.ch.getReturnCode()
+
+                        if not self.ch.getReturnCode():
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "comm", "command":
+                                     ["dbus-launch", "gsettings", "set",
+                                      "org.gnome.desktop.media-handling",
+                                      "autorun-never", "false"]}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                elif os.path.exists("/usr/bin/gconftool-2"):
+                    if self.automountMedia:
+                        cmd = ["gconftool-2", "--direct", "--config-source",
+                               "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
+                               "--type", "bool", "--set",
+                               "/desktop/gnome/volume_manager/automount_media",
+                               "false"]
+                        self.ch.executeCommand(cmd)
+                        returnCode = self.ch.getReturnCode()
+
+                        if not returnCode:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "comm", "command":
+                                     ["gconftool-2", "--direct",
+                                      "--config-source", "xml:readwrite:" +
+                                      "/etc/gconf/gconf.xml.mandatory",
+                                      "--type", "bool", "--set",
+                                      "/desktop/gnome/volume_manager/" +
+                                      "automount_media", "true"]}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                    if self.automountDrives:
+                        cmd = ["gconftool-2", "--direct", "--config-source",
+                               "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
+                               "--type", "bool", "--set",
+                               "/desktop/gnome/volume_manager/automount_drives",
+                               "false"]
+                        self.ch.executeCommand(cmd)
+                        returnCode += self.ch.getReturnCode()
+
+                        if not self.ch.getReturnCode():
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "comm", "command":
+                                     ["gconftool-2", "--direct",
+                                      "--config-source", "xml:readwrite:" +
+                                      "/etc/gconf/gconf.xml.mandatory",
+                                      "--type", "bool", "--set",
+                                      "/desktop/gnome/volume_manager/" +
+                                      "automount_drives",
+                                      "true"]}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                if returnCode:
                     success = False
                     results += "Fix failed to disable GNOME automounting\n"
 
+            self.detailedresults = results
             self.rulesuccess = success
-            if self.rulesuccess:
-                self.detailedresults = "RestrictMounting fix has been run " + \
-                                       "to completion\n"
-            else:
-                self.detailedresults = "RestrictMounting fix was unsuccessful\n" \
-                                       + self.results
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

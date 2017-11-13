@@ -22,15 +22,20 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule NoCoreDumps
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
+@change: 2016/09/09 eball Added self.checkUndo = True
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.NoCoreDumps import NoCoreDumps
 
@@ -45,7 +50,7 @@ class zzzTestRuleNoCoreDumps(RuleTest):
                                 self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
+        self.checkUndo = True
 
     def tearDown(self):
         pass

@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 Created on Oct 18, 2013
 
 TCPWrappers is a library which provides simple access control and standardized
@@ -37,6 +36,7 @@ built to make use of the libwrap library.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/29 eball Fixed potential first-run failure
 @change: 2015/10/08 eball Help text cleanup
+@change: 2016/06/14 eball Rewrote most code
 '''
 
 from __future__ import absolute_import
@@ -47,8 +47,8 @@ import traceback
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import getOctalPerms
-from ..localize import ALLOWNET, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
+from ..stonixutilityfunctions import getOctalPerms, createFile, iterate
+from ..localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
 
 
 class TCPWrappers(Rule):
@@ -77,156 +77,175 @@ class TCPWrappers(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = '''TCPWrappers is a library which provides simple \
-access control and standardized logging for supported applications which \
-accept connections over a network. Historically, TCPWrappers was used to \
-support inetd services. Now that inetd is deprecated, TCPWrappers supports \
-only services which were built to make use of the libwrap library.
-This rule will ensure a secure configuration for the hosts.allow and \
-hosts.deny files.'''
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = ['CIS', 'NSA(2.5.4)', '4434-7']
-        self.isApplicableWhiteList = []
-        self.isApplicableBlackList = ["darwin"]
-        self.applicable = {'type': 'black', 'family': ['darwin']}
+        self.applicable = {'type': 'white',
+                           'family': ['linux']}
 
         # init CIs
         self.ci = self.initCi("bool",
-                              "TCPWrappers",
+                              "TCPWRAPPERS",
                               "To prevent TCP Wrappers from being " +
                               "configured on this system, set the " +
                               "value of TCPWrappers to False.",
                               True)
 
-        self.allownetCI = self.initCi("string", "Allow Subnet",
-                                      "Enter the subnet you wish to allow " +
-                                      "services access to on the network." +
-                                      " To allow none, leave blank.",
-                                      str(ALLOWNET))
+        datatype = "list"
+        key = "ALLOWNETS"
+        instructions = "Please enter the subnet(s) you wish to allow to " + \
+            "connect via SSH and X-11 forwarding. To allow none, leave blank."
+        default = ALLOWNETS
+
+        self.allownetCI = self.initCi(datatype, key, instructions, default)
+        self.constlist = [ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT]
 
     def report(self):
         '''
         Check for correct configuration of hosts.allow and hosts.deny
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
+        self.detailedresults = ""
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.compliant = False
+            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT"
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         # defaults
-        configured = True
-        foundallowline = False
-        founddenyline = False
-        self.allowcfgline = True
-        self.denycfgline = True
-        self.allowperms = True
-        self.denyperms = True
-        allowsshd = False
-        allowsshdfwdx = False
+        self.compliant = True
+        allowcfgline = False
+        allownetscfg = True
+        denycfgline = False
+        allow = "/etc/hosts.allow"
+        deny = "/etc/hosts.deny"
 
         try:
 
             self.detailedresults = ""
 
-            if os.path.exists('/etc/hosts.allow'):
-
+            if os.path.exists(allow):
                 # check for correct permissions on the hosts.allow file
-                perms = getOctalPerms('/etc/hosts.allow')
+                perms = getOctalPerms(allow)
                 if perms != 644:
-                    self.allowperms = False
-                    self.detailedresults += "Permissions for hosts.allow " + \
-                        "file are incorrect\n"
-                if os.stat('/etc/hosts.allow').st_uid != 0:
-                    self.allowperms = False
-                    self.detailedresults += "Incorrect owner for hosts.allow\n"
-                if os.stat('/etc/hosts.allow').st_gid != 0:
-                    self.allowperms = False
-                    self.detailedresults += "Incorrect group for hosts.allow\n"
+                    self.compliant = False
+                    self.detailedresults += "Permissions for " + allow + \
+                        " are incorrect. Expected 644, got " + str(perms) + \
+                        "\n"
+                if os.stat(allow).st_uid != 0:
+                    self.compliant = False
+                    self.detailedresults += "Incorrect owner for " + allow + \
+                        "\n"
+                if os.stat(allow).st_gid != 0:
+                    self.compliant = False
+                    self.detailedresults += "Incorrect group for " + allow + \
+                        "\n"
 
                 # check for default deny all line in hosts.allow
-                f = open('/etc/hosts.allow', 'r')
+                f = open(allow, 'r')
                 contentlines = f.readlines()
                 f.close()
 
                 for line in contentlines:
-                    if re.search("^(all|ALL)[\s]*:[\s]*(all|ALL)[\s]*:[\s]*(DENY|deny)",
-                                 line):
-                        foundallowline = True
-
-                if not foundallowline:
-                    self.allowcfgline = False
-                    self.detailedresults += "Could not find 'all : all : " + \
-                        "deny' line in hosts.allow\n"
+                    if re.search("^(all|ALL)[\s]*:[\s]*(all|ALL)[\s]*:" +
+                                 "[\s]*(DENY|deny)", line, re.M):
+                        allowcfgline = True
+                        break
+                if not allowcfgline:
+                    self.detailedresults += "Could not find 'all : " + \
+                        "all : deny' line in " + allow + "\n"
 
                 # check for allow sshd cfg lines
-                if str(self.allownetCI.getcurrvalue()).strip() != "":
+                allownets = self.allownetCI.getcurrvalue()
+                for allownet in allownets:
+                    if allownet:
+                        foundsshd = False
+                        foundx11 = False
+                        for line in contentlines:
+                            if re.search("^#", line):
+                                continue
+                            elif re.search("^sshd: " + allownet + " : ALLOW",
+                                           line):
+                                foundsshd = True
+                            elif re.search("^sshdfwd-X11: " + allownet +
+                                           " : ALLOW", line, re.M):
+                                foundx11 = True
+                        if not foundsshd:
+                            self.detailedresults += "Could not find " + \
+                                "\"sshd: " + allownet + " : ALLOW\" line in " + \
+                                allow + "\n"
+                        if not foundx11:
+                            self.detailedresults += "Could not find " \
+                                "\"sshdfwd-X11: " + allownet + \
+                                " : ALLOW\" line in " + allow + "\n"
 
-                    for line in contentlines:
-                        if re.search("^sshd: " +
-                                     str(self.allownetCI.getcurrvalue()) +
-                                     " : ALLOW", line):
-                            allowsshd = True
+                        allownetscfg &= foundsshd & foundx11
 
-                    for line in contentlines:
-                        if re.search("^sshdfwd-X11: " +
-                                     str(self.allownetCI.getcurrvalue()) +
-                                     " : ALLOW", line):
-                            allowsshdfwdx = True
+                for line in contentlines:
+                    if re.search("^#", line):
+                        continue
+                    elif re.search("ALLOW|allow", line):
+                        orAllownets = "|".join(allownets)
+                        # If allownets consists only of an empty string,
+                        # a regex of |127.0.0.1 will match anything. We
+                        # therefore need to make sure that if the joined
+                        # allownets are an empty string, we get rid of the |.
+                        if orAllownets:
+                            regex = orAllownets + "|127.0.0.1"
+                        else:
+                            regex = "127.0.0.1"
+                        if not re.search(regex, line):
+                            self.compliant = False
+                            self.detailedresults += "Uncommented ALLOW lines " + \
+                                "for subnets not in ALLOWNETS (and not " + \
+                                "127.0.0.1) found in " + allow
+                            break
 
-                    if not allowsshd:
-                        self.allowcfgline = False
-                        self.detailedresults += "Could not find 'sshd:' " + \
-                            "line for allowhost in hosts.allow\n"
-
-                    if not allowsshdfwdx:
-                        self.allowcfgline = False
-                        self.detailedresults += "Could not find 'sshdfwd-X11:'" + \
-                            " line for allowhost in hosts.allow\n"
+                self.compliant &= allowcfgline & allownetscfg
 
             else:
-
-                configured = False
+                self.compliant = False
                 self.detailedresults += "Could not find /etc/hosts.allow\n"
 
-            if os.path.exists('/etc/hosts.deny'):
-
+            if os.path.exists(deny):
                 # check for correct permissions on the hosts.deny file
-                perms = getOctalPerms('/etc/hosts.deny')
+                perms = getOctalPerms(deny)
                 if perms != 644:
-                    self.denyperms = False
+                    self.compliant = False
                     self.detailedresults += "Permissions for hosts.deny " + \
                         "file are incorrect\n"
-                if os.stat('/etc/hosts.deny').st_uid != 0:
-                    self.denyperms = False
+                if os.stat(deny).st_uid != 0:
+                    self.compliant = False
                     self.detailedresults += "Incorrect owner for hosts.deny\n"
-                if os.stat('/etc/hosts.deny').st_gid != 0:
-                    self.denyperms = False
+                if os.stat(deny).st_gid != 0:
+                    self.compliant = False
                     self.detailedresults += "Incorrect group for hosts.deny\n"
 
                 # check for deny banners line in hosts.deny
-                f = open('/etc/hosts.deny', 'r')
+                f = open(deny, 'r')
                 contentlines = f.readlines()
                 f.close()
 
                 for line in contentlines:
-                    if re.search("^(ALL|all)[\s]*:[\s]*(ALL|all)[\s]*:[\s]*banners[\s]*/etc/banners[\s]*:[\s]*(deny|DENY)",
-                                 line):
-                        founddenyline = True
-
-                if not founddenyline:
-                    self.denycfgline = False
-                    self.detailedresults += "Could not find 'all : all : " + \
-                        "deny' line in hosts.allow\n"
-
-            else:
-
-                configured = False
-                self.detailedresults += "Could not find /etc/hosts.deny\n"
-
-            if self.allowperms and self.allowcfgline and self.denyperms and \
-               self.denycfgline and configured:
-                self.compliant = True
+                    if re.search("^(ALL|all)[\s]*:[\s]*(ALL|all)[\s]*:[\s]*" +
+                                 "banners[\s]*/etc/banners[\s]*:[\s]*(deny|DENY)",
+                                 line, re.M):
+                        denycfgline = True
+                        break
+                if not denycfgline:
+                    self.detailedresults += "Could not find \"ALL:ALL:" + \
+                        "banners /etc/banners:deny\" line in hosts.deny\n"
+                self.compliant &= denycfgline
             else:
                 self.compliant = False
+                self.detailedresults += "Could not find /etc/hosts.deny\n"
+
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -244,112 +263,107 @@ hosts.deny files.'''
         '''
         Apply changes to hosts.allow and hosts.deny to correctly configure them
 
-        @author: bemalmbe
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
 
         # defaults
         self.iditer = 0
         self.detailedresults = ""
+        allow = "/etc/hosts.allow"
+        allowtmp = allow + ".stonixtmp"
+        deny = "/etc/hosts.deny"
+        denytmp = deny + ".stonixtmp"
 
         try:
-
             if self.ci.getcurrvalue():
-
+                allownets = self.allownetCI.getcurrvalue()
+                allowCreated = False
                 # If file hosts.allow does not exist, create it with the
                 # correct config and permissions/ownership
-                if not os.path.exists('/etc/hosts.allow'):
-
-                    f = open('/etc/hosts.allow', 'w')
-                    content = HOSTSALLOWDEFAULT
-                    content = re.sub('{allownet}',
-                                     str(self.allownetCI.getcurrvalue()),
-                                     content)
-                    if str(self.allownetCI.getcurrvalue()).strip() == "":
+                if not os.path.exists(allow):
+                    if createFile(allow, self.logger):
+                        self.iditer += 1
+                        myid = iterate(self.iditer, self.rulenumber)
+                        event = {"eventtype": "creation", "filepath": allow}
+                        self.statechglogger.recordchgevent(myid, event)
+                        allowCreated = True
+                    else:
+                        self.rulesuccess = False
+                        self.detailedresults += "Failed to create file: " + \
+                            allow + "\n"
+                content = HOSTSALLOWDEFAULT
+                if len(allownets) == 1:
+                    content = re.sub('{allownet}', allownets[0], content)
+                    if allownets[0] == "":
                         content = re.sub('sshd:', '#sshd:', content)
                         content = re.sub('sshdfwd-X11:', '#sshdfwd-X11:',
                                          content)
-
-                    f.write(content)
-                    f.close()
-
-                    os.chmod('/etc/hosts.allow', 0644)
-                    os.chown('/etc/hosts.allow', 0, 0)
-
                 else:
+                    contentlines = content.splitlines(True)
+                    for ind, line in enumerate(contentlines):
+                        search = re.search(r"^(.*)\{allownet\}(.*)$", line,
+                                           re.S)
+                        if search:
+                            del contentlines[ind]
+                            for allownet in allownets:
+                                allowline = search.group(1) + allownet + \
+                                    search.group(2)
+                                contentlines.insert(ind, allowline)
+                    content = "".join(contentlines)
 
-                    # If /etc/hosts.allow file does exist, make sure it has the
-                    # correct configuration and permissions/ownership
-                    if not self.allowcfgline:
+                f = open(allowtmp, 'w')
+                f.write(content)
+                f.close()
 
-                        content = HOSTSALLOWDEFAULT
-                        content = re.sub('{allownet}',
-                                         str(self.allownetCI.getcurrvalue()),
-                                         content)
-                        if str(self.allownetCI.getcurrvalue()).strip() == "":
-                            content = re.sub('sshd:', '#sshd:', content)
-                            content = re.sub('sshdfwd-X11:', '#sshdfwd-X11:',
-                                             content)
+                if not allowCreated:
+                    self.iditer += 1
+                    myid = iterate(self.iditer, self.rulenumber)
+                    event = {"eventtype": "conf", "filepath": allow}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(allow, allowtmp, myid)
 
-                        tf = open('/etc/hosts.allow.stonixtmp', 'w')
-                        tf.write(content)
-                        tf.close()
-
-                        event = {'eventtype': 'conf',
-                                 'filename': '/etc/hosts.allow'}
-
-                        self.iditer += 1
-                        myid = '001300' + str(self.iditer)
-
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange('/etc/hosts.allow',
-                                                             '/etc/hosts.allow.stonixtmp',
-                                                             myid)
-
-                        os.rename('/etc/hosts.allow.stonixtmp',
-                                  '/etc/hosts.allow')
-
-                        os.chmod('/etc/hosts.allow', 0644)
-                        os.chown('/etc/hosts.allow', 0, 0)
+                os.rename(allowtmp, allow)
+                os.chmod(allow, 0644)
+                os.chown(allow, 0, 0)
 
                 # If file hosts.deny does not exist, create it with the correct
                 # config
-                if not os.path.exists('/etc/hosts.deny'):
-
-                    f = open('/etc/hosts.deny', 'w')
-                    content = HOSTSDENYDEFAULT
-                    f.write(content)
-                    f.close()
-
-                    os.chmod('/etc/hosts.deny', 0644)
-                    os.chown('/etc/hosts.deny', 0, 0)
-
-                else:
-
-                    # If /etc/hosts.deny file does exist, make sure it has the
-                    # default deny banners config line and the correct
-                    # permissions on it
-                    if not self.denycfgline:
-
-                        content = HOSTSDENYDEFAULT
-                        tf = open('/etc/hosts.deny.stonixtmp', 'w')
-                        tf.write(content)
-                        tf.close()
-
-                        event = {'eventtype': 'conf',
-                                 'filename': '/etc/hosts.deny'}
-
+                content = HOSTSDENYDEFAULT
+                denyCreated = False
+                if not os.path.exists(deny):
+                    if createFile(deny, self.logger):
                         self.iditer += 1
-                        myid = '001300' + str(self.iditer)
-
+                        myid = iterate(self.iditer, self.rulenumber)
+                        event = {"eventtype": "creation", "filepath": deny}
                         self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange('/etc/hosts.deny',
-                                                             '/etc/hosts.deny.stonixtmp',
-                                                             myid)
-                        os.rename('/etc/hosts.deny.stonixtmp',
-                                  '/etc/hosts.deny')
+                        denyCreated = True
+                    else:
+                        self.rulesuccess = False
+                        self.detailedresults += "Failed to create file: " + \
+                            deny + "\n"
 
-                        os.chmod('/etc/hosts.deny', 0644)
-                        os.chown('/etc/hosts.deny', 0, 0)
+                f = open(denytmp, 'w')
+                f.write(content)
+                f.close()
+
+                if not denyCreated:
+                    self.iditer += 1
+                    myid = iterate(self.iditer, self.rulenumber)
+                    event = {"eventtype": "conf", "filepath": deny}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(deny, denytmp, myid)
+
+                os.rename(denytmp, deny)
+                os.chmod(deny, 0644)
+                os.chown(deny, 0, 0)
             else:
                 self.detailedresults = str(self.ci.getkey()) + \
                     " was disabled. No action was taken."

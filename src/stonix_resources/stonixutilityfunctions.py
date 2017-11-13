@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-'''
-Created on Oct 18, 2011
-Miscellaneous utility functions.
-@author: dkennel
-'''
 
 ###############################################################################
 #                                                                             #
@@ -44,67 +39,103 @@ Miscellaneous utility functions.
 #
 #   2011/10/18 Copied in storutils as a jumpstart for utility functions.
 
+'''
+Created on Oct 18, 2011
+Miscellaneous utility functions.
+
+@author: Dave Kennel
+@change: Breen Malmberg - 5/8/2017 - added method validateParam;
+        fixed a bad indentation on/near line 1329, in method
+        isServerVersionHigher; (Note: many methods missing try/except
+        blocks!); Removed old, commented-out isApplicable method (commented
+        out by Dave Kennel - per Dave Kennel "this block can probably be safely
+        removed in 0.8.17"); removed unused method iterate2
+@change: Breen Malmberg - 7/12/2017 - doc string pass on all methods; added try/except
+        blocks to all methods which were missing it; removed unused imports; removed
+        method cloneMeta() - will sub resetsecon where it was used
+@todo: re-write checkUserGroupName so it only has 1 return type
+        and update the rules which use it (currently only ConfigureLogging)
+@todo: replace * import with needed types only
+@todo: remove duplicate methods and change implementation in rules that used the removed ones
+        to use the other one
+@note: don't write methods without try/except blocks; log errors/issues; methods
+        should only have 1, determinate, return type; don't write methods without
+        doc strings or without naming the author; don't use lazy imports; record all
+        changes with the @change tag (name and date of change and what was changed);
+        don't write methods with return variables that have no default initialization
+'''
 
 import os
-from grp import getgrgid
-from pwd import getpwuid
+import grp
+import inspect
+import pwd
 import re
 import subprocess
 import traceback
 import socket
-import random
 import stat
+import urllib2
+
+from grp import getgrgid
+from pwd import getpwuid
 from types import *
 from distutils.version import LooseVersion
-from environment import Environment
 from subprocess import call, Popen, PIPE, STDOUT
-import urllib2
 from logdispatcher import LogPriority
-# from twisted.python.procutils import which
-
-# =========================================================================== #
 
 
 def resetsecon(filename):
-    '''resetsecon(filename)
-    Resets the SELinux security context of a file. This should be done after
+    '''
+    Reset the SELinux security context of a file. This should be done after
     sensitive files are modified to prevent breakage due to SELinux denials.
 
-    @param filename: Full path to the file to be reset
+    @param filename: string; Full path to the file to be reset
     @author: D. Kennel
+    @return: void
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
     '''
 
-    if os.path.exists('/sbin/restorecon'):
-        call('/sbin/restorecon ' + filename + ' &> /dev/null', shell=True,
-             close_fds=True)
+    try:
 
-# =========================================================================== #
+        if os.path.exists('/sbin/restorecon'):
+            call('/sbin/restorecon ' + filename + ' &> /dev/null', shell=True,
+                 close_fds=True)
 
+    except Exception:
+        raise
 
 def getlocalfs(logger, environ):
-    '''This function is used to return a list of local filesystems. It is used
+    '''
+    This function is used to return a list of local filesystems. It is used
     in the FilePermissions rule among others.
     It must be passed references to the instantiated logdispatcher and
     environment objects.
 
-    @param Object: LogDispatcher instance
-    @param Object: Environment instance
-    @return: List of strings that are local filesystems
-    @author: dkennel
+    @param logger: logging object
+    @param environ: environment object
+    @return: fslist; List of strings that are local filesystems (default = [])
+    @rtype: list
+    @author: Dave Kennel
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
     '''
+
     logger.log(LogPriority.DEBUG,
                ['GetLocalFs', 'Attempting to discover local filesystems'])
+
     fslist = []
     fstab = '/etc/fstab'
     fstypeindex = 2
     mpindex = 1
+
     # Macs are kinda broken vis-a-vis mounting so we do this to get the
     # local filesystem info from mount. Usually we're only worried about
     # /.
+
     if environ.getosfamily() == 'darwin':
         logger.log(LogPriority.DEBUG,
                         ['GetLocalFs', 'Performing OS X discovery'])
         try:
+
             cmd = '/sbin/mount'
             proc = subprocess.Popen(cmd, shell=True, close_fds=True,
                                     stdout=subprocess.PIPE)
@@ -144,13 +175,16 @@ def getlocalfs(logger, environ):
                        ['GetLocalFS', detailedresults])
 
     else:
+
         if environ.getosfamily() == 'solaris':
             logger.log(LogPriority.DEBUG,
                        ['GetLocalFs', 'Performing Solaris discovery'])
             fstab = '/etc/vfstab'
             fstypeindex = 3
             mpindex = 2
+
         try:
+
             fhandle = open(fstab, 'r')
             tabdata = fhandle.readlines()
             fhandle.close()
@@ -180,69 +214,76 @@ def getlocalfs(logger, environ):
                ['GetLocalFs', 'Local filesystems: ' + str(fslist)])
     return fslist
 
-# =========================================================================== #
 # This will become a rule or part of a rule
-
-
 def importkey(logger):
-    """importkey()
-
+    """
     On new installs we need to import the rpm gpg key to check package sigs.
     This function will import the key if has not been imported already. We
     don't need to do this if called in install mode because the assumption
-    is that expressway has done it."""
+    is that expressway has done it.
 
-    stdin, stdout, stderr = os.popen3('/bin/rpm -qi gpg-pubkey')
-    isimported = stdout.read()
-    stdout.close()
-    stdin.close()
-    stderr.close()
-    if not re.search('security@redhat.com', isimported):
-        if os.path.exists('/usr/share/rhn/RPM-GPG-KEY'):
-            importcommand = '/bin/rpm --import /usr/share/rhn/RPM-GPG-KEY'
-        elif os.path.exists('/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'):
-            importcommand = '/bin/rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'
-        else:
-            logger.log(LogPriority.INFO,
-                       ['importkey',
-                        "Could not locate RPM GPG key. Install GPG key manually"])
-            return False
+    @param logger: logging object
+    @author: Roy Nielsen
+    @return: void
+    @change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except;
+            fixed method logic
+    """
 
-        try:
-            retcode = call(importcommand, shell=True)
-            if retcode < 0:
-                # something bad happened
-                pass
+    try:
 
-        except OSError, err:
-            logger.log(LogPriority.ERROR, ['StonixUtilityFunctions.importkey',
-                                           err])
+        stdin, stdout, stderr = os.popen3('/bin/rpm -qi gpg-pubkey')
+        isimported = stdout.read()
+        stdout.close()
+        stdin.close()
+        stderr.close()
+        importcommand = ""
+    
+        if not re.search('security@redhat.com', isimported):
+            if os.path.exists('/usr/share/rhn/RPM-GPG-KEY'):
+                importcommand = '/bin/rpm --import /usr/share/rhn/RPM-GPG-KEY'
+            elif os.path.exists('/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'):
+                importcommand = '/bin/rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'
+            else:
+                logger.log(LogPriority.DEBUG, ['importkey', "Could not locate RPM GPG key. Install GPG key manually"])
 
+            if importcommand:
+                retcode = call(importcommand, shell=True)
+                if retcode < 0:
+                    logger.log(LogPriority.DEBUG, "The rpm import gpg key command failed with exit code: " + str(retcode))
+
+    except Exception:
+        raise
 
 def write_file(logger, file_name="", file_content=""):
     '''
     Write a config file (file_content) to destination (file_name)
-
     Initially intended for installing scripts and plists to be controlled by
     launchd
 
+    @param logger: logging object
+    @param file_name: string; file path to write to
+    @param file_content: string; contents to write to <file_name>
     @author: Roy Nielsen
+    @return: void
+    @change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except;
+            simplified method logic; added logging
     '''
-    # Need to make sure there is content in file_name and file_content
-    if not re.match("^$", file_name) and not re.match("^$", file_content):
 
-        try:
+    try:
+
+        # Need to make sure that file_name and file_content are not blank
+        if not file_name:
+            logger.log(LogPriority.DEBUG, "No file name provided. Nothing was written.")
+        elif not file_content:
+            logger.log(LogPriority.DEBUG, "No file content provided. Nothing was written.")
+        else:
+
             fh = open(file_name, "w")
-            try:
-                fh.write(file_content)
-            finally:
-                fh.close()
-        except IOError, err:
-            logger.log(LogPriority.ERROR, "Error opening file: " + file_name +
-                       " error: " + err)
+            fh.write(file_content)
+            fh.close()
 
-# =========================================================================== #
-
+    except Exception:
+        raise
 
 def set_no_proxy():
     """
@@ -250,255 +291,139 @@ def set_no_proxy():
     to create a "no_proxy" environment for python
 
     @author: Roy Nielsen
-
+    @return: void
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
     """
-    proxy_handler = urllib2.ProxyHandler({})
-    opener = urllib2.build_opener(proxy_handler)
-    urllib2.install_opener(opener)
 
-# =========================================================================== #
+    try:
 
+        proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(proxy_handler)
+        urllib2.install_opener(opener)
+
+    except Exception:
+        raise
 
 def delete_plist_key(plist="", key=""):
     '''
-    **** Macintosh Specific Function ****
-
+    **** Macintosh-specific Function ****
     Delete a key from a plist file
 
-    @param: plist - the fully qualified filename of the plist
-    @param: key   - the key to delete
-    @returns: in_compliance - 0 for failed to delete
-                              1 for done
+    @param plist: string; the fully qualified filename of the plist
+    @param key: string; the key to delete
+    @return: in_compliance (0 for failed to delete 1 for done; default = 0)
+    @rtype: int
     @author: Roy Nielsen
+    @change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except
     '''
+
     in_compliance = 0
-    # see if the value is there
-    current_value = get_plist_value(plist, key)
 
-    if re.match("-NULL-", current_value):
-        # we are done; the key is not there
-        in_compliance = 1
-    else:
-        # remove the key
+    try:
 
-        cmd = ["defaults", "delete", plist, key]
-
-        Popen(cmd, stdout=PIPE).communicate()[0]
-
-        # validate it is no longer there
+        # see if the value is there
         current_value = get_plist_value(plist, key)
-
+    
         if re.match("-NULL-", current_value):
+            # we are done; the key is not there
             in_compliance = 1
         else:
-            in_compliance = 0
+            # remove the key
+    
+            cmd = ["defaults", "delete", plist, key]
+    
+            Popen(cmd, stdout=PIPE).communicate()[0]
+    
+            # validate it is no longer there
+            current_value = get_plist_value(plist, key)
+    
+            if re.match("-NULL-", current_value):
+                in_compliance = 1
 
+    except Exception:
+        raise
     return in_compliance
-
-# =========================================================================== #
-
 
 def get_plist_value(plist="", key="", current_host=""):
     '''
-    **** Macintosh Specific Function ****
+    **** Macintosh-specific Function ****
+    Get the value of a key in a plist file
 
-    Get the value of a key in the plist file
-
-    @param: plist - the fully qualified filename of the plist
-    @param: key   - the key to delete
-    @param: current_host = whether or not to use the -currentHost option
-                           0 = don't use option
-                           1 = use -currentHost option
-    @returns: "-NULL-" if the key is not found,
-                       otherwise, it returns the value of the key
+    @param plist: string; the fully qualified filename of the plist
+    @param key: string; the key to delete
+    @param current_host: string; whether or not to use the -currentHost option
+           0 = don't use option
+           1 = use -currentHost option
+    @return: current_value ('-NULL-' if the key is not found, otherwise it returns the value of the key; default = '-NULL-')
+    @rtype: string
     @author: Roy Nielsen
+    @change: Breen Malmberg - 7/12/2017 - doc string edit; added try/except;
+            added return var default init; simplified method logic
     '''
-    # determine if the currentHost option should be used
-    # use this option when reading in the user's ByHost dir
-    if current_host:
-        current_host = " -currentHost"
-    else:
-        current_host = ""
 
-    if re.match("^$", current_host):
-        cmd = ["defaults", "read", plist, key]
-    else:
-        cmd = ["defaults", current_host, "read", plist, key]
+    current_value = "-NULL-"
 
-    # get the current value
-    current_value = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()[0]
+    try:
 
-    if re.search("does not exist$", current_value):
-        current_value = "-NULL-"
+        # determine if the currentHost option should be used
+        # use this option when reading in the user's ByHost dir
+        if current_host:
+            current_host = " -currentHost"
 
+        if not current_host:
+            cmd = ["defaults", "read", plist, key]
+        else:
+            cmd = ["defaults", current_host, "read", plist, key]
+
+        # get the current value
+        current_value = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()[0]
+    
+        if re.search("does\s+not\s+exist$", current_value):
+            current_value = "-NULL-"
+
+    except Exception:
+        raise
     return current_value
-
-# =========================================================================== #
-
 
 def has_connection_to_server(logger, server=None, port=80, timeout=1):
     '''
     Check to see if there is a connection to a server.
-    @param logger: logger object
-    @param server: name of the server you want to check connection with
-                   default = None
-    @param port: port number you want to check connection with
-                 default=80
-    @param timeout: the number of seconds to wait for a timeout, can be a float.
-                    default = 1 second
-    @return: True if there is a connection, False if there is not.
 
-    @author: Dave Kennel/Roy Nielsen
+    @param logger: logger object
+    @param server: string; name of the server you want to check connection with
+            default = None
+    @param port: int; port number you want to check connection with
+            default=80
+    @param timeout: int; the number of seconds to wait for a timeout, can be a float.
+            default = 1 second
+    @return: resolvable (True if there is a connection, False if there is not; default = True)
+    @rtype: bool
+    @author: Dave Kennel, Roy Nielsen
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; 
     '''
-    resolvable = False
+
+    resolvable = True
+
     if server:
+
         try:
+
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout)
             sock.connect((server, port))
             sock.close()
-            resolvable = True
-        except (socket.gaierror, socket.timeout, socket.error), err:
+
+        except (socket.gaierror, socket.timeout, socket.error) as err:
             resolvable = False
-            logger.log(LogPriority.ERROR, "has_connection_to_server: socket \
-                       error: " + str(err))
+            logger.log(LogPriority.ERROR, "has_connection_to_server: socket error: " + str(err))
             logger.log(LogPriority.ERROR, "has_connection_to_server: server: "
                        + str(server) + " port: " + str(port) + " timeout = "
                        + str(timeout) + " Connection failed")
     else:
-        logger.log(LogPriority.ERROR, "has_connection_to_server: Need a \
-        non-empty server name")
+        logger.log(LogPriority.DEBUG, "No server name provided. Cannot determine server connection status.")
+        resolvable = False
+
     return resolvable
-
-# =========================================================================== #
-
-
-def cloneMeta(logger, originFile, destinationFile):
-    '''
-    Copies all permissions, ownership and security context (secon) data
-    from originFile to destinationFile. This function does not work on Mac OS X
-    systems.
-
-    @param originFile: full file path to copy metadata from
-    @param destinationFile: full file path to copy metadata to
-
-    @author bemalmbe
-    '''
-
-    # note that the stat tool is not always installed by default on all systems
-    # - namely: solaris and derivations thereof
-
-    env = Environment()
-
-    if env.getosfamily() == 'darwin':
-        return
-
-    try:
-
-        # clone permissions; doesn't work on mac os x
-        if env.getosfamily() == 'freebsd':
-            (stdout, stderr) = Popen(["stat -f %Op " + originFile], shell=True,
-                                     stdout=PIPE).communicate()
-        else:
-            (stdout, stderr) = Popen(["stat -c %a " + originFile], shell=True,
-                                     stdout=PIPE).communicate()
-
-        if stdout and isinstance(stdout, str):
-
-            if not re.match("^[0-9]*$", stdout):
-                logger.log(LogPriority.DEBUG,
-                           'Improperly formatted permissions string returned')
-
-            formattedperms = stdout.strip()
-
-            # the freebsd version of the stat command can only return a string
-            # which contains the file type code prepended to the octal
-            # permissions string we must therefor strip the preceeding file
-            # type code in order to perform a chmod with it
-            if len(formattedperms) > 3:
-                while len(formattedperms) > 3:
-                    formattedperms = formattedperms[1:]
-
-            os.system('chmod ' + formattedperms + ' ' + destinationFile)
-
-            # clone ownership
-            (stdout, stderr) = Popen(["stat -c %U:%G " + originFile],
-                                     shell=True, stdout=PIPE).communicate()
-
-            formattedownership = stdout.strip()
-
-            os.system('chown ' + formattedownership + ' ' + destinationFile)
-
-            # clone secon; doesn't work on mac os x
-            if env.getosfamily() != 'darwin':
-
-                os.system('chcon --reference=' + originFile + ' ' +
-                          destinationFile)
-
-        else:
-
-            logger.log(LogPriority.DEBUG, 'stat command failed to get ' +
-                       'output. Is the stat command available on this ' +
-                       'system type?')
-            return
-
-    except (OSError):
-        raise
-    except Exception:
-        raise
-
-# =========================================================================== #
-
-
-def iterate2(idbase, iterator):
-    '''
-    take inputs iterator and idbase and dynamically create and output a
-    properly formatted id string for use with 'event' dictionaries used in
-    the undo() methods of each class/rule in Dylan
-
-    @params idbase integer
-    @params iterator integer
-
-    @return int myid
-
-    @author bemalmbe
-    '''
-
-    # #USE CASE 1 (<)
-    # idbase = 01230
-    # iterator = 1
-    # if 5 < (7 - 1) = 5 < 6; true
-    # i = (7 - (5 + 1) = 7 - 6 = 1
-    # idbase = idbase + ('0' * 1) = 012300 = 6 characters
-    # myid = idbase + iterator = 7 characters = 0123001
-
-    # #USE CASE 2 (>=)
-    # idbase = 01230000
-    # iterator = 1
-    # if 8 > (7 - 1); if 8 > 6; if idbase is greater than formatlen - len(iterator)
-    # i = 8 - 7 = 1 + 1 = 2
-    # idbase = idbase - 2 character = 6 characters = 012300
-    # myid = idbase + iterator = 7 characters = 0123001
-
-    iterator = str(iterator).strip()
-    idbase = str(idbase).strip()
-    formatlen = 7
-
-    if len(idbase) < (formatlen - len(iterator)):
-        i = (formatlen - (len(idbase) + len(iterator)))
-        idbase = idbase + ('0' * i)
-
-    elif len(idbase) >= (formatlen - len(iterator)):
-        i = (len(idbase) - formatlen) + len(iterator)
-        idbase = idbase.replace(' ', '')[:-i]
-
-    myid = idbase + iterator
-    myid = int(myid)
-
-    return str(myid)
-
-# =========================================================================== #
-
 
 def isWritable(logger, filepath, owner="o"):
     '''
@@ -512,11 +437,12 @@ def isWritable(logger, filepath, owner="o"):
      user
      u
 
-    @params filepath string
-    @params owner string
-    @params logger object
-    @return bool
-    @author bemalmbe
+    @params filepath: string; path of file to check
+    @params owner: string; type of writability to check
+    @params logger: logging object
+    @return isw
+    @rtype: bool
+    @author Breen Malmberg
     '''
 
     # set default return value isw to False
@@ -549,38 +475,46 @@ def isWritable(logger, filepath, owner="o"):
 
     return isw
 
-# =========================================================================== #
-
-
 def getOctalPerms(filepath):
     '''
     Get and return the octal format of the file permissions for filepath
 
-    @return int
-    @author bemalmbe
+    @return: octperms
+    @rtype: int
+    @author: Breen Malmberg
+    @param filepath: path of file to check
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+            added default return var init
     '''
 
-    rawresult = os.stat(filepath).st_mode
+    octperms = 0
 
-    if stat.S_ISREG(rawresult):
-        octperms = oct(stat.S_IMODE(rawresult))
-        while len(octperms) > 3:
-                octperms = octperms[1:]
-    else:
-        octperms = 0
+    try:
 
+        rawresult = os.stat(filepath).st_mode
+
+        if stat.S_ISREG(rawresult):
+            octperms = oct(stat.S_IMODE(rawresult))
+            while len(octperms) > 3:
+                    octperms = octperms[1:]
+
+    except Exception:
+        raise
     return int(octperms)
-
-# =========================================================================== #
-
 
 def getOwnership(filepath):
     '''
     Get and return the numeric user and group owner of the filepath
 
-    @return list of type(int)
-    @author bemalmbe
+    @return: ownership (list; uid in position 0, gid in position 1; default = [])
+    @rtype: list
+    @param filepath: string; path of file to get ownership info from
+    @author Breen Malmberg
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added
+            default return var init
     '''
+
+    ownership = []
 
     try:
 
@@ -589,617 +523,451 @@ def getOwnership(filepath):
 
         ownership = [owner, group]
 
-        return ownership
-
     except Exception:
         raise
-
-
-
-# =========================================================================== #
-
+    return ownership
 
 def isThisYosemite(environ):
     '''
-    returns true if this is OS is Mountain Lion
+    returns True if the current system's OS is Mountain Lion
+
     @author: ekkehard j. koch
-    @param self:essential if you override this definition
-    @return: boolean - true if applicable false if not
-    @change: 10/17/2013 Original Implementation
+    @param environ: environment object
+    @return: isYosemite (True if applicable False if not)
+    @rtype: bool
+    @change: ekkehard j. koch - 10/17/2013 - Original Implementation
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+            simplified method logic; added default return var init
+            
     '''
-    osfamily = environ.getosfamily()
-    operatingsystem = environ.getostype()
-    osversion = environ.getosver()
-    if osfamily == "darwin" and operatingsystem == 'Mac OS X':
-        if osversion.startswith("10.10"):
-            isYosemite = True
-        else:
-            isYosemite = False
-    else:
-        isYosemite = False
+
+    isYosemite = False
+
+    try:
+
+        osfamily = environ.getosfamily()
+        operatingsystem = environ.getostype()
+        osversion = environ.getosver()
+        if osfamily == "darwin" and operatingsystem == 'Mac OS X':
+            if osversion.startswith("10.10"):
+                isYosemite = True
+
+    except Exception:
+        raise
     return isYosemite
-
-# =========================================================================== #
-
 
 def isThisMavericks(environ):
     '''
-    returns true if this is OS is Mavericks
+    returns True if the current system's OS is Mavericks
+
     @author: ekkehard j. koch
-    @param self:essential if you override this definition
-    @return: boolean - true if applicable false if not
-    @change: 10/17/2013 Original Implementation
+    @param environ: environment object
+    @return: isMavericks (True if applicable False if not)
+    @rtype: bool
+    @change: ekkehard j. koch - 10/17/2013 - Original Implementation
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+            added default return var init; simplified method logic
     '''
-    osfamily = environ.getosfamily()
-    operatingsystem = environ.getostype()
-    osversion = environ.getosver()
-    if osfamily == "darwin" and operatingsystem == 'Mac OS X':
-        if osversion.startswith("10.9"):
-            isMavericks = True
-        else:
-            isMavericks = False
-    else:
-        isMavericks = False
+
+    isMavericks = False
+
+    try:
+
+        osfamily = environ.getosfamily()
+        operatingsystem = environ.getostype()
+        osversion = environ.getosver()
+        if osfamily == "darwin" and operatingsystem == 'Mac OS X':
+            if osversion.startswith("10.9"):
+                isMavericks = True
+
+    except Exception:
+        raise
     return isMavericks
-
-# =========================================================================== #
-
 
 def isThisMountainLion(environ):
     '''
-    returns true if this is OS is Mountain Lion
+    returns True if the current system's OS is Mountain Lion
+
     @author: ekkehard j. koch
-    @param self:essential if you override this definition
-    @return: boolean - true if applicable false if not
-    @change: 10/17/2013 Original Implementation
+    @param environ: environment object
+    @return: isMountainLion (True if applicable False if not)
+    @rtype: bool
+    @change: ekkehard j. koch - 10/17/2013 - Original Implementation
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+            added default return var init; simplified method logic
     '''
-    osfamily = environ.getosfamily()
-    operatingsystem = environ.getostype()
-    osversion = environ.getosver()
-    if osfamily == "darwin" and operatingsystem == 'Mac OS X':
-        if osversion.startswith("10.8"):
-            isMountainLion = True
-        else:
-            isMountainLion = False
-    else:
-        isMountainLion = False
+
+    isMountainLion = False
+
+    try:
+
+        osfamily = environ.getosfamily()
+        operatingsystem = environ.getostype()
+        osversion = environ.getosver()
+        if osfamily == "darwin" and operatingsystem == 'Mac OS X':
+            if osversion.startswith("10.8"):
+                isMountainLion = True
+
+    except Exception:
+        raise
     return isMountainLion
 
-# =========================================================================== #
-# Commented out by D. Kennel. Replaced by isApplicable method in template class
-# this block can probably be safely removed in 0.8.17.
-
-# def isApplicable(environ, whitelist=[], blacklist=[]):
-#     '''
-# <<<<<<< HEAD
-#     checks if current os is either white or blacklisted
-# =======
-#     see if osfamily, operatingsystem, osversion are in the whitelist and not
-#     in the blacklist
-# >>>>>>> origin/develop
-#     @author: ekkehard j. koch
-#     @param enivron - the environment object
-#     @param whitelist: list of string or dictionary
-#     {0: osfamily,1: operatingsystem, 2: osversion}
-#     @param blacklist: list of string or dictionary
-#     {0: osfamily,1: operatingsystem, 2: osversion}
-#     @return: boolean - true if applicable false if not
-#     @change: 12/18/2013 - ekkehard - Original Implementation
-#     @change: 07/23/2014 - ekkehard - added operating list processing to
-#     white and black lists
-#     @change: 2014/12/16 - dkennel - Fixed bug that was exposed by fix in
-#     environment.getosver()
-#     '''
-# # Did we get a list for the whitelist?
-#     vartype = type(whitelist)
-#     if not vartype == ListType:
-#         raise TypeError("whitelist = " +
-#                         str(whitelist) +
-#                         " is not a " + str(ListType) +
-#                         " but a " + str(vartype) + ".")
-# # Did we get a list for the blacklist?
-#     vartype = type(blacklist)
-#     if not vartype == ListType:
-#         raise TypeError("blacklist = " +
-#                         str(blacklist) +
-#                         " is not a " + str(ListType) +
-#                         " but a " + str(vartype) + ".")
-# # What are we running on
-#     osfamily = environ.getosfamily()
-#     operatingsystem = environ.getostype()
-#     osversion = environ.getosver()
-# # Intitialize inWhiteList and inBlackList
-#     inWhitlist = False
-#     inBlacklist = False
-# # Evaluate what we got and what we need to do
-#     if whitelist == [] and blacklist == []:
-#         processWhiteList = False
-#         processBlackList = False
-#     elif not whitelist == [] and not blacklist == []:
-#         processWhiteList = True
-#         processBlackList = True
-#     elif not whitelist == []:
-#         processWhiteList = True
-#         processBlackList = False
-#     elif not blacklist == []:
-#         processWhiteList = False
-#         processBlackList = True
-#     else:
-#         processWhiteList = False
-#         processBlackList = False
-# # Process the white list
-#     if processWhiteList:
-#         for item in whitelist:
-#             wlosfamily = ""
-#             wloperatingsytem = ""
-#             wlosversion = None
-#             wldictinary = None
-#             itemtype = type(item)
-#             if itemtype == StringType:
-#                 wlosfamily = item
-#                 if wlosfamily == osfamily:
-#                     inWhitlist = True
-#                     break
-#             elif itemtype == DictType:
-#                 wldictinary = item
-# # Check out white list osfamily entry in dictionary needs to be string
-#                 try:
-#                     wlosfamily = wldictinary["0"]
-#                 except(KeyError):
-#                     wlosfamily = ""
-#                 vartype = type(wlosfamily)
-#                 if not vartype == StringType:
-#                     raise TypeError("whitelist osfamily = " + \
-#                                     str(wlosfamily) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not wlosfamily == "":
-#                     if osfamily == wlosfamily:
-#                         wlosfamilyIsApplicable = True
-#                     else:
-#                         wlosfamilyIsApplicable = False
-#                 else:
-#                     wlosfamilyIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 try:
-#                     wloperatingsytem = wldictinary["1"]
-#                 except(KeyError):
-#                     wloperatingsytem = ""
-#                 vartype = type(wloperatingsytem)
-#                 if vartype == ListType:
-#                     for listitem in wloperatingsytem:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("whitelist osversion " + \
-#                                             str(operatingsystem) + \
-#                                             " list item = " + str(listitem) + \
-#                                             " is not a " + str(StringType) + \
-#                                             " but a " + str(vartype) + ".")
-#                     if not wloperatingsytem == []:
-#                         wloperatingsytemIsApplicable = False
-#                         for ver in wloperatingsytem:
-#                             myver = str(ver)
-#                             if re.match("^%s" % myver, str(operatingsystem)):
-#                                 wloperatingsytemIsApplicable = True
-#                     else:
-#                         wloperatingsytemIsApplicable = True
-#                 elif not vartype == StringType:
-#                     raise TypeError("whitelist operatingsystem = " + \
-#                                     str(wloperatingsytem) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not wloperatingsytem == "":
-#                     if wloperatingsytem == operatingsystem:
-#                         wloperatingsytemIsApplicable = True
-#                     else:
-#                         wloperatingsytemIsApplicable = False
-#                 else:
-#                     wloperatingsytemIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 try:
-#                     wlosversion = wldictinary["2"]
-#                 except(KeyError):
-#                     wlosversion = ""
-#                 vartype = type(wlosversion)
-#                 if vartype == StringType:
-#                     if not wlosversion == "":
-#                         mywlosversion = str(wlosversion)
-#                         if re.match("^%s" % mywlosversion, str(osversion)):
-#                             wlosversionIsApplicable = True
-#                         else:
-#                             wlosversionIsApplicable = False
-#                     else:
-#                         wlosversionIsApplicable = True
-#                 elif vartype == ListType:
-#                     for listitem in wlosversion:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("whitelist osversion " + \
-#                                             str(wlosversion) + \
-#                                             " list item = " + str(listitem) + \
-#                                             " is not a " + str(StringType) + \
-#                                             " but a " + str(vartype) + ".")
-#                     if not wlosversion == []:
-#                         wlosversionIsApplicable = False
-#                         for ver in wlosversion:
-#                             myver = str(ver)
-#                             myverlist = myver.split(".")
-#                             osversionlist = str(osversion).split(".")
-#                             counter = 0
-#                             myvernumber = int(myverlist[counter])
-#                             osversionnumber = int(osversionlist[counter])
-#                             numbersequal = True
-#                             for myveritem in myverlist:
-#                                 myvernumber = int(myveritem)
-#                                 if counter <= len(osversionlist):
-#                                     try:
-#                                         osversionnumber = int(osversionlist[counter])
-#                                     except (IndexError):
-#                                         numbersequal = False
-#                                         continue
-#                                 else:
-#                                     numbersequal = False
-#                                     continue
-#                                 if not myvernumber == osversionnumber:
-#                                     numbersequal = False
-#                                 counter = counter + 1
-#                             if numbersequal:
-#                                 wlosversionIsApplicable = True
-#                     else:
-#                         wlosversionIsApplicable = True
-#                 else:
-#                     raise TypeError("whitelist osversion = " + \
-#                                     str(wlosversion) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(ListType) + \
-#                                     " but a " + str(vartype) + ".")
-# # if osfamily and operintingsystem and osversion are applicable it is in
-# # whitelist
-#                 if wlosfamilyIsApplicable and wloperatingsytemIsApplicable and wlosversionIsApplicable:
-#                     inWhitlist = True
-#                     break
-#             else:
-#                 raise TypeError("whitelist item = " + \
-#                                     str(item) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(DictType) + \
-#                                     " but a " + str(itemtype) + ".")
-# # Process the Black list
-#     if processBlackList:
-#         inBlacklist = False
-#         for item in blacklist:
-#             blosfamily = ""
-#             bloperatingsytem = ""
-#             blosversion = None
-#             bldictinary = None
-#             itemtype = type(item)
-#             if itemtype == StringType:
-#                 if item == osfamily:
-#                     inBlacklist = True
-#                     break
-#             elif itemtype == DictType:
-#                 bldictinary = item
-# # Check out white list osfamily entry in dictionary needs to be string
-#                 try:
-#                     blosfamily = bldictinary["0"]
-#                 except(KeyError):
-#                     blosfamily = ""
-#                 vartype = type(blosfamily)
-#                 if not vartype == StringType:
-#                     raise TypeError("blacklist osfamily = " + \
-#                                     str(blosfamily) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not blosfamily == "":
-#                     if osfamily == blosfamily:
-#                         blosfamilyIsApplicable = True
-#                     else:
-#                         blosfamilyIsApplicable = False
-#                 else:
-#                     blosfamilyIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 bloperatingsytem = bldictinary["1"]
-#                 vartype = type(bloperatingsytem)
-#                 if vartype == ListType:
-#                     for listitem in bloperatingsytem:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("whitelist osversion " + \
-#                                             str(operatingsystem) + \
-#                                             " list item = " + str(listitem) + \
-#                                             " is not a " + str(StringType) + \
-#                                             " but a " + str(vartype) + ".")
-#                     if not bloperatingsytem == []:
-#                         bloperatingsytemIsApplicable = False
-#                         for ver in bloperatingsytem:
-#                             myver = str(ver)
-#                             if re.match("^%s" % myver, str(operatingsystem)):
-#                                 bloperatingsytemIsApplicable = True
-#                     else:
-#                         bloperatingsytemIsApplicable = True
-#                 elif not vartype == StringType:
-#                     raise TypeError("blacklist operatingsystem = " + \
-#                                     str(bloperatingsytem) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " but a " + str(vartype) + ".")
-#                 elif not bloperatingsytem == "":
-#                     if bloperatingsytem == operatingsystem:
-#                         bloperatingsytemIsApplicable = True
-#                     else:
-#                         bloperatingsytemIsApplicable = False
-#                 else:
-#                     bloperatingsytemIsApplicable = True
-# # Check out white list operatingsystem entry in dictionary needs to be string
-#                 blosversion = bldictinary["2"]
-#                 vartype = type(blosversion)
-#                 if vartype == StringType:
-#                     if not blosversion == "":
-#                         myblosversion = str(blosversion)
-#                         if re.match("^%s" % myblosversion, str(osversion)):
-#                             blosversionIsApplicable = True
-#                         else:
-#                             blosversionIsApplicable = False
-#                     else:
-#                         blosversionIsApplicable = True
-#                 elif vartype == ListType:
-#                     for listitem in blosversion:
-#                         vartype = type(listitem)
-#                         if not vartype == StringType:
-#                             raise TypeError("blacklist osversion " +
-#                                             str(blosversion) +
-#                                             " list item = " + str(listitem) +
-#                                             " is not a " + str(StringType) +
-#                                             " but a " + str(vartype) + ".")
-#                     if not blosversion == []:
-#                         blosversionIsApplicable = False
-#                         for ver in blosversion:
-#                             myver = str(ver)
-#                             myverlist = myver.split(".")
-#                             osversionlist = str(osversion).split(".")
-#                             counter = 0
-#                             myvernumber = int(myverlist[counter])
-#                             osversionnumber = int(osversionlist[counter])
-#                             numbersequal = True
-#                             for myveritem in myverlist:
-#                                 myvernumber = int(myveritem)
-#                                 if counter <= len(osversionlist):
-#                                     try:
-#                                         osversionnumber = int(osversionlist[counter])
-#                                     except (IndexError):
-#                                         numbersequal = False
-#                                         continue
-#                                 else:
-#                                     numbersequal = False
-#                                     continue
-#                                 if not myvernumber == osversionnumber:
-#                                     numbersequal = False
-#                                 counter = counter + 1
-#                             if numbersequal:
-#                                 blosversionIsApplicable = True
-#                     else:
-#                         blosversionIsApplicable = True
-#                 else:
-#                     raise TypeError("blacklist osversion = " + \
-#                                     str(blosversion) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(ListType) + \
-#                                     " but a " + str(vartype) + ".")
-# # if osfamily and operintingsystem and osversion are applicable it is in
-# # whitelist
-#                 if blosfamilyIsApplicable and bloperatingsytemIsApplicable and blosversionIsApplicable:
-#                     inBlacklist = True
-#                     break
-#             else:
-#                 raise TypeError("blacklist item = " + \
-#                                     str(item) + \
-#                                     " is not a " + str(StringType) + \
-#                                     " or a " + str(DictType) + \
-#                                     " but a " + str(itemtype) + ".")
-# 
-# # See if isApplicable is valid due to the whitlist
-#     if processWhiteList and inWhitlist:
-#         isApplicableWhiteList = True
-#     elif processWhiteList and not inWhitlist:
-#         isApplicableWhiteList = False
-#     elif not processWhiteList:
-#         isApplicableWhiteList = True
-# 
-# # See if isApplicable is valid due to the blacklist
-#     if processBlackList and inBlacklist:
-#         isApplicableBlackList = False
-#     elif processBlackList and not inBlacklist:
-#         isApplicableBlackList = True
-#     elif not processBlackList:
-#         isApplicableBlackList = True
-# 
-# # Let's see what we should return
-#     if isApplicableWhiteList and isApplicableBlackList:
-#         isApplicableValue = True
-#     else:
-#         isApplicableValue = False
-# 
-#     return isApplicableValue
-
-###############################################################################
-
-
 def readFile(filepath, logger):
-    '''Read the contents of a file.
-    @author: dwalker
-    @param filepath: string
-    @param logger: logger object
-    @return: list  '''
+    '''
+    Read and return the contents of <filepath>, in list format.
+
+    @author: Derek Walker
+    @param filepath: string; path to file to read
+    @param logger: logging object
+    @return: contents
+    @rtype: list
+    @change: bgonz12 - 2017/06/02 - fixed the implementation to use std lib's
+             readlines function, removing syntax error; moved the implementation
+             into the try block
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+    '''
+
     contents = []
+
     try:
+
         f = open(filepath, 'r')
+        contents = f.readlines()
+        f.close()
+
     except IOError:
         detailedresults = "unable to open the specified file"
         detailedresults += traceback.format_exc()
         logger.log(LogPriority.DEBUG, detailedresults)
-        return []
-    for line in f:
-        contents.append(line)
-    f.close()
-    return contents
-###############################################################################
+        contents = []
 
+    return contents
 
 def writeFile(tmpfile, contents, logger):
-    '''Write the string of the contents to a file.
-    @author: dwalker
+    '''
+    Write <contents> to <tmpfile>.
+    Return True if successful, False if not.
+
+    @author: Derek Walker
     @param tmpfile: string
     @param contents: string
-    @param logger: logger object
-    @return: bool'''
-    debug = ""
+    @param logger: logging object
+    @return: success
+    @rtype: bool
+    @change: Breen Malmberg - 5/8/2017 - refactor to handle both
+            list and string type contents parameter; no change needed
+            to implementation in rules
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+    '''
+
+    success = True
+
     try:
-        w = open(tmpfile, "w")
-    except IOError:
-        debug += "unable to open the specified file\n"
-        debug += traceback.format_exc()
-        logger.log(LogPriority.DEBUG, debug)
-        return False
-    try:
-        w.write(contents)
-    except IOError:
-        debug += "unable to write to the specified file\n"
-        debug += +traceback.format_exc() + "\n"
-        logger.log(LogPriority.DEBUG, debug)
-        return False
-    w.close()
-    return True
-###############################################################################
+
+        w = open(tmpfile, 'w')
+        if isinstance(contents, basestring):
+            w.write(contents)
+        elif isinstance(contents, list):
+            w.writelines(contents)
+        else:
+            success = False
+            logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
+        w.close()
+    except Exception:
+        raise
+    return success
 
 def getUserGroupName(filename):
-    retval = []
-    statdata = os.stat(filename)
-    uid = statdata.st_uid
-    gid = statdata.st_gid
-    user = getpwuid(uid)[0]
-    group = getgrgid(gid)[0]
-    retval.append(user)
-    retval.append(group)
-    return retval
-###############################################################################
+    '''
+    This method gets the uid and gid string name of a file
+    and stores in a list where position 0 is the owner and 
+    position 1 is the group
 
-def checkPerms(path, perm, logger):
-    '''Check the current file's permissions.
-    @author: dwalker
-    @param path: string
-    @param perm: list
-    @param param: logger object
-    @return: bool  '''
-    debug = ""
+    @author: Derek Walker
+    @param filename: string; filename to get uid and gid name
+    @return: retval (uid in position 0 of list. gid in position 1 of list)
+    @rtype: list
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
+    '''
+
+    retval = []
+
     try:
-        statdata = os.stat(path)
-        owner = statdata.st_uid
-        group = statdata.st_gid
-        mode = stat.S_IMODE(statdata.st_mode)
-        if owner != perm[0] or group != perm[1] or mode != perm[2]:
-            debug += "The following file has incorrect permissions:" + path + "\n"
+
+        statdata = os.stat(filename)
+        uid = statdata.st_uid
+        gid = statdata.st_gid
+        user = getpwuid(uid)[0]
+        group = getgrgid(gid)[0]
+        retval.append(user)
+        retval.append(group)
+
+    except Exception:
+        raise
+    return retval
+
+def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
+    '''
+    This method is usually used in conjuction with getUserGroupName.
+    Returned list from getUserGroupName is passed through this method along
+    with desired owner and group string name and checked to see if they match
+
+    @author: Derek Walker
+    @param ownergrp: list containing user/owner string name (0) and group string
+        name (1)
+    @param owner: Desired owner string name to check against
+    @param group: Desired group string name to check against
+    @param actualmode: Actual mode number to be compared with <desiredmode>
+    @param desiredmode: Desired mode number to be compared with <actualmode>
+    @param logger: logging object
+    @return: retval
+    @rtype: list | bool
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
+    @note: methods should not have more than 1 return type!!
+    '''
+
+    retval = []
+
+    try:
+
+        if not ownergrp[0]:
+            debug = "There is no owner provided for checkUserGroupName method\n"
             logger.log(LogPriority.DEBUG, debug)
             return False
+        if not ownergrp[1]:
+            debug = "There is no group provided for checkUserGroupName method\n"
+            logger.log(LogPriority.DEBUG, debug)
+            return False
+
+        if grp.getgrnam(group)[2] != "":
+            gid = grp.getgrnam(group)[2]
+        if pwd.getpwnam(owner)[2] != "":
+            uid = pwd.getpwnam(owner)[2]
+        if str(uid) and str(gid):
+            if actualmode != desiredmode or ownergrp[0] != owner or ownergrp[1] != group:
+                retval.append(uid)
+                retval.append(gid)
+                return retval
+            else:
+                return True
         else:
-            return True
-    except OSError:
-        debug = "unable to check permissions on: " + path + "\n"
-        logger.log(LogPriority.DEBUG, debug)
-        return False
-###############################################################################
+            debug = "There is no uid or gid associated with owner and group parameters\n"
+            logger.log(LogPriority.DEBUG, debug)
+            return False
 
+    except Exception:
+        raise
+    return retval
 
-def setPerms(path, perm, logger, stchlogger="", myid=""):
-    '''Set the current file's permissions.
-    @author: dwalker
-    @param path: string
-    @param perm: list
-    @param logger: logger object
-    @param stchlogger: state change logger object
-    @param myid: string
-    @return: bool  '''
-    debug = ""
+def checkPerms(path, perm, logger):
+    '''
+    Check the given file's permissions.
+
+    @return: retval
+    @rtype: bool
+    @param path: string; file path whose perm's to check
+    @param perm: list; list of ownership and permissions information
+    @param logger: LogDispatch object
+    @author: Derek Walker
+    @change: Breen Malmberg - 1/10/2017 - doc string edit; return val init;
+            minor refactor; parameter validation; logging
+    '''
+
+    retval = True
+
     try:
+
+        if not isinstance(path, basestring):
+            logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
+        if not isinstance(perm, list):
+            logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
+        if not isinstance(logger, object):
+            logger.log(LogPriority.DEBUG, "Specified parameter: logger must be of type: object. Got: " + str(type(logger)) + "\n")
+
+        for v in locals():
+            if not v:
+                logger.log(LogPriority.DEBUG, "Specified parameter: " + str(v) + " was blank or None!\n")
+
         statdata = os.stat(path)
         owner = statdata.st_uid
         group = statdata.st_gid
         mode = stat.S_IMODE(statdata.st_mode)
+
+        if owner != perm[0]:
+            logger.log(LogPriority.DEBUG, "File: " + str(path) + " has incorrect owner.\n")
+            retval = False
+        if group != perm[1]:
+            logger.log(LogPriority.DEBUG, "File: " + str(path) + " has incorrect group.\n")
+            retval = False
+        if mode != perm[2]:
+            logger.log(LogPriority.DEBUG, "File: " + str(path) + " has incorrect permissions.\n")
+            logger.log(LogPriority.DEBUG, "File perm's = " + str(mode) + "; Desired perm's = " + str(perm[2]) + "\n")
+            retval = False
+
+    except OSError:
+        logger.log(LogPriority.DEBUG, "Unable to check permissions on: " + path + "\n")
+        retval = False
+    except Exception:
+        raise
+
+    return retval
+
+def setPerms(path, perm, logger, stchlogger="", myid=""):
+    '''
+    Set the given <path>'s permissions to <perm>.
+
+    @return: retval
+    @rtype: bool
+    @param path: string; full path to the file whose perms to set
+    @param perm: list; integer list of permissions and ownership information
+    @param logger: object; logger object
+    @param stchlogger: object; statechangelogger object
+    @param myid: string; indicates a unique id to assign to the action of changing perms
+    @author: Derek Walker
+    @change: Breen Malmberg - 1/10/2017 - doc string edit; minor refactor; logging;
+            return var init; parameter validation
+    '''
+
+    retval = True
+
+    try:
+
+        if not isinstance(path, basestring):
+            logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
+        if not isinstance(perm, list):
+            logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
+        if not isinstance(logger, object):
+            logger.log(LogPriority.DEBUG, "Specified parameter: logger must be of type: object. Got: " + str(type(logger)) + "\n")
+
+        for v in locals():
+            if not v:
+                logger.log(LogPriority.DEBUG, "Specified parameter: " + str(v) + " was blank or None!\n")
+
+        statdata = os.stat(path)
+        owner = statdata.st_uid
+        group = statdata.st_gid
+        mode = stat.S_IMODE(statdata.st_mode)
+
         if stchlogger:
             event = {'eventtype': 'perm',
                      'startstate': [owner, group, mode],
                      'endstate': perm,
                      'filepath': path}
             stchlogger.recordchgevent(myid, event)
+
         os.chown(path, perm[0], perm[1])
         os.chmod(path, perm[2])
-        return True
-    except OSError:
-        debug += "couldn't set the permissions on: " + path + "\n"
-        logger.log(LogPriority.DEBUG, debug)
-        return False
-###############################################################################
 
+    except OSError:
+        logger.log(LogPriority.DEBUG, "Failed to set permissions on: " + str(path) + "\n")
+        retval = False
+    except Exception:
+        raise
+
+    return retval
 
 def iterate(iditerator, rulenumber):
-    '''A method to create a unique id number for recording events.
-    @author: dwalker
+    '''
+    Create and return a unique id number, in string format, for recording events
+    in Stonix.
+
+    @author: Derek Walker
     @param iditerator: int
     @param rulenumber: int 
-    @return: string '''
-    if len(str(rulenumber)) == 1:
-        padding = "000"
-    elif len(str(rulenumber)) == 2:
-        padding = "00"
-    elif len(str(rulenumber)) == 3:
-        padding = "0"
-    if iditerator < 10:
-        idbase = padding + str(rulenumber) + "00"
-        myid = idbase + str(iditerator)
-    elif iditerator >= 10 and iditerator < 100:
-        idbase = padding + str(rulenumber) + "0"
-        myid = idbase + str(iditerator)
-    elif iditerator >= 100 and iditerator < 1000:
-        idbase = padding + str(rulenumber)
-        myid = idbase + str(iditerator)
+    @return: myid (default = '0000')
+    @rtype: string
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added return
+            var init; added try/except
+    '''
+
+    myid = "0000"
+
+    try:
+
+        if len(str(rulenumber)) == 1:
+            padding = "000"
+        elif len(str(rulenumber)) == 2:
+            padding = "00"
+        elif len(str(rulenumber)) == 3:
+            padding = "0"
+        if iditerator < 10:
+            idbase = padding + str(rulenumber) + "00"
+            myid = idbase + str(iditerator)
+        elif iditerator >= 10 and iditerator < 100:
+            idbase = padding + str(rulenumber) + "0"
+            myid = idbase + str(iditerator)
+        elif iditerator >= 100 and iditerator < 1000:
+            idbase = padding + str(rulenumber)
+            myid = idbase + str(iditerator)
+
+    except Exception:
+        raise
     return myid
 
-###############################################################################
-
 def createFile(path, logger):
-    '''Method that creates a file if not present.
-    @author: dwalker
-    @param path: string
-    @return: bool '''
+    '''
+    Create a blank file with file name = <path>, if <path>
+    does not already exist.
+
+    @author: Derek Walker
+    @param path: string representing full path to write
+    @param logger: logging object
+    @return: retval
+    @rtype: bool
+    @change: Breen Malmberg - 7/12/2017 - completed doc string; added return var;
+            added return var init; added check to see if path already exists
+    '''
+
+    retval = True
     debug = ""
+
     try:
-        w = open(path, "w")
-        w.close()
+
+        pathdir, _ = os.path.split(path)
+        if not os.path.exists(pathdir):
+            os.makedirs(pathdir)
+        if not os.path.exists(path):
+            w = open(path, "w")
+            w.close()
+
     except IOError:
-        debug += "unable to Create the file: " + path
+        debug += "Unable to create the file: " + path
         debug += traceback.format_exc() + "\n"
         logger.log(LogPriority.DEBUG, debug)
-        return False
-    return True
-
-###############################################################################
+        retval = False
+    return retval
 
 def findUserLoggedIn(logger):
     """
-    Find the name of the user logged in.
+    Find the name of the logged-in user.
 
+    @return: myuser
+    @rtype: string
+    @param logger: logging object
     @author: Roy Nielsen
+    @change: Breen Malmberg - 7/12/2017 - completed doc string; added try/except
+            and var init
     """
-    matchpat = re.compile("^(\w+)\s+")
 
-    (retval, reterr) = Popen(["/usr/bin/stat", "-f", "'%Su'", "/dev/console"],
-                                           stdout=PIPE, stderr=PIPE,
-                                           shell=False)
+    myuser = ""
 
-    theuser = matchpat.match(retval)
-    myuser = theuser.group(1)
-    logger.log(LogPriority.DEBUG, "User is: " + myuser, "verbose")
+    try:
+
+        matchpat = re.compile("^(\w+)\s+")
+
+        (myuser, reterr) = Popen(["/usr/bin/stat", "-f", "'%Su'", "/dev/console"],
+                                               stdout=PIPE, stderr=PIPE,
+                                               shell=False).communicate()
+        if myuser:
+            logger.log(LogPriority.DEBUG, "User name is: " + myuser.strip())
+        else:
+            logger.log(LogPriority.DEBUG, "User name NOT FOUND")
+
+    except Exception:
+        raise
+    myuser = myuser.strip()
+    myuser = myuser.strip("'")
     return myuser
-
-###############################################################################
 
 def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger=None):
     """
@@ -1212,96 +980,109 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
     Returns - True: if version two is higher
               False: if version two is lower
                      Also returns false if the pattern \d+\.\d+\.\d+ is not met
-    """
-    client_version = str(client_version).strip()
-    server_version = str(server_version).strip()
 
-    if logger :
-        def logprint(x):
-           logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
-    else :
-        def logprint(x):
-            print str(x)
+    @author: Roy Nielsen
+    @return: needToUpdate
+    @rtype: bool
+    @param client_version: string representing version of client
+    @param server_version: string representing version of server
+    @param logger: logging object (optional; default = None)
+    @change: Breen Malmberg - 7/12/2017 - completed doc string; added try/except
+    """
 
     needToUpdate = False
-    if re.match("^$", client_version) or \
-       re.match("^$", server_version):
-        needToUpdate = False
-    if re.match("^\s+$", client_version) or \
-       re.match("^\s+$", server_version):
-        needToUpdate = False
-    elif not re.search("\d+\.\d+\.\d+", client_version):
-        needToUpdate = False
-    elif not re.search("\d+\.\d+\.\d+", server_version):
-        needToUpdate = False
-    else:
-        logprint("\n\n\tOk so far . . .\n\n")
-        logprint("cv: \"" + str(client_version) + "\"")
-        logprint("sv: \"" + str(server_version) + "\"")
-        needToUpdate = False
-        c_vers = str(client_version).split(".")
-        s_vers = str(server_version).split(".")
-        if (len(c_vers) == len(s_vers)):
-            """
-            Lengths are equal, can compare each number without problem.
-            """
-            logprint("\n\n\tLengths equal:: clientver: " + str(client_version) + " serverver: " + str(server_version) + "\n\n")
-            for i in range(len(c_vers)):
-                logprint("\t\ti: " + str(i) + " c_vers: " + str(c_vers[i]) + " s_vers: " + str(s_vers[i]))
-                if int(c_vers[i]) < int(s_vers[i]):
-                    needToUpdate = True
-                    break
-                if int(c_vers[i]) > int(s_vers[i]):
-                    needToUpdate = False
-                    break
-            logprint("\n\n")
 
-        elif (len(c_vers) > len(s_vers)):
-            i = 0
-            """
-            Version of client is longer than server, if the first items all
-            match, the version on the client is higher than on the server.
-            """
-            logprint("\n\n\tclient longer:: clientver: " + str(client_version) + " serverver: " + str(server_version) + "\n\n")
-            for i in range(len(s_vers)):
-                logprint("\t\ti: " + str(i) + " c_vers: " + str(c_vers[i]) + " s_vers: " + str(s_vers[i]))
-                if i == len(s_vers):
-                    break
-                if int(c_vers[i]) < int(s_vers[i]):
-                    needToUpdate = True
-                    break
-                if int(c_vers[i]) > int(s_vers[i]):
-                    needToUpdate = False
-                    break
-            logprint("\n\n")
-        elif (len(c_vers) < len(s_vers)):
-            i = 0
-            """
-            Version of the server is longer than the version of the client.
-            If the first items all match, and the server version is greater
-            than 0, then the client needs to be upgraded.
-            """
-            logprint("\n\n\tserver longer:: clientver: " + str(client_version) + " serverver: " + str(server_version) + "\n\n")
-            j = 0
-            for i in range(len(c_vers)):
-                logprint("\t\ti: " + str(i) + " c_vers: " + str(c_vers[i]) + " s_vers: " + str(s_vers[i]))
-                if int(c_vers[i]) < int(s_vers[i]):
-                    needToUpdate = True
-                    break
-                if int(c_vers[i]) > int(s_vers[i]):
-                    needToUpdate = False
-                    break
-                j = i
-            logprint("\n\n")
-            if int(s_vers[j+1]) > 0 and needToUpdate == False:
-                needToUpdate = True
-        logprint("\n\n\tneedToUpdate: " + str(needToUpdate) + "\n\n")
+    try:
 
+        client_version = str(client_version).strip()
+        server_version = str(server_version).strip()
+
+        if logger:
+            def logprint(x):
+                logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
+        else:
+            def logprint(x):
+                print str(x)
+
+        if re.match("^$", client_version) or re.match("^$", server_version):
+            needToUpdate = False
+        if re.match("^\s+$", client_version) or \
+           re.match("^\s+$", server_version):
+            needToUpdate = False
+        elif not re.search("\d+\.\d+\.\d+", client_version):
+            needToUpdate = False
+        elif not re.search("\d+\.\d+\.\d+", server_version):
+            needToUpdate = False
+        else:
+            logprint("\n\n\tOk so far . . .\n\n")
+            logprint("cv: \"" + str(client_version) + "\"")
+            logprint("sv: \"" + str(server_version) + "\"")
+            needToUpdate = False
+            c_vers = str(client_version).split(".")
+            s_vers = str(server_version).split(".")
+            if (len(c_vers) == len(s_vers)):
+                """
+                Lengths are equal, can compare each number without problem.
+                """
+                logprint("\n\n\tLengths equal:: clientver: " + str(client_version) + " serverver: " + str(server_version) + "\n\n")
+                for i in range(len(c_vers)):
+                    logprint("\t\ti: " + str(i) + " c_vers: " + str(c_vers[i]) + " s_vers: " + str(s_vers[i]))
+                    if int(c_vers[i]) < int(s_vers[i]):
+                        needToUpdate = True
+                        break
+                    if int(c_vers[i]) > int(s_vers[i]):
+                        needToUpdate = False
+                        break
+                logprint("\n\n")
+    
+            elif (len(c_vers) > len(s_vers)):
+                i = 0
+                """
+                Version of client is longer than server, if the first items all
+                match, the version on the client is higher than on the server.
+                """
+                logprint("\n\n\tclient longer:: clientver: " + str(client_version) + " serverver: " + str(server_version) + "\n\n")
+                for i in range(len(s_vers)):
+                    logprint("\t\ti: " + str(i) + " c_vers: " + str(c_vers[i]) + " s_vers: " + str(s_vers[i]))
+                    if i == len(s_vers):
+                        break
+                    if int(c_vers[i]) < int(s_vers[i]):
+                        needToUpdate = True
+                        break
+                    if int(c_vers[i]) > int(s_vers[i]):
+                        needToUpdate = False
+                        break
+                logprint("\n\n")
+            elif (len(c_vers) < len(s_vers)):
+                i = 0
+                """
+                Version of the server is longer than the version of the client.
+                If the first items all match, and the server version is greater
+                than 0, then the client needs to be upgraded.
+                """
+                logprint("\n\n\tserver longer:: clientver: " + str(client_version) + " serverver: " + str(server_version) + "\n\n")
+                j = 0
+                for i in range(len(c_vers)):
+                    logprint("\t\ti: " + str(i) + " c_vers: " + str(c_vers[i]) + " s_vers: " + str(s_vers[i]))
+                    if int(c_vers[i]) < int(s_vers[i]):
+                        needToUpdate = True
+                        break
+                    if int(c_vers[i]) > int(s_vers[i]):
+                        needToUpdate = False
+                        break
+                    j = i
+                logprint("\n\n")
+                if int(s_vers[j+1]) > 0 and needToUpdate == False:
+                    needToUpdate = True
+            logprint("\n\n\tneedToUpdate: " + str(needToUpdate) + "\n\n")
+
+    except Exception:
+        raise
     return needToUpdate
 
-
 def versioncomp(firstver, secondver):
-    '''versioncomp() is an alternate version comparison to the original
+    '''
+    versioncomp() is an alternate version comparison to the original
     isServerVersionHigher() function. This function takes two version strings
     as arguments. The second string is compared to the first and the results
     are based on that order. The return is a string that is one of the
@@ -1311,18 +1092,30 @@ def versioncomp(firstver, secondver):
     older - the second version is older or lower than the first
     This function only works for purely numeric versions. e.g. 2.3.4 but not
     2.3.4B.
+
     @param string firstver: the first version string
     @param string secondver: the second version string
-    @return: string equal | newer | older
-    @author: dkennel
+    @return: versionis
+    @rtype: string (equal | newer | older; default = equal)
+    @author: Dave Kennel
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+            added return var; added return var init
     '''
-    if LooseVersion(secondver) == LooseVersion(firstver):
-        return 'equal'
-    elif LooseVersion(secondver) > LooseVersion(firstver):
-        return 'newer'
-    elif LooseVersion(secondver) < LooseVersion(firstver):
-        return 'older'
 
+    versionis = 'equal'
+
+    try:
+
+        if LooseVersion(secondver) == LooseVersion(firstver):
+            versionis = 'equal'
+        elif LooseVersion(secondver) > LooseVersion(firstver):
+            versionis = 'newer'
+        elif LooseVersion(secondver) < LooseVersion(firstver):
+            versionis = 'older'
+
+    except Exception:
+        raise
+    return versionis
 
 def fixInflation(filepath, logger, perms, owner):
     '''
@@ -1438,5 +1231,68 @@ def fixInflation(filepath, logger, perms, owner):
     except Exception as err:
         logger.log(LogPriority.ERROR, "stonixutilityfunctions.fixInflation(): " + str(err))
         retval = False
-        return retval
     return retval
+
+def validateParam(logger, param, ptype, pname):
+    '''
+    check whether a param is of the given type
+    return True if type matches
+    return False if type does not match
+
+    @param logger: logging object
+    @param param: any; variable to check
+    @param ptype: object base type
+    @param pname: string; name of variable being passed (for logging purposes)
+    @return: valid
+    @rtype: bool
+    @author: Breen Malmberg
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+    '''
+
+    valid = True
+    log = True
+
+    try:
+
+        if not logger:
+            print "No logging object was passed to method validateParam. Printing to console instead..."
+            log = False
+
+        if not pname:
+            valid = False
+            if log:
+                logger.log(LogPriority.DEBUG, "Parameter pname was blank or None!")
+            else:
+                print "Parameter pname was blank or None!"
+            return valid
+        if not param:
+            log = False
+        if not ptype:
+            log = False
+
+        if not isinstance(param, ptype):
+            valid = False
+            if log:
+                logger.log(LogPriority.DEBUG, "Parameter: " + str(pname) + " needs to be of type " + str(ptype) + ". Got: " + str(type(param)))
+            else:
+                print "One or more passed parameters was not specified or was an invalid type!"
+
+    except Exception, errmsg:
+        if log:
+            logger.log(LogPriority.ERROR, str(errmsg))
+        else:
+            print str(errmsg)
+    return valid
+
+def reportStack(level=1):
+    filename = inspect.stack()[level][1]
+    functionName = str(inspect.stack()[level][3])
+    lineNumber = str(inspect.stack()[level][2])
+    '''  
+    print("----------------")
+    print(filename)
+    print(functionName) 
+    print(lineNumber)   
+    '''
+    return filename + " : " + functionName + " : " + lineNumber + " : "
+

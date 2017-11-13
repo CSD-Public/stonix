@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -55,7 +55,7 @@ from ..macpkgr import MacPkgr
 from ..Connectivity import Connectivity
 
 # Link to the current version of the JAMF Casper Suite Installer
-PACKAGENAME="QuickAdd.stonix.pkg"
+PACKAGENAME="stonix4mac.quickadd.pkg"
 
 
 class InstallCasperSuite(Rule):
@@ -93,7 +93,7 @@ class InstallCasperSuite(Rule):
 # Set up CommandHelper instance
         self.ch = CommandHelper(self.logdispatch)
 # Set up FileHelper instance
-        self.fh = FileHelper(self.logdispatch)
+        self.fh = FileHelper(self.logdispatch, self.statechglogger)
         self.files = {
           "LANL Self Service":
           {"path": "/Applications/LANL Self Service.app",

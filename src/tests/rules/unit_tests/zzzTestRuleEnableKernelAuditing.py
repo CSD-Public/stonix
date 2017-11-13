@@ -22,21 +22,28 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule EnableKernelAuditing
 
 @author: Breen Malmberg
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
+@change: 2017/10/23 rsn - removed unused service helper
 '''
 from __future__ import absolute_import
 import unittest
+import re
 import os
+import sys
 
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
 
 
-class zzzTestRuleConsoleRootOnly(RuleTest):
+class zzzTestRuleEnableKernelAuditing(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
@@ -99,6 +106,71 @@ class zzzTestRuleConsoleRootOnly(RuleTest):
 #                 if os.path.exists(loc):
 #                     os.rename(loc, loc + '.stonixbak')
         return success
+
+    def test_get_system_arch(self):
+        '''
+        test the command to get the system arch
+        @author: Breen Malmberg
+        '''
+
+        found = False
+
+        self.ch.executeCommand('uname -m')
+        self.assertEqual(0, self.ch.getReturnCode())
+        outputlines = self.ch.getOutput()
+        self.assertFalse(outputlines == '')
+        for line in outputlines:
+            if re.search('^x86\_64', line):
+                found = True
+        for line in outputlines:
+            if re.search('^x86', line):
+                found = True
+        self.assertEqual(found, True)
+
+    def test_get_suid_files(self):
+        '''
+        test the command to find suid files
+        @author: Breen Malmberg
+        '''
+
+        self.ch.executeCommand('find / -xdev -type f -perm -4000 -o -type f -perm -2000')
+        self.assertEqual(0, self.ch.getReturnCode())
+
+    def test_release_file_exists(self):
+        '''
+        does at least one of the release file paths that the code relies on exist?
+        linux-only
+        @author: Breen Malmberg
+        '''
+
+        if self.environ.getosfamily() == 'darwin':
+            return True
+
+        found = False
+
+        releasefilelocs = ['/etc/os-release', '/etc/redhat-release']
+        for loc in releasefilelocs:
+            if os.path.exists(loc):
+                found = True
+        self.assertEqual(found, True)
+
+    def test_grub_cfg_file_exists(self):
+        '''
+        does at least one of the grub config file paths that the code relies on exist?
+        linux-only
+        @author: Breen Malmberg
+        '''
+
+        if self.environ.getosfamily() == 'darwin':
+            return True
+
+        found = False
+
+        grubcfglocs = ['/boot/grub/grub.conf', '/etc/default/grub']
+        for loc in grubcfglocs:
+            if os.path.exists(loc):
+                found = True
+        self.assertEqual(found, True)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

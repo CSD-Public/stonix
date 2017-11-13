@@ -27,9 +27,14 @@ This is a Unit Test for Rule ConfigureAIDE
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
 @change: 2015/10/28 eball Enabled CI, fixed PEP8 compliance
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
+import sys
 import unittest
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureAIDE import ConfigureAIDE

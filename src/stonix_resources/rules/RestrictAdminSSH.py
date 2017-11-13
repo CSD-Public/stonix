@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -30,6 +30,7 @@ Created on Dec 16, 2013
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/09 eball OS X El Capitan compatibility
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
@@ -49,7 +50,7 @@ class RestrictAdminSSH(Rule):
         self.rulename = "RestrictAdminSSH"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables SSH root login access"
+        self.sethelptext()
         datatype = 'bool'
         key = 'RESTRICTADMINSSH'
         instructions = '''To disable this rule set the value of
@@ -60,7 +61,7 @@ RESTRICTADMINSSH to False.'''
         self.ssh = {"DenyGroups": "admin"}
         self.iditerator = 0
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
     def usesSip(self):
         """

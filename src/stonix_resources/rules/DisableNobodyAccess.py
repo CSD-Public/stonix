@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,7 @@ Created on Aug 8, 2013
 @change: 04/18/2014 dkennel Replaced old style CI with new
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, checkPerms
@@ -68,6 +69,7 @@ class DisableNobodyAccess(Rule):
         self.iditerator = 0
         self.path = "/etc/default/keyserv"
         self.editor = ""
+        self.sethelptext()
 
     def report(self):
         '''
@@ -137,6 +139,9 @@ class DisableNobodyAccess(Rule):
                          "filepath": self.path}
                 self.statechglogger.recordchgevent(myid, event)
                 if self.editor.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
                     if self.editor.commit():
                         os.chown(self.path, 0, 0)
                         os.chmod(self.path, 292)

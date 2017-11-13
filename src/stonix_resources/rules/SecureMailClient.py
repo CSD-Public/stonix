@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,15 +20,16 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-
+'''
 This method runs all the report methods for RuleKVEditors defined in the
 dictionary
-@copyright: 2014 Los Alamos National Security, LLC All rights reserved
+@copyright: 2014-2016 Los Alamos National Security, LLC All rights reserved
 @author: ekkehard j. koch
-@change: 03/25/2014 Original Implementation
+@change: 2014/03/25 Original Implementation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/14 eball Fixed paths, separated user and root functionality
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import os
@@ -54,13 +54,11 @@ class SecureMailClient(RuleKVEditor):
         self.rulename = 'SecureMailClient'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """Disable automatic image loading and inline \
-attachment viewing, and alert the user to non-local domains, in the Apple \
-Mail Client."""
+        self.sethelptext()
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         mailplist = "/Library/Containers/com.apple.mail/Data/Library/" + \
             "Preferences/com.apple.mail.plist"
@@ -124,26 +122,29 @@ Mail Client."""
                                          False,
                                          {"AlertForNonmatchingDomains":
                                           ["0", "-bool no"]})
-                        self.addKVEditor("AppleMailDomainForMatching",
-                                         "defaults",
-                                         fullpath2,
-                                         "",
-                                         {"DomainForMatching":
-                                          [APPLEMAILDOMAINFORMATCHING,
-                                           "-array " +
-                                           APPLEMAILDOMAINFORMATCHING]},
-                                         "present",
-                                         "",
-                                         "Alert User about email addresses " +
-                                         "that do not match " +
-                                         APPLEMAILDOMAINFORMATCHING +
-                                         " domain for the Apple Mail Client.",
-                                         None,
-                                         False,
-                                         {"DomainForMatching":
-                                          [re.escape("~" + sharedplist +
-                                                     ", DomainForMatching " +
-                                                     "does not exist"), None]})
+                        if self.checkConsts([APPLEMAILDOMAINFORMATCHING]):
+                            self.addKVEditor("AppleMailDomainForMatching",
+                                             "defaults",
+                                             fullpath2,
+                                             "",
+                                             {"DomainForMatching":
+                                              [APPLEMAILDOMAINFORMATCHING,
+                                               "-array " +
+                                               APPLEMAILDOMAINFORMATCHING]},
+                                             "present",
+                                             "",
+                                             "Alert User about email addresses " +
+                                             "that do not match " +
+                                             APPLEMAILDOMAINFORMATCHING +
+                                             " domain for the Apple Mail Client.",
+                                             None,
+                                             False,
+                                             {"DomainForMatching":
+                                              [re.escape("~" + sharedplist +
+                                                         ", DomainForMatching " +
+                                                         "does not exist"), None]})
+                        else:
+                            self.detailedresults += "\nThe functionality for Apple Mail Domain Matching requires the following constant be defined and not None, in localize.py : APPLEMAILDOMAINFORMATCHING."
 
         else:
             fullpath1 = self.environ.geteuidhome() + mailplist
@@ -190,25 +191,28 @@ Mail Client."""
                                  False,
                                  {"AlertForNonmatchingDomains":
                                   ["0", "-bool no"]})
-                self.addKVEditor("AppleMailDomainForMatching",
-                                 "defaults",
-                                 fullpath2,
-                                 "",
-                                 {"DomainForMatching":
-                                  [APPLEMAILDOMAINFORMATCHING,
-                                   "-array " + APPLEMAILDOMAINFORMATCHING]},
-                                 "present",
-                                 "",
-                                 "Alert User about email addresses that " +
-                                 "do not match " +
-                                 APPLEMAILDOMAINFORMATCHING + " domain " +
-                                 "for the Apple Mail Client.",
-                                 None,
-                                 False,
-                                 {"DomainForMatching":
-                                  [re.escape("~" + sharedplist +
-                                             ", DomainForMatching does " +
-                                             "not exist"), None]})
+                if self.checkConsts([APPLEMAILDOMAINFORMATCHING]):
+                    self.addKVEditor("AppleMailDomainForMatching",
+                                     "defaults",
+                                     fullpath2,
+                                     "",
+                                     {"DomainForMatching":
+                                      [APPLEMAILDOMAINFORMATCHING,
+                                       "-array " + APPLEMAILDOMAINFORMATCHING]},
+                                     "present",
+                                     "",
+                                     "Alert User about email addresses that " +
+                                     "do not match " +
+                                     APPLEMAILDOMAINFORMATCHING + " domain " +
+                                     "for the Apple Mail Client.",
+                                     None,
+                                     False,
+                                     {"DomainForMatching":
+                                      [re.escape("~" + sharedplist +
+                                                 ", DomainForMatching does " +
+                                                 "not exist"), None]})
+                else:
+                    self.detailedresults += "\nThe functionality for Apple Mail Domain Matching requires the following constant be defined and not None, in localize.py : APPLEMAILDOMAINFORMATCHING."
 
     def afterfix(self):
         for path in self.permsdict:

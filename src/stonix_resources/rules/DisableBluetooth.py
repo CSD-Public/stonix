@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,8 @@ Check to see if all of the above operations have been done or not - report()
 @change: 04/18/2014 dkennel Replaced old style CI with new
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/23 rsn - change to new service helper interface
 '''
 
 from __future__ import absolute_import
@@ -65,9 +67,6 @@ class DisableBluetooth(Rule):
         self.rulename = 'DisableBluetooth'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule will disable all Bluetooth services, " + \
-            "blacklist all Bluetooth drivers, and remove all Bluetooth " + \
-            "packages."
 
         # configuration item instantiation
         datatype = 'bool'
@@ -78,7 +77,7 @@ class DisableBluetooth(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
-        self.servicehelper = ServiceHelper(self.environ, self.logger)
+        self.servicehelper = ServiceHelper(self.environ, self.logger).svchelper
         self.guidance = ["NSA(3.3.14)", "CCE 14948-4", "CCE 4377-8",
                          "CCE 4355-4"]
         self.driverdict = {"blacklist": ["bluetooth", "btusb", "bcm203x",
@@ -92,6 +91,7 @@ class DisableBluetooth(Rule):
                                          "bfusb"]}
         self.iditerator = 0
         self.created = False
+        self.sethelptext()
 
     def report(self):
         '''
@@ -121,7 +121,7 @@ class DisableBluetooth(Rule):
                                 'ubthidhci', 'bthidd']
             # check whether bluetooth services are disabled
             for service in self.servicelist:
-                enabled = self.servicehelper.auditservice(service)
+                enabled = self.servicehelper.auditService(service, _="_")
                 if enabled:
                     self.detailedresults += service + " is enabled\n"
                     compliant = False
@@ -137,9 +137,9 @@ class DisableBluetooth(Rule):
                     debug = "Permissions are incorrect on " + kvpath + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
-                if not self.kve.report():
-                    self.detailedresults += "Blacklist file exists but is not \
-correct\n"
+                self.kve.report()
+                if self.kve.fixables:
+                    self.detailedresults += "\nThe following configuration options are missing or incorrect in " + str(kvpath) + ":\n" + "\n".join(self.kve.fixables)
                     compliant = False
             else:
                 if os.path.exists('/etc/modprobe.d'):
@@ -195,8 +195,8 @@ Bluetooth\n"
             debug = ""
             # disable bluetooth services
             for service in self.servicelist:
-                if self.servicehelper.auditservice(service):
-                    if self.servicehelper.disableservice(service):
+                if self.servicehelper.auditService(service, _="_"):
+                    if self.servicehelper.disableService(service, _="_"):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",

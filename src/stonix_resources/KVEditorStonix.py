@@ -58,13 +58,14 @@ class KVEditorStonix(KVEditor):
     intent variable and data can only be set once upon instantiation'''
 
     def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
-                                                                configType=""):
+                 configType="", output=""):
         '''If kvtype is conf or tagconf, although not mandatory, intent and
         configType should be passed as parameters at object instantiation time
         '''
         self.logger = logger
         KVEditor.__init__(self, stchlgr, logger, kvtype, path, tmpPath, data,
-                                                            intent, configType)
+                          intent, configType, output)
+        self.logger = logger
         self.stchlgr = stchlgr
         self.kvtype = kvtype
         self.eid = ""
@@ -72,17 +73,26 @@ class KVEditorStonix(KVEditor):
     def report(self):
         retval = self.validate()
         if retval == "invalid":
-            self.detailedresults = "Data is not in correct format\n"
-            raise(self.detailedresults)
+            debug = "Configuration file is in bad format\n" + \
+                "KVEditorStonix report is returning False\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
         elif retval:
+            debug = "KVEditorStonix report is returning True\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
         else:
+            debug = "KVEditorStonix report is returning False\n"
             return False
 ###############################################################################
     def fix(self):
         if self.update():
+            debug = "KVEditorStonix fix is returning True\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
         else:
+            debug = "KVEditorStonix fix is returning False\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 ###############################################################################
     def commit(self):
@@ -90,6 +100,8 @@ class KVEditorStonix(KVEditor):
             if self.editor.nocmd:
                 return True
             if not self.editor.commit():
+                debug = "KVEditorStonix commit is returning False\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 return False
             if isinstance(self.editor.getundoCmd(),str):
                 eventtype = "commandstring"
@@ -100,7 +112,21 @@ class KVEditorStonix(KVEditor):
                      "endstate": "configured",
                      "command": self.editor.getundoCmd()}
             if self.getEventID():
-                self.stchlgr.recordchgevent(self.getEventID(),event)
+                self.stchlgr.recordchgevent(self.getEventID(), event)
+            debug = "KVEditorStonix commit is returning True\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return True
+        elif self.kvtype == "profiles":
+            if not self.editor.commit():
+                debug = "KVEditorStonix commit is returning False\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+            if self.getEventID():
+                event = {"eventtype": "comm",
+                         "command": self.editor.getundoCmd()}
+                self.stchlgr.recordchgevent(self.getEventID(), event)
+            debug = "KVEditorStonix commit is returning True\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
         elif self.editor.commit():
             event = {'eventtype': 'conf',
@@ -113,11 +139,15 @@ class KVEditorStonix(KVEditor):
             try:
                 os.rename(self.tmpPath, self.path)
             except OSError:
-                self.detailedresults = "couldn't rename file"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                raise
+                debug = "Couldn't rename file in KVEditorStonix commit\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+            debug = "KVEditorStonix commit is returning True\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
         else:
+            debug = "KVEditorStonix commit is returning False\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 ###############################################################################
     def getEventID(self):

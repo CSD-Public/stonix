@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,7 @@ authorization after a successful sudo authorization is made.
 @change: 2015/09/09 eball Improved feedback
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 import re
@@ -66,18 +67,13 @@ class ReduceSudoTimeout(Rule):
         self.rulenumber = 151
         self.rulename = 'ReduceSudoTimeout'
         self.formatDetailedResults("initialize")
-        self.helptext = "ReduceSudoTimeout ensures that the sudoers file " + \
-            "has a timeout value of 0 so that a password is required for " + \
-            "every sudo call. This is mandatory for Mac users but optional " + \
-            "for all other platforms.\n***Please note, for all systems " + \
-            "besides Mac OS X, this rule is disabled by default. To enable, " + \
-            "click the enable box then click save before running fix***"
+        self.sethelptext()
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         datatype = 'bool'
-        key = 'ReduceSudoTimeout'
+        key = 'REDUCESUDOTIMEOUT'
         instructions = "If set to true, the REDUCESUDOTIMEOUT " + \
             "variable will set the sudo timeout to 0, requiring a password " + \
             "for each sudo call."
@@ -195,7 +191,7 @@ class ReduceSudoTimeout(Rule):
 permissions on file: " + sudo + "\n"
                     else:
                         success = False
-                        self.detaileresults += "Was not able to successfully \
+                        self.detailedresults += "Was not able to successfully \
 set permissions on file: " + sudo + "\n"
                 contents = readFile(sudo, self.logger)
                 if contents:

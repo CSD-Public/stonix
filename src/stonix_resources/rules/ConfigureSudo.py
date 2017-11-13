@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -31,6 +31,12 @@ Created on Mar 7, 2013
 @change: 2015/09/06 Breen Malmberg, re-wrote rule
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/10/09 eball Fixed bad variable name in report
+@change: 2016/05/09 rsn put default on Mac as admin, also
+                        fixed search string and stopped removing lines.
+@change: Breen Malmberg - 2/13/2017 - set the default group name to sudo on ubuntu and debian
+        systems; set a default initialization of the group name variable
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 from __future__ import absolute_import
 
@@ -43,7 +49,6 @@ import traceback
 import os
 import re
 
-
 class ConfigureSudo(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -53,29 +58,29 @@ class ConfigureSudo(Rule):
         self.rulename = "ConfigureSudo"
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = """This rule will check for proper settings for \
-"wheel" (or another administrative group, if specified below) in the sudoers \
-file.
-If the rule is non-compliant after you have run the fix, ensure that the \
-group entered in the text field exists, and that the usernames of all \
-administrators who should be allowed to execute commands as root are members \
-of that group. This rule will not be applicable to Solaris.
-***Please be aware that the default group for this rule is wheel. If you \
-would like to change the group, enter the desired group in the text field \
-below and hit save before running.***"""
-
+        self.sethelptext()
         self.guidance = ["NSA 2.3.1.3"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
+# set up CI's
         #configuration item instantiation
         datatype = 'string'
         key = 'GROUPNAME'
         instructions = "The group listed is the group that will be placed " + \
         "into the sudoers file with permissions to run all commands."
-        default = "wheel"
-        self.ci = self.initCi(datatype, key, instructions, default)
+
+        # set the default group name to add to sudoers
+        self.group = "wheel"
+        if self.environ.getosfamily() == 'darwin':
+            self.group = "admin"
+        elif re.search('Ubuntu', self.environ.getostype(), re.IGNORECASE):
+            self.group = "sudo"
+        elif re.search('Debian', self.environ.getostype(), re.IGNORECASE):
+            self.group = "sudo"
+
+        self.ci = self.initCi(datatype, key, instructions, self.group)
 
         datatype2 = 'bool'
         key2 = 'CONFIGURESUDO'
@@ -95,18 +100,19 @@ CONFIGURESUDO to False.'''
 
         self.logger.log(LogPriority.DEBUG, "Running localization() method...")
 
-        self.sudoersfile = '/etc/sudoers' # default
+        self.sudoersfile = '/etc/sudoers'
         sudoerslocs = ['/etc/sudoers', '/private/etc/sudoers', '/usr/local/etc/sudoers']
         for loc in sudoerslocs:
             if os.path.exists(loc):
                 self.sudoersfile = loc
+        self.sudoerstmp = self.sudoersfile + '.stonixtmp'
 
         try:
 
             self.pkghelper = Pkghelper(self.logger, self.environ)
 
-            self.searchusl = 'ALL=\(ALL\)' # default
-            self.fixusl = 'ALL=(ALL)' # default
+            self.searchusl = 'ALL=\(ALL\)'
+            self.fixusl = 'ALL=(ALL)'
             if self.environ.getostype() == 'Mac OS X':
                 self.searchusl = "ALL=\(ALL\)"
                 self.fixusl = "ALL=(ALL)"
@@ -156,10 +162,12 @@ CONFIGURESUDO to False.'''
         '''
 
         found = False
+        contentlines = []
 
         try:
 
             self.logger.log(LogPriority.DEBUG, "Running findString() method...")
+
             contentlines = self.readFile(self.sudoersfile)
 
             for line in contentlines:
@@ -171,51 +179,67 @@ CONFIGURESUDO to False.'''
 
         return found
 
-    def fixSudoers(self, fixstring):
+    def fixSudoers(self):
         '''
         wrapper to run fix actions for sudoers
 
-        @param fixstring: string the string to write to the file
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
         '''
 
         retval = True
-        replaced = False
-        sudoerstmp = self.sudoersfile + '.stonixtmp'
-        appended = False
+        commentline = "^#.*(in|of) group.*to (run|execute)"
+        existinggroup = "^\%.*" + str(self.searchusl)
+        replacedexistinggroup = False
+        addedgroup = False
 
         try:
 
             self.logger.log(LogPriority.DEBUG, "Running fixSudoers() method...")
 
-            contentlines = self.readFile(self.sudoersfile)
-            for line in contentlines:
-                if re.search('^' + self.groupname, line):
-                    contentlines = [c.replace(line, fixstring + '\n') for c in contentlines]
-                    replaced = True
-                    self.logger.log(LogPriority.DEBUG, "Found incorrect entry in file: " + str(self.sudoersfile) + ' and replaced it')
+            if not self.findString(self.searchstring):
+                self.logger.log(LogPriority.DEBUG, "Sudoers file not configured correctly. Fixing file...")
+                contentlines = self.readFile(self.sudoersfile)
 
-            if not replaced:
-                self.logger.log(LogPriority.DEBUG, "Appended correct config entry to file: " + str(self.sudoersfile))
-                contentlines.append('\n' + fixstring)
-                appended = True
-            f = open(sudoerstmp, 'w')
-            f.writelines(contentlines)
-            f.close()
+# replace an existing group entry, if found
+                for line in contentlines:
+                    if re.search(existinggroup, line, re.IGNORECASE):
+                        contentlines = [c.replace(line, self.fixstring) for c in contentlines]
+                        replacedexistinggroup = True
+                        addedgroup = True
 
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "conf",
-                     "filepath": self.sudoersfile}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(self.sudoersfile, sudoerstmp, myid)
-            os.rename(sudoerstmp, self.sudoersfile)
+# if there wasn't any existing group entry replaced, then add the new group line at the correct spot
+                if not replacedexistinggroup:
+                    for line in contentlines:
+                        if re.search(commentline, line, re.IGNORECASE):
+                            contentlines = [c.replace(line, line + self.fixstring) for c in contentlines]
+                            addedgroup = True
 
-            if not replaced and not appended:
-                retval = False
-                self.logger.log(LogPriority.DEBUG, "Contents were unable to be changed in file: " + str(self.sudoersfile))
+# if we couldn't find the correct spot and didn't add the new group line, then append it to end of the file
+                if not addedgroup:
+                    contentlines.append(self.fixstring)
+                    addedgroup = True
+
+# if we changed any of the lines, write the new contents to the file and record the change
+                if addedgroup:
+                    self.logger.log(LogPriority.DEBUG, "Fixed sudoers contents. Writing the new contents to the file...")
+                    f = open(self.sudoerstmp, 'w')
+                    f.writelines(contentlines)
+                    f.close()
+
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": self.sudoersfile}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.sudoersfile, self.sudoerstmp, myid)
+                    os.rename(self.sudoerstmp, self.sudoersfile)
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Nothing changed. Nothing written to sudoers file.")
+
+            else:
+                self.logger.log(LogPriority.DEBUG, "File contents already configured correctly. Nothing was changed.")
 
         except Exception:
             raise
@@ -236,11 +260,12 @@ CONFIGURESUDO to False.'''
 
             self.detailedresults = ""
             self.compliant = True
+            self.searchstring = ""
 
-            # set up some class variables
-            self.groupname = "%" + self.ci.getcurrvalue()
-            self.fixstring = '# Added by STONIX\n' + self.groupname + '\t' + self.fixusl + '\tALL\n'
-            self.searchstring = '^' + self.groupname + '\s*' + self.searchusl + '\s*ALL'
+            # make sure we get the correct group name if the user changed the default one
+            if self.group != str(self.ci.getcurrvalue()):
+                self.group = self.ci.getcurrvalue()
+            self.searchstring = "^\%" + str(self.group) + '\s+' + self.searchusl + '\s+ALL'
 
             # make sure the sudoers file exists
             if not os.path.exists(self.sudoersfile):
@@ -254,7 +279,7 @@ CONFIGURESUDO to False.'''
                 # make sure the sudoers file contains the correct user specification configuration
                 if not self.findString(self.searchstring):
                     self.compliant = False
-                    self.detailedresults += '\nCorrect User specification line was not found in sudoers file. Should be:\n' + self.groupname + '\t' + self.fixusl + '\tALL'
+                    self.detailedresults += '\nCorrect User specification line was not found in sudoers file. Should be:\n%' + self.group + '\t' + self.fixusl + '\tALL'
                     self.logger.log(LogPriority.DEBUG, 'Correct User specification line was not found in sudoers file')
 
                 #make sure the sudoers file has correct permissions
@@ -296,6 +321,8 @@ CONFIGURESUDO to False.'''
                 self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
                 return
 
+            self.fixstring = '# Added by STONIX\n%' + self.group + '\t' + self.fixusl + '\tALL\n'
+
             #clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             self.logger.log(LogPriority.DEBUG, "Clearing event list for this rule...")
@@ -303,7 +330,7 @@ CONFIGURESUDO to False.'''
                 self.statechglogger.deleteentry(event)
 
             # run fix actions
-            if not self.fixSudoers(self.fixstring):
+            if not self.fixSudoers():
                 fixresult = False
 
             #we don't record a change event for permissions

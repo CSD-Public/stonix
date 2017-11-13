@@ -39,6 +39,9 @@ Created on Aug 24, 2010
 
 @author: dkennel
 @change: 2014/05/29 - ekkehard j. koch - pep8 and comment updates
+@change: 2017/03/07 - dkennel - added fisma risk level support
+@change: 2017/09/20 - bgonz12 - updated the implementation of getdefaultip and
+            getallips.
 '''
 import os
 import re
@@ -49,7 +52,7 @@ import types
 import platform
 import pwd
 import time
-from localize import CORPORATENETWORKSERVERS, STONIXVERSION
+from localize import CORPORATENETWORKSERVERS, STONIXVERSION, FISMACAT
 if os.geteuid() == 0:
     try:
         import dmidecode
@@ -89,6 +92,8 @@ class Environment:
         self.verbosemode = False
         self.debugmode = False
         self.runtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        self.systemfismacat = 'low'
+        self.systemfismacat = self.determinefismacat()
         self.collectinfo()
 
     def setinstallmode(self, installmode):
@@ -272,6 +277,7 @@ class Environment:
         # print 'Environment running guessnetwork'
         self.guessnetwork()
         self.collectpaths()
+        self.determinefismacat()
 
     def discoveros(self):
         """
@@ -436,10 +442,12 @@ class Environment:
 
         @return: string - ipaddress
         @author: dkennel
+        @change: 2017/9/20 - bgonz12 - Changed implementation to not branch
+                    conditionally by OS, but to branch by file system searches.
         """
         ipaddr = '127.0.0.1'
         gateway = ''
-        if sys.platform == 'linux2':
+        if os.path.exists('/usr/bin/lsb_release'):
             try:
                 routecmd = subprocess.Popen('/sbin/route -n', shell=True,
                                             stdout=subprocess.PIPE,
@@ -448,7 +456,7 @@ class Environment:
             except(OSError):
                 return ipaddr
             for line in routedata:
-                if re.search('^default', line):
+                if re.search('^default|^0.0.0.0|^\*', line):
                     line = line.split()
                     try:
                         gateway = line[1]
@@ -518,46 +526,46 @@ class Environment:
 
         @return: list of strings
         @author: dkennel
+        @change: 2017/9/22 - bgonz12 - Changed implementation to use the ip
+                    command before trying to use the ifconfig command.
         """
         iplist = []
-        if sys.platform == 'linux2':
-            try:
-                ifcmd = subprocess.Popen('/sbin/ifconfig', shell=True,
-                                         stdout=subprocess.PIPE,
-                                         close_fds=True)
-                ifdata = ifcmd.stdout.readlines()
-            except(OSError):
-                return iplist
-            for line in ifdata:
-                if re.search('inet addr:', line):
-                    try:
-                        line = line.split()
-                        addr = line[1]
-                        addr = addr.split(':')
-                        addr = addr[1]
-                        iplist.append(addr)
-                    except(IndexError):
-                        continue
-        else:
-            try:
-                if os.path.exists('/usr/sbin/ifconfig'):
-                    cmd = '/usr/sbin/ifconfig -a'
-                else:
-                    cmd = '/sbin/ifconfig -a'
-                ifcmd = subprocess.Popen(cmd, shell=True,
-                                         stdout=subprocess.PIPE,
-                                         close_fds=True)
-                ifdata = ifcmd.stdout.readlines()
-            except(OSError):
-                return iplist
-            for line in ifdata:
-                if re.search('inet ', line):
-                    try:
-                        line = line.split()
-                        addr = line[1]
-                        iplist.append(addr)
-                    except(IndexError):
-                        continue
+        cmd = ''
+        if os.path.exists('/usr/sbin/ip'):
+            cmd = '/usr/sbin/ip address'
+        elif os.path.exists('/sbin/ip'):
+            cmd = '/sbin/ip address'
+        elif os.path.exists('/usr/sbin/ifconfig'):
+            cmd = '/usr/sbin/ifconfig -a'
+        elif os.path.exists('/sbin/ifconfig'):
+            cmd = '/sbin/ifconfig -a'
+        try:
+            ifcmd = subprocess.Popen(cmd, shell=True,
+                                     stdout=subprocess.PIPE,
+                                     close_fds=True)
+            ifdata = ifcmd.stdout.readlines()
+        except(OSError):
+            # TODO - Need error handler
+            raise
+        for line in ifdata:
+            if re.search('inet addr:', line):
+                try:
+                    line = line.split()
+                    addr = line[1]
+                    addr = addr.split(':')
+                    addr = addr[1]
+                    iplist.append(addr)
+                except(IndexError):
+                    continue
+            elif re.search('inet ', line):
+                try:
+                    line = line.split()
+                    addr = line[1]
+                    addr = addr.split('/')
+                    addr = addr[0]
+                    iplist.append(addr)
+                except(IndexError):
+                    continue
         return iplist
 
     def get_property_number(self):
@@ -812,19 +820,39 @@ class Environment:
     def oncorporatenetwork(self):
         """
         Determine if we are running on the corporate network
+
+        @return: amoncorporatenetwork
+        @rtype: bool
         @author: ekkehard j. koch
+        @change: Breen Malmberg - 2/28/2017 - added logic to ensure that this
+                code only runs if the constant, CORPORATENETWORKSERVERS, is
+                properly defined and not set to 'None', in localize.py;
+                minor doc string edit; note: no logging facility available in
+                environment, so can't log when CORPORATENETWORKSERVERS
+                is undefined or None...
         """
+
         amoncorporatenetwork = False
-        listOfServers = CORPORATENETWORKSERVERS
-        for server in listOfServers:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect((server, 80))
-                sock.close()
-                amoncorporatenetwork = True
-                return amoncorporatenetwork
-            except (socket.gaierror, socket.timeout, socket.error):
-                amoncorporatenetwork = False
+
+        # return False if the constant CORPORATENETWORKSERVERS is
+        # either set to 'None' or not defined, in localize.py
+        if CORPORATENETWORKSERVERS == None:
+            print str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py")
+            return amoncorporatenetwork
+        elif not CORPORATENETWORKSERVERS:
+            print str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py")
+            return amoncorporatenetwork
+        else:
+            listOfServers = CORPORATENETWORKSERVERS
+            for server in listOfServers:
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect((server, 80))
+                    sock.close()
+                    amoncorporatenetwork = True
+                    return amoncorporatenetwork
+                except (socket.gaierror, socket.timeout, socket.error):
+                    amoncorporatenetwork = False
         return amoncorporatenetwork
 
     def collectpaths(self):
@@ -838,7 +866,11 @@ class Environment:
 
         @author: Roy Nielsen
         """
-        script_path_zero = os.path.realpath(sys.argv[0])
+        try:
+            script_path_zero = sys._MEIPASS
+        except Exception:
+            script_path_zero = os.path.realpath(sys.argv[0])
+
         try:
             script_path_one = os.path.realpath(sys.argv[1])
         except:
@@ -872,29 +904,22 @@ class Environment:
                     print "ERROR: Cannot run using this method"
             else:
                 #print "DEBUG: Cannot find appropriate path, building paths for current directory"
-                self.script_path = os.getcwd()
+                try:
+                    self.script_path = sys._MEIPASS
+                except Exception:
+                    self.script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 
         #####
         # Set the rules & stonix_resources paths
-        if re.search("stonix.app/Contents/MacOS$", self.script_path):
-            #####
-            # Find the stonix.conf file in the stonix.app/Contents/Resources
-            # directory
-            macospath = self.script_path
-            self.resources_path = os.path.join(self.script_path,
-                                               "stonix_resources")
-            self.rules_path = os.path.join(self.resources_path,
-                                           "rules")
-        else:
-            # ##
-            # create the self.resources_path
-            self.resources_path = os.path.join(self.script_path,
-                                               "stonix_resources")
-            # ##
-            # create the self.rules_path
-            self.rules_path = os.path.join(self.script_path,
-                                           "stonix_resources",
-                                           "rules")
+        # ##
+        # create the self.resources_path
+        self.resources_path = os.path.join(self.script_path,
+                                           "stonix_resources")
+        # ##
+        # create the self.rules_path
+        self.rules_path = os.path.join(self.script_path,
+                                       "stonix_resources",
+                                       "rules")
         #####
         # Set the log file path
         if self.geteuid() == 0:
@@ -911,26 +936,22 @@ class Environment:
 
         #####
         # Set the configuration file path
-        if re.search("stonix.app/Contents/MacOS/stonix$", os.path.realpath(sys.argv[0])):
-            #####
-            # Find the stonix.conf file in the stonix.app/Contents/Resources
-            # directory
-            macospath = self.script_path
-            parents = macospath.split("/")
-            parents.pop()
-            parents.append("Resources")
-            resources_dir = "/".join(parents)
-            self.conf_path = os.path.join(resources_dir, "stonix.conf")
-        elif os.path.exists(os.path.join(self.script_path, "etc", "stonix.conf")):
-            self.conf_path = os.path.join(self.script_path, "etc", "stonix.conf")
-        elif re.search('pydev', script_path_zero) and re.search('stonix_resources', script_path_one):
-            print "INFO: Called by unit test"
-            srcpath = script_path_one.split('/')[:-2]
-            srcpath = '/'.join(srcpath)
-            self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print self.conf_path
+        self.conf_path = "/etc/stonix.conf"
+
+    def determinefismacat(self):
+        '''
+        This method pulls the fimsa categorization from the localize.py
+        localization file. This allows a site to prepare special packages for
+        use on higher risk systems rather than letting the system administrator
+        self select the higher level.
+
+        @return: string - low, med, high
+        @author: dkennel
+        '''
+        if FISMACAT not in ['high', 'med', 'low']:
+            raise ValueError('FISMACAT invalid: valid values are low, med, high')
         else:
-            self.conf_path = "/etc/stonix.conf"
+            return FISMACAT
 
     def get_test_mode(self):
         """
@@ -1000,7 +1021,7 @@ class Environment:
         '''
         Set the number of rules that apply to the system. This information is
         used by the log dispatcher in the run metadata.
-        
+
         @param num: int - number of rules that apply to this host
         @author: dkennel
         '''
@@ -1014,9 +1035,35 @@ class Environment:
     def getnumrules(self):
         '''
         Return the number of rules that apply to this host.
-        
+
         @author: dkennel
         '''
         return self.numrules
 
-    
+    def getsystemfismacat(self):
+        '''
+        Return the system FISMA risk categorization.
+
+        @return: string - low, med, high
+        @author: dkennel
+        '''
+        return self.systemfismacat
+
+    def setsystemfismacat(self, category):
+        '''
+        Set the systems FISMA risk categorization. The risk categorization
+        cannot be set lower than the default risk level set in FISMACAT in
+        localize.py
+
+        @param category: string - low, med, high
+        @author: dkennel
+        '''
+
+        if category not in ['high', 'med', 'low']:
+            raise ValueError('SystemFismaCat invalid: valid values are low, med, high')
+        elif self.systemfismacat == 'high':
+            self.systemfismacat = 'high'
+        elif self.systemfismacat == 'med' and category == 'high':
+            self.systemfismacat = 'high'
+        elif self.systemfismacat == 'low' and category == 'high':
+            self.systemfismacat = category

@@ -22,13 +22,19 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableRemoveableStorage
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
+@author: Breen Malmberg
+@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+                        file as well as with the test harness.
 '''
 from __future__ import absolute_import
 import unittest
+import sys
+import os
+import re
+
+sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
@@ -46,7 +52,8 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-
+        self.rule.storageci.updatecurrvalue(True)
+        self.ignoreresults = True
     def tearDown(self):
         pass
 
@@ -61,6 +68,35 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
+        plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
+        self.rule.daemonpath = daemonpath
+        if re.search("^10.11", self.environ.getosver()):
+            usb = "IOUSBMassStorageDriver"
+        else:
+            usb = "IOUSBMassStorageClass"
+        kernelmods = [usb,
+                      "IOFireWireFamily",
+                      "AppleThunderboltUTDM",
+                      "AppleSDXC"]
+        check = "/usr/sbin/kextstat"
+        load = "/sbin/kextload"
+        '''Remove plist file for launch job if exists'''
+        if os.path.exists(plistpath):
+            os.remove(plistpath)
+        '''Remove daemon file if exists'''
+        if os.path.exists(daemonpath):
+            os.remove(daemonpath)
+        for kmod in kernelmods:
+            cmd = check + "| grep " + kmod
+            self.ch.executeCommand(cmd)
+            if self.ch.getReturnCode() != 0:
+                '''kernel mod is not loaded, load to make non-compliant'''
+                cmd = load + " /System/Library/Extensions/" + kmod + ".kext"
+                if not self.ch.executeCommand(cmd):
+                    debug = "Unable to load kernel module " + kmod + " for unit test\n"
+                    self.logdispatch.log(LogPriority.DEBUG, debug)
+                    success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

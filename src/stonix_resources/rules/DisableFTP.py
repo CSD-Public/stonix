@@ -26,17 +26,23 @@ Created on Mar 4, 2015
 @author: dwalker
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball PEP8 cleanup
+@change: 2017/8/9 dwalker updated rule to use unload option vs disable option
+@change: 2017/8/30 dwalker updated rule to properly disable ftp according to
+        apple suport
 '''
 from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
-from ..ServiceHelper import ServiceHelper
+from ..rule import Rule
+from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
+from ..stonixutilityfunctions import iterate
+import traceback
+import re
 
 
-class DisableFTP(RuleKVEditor):
+class DisableFTP(Rule):
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
-        RuleKVEditor.__init__(self, config, environ, logdispatcher,
+        Rule.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 266
         self.rulename = 'DisableFTP'
@@ -45,7 +51,7 @@ class DisableFTP(RuleKVEditor):
         self.mandatory = True
         self.helptext = "This rule disables FTP services for the Mac"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
 
         # init CIs
         datatype = 'bool'
@@ -54,42 +60,79 @@ class DisableFTP(RuleKVEditor):
             "the value of DISABLEFTP to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.addKVEditor("DisableFTP",
-                         "defaults",
-                         "/System/Library/LaunchDaemons/ftp.plist",
-                         "",
-                         {"Disabled": ["1", "-bool yes"]},
-                         "present",
-                         "",
-                         "Disable FTP service")
-        self.sh = ServiceHelper(self.environ, self.logger)
-        self.setkvdefaultscurrenthost()  # default value is False
-
-    def afterfix(self):
-        '''
-        @author: dwalker
-        @return: boolean - True if definition is successful in unloading
-            ftp, False if unsuccessful
-        '''
-        if self.sh.auditservice("ftpd", "ftpd"):
-            if self.sh.disableservice("ftpd", "ftpd"):
-                return True
+    
+    def report(self):
+        try:
+            self.detailedresults = ""
+            compliant = True
+            cmd = ["/bin/launchctl", "list"]
+            self.ch = CommandHelper(self.logger)
+            if self.ch.executeCommand(cmd):
+                output = self.ch.getOutput()
+                for line in output:
+                    if re.search("com\.apple\.ftpd", line):
+                        self.detailedresults += "FTP is running and it shouldn't\n"
+                        compliant = False
+                        break
             else:
-                self.detailedresults += "Wasn't able to unload ftpd\n"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
-
-###############################################################################
-
-    def afterreport(self):
-        '''
-        @author: dwalker
-        @return: boolean
-        '''
-        if self.sh.auditservice("ftpd", "ftpd"):
-            self.detailedresults += "FTP is set to be disabled but " + \
-                "hasn't been unloaded"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return False
-        else:
-            return True
+                self.detailedresults += "Unable to list running services\n"
+                compliant = False
+            self.compliant = compliant
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.compliant = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
+    
+    def fix(self):
+        try:
+            if not self.ci.getcurrvalue():
+                return
+            success = True
+            self.detailedresults = ""
+    
+            #clear out event history so only the latest fix is recorded
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            cmd = ["/bin/launchctl", "disable", "system/com.apple.ftpd"]
+            self.ch.executeCommand(cmd)
+            cmd = ["/bin/launchctl", "unload",
+                   "/System/Library/LaunchDaemons/ftp.plist"]
+            if not self.ch.executeCommand(cmd):
+                success = False
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                cmd = ["/bin/launchctl", "enable", "system/com.apple.ftpd"]
+                event = {"eventtype": "comm",
+                         "command": cmd}
+                self.statechglogger.recordchgevent(myid, event)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                cmd = ["/bin/launchctl", "load", "-w",
+                       "/System/Library/LaunchDaemons/ftp.plist"]
+                event = {"eventtype": "comm",
+                         "command": cmd}
+                self.statechglogger.recordchgevent(myid, event)
+            self.rulesuccess = success
+                
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", success,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess

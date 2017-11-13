@@ -29,16 +29,17 @@ import httplib
 import urllib
 import urllib2
 
-import SSLSecConnection
-from stonixutilityfunctions import set_no_proxy
+#--- non-native python libraries in this source tree
 from logdispatcher import LogPriority
+
 
 class ConnectivityInvalidURL(Exception):
     """
-    Custom Exception    
+    Custom Exception
     """
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
+
 
 class Connectivity(object):
     """
@@ -46,17 +47,19 @@ class Connectivity(object):
     
     @author: Roy Nielsen
     """
-    def __init__(self, logger):
+    def __init__(self, logger, use_proxy=False):
         """
         Constructor
         """
         self.logger = logger
+
         ##########################
         # Make it so this will only work on the yellow.
-        set_no_proxy()
+        if not use_proxy:
+            self.set_no_proxy()
 
     ############################################################
-        
+
     def is_site_socket_online(self, host):
         """ This function checks to see if a host name has a DNS entry by checking
             for socket info. If the website gets something in return, 
@@ -82,7 +85,7 @@ class Connectivity(object):
         else:
             msg = "Socket connection available to: " + str(host)
             self.logger.log(LogPriority.ERROR, msg)
-            
+
         return retval
 
     ############################################################
@@ -92,20 +95,22 @@ class Connectivity(object):
             HEAD data from the host. This means that it only requests the headers.
             If the host cannot be reached or something else goes wrong, it returns
             False.
-            
+
             This will only work if the self.set_no_proxy method is used before
             this method is called.
-        """        
+        """
         retval = False
 
         try:
             page = site + path
-            req = urllib2.Request(page, headers={'User-Agent' : "Magic Browser"}) 
+            req = urllib2.Request(page, headers={'User-Agent' : "Magic Browser"})
             req.add_header('User-agent', 'Firefox/31.5.0')
             request = urllib2.urlopen(req, timeout=3)
             retval = True
         except urllib2.URLError, err:
             msg = "Error trying to get web page type: " + str(err)
+            """
+            ERROR - Not working in macOS Sierra
             try:
                 self.logger.log(LogPriority.ERROR, msg)
                 if hasattr(err, 'code'):
@@ -123,24 +128,25 @@ class Connectivity(object):
             except Exception, err:
                 msg = "General Exception: Can't connect to server: " + str(err)
                 self.logger.log(LogPriority.DEBUG, msg)
+            """
         else:
             self.logger.log(LogPriority.DEBUG, "Got the right web page type.")
-        
+
         return retval
 
     def isPageAvailable(self, url="", timeout=8):
         """
-        Check if a specific webpage link is available, using httplib's 
+        Check if a specific webpage link is available, using httplib's
         request('GET', url).  If a 200 is received in return, the connection
         to the page was successful.
-        
+
         @parameter: url - valid http:// or https:// url
         @parameter: timeout - how fast to timeout the connection.
         """
         url = url.strip()
-        self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
+        self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")
         self.logger.log(LogPriority.DEBUG, "timeout: " + str(timeout))
-        
+
         success = False
         if isinstance(url, str):
             #####
@@ -196,8 +202,9 @@ class Connectivity(object):
         success = False
         self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
         
-        if isinstance(url, str):
-            self.logger.log(LogPriority.DEBUG, "URL is a string...")
+        if isinstance(url, str) and url:
+            self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")
+            self.logger.log(LogPriority.DEBUG, "URL is a string and not empty...")
             if re.match("^http://.+", url) or re.match("^https://.+", url):
                 self.logger.log(LogPriority.DEBUG, "Found valid protocol...")
                 urlsplit = url.split("/")
@@ -216,7 +223,7 @@ class Connectivity(object):
                     # Get the host - check if there is a port indication in the URL, 
                     # ie. poxyout.example.com:8888 if so, get both.
                     hostList = hostAndPort.split(":")
-                    self.logger.log(LogPriority.DEBUG, "hostList: " + str(hostlist))
+                    self.logger.log(LogPriority.DEBUG, "hostList: " + str(hostList))
                     ####
                     # Multiple colons is invalid, so raise an exception if two or 
                     # more are found.
@@ -231,10 +238,11 @@ class Connectivity(object):
                 elif not re.search(":", hostAndPort):
                     success = True
             else:
-                self.logger.log(LogPriority.DEBUG, "Could NOT find valid protocol...")                
+                self.logger.log(LogPriority.DEBUG, "Could NOT find valid " + \
+                                                   "protocol...")                
         else:
-            self.logger.log(LogPriority.DEBUG, "URL is not a string...")
-
+            self.logger.log(LogPriority.DEBUG, "URL is not a string, or it " + \
+                                               "is an empty string...")
         return success
     
     def decomposeURL(self, url=""):
@@ -296,3 +304,93 @@ class Connectivity(object):
         self.logger.log(LogPriority.DEBUG, "page: " + str(page))
 
         return str(host), str(port), str(page)
+
+
+    ###########################################################################
+    
+    def set_no_proxy(self):
+        """
+        This method described here: http://www.decalage.info/en/python/urllib2noproxy
+        to create a "no_proxy" environment for python
+    
+        @author: Roy Nielsen
+    
+        """
+        proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(proxy_handler)
+        urllib2.install_opener(opener)
+
+    ###########################################################################
+    
+    def buildValidatingOpener(self, ca_certs, proxy=False):
+        '''
+        Return a urllib2 'opener' that can verify a site based on a public CA
+        pem file.
+        
+        @param: ca_certs - a Pem file that has one or more public CA certs
+                           to compare a website's cert with to make sure the
+                           site has a valid ancestry.
+        @param: proxy - proxy string that defines a proxy that the opener
+                        needs to travel through.  If false, will not use proxies
+
+        @returns: a valid urllib2 https handler, or False, having not been able
+                  to load the ssl library
+        
+        example:
+
+        >>> opener = buildValidatingOpener(resourcesDir + "/.ea.pem")
+        >>> params = urllib.urlencode({'PropNumIn' : self.prop_num})
+        >>> headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+        >>> url = 'https://' + str(host) + str(page)
+        >>>
+        >>> req = urllib2.Request(url, params, headers)
+        >>>
+        >>> data = opener.open(req).read()
+        >>> 
+        >>> opener.close()
+ 
+        @compiler: Roy Nielsen
+        '''
+        url_opener = False
+        try:
+            import ssl
+        except ImportError:
+            self.logger.log(LogPriority.DEBUG, "SSL not found.  Not able to " +\
+                                               "a validating https opener.")
+        else:
+            class VerifiedHTTPSConnection(httplib.HTTPSConnection):
+                def connect(self):
+                    # overrides the version in httplib so that we do
+                    #    certificate verification
+                    sock = socket.create_connection((self.host, self.port),
+                                                    self.timeout)
+                    if self._tunnel_host:
+                        self.sock = sock
+                        self._tunnel()
+
+                    # wrap the socket using verification with the root
+                    #    certs in trusted_root_certs
+                    self.sock = ssl.wrap_socket(sock,
+                                                self.key_file,
+                                                self.cert_file,
+                                                cert_reqs=ssl.CERT_REQUIRED,
+                                                ca_certs=ca_certs,
+                                                )
+
+            # wraps https connections with ssl certificate verification
+            class VerifiedHTTPSHandler(urllib2.HTTPSHandler):
+                def __init__(self, connection_class=VerifiedHTTPSConnection):
+                    self.specialized_conn_class = connection_class
+                    urllib2.HTTPSHandler.__init__(self)
+
+                def https_open(self, req):
+                    return self.do_open(self.specialized_conn_class, req)
+
+            https_handler = VerifiedHTTPSHandler()
+            if proxy:
+                url_opener = urllib2.build_opener(https_handler, urllib2.ProxyHandler({'https' : proxy}))
+            else:
+                url_opener = urllib2.build_opener(https_handler, urllib2.ProxyHandler({}))
+
+        return url_opener
+    

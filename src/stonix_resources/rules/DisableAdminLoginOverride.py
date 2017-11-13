@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,6 +27,9 @@ locked session.
 @author: Eric Ball
 @change: 2015-08-03 eball Original implementation
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
+@change: 2016/02/10 eball Update for El Capitan
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 from __future__ import absolute_import
 import os
@@ -46,10 +49,8 @@ class DisableAdminLoginOverride(Rule):
         self.rulename = "DisableAdminLoginOverride"
         self.formatDetailedResults("initialize")
         self.mandatory = False
-        self.helptext = '''This rule disables the ability of administrators \
-to log into another user's active, locked session.'''
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # Configuration item instantiation
         datatype = "bool"
@@ -61,6 +62,7 @@ to log into another user's active, locked session.'''
 
         self.guidance = ["CIS 5.10"]
         self.iditerator = 0
+        self.sethelptext()
 
     def report(self):
         try:
@@ -126,9 +128,9 @@ to log into another user's active, locked session.'''
             else:
                 success = False
                 self.detailedresults += self.path + ''' does not exist. STONIX \
-will not attempt to create this file. If you are using OS X 10.9 or 10.10, \
-this is most likely a bug, and should be reported. Other versions of OS X are \
-not currently supported by STONIX.'''
+will not attempt to create this file. If you are using OS X 10.9 or later, \
+this is most likely a bug, and should be reported. Earlier versions of OS X \
+are not currently supported by STONIX.'''
 
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):

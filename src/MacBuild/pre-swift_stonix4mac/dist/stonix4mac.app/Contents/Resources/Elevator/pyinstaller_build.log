@@ -1,0 +1,83 @@
+21 INFO: PyInstaller: 3.3.dev0+gf240705
+21 INFO: Python: 2.7.12
+26 INFO: Platform: Darwin-15.6.0-x86_64-i386-64bit
+26 DEBUG: Testing for UPX ...
+30 INFO: UPX is not available.
+30 INFO: Removing temporary files and cleaning cache in /Users/rsn/Library/Application Support/pyinstaller
+31 DEBUG: script: elevator.py
+32 INFO: Extending PYTHONPATH with paths
+['/Users/rsn/src/scratch/pyqt/dylan/current/external_20161004_0540-pyqt5/stonix/src/MacBuild/stonix4mac',
+ '/opt/tools/lib/Python/2.7/site-packages/PyQt5',
+ '/opt/tools/Qt5.6.1/lib',
+ '/opt/tools/lib/Python/2.7/site-packages',
+ '/opt/tools/lib/Python/2.7/site-packages/sip/PyQt5',
+ '/opt/tools/bin',
+ '/usr/lib',
+ '/Users/rsn/src/scratch/pyqt/dylan/current/external_20161004_0540-pyqt5/stonix/src/MacBuild/stonix4mac/Resources/Elevator']
+32 INFO: checking Analysis
+32 INFO: Building Analysis because out00-Analysis.toc is non existent
+32 INFO: Initializing module dependency graph...
+34 INFO: Initializing module graph hooks...
+37 DEBUG: Hidden import: codecs
+70 DEBUG: Hidden import 'codecs' already found
+70 INFO: running Analysis out00-Analysis.toc
+70 DEBUG: Analyzing /usr/local/opt/python/bin/../Frameworks/Python.framework/Versions/2.7/bin/python2.7
+73 DEBUG: Skipping libSystem.B.dylib dependency of python2.7
+73 DEBUG: Adding Python dependency of python2.7 from /usr/local/Cellar/python/2.7.12/Frameworks/Python.framework/Versions/2.7/Python
+73 DEBUG: Analyzing /usr/local/Cellar/python/2.7.12/Frameworks/Python.framework/Versions/2.7/Python
+75 DEBUG: Skipping libSystem.B.dylib dependency of Python
+75 INFO: Caching module hooks...
+77 INFO: Analyzing elevator.py
+1873 INFO: Processing pre-find module path hook   distutils
+2111 INFO: Processing pre-safe import module hook   _xmlplus
+2140 INFO: Loading module hooks...
+2140 INFO: Loading module hook "hook-distutils.py"...
+2141 INFO: Loading module hook "hook-xml.py"...
+2183 INFO: Loading module hook "hook-PyQt5.QtWidgets.py"...
+2184 INFO: Loading module hook "hook-httplib.py"...
+2184 INFO: Loading module hook "hook-PyQt5.py"...
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+ImportError: dlopen(/opt/tools/lib/Python/2.7/site-packages/PyQt5/QtCore.so, 2): Symbol not found: __cg_jpeg_resync_to_restart
+  Referenced from: /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO
+  Expected in: /usr/local/lib/libJPEG.dylib
+ in /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO
+2219 INFO: Loading module hook "hook-encodings.py"...
+2219 DEBUG: Collecting submodules for encodings
+2263 DEBUG: collect_submodules - Found submodules: set(['encodings.cp932', 'encodings.johab', 'encodings.iso2022_jp_ext', 'encodings.iso8859_15', 'encodings.big5', 'encodings.cp1140', 'encodings.cp775', 'encodings.euc_jis_2004', 'encodings.utf_32_le', 'encodings.shift_jis', 'encodings.utf_7', 'encodings.euc_kr', 'encodings.mac_arabic', 'encodings.utf_8', 'encodings.cp037', 'encodings.base64_codec', 'encodings.cp864', 'encodings.cp949', 'encodings.iso8859_9', 'encodings.iso8859_8', 'encodings.gb2312', 'encodings.iso8859_3', 'encodings.iso8859_2', 'encodings.iso8859_1', 'encodings.iso8859_7', 'encodings.iso8859_6', 'encodings.iso8859_5', 'encodings.iso8859_4', 'encodings.cp857', 'encodings.cp856', 'encodings.cp855', 'encodings.cp852', 'encodings.cp850', 'encodings.cp858', 'encodings', 'encodings.mac_iceland', 'encodings.gbk', 'encodings.shift_jis_2004', 'encodings.mac_greek', 'encodings.palmos', 'encodings.iso2022_jp', 'encodings.utf_8_sig', 'encodings.koi8_r', 'encodings.koi8_u', 'encodings.mac_turkish', 'encodings.undefined', 'encodings.mac_farsi', 'encodings.cp1026', 'encodings.mac_romanian', 'encodings.iso2022_jp_1', 'encodings.iso2022_jp_3', 'encodings.iso2022_jp_2', 'encodings.utf_16_le', 'encodings.uu_codec', 'encodings.ptcp154', 'encodings.euc_jisx0213', 'encodings.iso2022_jp_2004', 'encodings.zlib_codec', 'encodings.tis_620', 'encodings.cp720', 'encodings.cp875', 'encodings.cp874', 'encodings.rot_13', 'encodings.bz2_codec', 'encodings.unicode_escape', 'encodings.punycode', 'encodings.mac_croatian', 'encodings.mac_centeuro', 'encodings.mac_roman', 'encodings.cp437', 'encodings.utf_16', 'encodings.cp737', 'encodings.utf_16_be', 'encodings.latin_1', 'encodings.utf_32', 'encodings.charmap', 'encodings.hp_roman8', 'encodings.cp1006', 'encodings.iso8859_16', 'encodings.cp424', 'encodings.iso8859_14', 'encodings.iso8859_13', 'encodings.iso8859_11', 'encodings.iso8859_10', 'encodings.cp500', 'encodings.unicode_internal', 'encodings.iso2022_kr', 'encodings.aliases', 'encodings.mac_cyrillic', 'encodings.hz', 'encodings.euc_jp', 'encodings.cp1258', 'encodings.cp1257', 'encodings.cp1256', 'encodings.cp1255', 'encodings.cp1254', 'encodings.cp1253', 'encodings.cp1252', 'encodings.cp1251', 'encodings.cp1250', 'encodings.string_escape', 'encodings.utf_32_be', 'encodings.quopri_codec', 'encodings.cp950', 'encodings.hex_codec', 'encodings.mac_latin2', 'encodings.cp869', 'encodings.cp866', 'encodings.big5hkscs', 'encodings.cp865', 'encodings.cp862', 'encodings.cp863', 'encodings.cp860', 'encodings.cp861', 'encodings.ascii', 'encodings.shift_jisx0213', 'encodings.gb18030', 'encodings.raw_unicode_escape', 'encodings.mbcs', 'encodings.idna'])
+2538 INFO: Loading module hook "hook-PyQt5.QtCore.py"...
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+ImportError: dlopen(/opt/tools/lib/Python/2.7/site-packages/PyQt5/QtCore.so, 2): Symbol not found: __cg_jpeg_resync_to_restart
+  Referenced from: /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO
+  Expected in: /usr/local/lib/libJPEG.dylib
+ in /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO
+Traceback (most recent call last):
+  File "/usr/local/bin/pyinstaller", line 9, in <module>
+    load_entry_point('PyInstaller==3.3.dev0+gf240705', 'console_scripts', 'pyinstaller')()
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/__main__.py", line 90, in run
+    run_build(pyi_config, spec_file, **vars(args))
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/__main__.py", line 46, in run_build
+    PyInstaller.building.build_main.main(pyi_config, spec_file, **kwargs)
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/build_main.py", line 788, in main
+    build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/build_main.py", line 734, in build
+    exec(text, spec_namespace)
+  File "<string>", line 16, in <module>
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/build_main.py", line 212, in __init__
+    self.__postinit__()
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/datastruct.py", line 161, in __postinit__
+    self.assemble()
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/build_main.py", line 470, in assemble
+    module_hook.post_graph()
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/imphook.py", line 409, in post_graph
+    self._load_hook_module()
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/building/imphook.py", line 376, in _load_hook_module
+    self.hook_module_name, self.hook_filename)
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/hooks/hook-PyQt5.QtCore.py", line 15, in <module>
+    binaries = qt_plugins_binaries('codecs', namespace='PyQt5')
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/utils/hooks/qt.py", line 64, in qt_plugins_binaries
+    pdir = qt_plugins_dir(namespace=namespace)
+  File "/usr/local/lib/python2.7/site-packages/PyInstaller-3.3.dev0+gf240705-py2.7.egg/PyInstaller/utils/hooks/qt.py", line 38, in qt_plugins_dir
+    raise Exception('Cannot find {0} plugin directories'.format(namespace))
+Exception: Cannot find PyQt5 plugin directories

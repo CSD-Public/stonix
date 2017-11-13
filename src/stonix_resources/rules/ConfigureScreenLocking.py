@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -20,6 +20,8 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+#from deb_build_script import line
+#from __builtin__ import False
 '''
 Created on Jul 11, 2013
 
@@ -36,10 +38,15 @@ Created on Jul 11, 2013
 @change: 2015/08/26 ekkehard - Artifact artf37282 : ConfigureScreenLocking(74)
                              - askForPasswordDelay not set to 0
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2016/06/22 eball Added gsettings report and fix for RHEL 7 compat
+@change: 2016/10/18 eball Added lock-delay key to special check in reportGnome
+    for values that come back with "uint32 [int val]". Also added two single
+    quotes to picture-uri value, since a blank value cannot be "set".
+@change: 2016/11/22 eball Changed gsettings times from 300 to 900.
 '''
 from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms
-from ..stonixutilityfunctions import readFile, resetsecon
+from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
+from ..stonixutilityfunctions import readFile, resetsecon, getOctalPerms, writeFile
 from ..ruleKVEditor import RuleKVEditor
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
@@ -49,6 +56,7 @@ from ..CommandHelper import CommandHelper
 import os
 import traceback
 import re
+from glob import glob
 from pwd import getpwnam
 
 
@@ -64,20 +72,9 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.effectiveUserID = self.environ.geteuid()
-        if self.environ.getosfamily() == "darwin":
-            self.helptext = "This rule will configure screen saver " + \
-                            "settings."
-        else:
-            self.helptext = "This rule will configure screen locking " + \
-                "after 15 minutes of continuous inactivity.  This rule will " + \
-                "only configure screen locking for GNOME and KDE.  Other " + \
-                "desktop managers may be supported in the future. This rule " + \
-                "should work the same for all operating systems due to the " + \
-                "consistency of GNOME and KDE. If a desktop manager is not " + \
-                "installed, it is considered to be in compliance.\n***Please " + \
-                "be advised: there is no undo method for this rule***"
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.guidance = ["NSA 2.3.5.6.1"]
         if self.environ.getosfamily() == "darwin":
@@ -170,6 +167,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                                              "LockGrace": "60000",
                                              "Timeout": "840"}}
             self.gnomeInst = True
+            self.useGconf = True
             self.iditerator = 0
 
     def report(self):
@@ -230,33 +228,179 @@ class ConfigureScreenLocking(RuleKVEditor):
 
         compliant = True
         self.cmdhelper = CommandHelper(self.logger)
-        gconf = "/usr/bin/gconftool-2"
-        if not os.path.exists(gconf):
-            self.detailedresults += "gnome is not installed\n"
-            self.gnomeInst = False
-            return compliant
-        getcmds = {" --get /apps/gnome-screensaver/idle_activation_enabled":
-                   "true",
-                   " --get /apps/gnome-screensaver/lock_enabled": "true",
-                   " --get /apps/gnome-screensaver/mode": "blank-only",
-                   " --get /apps/gnome-screensaver/idle_delay": "15"}
-        for cmd in getcmds:
-            cmd2 = gconf + cmd
-            self.cmdhelper.executeCommand(cmd2)
-            output = self.cmdhelper.getOutput()
-            error = self.cmdhelper.getError()
-            if output:
-                if cmd == " --get /apps/gnome-screensaver/idle_delay":
-                    if int(output[0].strip()) > 15:
+        self.stonixsettings = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
+        gsettings = "/usr/bin/gsettings"
+        if os.path.exists(gsettings):
+            self.useGconf = False
+        if self.useGconf:
+            gconf = "/usr/bin/gconftool-2"
+            if not os.path.exists(gconf):
+                self.detailedresults += "gnome is not installed\n"
+                self.gnomeInst = False
+                return compliant
+            getcmds = {" --get /apps/gnome-screensaver/idle_activation_enabled":
+                       "true",
+                       " --get /apps/gnome-screensaver/lock_enabled": "true",
+                       " --get /apps/gnome-screensaver/mode": "blank-only",
+                       " --get /desktop/gnome/session/idle_delay": "15"}
+            for cmd in getcmds:
+                cmd2 = gconf + cmd
+                self.cmdhelper.executeCommand(cmd2)
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    if cmd == " --get /desktop/gnome/session/idle_delay":
+                        if int(output[0].strip()) > 15:
+                            compliant = False
+                            self.detailedresults += "Idle delay value " + \
+                                "is not 15 or lower (value: " + \
+                                output[0].strip() + ")\n"
+                    elif output[0].strip() != getcmds[cmd]:
+                        self.detailedresults += cmd2 + " didn't produce the \
+    desired value after being run which is " + getcmds[cmd] + "\n"
                         compliant = False
-                elif output[0].strip() != getcmds[cmd]:
-                    self.detailedresults += cmd2 + " didn't produce the \
-desired value after being run which is " + getcmds[cmd] + "\n"
+                elif error:
+                    self.detailedresults += "There is no value set for:" + \
+                                            cmd2 + "\n"
                     compliant = False
-            elif error:
-                self.detailedresults += "There is no value set for:" + \
-                                        cmd2 + "\n"
-                compliant = False
+        else:
+            getcmds = {" get org.gnome.desktop.screensaver " +
+                       "idle-activation-enabled": "true",
+                       " get org.gnome.desktop.screensaver lock-enabled":
+                       "true",
+                       " get org.gnome.desktop.screensaver lock-delay":
+                       "0",
+                       " get org.gnome.desktop.screensaver picture-opacity":
+                       "100",
+                       " get org.gnome.desktop.screensaver picture-uri": "''",
+                       " get org.gnome.desktop.session idle-delay": "300"}
+            self.fixes = {}
+            self.writes = []
+            for cmd in getcmds:
+                cmd2 = gsettings + cmd
+                self.cmdhelper.executeCommand(cmd2)
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    if cmd == " get org.gnome.desktop.session idle-delay":
+                        try:
+                            splitOut = output[0].split()
+                            if len(splitOut) > 1:
+                                num = splitOut[1]
+                            else:
+                                num = splitOut[0]
+                            if int(num) > 300:
+                                compliant = False
+                                self.detailedresults += "Idle delay value " + \
+                                    "is not 300 seconds or lower (value: " +\
+                                    num + ")\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                            elif int(num) == 0:
+                                compliant = False
+                                self.detailedresults += "Idle delay set  " + \
+                                    "to 0, meaning it is disabled.\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                        except ValueError:
+                            self.detailedresults += "Unexpected result: " + \
+                                '"' + cmd2 + '" output was not a number\n'
+                            compliant = False
+                            self.fixes[cmd] = getcmds[cmd]
+                                    
+                    elif cmd == " get org.gnome.desktop.screensaver lock-delay":
+                        try:
+                            splitOut = output[0].split()
+                            if len(splitOut) > 1:
+                                num = splitOut[1]
+                            else:
+                                num = splitOut[0]
+                            if int(num) != 0:
+                                compliant = False
+                                self.detailedresults += "Lock delay is not " + \
+                                    "set to 0\n"
+                                self.fixes[cmd] = getcmds[cmd]
+                        except ValueError:
+                            self.detailedresults += "Unexpected result: " + \
+                                '"' + cmd2 + '" output was not a number\n'
+                            compliant = False
+                            self.fixes[cmd] = getcmds[cmd]
+                    elif output[0].strip() != getcmds[cmd]:
+                        self.detailedresults += '"' + cmd2 + "\" didn't " + \
+                            "produce the desired value: " + getcmds[cmd] + "\n"
+                        compliant = False
+                        self.fixes[cmd] = getcmds[cmd]
+                    if os.path.exists(self.stonixsettings):
+                        cmd = ["grep", "idle-delay", self.stonixsettings]
+                        self.cmdhelper.executeCommand(cmd)
+                        output = self.cmdhelper.getOutput()
+                        for line in output:
+                            if line.strip() != "/org/gnome/desktop/session/idle-delay":
+                                self.writes.append("/org/gnome/desktop/session/idle-delay\n")
+                                compliant = False
+                                self.detailedresults += "User should " + \
+                                    "not be able to change idle-delay " + \
+                                    "settings\n"
+                                break
+                    
+                        cmd = ["grep", "idle-activation-enabled", 
+                               self.stonixsettings]
+                        self.cmdhelper.executeCommand(cmd)
+                        output = self.cmdhelper.getOutput()
+                        for line in output:
+                            if line.strip() != "/org/gnome/desktop/session/idle-activation-enabled":
+                                self.writes.append("/org/gnome/desktop/session/idle-activation-enabled\n")
+                                compliant = False
+                                self.detailedresults += "User should " + \
+                                    "not be able to change idle-activation-enabled " + \
+                                    "settings\n"
+                                break
+                        cmd = ["grep", "lock-enabled", self.stonixsettings]
+                        self.cmdhelper.executeCommand(cmd)
+                        output = self.cmdhelper.getOutput()
+                        for line in output:
+                            if line.strip() != "/org/gnome/desktop/screensaver/lock-enabled":
+                                self.writes.append("/org/gnome/desktop/screensaver/lock-enabled\n")
+                                compliant = False
+                                self.detailedresults += "User should " + \
+                                    "not be able to change lock-enabled " + \
+                                    "settings\n"
+                                break
+                        cmd = ["grep", "lock-delay", self.stonixsettings]
+                        self.cmdhelper.executeCommand(cmd)
+                        output = self.cmdhelper.getOutput()
+                        for line in output:
+                            if line.strip() != "/org/gnome/desktop/screensaver/lock-delay":
+                                self.writes.append("/org/gnome/desktop/screensaver/lock-delay\n")
+                                compliant = False
+                                self.detailedresults += "User should " + \
+                                    "not be able to change lock-delay " + \
+                                    "settings\n"
+                                break
+                        cmd = ["grep", "picture-uri", self.stonixsettings]
+                        self.cmdhelper.executeCommand(cmd)
+                        output = self.cmdhelper.getOutput()
+                        for line in output:
+                            if line.strip() != "/org/gnome/desktop/screensaver/picture-uri":
+                                self.writes.append("/org/gnome/desktop/screensaver/picture-uri\n")
+                                compliant = False
+                                self.detailedresults += "User should " + \
+                                    "not be able to change picture-uri " + \
+                                    "settings\n"
+                                break
+                    else:
+                        self.writes = ["/org/gnome/desktop/session/idle-delay\n",
+                       "/org/gnome/desktop/session/idle-activation-enabled\n",
+                       "/org/gnome/desktop/screensaver/lock-enabled\n",
+                       "/org/gnome/desktop/screensaver/lock-delay\n",
+                       "/org/gnome/desktop/screensaver/picture-uri\n"]
+                        compliant = False
+                        self.detailedresults += "gnome stonix file doesn't exist\n"
+                elif error:
+                    if re.search("No such key", error[0]):
+                        continue
+                    self.detailedresults += "There is no value set for:" + \
+                        cmd2 + "\n"
+                    compliant = False
+                    self.fixes[cmd] = getcmds[cmd]
         return compliant
 
 ###############################################################################
@@ -270,15 +414,21 @@ desired value after being run which is " + getcmds[cmd] + "\n"
         @param self - essential if you override this definition
         @return: bool
         '''
-        finalcompliant = True
+        compliant = True
         self.kdefix = []
         debug = ""
-        if self.environ.geteuid() == 0:
+        bindir = glob("/usr/bin/kde*")
+        kdefound = False
+        for kdefile in bindir:
+            if re.search("^kde\d$", kdefile):
+                kdefound = True
+        if kdefound and self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
             if not contents:
                 debug = "You have some serious issues, /etc/passwd is blank\n"
                 self.logger.log(LogPriority.INFO, debug)
                 self.rulesuccess = False
+                self.detailedresults += "No contents found in /etc/passwd!\n"
                 return False
             for line in contents:
                 compliant = True
@@ -291,43 +441,66 @@ desired value after being run which is " + getcmds[cmd] + "\n"
                                 continue
                             homebase += '/.kde'
                             if not os.path.exists(homebase):
+                                self.detailedresults += "Could not find " + \
+                                    homebase + "\n"
                                 compliant = False
                             else:
                                 homebase += '/share'
                                 if not os.path.exists(homebase):
+                                    self.detailedresults += "Could not find " + \
+                                        homebase + "\n"
                                     compliant = False
                                 else:
                                     homebase += '/config'
                                     if not os.path.exists(homebase):
+                                        self.detailedresults += "Could not " + \
+                                            "find " + homebase + "\n"
                                         compliant = False
                                     else:
                                         kfile = homebase + '/kdesktoprc'
                                         if not os.path.exists(kfile):
                                             kfile = homebase + '/kscreensaverrc'
                                             if not os.path.exists(kfile):
+                                                self.detailedresults += "Could " + \
+                                                    "not find " + kfile + "\n"
                                                 compliant = False
                                             else:
                                                 uid = getpwnam(temp[0])[2]
                                                 gid = getpwnam(temp[0])[3]
                                                 if not checkPerms(kfile,
-                                                                  [uid, gid, 384],
+                                                                  [uid, gid,
+                                                                   0o600],
                                                                   self.logger):
+                                                    self.detailedresults += \
+                                                        "Incorrect permissions " + \
+                                                        "for file " + kfile + \
+                                                        ": Expected 600, " + \
+                                                        "found " + \
+                                                        getOctalPerms(kfile) + \
+                                                        "\n"
                                                     compliant = False
                                                 if not self.searchFile(kfile):
+                                                    self.detailedresults += \
+                                                        "Did not find " + \
+                                                        "required contents " + \
+                                                        "in " + kfile + "\n"
                                                     compliant = False
                             if not compliant:
-                                finalcompliant = False
                                 self.kdefix.append(temp[0])
                         else:
                             debug += "placeholder 6 in /etc/passwd is not a \
 directory, invalid form of /etc/passwd"
                             self.logger.log(LogPriority.DEBUG, debug)
+                            self.detailedresults += "Unexpected formatting in " + \
+                                "/etc/passwd"
                             return False
                 except IndexError:
                     compliant = False
                     debug += traceback.format_exc() + "\n"
                     debug += "Index out of range\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unexpected formatting in " + \
+                        "/etc/passwd"
                     break
                 except Exception:
                     break
@@ -336,7 +509,7 @@ directory, invalid form of /etc/passwd"
                                         "have kde configured:\n"
                 for user in self.kdefix:
                     self.detailedresults += user + "\n"
-        else:
+        elif kdefound:
             if self.environ.getosfamily() == "solaris":
                 who = "/usr/bin/who"
             else:
@@ -352,6 +525,7 @@ directory, invalid form of /etc/passwd"
                 debug += "You have some serious issues, /etc/passwd is blank\n"
                 self.logger.log(LogPriority.INFO, debug)
                 self.rulesuccess = False
+                self.detailedresults += "No contents found in /etc/passwd!\n"
                 return False
             compliant = True
             for line in contents:
@@ -364,40 +538,60 @@ directory, invalid form of /etc/passwd"
                                 continue
                             homebase += '/.kde'
                             if not os.path.exists(homebase):
+                                self.detailedresults += "Could not find " + \
+                                    homebase + "\n"
                                 compliant = False
                             else:
                                 homebase += '/share'
                                 if not os.path.exists(homebase):
+                                    self.detailedresults += "Could not find " + \
+                                        homebase + "\n"
                                     compliant = False
                                 else:
                                     homebase += '/config'
                                     if not os.path.exists(homebase):
+                                        self.detailedresults += "Could not " + \
+                                            "find " + homebase + "\n"
                                         compliant = False
                                     else:
                                         kfile = homebase + '/kdesktoprc'
                                         if not os.path.exists(kfile):
                                             kfile = homebase + '/kscreensaverrc'
                                             if not os.path.exists(kfile):
+                                                self.detailedresults += \
+                                                    "Could not find " + kfile + \
+                                                    "\n"
                                                 compliant = False
                                             else:
                                                 uid = getpwnam(temp[0])[2]
                                                 gid = getpwnam(temp[0])[3]
                                                 if not checkPerms(kfile,
-                                                                  [uid, gid, 384],
+                                                                  [uid, gid,
+                                                                   0o600],
                                                                   self.logger):
+                                                    self.detailedresults += \
+                                                        "Incorrect permissions " + \
+                                                        "for file " + kfile + \
+                                                        ": Expected 600, " + \
+                                                        "found " + \
+                                                        getOctalPerms(kfile) + \
+                                                        "\n"
                                                     compliant = False
                                                 if not self.searchFile(kfile):
+                                                    self.detailedresults += \
+                                                        "Did not find " + \
+                                                        "required contents " + \
+                                                        "in " + kfile + "\n"
                                                     compliant = False
-                            if not self.searchFile(kfile):
-                                self.kdefix.append(temp[0])
-                                compliant = False
                             if not compliant:
-                                finalcompliant = False
+                                self.kdefix.append(temp[0])
                             break
                         else:
                             debug += "placeholder 6 in /etc/passwd is not a \
 directory, invalid form of /etc/passwd"
                             self.logger.log(LogPriority.DEBUG, debug)
+                            self.detailedresults += "Unexpected formatting in " + \
+                                "/etc/passwd"
                             return False
                         break
                 except IndexError:
@@ -405,10 +599,14 @@ directory, invalid form of /etc/passwd"
                     debug += traceback.format_exc() + "\n"
                     debug += "Index out of range\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unexpected formatting in " + \
+                        "/etc/passwd"
                     break
                 except Exception:
+                    debug += traceback.format_exc() + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     break
-        return finalcompliant
+        return compliant
 
 ###############################################################################
 
@@ -466,97 +664,130 @@ directory, invalid form of /etc/passwd"
         @return: bool - True if gnome is successfully configured, False if it
                 isn't
         '''
+        info = ""
+        success = True
         if not self.gnomeInst:
             self.detailedresults += "Gnome is not installed, no fix necessary \
 for this portion of the rule\n"
             return True
-        info = ""
-        gconf = "/usr/bin/gconftool-2"
-        gcmd1 = " --get /apps/gnome-screensaver/idle_activation_enabled"
-        gcmd2 = " --get /apps/gnome-screensaver/lock_enabled"
-        gcmd3 = " --get /apps/gnome-screensaver/mode"
-        gcmd4 = " --get /apps/gnome-screensaver/idle_delay"
-        scmd1 = " --type bool --set /apps/gnome-screensaver/idle_activation_enabled true"
-        scmd2 = " --type bool --set /apps/gnome-screensaver/lock_enabled true"
-        scmd3 = ' --type string --set /apps/gnome-screensaver/mode "blank-only"'
-        scmd4 = " --type int --set /apps/gnome-screensaver/idle_delay 15"
-        success = True
-        cmd = gconf + gcmd1
-        if self.cmdhelper.executeCommand(cmd):
-            output = self.cmdhelper.getOutput()
-            error = self.cmdhelper.getError()
-            if output:
-                if output[0].strip() != "true":
+        elif self.useGconf:
+            gconf = "/usr/bin/gconftool-2"
+            gcmd1 = " --get /apps/gnome-screensaver/idle_activation_enabled"
+            gcmd2 = " --get /apps/gnome-screensaver/lock_enabled"
+            gcmd3 = " --get /apps/gnome-screensaver/mode"
+            gcmd4 = " --get /desktop/gnome/session/idle_delay"
+            scmd1 = " --type bool --set /apps/gnome-screensaver/idle_activation_enabled true"
+            scmd2 = " --type bool --set /apps/gnome-screensaver/lock_enabled true"
+            scmd3 = ' --type string --set /apps/gnome-screensaver/mode "blank-only"'
+            scmd4 = " --type int --set /desktop/gnome/session/idle_delay 15"
+            cmd = gconf + gcmd1
+            if self.cmdhelper.executeCommand(cmd):
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    if output[0].strip() != "true":
+                        cmd = gconf + scmd1
+                        if self.cmdhelper.executeCommand(cmd):
+                            output = self.cmdhelper.getOutput()
+                            error = self.cmdhelper.getError()
+                            if self.cmdhelper.getReturnCode() != 0:
+                                info += "Unable to set value for " + scmd1 + "\n"
+                                success = False
+                elif error:
                     cmd = gconf + scmd1
                     if self.cmdhelper.executeCommand(cmd):
-                        output = self.cmdhelper.getOutput()
-                        error = self.cmdhelper.getError()
                         if self.cmdhelper.getReturnCode() != 0:
                             info += "Unable to set value for " + scmd1 + "\n"
                             success = False
-            elif error:
-                cmd = gconf + scmd1
-                if self.cmdhelper.executeCommand(cmd):
-                    if self.cmdhelper.getReturnCode() != 0:
-                        info += "Unable to set value for " + scmd1 + "\n"
-                        success = False
-        cmd = gconf + gcmd2
-        if self.cmdhelper.executeCommand(cmd):
-            output = self.cmdhelper.getOutput()
-            error = self.cmdhelper.getError()
-            if output:
-                if output[0].strip() != "true":
+            cmd = gconf + gcmd2
+            if self.cmdhelper.executeCommand(cmd):
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    if output[0].strip() != "true":
+                        cmd = gconf + scmd2
+                        if self.cmdhelper.executeCommand(cmd):
+                            output = self.cmdhelper.getOutput()
+                            error = self.cmdhelper.getError()
+                            if self.cmdhelper.getReturnCode() != 0:
+                                info += "Unable to set value for " + scmd2 + "\n"
+                                success = False
+                elif error:
                     cmd = gconf + scmd2
                     if self.cmdhelper.executeCommand(cmd):
-                        output = self.cmdhelper.getOutput()
-                        error = self.cmdhelper.getError()
                         if self.cmdhelper.getReturnCode() != 0:
                             info += "Unable to set value for " + scmd2 + "\n"
                             success = False
-            elif error:
-                cmd = gconf + scmd2
-                if self.cmdhelper.executeCommand(cmd):
-                    if self.cmdhelper.getReturnCode() != 0:
-                        info += "Unable to set value for " + scmd2 + "\n"
-                        success = False
-        cmd = gconf + gcmd3
-        if self.cmdhelper.executeCommand(cmd):
-            output = self.cmdhelper.getOutput()
-            error = self.cmdhelper.getError()
-            if output:
-                if output[0].strip() != "blank only":
+            cmd = gconf + gcmd3
+            if self.cmdhelper.executeCommand(cmd):
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    if output[0].strip() != "blank only":
+                        cmd = gconf + scmd3
+                        if self.cmdhelper.executeCommand(cmd):
+                            output = self.cmdhelper.getOutput()
+                            error = self.cmdhelper.getError()
+                            if self.cmdhelper.getReturnCode() != 0:
+                                info += "Unable to set value for " + scmd3 + "\n"
+                                success = False
+                elif error:
                     cmd = gconf + scmd3
                     if self.cmdhelper.executeCommand(cmd):
-                        output = self.cmdhelper.getOutput()
-                        error = self.cmdhelper.getError()
                         if self.cmdhelper.getReturnCode() != 0:
                             info += "Unable to set value for " + scmd3 + "\n"
                             success = False
-            elif error:
-                cmd = gconf + scmd3
-                if self.cmdhelper.executeCommand(cmd):
-                    if self.cmdhelper.getReturnCode() != 0:
-                        info += "Unable to set value for " + scmd3 + "\n"
-                        success = False
-        cmd = gconf + gcmd4
-        if self.cmdhelper.executeCommand(cmd):
-            output = self.cmdhelper.getOutput()
-            error = self.cmdhelper.getError()
-            if output:
-                if int(output[0].strip()) > 15:
+            cmd = gconf + gcmd4
+            if self.cmdhelper.executeCommand(cmd):
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    if int(output[0].strip()) > 15:
+                        cmd = gconf + scmd4
+                        if self.cmdhelper.executeCommand(cmd):
+                            output = self.cmdhelper.getOutput()
+                            error = self.cmdhelper.getError()
+                            if self.cmdhelper.getReturnCode() != 0:
+                                info += "Unable to set value for " + scmd4 + "\n"
+                                success = False
+                elif error:
                     cmd = gconf + scmd4
                     if self.cmdhelper.executeCommand(cmd):
-                        output = self.cmdhelper.getOutput()
-                        error = self.cmdhelper.getError()
                         if self.cmdhelper.getReturnCode() != 0:
                             info += "Unable to set value for " + scmd4 + "\n"
                             success = False
-            elif error:
-                cmd = gconf + scmd4
-                if self.cmdhelper.executeCommand(cmd):
-                    if self.cmdhelper.getReturnCode() != 0:
-                        info += "Unable to set value for " + scmd4 + "\n"
-                        success = False
+        else:
+            gsettings = "/usr/bin/gsettings"
+            for cmd in self.fixes:
+                setCmd = re.sub("get", "set", cmd, 1)
+                setCmd += " " + self.fixes[cmd]
+                cmd2 = gsettings + setCmd
+                self.cmdhelper.executeCommand(cmd2)
+                if self.cmdhelper.getReturnCode() != 0:
+                    info += "Unable to set value for " + setCmd
+                    success = False
+            if not os.path.exists("/etc/dconf/db/local.d/locks/stonix-settings.conf"):
+                if not createFile(self.stonixsettings, self.logger):
+                    self.rulesuccess = False
+                    self.detailedresults += "Unabled to create stonix-settings file\n"
+                    self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                    return False
+            if self.writes:
+                contents = ""
+                tmpfile = self.stonixsettings + ".tmp"
+                for line in self.writes:
+                    contents += line
+                if not writeFile(tmpfile, contents, self.logger):
+                    self.rulesuccess = False
+                    self.detailedresults += "Unable to write contents to " + \
+                        "stonix-settings file\n"
+                else:
+                    os.rename(tmpfile, self.stonixsettings)
+                    os.chown(self.stonixsettings, 0, 0)
+                    os.chmod(self.stonixsettings, 493)
+                    resetsecon(self.stonixsettings)
+        self.detailedresults += info
         return success
 
 ###############################################################################

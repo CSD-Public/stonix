@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.4
+Version: 0.9.8
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -45,12 +45,22 @@ mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/rules
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx
 mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/FileStateManager/pam/0.9.6.13/darwin/MacOSX/10.11/stateAfter/etc/pam.d
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/FileStateManager/pam/0.9.5.99/darwin/MacOSX/10.11/stateAfter/etc/pam.d
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/help
+mkdir -p $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/images
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man8
 
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/rules/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/rules/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/gfx/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx/
-/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.mobileconfig $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.mobileconfigfake $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/passwordprofile-10.11 $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.plist $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/images/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/images/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/usr/share/man/man8/stonix.8 $RPM_BUILD_ROOT/usr/share/man/man8/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix.py $RPM_BUILD_ROOT/usr/bin/
 touch $RPM_BUILD_ROOT/etc/stonix.conf
@@ -116,6 +126,149 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Jun 6 2017 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.8
+- Fixed a broken utility method
+- Fixed a logic issue in DisableGUILogon which was causing it to incorrectly report not compliant
+- SSH service should no longer be turned on if not already on
+- Fixed a traceback in SetFSMountOptions
+- Fixed a traceback in SoftwarePatching
+- Fixed an issue with opensuse 42 which was causing STONIX to choose the wrong package manager
+- Fixed package name for debian 32 bit in EnablePAEandNX
+- Fixed an issue in EnablePAEandNX which was causing it to look for a non-existent package in ubuntu 16 (32 bit)
+- Added better user feedback to BootLoaderPerms rule about what is not compliant when it is not compliant
+- Cleaned up and re-factored SetFSMountOptions for better code maintenance
+- ConfigurePasswordPolicy now adheres to the new FISMA High / Low setting in localize.py
+- Fixed incorrect file contents being added, in Fedora, for rule ConfigureLANLLDAP
+- Fixed package conflicts issue with opensuse, for rule ConfigureLANLLDAP
+- Fixed an incorrect return code comparison issue in helper class zypper.py
+
+* Tue Apr 4 2017 David Kennel <dkennel@lanl.gov> - 0.9.7
+- Public code base now has placeholders for certain constants, in localize and informs the user when attempting to use rules which require these constants, i$
+- Stonix now has a new "FISMA" setting in localize, which can be overridden in each rule if necessary, which determines which rules are run by default, when $
+- Debian/Ubuntu package will now no longer overwrite existing stonix.conf
+- MinimizeServices - Will no longer disable ntp, chrony or syslog, by default
+- SecureATCron - Now assigns the correct permissions to cron.log
+- RemoveSoftware - Fixed a typo which was resulting in 2 service names being concatenated in the CI list
+- ConfigureLANLLDAP - Fixed a bug which was preventing required packages sssd, krb5, pam_ldap from being installed, related services from being started/enabl$
+- ConfigureLogging - Fixed a traceback error which was preventing the rule from running on CentOS 6
+- Added filter mechanism and variables to support fine tuned actions and rule filtering based on FISMA risk categorization
+- Corrected issue with duplicate rule id numbers affecting ConfigureProcessAccounting and EncryptSwap
+- Corrected multiple issues with MacOS STIG rules
+- Updated MinimizeServices to correct issues on Debian systems
+- Corrected permissions problem with SecureATCRON
+- Fixed issues with the way that some rules responded to default values in localize.py
+- Fixed traceback in DisableInactiveAccounts that affected MacOS
+- Fixed multiple issues in ConfigureLogging
+* Fri Feb 3 2017 David Kennel <dkennel@lanl.gov> - 0.9.5
+- Corrected bug that caused STONIX to not recognize when firewalld was running.
+- New rule added: ConfigureFirefox. The configure Firefox rule will disable all automatic update and "phone home" behavior and configure the browser for SSO authentication.
+- New rule added: ConfigureFirewall. This rule will enable the system firewall on supported platforms and configure it with reasonable rules. In most cases this means block all inbound except SSH and permit all outbound.
+- New rule ForceIdleLogout. This optional rule will force idle Gnome and KDE sessions to log off
+- Corrected an issue where the State Change Logger did not record file changes correctly when the "old" file did not exist.
+- BootSecurity(18): Changed method of reporting to audit the service rather than just checking a list of services (which included disabled and removed services), making report results more accurate.
+- CheckRootPath(44): Now includes a fix, to ensure that root's PATH matches the vendor default.
+- ConfigureLANLLDAP(254): Running the rule multiple times on NSLCD systems will no longer result in repeated lines in nsswitch.conf
+- ConfigureScreenLocking(74): Originally based on gconftool-2, this was updated to work with the newer gsettings command. Fixed potential bugs in GNOME 3 systems, where the picture-uri variable was not being set. Fixed idle-delay being off (set to 0) appearing as compliant. Rule now checks for "No such key" as gconftool-2/gsettings output, which indicates a compliant state (this was previously seen as a failure).
+- FilePermissions(25): Cleaned up and clarified feedback.
+- MinimizeServices(12): Added psacct, iptables, ip6tables, ssh, ssh.service, lvm2-activation-early.service, lvm2-activation.service to approved services.
+- PasswordExpiration(42): Accounts will be disabled 35 days after the password expires.
+- RemoveSUIDGames(244): An issue was found where removing certain games resulted in other games being installed. Made removal function recursive, with a depth limit of 6 to avoid infinite loops.
+- SecureHomeDir(45): Added try/except to avoid errors if /home/{user} does not exist.
+- SecureMDNS(135): Updated to disable zeroconf networking, per CCE-RHEL7-CCE-TBD 2.5.2.
+- SecureNFS(39): Improved help text.
+- Rule NetworkTuning(15) renamed SecureIPV4(15)
+- ConfigureLogging - now properly logs for authentication events on .deb systems
+- PasswordExpiration - PASS_MIN_LEN directive no longer applicable for login.defs file on .deb and opensuse systems.
+- RemoveSoftware – New rule
+- SecureIPV6 – Now configures Mac OSX
+- Fixed bug in PasswordExpiration rule
+- Fixed bug in ConfigureScreenLocking rule
+- Fixed bug in ConfigureSystemAuthentication rule
+- Fixed bug in DisableIPV6 rule
+- Fixed bug in NoCoreDumps rule
+- Fixed bug in SecureNFS rule
+- Fixed bug in SSHTimeout rule
+- New STIG specific rules for Mac: STIGConfigureApplicationRestrictionsPolicy, STIGConfigureBluetoothPolicy, STIGConfigureLoginWindowPolicy, STIGConfigurePasswordPolicy	STIGConfigureRestrictionsPolicy, STIGDisableCloudPolicy
+- ConfigureSystemAuthentication – complete refactor of rule for a more robust and thorough run.  Now has different specs for password requirements bettween the red and yellow network.
+- ConfigurePasswordPolicy – rule is being removed for yellow network due to issues with OSX.
+- SetTFTPDSecureMode – new rule
+- New Rule – RestrictAccessToKernelMessageBuffer
+- New Rule – MinimizeAcceptedDHCPOptions
+- New Rule – AuditSSHKeys
+- New Rule – AuditNetworkSniffing
+- New Rule – EnablePAEandNX
+- New Rule – LinuxPackageSigning
+- New Rule – DisableInactiveAccounts
+- Fixed an issue where InstallBanners would, under certain conditions, append a new configuration line to the same line as another configuration option, resulting in bad syntax
+- SSH banner file changed (in InstallBanners) from /etc/motd to /etc/issue so that the text will display before/during ssh login
+- Fixed a chmod issue, on the banner text file, in InstallBanners
+- Fixed a missing configuration option disable-user-list in InstallBanners, for Debian 7
+- InstallBanners banner text updated to meet compliance standards on RHEL 7
+- Fixed a typo in one of the underlying framework classes (kveditor) which resolved multiple issues in multiple rules, across multiple systems
+- Fixed a pathing error in InstallBanners, for OpenSuSE 13.2
+- SystemAccounting will now show as passing, during compliance run, if not enabled. Added doc strings to each method. Rule will now check to see if its CI is enabled or not, in report. Changed CI instructions to be more clear to the end user. Added several in-line comments. Added messaging to indicate to the end user, whether the rule will run its fix or not, based on whether the CI is enabled or not
+- SystemAccounting's Unit test will now auto enable its CI when run, in order to properly test the rule's full functionality.
+- Fixed an issue with a regular expression in SecureNFS, looking for class A addresses
+- SecureNFS New Feature – Will now ensure there are no overly broad NFS exports (exports to an entire class B or larger subnet; exports to an entire DNS domain; etc.)
+- Fixed an issue in SecureNFS which was allowing it to start the nfsd service even if it was not already started
+- Updated SecureNFS rule with support for host access lists for each export
+- SetFSMountOptions rule will now check samba mounts for packet signing; added nodev option to any nfs mounts; added nosuid option to any nfs mounts
+- New rule: AuditFirefoxUsage(84): Checks the root account's Firefox history to check for dangerous non-local browsing.
+- New rule: ConfigureProcessAccounting(97): Enables the process accounting service, psacct.
+- New rule: DisablePrelinking(89)
+- New rule: InstallRootCert(10): Adds and activates the LANL root certificate
+- logdispatcher: Now handles errors caused by a non-existent e-mail address. This relieves hanging on non-network-connected machines.
+- stonix4mac: There will no longer be a symlink stonix.conf in the /Applications/stonix4mac/... path. The installer will only create, and only look for, /etc/stonix.conf
+- SHupdaterc: Added '$' to end of regex in auditservice() method, so that searches are more accurate.
+- stonix4mac: Added ownership changes to postinstall script to ensure that all files are owned by root
+- GUI: Configuration items (CIs) no longer show up when STONIX is run in User context
+- PAM stack variables are now part of localize.py, so that they can be easily localized for non-LANL users
+- Changed Fedora to dnf packagehelper; updated rules DisableInteractiveStartup, InstallVLock, SecureDHCPServer, SecureNFS, SecurePOPIMAP for this change.
+- There is currently a bug with Debian8/python which prevents
+- ConfigureMACPolicy from running correctly on that OS
+- Fixed an issue which was causing apparmor to not load on restart (on systems which use apparmor) after running fix in ConfigureMACPolicy (note: there is still a bug with Debian python which prevents this rule from ever being compliant after fix. This is not a stonix bug/issue. It will remain this way untilt he Debian folks fix this issue.)
+- Fixed a typo in a method call, in ConfigureMACPolicy which was preventing the rule from loading on rhel 6 systems
+- There is an issue in Debian's version of gdm3 which prevents certain required security configuration options from being enabled at the same time. As a result, STONIX will now force the use of lightdm as the display manager for Debian systems found running gdm3 as their display manager
+- MuteMic now mutes mics on systemd and init systems at boot time
+- Fixed a referenced before a assignment variable problem in EnablePAEandNX (this was causing a traceback under certain circumstances)
+- Fixed an error in the fix() method of EnablePAEandNX rule, and removed an invalid test from its Unit test
+- Initialized commandhelper object before calling it, in all cases for the EnablePAEandNX Unit tests
+- Fixed sshd allow hosts syntax in TCPWrappers rule
+- Fixed traceback in LinuxPackageSigning Unit test
+- Added support for debian and ubuntu pathing in MuteMic
+- Fixed a SetDaemonUmask Unit test traceback
+- Fixed an issue in RootMailAlias which was causing duplicate line entries in the aliases file
+- MinimizeServices will now no longer kill the lightdm.service (which would result in a black screen with a blinking cursor)
+- Fixed a PasswordExpiration non-compliant after fix condition on Ubuntu 16
+- Issues with both the underlying framework and the rule itself were fixed to resolve multiple issues with SecureCUPS rule
+- Fixed a configuration file path for Fedora 24, in ForceIdleLogout
+- Fixed an issue with SetNTP where it would not install ntp or chrony if neither existed on the system, and would simply report compliant. It now installs the correct package, depending on the system, and configures it
+- Fixed an issue with EnableKernelAuditing which was preventing audit rules from being loaded
+- Fixed a configuration issue, in EnableKernelAuditing, with ausyscall stime only having a 32-bit syscall (was issuing an arch=b64 call which was causing a traceback)
+- EnableKernelAuditing New Feature – EnableKernelAuditing will now audit a configuration slightly exceeding the LSPP
+- Fixed a reporting issue with EnableKernelAuditing which was causing it to wrongly report that the fix had failed
+- Fixed multiple pathing issues for MinimizeAcceptedDHCPOptions, for rhel, fedora, centos, opensuse
+- Fixed an issue with the regular expression in report method of RestrictAccessToKernelMessageBuffer
+- Fixed a syntax error in ConfigureAIDE's cron job entry
+- Fixed an issue with DisableInactiveAccounts Unit test
+- Made the help text for DisableInactiveAccounts more clear and complete
+- Fixed an issue with DisableInactiveAccounts not recognizing when an account had never had a password set before
+- Fixed a typo in the disableaccount command in DisableInactiveAccounts
+- Changed the help text for DisableInactiveAccounts to be much more clear to the end user about what is being disabled and when and why
+- Fixed a race condition between VerifySysFilePerms and SymlinkDangerFiles rules, by leaving /private/etc/hosts.equiv as a file and just ensuring it remains empty
+- Fixed an issue with SymlinkDangerFiles which was causing VerifySysFilePerms to report as NCAF on some Mac OS X systems (different than the above race condition)
+- Updated DisableAFPFileSharing rule with commands to make it compatible with 10.11 and 10.12. Updated the commands in the Unit test for this rule as well
+- ssh and sshd configurations will now be written to the correct “/etc/ssh/” directory, instead of “/etc/”
+- Fixed an init traceback of MinimizeAcceptedDHCPOptions on Mac OS X systems
+- ConfigureNetworks will now properly disable wi-fi devices on the system when in an area not appropriate for wi-fi – even if the device is not listed in the service list (this is a workaround for an el capitan OS bug)
+- Fixed a missing function call in one of the framework classes, for ConfigureNetworks which was causing false negative reporting after the rule's fix had been run
+- Fixed many doc strings, added debug logging for, and fixed numerous log issues for – ConfigureNetworks rule and the associated networksetup helper class
+- SecureWinFileSharing New Feature – OS X SMB signing enabled and required
+- Fixed an issue in SecureWinFileSharing where the applicability of the rule was never getting set
+- Fixed some broken logic in report method of DisableCamera rule. Fixed several doc strings. Added debug logging. Removed unused code and imports. Minor refactor of code in report and fix methods. This fixed an NCAF on OS X 10.12 machines
+- Added support for Mac OS X systems, in SecureATCRON
+- Added support for Mac OS X systems, in SecureCUPS
+
 * Thu Feb 4 2016 David Kennel <dkennel@lanl.gov> - 0.9.4
 - Fixed issue where filehelper object did not configure statechglogger correctly when the file to be removed does not exist
 - New rule for OS X - ConfigureDiagnosticReporting

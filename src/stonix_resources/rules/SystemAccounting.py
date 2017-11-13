@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -36,6 +36,10 @@ due to departures from the normal system performance curve.
 @change: 2015/09/29 Breen Malmberg - Added initialization of variable self.iditerator in fix()
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/18 eball Added undo events to fix
+@change: 2016/05/19 Breen Malmberg - added docstrings to every method; added a check in reporting to see if rule is enabled or not;
+added some in-line comments to several methods, where needed; changed the CI instructions to be more clear to the end user; added
+messaging to indicate to the user whether the method will run or not, based on current CI status
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 
 from __future__ import absolute_import
@@ -69,31 +73,26 @@ class SystemAccounting(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rootrequired = True
-        self.helptext = '''System accounting is an optional process which \
-gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 \
-minutes, by default. The data may be accessed with the sar command, or by \
-reviewing the nightly report files named /var/log/sa/sar*. Once a normal \
-baseline for the system has been established, with frequent monitoring, \
-unauthorized activity (password crackers and other CPU-intensive jobs, and \
-activity outside of normal usage hours) may be detected due to departures \
-from the normal system performance curve.'''
+        self.sethelptext()
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         # set up configuration items for this rule
         datatype = 'bool'
         key = 'SYSTEMACCOUNTING'
-        instructions = 'To enable this rule, set the value of ' + \
-            'SYSTEMACCOUNTING to True'
+        instructions = 'This is an optional rule and it is disabled by default. To enable this rule, set the value of ' + \
+            'SYSTEMACCOUNTING to True.'
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def islinux(self):
         '''
-        is this linux or another os type?
+        detect whether the current system is using linux
 
+        @return: retval
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
@@ -108,6 +107,8 @@ from the normal system performance curve.'''
 
     def setlinux(self):
         '''
+        set variables specific to linux systems
+
         @author: Breen Malmberg
         '''
 
@@ -118,6 +119,8 @@ from the normal system performance curve.'''
 
     def setmac(self):
         '''
+        set variables specific to mac systems
+
         @author: Breen Malmberg
         '''
 
@@ -128,6 +131,8 @@ from the normal system performance curve.'''
 
     def setCmds(self, ostype='linux'):
         '''
+        set command path according to which os type the current system is
+
         @author: Breen Malmberg
         '''
 
@@ -138,9 +143,12 @@ from the normal system performance curve.'''
 
     def setPaths(self, ostype='linux'):
         '''
+        set directory and file paths according to which os type the current system is
+
         @author: Breen Malmberg
         '''
 
+        # defaults
         self.accpath = ''
         self.pkgname = ''
         self.accbasedir = ''
@@ -157,6 +165,8 @@ from the normal system performance curve.'''
 
     def setOpts(self, ostype='linux'):
         '''
+        set configuration options based on which os type the current system is
+
         @author: Breen Malmberg
         '''
 
@@ -167,6 +177,8 @@ from the normal system performance curve.'''
 
     def setObjs(self, ostype='linux'):
         '''
+        initialize objects for use, based on which os type the current system is
+
         @author: Breen Malmberg
         '''
 
@@ -178,14 +190,25 @@ from the normal system performance curve.'''
 
     def report(self):
         '''
+        decide which report actions to run, then call the corresponding methods and
+        set compliance based on the return value(s)
+
+        @return: self.compliant
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
         # defaults
         self.compliant = True
-        self.detailedresults = ''
+        self.detailedresults = ""
 
         try:
+
+            if not self.ci.getcurrvalue():
+                self.detailedresults += "This is an optional rule and the CI for this rule is currently disabled. This rule will not run until the CI is enabled."
+                self.logger.log(LogPriority.DEBUG, "This is an optional rule and the CI for this rule is currently disabled. This rule will not run until the CI is enabled.")
+                return self.compliant
+
             if self.islinux():
                 self.setlinux()
                 self.compliant = self.reportlinux()
@@ -205,6 +228,11 @@ from the normal system performance curve.'''
 
     def reportlinux(self):
         '''
+        run report actions specific to linux platforms
+        return configuration status boolean
+
+        @return: configured
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
@@ -212,6 +240,7 @@ from the normal system performance curve.'''
         configured = True
 
         try:
+
             if not self.pkghelper.check(self.pkgname):
                 self.detailedresults += 'Accounting package not installed: ' \
                     + str(self.pkgname) + '\n'
@@ -252,12 +281,19 @@ from the normal system performance curve.'''
 
     def reportmac(self):
         '''
+        run report actions specific to mac platforms
+        return configuration status boolean
+
+        @return: configured
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
+        # defaults
         configured = True
 
         try:
+
             if not os.path.exists(self.accpath):
                 configured = False
                 self.detailedresults += 'Accounting file not found: ' + \
@@ -282,13 +318,22 @@ from the normal system performance curve.'''
 
     def fix(self):
         '''
+        decide which fix action to run based on os type of current system
+        then call the corresponding method
+        return success status of fix actions
+
+        @return: success
+        @rtype: bool
         @author: Breen Malmberg
         '''
+
         # defaults
-        self.detailedresults = ''
+        self.detailedresults = ""
         success = True
         self.iditerator = 0
+
         try:
+
             if self.ci.getcurrvalue():
                 if self.islinux():
                     success = self.fixlinux()
@@ -310,9 +355,16 @@ from the normal system performance curve.'''
 
     def fixlinux(self):
         '''
+        run fix actions specific to linux platforms
+        record undo actions for each fix action performed
+        return success status of any fix actions run
+
+        @return: success
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
+        # defaults
         success = True
         found = False
 
@@ -341,6 +393,9 @@ from the normal system performance curve.'''
                     if not editor.report():
                         if editor.fixables:
                             if editor.fix():
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                editor.setEventID(myid)
                                 if not editor.commit():
                                     success = False
                                     self.detailedresults += "KVEditor " + \
@@ -419,6 +474,12 @@ from the normal system performance curve.'''
 
     def fixmac(self):
         '''
+        run fix actions specific to mac platforms
+        record undo actions for any fix actions performed
+        return success status of fix actions run
+
+        @return: success
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
@@ -478,6 +539,11 @@ from the normal system performance curve.'''
 
     def getFileContents(self, filepath):
         '''
+        retrieve and return the file contents of the file at location: filepath
+
+        @param filepath: string full path to the file, for which contents are to be read/returned
+        @return: contentlines
+        @rtype: list
         @author: Breen Malmberg
         '''
 

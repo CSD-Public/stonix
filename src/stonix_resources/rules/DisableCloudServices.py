@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -30,11 +30,13 @@ dictionary
 @change: 2014/12/02 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/10/24 rsn - removed unused ServiceHelper reference
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..stonixutilityfunctions import iterate
 from ..logdispatcher import LogPriority
@@ -64,20 +66,17 @@ dictionary
         self.rulename = 'DisableCloudServices'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule disables iCloud services on OS X or " + \
-            "Unity Webapps and Lens Shopping on Ubuntu."
         self.rootrequired = True
         self.logger = self.logdispatch
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10'],
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10'],
                                   'Ubuntu': ['12.04', '+']}}
         self.ch = CommandHelper(self.logdispatch)
-        self.sh = ServiceHelper(self.environ, self.logdispatch)
 
         # init CIs
         datatype = 'bool'
-        key = 'DisableCloudServices'
+        key = 'DISABLECLOUDSERVICES'
         instructions = "To prevent cloud services from being disabled, " + \
             "set the value of DisableCloudServices to False."
         default = True
@@ -100,7 +99,7 @@ dictionary
         else:
             self.debianpkglist = ['unity-webapps-common',
                                   'unity-lens-shopping']
-
+        self.sethelptext()
     def report(self):
         '''
         choose which report method to run based on OS archetype

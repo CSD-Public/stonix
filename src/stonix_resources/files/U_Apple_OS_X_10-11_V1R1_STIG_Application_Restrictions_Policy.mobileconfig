@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>PayloadIdentifier</key>
+		<string>mil.disa.STIG.Application_Restrictions.alacarte</string>
+		<key>PayloadRemovalDisallowed</key>
+		<false/>
+		<key>PayloadScope</key>
+		<string>User</string>
+		<key>PayloadType</key>
+		<string>Configuration</string>
+		<key>PayloadUUID</key>
+		<string>a1d8a0d8-bb69-4733-aa2d-9d29a9fa57f0</string>
+		<key>PayloadOrganization</key>
+		<string>DISA</string>
+		<key>PayloadVersion</key>
+		<integer>1</integer>
+		<key>PayloadDisplayName</key>
+		<string>STIG Settings-App Restrictions</string>
+		<key>PayloadContent</key>
+		<array>
+			<dict>
+				<key>PayloadType</key>
+				<string>com.apple.applicationaccess.new</string>
+				<key>PayloadVersion</key>
+				<integer>1</integer>
+				<key>PayloadIdentifier</key>
+				<string>com.apple.mdm.alacarte.apprestrictions</string>
+				<key>PayloadUUID</key>
+				<string>1d7bcc00-4ce6-0132-d01a-003ee1c1075e</string>
+				<key>PayloadEnabled</key>
+				<true/>
+				<key>PayloadDisplayName</key>
+				<string>Application Restrictions</string>
+				<key>familyControlsEnabled</key>
+				<true/>
+				<key>pathBlackList</key>
+				<array>
+					<string>/Applications/Messages.app/</string>
+					<string>/Applications/FaceTime.app/</string>
+					<string>/Applications/Reminders.app/</string>
+					<string>/Applications/Notes.app/</string>
+					<string>/Applications/Mail.app/</string>
+					<string>/Applications/Contacts.app/</string>
+					<string>/Applications/Calendar.app/</string>
+					<string>/Applications/Game Center.app/</string>
+				</array>
+				<key>pathWhiteList</key>
+				<array>
+					<string>/</string>
+				</array>
+				<key>whiteList</key>
+				<array/>
+			</dict>
+		</array>
+	</dict>
+</plist>

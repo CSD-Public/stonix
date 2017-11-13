@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -31,8 +31,12 @@ dictionary
 @change: 2015/04/14 dkennel updated to use new isApplicable
 @change: 2015/09/17 ekkehard BatteryDiskSleep should have disksleep value not display sleep.
 @change: 2015/11/16 eball Re-enabled getting values from CIs rather than static dict
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
+
 from __future__ import absolute_import
+
 import traceback
 import types
 from ..rule import Rule
@@ -64,12 +68,11 @@ class ConfigurePowerManagement(Rule):
         self.rulename = 'ConfigurePowerManagement'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "Set the power setting to optimize battery usage " +\
-        "or computer performance depending on user's current setup."
+        self.sethelptext()
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
         self.psconfiguration = \
         {"ACDisableSystemSleep":
          {"HelpText": "Sets the Mac to stay awake if power is plugged-in. Default(AC Power, sleep, 0).",

@@ -91,7 +91,7 @@ The following options control the running of the script:
  -v  --verbose print verbose information about what stor is doing.
  -R  --rule run a single stonix rule. Requires -f, -X or -r.
 
-WARNING! If run with the -f flag THIS PROGAM WILL MODIFY
+WARNING! If run with the -f flag THIS PROGRAM WILL MODIFY
 SYSTEM SETTINGS!
 
 *********
@@ -99,7 +99,7 @@ The system should be rebooted when the script completes for all
 changes to take effect.
 *********
 
-stonix is a system hardening program produced by the CSD
+stonix is a system hardening program produced by the NIE
 Development Services team. It is designed to apply hardening settings
 to Unix and Unix-like operating systems in accordance with published
 security guidelines.
@@ -114,8 +114,20 @@ hardening process please review the hardening guidance from CIS, DISA and NSA.
 
 Created on Aug 23, 2010
 
-@author: dkennel
+@author: David Kennel
+@change: 2017/03/07 - David Kennel - Added support for FISMA categorization.
+@change: 2017/06/19 - David Kennel - Added safeties to rule loading for redundant
+rule names and numbers.
+@change: 2017/07/12 - Breen Malmberg - added method getruleauditonly();
+        added todo notes; changed author name formats to be consistent;
+        fixed some typo's in the class doc string; updated group name (CSD -> NIE)
+@todo: There are some methods that require fixing / completing / re-working
+        (search FIX ME)
+@todo: All methods need a once-over done on their doc strings
+@todo: improve logging/debugging on all methods
+@todo: look at adding try/except to all methods missing them
 '''
+
 # Std Library imports
 import sys
 import os
@@ -123,8 +135,12 @@ import re
 import traceback
 import time
 import subprocess
+import imp
+from pkgutil import extend_path
 
 # Local imports
+__path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
+import stonix_resources
 
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
@@ -132,12 +148,10 @@ from stonix_resources.environment import Environment
 from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
+from stonix_resources.CheckApplicable import CheckApplicable
+#import stonix_resources.fixFrozen
+
 from stonix_resources.cli import Cli
-try:
-    from stonix_resources.gui import GUI
-    from PyQt4 import QtCore, QtGui
-except(ImportError):
-    pass
 
 
 class Controller(Observable):
@@ -178,6 +192,11 @@ class Controller(Observable):
             self.prog_args = ProgramArguments()
             self.processargs()
         self.config = Configuration(self.environ)
+        try:
+            fismacategory = self.config.getconfvalue('main', 'fismacat')
+            self.environ.setsystemfismacat(fismacategory)
+        except(KeyError):
+            pass
         self.numrulesrunning = 0
         self.numrulescomplete = 0
         self.currulename = ''
@@ -188,24 +207,68 @@ class Controller(Observable):
         self.tryacquirelock()
 
         if self.mode == 'gui':
-            # This resets the UI to the command line if GUI was selected on the
-            # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
-                self.mode = 'cli'
-                self.logger.log(LogPriority.ERROR,
-                                'GUI Selected but PyQt4 not available. ' +
-                                'Please install PyQt4 and dependencies for ' +
-                                'GUI functionality.')
-            else:
-                app = QtGui.QApplication(sys.argv)
-                splashart = os.path.join(self.environ.get_icon_path(),
-                                         'StonixSplash.png')
-                splashimage = QtGui.QPixmap(splashart)
-                splash = QtGui.QSplashScreen(splashimage,
-                                             QtCore.Qt.WindowStaysOnTopHint)
-                splash.setMask(splashimage.mask())
-                splash.show()
-                app.processEvents()
+            applicable2PyQt5 = {'type': 'white',
+                               'os': {'Mac OS X': ['10.10', '+']}}
+            applicable2PyQt4 = {'type': 'black',
+                               'family': ['darwin']}
+            self.chkapp = CheckApplicable(self.environ, self.logger)
+
+            if self.chkapp.isApplicable(applicable2PyQt5):
+                #####
+                # Appropriate to OS that supports PyQt5
+                try:
+                    from PyQt5 import QtCore, QtWidgets, QtGui
+                    from stonix_resources.gui_pyqt5 import GUI
+                except ImportError:
+                    pass
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt5' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt5 not available. ' +
+                                    'Please install PyQt5 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt5' in sys.modules:
+                    app = QtWidgets.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtWidgets.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
+            if self.chkapp.isApplicable(applicable2PyQt4):
+                #####
+                # Appropriate to OS that supports PyQt4
+                try:
+                    from PyQt4 import QtCore, QtGui
+                    from stonix_resources.gui import GUI
+                except(ImportError):
+                    pass
+
+                # This resets the UI to the command line if GUI was selected on the
+                # command line and PyQt4 isn't present.
+                if 'PyQt4' not in sys.modules and self.mode == 'gui':
+                    self.mode = 'cli'
+                    self.logger.log(LogPriority.ERROR,
+                                    'GUI Selected but PyQt4 not available. ' +
+                                    'Please install PyQt4 and dependencies for ' +
+                                    'GUI functionality.')
+                elif 'PyQt4' in sys.modules:
+                    app = QtGui.QApplication(sys.argv)
+                    splashart = os.path.join(self.environ.get_icon_path(),
+                                             'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtGui.QSplashScreen(splashimage,
+                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+
         self.statechglogger = StateChgLogger(self.logger, self.environ)
         # NB We don't have a main event loop at this point so we call
         # the app.processEvents() again to make the splash screen show
@@ -216,7 +279,7 @@ class Controller(Observable):
         if not(self.mode == 'test'):
             # This resets the UI to the command line if GUI was selected on the
             # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and self.mode == 'gui':
+            if 'PyQt4' not in sys.modules and 'PyQt5' not in sys.modules and self.mode == 'gui':
                 self.mode = 'cli'
                 self.logger.log(LogPriority.ERROR,
                                 'GUI Selected but PyQt4 not available. ' +
@@ -268,10 +331,13 @@ class Controller(Observable):
         @return: List of instantiated rule objects
 
         @return: list : a list of instantiated rule classes
-        @author: D. Kennel
+        @author: David Kennel
         """
+        rulewalklist = []
         instruleclasses = []
         validrulefiles = []
+        rulenumbers = []
+        rulenames = []
         initlist = ['__init__.py', '__init__.pyc', '__init__.pyo']
 
         stonixPath = self.environ.get_resources_path()
@@ -291,74 +357,125 @@ class Controller(Observable):
         rulefiles = os.listdir(str(rulesPath))
         # print str(rulefiles)
 
-        for rfile in rulefiles:
-            if rfile in initlist:
-                continue
-            else:
-                validrulefiles.append(rfile)
-        self.logger.log(LogPriority.DEBUG,
-                        ['validrulefiles:', str(validrulefiles)])
-
-        # This is a list comprehension to build a list of module names to
-        # import based on the names of valid rule files from stonix/rules
-        # destination list = [ *transform* *source* *filter* ]
-        modulenames = [mod.replace('.py', '') for mod in validrulefiles
-                        if re.search("\.py$", mod)]
-        self.logger.log(LogPriority.DEBUG,
-                        ['Module names:', str(modulenames)])
-
-        # The output of this section is a list of valid, fully qualified,
-        # rule class names.
-        classnames = []
-        for module in modulenames:
-            module = module.split("/")[-1]
-            # print module
-            classname = 'stonix_resources.rules.' + module + '.' + module
-            classnames.append(classname)
-
-        # This is odd and requires detailed comments. This block imports the
-        # modules then recurses down, instantiates the main rule class and
-        # appends the class to a list.
-        for cls in classnames:
-            starttime = time.time()
-            parts = cls.split(".")
-            # the module is the class less the last element
-            module = ".".join(parts[:-1])
-            # Using the __import__ built in function to import the module
-            # since our names are only known at runtime.
+        #####
+        # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
+        # process rules accordingly
+        if hasattr(sys, 'frozen'):
+            #####
+            # Search through the already imported libraries for stonix rules
+            for item in sys.modules.keys():
+                if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Key Match: ' + str(item))
+                    rulewalklist.append(item)
             self.logger.log(LogPriority.DEBUG,
-                            'Attempting to load: ' + module)
-            try:
-                mod = __import__(module)
-            except Exception:
-                trace = traceback.format_exc()
-                self.logger.log(LogPriority.ERROR,
-                                "Error importing rule: " + trace)
-                continue
-            # Recurse down the class name until we get a reference to the class
-            # itself. Then we instantiate using the reference.
-            for component in parts[1:]:
+                            ['Rule Walk list from keys: ', str(rulewalklist)])
+        else:
+            for rfile in rulefiles:
+                if rfile in initlist:
+                    continue
+                else:
+                    validrulefiles.append(rfile)
+            self.logger.log(LogPriority.DEBUG,
+                            ['validrulefiles: ', str(rulewalklist)])
+            # This is a list comprehension to build a list of module names to
+            # import based on the names of valid rule files from stonix/rules
+            # destination list = [ *transform* *source* *filter* ]
+            modulenames = [mod.replace('.py', '') for mod in validrulefiles
+                            if re.search("\.py$", mod)]
+            self.logger.log(LogPriority.DEBUG,
+                            ['Module names:', str(modulenames)])
+
+            # The output of this section is a list of valid, fully qualified,
+            # rule class names.
+            for module in modulenames:
+                module = module.split("/")[-1]
+                # print module
+                classname = 'stonix_resources.rules.' + module + '.' + module
+                rulewalklist.append(classname)
+
+        self.logger.log(LogPriority.DEBUG,
+                        ['Walk list:', str(rulewalklist)])
+
+        for rule in rulewalklist:
+            if hasattr(sys, 'frozen'):
+                starttime = time.time()
+                #####
+                # Make sure rules start with a letter...
+                self.logger.log(LogPriority.DEBUG,
+                                'Using Frozen path for ' + str(rule))
+                #####
+                # Get just the rule name
+                ruleClass = rule.split('.')[2]
+                self.logger.log(LogPriority.DEBUG,
+                                'Class name after split: ' + str(ruleClass))
+                #####
+                # Acquire the rule class module
+                mod = getattr(sys.modules[rule], ruleClass)
+                self.logger.log(LogPriority.DEBUG,
+                                'Mod name: ' + str(mod))
+            else:
+                # This is odd and requires detailed comments. This block imports the
+                # modules then recurses down, instantiates the main rule class and
+                # appends the class to a list.
+                starttime = time.time()
+                parts = rule.split(".")
+                # the module is the class less the last element
+                module = ".".join(parts[:-1])
+                # Using the __import__ built in function to import the module
+                # since our names are only known at runtime.
+                self.logger.log(LogPriority.DEBUG,
+                                'Attempting to load: ' + str(module))
                 try:
-                    mod = getattr(mod, component)
+                    mod = __import__(module)
                 except Exception:
                     trace = traceback.format_exc()
                     self.logger.log(LogPriority.ERROR,
-                                    "Error finding rule class reference: "
-                                    + trace)
+                                    "Error importing rule: " + trace)
                     continue
+                # Recurse down the class name until we get a reference to the 
+                # class itself. Then we instantiate using the reference.
+                for component in parts[1:]:
+                    try:
+                        mod = getattr(mod, component)
+                    except Exception:
+                        trace = traceback.format_exc()
+                        self.logger.log(LogPriority.ERROR,
+                                        "Error finding rule class reference: "
+                                        + str(trace))
+                        continue
             try:
-                clinst = mod(config, environ, self.logger, self.statechglogger)
-                instruleclasses.append(clinst)
+                clinst = mod(config, environ,
+                             self.logger,
+                             self.statechglogger)
+                rulenum = clinst.getrulenum()
+                self.logger.log(LogPriority.DEBUG,
+                                'Checking Rule Number: ' + str(rulenum))
+                rulename = clinst.getrulename()
+                self.logger.log(LogPriority.DEBUG,
+                                'Checking Rule Name: ' + str(rulename))
+                if rulenum in rulenumbers:
+                    raise ValueError('ERROR: Rule Number ' + str(rulenum) + ' already instantiated! Not loading rule: ' + rulename)
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Rule Numbers List: ' + str(rulenumbers))
+                elif rulename in rulenames:
+                    raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + str(rulenum))
+                    self.logger.log(LogPriority.DEBUG,
+                                    'Rule Numbers List: ' + str(rulenames))
+                else:
+                    rulenumbers.append(rulenum)
+                    rulenames.append(rulename)
+                    instruleclasses.append(clinst)
                 etime = time.time() - starttime
                 self.logger.log(LogPriority.DEBUG,
                                 'load time: ' + str(etime))
             except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+                # User initiated exit
                 raise
             except Exception:
                 trace = traceback.format_exc()
                 self.logger.log(LogPriority.ERROR,
-                                "Error instantiating rule: " + trace)
+                                "Error instantiating rule: " + str(trace))
                 continue
         # print instruleclasses
         return instruleclasses
@@ -371,7 +488,7 @@ class Controller(Observable):
 
         @param rules: List of instantiated rule objects
         @return: List of instantiated rule objects
-        @author: D. Kennel
+        @author: David Kennel
         """
         applicablerules = []
         for rule in rules:
@@ -405,7 +522,7 @@ class Controller(Observable):
         and the rule help text. The dictionary is keyed by rule number.
 
         @return: Dictionary of lists
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulesdata = {}
         for rule in self.installedrules:
@@ -429,7 +546,7 @@ class Controller(Observable):
         @param string: name of the rule to fetch a number for.
         @return: int : number for the rule matching the passed name 0 if no
         match is found.
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulenum = 0
         for rule in self.installedrules:
@@ -447,7 +564,7 @@ class Controller(Observable):
         @param int: number of the rule to fetch a name for.
         @return: string : name for the rule matching the passed number. None if
         no match is found.
-        @author: D. Kennel
+        @author: David Kennel
         """
         rulename = None
         for rule in self.installedrules:
@@ -461,7 +578,7 @@ class Controller(Observable):
         Call all rules in fix(harden) mode
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
@@ -516,7 +633,7 @@ class Controller(Observable):
         Call all rules in audit(report) mode
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
@@ -560,7 +677,7 @@ class Controller(Observable):
 
         @param int ruleid :
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
@@ -648,7 +765,7 @@ class Controller(Observable):
 
         @param int ruleid :
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         message = "Controller:runruleaudit: Entering with rule id " + \
         str(ruleid)
@@ -702,7 +819,7 @@ class Controller(Observable):
         Undo all changes to the system.
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
@@ -739,7 +856,7 @@ class Controller(Observable):
 
         @param int ruleid :
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
@@ -780,7 +897,7 @@ class Controller(Observable):
 
         @param int ruleid : int (identifier) of rule to get help text for.
         @return string :
-        @author D. Kennel
+        @author David Kennel
         """
         helptxt = []
         for rule in self.installedrules:
@@ -793,7 +910,7 @@ class Controller(Observable):
         Update all databases held by database rules in stonix_resources.
 
         @return void :
-        @author D. Kennel
+        @author David Kennel
         """
         numdbrules = 0
         self.numrulescomplete = 0
@@ -827,7 +944,7 @@ class Controller(Observable):
         text and a list of configitem objects for that rule.
 
         @return dict :
-        @author D. Kennel
+        @author David Kennel
         """
         configdict = {}
         for rule in self.installedrules:
@@ -848,7 +965,7 @@ class Controller(Observable):
 
         @param int ruleid : Integer rule number
         @return list : list of configurationitem objects
-        @author D. Kennel
+        @author David Kennel
         """
         cilist = []
         for rule in self.installedrules:
@@ -867,7 +984,7 @@ class Controller(Observable):
         @param bool simpleconf : Whether or not we are generating a simple
         configuration file or not.
         @return  : void
-        @author D. Kennel
+        @author David Kennel
         """
         currdata = self.getconfigoptions()
         self.config.writeconfig(simpleconf, currdata)
@@ -889,7 +1006,7 @@ class Controller(Observable):
         stack is running.
 
         @return string : rulename
-        @author D. Kennel
+        @author David Kennel
         """
         return self.currulename
 
@@ -900,7 +1017,7 @@ class Controller(Observable):
 
         @param int: ruleid
         @return: bool
-        @author: D. Kennel
+        @author: David Kennel
         """
         compliant = False
         for rule in self.installedrules:
@@ -915,7 +1032,7 @@ class Controller(Observable):
 
         @param int: ruleid
         @return: string
-        @author: D. Kennel
+        @author: David Kennel
         """
         detailedresults = []
         for rule in self.installedrules:
@@ -930,7 +1047,7 @@ class Controller(Observable):
         rule stack is running.
 
         @return int : range 0 - 100
-        @author D. Kennel
+        @author David Kennel
         """
         total = float(self.numrulesrunning)
         curr = float(self.numrulescomplete)
@@ -945,12 +1062,36 @@ class Controller(Observable):
             print "Controller:getcompletionpercentage: Percent: " + str(percent)
         return percent
 
+    def getruleauditonly(self, ruleid):
+        '''
+        This method returns the audit only status boolean
+        from the rule with a given <ruleid>.
+
+        @param ruleid: int; the rule number identifier
+        @return: auditonly
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        auditonly = False
+
+        try:
+
+            for rule in self.installedrules:
+                if ruleid == rule.getrulenum():
+                    auditonly = rule.getauditonly()
+
+        except Exception as err:
+            self.logger.log(LogPriority.DEBUG, str(err))
+            return False
+        return auditonly
+
     def displaylastrun(self):
         """
         Returns the contents of the log file by way of the logger object.
 
         @return string :
-        @author
+        @author: ???
         """
         return self.logger.displaylastrun()
 
@@ -962,7 +1103,7 @@ class Controller(Observable):
 
         @param object_ callingobject :
         @return  :
-        @author
+        @author: ???
         """
         pass
 
@@ -974,7 +1115,7 @@ class Controller(Observable):
         our PID.
 
         @return: void
-        @author: D. Kennel
+        @author: David Kennel
         """
         lockmessage = """
 !WARNING! Another copy of STONIX appears to be running!
@@ -1051,7 +1192,7 @@ ABORTING EXECUTION!"""
         Check that the installation of STONIX is safe from a security
         perspective. All files must only be writable by root.
 
-        @author: dkennel
+        @author: David Kennel
         @return: bool True if install passes checks
         """
         safe = True
@@ -1063,7 +1204,7 @@ ABORTING EXECUTION!"""
         exit.
 
         @return: void
-        @author: D. Kennel
+        @author: David Kennel
         """
 
         if os.path.exists(self.lockfile):
@@ -1079,7 +1220,7 @@ ABORTING EXECUTION!"""
         This method calls the prog_args instance to process the command line
         args and then jumps to the appropriate execution mode.
 
-        @author: R. Nielsen, D. Kennel
+        @author: R. Nielsen, David Kennel
         @return: void
         """
         self.environ.setverbosemode(self.prog_args.get_verbose())
@@ -1153,7 +1294,7 @@ ABORTING EXECUTION!"""
         is needed for users to be able to list rules available to run in module
         mode. The program will exit after this method is complete.
 
-        @author: D. Kennel
+        @author: David Kennel
         @return: void
         """
         rulelist = []
@@ -1176,7 +1317,7 @@ ABORTING EXECUTION!"""
         """
         This private method performs a cli run based on the passed flags.
 
-        @author: D. Kennel
+        @author: David Kennel
         @return: void
         """
         self.logger.log(LogPriority.DEBUG,

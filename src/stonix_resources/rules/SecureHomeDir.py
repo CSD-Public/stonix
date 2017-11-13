@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ Created on May 20, 2013
 @change: 04/21/2014 dkennel Updated CI invocation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/17 dkennel updated for new isApplicable
+@change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, readFile
@@ -53,8 +54,7 @@ class SecureHomeDir(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = False
-        self.helptext = '''Ensures that each user's home directory is not \
-group writeable or world readable'''
+        self.sethelptext()
         datatype = 'bool'
         key = 'SECUREHOME'
         instructions = '''To disable this rule set the value of SECUREHOME to \
@@ -64,10 +64,11 @@ False.'''
         self.guidance = ['NSA 2.3.4.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
 
         self.iditerator = 0
         self.cmdhelper = CommandHelper(self.logger)
+        self.sethelptext()
 
 ###############################################################################
 
@@ -141,7 +142,10 @@ False.'''
 
                 for user in users:
                     templist = []
-                    currpwd = pwd.getpwnam(user)
+                    try:
+                        currpwd = pwd.getpwnam(user)
+                    except KeyError:
+                        continue
 
                     try:
 
@@ -379,7 +383,7 @@ correct format as of the line: " + line + "\n"
                                 break
 
         else:
-            user = os.getlogin()
+            user = pwd.getpwuid(os.getuid())[ 0 ]
             output = os.listdir(homebase)
             for line in output:
                 #the current user has a home directory!

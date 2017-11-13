@@ -24,31 +24,34 @@
 Created on Sep 19, 2012
 
 @author: dkennel
+@change: 2017/10/11 - rsn - Switching to service helper two
 '''
 import subprocess
 import re
 from logdispatcher import LogPriority
+from ServiceHelperTemplate import ServiceHelperTemplate
 
-class SHsvcadm(object):
+
+class SHsvcadm(ServiceHelperTemplate):
     '''
     SHsvcadm is the Service Helper for systems using the svcadm command to
     configure services. (Solaris)
     '''
 
-
     def __init__(self, environment, logdispatcher):
         '''
         Constructor
         '''
+        super(SHsvcadm, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/usr/sbin/svcadm '
         self.svc = '/usr/bin/svcs '
-        
-    def disableservice(self, service):
+
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
-        
+
         @param string: Name of the service to be disabled
         @return: Bool indicating success status
         '''
@@ -63,13 +66,13 @@ class SHsvcadm(object):
             confsuccess = False
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.disable ' + service + str(confsuccess))
-        return confsuccess        
-    
-    def enableservice(self, service):
+        return confsuccess
+
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
-        
+
         @param string: Name of the service to be enabled
         @return: Bool indicating success status
         '''
@@ -85,12 +88,12 @@ class SHsvcadm(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.enable ' + service + str(confsuccess))
         return confsuccess
-    
-    def auditservice(self, service):
+
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
-        
+
         @param string: Name of the service to audit
         @return: Bool, True if the service is configured to run
         '''
@@ -109,15 +112,15 @@ class SHsvcadm(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.audit ' + service + str(running))
         return running
-    
-    def isrunning(self, service):
+
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
-        
+
         Like BSD this fails the unittest but works IRL.
-        
+
         @param sting: Name of the service to check
         @return: bool, True if the service is already running
         '''
@@ -135,14 +138,14 @@ class SHsvcadm(object):
                     running = True
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.isrunning ' + service + str(running))
-        return running        
-    
-    def reloadservice(self, service):
+        return running
+
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
-        
+
         @param string: Name of the service to reload
         @return: bool indicating success status
         '''
@@ -159,11 +162,11 @@ class SHsvcadm(object):
                 return False
             else:
                 return True
-            
-    def listservices(self):
+
+    def listServices(self, **kwargs):
         '''
         Return a list containing strings that are service names.
-        
+
         @return: list
         '''
         self.logdispatcher.log(LogPriority.DEBUG,

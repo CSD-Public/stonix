@@ -27,8 +27,12 @@ Created on 04/29/2012
 
 @author: ekkehard
 @change: 2015/10/15 eball Refactored KVEditor unit test to KVADefault test
-'''
+@change: roy - adding sys.path.append for both test framework and individual
+               test runs.'''
 import unittest
+import sys
+
+sys.path.append("../../../..")
 import src.stonix_resources.KVEditorStonix as KVEditorStonix
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher

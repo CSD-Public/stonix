@@ -29,7 +29,9 @@ Created on Apr 5, 2013
 import KVADefault
 import KVAConf
 import KVATaggedConf
+import KVAProfiles
 import os
+from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 
 
@@ -44,20 +46,20 @@ class KVEditor(object):
     not run commit until all'''
 
     def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
-                 configType=""):
+                 configType="", output=""):
         '''
         KVEditor constructor
         @param stchlgr: StateChgLogger object
         @param logger: logger object
         @param kvtype: Type of key-value file.
-                       Valid values: "tagconf", "conf", "defaults"
+                       Valid values: "tagconf", "conf", "defaults", "profiles"
         @param path: Path to key-value file
         @param tmpPath: Path to temp file for key-value list
         @param data: Dict of key-value data
         @param intent: "present" or "notpresent"
         @param configType: Specify how the config options are separated.
                            Valid values: "space", "openeq", "closedeq"
-        @return: True if kvtype is valid
+        @param output: Output of profiler command, used only by KVAProfiles
         '''
         self.kvtype = kvtype
         self.path = path
@@ -65,6 +67,7 @@ class KVEditor(object):
         self.logger = logger
         self.configType = configType
         self.data = data
+        self.output = output
         self.detailedresults = ""
         self.missing = []
         self.fixables = {}
@@ -89,6 +92,8 @@ class KVEditor(object):
         elif self.kvtype == "defaults":
             self.editor = KVADefault.KVADefault(self.path, self.logger,
                                                 self.data)
+        elif self.kvtype == "profiles":
+            self.editor = KVAProfiles.KVAProfiles(self.logger, self.path)
         else:
             self.detailedresults = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
@@ -134,9 +139,8 @@ class KVEditor(object):
 
     def getPath(self):
         if not os.path.exists(self.path):
-            self.detailedresults = "File path does not exist"
-            self.logger.log(LogPriority.INFO,
-                            ["KVEditor", self.detailedresults])
+            debug = "File path does not exist\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
         else:
             return self.path
@@ -162,6 +166,7 @@ class KVEditor(object):
 
     def validate(self):
         try:
+            status = False
             if self.kvtype == "defaults":
                 status = self.validateDefaults()
             elif self.kvtype == "plist":
@@ -170,8 +175,13 @@ class KVEditor(object):
                 status = self.validateConf()
             elif self.kvtype == "tagconf":
                 status = self.validateTag()
+            elif self.kvtype == "profiles":
+                status = self.validateProfiles()
             else:
                 status = "invalid"
+            debug = "KVEditor is returning " + str(status) + " back to " + \
+                "KVEditorStonix.report()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return status
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -180,6 +190,7 @@ class KVEditor(object):
 
     def update(self):
         try:
+            status = False
             if self.kvtype == "defaults":
                 status = self.updateDefaults()
             elif self.kvtype == "plist":
@@ -188,8 +199,13 @@ class KVEditor(object):
                 status = self.updateConf()
             elif self.kvtype == "tagconf":
                 status = self.updateTag()
+            elif self.kvtype == "profiles":
+                status = self.updateProfiles()
             else:
-                return False
+                status = False
+            debug = "KVEditor is returning " + str(status) + " back to " + \
+                "KVEditorStonix.fix()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return status
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -209,8 +225,14 @@ class KVEditor(object):
 
     def updateDefaults(self):
         if self.editor.update():
+            debug = "KVEditor.updateDefaults() is returning True to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
         else:
+            debug = "KVEditor.updateDefaults() is returning False to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 
     def checkDefaults(self, data):
@@ -236,7 +258,9 @@ class KVEditor(object):
         if self.intent == "present":
             for k, v in self.data.iteritems():
                 retval = self.editor.validate(k, v)
-                if isinstance(retval, list):
+                if retval == "invalid":
+                    validate = "invalid"
+                elif isinstance(retval, list):
                     self.fixables[k] = retval
                     validate = False
                 elif not retval:
@@ -245,18 +269,38 @@ class KVEditor(object):
         if self.intent == "notpresent":
             for k, v in self.data.iteritems():
                 retval = self.editor.validate(k, v)
-                if isinstance(retval, list):
+                if retval == "invalid":
+                    validate = "invalid"
+                elif isinstance(retval, list):
                     self.removeables[k] = retval
                     validate = False
                 elif retval is True:
                     validate = False
                     self.removeables[k] = v
+        if validate == "invalid":
+            debug = "KVEditor.validateConf() is returning invalid to " + \
+                "KVEditor.validate()\n"
+        elif validate:
+            debug = "KVEditor.validateConf() is returning True to " + \
+                "KVEditor.validate()\n"
+        else:
+            debug = "KVEditor.validateConf() is returning False to " + \
+                "KVEditor.validate()\n"
+        self.logger.log(LogPriority.DEBUG, debug)
         return validate
 
     def updateConf(self):
         if self.fixables or self.removeables:
             if self.editor.update(self.fixables, self.removeables):
+                debug = "KVEditor.updateConf() is returning True to " + \
+                    "KVEditor.update()\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 return True
+            else:
+                debug = "KVEditor.updateConf() is returning False to " + \
+                    "KVEditor.update()\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
 
     def checkConf(self):
         if isinstance(self.data, dict):
@@ -266,7 +310,6 @@ class KVEditor(object):
 
     def validateTag(self):
         validate = True
-        self.fixables = {}
         keyvals = {}
         if not self.checkTag():
             return False
@@ -274,23 +317,41 @@ class KVEditor(object):
             for tag in self.data:
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
-                    return "invalid"
-                elif keyvals:
+                    validate = "invalid"
+                elif isinstance(keyvals, dict):
                     self.fixables[tag] = keyvals
                     validate = False
         if self.intent == "notpresent":
             for tag in self.data:
                 keyvals = self.editor.getValue(tag, self.data[tag])
                 if keyvals == "invalid":
-                    return "invalid"
-                elif keyvals:
+                    validate = "invalid"
+                elif isinstance(keyvals, dict):
                     self.removeables[tag] = keyvals
                     validate = False
+        if validate == "invalid":
+            debug = "KVEditor.validateTag() is returning invalid to " + \
+                "KVEditor.validate()\n"
+        elif validate:
+            debug = "KVEditor.validateTag() is returning True to " + \
+                "KVEditor.validate()\n"
+        else:
+            debug = "KVEditor.validateTag() is returning False to " + \
+                "KVEditor.validate()\n"
+        self.logger.log(LogPriority.DEBUG, debug)
         return validate
 
     def updateTag(self):
         if self.editor.setValue(self.fixables, self.removeables):
+            debug = "KVEditor.updateTag() is returning True to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return True
+        else:
+            debug = "KVEditor.updateTag() is returning False to " + \
+                "KVEditor.update()\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
 
     def checkTag(self):
         if isinstance(self.data, dict):
@@ -301,8 +362,55 @@ class KVEditor(object):
         else:
             return False
 
+    def validateProfiles(self):
+        '''
+        @since: 3/10/2016
+        @author: dwalker
+        @var self.data: A dictionary in the form of {k: {v: ["numberValue",
+                                                             "datatype",
+                                                             "acceptableDeviation"(optional)],
+                                                        v: ["", "", ""],
+                                                        v: ["", "", ""],
+                                                        .
+                                                        .
+                                                        .}}
+        @var: k: The profile sub-identifier e.g.
+            com.apple.mobiledevice.passwordpolicy
+        @var v: The profile data key-value pairs in a dictionary e.g.
+            allowSimple that will appear in the output of the system_profiler
+            command within the first opening brace after the profile
+            sub-identifier.  v also contains an associated list containing:
+            [a,b,c]
+            a) the value on the other side of the = sign
+            b) whether that value is an integer(int) or a boolean(bool)
+            c) (optional) whether the value present after the = sign(a),
+                if an int, can be lower(less) or higher(more) in order to
+                detect and represent stringency (see self.data description
+                above).
+        @return: Value returned from validate method in factory sub-class
+        @rtype: bool
+        '''
+        cmd = ["/usr/sbin/system_profiler", "SPConfigurationProfileDataType"]
+        self.ch = CommandHelper(self.logger)
+        if self.ch.executeCommand(cmd):
+            self.output = self.ch.getOutput()
+            retval = True
+            if self.output:
+                for k, v in self.data.iteritems():
+                    retval = self.editor.validate(self.output, k, v)
+                    if not retval:
+                        return False
+            else:
+                debug = "There are no profiles installed"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
+        return True
+
+    def updateProfiles(self):
+        retval = self.editor.update()
+        return retval
     def commit(self):
-        if self.kvtype == "defaults":
+        if self.kvtype == "defaults" or self.kvtype == "profiles":
             retval = self.editor.commit()
             return retval
         else:

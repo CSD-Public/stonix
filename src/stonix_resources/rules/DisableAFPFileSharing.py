@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -26,19 +26,41 @@ This method disables AFP file sharing on mac os x systems
 @author: Breen Malmberg
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text cleanup
+@change: 2016/07/07 ekkehard converted to RuleKVEditor
+@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
 from __future__ import absolute_import
+from ..ruleKVEditor import RuleKVEditor
 
-import traceback
-
-from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 
+import re
+import traceback
 
-class DisableAFPFileSharing(Rule):
+
+class DisableAFPFileSharing(RuleKVEditor):
     '''
+AFP & SMB start up and stop
+
+AFP Service
+Starting and Stopping AFP Service
+To start AFP service:
+$ sudo serveradmin start afp
+To stop AFP service:
+$ sudo serveradmin stop afp
+Checking AFP Service Status
+To see if AFP service is running:
+$ sudo serveradmin status afp
+To see complete AFP status:
+$ sudo serveradmin fullstatus afp
+Viewing AFP Settings
+To list all AFP service settings:
+$ sudo serveradmin settings afp
+To list a particular setting:
+$ sudo serveradmin settings afp:setting
     This method disables AFP file sharing on mac os x systems
 
     @author: Breen Malmberg
@@ -47,97 +69,163 @@ class DisableAFPFileSharing(Rule):
 ###############################################################################
 
     def __init__(self, config, environ, logger, statechglogger):
-
-        Rule.__init__(self, config, environ, logger, statechglogger)
+        RuleKVEditor.__init__(self, config, environ, logger,
+                              statechglogger)
         self.rulenumber = 164
         self.rulename = 'DisableAFPFileSharing'
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This method disables AFP file sharing on Mac OS X " + \
-            "systems."
-        self.rootrequired = True
         self.logger = logger
+        self.rootrequired = True
         self.guidance = ['CIS 1.4.14.3']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']}}
 
-        # set up configuration items for this rule
-        datatype = 'bool'
-        key = 'DisableAFPFileSharing'
-        instructions = 'To disable this rule, set the value of ' + \
-            'DisableAFPFileSharing to False'
-        default = True
-        self.ci = self.initCi(datatype, key, instructions, default)
+        if self.environ.getostype() == "Mac OS X":
+            self.addKVEditor("DisableAFPFileSharing",
+                             "defaults",
+                             "/System/Library/LaunchDaemons/com.apple.AppleFileServer",
+                             "",
+                             {"Disabled": ["1", "-bool True"]},
+                             "present",
+                             "",
+                             "Disable AFP File Sharing",
+                             None,
+                             False,
+                             {})
 
-    def report(self):
+        self.initObjs()
+        self.determineOrigAFPstatus()
+        self.sethelptext()
+
+    def initObjs(self):
         '''
-        report compliance status of the system with this rule
+        initialize any objects to be used by this class
 
-        @return: self.compliant
-        @rtype: boolean
+        @return: void
         @author: Breen Malmberg
         '''
 
-        self.compliant = True
-        self.detailedresults = ""
+        self.cmdhelper = CommandHelper(self.logger)
 
-        try:
+    def determineOrigAFPstatus(self):
+        '''
+        store the original operational state/status of
+        Apple File Server as a bool
+        '''
 
-            self.cmdhelper = CommandHelper(self.logger)
-            self.afpfile = '/System/Library/LaunchDaemons/com.apple.AppleFileServer.plist'
-            cmd = 'defaults read ' + self.afpfile + ' Disabled'
+        # default init
+        self.afporigstatus = False
 
-            self.cmdhelper.executeCommand(cmd)
-            output = self.cmdhelper.getOutputString()
-            if output.strip() != '1':
-                self.compliant = False
-                self.detailedresults += '\nAFP file server is not disabled'
+        # if version = 10.10.*, then use KVEditor and ignore the other code
+        if not re.search("10\.10.*", self.environ.getosver(), re.IGNORECASE):
 
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.compliant
-
-###############################################################################
+            getafpstatuscmd = "launchctl list com.apple.AppleFileServer"
+            self.cmdhelper.executeCommand(getafpstatuscmd)
+            retcode = self.cmdhelper.getReturnCode()
+            if retcode != 0:
+                errstr = self.cmdhelper.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errstr)
+            outputstr = self.cmdhelper.getOutputString()
+            if not re.search("Could not find", outputstr, re.IGNORECASE):
+                self.afporigstatus = True
 
     def fix(self):
         '''
-        run command to disable afp file sharing
+        disable Apple File Sharing service
 
         @return: success
-        @rtype: boolean
+        @rtype: bool
         @author: Breen Malmberg
         '''
 
-        self.detailedresults = ""
         success = True
 
         try:
 
-            cmd = 'defaults write ' + self.afpfile + ' Disabled -bool True'
-            self.cmdhelper.executeCommand(cmd)
-            errout = self.cmdhelper.getErrorString()
-
-            if errout:
-                success = False
+            # if version = 10.10.*, then use KVEditor and ignore the other code
+            if re.search("10\.10.*", self.environ.getosver(), re.IGNORECASE):
+                RuleKVEditor.fix(self)
             else:
-                event = {'eventtype': 'commandstring',
-                         'command': 'defaults remove ' + self.afpfile + ' Disabled'}
-                myid = '0164001'
-                self.statechglogger.recordchgevent(myid, event)
+
+                clientfixpath1 = "/System/Library/LaunchDaemons/com.apple.AppleFileServer"
+                clientfixtool = "launchctl"
+                clientfixcmd1 = clientfixtool + " unload " + clientfixpath1
+
+                # the below 'path' is actually an alias
+                # which is understood by launchctl.
+                # in mac terminology, this is called a 'target'
+                clientfixpath2 = "system/com.apple.AppleFileServer"
+                clientfixcmd2 = clientfixtool + " disable " + clientfixpath2
+
+                self.cmdhelper.executeCommand(clientfixcmd1)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
+                    errstr = self.cmdhelper.getErrorString()
+                    self.logger.log(LogPriority.DEBUG, errstr)
+                    success = False
+                self.cmdhelper.executeCommand(clientfixcmd2)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode != 0:
+                    errstr = self.cmdhelper.getErrorString()
+                    self.logger.log(LogPriority.DEBUG, errstr)
+                    success = False
+
+            if success:
+                self.detailedresults += "\nApple File Server has successfully been disabled."
+
+            self.formatDetailedResults('fix', success, self.detailedresults)
+            return success
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+
+    def undo(self):
+        '''
+        restore Apple File Sharing service
+        to its original state
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        success = True
+
+        try:
+
+            # if version = 10.10.*, then use KVEditor and ignore the other code
+            if re.search("10\.10.*", self.environ.getosver(), re.IGNORECASE):
+                RuleKVEditor.undo(self)
+            else:
+
+                if not self.afporigstatus:
+                    undocmd1 = "launchctl enable system/com.apple.AppleFileServer"
+                    undocmd2 = "launchctl load /System/Library/LaunchDaemons/com.apple.AppleFileServer.plist"
+                    self.cmdhelper.executeCommand(undocmd1)
+                    retcode = self.cmdhelper.getReturnCode()
+                    if retcode != 0:
+                        success = False
+                        errstr = self.cmdhelper.getErrorString()
+                        self.logger.log(LogPriority.DEBUG, errstr)
+                    self.cmdhelper.executeCommand(undocmd2)
+                    retcode = self.cmdhelper.getReturnCode()
+                    if retcode != 0:
+                        success = False
+                        errstr = self.cmdhelper.getErrorString()
+                        self.logger.log(LogPriority.DEBUG, errstr)
+
+                if not success:
+                    self.detailedresults += "\nUndo failed to restore Apple File Sharing to its original state on this system."
+                else:
+                    self.detailedresults += "\nUndo has successfully restored Apple File Sharing to its original state on this system."
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            self.detailedresults = traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults('undo', success, self.detailedresults)
         return success

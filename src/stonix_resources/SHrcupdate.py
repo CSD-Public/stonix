@@ -29,31 +29,33 @@ import subprocess
 import re
 import os
 from logdispatcher import LogPriority
+from ServiceHelperTemplate import ServiceHelperTemplate
 
-class SHrcupdate(object):
+
+class SHrcupdate(ServiceHelperTemplate):
     '''
     SHrcupdate is the Service Helper for systems using the rcupdate command to
     configure services. (Gentoo & variants)
-    
+
     @author: dkennel
     '''
-
 
     def __init__(self, environment, logdispatcher):
         '''
         Constructor
         '''
+        super(SHrcupdate, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.cmd = '/sbin/rc-update '
         self.svc = '/etc/init.d/ '
         self.svclist = self.getsvclist()
-        
+
     def getsvclist(self):
         '''
         Returns the list of enabled services and the run level in which they are
         scheduled to run. This is the raw output of rc-update show.
-        
+
         @author: D. Kennel
         '''
         self.logdispatcher.log(LogPriority.DEBUG, 'SHrcupdate.getsvclist')
@@ -67,13 +69,13 @@ class SHrcupdate(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.getsvclist' + str(svclist))
         return svclist
-    
+
     def findrunlevel(self, service):
         '''
         Returns a string indicating the run level that the named service is
         configured to run at. If the service is not configured to run it will
         return None.
-        
+
         @param string: service name
         @return: string: runlevel
         @author: D. Kennel
@@ -91,11 +93,11 @@ class SHrcupdate(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.findrunlevel ' + service + ' ' + runlevel)
         return runlevel
-        
-    def disableservice(self, service):
+
+    def disableService(self, service, **kwargs):
         '''
         Disables the service and terminates it if it is running.
-        
+
         @param string: Name of the service to be disabled
         @return: Bool indicating success status
         '''
@@ -111,7 +113,7 @@ class SHrcupdate(object):
                               stderr=subprocess.PIPE)
         if ret != 0:
             confsuccess = False
-        if self.isrunning(service):
+        if self.isRunning(service):
             ret2 = subprocess.call(self.svc + service + ' stop',
                                    shell=True, close_fds=True,
                                    stdout=subprocess.PIPE,
@@ -123,13 +125,13 @@ class SHrcupdate(object):
         if confsuccess and svcoff:
             return True
         else:
-            return False        
-    
-    def enableservice(self, service):
+            return False
+
+    def enableService(self, service, **kwargs):
         '''
         Enables a service and starts it if it is not running as long as we are
         not in install mode
-        
+
         @param string: Name of the service to be enabled
         @return: Bool indicating success status
         '''
@@ -158,13 +160,13 @@ class SHrcupdate(object):
         if confsuccess and svcon:
             return True
         else:
-            return False 
-    
-    def auditservice(self, service):
+            return False
+
+    def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
-        
+
         @param string: Name of the service to audit
         @return: Bool, True if the service is configured to run
         '''
@@ -184,11 +186,11 @@ class SHrcupdate(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.auditservice ' + service + ' ' + str(running))
         return running
-    
-    def isrunning(self, service):
+
+    def isRunning(self, service, **kwargs):
         '''
         Check to see if a service is currently running. 
-        
+
         @param sting: Name of the service to check
         @return: bool, True if the service is already running
         '''
@@ -203,20 +205,20 @@ class SHrcupdate(object):
         # some services don't return any output (sysstat) so we call audit
         chk.poll()
         if len(message) == 0:
-            running = self.auditservice(service)
+            running = self.auditService(service)
         for line in message:
             if re.search('started', line):
                 running = True
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.isrunning ' + service + ' ' + str(running))
-        return running        
-    
-    def reloadservice(self, service):
+        return running
+
+    def reloadService(self, service, **kwargs):
         '''
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
-        
+
         @param string: Name of the service to reload
         @return: bool indicating success status
         '''
@@ -236,11 +238,11 @@ class SHrcupdate(object):
             self.logdispatcher.log(LogPriority.DEBUG,
                                    'SHrcupdate.reload ' + service + str(ret))
             return True
-            
-    def listservices(self):
+
+    def listServices(self, **kwargs):
         '''
         Return a list containing strings that are service names.
-        
+
         @return: list
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
