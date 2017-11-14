@@ -36,6 +36,7 @@ possible. Configure SNMP if necessary.
 @change: 2015/10/08 eball Help text cleanup
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -74,7 +75,7 @@ class SecureSNMP(Rule):
         self.guidance = ['NSA 3.20', 'CCE 4540-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         datatype = 'bool'
         key = 'DISABLESNMP'
         instructions = "If there is a mission-critical need for hosts at" + \

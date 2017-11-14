@@ -33,6 +33,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2016/09/09 eball Refactored reports and fixes to remove file creation
     from reports.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
@@ -59,7 +60,7 @@ class NoCoreDumps(Rule):
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         datatype = 'bool'
         key = 'NOCOREDUMPS'

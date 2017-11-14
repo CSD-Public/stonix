@@ -29,6 +29,7 @@ Test suite for the rule.py base class.
 @change: 2015/01/13 dkennel refactor of isApplicable() and associated test
 @change: 2016-02-10 roy adding sys.path.append for both test framework and 
                         individual test runs.
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @author: dkennel
 
 '''
@@ -216,19 +217,19 @@ class zzzTestFramework(unittest.TestCase):
             #self.to.applicable = {'type': 'brown', 'family': 'linux'}
             #self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
-                                  'os' :{'Mac OS X': ['10.9', '+']}}
+                                  'os' :{'Mac OS X': ['10.11', '+']}}
             self.failUnlessEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
-                                  'os' :{'Mac OS X': ['10.9', '+']}}
+                                  'os' :{'Mac OS X': ['10.11', '+']}}
             self.failUnlessEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Mac OS X': ['10.9', '+', '7.0']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
-                                  'os' :{'Mac OS X': ['10.10.10', '-']}}
+                                  'os' :{'Mac OS X': ['10.11.10', '-']}}
             self.failUnlessEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
-                                  'os' :{'Mac OS X': ['10.10.10', '-']}}
+                                  'os' :{'Mac OS X': ['10.11.10', '-']}}
             self.failUnlessEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Mac OS X': ['7.0', '-', '10.9']}}

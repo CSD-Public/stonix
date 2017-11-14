@@ -38,6 +38,7 @@ Install and configure warning banners, to be displayed at startup.
 @change: 2016/08/10 eball Added "dbus-launch" to gsettings commands, major PEP8
     cleanup.
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -84,7 +85,7 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         # init CIs
         datatype = 'bool'
         key = 'INSTALLBANNERS'
