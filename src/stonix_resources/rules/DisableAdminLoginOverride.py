@@ -30,6 +30,7 @@ locked session.
 @change: 2016/02/10 eball Update for El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 import os
@@ -50,7 +51,7 @@ class DisableAdminLoginOverride(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         # Configuration item instantiation
         datatype = "bool"

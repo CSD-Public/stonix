@@ -49,6 +49,7 @@ configuration changes to the avahi service
     to comply with CCE-RHEL7-CCE-TBD 2.5.2
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -97,7 +98,7 @@ class SecureMDNS(Rule):
                          'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)

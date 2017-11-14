@@ -43,6 +43,7 @@ Created on Jul 11, 2013
     for values that come back with "uint32 [int val]". Also added two single
     quotes to picture-uri value, since a blank value cannot be "set".
 @change: 2016/11/22 eball Changed gsettings times from 300 to 900.
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
@@ -72,7 +73,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.effectiveUserID = self.environ.geteuid()
         self.sethelptext()
         self.formatDetailedResults("initialize")

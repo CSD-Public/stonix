@@ -31,6 +31,7 @@ Created on May 31, 2016
 @change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
     desktop manager, SDDM.
 @change: 2017/10/23 rsn - removed unused service helper
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 
@@ -84,7 +85,7 @@ managers will not save work in progress when the logout occurs.
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.11.10']}}
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
 
