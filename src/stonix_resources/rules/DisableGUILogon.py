@@ -26,10 +26,11 @@ Created on 2015/07/01
 @author: Eric Ball
 @change: 2015/12/07 eball Added information about REMOVEX CI to help text
 @change: 2016/07/06 eball Separated fix into discrete methods
-@change: 2017/06/02 bgonz12 Changed a conditional in reportUbuntu to search for
+@change: 2017/06/02 bgonz12 - Change a conditional in reportUbuntu to search for
                     "manual" using regex instead of direct comparison
 @change 2017/08/28 rsn Fixing to use new help text methods
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2017/11/14 bgonz12 - Fix removeX dependency issue for deb systems
 '''
 from __future__ import absolute_import
 
@@ -441,9 +442,12 @@ class DisableGUILogon(Rule):
                    "xinit*"]
             self.ch.executeCommand(cmd)
         elif re.search("debian|ubuntu", self.myos):
-            cmd = ["apt-get", "purge", "-y", "--force-yes", "unity.*",
-                   "xserver-xorg-core", "xserver-xorg", "lightdm.*", "libx11-data"]
-            self.ch.executeCommand(cmd)
+            xpkgs = ["unity.*", "xserver-xorg-video-ati",
+                     "xserver-xorg-input-synaptics",
+                     "xserver-xorg-input-wacom", "xserver-xorg-core",
+                     "xserver-xorg", "lightdm.*", "libx11-data"]
+            for xpkg in xpkgs:
+                self.ph.remove(xpkg)
         elif re.search("fedora", self.myos):
             # Fedora does not use the same group packages as other
             # RHEL-based OSs. Removing this package will remove the X
