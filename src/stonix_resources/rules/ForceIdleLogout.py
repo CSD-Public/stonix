@@ -32,6 +32,7 @@ Created on May 31, 2016
     desktop manager, SDDM.
 @change: 2017/10/23 rsn - removed unused service helper
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2017/11/14 bgonz12 - Changed rule to only run in root space
 '''
 from __future__ import absolute_import
 
@@ -82,7 +83,7 @@ to be enabled below for environments that require it. The idle time before \
 logout may also be customized. N.B. Please note that most Linux window \
 managers will not save work in progress when the logout occurs.
 '''
-        self.rootrequired = False
+        self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.11.10']}}
