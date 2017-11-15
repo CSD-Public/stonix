@@ -44,6 +44,8 @@ Created on Jul 11, 2013
     quotes to picture-uri value, since a blank value cannot be "set".
 @change: 2016/11/22 eball Changed gsettings times from 300 to 900.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change 2017/11/15 bgonz12 - changed gsettings to unlock the dconf
+    stonix-settings before trying to configure them
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
@@ -759,6 +761,22 @@ for this portion of the rule\n"
                             success = False
         else:
             gsettings = "/usr/bin/gsettings"
+            if os.path.exists(self.stonixsettings):
+                tmpfile = self.stonixsettings + ".tmp"
+                if not writeFile(tmpfile, "", self.logger):
+                    self.rulesuccess = False
+                    self.detailedresults += "Unabled to unlock settings in" + \
+                        " stonix-settings file\n"
+                    self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                    return False
+                else:
+                    os.rename(tmpfile, self.stonixsettings)
+                    os.chown(self.stonixsettings, 0, 0)
+                    os.chmod(self.stonixsettings, 493)
+                    resetsecon(self.stonixsettings)
+                    cmd = "/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
             for cmd in self.fixes:
                 setCmd = re.sub("get", "set", cmd, 1)
                 setCmd += " " + self.fixes[cmd]
@@ -767,7 +785,7 @@ for this portion of the rule\n"
                 if self.cmdhelper.getReturnCode() != 0:
                     info += "Unable to set value for " + setCmd
                     success = False
-            if not os.path.exists("/etc/dconf/db/local.d/locks/stonix-settings.conf"):
+            if not os.path.exists(self.stonixsettings):
                 if not createFile(self.stonixsettings, self.logger):
                     self.rulesuccess = False
                     self.detailedresults += "Unabled to create stonix-settings file\n"
@@ -788,6 +806,8 @@ for this portion of the rule\n"
                     os.chown(self.stonixsettings, 0, 0)
                     os.chmod(self.stonixsettings, 493)
                     resetsecon(self.stonixsettings)
+                    cmd = "/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
         self.detailedresults += info
         return success
 
