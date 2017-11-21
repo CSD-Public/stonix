@@ -457,7 +457,7 @@ class ServiceHelper(object):
                     enabledSingle = True
 
                 if self.isHybrid:
-                    if self.secondary.enableService(self.getService, **kwargs):
+                    if self.secondary.enableService(self.getService(), **kwargs):
                         enabledSecondary = True
 
             enabledSuccess = enabledSingle or enabledSecondary
