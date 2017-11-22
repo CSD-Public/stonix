@@ -34,6 +34,7 @@ are vulnerable to exploit and monitoring.
 @change: 2017/06/16 Breen Malmberg Added ARD_AllLocalUsersPrivs kveditor
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 Breen Malmberg - Added self.sethelptext()
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -61,7 +62,7 @@ class ConfigureRemoteManagement(RuleKVEditor):
         self.guidance = ['CIS 2.4.9', 'Apple HT201710']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("ARD_AllLocalUsers",

@@ -32,6 +32,7 @@ likely to compromise the security of the Mac.
 @change: 2015/09/16 eball Refactored rule to update active authorization
                           settings rather than the typically-unused plist
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -71,7 +72,7 @@ class ReqPassSysPref(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         self.prefslist = ["system.preferences",
                           "system.preferences.accessibility",

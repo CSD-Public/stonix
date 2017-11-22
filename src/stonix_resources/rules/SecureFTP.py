@@ -35,6 +35,7 @@ the Fix method.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/04/26 ekkehard Results Formatting
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -80,7 +81,7 @@ of users allowed to access ftp and set the default umask for ftp users.
                          'CCE 4549-2', 'CCE 4554-2', 'CCE 4443-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         # init CI(s)
         datatype = 'bool'

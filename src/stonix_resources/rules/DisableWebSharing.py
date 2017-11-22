@@ -33,6 +33,7 @@ well-managed web server is recommended.
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 @change: 2017/10/23 rsn - Changing for new service helper interface
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -67,7 +68,7 @@ well-managed web server is recommended.
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         # set up CIs
         datatype = 'bool'

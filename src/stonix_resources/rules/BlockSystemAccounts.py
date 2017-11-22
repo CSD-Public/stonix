@@ -43,6 +43,7 @@ mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -82,7 +83,7 @@ shells set the value of this to False, or No.'''
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.ci = self.initCi(datatype, key, instructions,
                                                default)
         self.guidance = ['CIS', 'NSA(2.3.1.4)', 'cce-3987-5', '4525-2',
