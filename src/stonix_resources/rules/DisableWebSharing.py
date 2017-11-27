@@ -59,8 +59,6 @@ well-managed web server is recommended.
         Constructor
         '''
         Rule.__init__(self, config, environ, logger, statechglogger)
-        self.logger = logger
-        self.environ = environ
         self.rulenumber = 208
         self.rulename = 'DisableWebSharing'
         self.formatDetailedResults("initialize")
