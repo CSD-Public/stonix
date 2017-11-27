@@ -19,7 +19,7 @@ class ManageUser(object):
 
     #----------------------------------------------------------------------
 
-    def __init__(self, logger=False):
+    def __init__(self, logger):
         """
         Class initialization method
         """
