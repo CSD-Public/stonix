@@ -61,6 +61,7 @@ well-managed web server is recommended.
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.rulenumber = 208
         self.rulename = 'DisableWebSharing'
+        self.logger = logger
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.compliant = False
