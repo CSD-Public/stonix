@@ -63,8 +63,8 @@ class MacBuildLib(object):
         self.pypaths = pypaths
         self.logger = logger
         self.rw = RunWith(logger)
-        self.manage_user = ManageUser(self.logger)
-        self.manage_keychain = ManageKeychain(self.logger)
+        self.manage_user = ManageUser(logger)
+        self.manage_keychain = ManageKeychain(logger)
 
     def regexReplace(self, filename, findPattern, replacePattern, outputFile="",
                      backupname=""):
@@ -287,6 +287,37 @@ class MacBuildLib(object):
             pl.writePlist(mypl, targetFile)
         except Exception:
             raise
+
+    def changeViewControllerTitle(self, titleString=""):
+        '''
+        Change the window title string in the ViewController.swift file
+
+        @param: titleString - the string to use for the window title.
+
+        @note: Window title string should be something like "stonix4mac 0.9.14.2"
+               where 0.9.14.2 is the build version for stonix.
+
+        @author: Roy Nielsen
+        '''
+        success = False
+        try:
+            with open("stonix4mac/stonix4mac/ViewController.swift") as viewController:
+                fileContent = viewController.readlines()
+                viewController.close()
+            newFileContent = []
+            for line in fileContent:
+                if re.search("self\.view\.window\?\.title", line):
+                    line = re.sub("\s+self\.view\.window\?\.title\s*=\s*.*$", "        self.view.window?.title = \"" + str(titleString) + "\"", line)
+                    self.logger.log(lp.DEBUG, "Wrote title to line: \"" + str(line) + "\"")
+                newFileContent.append(line)
+
+            with open("stonix4mac/stonix4mac/ViewController.swift", "w") as viewController:
+                for line in newFileContent:
+                    viewController.write(line)
+                viewController.close()
+        except Exception, err:
+            message = "error attempting to fix title..." + traceback.format_exc()
+            self.logger.log(lp.DEBUG, message)
 
     def getHiddenImports(self, buildRoot='', treeRoot=''):
         '''

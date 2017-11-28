@@ -23,7 +23,7 @@ class ViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        self.view.window!.title = "stonix4mac"
+        self.view.window?.title = "stonix4mac 1001"
     }
     
     @IBAction func userAction(_ sender: NSButton) {
@@ -73,4 +73,5 @@ class ViewController: NSViewController {
     }
     
 }
+
 
