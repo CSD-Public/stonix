@@ -78,6 +78,7 @@ class SSHTimeout(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+        self.ph = Pkghelper(self.logger, self.environ)
 
     def report(self):
         '''SSHTimeout.report(): produce a report on whether or not a valid
@@ -101,7 +102,6 @@ class SSHTimeout(Rule):
                 self.path = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
 
-                self.ph = Pkghelper(self.logger, self.environ)
                 if self.ph.manager == "zypper":
                     openssh = "openssh"
                 else:
