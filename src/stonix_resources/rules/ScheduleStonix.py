@@ -39,6 +39,7 @@ per day
 @change 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
         within ServiceHelper and SHlaunchd)
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2017/11/27 Breen Malmberg removed print statements
 '''
 
 from __future__ import absolute_import
@@ -607,8 +608,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         @author: Breen Malmberg
         '''
 
-        print "\nENTERING FIXLINUX()\n"
-
         retval = True
         legacystonixcron = '/etc/legacy_stonix_cron'
         userscriptdir = '/etc/profile.d/user-stonix.py'
@@ -643,8 +642,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             os.chown(self.cronfilelocation, 0, 0)
             os.chmod(self.cronfilelocation, 0644)
         else:
-
-            print "\nCRON FILE IS: " + str(self.cronfilelocation) + "\n"
 
             contents = self.getFileContents(self.cronfilelocation)
     
