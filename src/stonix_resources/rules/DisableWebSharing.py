@@ -61,7 +61,6 @@ well-managed web server is recommended.
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.rulenumber = 208
         self.rulename = 'DisableWebSharing'
-        self.logger = logger
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.compliant = False
@@ -69,7 +68,7 @@ well-managed web server is recommended.
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
-
+        self.logger = logger
         # set up CIs
         datatype = 'bool'
         key = 'DISABLEWEBSHARING'
@@ -80,6 +79,8 @@ well-managed web server is recommended.
         # set up class var's
         self.maclongname = '/System/Library/LaunchDaemons/org.apache.httpd.plist'
         self.macshortname = 'org.apache.httpd'
+        self.svchelper = ServiceHelper(self.environ, self.logger)
+        self.cmhelper = CommandHelper(self.logger)
         self.sethelptext()
 
     def report(self):
@@ -96,12 +97,13 @@ well-managed web server is recommended.
         self.compliant = False
 
         # init servicehelper object
-        self.svchelper = ServiceHelper(self.environ, self.logger)
-        self.cmhelper = CommandHelper(self.logger)
-
         if not os.path.exists(self.maclongname):
-            self.detailedresults += '\norg.apache.httpd.plist does not exist'
-            return False
+            self.compliant = True
+            self.detailedresults += '\norg.apache.httpd.plist does not exist.\nThis is fine'
+            self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            return self.compliant
 
         try:
 
@@ -224,3 +226,5 @@ well-managed web server is recommended.
         afterfixsuccessful = True
         afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
         return afterfixsuccessful
+
+
