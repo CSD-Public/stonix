@@ -102,7 +102,7 @@ class SecureNFS(Rule):
                 data1 = {"nfs.lockd.port": "",
                          "nfs.lockd.tcp": "1",
                          "nfs.lockd.udp": "1"}
-                if not self.sh.auditservice('/System/Library/LaunchDaemons/' +
+                if not self.sh.auditService('/System/Library/LaunchDaemons/' +
                                             'com.apple.nfsd.plist',
                                             'com.apple.nfsd'):
                     self.compliant = True
