@@ -148,7 +148,7 @@ class RemoveSTOM(Rule):
             compliant = True
 # See if any STOM Services Are Running
             for currentservicename, currentservice in self.services.items():
-                if self.sh.auditservice(currentservice, currentservicename):
+                if self.sh.auditService(currentservice, serviceTemplate=currentservicename):
                     if serviceresults == "":
                         serviceresults = "('" + str(currentservicename) + \
                         "','" + str(currentservice) + "')"
@@ -156,12 +156,12 @@ class RemoveSTOM(Rule):
                         serviceresults = serviceresults + ", ('" + \
                         str(currentservicename) + "','" + \
                         str(currentservice) + "')"
-                    message = "Service: auditservice('" + currentservice + \
+                    message = "Service: auditService('" + currentservice + \
                     "','" + currentservicename + "') = True!"
                     self.logdispatch.log(LogPriority.DEBUG, message)
                     compliant = False
                 else:
-                    message = "Service: auditservice('" + currentservice + \
+                    message = "Service: auditService('" + currentservice + \
                     "','" + currentservicename + "') = False!"
                     self.logdispatch.log(LogPriority.DEBUG, message)
 # See if any STOM Files are present
@@ -217,12 +217,12 @@ class RemoveSTOM(Rule):
 # See if any STOM Services Are Running disable them
             if fixed:
                 for currentservicename, currentservice in self.services.items():
-                    if self.sh.auditservice(currentservice, currentservicename):
-                        message = "Service: auditservice('" + currentservice + \
+                    if self.sh.auditService(currentservice, serviceTemplate=currentservicename):
+                        message = "Service: auditService('" + currentservice + \
                         "','" + currentservicename + "') = True!"
                         self.logdispatch.log(LogPriority.INFO, message)
-                        servicesDisabledSuccess = self.sh.disableservice(currentservice,
-                                                                         currentservicename)
+                        servicesDisabledSuccess = self.sh.disableService(currentservice,
+                                                                         serviceTemplate=currentservicename)
                         if not servicesDisabledSuccess:
                             servicesNotDisabled = currentservicename
                             break
@@ -235,7 +235,7 @@ class RemoveSTOM(Rule):
                                 currentservice + "','" + currentservicename + \
                                 "')"
                     else:
-                        message = "Service: auditservice('" + \
+                        message = "Service: auditService('" + \
                         currentservice + "','" + currentservicename + \
                         "') = False!"
                         self.logdispatch.log(LogPriority.DEBUG, message)
