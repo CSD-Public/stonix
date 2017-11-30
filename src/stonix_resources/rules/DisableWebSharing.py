@@ -106,7 +106,7 @@ well-managed web server is recommended.
             return self.compliant
 
         try:
-
+            self.macServiceTarget = "system/" + self.macshortname 
             if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
 
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):

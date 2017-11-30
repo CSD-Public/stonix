@@ -101,6 +101,20 @@ class ServiceHelperTemplate(object):
 
     #----------------------------------------------------------------------
 
+    def isSaneFilePath(self, filepath):
+        """
+        Check for a good file path in the passed in string.
+        
+        @author: Roy Nielsen
+        """
+        sane = False
+        if isinstance(filepath, basestring):
+            if re.match("^[A-Za-z/][A-Za-z0-9/_\-]*", filepath):
+                sane = True
+        return sane
+
+    #----------------------------------------------------------------------
+
     def setService(self, service, **kwargs):
         '''
         Update the name of the service being worked with.

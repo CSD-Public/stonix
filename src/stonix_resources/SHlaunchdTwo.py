@@ -28,12 +28,15 @@ Second generation service helper.
 @author: rsn
 '''
 import os
+import pwd
 import time
 import types
+
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
-from stonixutilityfunctions import reportStack
+from stonixutilityfunctions import reportStack, findUserLoggedIn
+
 
 class SHlaunchdTwo(ServiceHelperTemplate):
     '''
@@ -98,6 +101,42 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         '''
         return self.lCtl
 
+    def findInformationFromFileName(self, fullFilePath):
+        '''
+        '''
+        domainInfo = {}
+        serviceName = ""
+        if self.isSaneFileName(fullFilePath):
+            # last item in the file path
+            filename = fillFilePath("/")[-1]
+            # remove the file extension of the file name
+            serviceName = filename.split(".")[:-1]
+            
+        if serviceName:
+            domainInfo['serviceName'] = serviceName
+        else:
+            return domainInfo
+        
+        domain = ""
+        if 'LaunchAgent' in filename.split("/"):
+            domain = 'gui'
+        elif 'LaunchDaemon' in filename.split("/"):
+            domain = 'system'
+        else:
+            return {}
+        
+        if domain in ['gui', 'user']:
+            self.userLoggedIn = findUserLoggedIn()
+            self.userLoggedInUid = ""
+            if userLoggedIn:
+                self.userLoggedInUid = pwd.getpwnam(self.userLoggedIn).pw_uid
+            domain += "/" + str(userLoggedInUid)
+            
+        domainInfo['domain'] = domain
+        domainInfo['domainTarget'] = domain + "/" + serviceName
+        
+        return domainInfo
+            
     #----------------------------------------------------------------------
     # Standard interface to the service helper.
     #----------------------------------------------------------------------
@@ -135,7 +174,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         target = self.targetValid(**kwargs)
         if target:
-            successTwo = self.lCtl.bootOut(target, service)
+            domainInfo = self.findInformationFromFileName(service)
+            successTwo = self.lCtl.bootOut(domainInfo[domain], service)
             successOne = self.lCtl.disable(target)
 
             if successOne and successTwo:
@@ -185,16 +225,18 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             else:
                 options = kwargs.get('options')
     
-            successOne = self.lCtl.enable(target)
-            time.sleep(3)
-            successTwo = self.lCtl.bootStrap(service, target)
-            #successThree = self.lCtl.kickStart(serviceTarget, options)
-    
-            if successOne and successTwo: # and successTwo and successThree:
-                success = True
-            else:
-                #raise ValueError("Problem enabling service: " + serviceTarget + " one=" + str(successOne) + ", two=" + str(successTwo) + " three: " + str(successThree))
-                raise ValueError("Problem enabling service: " + target + " one=" + str(successOne) + ", two=" + str(successTwo))
+            domainInfo = self.findInformationFromFileName(service)
+            if domainInfo:
+                successOne = self.lCtl.enable(domainInfo['domainTarget'])
+                time.sleep(3)
+                successTwo = self.lCtl.bootStrap(service, domainInfo[domainTarget])
+                #successThree = self.lCtl.kickStart(serviceTarget, options)
+        
+                if successOne and successTwo: # and successTwo and successThree:
+                    success = True
+                else:
+                    #raise ValueError("Problem enabling service: " + serviceTarget + " one=" + str(successOne) + ", two=" + str(successTwo) + " three: " + str(successThree))
+                    raise ValueError("Problem enabling service: " + target + " one=" + str(successOne) + ", two=" + str(successTwo))
 
         return success
 
@@ -234,9 +276,15 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         success = False
 
         target = self.targetValid(**kwargs)
-        if target:
-            success, data = self.lCtl.printTarget(target)
-
+        domainInfo = self.findInformationFromFileName(service)
+        if target and domainInfo:
+            # Check file permissions of the service
+            statInfo = os.stat(service)
+            owner = statInfo.st_uid
+            group = statInfo.st_gid
+            if bool(statInfo.st_mode & 0o644):
+                success = True
+                
         return success
 
     #----------------------------------------------------------------------

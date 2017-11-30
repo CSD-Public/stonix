@@ -148,12 +148,12 @@ class ServiceHelper(object):
                 self.svchelper = SHrcconf.SHrcconf(self.environ,
                                                    self.logdispatcher)
             elif islaunchd:
-                if re.match("10.11", self.environ.getosver()):
-                     self.svchelper = SHlaunchd.SHlaunchd(self.environ,
+                #if re.match("10.11", self.environ.getosver()):
+                self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
-                else:
-                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
-                                                     self.logdispatcher)
+                #else:
+                #     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
+                #                                     self.logdispatcher)
             else:
                 raise RuntimeError("Could not identify service management " +
                                    "programs")
