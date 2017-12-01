@@ -107,11 +107,11 @@ class SSHTimeout(Rule):
                 else:
                     openssh = "openssh-server"
 
-            if not self.ph.check(openssh):
-                self.compliant = True
-                self.detailedresults += "Package " + openssh + " is not installed.\nNothing to configure."
-                self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                return self.compliant
+                if not self.ph.check(openssh):
+                    self.compliant = True
+                    self.detailedresults += "Package " + openssh + " is not installed.\nNothing to configure."
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    return self.compliant
 
             self.ssh = {"ClientAliveInterval": str(timeout),
                         "ClientAliveCountMax": "0"}
