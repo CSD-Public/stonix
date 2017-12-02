@@ -546,6 +546,7 @@ class networksetup():
                 else:
                     networktype = "unknown"
                 self.ns[servicename] = {"name": servicename,
+                                        "hardware port":  servicename,
                                         "enabled": networkenabled,
                                         "type": networktype}
 # determine network type
@@ -561,9 +562,9 @@ class networksetup():
                         if len(itemarray) > 1:
                             self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
 # update dictionary entry for network
-                    self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype, hardwareport): (" + \
+                    self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype): (" + \
                                          str(servicename) + ", " + str(networkenabled) + ", " + \
-                                         str(networktype) + "," + str(hardwareport) + ")")
+                                         str(networktype) + ")")
 # create an ordered list to look up later
                     orderkey = str(order).zfill(4)
                     self.nso[orderkey] = servicename
