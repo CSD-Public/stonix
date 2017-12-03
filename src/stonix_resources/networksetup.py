@@ -490,10 +490,8 @@ class networksetup():
 
 ###############################################################################
 
-    def networksetupoutputprocessing(self, outputLines, commandType):
+    def networksetupistnetworkserviceorderoutputprocessing(self, outputLines):
         
-        if not commandType in ["-listallhardwareports", "-listnetworkserviceorder"]:
-            raise
         success = True
         order = -1
         newserviceonnexline = False
@@ -516,12 +514,7 @@ class networksetup():
                 newserviceonnexline = True
             else:
                 infoOnThisLine = True
-            if newservice and infoOnThisLine and commandType == "-listallhardwareports":
-                self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
-                networkenabled = False
-                linearray = lineprocessed.split(":")
-                linearray = linearray[1:]
-            elif newservice and infoOnThisLine:
+            if newservice and infoOnThisLine:
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 order = order + 1
 # see if network is enabled
@@ -531,15 +524,31 @@ class networksetup():
                     networkenabled = True
                 linearray = lineprocessed.split()
                 linearray = linearray[1:]
-            if newservice and infoOnThisLine:
                 servicename = ""
                 for item in linearray:
                     if servicename == "":
                         servicename = item
                     else:
                         servicename = servicename + " " + item
+                
+                if "ethernet" in servicename.lower():
+                    networktype = "ethernet"
+                elif "bluetooth" in servicename.lower():
+                    networktype = "bluetooth"
+                elif "usb" in servicename.lower():
+                    networktype = "usb"
+                elif "wi-fi" in item.lower():
+                    networktype = "wi-fi"
+                elif "firewire" in servicename.lower():
+                    networktype = "firewire"
+                elif "thunderbolt" in servicename.lower():
+                    networktype = "thunderbolt"
+                else:
+                    networktype = "unknown"
                 self.ns[servicename] = {"name": servicename,
-                                        "enabled": networkenabled}
+                                        "hardware port":  servicename,
+                                        "enabled": networkenabled,
+                                        "type": networktype}
 # determine network type
             elif infoOnThisLine:
                 self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
@@ -552,35 +561,93 @@ class networksetup():
                     if servicename <> "":
                         if len(itemarray) > 1:
                             self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
-                if servicename <> "":
-                    hardwareport = self.ns[servicename]["hardware port"].lower()
-                    splitline = hardwareport.split()
-                    networktype = ""
-                    for item in splitline:
-                        if item.lower() == "ethernet":
-                            networktype = item.lower()
-                        elif item.lower() == "bluetooth":
-                            networktype = item.lower()
-                        elif item.lower() == "usb":
-                            networktype = item.lower()
-                        elif item.lower() == "wi-fi":
-                            networktype = item.lower()
-                        elif item.lower() == "firewire":
-                            networktype = item.lower()
-                        elif item.lower() == "thunderbolt":
-                            networktype = item.lower()
-                    if networktype == "":
-                        networktype = "unknown"
 # update dictionary entry for network
-                    self.ns[servicename]["type"] = networktype
-                    self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype, hardwareport): (" + \
+                    self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype): (" + \
                                          str(servicename) + ", " + str(networkenabled) + ", " + \
-                                         str(networktype) + "," + str(hardwareport) + ")")
+                                         str(networktype) + ")")
 # create an ordered list to look up later
                     orderkey = str(order).zfill(4)
                     self.nso[orderkey] = servicename
                     self.updateNetworkConfigurationDictionaryEntry(servicename)
 
+        return success
+
+###############################################################################
+
+    def networksetuplistallhardwareportsoutputprocessing(self, outputLines):
+        
+        success = True
+        newserviceonnexline = False
+        newservice = False
+        servicename = ""
+        noinfo = False
+        for line in outputLines:
+            lineprocessed = line.strip()
+            if newserviceonnexline:
+                newservice = True
+                newserviceonnexline = False
+            else:
+                newservice = False
+                newserviceonnexline = False
+            if lineprocessed == "":
+                infoOnThisLine = False
+                newserviceonnexline = True
+            else:
+                infoOnThisLine = True
+# Get info from first new service line
+            if newserviceonnexline and not servicename == "":
+                self.updateNetworkConfigurationDictionaryEntry(servicename)
+            elif lineprocessed == "VLAN Configurations":
+                exit
+            elif newservice and infoOnThisLine:
+                self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
+                linearray = lineprocessed.split(":")
+                linearray = linearray[1:]
+                servicename = ""
+                for item in linearray:
+                    if servicename == "":
+                        servicename = item
+                    else:
+                        servicename = servicename + " " + item
+                if "ethernet" in servicename.lower():
+                    networktype = "ethernet"
+                elif "bluetooth" in servicename.lower():
+                    networktype = "bluetooth"
+                elif "usb" in servicename.lower():
+                    networktype = "usb"
+                elif "wi-fi" in item.lower():
+                    networktype = "wi-fi"
+                elif "firewire" in servicename.lower():
+                    networktype = "firewire"
+                elif "thunderbolt" in servicename.lower():
+                    networktype = "thunderbolt"
+                else:
+                    networktype = "unknown"
+                self.ns[servicename] = {"name": servicename, "hardware port": servicename, "type": networktype}
+# determine network type
+            elif infoOnThisLine:
+                self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
+                linearray = lineprocessed.split()
+                colonFound = False
+                nameOfItem = ""
+                valueOfItem = ""
+                for item in linearray:
+                    processedItem = item.strip()
+                    if not colonFound:
+                        if ":" in item:
+                            colonFound = True
+                            processedItem = item.strip(":")
+                        if nameOfItem == "":
+                            nameOfItem = processedItem.lower()
+                        else:
+                            nameOfItem = nameOfItem + " " + processedItem.lower()
+                    else:
+                        if valueOfItem == "":
+                            valueOfItem = processedItem
+                        else:
+                            valueOfItem = valueOfItem + " " + processedItem
+                if not valueOfItem == "" and not nameOfItem == "":
+                    self.ns[servicename][nameOfItem] = valueOfItem
         return success
 
 ###############################################################################
@@ -883,14 +950,14 @@ class networksetup():
                 command = [self.nsc, "-listallhardwareports"]
                 self.ch.executeCommand(command)
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-                success = self.networksetupoutputprocessing(self.ch.getOutput(), "-listallhardwareports")
+                success = self.networksetuplistallhardwareportsoutputprocessing(self.ch.getOutput())
 
 # issue networksetup -listallnetworkservices to get all network services
             if success:
                 command = [self.nsc, "-listnetworkserviceorder"]
                 self.ch.executeCommand(command)
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
-                success = self.networksetupoutputprocessing(self.ch.getOutput(),"-listnetworkserviceorder")
+                success = self.networksetupistnetworkserviceorderoutputprocessing(self.ch.getOutput())
 
 # set ns init and nso init status
             self.nsInitialized = True
