@@ -378,8 +378,12 @@ class SecureMDNS(Rule):
                 self.detailedresults += "Parameter: " + str(self.parameter) + \
                     " for service " + self.servicename + " is not set.\n"
             # see if service is running
-            servicesuccess = self.sh.auditService(self.service,
-                                                  serviceTarget=self.servicename)
+            if not re.match("^10.11", self.environ.getosver()):
+                servicesuccess = self.sh.auditService(self.service,
+                                                      serviceTarget="system/" + self.servicename)
+            else:
+                servicesuccess = self.sh.auditService(self.service,
+                                                      serviceTarget=self.servicename)
             if servicesuccess:
                 debug = "Service: " + str(self.service) + ", " + \
                     self.servicename + " audit successful."
