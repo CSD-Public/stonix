@@ -198,7 +198,7 @@ class LaunchCtl(object):
         success = False
         output = ''
         error = ''
-        reterncode = ''
+        returncode = ''
         #####
         # Make sure the command dictionary was properly formed, as well as
         # returning the formatted subcommand list
@@ -312,7 +312,7 @@ class LaunchCtl(object):
         """
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if self.isSaneFilePath(plist):
             args = []
 
@@ -411,7 +411,7 @@ class LaunchCtl(object):
         """
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if self.isSaneFilePath(plist):
             args = []
 
@@ -454,7 +454,7 @@ class LaunchCtl(object):
         """
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not label or not isinstance(label, basestring):
             return success
         
@@ -477,7 +477,7 @@ class LaunchCtl(object):
         """
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not label or not isinstance(label, basestring):
             return success
         
@@ -510,7 +510,7 @@ class LaunchCtl(object):
         output = ""
         returncode = 0
         #####
-        # Input validatio.
+        # Input validation.
         if label and isinstance(label, basestring):
             cmd = [self.launchctl, 'list', label]
         elif not label:
@@ -554,7 +554,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(pid, int) or \
            not isinstance(command, basestring) or \
            not isinstance(args, list):
@@ -583,7 +583,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(uid, int) or \
            not isinstance(command, basestring) or \
            not isinstance(args, list):
@@ -625,7 +625,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(domainTarget, basestring) or \
            not isinstance(servicePath, basestring):
             return success
@@ -664,7 +664,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(domainTarget, basestring) or \
            not isinstance(servicePath, basestring):
             return success
@@ -724,7 +724,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(serviceTarget, basestring):
             return success
         
@@ -774,7 +774,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(serviceTarget, basestring):
             return success
         
@@ -811,7 +811,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(serviceName, basestring):
             return success
         
@@ -875,7 +875,7 @@ class LaunchCtl(object):
         else:
             self.logger.log(lp.INFO, "Need a the options to be a single string...")
 
-        args.append(service)
+        args.append(serviceTarget)
 
         self.logger.log(lp.DEBUG, "args: " + str(args))
 
@@ -1002,7 +1002,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(serviceTarget, basestring):
             return success
 
@@ -1033,16 +1033,23 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(target, basestring):
             return success
 
-        cmd = { "print" : [target] }
+        # prepended system/ to service-target in order to hot fix multiple issues
+        # with service detection in servicehelper two implementation
+        # all rules calling new servicehelper must specify the service target context
+        # and they all currently do not. system/ is where all system services run.
+        # currently servicehelper two cannot look for user context services when
+        # being run in admin mode anyway, so this is just a best-effort workaround
+        # until servicehelper two can be redesigned or all the rules changed to 
+        # prepend system/ in their servicehelper calls
+        cmd = { "print" : ["system/" + target] }
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
-        if re.search("Could not find service", stderr) and \
-           re.search("in domain for system", stderr):
-           success = False
+        if re.search("Could not find service", stderr) and re.search("in domain for system", stderr):
+            success = False
 
         return success, stdout
 
@@ -1099,7 +1106,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(pid, int):
             return success
 
@@ -1141,7 +1148,7 @@ class LaunchCtl(object):
         '''
         success = False
         #####
-        # Input validatio.
+        # Input validation.
         if not isinstance(ownerPid, int) or not isinstance(portName, basestring):
             return success
         
