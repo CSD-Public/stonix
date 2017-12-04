@@ -598,7 +598,7 @@ class networksetup():
             if newserviceonnexline and not servicename == "":
                 self.updateNetworkConfigurationDictionaryEntry(servicename)
             elif lineprocessed == "VLAN Configurations":
-                exit
+                break
             elif newservice and infoOnThisLine:
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 linearray = lineprocessed.split(":")
