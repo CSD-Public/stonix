@@ -152,8 +152,8 @@ class ServiceHelper(object):
                      self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
                 else:
-                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(environment=self.environ,
-                                                     logdispatcher=self.logdispatcher)
+                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
+                                                     self.logdispatcher)
             else:
                 raise RuntimeError("Could not identify service management " +
                                    "programs")
