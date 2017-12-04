@@ -104,7 +104,7 @@ class SecureNFS(Rule):
                          "nfs.lockd.udp": "1"}
                 if not self.sh.auditService('/System/Library/LaunchDaemons/' +
                                             'com.apple.nfsd.plist',
-                                            'com.apple.nfsd'):
+                                            serviceTarget='com.apple.nfsd'):
                     self.compliant = True
                     self.formatDetailedResults("report", self.compliant,
                                                self.detailedresults)
