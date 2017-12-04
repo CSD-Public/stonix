@@ -380,7 +380,7 @@ class SecureMDNS(Rule):
             # see if service is running
             if not re.match("^10.11", self.environ.getosver()):
                 servicesuccess = self.sh.auditService(self.service,
-                                                      serviceTarget="system/" + self.servicename)
+                                                      serviceTarget=self.servicename)
             else:
                 servicesuccess = self.sh.auditService(self.service,
                                                       serviceTarget=self.servicename)
