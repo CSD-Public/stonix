@@ -29,7 +29,7 @@ Created on Dec 3, 2014
 @change: 2015/11/05 ekkehard Added LDAP Entry reporting if not compliant
 @change: 2017/07/26 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/22 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2017/11/22 ekkehard - check for connectivity before acting
+@change: 2017/12/04 ekkehard - check for connectivity before acting
 '''
 from ..rule import Rule
 from ..logdispatcher import LogPriority
