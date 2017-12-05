@@ -32,7 +32,7 @@ configuration changes to the avahi service in order to secure it.
 networking. By default, it is enabled. This rule makes a number of \
 configuration changes to the avahi service
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: dwalker - added hash tag separator lines for methods
 @change: 2014/02/16 ekkehard Implemented self.detailedresults flow
 @change: 2014/02/16 ekkehard Implemented isapplicable
@@ -50,6 +50,7 @@ configuration changes to the avahi service
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 12/05/2017 Breen Malmberg - changed moniker to full name for author entries
 '''
 
 from __future__ import absolute_import
@@ -216,12 +217,17 @@ class SecureMDNS(Rule):
         if the rule does not succeed.
 
         @return bool
-        @author bemalmbe
+        @author: Breen Malmberg
         @change: dwalker - added conditional call to reportmac()
+        @change: Breen Malmberg - 12/05/2017 - removed unnecessary argument
+                "serviceTarget" in linux-only call to servicehelper; removed
+                assignment of unused local variable serviceTarget to self.servicename
+                since servicename is not assigned in the linux code logic path (which
+                was resulting in variable referenced before assignment error)
         '''
 
         try:
-            self.serviceTarget = self.servicename
+
             # defaults
             compliant = True
             self.detailedresults = ''
@@ -242,7 +248,7 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     self.package = "avahi-daemon"
                     # if avahi-daemon is still running, it is not disabled
-                    if self.sh.auditService('avahi-daemon', serviceTarget=self.serviceTarget):
+                    if self.sh.auditService('avahi-daemon'):
                         compliant = False
                         self.detailedresults += 'DisableAvahi has been ' + \
                             'set to True, but avahi-daemon service is ' + \
@@ -354,7 +360,7 @@ class SecureMDNS(Rule):
         check for configuration items needed for mac os x
 
         @return bool
-        @author bemalmbe
+        @author: Breen Malmberg
         @change: dwalker - implemented kveditor defaults
         '''
         try:
@@ -408,8 +414,10 @@ class SecureMDNS(Rule):
         The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @author bemalmbe
+        @author: Breen Malmberg
         @change: dwalker - added statechglogger findrulechanges and deleteentry
+        @changed: Breen Malmberg - 12/05/2017 - removed unnecessary servicetarget
+                arguments in linux-only calls to servicehelper
         '''
 
         try:
@@ -432,10 +440,10 @@ class SecureMDNS(Rule):
                 if self.DisableAvahi.getcurrvalue():
                     avahi = self.package
                     avahid = 'avahi-daemon'
-                    if self.sh.auditService(avahid, serviceTarget=self.serviceTarget):
+                    if self.sh.auditService(avahid):
                         debug = "Disabling " + avahid + " service"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.sh.disableService(avahid, serviceTarget=self.serviceTarget)
+                        self.sh.disableService(avahid)
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper",
@@ -553,7 +561,7 @@ class SecureMDNS(Rule):
         '''
         apply fixes needed for mac os x
 
-        @author bemalmbe
+        @author: Breen Malmberg
         @change: dwalker - implemented kveditor instead of direct editing
         '''
         try:
@@ -622,7 +630,7 @@ class SecureMDNS(Rule):
 
         @param: pkgname - string. Name of package to parse dependencies of
         @return: int
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
         numdeps = 0
         flag = 0
