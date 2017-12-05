@@ -49,6 +49,7 @@ class RemoveSoftware(Rule):
         self.rulenumber = 91
         self.rulename = "RemoveSoftware"
         self.mandatory = True
+        self.formatDetailedResults("initialize")
         self.sethelptext()
         self.rootrequired = True
         self.guidance = ["NSA 2.3.5.6"]
