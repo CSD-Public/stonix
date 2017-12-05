@@ -107,6 +107,8 @@ class DisableCamera(Rule):
             else:
                 self.detailedresults += self.camprofile + " doesn't exist\n"
                 self.compliant = False
+            self.detailedresults += "If your system is reporting non compliant and you " + \
+                "don't have a physical camera installed, be aware this is normal behavior.\n"
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
