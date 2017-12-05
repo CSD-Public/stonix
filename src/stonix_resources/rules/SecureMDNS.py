@@ -221,7 +221,7 @@ class SecureMDNS(Rule):
         '''
 
         try:
-
+            self.serviceTarget = self.servicename
             # defaults
             compliant = True
             self.detailedresults = ''
