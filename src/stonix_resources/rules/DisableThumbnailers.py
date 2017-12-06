@@ -26,6 +26,8 @@ Created on Apr 22, 2015
 @author: dwalker
 @change: 2015/10/07 eball Help text cleanup
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change 2017/12/06 bgonz12 Removed the --direct option from the gconf commands
+            so the command doesn't fail while gconfd is running
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate
@@ -127,14 +129,14 @@ class DisableThumbnailers(Rule):
                                 search("False", output) or \
                                 search("No value set for", error) or \
                                 search("False", error):
-                            cmd = self.gconf + " --direct --config-source " + \
+                            cmd = self.gconf + " --config-source " + \
                                 "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
                                 "--type bool --set " + \
                                 "/desktop/gnome/thumbnailers/disable_all true"
                             if not self.ch.executeCommand(cmd):
                                 success = False
                             else:
-                                cmd = self.gconf + " --direct --config-source " + \
+                                cmd = self.gconf + " --config-source " + \
                                     "xml:readwrite:/etc/gconf/gconf.xml.mandatory " + \
                                     "--type bool --set " + \
                                     "/desktop/gnome/thumbnailers/disable_all false"
