@@ -81,6 +81,7 @@ class FilePermissions(Rule):
         self.environ = environ
         self.logger = logger
         self.statechglogger = statechglogger
+        self.compliant = False
         self.rulenumber = 25
         self.rulename = 'FilePermissions'
         self.mandatory = True
@@ -1208,11 +1209,11 @@ find / -xdev \( -nouser -o -nogroup \) -print
         '''
 
         self.detailedresults = ''
-        self.compliant = False
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [SITELOCALWWWDIRS]
         if not self.checkConsts(constlist):
+            self.compliant = False
             self.detailedresults = "\nPlease ensure that the constants: SITELOCALWWWDIRS, in localize.py, is defined and is not None. This rule will not function without it."
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
