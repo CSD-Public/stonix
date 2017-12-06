@@ -1207,16 +1207,18 @@ find / -xdev \( -nouser -o -nogroup \) -print
         @author: dkennel
         '''
 
+        self.detailedresults = ''
+        self.compliant = False
+
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [SITELOCALWWWDIRS]
         if not self.checkConsts(constlist):
-            self.compliant = False
             self.detailedresults = "\nPlease ensure that the constants: SITELOCALWWWDIRS, in localize.py, is defined and is not None. This rule will not function without it."
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
 
-        self.detailedresults = ''
         try:
+
             if not self.hasrunalready or self.firstrun:
                 self.logger.log(LogPriority.DEBUG,
                                 ['FilePermissions.report',
@@ -1256,19 +1258,19 @@ has been called a second time. The previous results are displayed. '''
                 self.detailedresults = note + "\n" + self.wwresults + '\n' + \
                     self.gwresults + '\n' + self.suidresults + '\n' + \
                     self.unownedresults
-            self.formatDetailedResults("report", self.compliant,
-                                       self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR,
                             [self.rulename + '.report',
                              self.detailedresults])
             self.rulesuccess = False
+
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
 
     def fix(self):
         """
