@@ -84,7 +84,7 @@ class Connectivity(object):
             self.logger.log(LogPriority.ERROR, msg)
         else:
             msg = "Socket connection available to: " + str(host)
-            self.logger.log(LogPriority.ERROR, msg)
+            self.logger.log(LogPriority.DEBUG, msg)
 
         return retval
 
