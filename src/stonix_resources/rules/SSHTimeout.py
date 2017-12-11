@@ -78,6 +78,7 @@ class SSHTimeout(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+        self.ph = Pkghelper(self.logger, self.environ)
 
     def report(self):
         '''SSHTimeout.report(): produce a report on whether or not a valid
@@ -101,17 +102,16 @@ class SSHTimeout(Rule):
                 self.path = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
 
-                self.ph = Pkghelper(self.logger, self.environ)
                 if self.ph.manager == "zypper":
                     openssh = "openssh"
                 else:
                     openssh = "openssh-server"
 
-            if not self.ph.check(openssh):
-                self.compliant = True
-                self.detailedresults += "Package " + openssh + " is not installed.\nNothing to configure."
-                self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                return self.compliant
+                if not self.ph.check(openssh):
+                    self.compliant = True
+                    self.detailedresults += "Package " + openssh + " is not installed.\nNothing to configure."
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    return self.compliant
 
             self.ssh = {"ClientAliveInterval": str(timeout),
                         "ClientAliveCountMax": "0"}
