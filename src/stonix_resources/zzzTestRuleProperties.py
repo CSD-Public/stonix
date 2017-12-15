@@ -55,7 +55,7 @@ class zzzTestRuleProperties(unittest.TestCase):
         for r in self.ruleslist:
             if re.search('\.pyc', r, re.IGNORECASE):
                 self.ruleslist.remove(r)
-        self.rulespath = self.rule.get_rules_path()
+        self.rulespath = self.environ.get_rules_path()
 
     def testDuplicateRuleNumbers(self):
 
