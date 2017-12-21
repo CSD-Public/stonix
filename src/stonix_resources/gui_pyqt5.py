@@ -71,7 +71,6 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import Qt
-from PyQt5.QtGui import *
 
 
 class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
@@ -142,7 +141,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         self.actionLog.triggered.connect(self.showlogbrowser)
 
         # set up search box
-        self.searchbox = QLineEdit(self)
+        self.searchbox = QtWidgets.QLineEdit(self)
         self.searchbox.resize(240, 30)
         self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
         self.searchbox.setText('Search')
