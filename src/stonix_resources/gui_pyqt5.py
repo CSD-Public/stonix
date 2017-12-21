@@ -71,6 +71,8 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import Qt
+from PyQt5.QtGui import *
+
 
 class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     """
