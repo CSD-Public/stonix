@@ -41,6 +41,9 @@ imports implement the STONIX GUI.
 
 @author: D. Kennel
 @note: 2015-09-11 - rsn - Adding initial attempt at a help browser.
+@change: 2017-12-21 - Breen Malmberg - added search box implementation;
+        (methods: getSearchText(), resizeEvent(), clearText(), updateSearchResults();
+        as well as lines in __init__ creating the searchbox and running self.getSearchText())
 '''
 
 import os
@@ -135,6 +138,17 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         self.cancel_button.clicked.connect(self.clearchanges)
         self.actionAbout.triggered.connect(self.helpabout)
         self.actionLog.triggered.connect(self.showlogbrowser)
+
+        # set up search box
+        self.searchbox = QtGui.QLineEdit(self)
+        self.searchbox.resize(240, 30)
+        self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
+        self.searchbox.setText('Search')
+        self.searchbox.textEdited.connect(self.updateSearchResults)
+        self.searchbox.mousePressEvent = lambda _ : self.clearText()
+        self.searchbox.setToolTip("Search rule names and descriptions")
+        self.searchbox.show()
+
         # Initialize icon variables
         logicon = os.path.join(self.icon_path, "message-news.png")
         exiticon = os.path.join(self.icon_path, "application-exit.png")
@@ -241,6 +255,88 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         self.statusBar().addPermanentWidget(self.pbar)
         self.raise_()
         self.show()
+        self.getSearchText()
+
+    def getSearchText(self):
+        '''
+        retrieve the list of text (both descriptions
+        and rule names) once, to search through
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "\n\ngetSearchText() called\n\n")
+
+        self.search_text = {}
+
+        for rnum in self.rule_data:
+            rname = self.controller.getrulenamebynum(rnum)
+            self.search_text[rname] = self.rule_data[rnum][0] + ' ' + self.rule_data[rnum][1]
+
+    def resizeEvent(self, event):
+        '''
+        keep the searchbox in the same position - 
+        relative to the parent application window
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
+
+    def clearText(self):
+        '''
+        clear searchbox text if it has the 
+        default 'Search' text in it when a user clicks
+        inside it
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        # self.logger.log(LogPriority.DEBUG, "\n\nclearText( method) called\n\n")
+
+        if self.searchbox.text() == 'Search':
+            self.searchbox.clear()
+
+    def updateSearchResults(self):
+        '''
+        show only rules which match the search term
+        against either their rule name or their rule description;
+        hide all rules which don't contain a match of the search term;
+        show all rules if the search box is cleared
+
+        @return: void
+        @author: Breen Malmberg
+        '''
+
+        # self.logger.log(LogPriority.DEBUG, "\n\nupdateSearchResults() method called\n\n")
+
+        foundin = []
+        allrules = self.rule_list_widget.findItems('.*', Qt.MatchRegExp)
+        searchTerm = ''
+        searchTerm = self.searchbox.text()
+
+        # if a user clears the searchbox, show all rules
+        if len(self.searchbox.text()) == 0:
+            for r in allrules:
+                r.setHidden(False)
+        else:
+            for rname in self.search_text:
+                if str(searchTerm).lower() in str(self.search_text[rname]).lower():
+                    foundin.append(rname)
+                else:
+                    if rname in foundin:
+                        foundin.remove(rname)
+
+            for item in allrules:
+                item.setHidden(True)
+            for rname in foundin:
+                items = self.rule_list_widget.findItems(rname, Qt.MatchExactly)
+                for item in items:
+                    item.setHidden(False)
+
 
     def openHelpBrowser(self):
         """
