@@ -141,7 +141,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         self.actionLog.triggered.connect(self.showlogbrowser)
 
         # set up search box
-        self.searchbox = QtWidgets.QLineEdit(parent=QtWidgets.QMainWindow)
+        self.searchbox = QtWidgets.QLineEdit(self)
         self.searchbox.resize(240, 30)
         self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
         self.searchbox.setPlaceholderText('Search')
