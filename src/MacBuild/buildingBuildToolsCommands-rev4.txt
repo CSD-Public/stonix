@@ -20,14 +20,11 @@ cd /opt/tools
 curl -o downloads/qt-everywhere-opensource-src-5.8.0.tar.gz -L http://download.qt.io/official_releases/qt/5.8/5.8.0/single/qt-everywhere-opensource-src-5.8.0.tar.gz
 tar xzvf downloads/qt-everywhere-opensource-src-5.8.0.tar.gz
 
-curl -o downloads/sip-4.19.2.tar.gz -L http://linux.rz.rub.de/download/gentoo-mirror/distfiles/sip-4.19.2.tar.gz
-tar xzvf downloads/sip-4.19.2.tar.gz
+curl -o downloads/sip-4.19.6.tar.gz -L http://gentoo.mirrors.tds.net/gentoo/distfiles/sip-4.19.6.tar.gz
+tar xzvf downloads/sip-4.19.6.tar.gz
 
-curl -o downloads/PyQt5_gpl-5.8.2.tar.gz -L http://linux.rz.rub.de/download/gentoo-mirror/distfiles/PyQt5_gpl-5.8.2.tar.gz
-tar xzvf downloads/PyQt5_gpl-5.8.2.tar.gz
-
-curl -o downloads/PyInstaller-3.2.1.tar.bz2  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.2.1/PyInstaller-3.2.1.tar.bz2
-tar xjvf downloads/PyInstaller-3.2.1.tar.bz2
+curl -o downloads/PyQt5_gpl-5.9.2.tar.gz -L http://gentoo.mirrors.tds.net/gentoo/distfiles/PyQt5_gpl-5.9.2.tar.gz
+tar xzvf downloads/PyQt5_gpl-5.9.2.tar.gz
 
 #####
 # Get pyinstaller
