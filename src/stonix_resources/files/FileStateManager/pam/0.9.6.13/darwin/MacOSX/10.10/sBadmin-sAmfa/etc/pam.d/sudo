@@ -1,0 +1,12 @@
+# sudo: auth account password session
+# --- start of modification
+# add the following for crypto card
+auth       sufficient     pam_krb5.so try_first_pass default_principal
+# modify the following to sufficient for crypto card
+auth       sufficient     pam_opendirectory.so
+# add the following for crypto card
+auth       required       pam_deny.so
+# --- end of modification
+account    required       pam_permit.so
+password   required       pam_deny.so
+session    required       pam_permit.so

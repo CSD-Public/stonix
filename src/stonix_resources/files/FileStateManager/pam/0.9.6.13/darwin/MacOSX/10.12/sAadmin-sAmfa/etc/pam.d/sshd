@@ -1,0 +1,17 @@
+# sshd: auth account password session
+# --- start of modification
+# modify the following sufficient and default_principal for crypto card
+auth       sufficient     pam_krb5.so try_first_pass default_principal
+# modify the following use_first_pass for crypto card
+auth       optional       pam_ntlm.so use_first_pass
+# modify the following use_first_pass for crypto card
+auth       optional       pam_mount.so use_first_pass
+# modify the following use_first_pass for crypto card
+auth       required       pam_opendirectory.so use_first_pass
+# --- end of modification
+account    required       pam_nologin.so
+account    required       pam_sacl.so sacl_service=ssh
+account    required       pam_opendirectory.so
+password   required       pam_opendirectory.so
+session    required       pam_launchd.so
+session    optional       pam_mount.so

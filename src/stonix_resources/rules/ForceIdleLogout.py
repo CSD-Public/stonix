@@ -561,7 +561,6 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 self.detailedresults += "Could not set permissions " + \
                     "for " + self.gnomelockpath + "\n"
         else:
-
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixgnome3',
                                   'Working GNOME with gconf'])

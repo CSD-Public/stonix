@@ -1,0 +1,12 @@
+# authorization: auth account
+# --- start of modification
+# modify the following use_first_pass use_kcminit for crypto card
+auth       sufficient     pam_krb5.so try_first_pass default_principal
+# no modification
+auth       optional       pam_ntlm.so use_first_pass
+# modify the following to sufficient for crypto card
+auth       sufficient       pam_opendirectory.so use_first_pass nullok
+# add the following for crypto card
+auth       required       pam_deny.so
+# --- end of modification
+account    required       pam_opendirectory.so
