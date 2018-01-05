@@ -85,6 +85,21 @@ this system, set the value of EnableKernelAuditing to False"""
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
+        freq_instructions = 'This value represents the number of auditable events which can occur before they are written to disk. A smaller number will mean more frequent writes, which can affect performance on some machines. Acceptable values are between 1 to 100.'
+        freq_default = 20
+        self.freqci = self.initCi('int', 'AUDITFLUSHFREQUENCY', freq_instructions, freq_default)
+        self.flushfrequency = str(self.freqci.getcurrvalue())
+
+        allowable_flush_types = ['data', 'incremental', 'sync']
+
+        flushtype_instructions = 'This value represents the mode that the audit daemon will use when handling writing audit events to disk. Acceptable values are: data, incremental, or sync. "data" will ensure that every time an auditable event occurs it is written to disk. "incremental" will wait until a specified number of events occur until they are all written at once. "sync" means that both data and meta-data will be written to disk every time an auditable event occurs. The most performance-intensive option is "sync" while the least perfomance-intensive option is "incremental".'
+        flushtype_default = "incremental"
+
+        self.flushtypeci = self.initCi('string', 'AUDITFLUSHTYPE', flushtype_instructions, flushtype_default)
+        if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
+            self.flushtypeci.updatecurrvalue('incremental')
+        self.flushtype = str(self.flushtypeci.getcurrvalue())
+
     def searchFileContents(self, contents, searchstring):
         '''
         search specified filepath for regex param searchstring
@@ -204,7 +219,8 @@ this system, set the value of EnableKernelAuditing to False"""
             self.auditconftmp = self.auditconffile + '.stonixtmp'
             self.auditconfoptions = {'log_file': '/var/log/audit/audit.log',
                                      'log_format': 'RAW',
-                                     'flush': 'data',
+                                     'flush': str(self.flushtype),
+                                     'freq': str(self.flushfrequency),
                                      'num_logs': '20',
                                      'dispatcher': '/sbin/audispd',
                                      'disp_qos': 'lossy',
@@ -313,6 +329,19 @@ this system, set the value of EnableKernelAuditing to False"""
         self.cmdhelper = CommandHelper(self.logger)
         self.svchelper = ServiceHelper(self.environ, self.logger)
         self.pkghelper = Pkghelper(self.logger, self.environ)
+        self.flushfrequency = str(self.freqci.getcurrvalue())
+        allowable_flush_types = ['data', 'incremental', 'sync']
+        allowable_freq_range = range(1,100)
+        if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
+            self.flushtypeci.updatecurrvalue('incremental')
+            self.logger.log(LogPriority.DEBUG, "User entered value for flush type was not one of the acceptable types. Changed to default incremental.")
+        self.flushtype = self.flushtypeci.getcurrvalue()
+        if self.flushfrequency not in allowable_freq_range:
+            self.flushfrequency = '20'
+            self.logger.log(LogPriority.DEBUG, "User entered value for flush frequency was not within acceptable range. Changed to default 20.")
+
+        self.auditconfoptions['freq'] = self.flushfrequency
+        self.auditconfoptions['flush'] = self.flushtype
 
         try:
 
