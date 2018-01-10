@@ -42,6 +42,7 @@ Created on Aug 24, 2010
 '''
 
 from observable import Observable
+import re
 import logging
 import localize
 import logging.handlers
@@ -237,6 +238,25 @@ class LogDispatcher (Observable):
                       ":" + stack1[3] + ":"
             else:
                 prefix = stack1[3] + ":"
+
+        if re.search('RULE START', msg):
+            prefix = ''
+            msg = msg + '\n\n'
+        if re.search('RULE END', msg):
+            prefix = ''
+            msg = msg + '\n\n'
+        if re.search('START REPORT', msg):
+            prefix = ''
+            msg = msg + '\n'
+        if re.search('END REPORT', msg):
+            prefix = ''
+            msg = msg + '\n'
+        if re.search('START FIX', msg):
+            prefix = ''
+            msg = msg + '\n'
+        if re.search('END FIX', msg):
+            prefix = ''
+            msg = msg + '\n'
 
         if priority == LogPriority.INFO:
             logging.info('INFO:' + prefix + msg)
@@ -476,36 +496,36 @@ Subject: STONIX Error Report: ''' + prefix + '''
                       'SYSLOG not accepting connections!'])
 
         self.metadataopen = True
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ["Hostname", self.environment.hostname])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ["IPAddress", self.environment.ipaddress])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ["MACAddress", self.environment.macaddress])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ["OS", str(self.environment.getosreportstring())])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ["STONIXversion", self.environment.getstonixversion()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['RunTime', self.environment.getruntime()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['PropertyNumber',
                   str(self.environment.get_property_number())])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['SystemSerialNo',
                   self.environment.get_system_serial_number()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['ChassisSerialNo',
                   self.environment.get_chassis_serial_number()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['SystemManufacturer',
                   self.environment.get_system_manufacturer()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['ChassisManufacturer',
                   self.environment.get_chassis_manfacturer()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['UUID', self.environment.get_sys_uuid()])
-        self.log(LogPriority.WARNING,
+        self.log(LogPriority.INFO,
                  ['PropertyNumber', self.environment.get_property_number()])
         self.log(LogPriority.DEBUG,
                  ['ScriptPath', self.environment.get_script_path()])

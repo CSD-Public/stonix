@@ -802,6 +802,7 @@ LANL-stonix."""
 
         1) Each new help text block must begin with the
         rule's rulenumber in diamond brackets - e.g. <123>
+        followed by an opening double quote
         2) Each help text block must end with ." (period
         followed by double quote)
         3) Each help text block must not contain any "
