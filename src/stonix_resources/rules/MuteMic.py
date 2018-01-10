@@ -97,6 +97,11 @@ valid exceptions.'
 
     def setPaths(self):
         '''
+        determine the correct paths for each utility,
+        based on the current OS distro
+
+        @return: void
+        @author: Breen Malmberg
         '''
 
         sysvinitscripts = ["/etc/rc.d/rc.local", "/etc/rc.local"]
@@ -308,7 +313,8 @@ valid exceptions.'
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
                     retval = False
-                    self.detailedresults += "\nError while running command: " + str(getc0Controls)
+                    errmsg = self.ch.getErrorString()
+                    self.detailedresults += "\nError while running command: " + str(getc0Controls) + " :\n" + str(errmsg)
                     self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
                 for line in output:
                     if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
@@ -327,7 +333,8 @@ valid exceptions.'
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
                         retval = False
-                        self.detailedresults += "\nError while running command: " + str(getc0mic)
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(getc0mic) + " :\n" + str(errmsg)
                         self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
                     for line in output:
                         if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
@@ -341,7 +348,8 @@ valid exceptions.'
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
                         retval = False
-                        self.detailedresults += "\nError while running command: " + str(getc0micb)
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(getc0micb) + " :\n" + str(errmsg)
                         self.logger.log(LogPriority.DEBUG, "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n")
                     for line in output:
                         if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
@@ -360,7 +368,8 @@ valid exceptions.'
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
                         retval = False
-                        self.detailedresults += "\nError while running command: " + str(getc0Cap)
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(getc0Cap) + " :\n" + str(errmsg)
                     for line in output:
                         if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
                             if not re.search("\[0\%\]", line, re.IGNORECASE):
@@ -379,8 +388,12 @@ valid exceptions.'
             output = self.ch.getOutput()
             retcode = self.ch.getReturnCode()
             if retcode != 0:
-                retval = False
-                self.detailedresults += "\nError while running command: " + str(getgenCap)
+                errmsg = self.ch.getErrorString()
+                # if the control does not exist, then there is no problem
+                # we can't mute/unmute/use a non-existent control
+                if not re.search("Unable to find simple control", errmsg, re.IGNORECASE):
+                    retval = False
+                    self.detailedresults += "\nError while running command: " + str(getgenCap) + " :\n" + str(errmsg)
             for line in output:
                     if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
                         if not re.search("\[0\%\]", line, re.IGNORECASE):
@@ -434,7 +447,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(command)
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(command) + " :\n" + str(errmsg)
             if re.search("[1-9]+", output.strip(), re.IGNORECASE):
                 retval = False
                 self.detailedresults += "\nThe microphone is not muted"
@@ -646,7 +660,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(command)
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(command) + " :\n" + str(errmsg)
 
         except Exception:
             raise
@@ -671,7 +686,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             output = self.ch.getOutput()
             if retcode != 0:
-                self.detailedresults += "\nError while running command: " + str(cmd)
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(cmd) + " :\n" + str(errmsg)
                 return indexes
             for line in output:
                 if re.search("index\:", line, re.IGNORECASE):
@@ -703,7 +719,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             output = self.ch.getOutput()
             if retcode != 0:
-                self.detailedresults += "\nError while running command: " + str(cmd)
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(cmd) + " :\n" + str(errmsg)
             for line in output:
                 if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
                     sline = line.split("'")
@@ -788,7 +805,8 @@ valid exceptions.'
             output = self.ch.getOutput()
     
             if retcode != 0:
-                self.detailedresults += "\nError while running command: " +str(checkbasecmd)
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " +str(checkbasecmd) + " :\n" + str(errmsg)
     
             for line in output:
                 if re.search("systemd", line, re.IGNORECASE):
@@ -849,7 +867,8 @@ valid exceptions.'
                 self.ch.executeCommand(enablescript)
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
-                    self.detailedresults += "\nError while running command: " + str(enablescript)
+                    errmsg = self.ch.getErrorString()
+                    self.detailedresults += "\nError while running command: " + str(enablescript) + " :\n" + str(errmsg)
     
             if systype == "sysvinit":
     
@@ -927,7 +946,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sget Capture")
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sget Capture") + " :\n" + str(errmsg)
             for line in output:
                 # toggle the c0 Capture control off (mute it)
                 if re.search("\[on\]", line, re.IGNORECASE):
@@ -935,7 +955,8 @@ valid exceptions.'
                     retcodeB = self.ch.getReturnCode()
                     if retcodeB != 0:
                         retval = False
-                        self.detailedresults += "\nError while running command: " + str(self.amixer +  " -c 0 sset Capture toggle")
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(self.amixer +  " -c 0 sset Capture toggle") + " :\n" + str(errmsg)
                     # again, we don't want to toggle more than once
                     break
 
@@ -946,7 +967,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sset Capture 0")
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sset Capture 0") + " :\n" + str(errmsg)
 
             setGenCap = self.amixer + " sset 'Capture' 0% nocap off mute"
             self.systemdservice.append("ExecStart=" + str(setGenCap) + "\n")
@@ -955,7 +977,8 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 retval = False
-                self.detailedresults += "\nError while running command: " + str(setGenCap)
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(setGenCap) + " :\n" + str(errmsg)
 
             systype = self.getSysType()
             script = self.buildScript(systype)
