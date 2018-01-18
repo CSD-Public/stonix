@@ -25,15 +25,15 @@ Created on Dec 11, 2012
 The SetDefaultUserUmask class sets the default user umask to 077. Also accepts
 user input of alternate 027 umask.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 02/16/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/16/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
 @change: 07/10/2014 rsn change assignments to comparisons and if on mac & root,
                     use 022 as the umask
 @change: 08/05/2014 ekkehard added removeStonixUMASKCodeFromFile
-@change: 08/25/2014 bemalmbe completely re-written
-@change: 08/27/2014 bemalmbe added documentation, cleaned up some existing
+@change: 08/25/2014 Breen Malmberg completely re-written
+@change: 08/27/2014 Breen Malmberg added documentation, cleaned up some existing
         documentation
 @change: 2015/04/17 dkennel updated for new isApplicable. Tuned text.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
@@ -88,9 +88,10 @@ class SetDefaultUserUmask(Rule):
 
         # decide what the default umask value should be, based on osfamily
         if self.environ.getosfamily() == 'darwin':
-            defaultumask = '022'
+            self.userumask = "022"
         else:
-            defaultumask = '027'
+            self.userumask = "077"
+        self.rootumask = "022"
 
         self.ci = self.initCi("bool",
                               "SetDefaultUserUmask",
@@ -100,29 +101,15 @@ class SetDefaultUserUmask(Rule):
                               True)
 
         # init CIs
-        self.userUmask = \
-        self.initCi("string", "DEFAULTUSERUMASK",
-                    "Set the default user umask value. Correct format is " + \
-                    "a 3-digit, 0-padded integer.", defaultumask)
+        user_ci_type = "string"
+        user_ci_name = "DEFAULTUSERUMASK"
+        user_ci_instructions = "Set the default user umask value. Correct format is " + "a 3-digit, 0-padded integer. This value will determine the default permissions for every file created by non-privileged users."
+        self.userUmask = self.initCi(user_ci_type, user_ci_name, user_ci_instructions, self.userumask)
 
-        self.rootUmask = self.initCi("string", "DEFAULTROOTUMASK",
-                                     "Set the default root umask value. " + \
-                                     "Correct format is 3-digit, 0-padded " + \
-                                     "integer. Setting this to a value " + \
-                                     "more restrictive than 022 may " + \
-                                     "cause issues.", "022")
-
-        # set up list of files which need to be checked and configured
-        self.rootfiles = ['/root/.bash_profile', '/root/.bashrc',
-                          '/root/.cshrc', '/root/.tcshrc']
-
-        self.filelist = ['/etc/profile', '/etc/csh.login', '/etc/csh.cshrc',
-                         '/etc/bashrc', '/etc/zshrc', '/etc/login.conf',
-                         '/etc/bash.bashrc']
-
-        # this is the correct file path to use for os 10.9 as per:
-        # http://support.apple.com/kb/ht2202
-        self.macfile = '/etc/launchd-user.conf'
+        root_ci_type = "string"
+        root_ci_name = "DEFAULTROOTUMASK"
+        root_ci_instructions = "Set the default root umask value. Correct format is a 3-digit, 0-padded integer. Setting this to a value more restrictive than 022 may cause issues on your system. This value will determine the default permissions for every file created by the root user."
+        self.rootUmask = self.initCi(root_ci_type, root_ci_name, root_ci_instructions, self.rootumask)
 
 ###############################################################################
 
@@ -135,11 +122,26 @@ class SetDefaultUserUmask(Rule):
         if the rule does not succeed.
 
         @return: bool
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
         self.detailedresults = ""
+
+        # set up list of files which need to be checked and configured
+        self.rootfiledict = {"/root/.bash_profile": False,
+                             "/root/.bashrc": False,
+                             "/root/.cshrc": False,
+                             "/root/.tcshrc": False}
+
+        self.userfiledict = {"/etc/profile": False,
+                             "/etc/csh.login": False,
+                             "/etc/csh.cshrc": False,
+                             "/etc/bashrc": False,
+                             "/etc/zshrc": False,
+                             "/etc/login.conf": False,
+                             "/etc/bash.bashrc": False,
+                             "/etc/login.defs": False}
 
         try:
 
@@ -156,8 +158,7 @@ class SetDefaultUserUmask(Rule):
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
@@ -168,21 +169,22 @@ class SetDefaultUserUmask(Rule):
         private method for reporting compliance status of darwin based systems
 
         @return: bool
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
-        configured = False
+        configured = True
 
         try:
 
-            # check for presence of umask config line in mac config file
-            if self.searchString('^umask\s*' + str(self.userUmask.getcurrvalue()),
-                                 self.macfile):
-                configured = True
-            # report that the umask config line does not exist, if not found
-            else:
-                self.detailedresults += '\numask config string not found in ' + str(self.macfile)
+            # needs better, mac-canonical implementation (possibly with launchd)
+            # waiting on response from apple as to how to do this properly, on 
+            # command line with mac.
+            umask = os.umask(0)
+            os.umask(umask)
+
+            if umask != self.userumask:
+                configured = False
 
         except Exception:
             raise
@@ -195,38 +197,43 @@ class SetDefaultUserUmask(Rule):
         '''
         private method for reporting compliance status of *nix based systems
 
-        @return: bool
-        @author: bemalmbe
+        @return: configured
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
-        userlinefound = False
-        rootlinefound = False
-        configured = False
+        configured = True
 
         try:
 
             # check for presence of umask config line in user files
-            for item in self.filelist:
-                if self.searchString('^umask\s*' + \
-                                     str(self.userUmask.getcurrvalue()), item):
-                    userlinefound = True
+            for item in self.userfiledict:
+                if not os.path.exists(item):
+                    self.detailedresults += "\nMissing required configuration file: " + str(item)
+                    configured = False
+                elif self.searchString('^umask\s*' + str(self.userUmask.getcurrvalue()), item):
+                    self.userfiledict[item] = True
+
+            for item in self.userfiledict:
+                if os.path.exists(item):
+                    if not self.userfiledict[item]:
+                        self.detailedresults += "\nFile: " + str(item) + " has an incorrect user umask configuration."
+                        configured = False
 
             # check for presence of umask config line in root files
-            for item in self.rootfiles:
+            for item in self.rootfiledict:
                 if not os.path.exists(item):
-                    self.detailedresults += '\n' + str(item) + ' config file was not found'
-                if self.searchString('^umask\s*' + \
-                                     str(self.rootUmask.getcurrvalue()), item):
-                    rootlinefound = True
+                    self.detailedresults += "\nMissing required configuration file: " + str(item)
+                    configured = False
+                elif self.searchString('^umask\s*' + str(self.rootUmask.getcurrvalue()), item):
+                    self.rootfiledict[item] = True
 
-            # report which config items are not compliant in detailedresults
-            if userlinefound and rootlinefound:
-                configured = True
-            elif not userlinefound:
-                self.detailedresults += '\nuser umask config line not found'
-            elif not rootlinefound:
-                self.detailedresults += '\nroot umask config line not found'
+            for item in self.rootfiledict:
+                if os.path.exists(item):
+                    if not self.rootfiledict[item]:
+                        self.detailedresults += "\nFile: " + str(item) + " has an incorrect root umask configuration."
+                        configured = False
 
         except Exception:
             raise
@@ -243,7 +250,7 @@ class SetDefaultUserUmask(Rule):
         the related config file.
 
         @return: bool
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -286,39 +293,85 @@ class SetDefaultUserUmask(Rule):
         private method to apply umask config changes to mac systems
 
         @return: bool
-        @author: bemalmbe
-        @change: bemalmbe 09/02/2014 - added calls to hotfix code provided by
+        @author: Breen Malmberg
+        @change: Breen Malmberg 09/02/2014 - added calls to hotfix code provided by
                 method removeStonixUMASKCodeFromFile()
+        @change: 01/17/2018 - Breen Malmberg - added conditional call to new fixmac1010_plus()
+                method, for newer versions of mac os.
         '''
 
         # defaults
         success = True
+        rootfiles = []
+        userfiles = []
+        for item in self.rootfiledict:
+            rootfiles.append(item)
+        for item in self.userfiledict:
+            userfiles.append(item)
 
         try:
 
-            # hotfix to remove bad code / config entries from previous version
-            self.removeStonixUMASKCodeFromFile(self.rootfiles)
-            self.removeStonixUMASKCodeFromFile(self.filelist)
+            # determine if the minor revision is greater than 9 (10.10+)
+            major_ver = self.environ.getosmajorver()
+            minor_ver = self.environ.getosminorver()
+            if int(major_ver) >= 10:
+                if int(minor_ver) > 9:
+                    # this is 10.10 or later, use the new method
+                    if not self.fixmac1010_plus():
+                        success = False
+            elif int(major_ver) == 10 and int(minor_ver) <= 9:
+                # this is 10.9 or before
 
-            # append the umask config line to the mac config file
-            self.configFile('umask ' + str(self.userUmask.getcurrvalue()),
-                            self.macfile, 0644, [0, 0])
-
-            # if mac config file does not exist, create it and write the
-            # umask config line to it
-            if not os.path.exists(self.macfile):
-                f = open(self.macfile, 'w')
-                f.write('umask ' + str(self.userUmask.getcurrvalue()) + '\n')
-                f.close()
-
-                # set correct permissions on newly created config file
-                os.chmod(self.macfile, 0644)
-                os.chown(self.macfile, 0, 0)
+                # hotfix to remove bad code / config entries from previous version
+                self.removeStonixUMASKCodeFromFile(rootfiles)
+                self.removeStonixUMASKCodeFromFile(userfiles)
+    
+                # append the umask config line to the mac config file
+                self.configFile('umask ' + str(self.userUmask.getcurrvalue()), self.macfile, 0644, [0, 0])
+    
+                # if mac config file does not exist, create it and write the
+                # umask config line to it
+                if not os.path.exists(self.macfile):
+                    f = open(self.macfile, 'w')
+                    f.write('umask ' + str(self.userUmask.getcurrvalue()) + '\n')
+                    f.close()
+    
+                    # set correct permissions on newly created config file
+                    os.chmod(self.macfile, 0644)
+                    os.chown(self.macfile, 0, 0)
 
         except Exception:
             success = False
             raise
         return success
+
+    def fixmac1010_plus(self):
+        '''
+        Canonical way of setting user umask in mac os x 10.10 and later
+        reference: https://support.apple.com/en-us/HT201684
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        @change: 01/17/2018 - Breen Malmberg - added this method for newer mac os versions
+        '''
+
+        retval = True
+
+        user_command = "/usr/bin/launchctl config user umask " + str(self.userumask)
+        umask_conf_file = "/private/var/db/com.apple.xpc.launchd/config"
+
+        if not os.path.exists(umask_conf_file):
+            os.makedirs(umask_conf_file, 0755)
+
+        self.ch.executeCommand(user_command)
+        if self.ch.getReturnCode() != 0:
+            errstr = self.ch.getErrorString()
+            retval = False
+            self.detailedresults += "\nFailed to set user umask"
+            self.logger.log(LogPriority.DEBUG, "Failed to set user umask\n" + str(errstr))
+
+        return retval
 
 ###############################################################################
 
@@ -326,46 +379,26 @@ class SetDefaultUserUmask(Rule):
         '''
         private method to apply umask config changes to *nix systems
 
-        @return: bool
-        @author: bemalmbe
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
         success = True
-        rootfilefound = False
 
         try:
 
             # iterate through list of user files
             # append the umask config line to each file
-            for item in self.filelist:
-                if os.path.exists(item):
-                    self.configFile('umask ' + \
-                                    str(self.userUmask.getcurrvalue()),
-                                    item, 0644, [0, 0])
+            for item in self.userfiledict:
+                if not self.userfiledict[item]:
+                    self.configFile('umask    ' + str(self.userUmask.getcurrvalue()) + "\n", item, 0644, [0, 0], True)
 
             # do any of the root umask conf files exist?
-            for item in self.rootfiles:
-                if os.path.exists(item):
-                    rootfilefound = True
-
-            # fail-safe in case no root umask conf file exists on the OS
-            if not rootfilefound:
-                for item in self.rootfiles:
-                    f = open(item, 'w')
-                    f.write('umask ' + str(self.rootUmask.getcurrvalue()) + '\n')
-                    f.close()
-                    os.chmod(item, 0644)
-                    os.chown(item, 0, 0)
-
-            # iterate through list of root files
-            # append umask config line to each file
-            else:
-                for item in self.rootfiles:
-                    if os.path.exists(item):
-                        self.configFile('umask ' + \
-                                        str(self.rootUmask.getcurrvalue()),
-                                        item, 0644, [0, 0])
+            for item in self.rootfiledict:
+                if not self.rootfiledict[item]:
+                    self.configFile('umask    ' + str(self.rootUmask.getcurrvalue()) + "\n", item, 0644, [0, 0], True)
 
         except Exception:
             success = False
@@ -380,37 +413,56 @@ class SetDefaultUserUmask(Rule):
 
         @param: searchRE - regex string to search for in given filepath
         @param: filepath - full path to the file, in which, to search
-        @return: bool
-        @author: bemalmbe
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
         stringfound = False
+        noduplicates = True
+        entries_found = 0
+        retval = True
+        duplicates = 0
 
         try:
 
             # check if path exists, then open it and read its contents
             if os.path.exists(filepath):
+                self.logger.log(LogPriority.DEBUG, "\nFound configuration file: " + str(filepath))
                 f = open(filepath, 'r')
                 contentlines = f.readlines()
                 f.close()
 
+                self.logger.log(LogPriority.DEBUG, "Checking " + str(filepath) + " for configuration...\n")
+
                 # search for the searchRE; if found, set return val to True
                 for line in contentlines:
-                    if re.search(searchRE, line):
+                    if re.search(searchRE, line, re.IGNORECASE):
                         stringfound = True
+                        entries_found += 1
+                        self.logger.log(LogPriority.DEBUG, "Found correct configuration in file: " + str(filepath))
+
+                if not stringfound:
+                    self.logger.log(LogPriority.DEBUG, "File: " + str(filepath) + " did NOT contain correct config.")
+                if entries_found > 1:
+                    duplicates = entries_found - 1
+                    self.detailedresults += "\n" + str(duplicates) + " duplicate entries found in file: " + str(filepath)
+                    self.logger.log(LogPriority.DEBUG, str(duplicates) + " duplicate entries found in file: " + str(filepath))
+                    noduplicates = False
             else:
-                self.detailedresults += '\n' + str(filepath) + ' specified' + \
-                ' was not found'
+                self.logger.log(LogPriority.DEBUG, "Specified file: " + str(filepath) + " does not exist.")
 
         except Exception:
             raise
 
-        return stringfound
+        retval = stringfound and noduplicates
+
+        return retval
 
 ###############################################################################
 
-    def configFile(self, configString, filepath, perms, owner):
+    def configFile(self, configString, filepath, perms, owner, create=False):
         '''
         private method for adding a configString to a given filepath
 
@@ -418,8 +470,10 @@ class SetDefaultUserUmask(Rule):
         @param: filepath - the full path of the file to edit
         @param: perms - 4-digit 0-padded octal permissions (integer)
         @param: owner - 2-element integer list, in format: [uid, gid]
-        @author: bemalmbe
+        @author: Breen Malmberg
         '''
+
+        umask_entries = 0
 
         try:
 
@@ -431,8 +485,23 @@ class SetDefaultUserUmask(Rule):
                 contentlines = f.readlines()
                 f.close()
 
-                # append the config string
-                contentlines.append('\n' + configString)
+                for line in contentlines:
+                    self.logger.log(LogPriority.DEBUG, "Searching new line for umask entry...")
+                    if re.search('^umask', line, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "Found umask config line. Is it a duplicate?")
+                        umask_entries += 1
+                        if umask_entries > 1:
+                            self.logger.log(LogPriority.DEBUG, "Yes. It is a duplicate. umask_entries = " + str(umask_entries))
+                            self.logger.log(LogPriority.DEBUG, "Deleting duplicate line: " + line)
+                            contentlines.remove(line)
+                        else:
+                            self.logger.log(LogPriority.DEBUG, "No. It is not a duplicate. umask_entries = " + str(umask_entries))
+                            self.logger.log(LogPriority.DEBUG, "Replacing existing umask config line with the provided one...")
+                            contentlines = [c.replace(line, configString) for c in contentlines]
+
+                if umask_entries == 0:
+                    # append the config string
+                    contentlines.append('\n' + configString)
 
                 # open temporary file, write new contents
                 tf = open(tmpfile, 'w')
@@ -449,6 +518,17 @@ class SetDefaultUserUmask(Rule):
 
                 # set permission and ownership on rewritten file
                 os.rename(tmpfile, filepath)
+                os.chmod(filepath, perms)
+                os.chown(filepath, owner[0], owner[1])
+            elif create:
+                f = open(filepath, 'w')
+                f.write(configString)
+                f.close()
+                event = {'eventtype': 'creation',
+                         'filepath': filepath}
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.statechglogger.recordchgevent(myid, event)
                 os.chmod(filepath, perms)
                 os.chown(filepath, owner[0], owner[1])
 
