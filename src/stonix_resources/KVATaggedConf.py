@@ -28,6 +28,7 @@ Created on Jul 23, 2013
 from logdispatcher import LogPriority
 import traceback
 import re
+import os
 
 class KVATaggedConf():
 
@@ -512,29 +513,47 @@ class KVATaggedConf():
         return self.writeFile(self.tmpPath, self.tempstring)
 ###############################################################################
     def writeFile(self, tmpfile, contents):
-        '''write the string(contents) to the tmpfile'''
-        tempstring = contents
-        path = tmpfile
-        try:
-            w = open(path, 'w')
-        except IOError, err:
-            self.detailedresults = self.rulename + ": unable to open the \
-            specified file"
-            self.detailedresults += traceback.format_exc()
-            self.logger.log(LogPriority.ERROR,
-                            [self.rulename + ".writeFile", self.detailedresults])
-            return False
-        try:
-            w.write(tempstring)
-        except IOError, err:
-            self.detailedresults = self.rulename + ": unable to write to the \
-            specified file"
-            self.detailedresults += traceback.format_exc()
-            self.logger.log(LogPriority.ERROR,
-                            [self.rulename + ".writeFile", self.detailedresults])
-            return False
-        w.close()
-        return True
+        '''
+        write the string(contents) to the tmpfile
+
+        @param tmpfile: string; full path of file to write
+        @param contents: string|list; contents to write to tmpfile
+        @return: retval
+        @rtype: bool
+        @author: Derek Walker
+        @change: 01/18/2018 - Breen Malmberg - fixed an attributeerror issue associated with the exception handling;
+                re-write of method; added doc string
+        '''
+
+        retval = True
+
+        parentdir = os.path.abspath(os.path.join(tmpfile, os.pardir))
+
+        if not os.path.exists(parentdir):
+            self.detailedresults += "\nUnable to write file: " + str(tmpfile)
+            self.logger.log(LogPriority.DEBUG, "Unable to open specified file path: " + str(tmpfile) + ". Parent directory does not exist.")
+            retval = False
+            return retval
+        else:
+            try:
+                fh = open(tmpfile, 'w')
+                if isinstance(contents, list):
+                    fh.writelines(contents)
+                elif isinstance(contents, basestring):
+                    fh.write(contents)
+                else:
+                    self.detailedresults += "\nUnable to write to file: " + str(tmpfile)
+                    self.logger.log(LogPriority.DEBUG, "Unable to write specified contents. Contents must be either string or list. Given parameter contents was of type: " + str(type(contents)))
+                    fh.close()
+                    retval = False
+                    return retval
+                fh.close()
+            except IOError:
+                fh.close()
+                self.logger.log(LogPriority.ERROR, traceback.format_exc())
+
+        return retval
+
 ###############################################################################
     def storeContents(self, path):
         try:
