@@ -625,22 +625,25 @@ def readFile(filepath, logger):
              readlines function, removing syntax error; moved the implementation
              into the try block
     @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+    @change: bgonz12 - 2018/1/18 - added handling for 'filepath' not existing
     '''
-
+    
     contents = []
 
-    try:
-
-        f = open(filepath, 'r')
-        contents = f.readlines()
-        f.close()
-
-    except IOError:
-        detailedresults = "unable to open the specified file"
-        detailedresults += traceback.format_exc()
+    if not os.path.exists(filepath):
+        detailedresults = "Unable to open specified file: " + filepath + \
+            ". File does not exist."
         logger.log(LogPriority.DEBUG, detailedresults)
-        contents = []
-
+    else:
+        try:
+            f = open(filepath, 'r')
+            contents = f.readlines()
+            f.close()
+        except IOError:
+            detailedresults = "Unable to open the specified file: " + \
+                filepath + ". " + traceback.format_exc()
+            logger.log(LogPriority.DEBUG, detailedresults)
+            contents = []
     return contents
 
 def writeFile(tmpfile, contents, logger):

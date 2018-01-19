@@ -205,6 +205,8 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         the log files, and the logging daemons of syslog and rsyslog
         @author: dwalker
         @return: bool - True or False upon success
+        @change: bgonz12 - 2018/1/18 - reduced the debug output for an
+                 exception handled Traceback.
         '''
         debug = ""
         compliant = True
@@ -368,9 +370,7 @@ daemon config file: " + self.logpath
                                     self.logfilescopy.append(key)
                                 break
                     except IndexError:
-                        debug = traceback.format_exc() + "\n"
-                        debug += "Index out of range\n"
-                        debug += "from line: " + line + "\n"
+                        debug = "Index out of range from line: " + line + "\n"
                         continue
             if self.logfilescopy:
                 for item in self.logfilescopy:
