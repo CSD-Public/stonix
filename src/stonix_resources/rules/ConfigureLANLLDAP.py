@@ -111,7 +111,7 @@ effect."""
 
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
-        self.sh = ServiceHelper(self.environ, self.logger).svchelper
+        self.sh = ServiceHelper(self.environ, self.logger)
         self.iditerator = 0
         self.nslcd = False
         self.pwcompliant = True
