@@ -65,6 +65,7 @@ Disable remember signons
 Configure the proxy settings
 Configure SPNEGO for web SSO
 Disable telemetry and crash reports
+Install the LANL WIN OLT Cert
 '''
         self.rootrequired = True
         self.applicable = {'type': 'white',
@@ -81,7 +82,7 @@ CONFIGUREFIREFOX to False.'''
         self.binpath = None
         self.stonixprefpath = None
         self.stonixautoconfpath = None
-        self.stonixpref = "astonix-v1.js"
+        self.stonixpref = "astonix-v2.js"
         self.stonixautoconf = 'stonixfirefox.cfg'
         self.discoverPaths()
 
@@ -192,7 +193,8 @@ CONFIGUREFIREFOX to False.'''
         if self.cffci.getcurrvalue():
             self.rulesuccess = True
             try:
-                prefs = """pref('general.config.obscure_value', 0);
+                prefs = """// Call to STONIX configured preferences
+pref('general.config.obscure_value', 0);
 pref('general.config.filename', '""" + self.stonixautoconf + """');
 """
                 autoconf = '''//put everything in a try/catch
@@ -243,6 +245,17 @@ lockPref("toolkit.crashreporter.enabled", false);
 
 // Close the try, and call the catch()
 } catch(e) {displayError("lockedPref", e);}
+
+// Install the WIN OLT Certificate Authority
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(Ci.nsIX509CertDB);
+var certdb2 = certdb;
+try {
+   certdb2 = Cc["@mozilla.org/security/x509certdb;1"].getService(Ci.nsIX509CertDB2);
+} catch (e) {}
+cert = "MIIDGTCCAgGgAwIBAgIQOFerAOrQH5dA/lfx140o2zANBgkqhkiG9w0BAQsFADAfMR0wGwYDVQQDExRMQU5MIFdJTiBPTFQgUm9vdCBDQTAeFw0xNTA3MzAxNzUzNTFaFw0zNTA3MzAxODAzNTBaMB8xHTAbBgNVBAMTFExBTkwgV0lOIE9MVCBSb290IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj1ujSUaiJz4IL3NQtGPVErepJbCApnhJDOyXSVluo6I+HoUfniFZoPKQjlw1IEUX0ssbkc9C0385xwX06t3tmgDODRpqPwHtyxg6MNs2hE5pulfvgQV22Ujvv3svpyM4RkZql+lySxq7/sniP6+BDP3WFdfHVaTU/LblzwhfpO7rNUr3sY7q3vjSVonzZkWOqg/jhWAYVhb0sLxk18/qWRH+W12aHUSq0COC8lU8J1fq80cUx36HqTpkCXd2KtPcNjUVr7Xl3riFrWFBy/JwwD++d69v5IhjxKPvrwoCEqW2uZXLMBy/IFvs3jggkHdYkxEAjo8+wi3Ca43Ai4Xm8QIDAQABo1EwTzALBgNVHQ8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUJagoh2sz6wKJxXwT1pQMshSBylEwEAYJKwYBBAGCNxUBBAMCAQAwDQYJKoZIhvcNAQELBQADggEBAIuZqgt4v+Dp4rcOO3f3UibSHKVFUW0q2RwCkKa1BD3v5pGUeLZeOpA8se03z5NcODyGaq3NeZmR8vsVdeujBhSHaQiWw5eTeV6L7MOxMkGiCm4rjdEINGoz1xPhYJVi5MVWR410lhjCcwG9ac1aB0pc43YXZ0aa0mmrdJr5yTGakpXhLsUTmZLv/fekCuiCDHcxqrlEF59MMn1Pu3Nep1N6bgudzuIEtBDTjQeyxaro27ecQrnYmUVNZPLUqqy87DfBcavLc6SlPDmSMEXwlqgzO6s1z47Q/jS635d404SbpS7k/kArAJADF7GLon5NuCEvFiKyAz3TjOzWh2UhfEU="; // This should be the certificate content with no line breaks at all.
+certdb.addCertFromBase64(cert, "C,C,C", "");
 '''
                 # Get filenames for any STONIX preference files that might
                 # already exist
@@ -252,6 +265,11 @@ lockPref("toolkit.crashreporter.enabled", false);
                             rmpath = os.path.join(self.defprefpath, prefile)
                             os.remove(rmpath)
                             os.remove(self.stonixautoconfpath)
+                defaultconfig = os.path.join(self.binpath, 'mozilla.cfg')
+                defaultpref = os.path.join(self.defprefpath, 'autoconfig.js')
+                for conffile in [defaultconfig, defaultpref]:
+                    if os.path.exists(conffile):
+                        os.remove(conffile)
                 # create new preference file
                 whandle = open(self.stonixprefpath, 'w')
                 whandle.write(prefs)
@@ -280,7 +298,7 @@ lockPref("toolkit.crashreporter.enabled", false);
 
     def undo(self):
         """
-        Disabling all firewalls
+        Undo Configure Firefox changes
 
         @author: dkennel
         """
