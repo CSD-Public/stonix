@@ -73,15 +73,8 @@ class SoftwarePatching(Rule):
         self.mandatory = True
         self.sethelptext()
         self.rootrequired = True
-        self.applicable = {'type': 'black', 'family': ['darwin', 'solaris']}
-
-        # this bit added to temporarily pull software patching from opensuse
-        # until the fixes can be implemented
-        ostype = self.environ.getostype()
-        if re.search('suse', ostype, re.IGNORECASE):
-            self.applicable = False
-        # this bit added to temporarily pull software patching from opensuse
-        # until the fixes can be implemented
+        self.environ = environ
+        self.isapplicable()
 
         data = "bool"
         key = "SCHEDULEUPDATE"
@@ -104,8 +97,6 @@ class SoftwarePatching(Rule):
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
         self.constlist = [PROXY, UPDATESERVERS]
-
-
 
     def updated(self):
         '''
@@ -138,6 +129,22 @@ class SoftwarePatching(Rule):
             raise
         os.environ = osEnvBkup
         return updated
+
+    def isapplicable(self):
+        '''
+        
+        '''
+
+        nonapplic = ['suse', 'darwin', 'solaris']
+        ostype = self.environ.getostype()
+        osfam = self.environ.getosfamily()
+        for item in nonapplic:
+            if re.search(item, ostype, re.IGNORECASE):
+                self.applicable = False
+            if re.search(item, osfam, re.IGNORECASE):
+                self.applicable = False
+        else:
+            self.applicable = True
 
     def report(self):
         '''
