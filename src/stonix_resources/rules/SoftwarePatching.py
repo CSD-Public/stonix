@@ -74,7 +74,8 @@ class SoftwarePatching(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.environ = environ
-        self.isapplicable()
+        self.applicable = {'type': 'black',
+                           'family': ['darwin', 'solaris', 'suse']}
 
         data = "bool"
         key = "SCHEDULEUPDATE"
@@ -129,22 +130,6 @@ class SoftwarePatching(Rule):
             raise
         os.environ = osEnvBkup
         return updated
-
-    def isapplicable(self):
-        '''
-        
-        '''
-
-        nonapplic = ['suse', 'darwin', 'solaris']
-        ostype = self.environ.getostype()
-        osfam = self.environ.getosfamily()
-        for item in nonapplic:
-            if re.search(item, ostype, re.IGNORECASE):
-                self.applicable = False
-            if re.search(item, osfam, re.IGNORECASE):
-                self.applicable = False
-        else:
-            self.applicable = True
 
     def report(self):
         '''
