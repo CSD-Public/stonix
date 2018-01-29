@@ -569,6 +569,7 @@ class CommandHelper(object):
 
                 outlines = []
                 errlines = []
+                outstr = ''
                 # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
 
@@ -582,7 +583,6 @@ class CommandHelper(object):
                     self.stdout = outlines
                     self.stderr = errlines
                     self.output = self.stderr + self.stdout
-                    outstr = ''
 
                     self.returncode = commandobj.returncode
                     msg = "returncode: " + str(self.returncode)
