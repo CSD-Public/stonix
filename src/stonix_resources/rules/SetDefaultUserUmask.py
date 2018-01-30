@@ -50,6 +50,7 @@ import shutil
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate
 from ..logdispatcher import LogPriority
+from ..CommandHelper import CommandHelper
 
 
 class SetDefaultUserUmask(Rule):
@@ -127,6 +128,7 @@ class SetDefaultUserUmask(Rule):
 
         # defaults
         self.detailedresults = ""
+        self.ch = CommandHelper(self.logger)
 
         # set up list of files which need to be checked and configured
         self.rootfiledict = {"/root/.bash_profile": False,
