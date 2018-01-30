@@ -28,12 +28,13 @@ Second generation service helper.
 @author: rsn
 '''
 import os
+import pwd
 import time
 import types
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
-from stonixutilityfunctions import reportStack
+from stonixutilityfunctions import reportStack, findUserLoggedIn
 
 class SHlaunchdTwo(ServiceHelperTemplate):
     '''
@@ -60,7 +61,47 @@ class SHlaunchdTwo(ServiceHelperTemplate):
     # helper Methods
     #----------------------------------------------------------------------
 
-    def targetValid(self, **kwargs):
+    def getTargetFromService(self, service):
+        '''
+        Determine the target from the full path to the service.  If it is a
+        LaunchAgent, it is in the loaded user space.  If it is a LaunchDaemon,
+        it is in the loaded System space.
+        
+        Future work: Look inside the plist to see if the service is set to run
+                     as a specific user.
+
+        NOTE: This has not been tested with a user logged in via ssh.  It
+              only applies to the user logged in to the GUI.
+
+        @param: service - Full path to a service to examine.
+
+        @returns: The target to be used for this service.
+
+        @author: Roy Nielsen
+        '''
+        target = None
+
+        if not isinstance(service, basestring) or not service:
+            return target
+
+        user = ''
+        userUid = ''
+
+        serviceName = service.split('/')[-1].split('.')[:-1]
+
+        if 'LaunchDaemon' in service:
+             target = 'system/' + service
+
+        if 'LaunchAgent' in service:
+            user = findUserLoggedIn()
+            if user:
+                userUid = pwd.getpwnam(user).pw_uid
+            if userUid:
+                target = 'gui/' + str(userUid) + '/' + service
+
+        return target
+
+    def targetValid(self, service, **kwargs):
         '''
         Validate a service or domain target, possibly via 
         servicename|serviceName|servicetarget|serviceTarget|domaintarget|domainTarget.
@@ -71,7 +112,9 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         @author: Roy Nielsen
         '''
         target = False
-        if 'servicename' in kwargs:
+        if service:
+            target = getTargetFromService(service)
+        elif 'servicename' in kwargs:
             target = kwargs.get('servicename')
         elif 'serviceName' in kwargs:
             target = kwargs.get('serviceName')
@@ -84,10 +127,12 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         elif 'domainTarget' in kwargs:
             target = kwargs.get('domaintarget')
         else:
-            raise ValueError(reportStack(2) + "One of 'servicename', " + \
-                             "'serviceName', 'serviceTarget'" + \
-                             ", 'domainTarget', 'servicetarget', " + \
+            raise ValueError(reportStack(2) + "Either the service (full " +
+                             "path to the service) or One of 'servicename', " +
+                             "'serviceName', 'serviceTarget'" +
+                             ", 'domainTarget', 'servicetarget', " +
                              "'domaintarget' are required for this method.")
+            
         return target
 
     def getLaunchCtl(self):
@@ -133,7 +178,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         '''
         success = False
 
-        target = self.targetValid(**kwargs)
+        target = self.targetValid(service, **kwargs)
         if target:
             successTwo = self.lCtl.bootOut(target, service)
             successOne = self.lCtl.disable(target)
@@ -177,7 +222,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         successOne = False
         successTwo = False
 
-        target = self.targetValid(**kwargs)
+        target = self.targetValid(service, **kwargs)
         if target:
         
             if 'options' not in kwargs:
@@ -233,7 +278,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         '''
         success = False
 
-        target = self.targetValid(**kwargs)
+        target = self.targetValid(service, **kwargs)
         if target:
             success, data = self.lCtl.printTarget(target)
 
@@ -278,7 +323,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         success = False
         data = None
 
-        target = self.targetValid(**kwargs)
+        target = self.targetValid(service, **kwargs)
         if target:
             success, data = self.lCtl.printTarget(target)
 
@@ -321,7 +366,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         @return: bool indicating success status
         '''
         success = False
-        target = self.targetValid(**kwargs)
+        target = self.targetValid(service, **kwargs)
         if target:
 
             if 'options' not in kwargs:
