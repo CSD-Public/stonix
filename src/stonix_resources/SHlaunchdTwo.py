@@ -113,7 +113,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         '''
         target = False
         if service:
-            target = getTargetFromService(service)
+            target = self.getTargetFromService(service)
         elif 'servicename' in kwargs:
             target = kwargs.get('servicename')
         elif 'serviceName' in kwargs:
