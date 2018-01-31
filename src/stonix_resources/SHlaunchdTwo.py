@@ -90,14 +90,14 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         serviceName = service.split('/')[-1].split('.')[:-1]
 
         if 'LaunchDaemon' in service:
-             target = 'system/' + service
+             target = 'system/' + serviceName
 
         if 'LaunchAgent' in service:
             user = findUserLoggedIn()
             if user:
                 userUid = pwd.getpwnam(user).pw_uid
             if userUid:
-                target = 'gui/' + str(userUid) + '/' + service
+                target = 'gui/' + str(userUid) + '/' + serviceName
 
         return target
 
