@@ -96,7 +96,7 @@ class SHlaunchd(ServiceHelperTemplate):
                              "'serviceName', 'serviceTarget'" +
                              ", 'domainTarget', 'servicetarget', " +
                              "'domaintarget' are required for this method.")
-            
+
         return target
 
     def disableService(self, service, **kwargs):
@@ -112,18 +112,14 @@ class SHlaunchd(ServiceHelperTemplate):
         '''
 
         servicesuccess = False
-        
+
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
-            if 'serviceTarget' not in kwargs:
-                raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
-            else:
-                serviceTarget = kwargs.get('serviceTarget')
-    
+
             command = [self.launchd, 'unload', service]
-    
+
             try:
-    
+
                 self.logdispatcher.log(LogPriority.DEBUG, "command = '" + \
                                        str(command) + "'")
                 if self.ch.executeCommand(command):
@@ -154,11 +150,7 @@ class SHlaunchd(ServiceHelperTemplate):
             try:
                 servicesuccess = False
                 servicecompleted = False
-                if 'serviceTarget' not in kwargs:
-                    raise ValueError("Variable 'serviceTarget' a required parameter for " + str(self.__class__.__name__))
-                else:
-                    serviceTarget = kwargs.get('serviceTarget')
-    
+
                 command = [self.launchd, 'load', service]
                 lastcommand = command
                 servicesuccess = self.ch.executeCommand(command)
@@ -201,7 +193,7 @@ class SHlaunchd(ServiceHelperTemplate):
                     raise ValueError("self.ch.executeCommand(" + \
                                      str(lastcommand) + ") Failed!")
                 return servicesuccess
-    
+
             except Exception:
                 raise
             return False
@@ -237,27 +229,27 @@ class SHlaunchd(ServiceHelperTemplate):
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
             try:
-    
+
                 self.ch.executeCommand(command)
                 retcode = self.ch.getReturnCode()
-    
+
                 if retcode != 0:
                     self.logdispatcher.log(LogPriority.DEBUG, "Command failed: " + str(command) + " with return code: " + str(retcode))
-    
+
                 cmdoutput = self.ch.getOutput()
-    
+
                 # is there any output at all?
                 if not cmdoutput:
                     isloaded = False
                     self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
-    
+
                 # did we even find the service in the output at all?
                 for line in cmdoutput:
                     if re.search(service, line, re.IGNORECASE):
                         found = True
                     if re.search(serviceTarget, line, re.IGNORECASE):
                         found = True
-    
+
                 # did we get any messages specifically stating the
                 # specified service is not loaded or not configured
                 # to run?
@@ -266,19 +258,19 @@ class SHlaunchd(ServiceHelperTemplate):
                         isloaded = False
                     elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
                         isloaded = False
-    
+
                 # if it wasn't found at all, it's not configured to run
                 if not found:
                     isloaded = False
-    
+
                 # log whether it's running or not
                 if isloaded:
                     self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is loaded")
                 else:
                     self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT loaded")
-    
+
                 self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.auditservice()...")
-    
+
             except Exception:
                 raise
         return isloaded
@@ -308,27 +300,27 @@ class SHlaunchd(ServiceHelperTemplate):
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
             try:
-    
+
                 self.ch.executeCommand(command)
                 retcode = self.ch.getReturnCode()
-    
+
                 if retcode != 0:
                     self.logdispatcher.log(LogPriority.DEBUG, "Command failed: " + str(command) + " with return code: " + str(retcode))
-    
+
                 cmdoutput = self.ch.getOutput()
-    
+
                 # is there any output at all?
                 if not cmdoutput:
                     isrunning = False
                     self.logdispatcher.log(LogPriority.INFO, "There was no output from command: " + str(command))
-    
+
                 # did we even find the service in the output at all?
                 for line in cmdoutput:
                     if re.search(service, line, re.IGNORECASE):
                         found = True
                     if re.search(serviceTarget, line, re.IGNORECASE):
                         found = True
-    
+
                 # if found, is it configured to run or not?
                 # did we get any messages specifically stating the
                 # specified service is not loaded or not configured
@@ -342,19 +334,19 @@ class SHlaunchd(ServiceHelperTemplate):
                         isrunning = False
                     elif re.search(self.noservicemsgs[1], line, re.IGNORECASE):
                         isrunning = False
-    
+
                 # if it wasn't found at all, it's not configured to run
                 if not found:
                     isrunning = False
-    
+
                 # log whether it's running or not
                 if isrunning:
                     self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
                 else:
                     self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
-    
+
                 self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.isrunning()...")
-    
+
             except Exception:
                 raise
         return isrunning
@@ -403,7 +395,7 @@ class SHlaunchd(ServiceHelperTemplate):
                     self.logdispatcher.log(LogPriority.DEBUG, "\n" + errmsg)
                 else:
                     self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(unloadcmd) + " was run successfully")
-    
+
                 self.ch.executeCommand(loadcmd)
                 retcode2 = self.ch.getReturnCode()
                 if retcode2 != 0:
@@ -413,9 +405,9 @@ class SHlaunchd(ServiceHelperTemplate):
                     self.logdispatcher.log(LogPriority.DEBUG, "\n" + errmsg2)
                 else:
                     self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(loadcmd) + " was run successfully")
-    
+
                 self.logdispatcher.log(LogPriority.DEBUG, "Exiting SHlaunchd.reloadservice()...")
-    
+
             except Exception:
                 raise
         return reloadsuccess
@@ -457,7 +449,7 @@ class SHlaunchd(ServiceHelperTemplate):
             self.logdispatcher.log(LogPriority.DEBUG,
                                    '(' + service + ', ' + serviceTarget + \
                                    ') = ' + str(servicesuccess))
-    
+
         return servicesuccess
 
     def stopService(self, service, **kwargs):
@@ -471,7 +463,7 @@ class SHlaunchd(ServiceHelperTemplate):
         servicesuccess = True
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
-    
+
             if self.isRunning(service, serviceTarget=serviceTarget):
                 command = [self.launchd, 'stop', 'job ', serviceTarget]
                 if self.ch.executeCommand(command):
@@ -479,9 +471,9 @@ class SHlaunchd(ServiceHelperTemplate):
                         servicesuccess = True
             else:
                 servicesuccess = True
-    
+
             self.logdispatcher.log(LogPriority.DEBUG,
                                    '(' + service + ', ' + serviceTarget + \
                                    ') = ' + str(servicesuccess))
-    
+
         return servicesuccess
