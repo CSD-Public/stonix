@@ -85,7 +85,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         user = ''
         userUid = ''
 
-        serviceName = service.split('/')[-1].split('.')[:-1]
+        serviceNameList = service.split('/')[-1].split('.')
+        serviceName = ".".join(serviceNameList[:-1]) # remove the .plist
 
         if 'LaunchDaemon' in service:
             target = 'system/' + serviceName
