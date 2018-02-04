@@ -27,6 +27,8 @@ Second generation service helper.
 
 @author: rsn
 '''
+import os
+import re
 import pwd
 import time
 from launchctl import LaunchCtl
@@ -182,16 +184,35 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         @return: Bool indicating success status
         '''
         success = False
+        domain = ''
 
         target = self.targetValid(service, **kwargs)
         if target:
-            targetName = target.split('/')[1]
-            successTwo = self.lCtl.bootOut(targetName, service)
-            successOne = self.lCtl.disable(target)
+            #targetName = target.split('/')[1]
+            domainList = target.split("/")[:-1]
+            if len(domainList) > 1:
+                domain = "/".join(domainList)
+            else:
+                domain = domainList[0]
+
+            if self.isRunning(service, **kwargs):
+                successTwo = self.lCtl.bootOut(domain, service)
+            else:
+                successTwo = True
+            if self.auditService(service, **kwargs):
+                successOne = self.lCtl.disable(target)
+            else:
+                successOne = True
 
             if successOne and successTwo:
                 success = True
 
+            else:
+                if self.isRunning(service, **kwargs):
+                    success = self.lCtl.bootOut(domain, service)
+                else:
+                    success = True
+                    
         return success
 
     # ----------------------------------------------------------------------
@@ -237,21 +258,31 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             else:
                 options = kwargs.get('options')
             '''
-            successOne = self.lCtl.enable(target)
-            time.sleep(3)
-            successTwo = self.lCtl.bootStrap(service, target)
-            # successThree = self.lCtl.kickStart(serviceTarget, options)
+            if self.auditService(service, **kwargs):
+                successOne = True
+            else:
+                successOne = self.lCtl.enable(target, service)
+                time.sleep(3)
 
-            if successOne and successTwo: # and successTwo and successThree:
+            if self.isRunning(service, **kwargs):
+                successTwo = True
+            else:
+                domainList = target.split("/")[:-1]
+                if len(domainList) > 1:
+                    domain = "/".join(domainList)
+                else:
+                    domain = domainList[0]
+
+                successTwo = self.lCtl.bootStrap(domain, service)
+                time.sleep(10)
+            if successOne and successTwo: # and successThree:
                 success = True
             else:
-                # raise ValueError("Problem enabling service: " +
-                #                  "serviceTarget + " one=" + str(successOne) +
-                #                  ", two=" + str(successTwo) +
-                #                  " three: " + str(successThree))
-                raise ValueError("Problem enabling service: " + target +
-                                 " one=" + str(successOne) +
-                                 ", two=" + str(successTwo))
+                success = False
+                self.logger.log(lp.DEBUG,
+                                "Problem enabling service: " + target +
+                                " one=" + str(successOne) +
+                                ", two=" + str(successTwo))
 
         return success
 
@@ -260,7 +291,10 @@ class SHlaunchdTwo(ServiceHelperTemplate):
     def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
-        not the service is configured to run or not.
+        not the service is configured to run or not.  Check if the plist
+        exists, and make sure that the file doesn't contain the disabled flag.
+        Also check and make sure it isn't in the currently running domaintarget
+        disabled list.
 
         @param: service: full path to the plist file used to manage
                          the service.
@@ -290,12 +324,43 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                  Data, Information about the process, if running
         '''
         success = False
+        successOne = False
+        successTwo = False
+        successThree = False
+        serviceDisabled = True
+        domain = ''
 
         target = self.targetValid(service, **kwargs)
         if target:
-            success, data = self.lCtl.printTarget(target)
+            successOne = os.path.isfile(service)
+            if re.search("LaunchAgents", service) or \
+               re.search("LaunchDaemons", service):
+                successTwo = True
+
+            domainList = target.split("/")[:-1]
+            if len(domainList) > 1:
+                domain = "/".join(domainList)
+            else:
+                domain = domainList[0]
+            # successThree, data = self.lCtl.printDisabled()
+            _, data = self.lCtl.printDisabled(domain)
+
             if data:
-                self.logger.log(lp.DEBUG, str(data))
+                label = target.split("/")[-1]
+                self.logger.log(lp.DEBUG, "label: " + str(label))
+                foundServiceDisabled = False
+                for item in data.split(","):
+                    if re.search("%s"%label, item):
+                        self.logger.log(lp.DEBUG, "Found label: " + str(label))
+                        foundServiceDisabled = True
+                        break
+                if not foundServiceDisabled:
+                    serviceDisabled = False
+
+            if successOne and successTwo and not serviceDisabled: # and successThree:
+                success = True
+            else:
+                success = False
 
         return success
 
@@ -341,8 +406,14 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         target = self.targetValid(service, **kwargs)
         if target:
-            success, data = self.lCtl.printTarget(target)
-            self.logger.log(lp.DEBUG, str(data))
+            label = target.split("/")[-1]
+            _, data, _, _ = self.lCtl.list()
+            for line in data:
+                if re.search("%s"%label, line):
+                    self.logger.log(lp.DEBUG, "Found label: " + str(line))
+                    success = True
+                    break
+            #self.logger.log(lp.DEBUG, str(data))
         return success
 
     # ----------------------------------------------------------------------

@@ -521,9 +521,6 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         """
         success = False
-        error = True
-        output = ""
-        returncode = 0
         #####
         # Input validation.
         if label and isinstance(label, basestring):
@@ -532,16 +529,19 @@ class LaunchCtl(object):
             cmd = [self.launchctl, 'list']
         else:
             return success
-            #####
-            # set up and run the command
-            self.ch.setCommand(cmd)
-            success = self.ch.executeCommand()
-            if success:
-                output = self.ch.getOutput()
-                error = self.ch.getError()
-                returncode = self.ch.getReturnCode()
+        #####
+        # set up and run the command
+        # self.ch.setCommand(cmd)
+        success = self.ch.executeCommand(cmd)
+
+        output = self.ch.getOutput()
+        error = self.ch.getError()
+        returncode = self.ch.getReturnCode()
 
         if not error:
+            self.logger.log(lp.DEBUG, "Output: " + str(output))
+            self.logger.log(lp.DEBUG, "Error: " + str(error))
+            self.logger.log(lp.DEBUG, "Return code: " + str(returncode))
             success = True
         else:
             self.logger.log(lp.DEBUG, "Output: " + str(output))
@@ -618,7 +618,7 @@ class LaunchCtl(object):
     # Supported Second generation subcommands
     # ----------------------------------------------------------------------
 
-    def bootStrap(self, servicePath='', domainTarget=""):
+    def bootStrap(self, domainTarget="", servicePath=''):
         '''
         @note: From the launchctl man page:
           bootstrap | bootout domain-target [service-path service-path2 ...] |
@@ -639,20 +639,28 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
+        cmd = ''
         #####
         # Input validation.
         if not isinstance(domainTarget, basestring) or \
            not isinstance(servicePath, basestring):
             return success
 
-        cmd = {"bootstrap": [domainTarget.split("/")[0], servicePath]}
+        if servicePath and domainTarget:
+            cmd = {"bootstrap": [domainTarget, servicePath]}
+        elif domainTarget:
+            cmd = {"bootstrap": [domainTarget]}
+        else:
+            return success
+
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) +
-                             " stdout: " + str(stdout) +
-                             " stderr: " + str(stderr) +
-                             " retcode: " + str(retcode))
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
         return success
 
     # ----------------------------------------------------------------------
@@ -684,27 +692,36 @@ class LaunchCtl(object):
            not isinstance(servicePath, basestring):
             return success
 
-        cmd = {"bootout": [domainTarget]}
+        if servicePath and domainTarget:
+            cmd = {"bootout": [domainTarget, servicePath]}
+        elif domainTarget:
+            cmd = {"bootout": [domainTarget]}
+        else:
+            return success
 
-        if self.printTarget(domainTarget):
-            success, stdout, stderr, retcode = self.runSubCommand(cmd)
-            #####
-            # errors that indicate the process is complete or in
-            # progress
-            if re.search("No such process", stderr) or \
-               re.search("Operation now in progress", stderr):
-                success = True
+        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        #####
+        # errors that indicate the process is complete or in
+        # progress
+        if re.search("No such process", stderr) or \
+           re.search("Operation now in progress", stderr):
+            success = True
 
         if retcode != '0'and not success:
-            raise ValueError(reportStack() + "- success: " + str(success) +
-                             " stdout: " + str(stdout) +
-                             " stderr: " + str(stderr) +
-                             " retcode: " + str(retcode))
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+        for item in stderr:
+            if item and re.search("Could not find specified service", item):
+                success = True
+                break
         return success
 
     # ----------------------------------------------------------------------
 
-    def enable(self, serviceTarget):
+    def enable(self, serviceTarget, servicePath=''):
         '''
         From the launchctl man page:
           enable | disable service-target
@@ -739,15 +756,22 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
+        stderr = False
         #####
         # Input validation.
         if not isinstance(serviceTarget, basestring):
             return success
 
-        cmd = {"enable": [serviceTarget]}
+        if servicePath and isinstance(servicePath, basestring):
+            cmd = {"enable": [serviceTarget, servicePath]}
+        else:
+            cmd = {"enable": [serviceTarget]}
+
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
-        if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) +
+        if retcode != '0' or stderr or not success:
+            success = False
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
                              " stdout: " + str(stdout) +
                              " stderr: " + str(stderr) +
                              " retcode: " + str(retcode))
@@ -1095,7 +1119,7 @@ class LaunchCtl(object):
 
     # -------------------------------------------------------------------------
 
-    def printDisabled(self):
+    def printDisabled(self, target=''):
         '''
         @note: From the launchctl man page:
           print-disabled
@@ -1103,10 +1127,13 @@ class LaunchCtl(object):
 
         @author: Roy Nielsen
         '''
-        cmd = {"print-disabled": []}
-        _, stdout, _, _ = self.runSubCommand(cmd)
+        success = False
+        stdout = ''
+        if target and isinstance(target, basestring):
+            cmd = {"print-disabled": [target]}
+            success, stdout, _, _ = self.runSubCommand(cmd)
 
-        return stdout
+        return success, stdout
 
     # -------------------------------------------------------------------------
 

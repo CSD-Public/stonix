@@ -149,10 +149,10 @@ class ServiceHelper(object):
                                                    self.logdispatcher)
             elif islaunchd:
                 if re.match("10.11", self.environ.getosver()):
-                     self.svchelper = SHlaunchd.SHlaunchd(self.environ,
+                    self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
                 else:
-                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
+                    self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
                                                      self.logdispatcher)
             else:
                 raise RuntimeError("Could not identify service management " +
@@ -274,11 +274,11 @@ class ServiceHelper(object):
             # rest of the parameters need to be validated by the concrete
             # service helper instance.
             if not isinstance(service, basestring):
-                raise TypeError("Service: " + str(service) + \
+                raise TypeError("Service: " + str(service) +
                                 " is not a string as expected.")
                 serviceValid = False
             elif not service:  # if service is an empty string
-                raise ValueError('service specified is blank. ' +\
+                raise ValueError('service specified is blank. ' +
                                 'No action will be taken!')
                 serviceValid = False
             elif service : # service is a string of one or more characters
@@ -459,6 +459,8 @@ class ServiceHelper(object):
                 if self.isHybrid:
                     if self.secondary.enableService(self.getService(), **kwargs):
                         enabledSecondary = True
+            else:
+                enabledSingle = True
 
             enabledSuccess = enabledSingle or enabledSecondary
 
@@ -685,16 +687,17 @@ class ServiceHelper(object):
         secondaryList = []
         try:
             serviceList = self.svchelper.listServices()
-            
+
             if self.isHybrid:
                 secondaryList = self.secondary.listServices()
                 if secondaryList:
                     serviceList += secondaryList
 
         except:
-            self.__calledBy()
-            raise
-            
+            self.logdispatcher.log(LogPriority.DEBUG, str(self.__calledBy()))
+            self.logdispatcher.log(LogPriority.DEBUG, "Sorry, exception raised, " +
+                                   "we cannot acquire a sercideList.")
+
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END = ' + str(serviceList))
         return serviceList
