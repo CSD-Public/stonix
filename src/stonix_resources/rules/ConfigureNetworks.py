@@ -29,6 +29,7 @@ dictionary
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2014/10/20 ekkehard Artifact artf34318 : ConfigureNetworks(122)
 @change: 2015/04/14 dkennel updated for new isApplicable
+@change: 2016/12/20 Breen Malmberg - (see method doc strings)
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
@@ -54,7 +55,6 @@ class ConfigureNetworks(RuleKVEditor):
     '''
 
     @author: ekkehard j. koch
-    @change: Breen Malmberg - 12/20/2016 - (see method doc strings)
     '''
 
 ###############################################################################
