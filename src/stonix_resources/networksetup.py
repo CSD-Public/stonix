@@ -494,6 +494,7 @@ class networksetup():
         
         success = True
         order = -1
+        networkenabled = False
         newserviceonnexline = False
         newservice = False
         servicename = ""
