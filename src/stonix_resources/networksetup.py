@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,6 +33,7 @@ macOS (OS X) for use with stonix4mac.
 @change: 2017/09/23 ekkehard __init__ fix
 @change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
 @change: 2017/10/13 ekkehard re-factor updateCurrentNetworkConfigurationDictionary
+@change: 2018/02/06 ekkehard fix traceback
 '''
 import re
 import types
