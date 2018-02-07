@@ -50,7 +50,7 @@ class networksetup():
     '''
     This objects encapsulates the complexities of the networksetup command
     on macOS (OS X)
-    
+
     @author: ekkehard j. koch
     '''
 
@@ -105,6 +105,9 @@ class networksetup():
         self.domainByPass = PROXYDOMAINBYPASS
         self.ch = CommandHelper(self.logdispatch)
         self.initialized = False
+        self.nameofdevice = ""
+        self.notinservicelist = False
+        self.detailedresults = ""
 
 ###############################################################################
 
@@ -290,11 +293,11 @@ class networksetup():
 
             self.logdispatch.log(LogPriority.DEBUG, "\nnetworkName = " + str(networkName).strip().lower() + "\n")
             self.logdispatch.log(LogPriority.DEBUG, "\nself.nameofdevice = " + str(self.nameofdevice).strip().lower() + "\n")
-            
+
             if str(networkName).strip().lower() == str(self.nameofdevice).strip().lower():
 
                 self.logdispatch.log(LogPriority.DEBUG, "networkName matches self.nameofdevice. Running airportpower disable command...")
-                
+
                 disablecommand = [self.nsc, "-setairportpower", networkName, "off"]
                 
                 self.ch.executeCommand(disablecommand)
@@ -492,14 +495,14 @@ class networksetup():
 ###############################################################################
 
     def networksetupistnetworkserviceorderoutputprocessing(self, outputLines):
-        
+
         success = True
         order = -1
         networkenabled = False
         newserviceonnexline = False
         newservice = False
         servicename = ""
-        noinfo = False
+        # noinfo = False
         for line in outputLines:
             lineprocessed = line.strip()
             if newserviceonnexline:
@@ -577,12 +580,12 @@ class networksetup():
 ###############################################################################
 
     def networksetuplistallhardwareportsoutputprocessing(self, outputLines):
-        
+
         success = True
         newserviceonnexline = False
         newservice = False
         servicename = ""
-        noinfo = False
+        # noinfo = False
         for line in outputLines:
             lineprocessed = line.strip()
             if newserviceonnexline:
@@ -617,7 +620,7 @@ class networksetup():
                     networktype = "bluetooth"
                 elif "usb" in servicename.lower():
                     networktype = "usb"
-                elif "wi-fi" in item.lower():
+                elif "wi-fi" in servicename.lower():
                     networktype = "wi-fi"
                 elif "firewire" in servicename.lower():
                     networktype = "firewire"
@@ -671,7 +674,7 @@ class networksetup():
                     self.detailedresults = messagestring
                 else:
                     self.detailedresults = self.detailedresults + "\n" + \
-                    messagestring
+                                           messagestring
         elif datatype == types.ListType:
             if not (pMessage == []):
                 for item in pMessage:
@@ -702,11 +705,11 @@ class networksetup():
 
 ###############################################################################
 
-    def setAdvancedNetworkSetup(self, pHardwarePort = None) :
+    def setAdvancedNetworkSetup(self, pHardwarePort = None):
         """
         Set proxies up for normal first configuration that has a network
         connection.
-        
+
         @author: Roy Nielsen
         @param self:essential if you override this definition
         @param pNetworkName:name of the network to fix
@@ -803,7 +806,7 @@ class networksetup():
         '''
         '''
         #####
-        # Find the interface that needs to be at the top of the self.nso order        
+        # Find the interface that needs to be at the top of the self.nso order
         cmd = ["/sbin/route", "get", "default"]
         
         self.ch.executeCommand(cmd)
@@ -815,7 +818,7 @@ class networksetup():
                 interface_match = re.match("\s+interface:\s+(\w+)", line)
                 defaultInterface = interface_match.group(1)
             except (IndexError, KeyError, AttributeError), err:
-                self.logdispatch.log(LogPriority.DEBUG, str(line))
+                self.logdispatch.log(LogPriority.DEBUG, str(line) + " : " + str(err))
             else:
                 break
 
@@ -846,7 +849,7 @@ class networksetup():
             try:
                 enet_match = re.match("^Ethernet Address:\s+(\w+:\w+:\w+:\w+:\w+:\w+)\s*$", line)
                 enet = enet_match.group(1)
-                #print enet
+                self.logger.log(LogPriority.DEBUG, "enet: " + str(enet))
             except AttributeError, err:
                 pass
 
@@ -863,10 +866,10 @@ class networksetup():
         # Reset NSO order if the defaultInterface is not at the top of the list
         newnso = {}
         i = 1
-        
+
         print str(self.nso)
         print "hardware port: " + hardwarePort
-                
+
         for key, value in sorted(self.nso.iteritems()):
             #print str(key) + " : " + str(value)
             if re.match("^%s$"%hardwarePort.strip(), value.strip()):
@@ -892,7 +895,7 @@ class networksetup():
     def startup(self):
         '''
         startup is designed to implement the startup portion of the stonix rule
-        
+
         @author: ekkehard j. koch
         '''
         disabled = True
