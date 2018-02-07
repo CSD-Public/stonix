@@ -83,6 +83,7 @@ class RestrictMounting(Rule):
 
     def report(self):
         try:
+            self.automountMedia = True
             self.path1 = "/etc/security/console.perms.d/50-default.perms"
             self.path2 = "/etc/security/console.perms"
             self.data = {"<console>":
