@@ -29,6 +29,8 @@ This rule restricts mounting rights and options.
 @change: 2016/08/01 eball Added "dbus-launch" before all gsettings commands,
     and fixed undos that were the same as the fix commands
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2018/2/9   bgonz12 - changed fix make sure dbus-x11 is installed
+    before disabling gnome automount in gsettings
 '''
 from __future__ import absolute_import
 import os
@@ -84,6 +86,7 @@ class RestrictMounting(Rule):
     def report(self):
         try:
             self.automountMedia = True
+            self.automountDrives = True
             self.path1 = "/etc/security/console.perms.d/50-default.perms"
             self.path2 = "/etc/security/console.perms"
             self.data = {"<console>":
@@ -144,7 +147,7 @@ class RestrictMounting(Rule):
                     compliant = False
                     results += "GNOME automounting is enabled\n"
 
-            elif os.path.exists("/usr/bin/gconftool-2"):
+            if os.path.exists("/usr/bin/gconftool-2"):
                 automountMedia = True
                 automountDrives = True
 
@@ -241,7 +244,8 @@ class RestrictMounting(Rule):
                                 " properties could not be set\n"
 
             if self.autofsCi.getcurrvalue():
-                if self.ph.check("autofs") and self.sh.auditService("autofs", _="_"):
+                if self.ph.check("autofs") and \
+                   self.sh.auditService("autofs", _="_"):
                     if self.sh.disableService("autofs", _="_"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
@@ -258,41 +262,53 @@ class RestrictMounting(Rule):
 
             returnCode = 0
             if self.gnomeCi.getcurrvalue():
-                if os.path.exists("/usr/bin/gsettings") and \
-                   os.path.exists("/usr/bin/dbus-launch"):
-                    if not self.automountOff:
-                        cmd = ["dbus-launch", "gsettings", "set",
-                               "org.gnome.desktop.media-handling",
-                               "automount", "false"]
-                        self.ch.executeCommand(cmd)
-                        returnCode = self.ch.getReturnCode()
+                if os.path.exists("/usr/bin/gsettings"):
+                    # gsettings requires a D-Bus session bus in order to make
+                    # any changes. This is because the dconf daemon must be
+                    # activated using D-Bus.
+                    if not os.path.exists("/usr/bin/dbus-launch"):
+                        self.ph.install("dbus-x11")
+                    
+                    if os.path.exists("/usr/bin/dbus-launch"):
+                        if not self.automountOff:
+                            cmd = ["dbus-launch", "gsettings", "set",
+                                   "org.gnome.desktop.media-handling",
+                                   "automount", "false"]
+                            self.ch.executeCommand(cmd)
+                            returnCode = self.ch.getReturnCode()
 
-                        if not returnCode:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "comm", "command":
-                                     ["dbus-launch", "gsettings", "set",
-                                      "org.gnome.desktop.media-handling",
-                                      "automount", "true"]}
-                            self.statechglogger.recordchgevent(myid, event)
+                            if not returnCode:
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, 
+                                               self.rulenumber)
+                                event = {"eventtype": "comm", "command":
+                                        ["dbus-launch", "gsettings", "set",
+                                         "org.gnome.desktop.media-handling",
+                                         "automount", "true"]}
+                                self.statechglogger.recordchgevent(myid, event)
 
-                    if not self.autorunNever:
-                        cmd = ["dbus-launch", "gsettings", "set",
-                               "org.gnome.desktop.media-handling",
-                               "autorun-never", "true"]
-                        self.ch.executeCommand(cmd)
-                        returnCode += self.ch.getReturnCode()
+                        if not self.autorunNever:
+                            cmd = ["dbus-launch", "gsettings", "set",
+                                   "org.gnome.desktop.media-handling",
+                                   "autorun-never", "true"]
+                            self.ch.executeCommand(cmd)
+                            returnCode += self.ch.getReturnCode()
 
-                        if not self.ch.getReturnCode():
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "comm", "command":
-                                     ["dbus-launch", "gsettings", "set",
-                                      "org.gnome.desktop.media-handling",
-                                      "autorun-never", "false"]}
-                            self.statechglogger.recordchgevent(myid, event)
+                            if not self.ch.getReturnCode():
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                event = {"eventtype": "comm", "command":
+                                        ["dbus-launch", "gsettings", "set",
+                                         "org.gnome.desktop.media-handling",
+                                         "autorun-never", "false"]}
+                                self.statechglogger.recordchgevent(myid, event)
+                    else:
+                        success = False
+                        debug = "Unable to disable GNOME automounting: " + \
+                                "dbus-x11 is not installed"
+                        self.logger.log(LogPriority.DEBUG, debug)
 
-                elif os.path.exists("/usr/bin/gconftool-2"):
+                if os.path.exists("/usr/bin/gconftool-2"):
                     if self.automountMedia:
                         cmd = ["gconftool-2", "--direct", "--config-source",
                                "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
