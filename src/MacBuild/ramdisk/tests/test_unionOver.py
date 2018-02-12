@@ -34,6 +34,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 
+@unittest.skip("Needs appropriate tests written...")
 class test_unionOver(GenericRamdiskTest):
     """
     Test unionfs functionality of ramdisks
@@ -46,15 +47,8 @@ class test_unionOver(GenericRamdiskTest):
         """
         Initializer
         """
-        raise unittest.SkipTest("Needs appropriate tests written")
 
-        #####
-        # If we don't have a supported platform, skip this test.
-        if not sys.platform.startswith("darwin"):
-            raise unittest.SkipTest("This is not valid on this OS")
         self.getLibc()
-     
-
 
     def setUp(self):
         """

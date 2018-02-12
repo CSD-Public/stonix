@@ -118,21 +118,12 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         success = True
         return success
 
+    @unittest.skipUnless(sys.platform.startswith("darwin"), "CheckDupID's does nto support this OS.")
     def test_checkForMacosDuplicateUser(self):
         """
         Tests the rule method that uses the /usr/bin/dscl command to
         check for duplicate User IDs in the local directory service
         """
-        applicable = {'type': 'white',
-                      'family': ['darwin']}
-
-        isTestApplicableHere = self.chkApp.isapplicable(applicable)
-
-        if not isTestApplicableHere:
-            if sys.version_info < (2, 7):
-                return
-            else:
-                raise unittest.SkipTest("CheckDupID's does not support this OS")
 
         uid = "7000"
 
