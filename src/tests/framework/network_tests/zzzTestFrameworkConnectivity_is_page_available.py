@@ -45,7 +45,7 @@ def name_test_template(*args):
         self.assert_value(*args)
     return foo
 
-@unittest.skipIf(re.search("foo.bar", PROXY, re.IGNORECASE), "Proxy is set to a fake value. Skipping connectivity test.")
+@unittest.skipIf(PROXY == None, "Proxy is not set. Skipping connectivity test.")
 class test_Connectivity_is_page_available(unittest.TestCase):
 
     def setUp(self):
@@ -54,7 +54,6 @@ class test_Connectivity_is_page_available(unittest.TestCase):
 
         self.environ = Environment()
         self.logdispatcher = LogDispatcher(self.environ)
-        self.skip = False
         self.conn = Connectivity(self.logdispatcher, use_proxy=True)
 
     def assert_value(self, expected, test_iteration, site, page):
@@ -62,13 +61,9 @@ class test_Connectivity_is_page_available(unittest.TestCase):
         '''
 
         if expected:
-            self.assertTrue(self.conn.is_site_available(site, page),
-                            "Could not reach page " + page + " at site " +
-                            site)
+            self.assertTrue(self.conn.is_site_available(site, page), "Could not reach page " + page + " at site " + site)
         else:
-            self.assertFalse(self.conn.is_site_available(site, page),
-                             "Found page " + page + " at site " +
-                             site)
+            self.assertFalse(self.conn.is_site_available(site, page), "Found page " + page + " at site " + site)
 
 for behavior, test_cases in test_case_data_is_page_available.items():
     for test_case_data in test_cases:
