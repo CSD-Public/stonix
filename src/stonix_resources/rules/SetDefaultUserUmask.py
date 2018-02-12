@@ -20,7 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-import cmd
+
 '''
 Created on Dec 11, 2012
 The SetDefaultUserUmask class sets the default user umask to 077. Also accepts
