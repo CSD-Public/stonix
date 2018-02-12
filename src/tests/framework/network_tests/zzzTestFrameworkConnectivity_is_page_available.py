@@ -40,39 +40,35 @@ def name_test_template(*args):
     """
     decorator for monkeypatching
     """
+
     def foo(self):
         self.assert_value(*args)
     return foo
 
-
+@unittest.skipIf(re.search("foo.bar", PROXY, re.IGNORECASE), "Proxy is set to a fake value. Skipping connectivity test.")
 class test_Connectivity_is_page_available(unittest.TestCase):
 
     def setUp(self):
+        '''
+        '''
+
         self.environ = Environment()
         self.logdispatcher = LogDispatcher(self.environ)
         self.skip = False
-        if self.environ.getosfamily() == "linux" or re.search("foo.bar", PROXY):
-            # If we can do this the easy way with Python > 2.7, do that. If
-            # not, set the skip flag
-            if hasattr(unittest, "SkipTest"):
-                self.skipTest("Proxy is set to a fake value. " +
-                              "Skipping connectivity test.")
-            else:
-                self.skip = True
-        if not self.skip:
-            self.conn = Connectivity(self.logdispatcher, use_proxy=True)
+        self.conn = Connectivity(self.logdispatcher, use_proxy=True)
 
     def assert_value(self, expected, test_iteration, site, page):
-        if not self.skip:
-            if expected:
-                self.assertTrue(self.conn.is_site_available(site, page),
-                                "Could not reach page " + page + " at site " +
-                                site)
-            else:
-                self.assertFalse(self.conn.is_site_available(site, page),
-                                 "Found page " + page + " at site " +
-                                 site)
+        '''
+        '''
 
+        if expected:
+            self.assertTrue(self.conn.is_site_available(site, page),
+                            "Could not reach page " + page + " at site " +
+                            site)
+        else:
+            self.assertFalse(self.conn.is_site_available(site, page),
+                             "Found page " + page + " at site " +
+                             site)
 
 for behavior, test_cases in test_case_data_is_page_available.items():
     for test_case_data in test_cases:
