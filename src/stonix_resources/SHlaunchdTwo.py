@@ -28,9 +28,9 @@ Second generation service helper.
 @author: rsn
 '''
 import os
+import re
 import pwd
 import time
-import types
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
@@ -57,16 +57,16 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         self.logger = logdispatcher
         self.lCtl = LaunchCtl(self.logger)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # helper Methods
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def getTargetFromService(self, service):
         '''
         Determine the target from the full path to the service.  If it is a
         LaunchAgent, it is in the loaded user space.  If it is a LaunchDaemon,
         it is in the loaded System space.
-        
+
         Future work: Look inside the plist to see if the service is set to run
                      as a specific user.
 
@@ -87,23 +87,26 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         user = ''
         userUid = ''
 
-        serviceName = service.split('/')[-1].split('.')[:-1]
+        serviceNameList = service.split('/')[-1].split('.')
+        serviceName = ".".join(serviceNameList[:-1]) # remove the .plist
 
         if 'LaunchDaemon' in service:
-             target = 'system/' + service
+            target = 'system/' + serviceName
 
         if 'LaunchAgent' in service:
-            user = findUserLoggedIn()
+            user = findUserLoggedIn(self.logger)
             if user:
                 userUid = pwd.getpwnam(user).pw_uid
             if userUid:
-                target = 'gui/' + str(userUid) + '/' + service
+                target = 'gui/' + str(userUid) + '/' + serviceName
 
         return target
 
+    # ----------------------------------------------------------------------
+
     def targetValid(self, service, **kwargs):
         '''
-        Validate a service or domain target, possibly via 
+        Validate a service or domain target, possibly via
         servicename|serviceName|servicetarget|serviceTarget|domaintarget|domainTarget.
 
         @return: the value of one of the above as "target", in the order
@@ -132,20 +135,23 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                              "'serviceName', 'serviceTarget'" +
                              ", 'domainTarget', 'servicetarget', " +
                              "'domaintarget' are required for this method.")
-            
+
         return target
+
+    # ----------------------------------------------------------------------
 
     def getLaunchCtl(self):
         '''
-        Return the instance of the LaunchCtl class for use outside this context.
+        Return the instance of the LaunchCtl class for use outside this
+        context.
 
         @author: Roy Nielsen
         '''
         return self.lCtl
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Standard interface to the service helper.
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def disableService(self, service=None, **kwargs):
         '''
@@ -153,16 +159,16 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @param: service: full path to the plist file used to manage
                          the service.
-        @param: serviceName|serviceTarget|domainTarget can be used 
-                interchangably via key value pair in kwargs.  See 
+        @param: serviceName|serviceTarget|domainTarget can be used
+                interchangably via key value pair in kwargs.  See
                 description below for details on this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -170,25 +176,46 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @return: Bool indicating success status
         '''
         success = False
+        domain = ''
 
         target = self.targetValid(service, **kwargs)
         if target:
-            successTwo = self.lCtl.bootOut(target, service)
-            successOne = self.lCtl.disable(target)
+            #targetName = target.split('/')[1]
+            domainList = target.split("/")[:-1]
+            if len(domainList) > 1:
+                domain = "/".join(domainList)
+            else:
+                domain = domainList[0]
+
+            if self.isRunning(service, **kwargs):
+                successTwo = self.lCtl.bootOut(domain, service)
+            else:
+                successTwo = True
+            if self.auditService(service, **kwargs):
+                successOne = self.lCtl.disable(target)
+            else:
+                successOne = True
 
             if successOne and successTwo:
                 success = True
 
+            else:
+                if self.isRunning(service, **kwargs):
+                    success = self.lCtl.bootOut(domain, service)
+                else:
+                    success = True
+                    
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def enableService(self, service, **kwargs):
         '''
@@ -203,8 +230,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -212,9 +239,10 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @return: Bool indicating success status
         '''
@@ -224,44 +252,62 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         target = self.targetValid(service, **kwargs)
         if target:
-        
+            '''
             if 'options' not in kwargs:
                 options = ""
             else:
                 options = kwargs.get('options')
-    
-            successOne = self.lCtl.enable(target)
-            time.sleep(3)
-            successTwo = self.lCtl.bootStrap(service, target)
-            #successThree = self.lCtl.kickStart(serviceTarget, options)
-    
-            if successOne and successTwo: # and successTwo and successThree:
+            '''
+            if self.auditService(service, **kwargs):
+                successOne = True
+            else:
+                successOne = self.lCtl.enable(target, service)
+                time.sleep(3)
+
+            if self.isRunning(service, **kwargs):
+                successTwo = True
+            else:
+                domainList = target.split("/")[:-1]
+                if len(domainList) > 1:
+                    domain = "/".join(domainList)
+                else:
+                    domain = domainList[0]
+
+                successTwo = self.lCtl.bootStrap(domain, service)
+                time.sleep(10)
+            if successOne and successTwo: # and successThree:
                 success = True
             else:
-                #raise ValueError("Problem enabling service: " + serviceTarget + " one=" + str(successOne) + ", two=" + str(successTwo) + " three: " + str(successThree))
-                raise ValueError("Problem enabling service: " + target + " one=" + str(successOne) + ", two=" + str(successTwo))
+                success = False
+                self.logger.log(lp.DEBUG,
+                                "Problem enabling service: " + target +
+                                " one=" + str(successOne) +
+                                ", two=" + str(successTwo))
 
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def auditService(self, service, **kwargs):
         '''
         Checks the status of a service and returns a bool indicating whether or
-        not the service is configured to run or not.
+        not the service is configured to run or not.  Check if the plist
+        exists, and make sure that the file doesn't contain the disabled flag.
+        Also check and make sure it isn't in the currently running domaintarget
+        disabled list.
 
         @param: service: full path to the plist file used to manage
                          the service.
-        @param: serviceName|serviceTarget|domainTarget can be used 
-                interchangably via key value pair in kwargs.  See 
+        @param: serviceName|serviceTarget|domainTarget can be used
+                interchangeably via key value pair in kwargs.  See
                 description below for details on this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -269,22 +315,57 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @return: Bool, True if the service is configured to run
                  Data, Information about the process, if running
         '''
+
         success = False
+        successOne = False
+        successTwo = False
+        successThree = False
+        serviceDisabled = True
+        domain = ''
 
         target = self.targetValid(service, **kwargs)
         if target:
-            success, data = self.lCtl.printTarget(target)
+            successOne = os.path.isfile(service)
+            if re.search("LaunchAgents", service) or \
+               re.search("LaunchDaemons", service):
+                successTwo = True
+
+            domainList = target.split("/")[:-1]
+            if len(domainList) > 1:
+                domain = "/".join(domainList)
+            else:
+                domain = domainList[0]
+            # successThree, data = self.lCtl.printDisabled()
+            _, data = self.lCtl.printDisabled(domain)
+
+            if data:
+                label = target.split("/")[-1]
+                self.logger.log(lp.DEBUG, "label: " + str(label))
+                foundServiceDisabled = False
+                for item in data.split(","):
+                    if re.search("%s"%label, item):
+                        self.logger.log(lp.DEBUG, "Found label: " + str(label))
+                        foundServiceDisabled = True
+                        break
+                if not foundServiceDisabled:
+                    serviceDisabled = False
+
+            if successOne and successTwo and not serviceDisabled: # and successThree:
+                success = True
+            else:
+                success = False
 
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def isRunning(self, service, **kwargs):
         '''
@@ -294,16 +375,16 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @param: service: full path to the plist file used to manage
                          the service.
-        @param: serviceName|serviceTarget|domainTarget can be used 
-                interchangably via key value pair in kwargs.  See 
+        @param: serviceName|serviceTarget|domainTarget can be used
+                interchangably via key value pair in kwargs.  See
                 description below for details on this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -311,12 +392,13 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
-        @Note: This concrete method implementation is the same as the auditService
-               method
+        @Note: This concrete method implementation is the same as the
+               auditService method
 
         @return: bool, True if the service is already running
         '''
@@ -325,11 +407,17 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         target = self.targetValid(service, **kwargs)
         if target:
-            success, data = self.lCtl.printTarget(target)
-
+            label = target.split("/")[-1]
+            _, data, _, _ = self.lCtl.list()
+            for line in data:
+                if re.search("%s"%label, line):
+                    self.logger.log(lp.DEBUG, "Found label: " + str(line))
+                    success = True
+                    break
+            #self.logger.log(lp.DEBUG, str(data))
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def reloadService(self, service, **kwargs):
         '''
@@ -342,16 +430,16 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @param: service: full path to the plist file used to manage
                          the service.
-        @param: serviceName|serviceTarget|domainTarget can be used 
-                interchangably via key value pair in kwargs.  See 
+        @param: serviceName|serviceTarget|domainTarget can be used
+                interchangably via key value pair in kwargs.  See
                 description below for details on this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -359,9 +447,10 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @return: bool indicating success status
         '''
@@ -373,22 +462,24 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 options = "-k"
             else:
                 options = kwargs.get('options')
-    
+
             success = self.lCtl.kickStart(target, options)
 
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
-    def listServices(self, **kwargs):
+    def listServices(self):
         '''
         List the services in a specified domain per the launchctl man page
 
         @return: list of strings
         '''
-        success = False
-        data = None
+        success, data, reterr, _ = self.lCtl.list()
 
-        data = self.lCtl.list()
+        if success and data and not reterr:
+            self.logger.log(lp.DEBUG, str(data))
+        else:
+            self.logger.log(lp.DEBUG, "No data found...")
 
         return data

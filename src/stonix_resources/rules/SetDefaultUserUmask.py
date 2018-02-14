@@ -20,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+
 '''
 Created on Dec 11, 2012
 The SetDefaultUserUmask class sets the default user umask to 077. Also accepts
@@ -179,14 +180,24 @@ class SetDefaultUserUmask(Rule):
 
         try:
 
-            # needs better, mac-canonical implementation (possibly with launchd)
-            # waiting on response from apple as to how to do this properly, on 
-            # command line with mac.
-            umask = os.umask(0)
-            os.umask(umask)
+            # determine if the minor revision is greater than 9 (10.10+)
+            major_ver = self.environ.getosmajorver()
+            minor_ver = self.environ.getosminorver()
+            if int(major_ver) >= 10:
+                if int(minor_ver) > 9:
+                    # this is 10.10 or later, use the new method
+                    if not self.reportmac1010_plus():
+                        configured = False
+            else:
 
-            if umask != self.userumask:
-                configured = False
+                # needs better, mac-canonical implementation (possibly with launchd)
+                # waiting on response from apple as to how to do this properly, on 
+                # command line with mac.
+                umask = os.umask(0)
+                os.umask(umask)
+    
+                if umask != self.userumask:
+                    configured = False
 
         except Exception:
             raise
@@ -241,6 +252,48 @@ class SetDefaultUserUmask(Rule):
             raise
 
         return configured
+
+    def reportmac1010_plus(self):
+        '''
+        the system's default user umask value (if set to something other than 022,
+        will be stored in the file /var/db/com.apple.xpc.launchd/config/user.plist
+        on versions of mac os x equal to or greater than 10.10
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        valid = False
+        pathexists = True
+        retval = False
+        plistpath = "/var/db/com.apple.xpc.launchd/config/user.plist"
+        cmd = "/usr/bin/defaults read " + str(plistpath) + " Umask"
+        # mac transforms the umask value to a different integer value
+        # the algorithm is unknown, but these values are tested and determined to be
+        # 022, 027 and 077 respectively
+        umaskTrans = {'022': '18',
+                      '027': '23',
+                      '077': '63'}
+
+        if not os.path.exists(plistpath):
+            pathexists = False
+        else:
+            self.ch.executeCommand(cmd)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                errstr = self.ch.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errstr)
+            outputstr = self.ch.getOutputString()
+            if self.userumask in umaskTrans:
+                if re.search(umaskTrans[self.userumask], outputstr, re.IGNORECASE):
+                    valid = True
+            else:
+                valid = False
+
+        retval = bool(valid and pathexists)
+
+        return retval
 
 ###############################################################################
 

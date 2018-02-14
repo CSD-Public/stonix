@@ -13,18 +13,18 @@ from src.MacBuild.ramdisk.macRamdisk import RamDisk, detach
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
+
+@unittest.skipUnless(sys.platform.startswith("darwin"), "RamDisk does not support this OS family.")
 class zzzTestFrameworkRamdisk(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         """
         Initializer
         """
+
         self.environ = Environment()
-        if self.environ.getosfamily() != "darwin":
-            myos = self.environ.getosfamily()
-            raise unittest.SkipTest("RamDisk does not support this OS" + \
-                                " family: " + str(myos))
-        
+
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
 

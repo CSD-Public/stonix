@@ -59,12 +59,12 @@ from shutil import move
 
 
 def singleton_decorator(class_):
-  instances = {}
-  def getinstance(*args, **kwargs):
-    if class_ not in instances:
-        instances[class_] = class_(*args, **kwargs)
-    return instances[class_]
-  return getinstance
+    instances = {}
+    def getinstance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+    return getinstance
 
 @singleton_decorator
 class LogDispatcher (Observable):
@@ -81,7 +81,10 @@ class LogDispatcher (Observable):
         self.environment = environment
         self.debug = self.environment.getdebugmode()
         self.verbose = self.environment.getverbosemode()
-        self.constsrequired = [localize.REPORTSERVER, localize.STONIXDEVS, localize.STONIXERR, localize.MAILRELAYSERVER]
+        self.constsrequired = [localize.REPORTSERVER,
+                               localize.STONIXDEVS,
+                               localize.STONIXERR,
+                               localize.MAILRELAYSERVER]
         reportfile = 'stonix-report.log'
         xmlfile = 'stonix-xmlreport.xml'
         self.logpath = self.environment.get_log_path()

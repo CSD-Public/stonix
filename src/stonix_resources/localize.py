@@ -2,7 +2,7 @@
 Created on Oct 18, 2012
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2012-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -46,6 +46,7 @@ that access the version variable to use this copy.
 @change: 2017/07/07 - ekkehard - incremented STONIXVERSION = '0.9.10'
 @change: 2017/10/10 - ekkehard - incremented STONIXVERSION = '0.9.13'
 @change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.14'
+@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.16'
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -54,7 +55,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = '0.9.15'
+STONIXVERSION = '0.9.16'
 
 # FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
 # is used to determine rule applicability and behavior with the higher the

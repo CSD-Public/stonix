@@ -1,20 +1,30 @@
 import sys
 import httplib
 import urllib2
+import ssl
+import socket
 
 class SSLSecConnection(httplib.HTTPSConnection):
+    '''
+    '''
+
     def __init__(self, *args, **kwargs):
+        '''
+        '''
+
         httplib.HTTPSConnection.__init__(self, *args, **kwargs)
 
     def connect(self):
-        """ 
+        """
         Interesting reference: http://nullege.com/codes/show/src%40p%40y%40pydle-HEAD%40pydle%40connection.py/144/ssl.VERIFY_CRL_CHECK_CHAIN/python
         This class is not currently checking certificate revocation...
         """
+
         if hasattr(ssl, '_create_unverified_context'):
+            # allow unverified SSL
             ssl._create_default_https_context = ssl._create_unverified_context
 
-        sock = socket.create_connection((self.host, self.port), self.timeout)
+        self.sock = socket.create_connection((self.host, self.port), self.timeout)
 
         """
         if self._tunnel_host:
@@ -62,5 +72,3 @@ class SSLSecHandler(urllib2.HTTPSHandler):
 
 if sys.hexversion >= 0x02070900:
     urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
-
-
