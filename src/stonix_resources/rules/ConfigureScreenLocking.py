@@ -48,6 +48,8 @@ Created on Jul 11, 2013
     stonix-settings before trying to configure them
 @change: 2017/11/30 bgonz12 - changed fixGnome to use a conf file
     for configuring dconf settings on rpm systems
+@change: 2018/02/14 bgonz12 - changed fixGnome to set dconf settings with conf
+    files instead of gsettings
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
@@ -232,19 +234,6 @@ class ConfigureScreenLocking(RuleKVEditor):
 
         compliant = True
         self.cmdhelper = CommandHelper(self.logger)
-        self.stonixsettings = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
-        self.dconfsettings = "/etc/dconf/db/local.d/local.key"
-        self.dconfdata = {"org/gnome/desktop/screensaver": {
-                                "idle-activation-enabled": "true",
-                                "lock-enabled": "true",
-                                "lock-delay": "0",
-                                "picture-opacity": "100",
-                                "picture-uri": "\'\'"},
-                          "org.gnome.desktop.session": {
-                                "idle-delay": "300"}}
-        self.kveditordconf = KVEditorStonix( self.statechglogger, self.logger,
-            "tagconf", self.dconfsettings, self.dconfsettings + ".tmp",
-            self.dconfdata, "present", "closedeq")
         gsettings = "/usr/bin/gsettings"
         if os.path.exists(gsettings):
             self.useGconf = False
@@ -280,6 +269,31 @@ class ConfigureScreenLocking(RuleKVEditor):
                                             cmd2 + "\n"
                     compliant = False
         else:
+            self.dconfsettings = "/etc/dconf/db/local.d/local.key"
+            self.dconfdata = {"org/gnome/desktop/screensaver": {
+                                            "idle-activation-enabled": "true",
+                                            "lock-enabled": "true",
+                                            "lock-delay": "0",
+                                            "picture-opacity": "100",
+                                            "picture-uri": "\'\'"},
+                              "org.gnome.desktop.session": {
+                                            "idle-delay": "300"}}
+            self.kveditordconf = KVEditorStonix( self.statechglogger,
+                                                 self.logger,
+                                                 "tagconf",
+                                                 self.dconfsettings,
+                                                 self.dconfsettings + ".tmp",
+                                                 self.dconfdata, "present",
+                                                 "closedeq")
+            self.dconfuserprofile = "/etc/dconf/profile/user"
+            self.userprofilecontent = "user-db:user\n" + \
+                                      "system-db:local"
+            self.dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
+            self.dconflockdata = ["/org/gnome/desktop/session/idle-delay\n",
+                       "/org/gnome/desktop/session/idle-activation-enabled\n",
+                       "/org/gnome/desktop/screensaver/lock-enabled\n",
+                       "/org/gnome/desktop/screensaver/lock-delay\n",
+                       "/org/gnome/desktop/screensaver/picture-uri\n"]
             getcmds = {" get org.gnome.desktop.screensaver " +
                        "idle-activation-enabled": "true",
                        " get org.gnome.desktop.screensaver lock-enabled":
@@ -290,8 +304,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                        "100",
                        " get org.gnome.desktop.screensaver picture-uri": "''",
                        " get org.gnome.desktop.session idle-delay": "300"}
-            self.fixes = {}
-            self.writes = []
             for cmd in getcmds:
                 cmd2 = gsettings + cmd
                 self.cmdhelper.executeCommand(cmd2)
@@ -310,17 +322,14 @@ class ConfigureScreenLocking(RuleKVEditor):
                                 self.detailedresults += "Idle delay value " + \
                                     "is not 300 seconds or lower (value: " +\
                                     num + ")\n"
-                                self.fixes[cmd] = getcmds[cmd]
                             elif int(num) == 0:
                                 compliant = False
                                 self.detailedresults += "Idle delay set  " + \
                                     "to 0, meaning it is disabled.\n"
-                                self.fixes[cmd] = getcmds[cmd]
                         except ValueError:
                             self.detailedresults += "Unexpected result: " + \
                                 '"' + cmd2 + '" output was not a number\n'
                             compliant = False
-                            self.fixes[cmd] = getcmds[cmd]
                                     
                     elif cmd == " get org.gnome.desktop.screensaver lock-delay":
                         try:
@@ -333,24 +342,22 @@ class ConfigureScreenLocking(RuleKVEditor):
                                 compliant = False
                                 self.detailedresults += "Lock delay is not " + \
                                     "set to 0\n"
-                                self.fixes[cmd] = getcmds[cmd]
                         except ValueError:
                             self.detailedresults += "Unexpected result: " + \
                                 '"' + cmd2 + '" output was not a number\n'
                             compliant = False
-                            self.fixes[cmd] = getcmds[cmd]
                     elif output[0].strip() != getcmds[cmd]:
-                        self.detailedresults += '"' + cmd2 + "\" didn't " + \
-                            "produce the desired value: " + getcmds[cmd] + "\n"
+                        self.detailedresults += '"' + cmd2 + \
+                        "\" produced value: " + output[0].strip() + \
+                        " instead of the desired value: " + getcmds[cmd] + "\n"
                         compliant = False
-                        self.fixes[cmd] = getcmds[cmd]
-                    if os.path.exists(self.stonixsettings):
-                        cmd = ["grep", "idle-delay", self.stonixsettings]
+                    if os.path.exists(self.dconfsettingslock):
+                        cmd = ["grep", "idle-delay", self.dconfsettingslock]
                         self.cmdhelper.executeCommand(cmd)
                         output = self.cmdhelper.getOutput()
                         for line in output:
                             if line.strip() != "/org/gnome/desktop/session/idle-delay":
-                                self.writes.append("/org/gnome/desktop/session/idle-delay\n")
+                                self.dconflockdata.append("/org/gnome/desktop/session/idle-delay\n")
                                 compliant = False
                                 self.detailedresults += "User should " + \
                                     "not be able to change idle-delay " + \
@@ -358,56 +365,51 @@ class ConfigureScreenLocking(RuleKVEditor):
                                 break
                     
                         cmd = ["grep", "idle-activation-enabled", 
-                               self.stonixsettings]
+                               self.dconfsettingslock]
                         self.cmdhelper.executeCommand(cmd)
                         output = self.cmdhelper.getOutput()
                         for line in output:
                             if line.strip() != "/org/gnome/desktop/session/idle-activation-enabled":
-                                self.writes.append("/org/gnome/desktop/session/idle-activation-enabled\n")
+                                self.dconflockdata.append("/org/gnome/desktop/session/idle-activation-enabled\n")
                                 compliant = False
                                 self.detailedresults += "User should " + \
                                     "not be able to change idle-activation-enabled " + \
                                     "settings\n"
                                 break
-                        cmd = ["grep", "lock-enabled", self.stonixsettings]
+                        cmd = ["grep", "lock-enabled", self.dconfsettingslock]
                         self.cmdhelper.executeCommand(cmd)
                         output = self.cmdhelper.getOutput()
                         for line in output:
                             if line.strip() != "/org/gnome/desktop/screensaver/lock-enabled":
-                                self.writes.append("/org/gnome/desktop/screensaver/lock-enabled\n")
+                                self.dconflockdata.append("/org/gnome/desktop/screensaver/lock-enabled\n")
                                 compliant = False
                                 self.detailedresults += "User should " + \
                                     "not be able to change lock-enabled " + \
                                     "settings\n"
                                 break
-                        cmd = ["grep", "lock-delay", self.stonixsettings]
+                        cmd = ["grep", "lock-delay", self.dconfsettingslock]
                         self.cmdhelper.executeCommand(cmd)
                         output = self.cmdhelper.getOutput()
                         for line in output:
                             if line.strip() != "/org/gnome/desktop/screensaver/lock-delay":
-                                self.writes.append("/org/gnome/desktop/screensaver/lock-delay\n")
+                                self.dconflockdata.append("/org/gnome/desktop/screensaver/lock-delay\n")
                                 compliant = False
                                 self.detailedresults += "User should " + \
                                     "not be able to change lock-delay " + \
                                     "settings\n"
                                 break
-                        cmd = ["grep", "picture-uri", self.stonixsettings]
+                        cmd = ["grep", "picture-uri", self.dconfsettingslock]
                         self.cmdhelper.executeCommand(cmd)
                         output = self.cmdhelper.getOutput()
                         for line in output:
                             if line.strip() != "/org/gnome/desktop/screensaver/picture-uri":
-                                self.writes.append("/org/gnome/desktop/screensaver/picture-uri\n")
+                                self.dconflockdata.append("/org/gnome/desktop/screensaver/picture-uri\n")
                                 compliant = False
                                 self.detailedresults += "User should " + \
                                     "not be able to change picture-uri " + \
                                     "settings\n"
                                 break
                     else:
-                        self.writes = ["/org/gnome/desktop/session/idle-delay\n",
-                       "/org/gnome/desktop/session/idle-activation-enabled\n",
-                       "/org/gnome/desktop/screensaver/lock-enabled\n",
-                       "/org/gnome/desktop/screensaver/lock-delay\n",
-                       "/org/gnome/desktop/screensaver/picture-uri\n"]
                         compliant = False
                         self.detailedresults += "gnome stonix file doesn't exist\n"
                 elif error:
@@ -416,7 +418,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                     self.detailedresults += "There is no value set for:" + \
                         cmd2 + "\n"
                     compliant = False
-                    self.fixes[cmd] = getcmds[cmd]
         return compliant
 
 ###############################################################################
@@ -773,58 +774,85 @@ for this portion of the rule\n"
                             info += "Unable to set value for " + scmd4 + "\n"
                             success = False
         else:
-            gsettings = "/usr/bin/gsettings"
-            if os.path.exists(self.stonixsettings):
-                tmpfile = self.stonixsettings + ".tmp"
+            # Set gsettings with dconf
+            # Unlock dconf settings
+            if os.path.exists(self.dconfsettingslock):
+                tmpfile = self.dconfsettingslock + ".tmp"
                 if not writeFile(tmpfile, "", self.logger):
                     self.rulesuccess = False
-                    self.detailedresults += "Unabled to unlock settings in" + \
-                        " stonix-settings file\n"
+                    self.detailedresults += "Unabled to unlock dconf" + \
+                        " settings in stonix-settings file\n"
                     self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
                     return False
                 else:
-                    os.rename(tmpfile, self.stonixsettings)
-                    os.chown(self.stonixsettings, 0, 0)
-                    os.chmod(self.stonixsettings, 493)
-                    resetsecon(self.stonixsettings)
-                    cmd = "/bin/dconf update"
-                    self.cmdhelper.executeCommand(cmd)
-            if not os.path.exists(self.stonixsettings):
-                    if not createFile(self.stonixsettings, self.logger):
+                    os.rename(tmpfile, self.dconfsettingslock)
+                    os.chown(self.dconfsettingslock, 0, 0)
+                    os.chmod(self.dconfsettingslock, 493)
+                    resetsecon(self.dconfsettingslock)
+                    if os.path.exists("/bin/dconf"):
+                        cmd = "/bin/dconf update"
+                        self.cmdhelper.executeCommand(cmd)
+                    elif os.path.exists("/usr/bin/dconf"):
+                        cmd = "/usr/bin/dconf update"
+                        self.cmdhelper.executeCommand(cmd)            
+            # Create dconf settings lock file
+            if not os.path.exists(self.dconfsettingslock):
+                    if not createFile(self.dconfsettingslock, self.logger):
                         self.rulesuccess = False
                         self.detailedresults += "Unabled to create stonix-settings file\n"
                         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
                         return False
-            for cmd in self.fixes:
-                setCmd = re.sub("get", "set", cmd, 1)
-                setCmd += " " + self.fixes[cmd]
-                cmd2 = gsettings + setCmd
-                self.cmdhelper.executeCommand(cmd2)
-                if self.cmdhelper.getReturnCode() != 0:
-                    info += "Unable to set value for " + setCmd
-                    success = False
-            if self.writes:
+            # Write to the lock file
+            if self.dconflockdata:
                 contents = ""
-                tmpfile = self.stonixsettings + ".tmp"
-                for line in self.writes:
+                tmpfile = self.dconfsettingslock + ".tmp"
+                for line in self.dconflockdata:
                     contents += line
                 if not writeFile(tmpfile, contents, self.logger):
                     self.rulesuccess = False
                     self.detailedresults += "Unable to write contents to " + \
                         "stonix-settings file\n"
                 else:
-                    os.rename(tmpfile, self.stonixsettings)
-                    os.chown(self.stonixsettings, 0, 0)
-                    os.chmod(self.stonixsettings, 493)
-                    resetsecon(self.stonixsettings)
-            self.ph = Pkghelper(self.logger, self.environ)
-            if self.ph.determineMgr() is "yum":
-                if not self.kveditordconf.report():
-                    self.kveditordconf.fix()
-                    self.kveditordconf.commit()
+                    os.rename(tmpfile, self.dconfsettingslock)
+                    os.chown(self.dconfsettingslock, 0, 0)
+                    os.chmod(self.dconfsettingslock, 493)
+                    resetsecon(self.dconfsettingslock)
+            
+            # Create dconf user profile file
+            if not os.path.exists(self.dconfuserprofile):
+                    if not createFile(self.dconfuserprofile, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unabled to create dconf " + \
+                                                "user profile file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
+            # Write dconf user profile
+            if os.path.exists(self.dconfuserprofile):
+                tmpfile = self.dconfuserprofile + ".tmp"
+                if not writeFile(tmpfile, self.userprofilecontent, self.logger):
+                    self.rulesuccess = False
+                    self.detailedresults += "Unabled to write to dconf user" + \
+                        " profile file\n"
+                    self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                    return False
+                else:
+                    os.rename(tmpfile, self.dconfuserprofile)
+                    os.chown(self.dconfuserprofile, 0, 0)
+                    os.chmod(self.dconfuserprofile, 493)
+                    resetsecon(self.dconfuserprofile)
+            # Fix dconf settings
+            if not self.kveditordconf.report():
+                self.kveditordconf.fix()
+                self.kveditordconf.commit()
+            if os.path.exists("/bin/dconf"):
                 cmd = "/bin/dconf update"
+                self.cmdhelper.executeCommand(cmd)
+            elif os.path.exists("/usr/bin/dconf"):
+                cmd = "/usr/bin/dconf update"
                 self.cmdhelper.executeCommand(cmd)
         self.detailedresults += info
         return success
