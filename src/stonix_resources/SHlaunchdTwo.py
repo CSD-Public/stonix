@@ -212,7 +212,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                     success = self.lCtl.bootOut(domain, service)
                 else:
                     success = True
-                    
+
         return success
 
     # ----------------------------------------------------------------------
