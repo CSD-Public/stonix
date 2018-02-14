@@ -224,7 +224,7 @@ well-managed web server is recommended.
 ###############################################################################
     def afterfix(self):
         afterfixsuccessful = True
-        afterfixsuccessful &= self.svchelper.auditService(self.maclongname, self.macshortname)
+        afterfixsuccessful &= self.svchelper.auditService(self.maclongname)
         return afterfixsuccessful
 
 

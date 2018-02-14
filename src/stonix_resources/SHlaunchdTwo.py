@@ -299,7 +299,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         @param: service: full path to the plist file used to manage
                          the service.
         @param: serviceName|serviceTarget|domainTarget can be used
-                interchangably via key value pair in kwargs.  See
+                interchangeably via key value pair in kwargs.  See
                 description below for details on this variable.
 
                system/[service-name]
@@ -323,6 +323,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         @return: Bool, True if the service is configured to run
                  Data, Information about the process, if running
         '''
+
         success = False
         successOne = False
         successTwo = False
