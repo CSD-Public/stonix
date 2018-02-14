@@ -199,7 +199,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 successTwo = self.lCtl.bootOut(domain, service)
             else:
                 successTwo = True
-            if self.auditService(service, **kwargs):
+
+            if successTwo:
                 successOne = self.lCtl.disable(target)
             else:
                 successOne = True
@@ -212,7 +213,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                     success = self.lCtl.bootOut(domain, service)
                 else:
                     success = True
-                    
+
         return success
 
     # ----------------------------------------------------------------------
@@ -258,24 +259,17 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             else:
                 options = kwargs.get('options')
             '''
-            if self.auditService(service, **kwargs):
-                successOne = True
-            else:
-                successOne = self.lCtl.enable(target, service)
-                time.sleep(3)
+            successOne = self.lCtl.enable(target, service)
 
-            if self.isRunning(service, **kwargs):
-                successTwo = True
+            domainList = target.split("/")[:-1]
+            if len(domainList) > 1:
+                domain = "/".join(domainList)
             else:
-                domainList = target.split("/")[:-1]
-                if len(domainList) > 1:
-                    domain = "/".join(domainList)
-                else:
-                    domain = domainList[0]
+                domain = domainList[0]
 
-                successTwo = self.lCtl.bootStrap(domain, service)
-                time.sleep(10)
-            if successOne and successTwo: # and successThree:
+            successTwo = self.lCtl.bootStrap(domain, service)
+
+            if successOne and successTwo:
                 success = True
             else:
                 success = False
@@ -328,8 +322,6 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         successOne = False
         successTwo = False
         successThree = False
-        serviceDisabled = True
-        domain = ''
 
         target = self.targetValid(service, **kwargs)
         if target:
@@ -338,27 +330,9 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                re.search("LaunchDaemons", service):
                 successTwo = True
 
-            domainList = target.split("/")[:-1]
-            if len(domainList) > 1:
-                domain = "/".join(domainList)
-            else:
-                domain = domainList[0]
-            # successThree, data = self.lCtl.printDisabled()
-            _, data = self.lCtl.printDisabled(domain)
+            successThree = self.isRunning(service)
 
-            if data:
-                label = target.split("/")[-1]
-                self.logger.log(lp.DEBUG, "label: " + str(label))
-                foundServiceDisabled = False
-                for item in data.split(","):
-                    if re.search("%s"%label, item):
-                        self.logger.log(lp.DEBUG, "Found label: " + str(label))
-                        foundServiceDisabled = True
-                        break
-                if not foundServiceDisabled:
-                    serviceDisabled = False
-
-            if successOne and successTwo and not serviceDisabled: # and successThree:
+            if successOne and successTwo and successThree:
                 success = True
             else:
                 success = False
