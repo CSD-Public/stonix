@@ -148,7 +148,7 @@ well-managed web server is recommended.
 
                 #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
                 #    self.rulesuccess = False
-                if not self.svchelper.disableservice(self.maclongname, self.macshortname):
+                if not self.svchelper.disableService(self.maclongname, self.macshortname):
 
                     self.rulesuccess = False
 
@@ -224,7 +224,7 @@ well-managed web server is recommended.
 ###############################################################################
     def afterfix(self):
         afterfixsuccessful = True
-        afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
+        afterfixsuccessful &= self.svchelper.auditService(self.maclongname)
         return afterfixsuccessful
 
 

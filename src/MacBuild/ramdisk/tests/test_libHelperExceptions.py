@@ -31,6 +31,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 
+@unittest.skip("Tests need to be written...")
 class test_libHelperExceptions(unittest.TestCase):
     """
     """
@@ -40,7 +41,7 @@ class test_libHelperExceptions(unittest.TestCase):
         """
         Initializer
         """
-        unittest.SkipTest("Tests need to be written...")
+
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
 

@@ -32,6 +32,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 
+@unittest.skip("Tests need to be written...")
 class test_ramdiskFactory(unittest.TestCase, GenericTestUtilities):
     """
     """
@@ -41,20 +42,13 @@ class test_ramdiskFactory(unittest.TestCase, GenericTestUtilities):
         """
         Initializer
         """
-        unittest.SkipTest("Tests need to be written...")
+
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
 
         self.logger = CyLogger()
 
         self.libcPath = None # initial initialization
-
-        #####
-        # If we don't have a supported platform, skip this test.
-        if not sys.platform.startswith("darwin") and \
-           not sys.platform.startswith("linux"):
-            raise unittest.SkipTest("This is not valid on this OS")
-        raise unittest.SkipTest("Not a supported tests....")
 
     def setUp(self):
         """

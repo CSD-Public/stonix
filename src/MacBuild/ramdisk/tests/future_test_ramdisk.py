@@ -33,6 +33,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 
+@unittest.skipUnless(sys.platform.startswith("darwin"|"linux"), "This is not valid on this OS")
 class test_ramdisk(GenericRamdiskTest):
     """
     """
@@ -49,12 +50,6 @@ class test_ramdisk(GenericRamdiskTest):
         self.message_level = "debug"
 
         self.libcPath = None # initial initialization
-
-        #####
-        # If we don't have a supported platform, skip this test.
-        if not sys.platform.startswith("darwin") and \
-           not sys.platform.startswith("linux"):
-            unittest.SkipTest("This is not valid on this OS")
 
         self.subdirs = ["two", "three" "one/four"]
 
