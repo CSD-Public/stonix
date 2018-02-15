@@ -330,7 +330,26 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                re.search("LaunchDaemons", service):
                 successTwo = True
 
-            successThree = self.isRunning(service)
+            try:
+                serviceName = target.split('/')[-1]
+            except KeyError:
+                return success
+            try:
+                success, stdout, _, _ = self.lCtl.list()
+            except KeyError:
+                pass
+            else:
+                foundDisabled = False
+                for line in stdout:
+                    if re.match("Could not find service ", line) and \
+                       re.search("%s"%serviceName, line) and \
+                       re.search(" in domain for system", line):
+                        foundDisabled = True
+                        break
+                if not foundDisabled:
+                    #####
+                    # Service is currently enabled.
+                    successThree = True
 
             if successOne and successTwo and successThree:
                 success = True
