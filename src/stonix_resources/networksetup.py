@@ -473,8 +473,8 @@ class networksetup():
         '''
         success = False
         pLocationName = pLocationName.strip()
-        if pLocationName == "":
-            locationName = self.location.lower()
+        if pLocationName == "" or re.match("^\s+$", pLocationName):
+            locationName = self.location.lower().strip()
         else:
             locationName = pLocationName.lower()
         if 'wi-fi' in locationName:
