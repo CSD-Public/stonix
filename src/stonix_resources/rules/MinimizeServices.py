@@ -73,7 +73,7 @@ class MinimizeServices(Rule):
         self.rootrequired = True
         self.applicable = {'type': 'black',
                            'family': ['darwin']}
-        self.servicehelper = ServiceHelper(self.environ, self.logger).svchelper
+        self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.guidance = ['NSA 2.1.2.2', 'NSA 2.2.2.3', 'NSA 2.4.3', 'NSA 3.1',
                          'CCE-3416-5', 'CCE-4218-4', 'CCE-4072-5', 'CCE-4254-9',
                          'CCE-3668-1', 'CCE-4129-3', 'CCE-3679-8', 'CCE-4292-9',

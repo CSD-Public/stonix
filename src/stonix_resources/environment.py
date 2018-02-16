@@ -80,6 +80,9 @@ class Environment:
         self.ipaddress = ''
         self.macaddress = ''
         self.osversion = ''
+        self.major_ver = ''
+        self.minor_ver = ''
+        self.trivial_ver = ''
         self.numrules = 0
         self.stonixversion = STONIXVERSION
         self.euid = os.geteuid()
@@ -340,6 +343,24 @@ class Environment:
                 else:
                     index = index + 1
             self.osversion = osver
+
+        # Breen Malmberg added support for os-release file
+        # method of getting version information
+        elif os.path.exists('/etc/os-release'):
+            relfile = open('/etc/os-release', 'r')
+            contentlines = relfile.readlines()
+            relfile.close()
+            for line in contentlines:
+                if re.search('VERSION\=', line, re.IGNORECASE):
+                    sline = line[+8:].split()
+                    sline[0] = sline[0].replace('"', '')
+                    self.osversion = sline[0]
+                elif re.search('NAME\=', line, re.IGNORECASE):
+                    sline = line[+5:].split()
+                    sline[0] = sline[0].replace('"', '')
+                    self.operatingsystem = sline[0]
+            self.osreportstring = self.operatingsystem +  ' ' + self.osversion
+
         elif os.path.exists('/usr/bin/sw_vers'):
             proc1 = subprocess.Popen('/usr/bin/sw_vers -productName',
                                      shell=True, stdout=subprocess.PIPE,
@@ -353,6 +374,7 @@ class Environment:
             release = release.strip()
             self.operatingsystem = description
             self.osversion = release
+
             proc3 = subprocess.Popen('/usr/bin/sw_vers -buildVersion',
                                      shell=True, stdout=subprocess.PIPE,
                                      close_fds=True)
@@ -360,6 +382,60 @@ class Environment:
             build = build.strip()
             opsys = description + ' ' + release + ' ' + build
             self.osreportstring = opsys
+
+    def getosmajorver(self):
+        '''
+        return the major revision number of the 
+        OS version as a string
+
+        @return: self.major_ver
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        ver = self.getosver()
+        try:
+            self.major_ver = ver.split('.')[0]
+        except IndexError:
+            self.major_ver = ver
+
+        return self.major_ver
+
+    def getosminorver(self):
+        '''
+        return the minor revision number of the 
+        OS version as a string
+
+        @return: self.minor_ver
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        ver = self.getosver()
+        try:
+            self.minor_ver = ver.split('.')[1]
+        except IndexError:
+            self.minor_ver = ver
+
+        return self.minor_ver
+
+    def getostrivialver(self):
+        '''
+        return the trivial revision number of the 
+        OS version as a string
+
+        @return: self.trivial_ver
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        ver = self.getosver()
+        try:
+            self.trivial_ver = ver.split('.')[2]
+        except IndexError:
+            self.trivial_ver = ver
+
+        return self.trivial_ver
 
     def setosfamily(self):
         """

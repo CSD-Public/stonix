@@ -34,7 +34,6 @@ Created on Oct 4, 2012
                service helper
 '''
 import os
-import pwd
 import sys
 import time
 import unittest
@@ -43,21 +42,25 @@ from pwd import getpwnam
 sys.path.append("../../../..")
 from src.stonix_resources.environment import Environment
 from src.tests.lib.logdispatcher_lite import LogDispatcher
+from src.tests.lib.logdispatcher_lite import LogPriority
 from src.stonix_resources.ServiceHelper import ServiceHelper
+from src.stonix_resources.launchctl import LaunchCtl
 from src.stonix_resources.stonixutilityfunctions import findUserLoggedIn, reportStack
 
 class zzzTestFrameworkServiceHelper(unittest.TestCase):
 
     def setUp(self):
         self.enviro = Environment()
-        self.enviro.setdebugmode(False)
+        self.enviro.setdebugmode(True)
+        time.sleep(3)
         self.logger = LogDispatcher(self.enviro)
-        self.mysh = ServiceHelper(environment=self.enviro, logdispatcher=self.logger)
+        self.mysh = ServiceHelper(environ=self.enviro, logger=self.logger)
+        self.lnchCtl = LaunchCtl(self.logger)
         self.myservice = 'crond'
         self.myservicename = ""
         if self.enviro.getosfamily() == 'darwin':
             self.myservice = "/Library/LaunchDaemons/gov.lanl.stonix.report.plist"
-            self.myservicename = "system/gov.lanl.stonix.report"
+            self.myservicename = "gov.lanl.stonix.report"
         elif self.enviro.getosfamily() == 'solaris':
             self.myservice = 'svc:/system/cron:default'
         elif self.enviro.getosfamily() == 'freebsd':
@@ -77,7 +80,7 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
             pwuserinfo = getpwnam(self.userLoggedIn)
             self.userLoggedInUid = str(pwuserinfo.pw_uid)
         except KeyError, err:
-            raise KeyError("username: " + str(self.userLoggedIn) + \
+            raise KeyError("username: " + str(self.userLoggedIn) +
                            " pwuserinfo: " + str(pwuserinfo) + " " + str(err))
         self.startStatus = 'on'
         #####
@@ -86,44 +89,90 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
             #####
             # If the service is not running, start it.
             self.startStatus = 'off'
-            serviceEnabled = self.mysh.enableService(self.myservice, serviceName=self.myservicename)
-            self.assertTrue(serviceEnabled, reportStack() + "Cannot enable service: " + str(self.myservice))
-            
+            serviceEnabled = self.mysh.enableService(self.myservice,
+                                                     serviceName=self.myservicename)
+            self.logger.log(LogPriority.INFO,
+                            "serviceEnabled: " + str(serviceEnabled))
+            self.assertTrue(serviceEnabled,
+                            reportStack() +
+                            "Cannot enable service: " +
+                            str(self.myservice))
 
     def tearDown(self):
         #####
         # if it was off in the first place, and it's running, turn it off.
         if self.startStatus == 'off' and \
            self.mysh.auditService(self.myservice, serviceName=self.myservicename):
-            didDisable = self.mysh.disableService(self.myservice, serviceName=self.myservicename)
-            self.assertTrue(didDisable, reportStack() + "Did not disable service: " + str(self.myservice) + " status: " + str(didDisable))
+            didDisable = self.mysh.disableService(self.myservice,
+                                                  serviceName=self.myservicename)
+            self.assertTrue(didDisable, reportStack() +
+                            "Did not disable service: " + str(self.myservice) +
+                            " status: " + str(didDisable))
 
     def testListServices(self):
         svcslist = self.mysh.listServices()
         self.assertTrue(len(svcslist) > 0)
 
     def testDisableEnable(self):
-        if self.mysh.auditService(self.myservice, serviceName=self.myservicename):
-            didDisable = self.mysh.disableService(self.myservice, serviceName=self.myservicename)
-            self.assertTrue(didDisable, reportStack() + "Did not disable service: " + str(self.myservice) + " status: " + str(didDisable))
+        didDisable = self.mysh.disableService(self.myservice,
+                                              serviceName=self.myservicename)
+        self.assertTrue(didDisable, reportStack() +
+                        "Did not disable service: " +
+                        str(self.myservice) + " status: " +
+                        str(didDisable))
+        #####
+        # Leave time for system operations to complete before continuing
+        # 5 seconds should do it.
+        time.sleep(5)
 
-        auditresult = self.mysh.auditService(self.myservice, serviceName=self.myservicename)
+        #####
+        # See what the state of the service is.  It should be disabled.
+        auditresult = self.mysh.auditService(self.myservice,
+                                             serviceName=self.myservicename)
         self.assertFalse(auditresult,
-                         reportStack() + "Service not disabled or return from audit not valid: " + str(auditresult))
-        time.sleep(3)
-        self.assertFalse(self.mysh.isRunning(self.myservice, serviceName=self.myservicename),
-                         reportStack() + "Service is still running or return from isrunning not valid")
-        serviceEnabled = self.mysh.enableService(self.myservice, serviceName=self.myservicename)
-        self.assertTrue(serviceEnabled, reportStack() + "Cannot enable service: " + str(self.myservice))
-        self.assertTrue(self.mysh.auditService(self.myservice, serviceName=self.myservicename),
-                        reportStack() + "Service not enabled or return from audit not valid")
-        time.sleep(3)
-        self.assertTrue(self.mysh.isRunning(self.myservice, serviceName=self.myservicename),
-                        reportStack() + "Service is not running or return from isrunning not valid")
+                         reportStack() +
+                         "Service not disabled or return from " +
+                         "audit not valid: " + str(auditresult))
+
+        #####
+        # Check the state of the service, it should not be running.
+        self.assertFalse(self.mysh.isRunning(self.myservice,
+                                             serviceName=self.myservicename),
+                                             reportStack() +
+                 "Service is still running or return from isrunning not valid")
+        #####
+        # Attempt to enable the service and assert that it is running
+        serviceEnabled = self.mysh.enableService(self.myservice,
+                                                serviceName=self.myservicename)
+
+        #####
+        # Check the return value of enableService.
+        self.assertTrue(serviceEnabled, reportStack() +
+                        "Cannot enable service: " + str(self.myservice))
+
+        #####
+        # Leave time for system operations to complete before continuing
+        # 5 seconds should do it.
+        time.sleep(5)
+
+        #####
+        # Service is enabled, check to make sure it is with audit
+        self.assertTrue(self.mysh.auditService(self.myservice,
+                                               serviceName=self.myservicename),
+                                               reportStack() +
+                          "Service not enabled or return from audit not valid")
+        #####
+        # Service is enabled, check to make sure it is with isRunning
+        self.assertTrue(self.mysh.isRunning(self.myservice,
+                                            serviceName=self.myservicename),
+                                            reportStack() +
+                   "Service is not running or return from isrunning not valid")
 
     def testReloadService(self):
-        serviceReloaded = self.mysh.reloadService(self.myservice, serviceName=self.myservicename)
-        self.assertTrue(serviceReloaded, reportStack() + 'Service reload returned false')
+        serviceReloaded = self.mysh.reloadService(self.myservice,
+                                                  serviceName=self.myservicename)
+        self.assertTrue(serviceReloaded,
+                        reportStack() + 'Service reload returned false')
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
