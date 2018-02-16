@@ -34,6 +34,7 @@ This class handles muting the microphone input levels.
 @change: 2016/07/19 Breen Malmberg added fixmac() and fixlinux() methods;
 altered report() and fix() methods to init variables to defaults and fix()
 method to use the new fixmac and fixlinux methods
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 import traceback
@@ -72,7 +73,7 @@ class MuteMic(Rule):
         self.guidance = ['CIS']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         self.setPaths()
 

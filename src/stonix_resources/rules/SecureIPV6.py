@@ -31,6 +31,7 @@ Created on Jan 14, 2014
 @change: 2016/06/23 dwalker adding mac os x configuration
 @change: 2016/07/07 ekkehard added net.inet6.ip6.maxifdefrouters = 1
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -69,7 +70,7 @@ False.'''
                          "CCE 4128-5"]
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.iditerator = 0
         self.created = False
 

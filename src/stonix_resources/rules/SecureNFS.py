@@ -36,6 +36,7 @@ method's return self.rulesuccess call, but before it, so it was always being cal
 return self.rulesuccess. self.rulesuccess will now return instead of success.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -64,7 +65,7 @@ class SecureNFS(Rule):
         self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.guidance = ["NSA(3.13.4)", "cce-4241-6", "cce-4465-1",
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]
@@ -101,9 +102,9 @@ class SecureNFS(Rule):
                 data1 = {"nfs.lockd.port": "",
                          "nfs.lockd.tcp": "1",
                          "nfs.lockd.udp": "1"}
-                if not self.sh.auditservice('/System/Library/LaunchDaemons/' +
+                if not self.sh.auditService('/System/Library/LaunchDaemons/' +
                                             'com.apple.nfsd.plist',
-                                            'com.apple.nfsd'):
+                                            serviceTarget='com.apple.nfsd'):
                     self.compliant = True
                     self.formatDetailedResults("report", self.compliant,
                                                self.detailedresults)

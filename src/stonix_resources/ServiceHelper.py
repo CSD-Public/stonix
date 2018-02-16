@@ -152,8 +152,8 @@ class ServiceHelper(object):
                      self.svchelper = SHlaunchd.SHlaunchd(self.environ,
                                                      self.logdispatcher)
                 else:
-                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(environment=self.environ,
-                                                     logdispatcher=self.logdispatcher)
+                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
+                                                     self.logdispatcher)
             else:
                 raise RuntimeError("Could not identify service management " +
                                    "programs")
@@ -457,7 +457,7 @@ class ServiceHelper(object):
                     enabledSingle = True
 
                 if self.isHybrid:
-                    if self.secondary.enableService(self.getService, **kwargs):
+                    if self.secondary.enableService(self.getService(), **kwargs):
                         enabledSecondary = True
 
             enabledSuccess = enabledSingle or enabledSecondary

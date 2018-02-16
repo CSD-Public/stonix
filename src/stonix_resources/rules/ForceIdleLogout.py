@@ -31,6 +31,8 @@ Created on May 31, 2016
 @change: 2017/17/21 bgonz12 Updated fix and report to use KDE Plasma's new
     desktop manager, SDDM.
 @change: 2017/10/23 rsn - removed unused service helper
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2017/11/14 bgonz12 - Changed rule to only run in root space
 '''
 from __future__ import absolute_import
 
@@ -63,6 +65,7 @@ class ForceIdleLogout(Rule):
         '''
         Constructor
         '''
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -73,7 +76,7 @@ class ForceIdleLogout(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.helptext = '''The ForceIdleLogout rule will configure \
-the system to log out gui sessions that have been idle for a long time. This \
+the system to log out GUI sessions that have been idle for a long time. This \
 helps prevent take over and illicit use of idle sessions and frees system \
 resources. Because some environments may rely on the capability of interactive \
 sessions to execute long running jobs this control is optional and will need \
@@ -81,10 +84,10 @@ to be enabled below for environments that require it. The idle time before \
 logout may also be customized. N.B. Please note that most Linux window \
 managers will not save work in progress when the logout occurs.
 '''
-        self.rootrequired = False
+        self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.11.10']}}
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
 
@@ -259,6 +262,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         @return: bool - true if settings are set to logout for inspected users
         @author: D. Kennel
         """
+
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
             ph = Pkghelper(self.logger, self.environ)
@@ -378,6 +382,9 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
             raise
 
     def chkosx(self):
+        '''
+        '''
+
         globalprefs = "/Library/Preferences/.GlobalPreferences.plist"
         globalprefstemp = globalprefs + ".stonixtmp"
         timeout = self.timeoutci.getcurrvalue() * 60
@@ -395,8 +402,10 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         @return: bool
         @author: D.Kennel
         """
+
         compliant = True
         self.detailedresults = ""
+
         try:
             if self.environ.osfamily == 'linux':
                 ph = Pkghelper(self.logger, self.environ)
@@ -432,7 +441,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                             "automatic logout of idle sessions.\n"
                     else:
                         self.detailedresults += "Gnome GUI environment " + \
-                            "does not appear to be correclty configured " + \
+                            "does not appear to be correctly configured " + \
                             "for automatic logout of idle sessions. This " + \
                             "guidance is optional in STONIX, check local " + \
                             "policy to see if it is required.\n"
@@ -444,7 +453,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                             "automatic logout of idle sessions.\n"
                     else:
                         self.detailedresults += "KDE GUI environment " + \
-                            "does not appear to be correclty configured " + \
+                            "does not appear to be correctly configured " + \
                             "for automatic logout of idle sessions. This " + \
                             "guidance is optional in STONIX, check local " + \
                             "policy to see if it is required.\n"
@@ -465,7 +474,6 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.detailedresults = 'ForceIdleLogout: '
@@ -485,6 +493,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
 
         @author: d.kennel
         """
+
         self.ph = Pkghelper(self.logger, self.environ)
         if not self.environ.geteuid() == 0:
             return
@@ -492,6 +501,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixgnome3',
                                   'Working GNOME with dconf'])
+
             try:
                 seconds = self.timeoutci.getcurrvalue() * 60
             except(TypeError):
@@ -594,9 +604,11 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
 
         @author: d.kennel
         """
+
         fhandle = open('/etc/passwd', 'r')
         passwddata = fhandle.readlines()
         fhandle.close()
+
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixkde4',
@@ -644,6 +656,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         @param homepath: Home directory path of the user being edited
         @author: d.kennel
         """
+
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
             ph = Pkghelper(self.logger, self.environ)
@@ -728,6 +741,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
 
         @author: D. Kennel
         """
+
         self.detailedresults = ""
         self.rulesuccess = True
         if self.filci.getcurrvalue() and self.environ.getosfamily() == "linux":
@@ -735,7 +749,6 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 try:
                     self.fixgnome3()
                 except (KeyboardInterrupt, SystemExit):
-                    # User initiated exit
                     raise
                 except Exception:
                     self.rulesuccess = False
@@ -749,7 +762,6 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 try:
                     self.fixkde4()
                 except (KeyboardInterrupt, SystemExit):
-                    # User initiated exit
                     raise
                 except Exception:
                     self.rulesuccess = False
@@ -787,7 +799,9 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
 
         @author: dkennel
         """
+
         self.targetstate = 'notconfigured'
+
         if self.environ.geteuid() == 0:
             try:
                 eventgnomecontent = self.statechglogger.getchgevent('0023001')
@@ -813,7 +827,6 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                                      ['ForceIdleLogout.undo',
                                       "EventID 0023002 not found"])
             except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
                 raise
             except Exception:
                 self.detailedresults = traceback.format_exc()
@@ -836,7 +849,6 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                                      ['ForceIdleLogout.undo',
                                       "EventID 0023003 not found"])
             except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
                 raise
             except Exception:
                 self.detailedresults = traceback.format_exc()

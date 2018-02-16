@@ -43,6 +43,11 @@ Created on Jul 11, 2013
     for values that come back with "uint32 [int val]". Also added two single
     quotes to picture-uri value, since a blank value cannot be "set".
 @change: 2016/11/22 eball Changed gsettings times from 300 to 900.
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change 2017/11/15 bgonz12 - changed fixGnome to unlock the dconf
+    stonix-settings before trying to configure them
+@change: 2017/11/30 bgonz12 - changed fixGnome to use a conf file
+    for configuring dconf settings on rpm systems
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
@@ -72,7 +77,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.effectiveUserID = self.environ.geteuid()
         self.sethelptext()
         self.formatDetailedResults("initialize")
@@ -161,7 +166,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                            "CONFIGURESCREENLOCKING to False."
             default = True
             self.ci = self.initCi(datatype, key, instructions, default)
-
             self.kdeprops = {"ScreenSaver": {"Enabled": "true",
                                              "Lock": "true",
                                              "LockGrace": "60000",
@@ -229,6 +233,18 @@ class ConfigureScreenLocking(RuleKVEditor):
         compliant = True
         self.cmdhelper = CommandHelper(self.logger)
         self.stonixsettings = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
+        self.dconfsettings = "/etc/dconf/db/local.d/local.key"
+        self.dconfdata = {"org/gnome/desktop/screensaver": {
+                                "idle-activation-enabled": "true",
+                                "lock-enabled": "true",
+                                "lock-delay": "0",
+                                "picture-opacity": "100",
+                                "picture-uri": "\'\'"},
+                          "org.gnome.desktop.session": {
+                                "idle-delay": "300"}}
+        self.kveditordconf = KVEditorStonix( self.statechglogger, self.logger,
+            "tagconf", self.dconfsettings, self.dconfsettings + ".tmp",
+            self.dconfdata, "present", "closedeq")
         gsettings = "/usr/bin/gsettings"
         if os.path.exists(gsettings):
             self.useGconf = False
@@ -758,6 +774,29 @@ for this portion of the rule\n"
                             success = False
         else:
             gsettings = "/usr/bin/gsettings"
+            if os.path.exists(self.stonixsettings):
+                tmpfile = self.stonixsettings + ".tmp"
+                if not writeFile(tmpfile, "", self.logger):
+                    self.rulesuccess = False
+                    self.detailedresults += "Unabled to unlock settings in" + \
+                        " stonix-settings file\n"
+                    self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                    return False
+                else:
+                    os.rename(tmpfile, self.stonixsettings)
+                    os.chown(self.stonixsettings, 0, 0)
+                    os.chmod(self.stonixsettings, 493)
+                    resetsecon(self.stonixsettings)
+                    cmd = "/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
+            if not os.path.exists(self.stonixsettings):
+                    if not createFile(self.stonixsettings, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unabled to create stonix-settings file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
             for cmd in self.fixes:
                 setCmd = re.sub("get", "set", cmd, 1)
                 setCmd += " " + self.fixes[cmd]
@@ -766,13 +805,6 @@ for this portion of the rule\n"
                 if self.cmdhelper.getReturnCode() != 0:
                     info += "Unable to set value for " + setCmd
                     success = False
-            if not os.path.exists("/etc/dconf/db/local.d/locks/stonix-settings.conf"):
-                if not createFile(self.stonixsettings, self.logger):
-                    self.rulesuccess = False
-                    self.detailedresults += "Unabled to create stonix-settings file\n"
-                    self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-                    return False
             if self.writes:
                 contents = ""
                 tmpfile = self.stonixsettings + ".tmp"
@@ -787,6 +819,13 @@ for this portion of the rule\n"
                     os.chown(self.stonixsettings, 0, 0)
                     os.chmod(self.stonixsettings, 493)
                     resetsecon(self.stonixsettings)
+            self.ph = Pkghelper(self.logger, self.environ)
+            if self.ph.determineMgr() is "yum":
+                if not self.kveditordconf.report():
+                    self.kveditordconf.fix()
+                    self.kveditordconf.commit()
+                cmd = "/bin/dconf update"
+                self.cmdhelper.executeCommand(cmd)
         self.detailedresults += info
         return success
 
