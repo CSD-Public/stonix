@@ -107,6 +107,26 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
 #                     os.rename(loc, loc + '.stonixbak')
         return success
 
+    def test_freqci_in_range(self):
+        '''
+        test if the frequency ci value is within range
+
+        @author: Breen Malmberg
+        '''
+
+        allowable_freq_range = range(1,100)
+        self.assertTrue(self.rule.freqci.getcurrvalue() in allowable_freq_range)
+
+    def test_flushtype_valid(self):
+        '''
+        test if the flush type ci value is a valid flush type
+
+        @author: Breen Malmberg
+        '''
+
+        allowable_flush_types = ['data', 'incremental', 'sync']
+        self.assertTrue(self.rule.flushtypeci.getcurrvalue() in allowable_flush_types)
+
     def test_get_system_arch(self):
         '''
         test the command to get the system arch

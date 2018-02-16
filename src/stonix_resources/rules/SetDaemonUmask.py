@@ -179,6 +179,17 @@ set the value of SetDaemonUmask to False.'
                     if not replacedline:
                         self.appendLine('\nUMASK ' + umaskvalue + '\n', debianfile, [0, 0], 0644)
 
+            # if all else fails, and mostly for fedora 27 ~
+            else:
+                if not os.path.exists("/etc/sysconfig"):
+                    os.makedirs("/etc/sysconfig", 0755)
+                f = open("/etc/sysconfig/init", "w")
+                f.write("umask " + umaskvalue + "\n")
+                f.close()
+
+                os.chmod("/etc/sysconfig/init", 0644)
+                os.chown("/etc/sysconfig/init", 0, 0)
+
             self.rulesuccess = True
 
         except Exception:

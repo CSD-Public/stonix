@@ -204,7 +204,9 @@ Siri is a built-in 'intelligent assistant' that enables users of Apple iPhone 4S
 
 GNOME is a desktop environment composed of free and open-source software which runs on Linux.
 
-A 'file thumbnail' is a small image, which is used in a 'Graphical User Interface' (GUI) environment to visually represent the file to which it is attached."
+A 'file thumbnail' is a small image, which is used in a 'Graphical User Interface' (GUI) environment to visually represent the file to which it is attached.
+
+gnome/nautilus thumbnail generation can be a security concern because the image of the thumbnail is a mini preview of the document or image contained in the file. This is why it is a good idea to disable these, from a security standpoint."
 
 <102>        "This rule disables 'Touch ID' authentication, starting in Mac OS X 10.12. 
 

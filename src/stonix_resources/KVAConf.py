@@ -27,6 +27,7 @@ Created on May 6, 2013
 '''
 from logdispatcher import LogPriority
 from stonixutilityfunctions import writeFile
+import os
 import traceback
 import re
 
@@ -582,19 +583,25 @@ class KVAConf():
         stores in private variable self.contents.
         @author: dwalker
         @param path: The path which contents need to be read
+        @change bgonz12 - 2018/1/18 - added handing for 'path' not existing
         '''
-        try:
-            f = open(path, 'r')
-        except IOError:
-            self.detailedresults = "KVAConf: unable to open the" \
-                "specified file"
-            self.detailedresults += traceback.format_exc()
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return False
-        self.contents = []
-        for line in f:
-            self.contents.append(line)
-        f.close()
+        if not os.path.exists(path):
+            detailedresults = "KVAConf: Unable to open specified file: " + \
+                path + ". File does not exist."
+            self.logger.log(LogPriority.DEBUG, detailedresults)
+        else:
+            try:
+                f = open(path, 'r')
+            except IOError:
+                self.detailedresults = "KVAConf: unable to open the" \
+                    "specified file"
+                self.detailedresults += traceback.format_exc()
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                return False
+            self.contents = []
+            for line in f:
+                self.contents.append(line)
+            f.close()
 ###############################################################################
 
     def getValue(self):

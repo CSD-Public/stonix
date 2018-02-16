@@ -56,7 +56,7 @@ mkdir -p $RPM_BUILD_ROOT/usr/share/man/man8
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/gfx/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.mobileconfig $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.mobileconfigfake $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
-/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/passwordprofile-10.11 $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+#/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/passwordprofile-10.11 $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.plist $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
 /usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
 /usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/

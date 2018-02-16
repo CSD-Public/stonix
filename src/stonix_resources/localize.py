@@ -58,7 +58,7 @@ that access the version variable to use this copy.
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
 # Variable Type: String
-STONIXVERSION = '0.9.14'
+STONIXVERSION = '0.9.15'
 
 # FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
 # is used to determine rule applicability and behavior with the higher the

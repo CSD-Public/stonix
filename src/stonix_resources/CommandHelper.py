@@ -569,6 +569,7 @@ class CommandHelper(object):
 
                 outlines = []
                 errlines = []
+                outstr = ''
                 # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
 
@@ -576,6 +577,7 @@ class CommandHelper(object):
                         outs, errs = commandobj.communicate()
                         outlines = str(outs).splitlines()
                         errlines = str(errs).splitlines()
+                        outstr = str(outs)
 
                 if commandobj is not None:
                     self.stdout = outlines
@@ -599,11 +601,12 @@ class CommandHelper(object):
                 if commandobj.stderr is not None:
                     commandobj.stderr.close()
         finally:
+
             msg = "You should not see this. CommandHelper.executeCommand()"
             if self.returncode is not None:
-                msg = "returncode:(" + str(self.returncode) + ") output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
+                msg = "returncode:(" + str(self.returncode) + ") \noutput:(" + str(outstr) + "); command:(" + str(self.command) + ")"
             else:
-                msg = "returncode:(None) output:(" + str(self.output) + "); command:(" + str(self.command) + ")"
+                msg = "returncode:(None) \noutput:(" + str(outstr) + "); command:(" + str(self.command) + ")"
             self.logdispatcher.log(LogPriority.DEBUG, msg)
 
         return success

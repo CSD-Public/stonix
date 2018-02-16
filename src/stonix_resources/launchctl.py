@@ -7,9 +7,7 @@ Some methods might be useful in older Mac OS X operating systems.
 
 @author: Roy Nielsen
 '''
-import os
 import re
-import sys
 
 from logdispatcher import LogPriority as lp
 from CommandHelper import CommandHelper
@@ -18,16 +16,17 @@ from stonixutilityfunctions import reportStack
 class LaunchCtl(object):
     """
     Service manager that provides an interface to the Mac OS launchctl command.
-    
+
     @privatemethod: validateSubCommand - validate a command that is
                     formatted as: { <subcommand> : [<arg1>, <arg1>, <arg3>]}
                     where each argN is a string.
 
     @privatemethod: runSubCommand - runs a launchctl command, in the format
-                    described above, then collects standard out, standard error
-                    and the launchctl return code, returning them to the caller.
+                    described above, then collects standard out, standard
+                    error and the launchctl return code, returning them to the
+                    caller.
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     Legacy commands
 
     @publicmethod: load - (legacy) loads the passed in plist/service
@@ -47,7 +46,7 @@ class LaunchCtl(object):
     @publicmethod: asuser - (legacy) execute a command in as close as possible
                             context to the passed in UID
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     Current commands
 
     @publicmethod: bootstrap
@@ -63,7 +62,8 @@ class LaunchCtl(object):
     @publicmethod: kickstart
 
     @publicmethod: kill - (2.0) Kills a service, with one of the passed
-                   in signals that are described in the Mac OS signal(3) manpage.
+                   in signals that are described in the Mac OS signal(3)
+                   manpage.
 
     @publicmethod: blame
 
@@ -95,9 +95,9 @@ class LaunchCtl(object):
         self.logger = logger
         self.ch = CommandHelper(self.logger)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # helper methods
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def isSaneFilePath(self, filepath):
         """
@@ -110,10 +110,11 @@ class LaunchCtl(object):
             if re.match("^[A-Za-z/\.][A-Za-z0-9/\._-]*", filepath):
                 sane = True
             else:
-                self.logger.log(lp.DEBUG, "filepath: " + str(filepath) + " is not valid.")
+                self.logger.log(lp.DEBUG, "filepath: " + str(filepath) +
+                                " is not valid.")
         return sane
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def validateSubCommand(self, command={}):
         """
@@ -142,42 +143,47 @@ class LaunchCtl(object):
                 #####
                 # Check to make sure only one command is in the dictionary
                 if commands > 1:
-                    self.logger.log(lp.ERROR, "Damn it Jim! One command at a time!!")
+                    self.logger.log(lp.ERROR, "Damn it Jim! One command at " +
+                                    "a time!!")
                     success = False
                     break
                 #####
                 # Check if the subcommand is a valid subcommand...
                 validSubcommands = ["load", "unload","start", "stop", "list",
                                     "bsexec", "asuser",
-                                    "bootstrap", "bootout", "enable", "disable",
-                                    "uncache", "kickstart", "kill", "blame",
-                                    "print", "print-cache", "print-disabled",
-                                    "procinfo", "hostinfo", "resolveport",
-                                    "reboot"]
+                                    "bootstrap", "bootout", "enable",
+                                    "disable", "uncache", "kickstart",
+                                    "kill", "blame", "print", "print-cache",
+                                    "print-disabled", "procinfo", "hostinfo",
+                                    "resolveport", "reboot"]
                 if subCommand not in validSubcommands:
                     success = False
                     break
                 else:
                     success = True
                 #####
-                # Check to make sure the key or subCommand is a string, and the value is
-                # alist and args are
-                if not isinstance(subCommand, basestring) or not isinstance(args, list):
-                    self.logger.log(lp.ERROR, "subcommand needs to be a string, and args needs to be a list of strings")
+                # Check to make sure the key or subCommand is a string, and
+                # the value is alist and args are
+                if not isinstance(subCommand, basestring) or \
+                   not isinstance(args, list):
+                    self.logger.log(lp.ERROR, "subcommand needs to be a " +
+                                    "string, and args needs to be a list " +
+                                    "of strings")
                     success = False
                 else:
                     #####
                     # Check the arguments to make sure they are all strings
                     for arg in args:
                         if not isinstance(arg, basestring):
-                            self.logger.log(lp.ERROR, "Arg '" + str(arg) + "'needs to be a string...")
+                            self.logger.log(lp.ERROR, "Arg '" + str(arg) +
+                                            "'needs to be a string...")
                             success = False
                     if success:
                         subcmd = [subCommand] + args
                         self.logger.log(lp.DEBUG, 'subcmd: ' + str(subcmd))
         return success, subcmd
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def runSubCommand(self, commandDict={}):
         """
@@ -214,7 +220,7 @@ class LaunchCtl(object):
             self.logger.log(lp.DEBUG, 'cmd: ' + str(cmd))
             #####
             # set up and run the command
-            #self.ch.setCommand(cmd)
+            # self.ch.setCommand(cmd)
             success = self.ch.executeCommand(cmd)
 
             output = self.ch.getOutput()
@@ -226,8 +232,9 @@ class LaunchCtl(object):
                 success = True
                 """
                 if "bootstrap" in subCmd:
-                    raise ValueError("cmd: " + str(cmd) + " output: " + str(output) + \
-                                     " error: " + str(error) + " retcode: " + str(returncode))
+                    raise ValueError("cmd: " + str(cmd) + " output: " +
+                                     str(output) + " error: " + str(error) +
+                                     " retcode: " + str(returncode))
                 """
 
             if error:
@@ -241,9 +248,9 @@ class LaunchCtl(object):
 
         return success, str(output), str(error), str(returncode)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Legacy Subcommands
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def load(self, plist="", options="", sessionType="", domain=False):
         """
@@ -316,33 +323,37 @@ class LaunchCtl(object):
         if self.isSaneFilePath(plist):
             args = []
 
-            if re.match("[-wF]+", str(options)) and isinstance(options, basestring):
+            if re.match("[-wF]+", str(options)) and \
+               isinstance(options, basestring):
                 args.append(options)
             else:
-                self.logger.log(lp.INFO, "Need a the options to be a single string...")
+                self.logger.log(lp.INFO, "Need a the options to be a single" +
+                                " string...")
 
             sessionTypes = ['Aqua', 'StandardIO', 'Background', 'LoginWindow']
             if sessionType in sessionTypes:
                 args += ['-S', sessionType]
             else:
-                self.logger.log(lp.INFO, "Need a the sessionType in: " + str(sessionTypes))
+                self.logger.log(lp.INFO, "Need a the sessionType in: " +
+                                str(sessionTypes))
 
             if isinstance(domain, basestring):
                 args += ['-D', domain]
             else:
-                self.logger.log(lp.INFO, "Need a the domain in: " + str(sessionTypes))
+                self.logger.log(lp.INFO, "Need a the domain in: " +
+                                str(sessionTypes))
 
             args.append(plist)
 
-            cmd = { "load" : args }
-            success, stdout, stderr, retcode = self.runSubCommand(cmd)
+            cmd = {"load" : args}
+            success, _, stderr, _ = self.runSubCommand(cmd)
 
             if not success and re.search("already loaded", stderr):
                 success = True
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def unLoad(self, plist="", options="", sessionType="", domain=False):
         """
@@ -415,32 +426,36 @@ class LaunchCtl(object):
         if self.isSaneFilePath(plist):
             args = []
 
-            if re.match("[-wF]+", str(options)) and isinstance(options, basestring):
+            if re.match("[-wF]+", str(options)) and \
+               isinstance(options, basestring):
                 args.append(options)
             else:
-                self.logger.log(lp.INFO, "Need a the options to be a single string...")
+                self.logger.log(lp.INFO, "Need a the options to be a single" +
+                                " string...")
 
             sessionTypes = ['Aqua', 'StandardIO', 'Background', 'LoginWindow']
             if sessionType in sessionTypes:
                 args += ['-S', sessionType]
             else:
-                self.logger.log(lp.INFO, "Need a the sessionType in: " + str(sessionTypes))
+                self.logger.log(lp.INFO, "Need a the sessionType in: " +
+                                str(sessionTypes))
 
             if isinstance(domain, basestring):
                 args += ['-D', domain]
             else:
-                self.logger.log(lp.INFO, "Need a the domain in: " + str(sessionTypes))
+                self.logger.log(lp.INFO, "Need a the domain in: " +
+                                str(sessionTypes))
 
             args.append(plist)
 
-            cmd = { "unload" : args }
-            success, stdout, stderr, retcode = self.runSubCommand(cmd)
+            cmd = {"unload": args}
+            success, _, stderr, _ = self.runSubCommand(cmd)
             if not success and re.search('Could not find specified', stderr):
                 success = True
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def start(self, label=""):
         """
@@ -457,13 +472,13 @@ class LaunchCtl(object):
         # Input validation.
         if not label or not isinstance(label, basestring):
             return success
-        
-        cmd = { "start" : label }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+
+        cmd = {"start": label}
+        success, _, _, _ = self.runSubCommand(cmd)
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def stop(self, label=""):
         """
@@ -480,13 +495,13 @@ class LaunchCtl(object):
         # Input validation.
         if not label or not isinstance(label, basestring):
             return success
-        
-        cmd = { "stop" : label }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+
+        cmd = {"stop": label}
+        success, _, _, _ = self.runSubCommand(cmd)
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def list(self, label=""):
         """
@@ -506,9 +521,6 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         """
         success = False
-        error = True
-        output = ""
-        returncode = 0
         #####
         # Input validation.
         if label and isinstance(label, basestring):
@@ -517,16 +529,19 @@ class LaunchCtl(object):
             cmd = [self.launchctl, 'list']
         else:
             return success
-            #####
-            # set up and run the command
-            self.ch.setCommand(cmd)
-            success = self.ch.executeCommand()
-            if success:
-                output = self.ch.getOutput()
-                error = self.ch.getError()
-                returncode = self.ch.getReturnCode()
+        #####
+        # set up and run the command
+        # self.ch.setCommand(cmd)
+        success = self.ch.executeCommand(cmd)
+
+        output = self.ch.getOutput()
+        error = self.ch.getError()
+        returncode = self.ch.getReturnCode()
 
         if not error:
+            self.logger.log(lp.DEBUG, "Output: " + str(output))
+            self.logger.log(lp.DEBUG, "Error: " + str(error))
+            self.logger.log(lp.DEBUG, "Return code: " + str(returncode))
             success = True
         else:
             self.logger.log(lp.DEBUG, "Output: " + str(output))
@@ -536,7 +551,7 @@ class LaunchCtl(object):
 
         return success, output, error, returncode
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def bsExec(self, pid, command, args=[]):
         '''
@@ -559,13 +574,13 @@ class LaunchCtl(object):
            not isinstance(command, basestring) or \
            not isinstance(args, list):
             return success
-        
-        cmd = { "bsexec" : [pid, command] + args }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+
+        cmd = {"bsexec": [pid, command] + args}
+        success, _, _, _ = self.runSubCommand(cmd)
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def asUser(self, uid, command, args=[]):
         '''
@@ -588,22 +603,22 @@ class LaunchCtl(object):
            not isinstance(command, basestring) or \
            not isinstance(args, list):
             return success
-        
-        cmd = { "asuser" : [uid, command] + args }
+
+        cmd = {"asuser": [uid, command] + args}
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) + \
-                             " stdout: " + str(stdout) + \
-                             " stderr: " + str(stderr) + \
+            raise ValueError(reportStack() + "- success: " + str(success) +
+                             " stdout: " + str(stdout) +
+                             " stderr: " + str(stderr) +
                              " retcode: " + str(retcode))
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # Supported Second generation subcommands
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
-    def bootStrap(self, servicePath='', domainTarget=""):
+    def bootStrap(self, domainTarget="", servicePath=''):
         '''
         @note: From the launchctl man page:
           bootstrap | bootout domain-target [service-path service-path2 ...] |
@@ -624,23 +639,31 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
+        cmd = ''
         #####
         # Input validation.
         if not isinstance(domainTarget, basestring) or \
            not isinstance(servicePath, basestring):
             return success
-        
-        cmd = { "bootstrap" : [domainTarget.split("/")[0], servicePath] }
+
+        if servicePath and domainTarget:
+            cmd = {"bootstrap": [domainTarget, servicePath]}
+        elif domainTarget:
+            cmd = {"bootstrap": [domainTarget]}
+        else:
+            return success
+
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) + \
-                             " stdout: " + str(stdout) + \
-                             " stderr: " + str(stderr) + \
-                             " retcode: " + str(retcode))
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def bootOut(self, domainTarget="", servicePath=''):
         '''
@@ -668,28 +691,37 @@ class LaunchCtl(object):
         if not isinstance(domainTarget, basestring) or \
            not isinstance(servicePath, basestring):
             return success
-        
-        cmd = { "bootout" : [domainTarget] }
-        
-        if self.printTarget(domainTarget):
-            success, stdout, stderr, retcode = self.runSubCommand(cmd)
-            #####
-            # errors that indicate the process is complete or in
-            # progress
-            if re.search("No such process", stderr) or \
-               re.search("Operation now in progress", stderr):
-                success = True
+
+        if servicePath and domainTarget:
+            cmd = {"bootout": [domainTarget, servicePath]}
+        elif domainTarget:
+            cmd = {"bootout": [domainTarget]}
+        else:
+            return success
+
+        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        #####
+        # errors that indicate the process is complete or in
+        # progress
+        if re.search("No such process", stderr) or \
+           re.search("Operation now in progress", stderr):
+            success = True
 
         if retcode != '0'and not success:
-            raise ValueError(reportStack() + "- success: " + str(success) + \
-                             " stdout: " + str(stdout) + \
-                             " stderr: " + str(stderr) + \
-                             " retcode: " + str(retcode))
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+        for item in stderr:
+            if item and re.search("Could not find specified service", item):
+                success = True
+                break
         return success
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
-    def enable(self, serviceTarget):
+    def enable(self, serviceTarget, servicePath=''):
         '''
         From the launchctl man page:
           enable | disable service-target
@@ -702,13 +734,13 @@ class LaunchCtl(object):
 
         @param: serviceTarget - See description below for details on
                 this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -716,28 +748,36 @@ class LaunchCtl(object):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @author: Roy Nielsen
         '''
         success = False
+        stderr = False
         #####
         # Input validation.
         if not isinstance(serviceTarget, basestring):
             return success
-        
-        cmd = { "enable" : [serviceTarget] }
+
+        if servicePath and isinstance(servicePath, basestring):
+            cmd = {"enable": [serviceTarget, servicePath]}
+        else:
+            cmd = {"enable": [serviceTarget]}
+
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
-        if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) + \
-                             " stdout: " + str(stdout) + \
-                             " stderr: " + str(stderr) + \
+        if retcode != '0' or stderr or not success:
+            success = False
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                             " stdout: " + str(stdout) +
+                             " stderr: " + str(stderr) +
                              " retcode: " + str(retcode))
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def disable(self, serviceTarget):
         '''
@@ -752,13 +792,13 @@ class LaunchCtl(object):
 
         @param: serviceTarget - See description below for details on
                 this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -766,9 +806,10 @@ class LaunchCtl(object):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @author: Roy Nielsen
         '''
@@ -777,14 +818,14 @@ class LaunchCtl(object):
         # Input validation.
         if not isinstance(serviceTarget, basestring):
             return success
-        
-        cmd = { "disable" : [serviceTarget] }
+
+        cmd = {"disable": [serviceTarget]}
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
         if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) + \
-                             " stdout: " + str(stdout) + \
-                             " stderr: " + str(stderr) + \
+            raise ValueError(reportStack() + "- success: " + str(success) +
+                             " stdout: " + str(stdout) +
+                             " stderr: " + str(stderr) +
                              " retcode: " + str(retcode))
         return success
 
@@ -796,7 +837,7 @@ class LaunchCtl(object):
         
         @param: serviceName - name of the service to check (plist), must
                 contain the full path to the service plist
-        
+
         @note: From the launchctl man page:
           uncache service-name
               This subcommand instructs launchd to bypass its service cache
@@ -814,45 +855,45 @@ class LaunchCtl(object):
         # Input validation.
         if not isinstance(serviceName, basestring):
             return success
-        
-        cmd = { "uncache" : [serviceName] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+
+        cmd = {"uncache": [serviceName]}
+        success, _, _, _ = self.runSubCommand(cmd)
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def kickStart(self, serviceTarget="", options='-k'):
         """
         From the launchctl man page:
           kickstart [-kp] service-target
-              Instructs launchd to kickstart the specified service. 
+              Instructs launchd to kickstart the specified service.
               Options can be one of:
 
               -k       If the service is already running, kill the running
                        instance before restarting the service.
-            
+
               -p       Upon success, print the PID of the new process or the
                        already-running process to stdout.
-            
+
             High sierra options:
               -s       Force the service to start.
 
-              -x       Attach to xpcproxy(3) before it execs and becomes the service
-                       process. This flag is generally not useful for anyone but the
-                       launchd maintainer.
-                       
+              -x       Attach to xpcproxy(3) before it execs and becomes the
+                       service process. This flag is generally not useful
+                       for anyone but the launchd maintainer.
+
               (-p)     No longer available in High Sierra
 
         @param: serviceTarget - See description below for details on
                 this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -860,41 +901,43 @@ class LaunchCtl(object):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @author: Roy Nielsen
         """
-        success = False
         #####
         # Input validation.
         args = []
-        if re.match("[-kp]+", str(options)) and isinstance(options, basestring):
+        if re.match("[-kp]+", str(options)) and \
+           isinstance(options, basestring):
             args.append(options)
         else:
-            self.logger.log(lp.INFO, "Need a the options to be a single string...")
+            self.logger.log(lp.INFO, "Need a the options to be a single " +
+                            "string...")
 
         args.append(serviceTarget)
 
         self.logger.log(lp.DEBUG, "args: " + str(args))
 
-        cmd = { "kickstart" : args }
+        cmd = {"kickstart": args}
         self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
         #####
         # If a '0' is returned
-        if retcode == '0':
+        if retcode == '0' and success:
             success = True
         else:
-            raise ValueError("kickstart - success: " + str(success) + \
-                             " stdout: " + str(stdout) + \
-                             " stderr: " + str(stderr) + \
+            raise ValueError("kickstart - success: " + str(success) +
+                             " stdout: " + str(stdout) +
+                             " stderr: " + str(stderr) +
                              " retcode: " + str(retcode))
-            
+
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def kill(self, signal="", serviceTarget=""):
         """
@@ -903,18 +946,19 @@ class LaunchCtl(object):
               Sends the specified signal to the specified service if it is
               running. The signal number or name (SIGTERM, SIGKILL, etc.) may
               be specified.
-              
-        @param: signal - Unix signals to be used can be found below in the 'signals'
-                variable.
+
+        @param: signal - Unix signals to be used can be found below in the
+                        'signals' variable.
+
         @param: serviceTarget - See description below for details on
                 this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -922,11 +966,10 @@ class LaunchCtl(object):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @author: Roy Nielsen
         """
@@ -957,12 +1000,12 @@ class LaunchCtl(object):
 
         args.append(serviceTarget)
 
-        cmd = { "kill" : args }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        cmd = {"kill": args}
+        success, _, _, _ = self.runSubCommand(cmd)
 
         return success
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def blame(self, serviceTarget):
         '''
@@ -980,13 +1023,13 @@ class LaunchCtl(object):
 
         @param: serviceTarget - See description below for details on
                 this variable.
-                
+
                system/[service-name]
                   Targets the system domain or a service within the system
                   domain. The system domain manages the root Mach bootstrap
                   and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
+                  Anyone may read or query the system domain, but root
+                  privileges are required to make modifications.
 
                 user/<uid>/[service-name]
                   Targets the user domain for the given UID or a service
@@ -994,9 +1037,10 @@ class LaunchCtl(object):
                   of a logged-in user. User domains do not exist on iOS.
 
                 For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
+                com.apple.example loaded into the GUI domain of a user with
+                UID 501, domain-target is gui/501/, service-name is
+                com.apple.example, and service-target is
+                gui/501/com.apple.example.
 
         @author: Roy Nielsen
         '''
@@ -1006,12 +1050,12 @@ class LaunchCtl(object):
         if not isinstance(serviceTarget, basestring):
             return success
 
-        cmd = { "blame" : [serviceTarget] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        cmd = {"blame": [serviceTarget]}
+        success, stdout, _, _ = self.runSubCommand(cmd)
 
         return success, stdout
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def printTarget(self, target):
         '''
@@ -1037,23 +1081,25 @@ class LaunchCtl(object):
         if not isinstance(target, basestring):
             return success
 
-        # prepended system/ to service-target in order to hot fix multiple issues
-        # with service detection in servicehelper two implementation
-        # all rules calling new servicehelper must specify the service target context
-        # and they all currently do not. system/ is where all system services run.
-        # currently servicehelper two cannot look for user context services when
-        # being run in admin mode anyway, so this is just a best-effort workaround
-        # until servicehelper two can be redesigned or all the rules changed to 
-        # prepend system/ in their servicehelper calls
-        cmd = { "print" : ["system/" + target] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        # prepended system/ to service-target in order to hot fix multiple
+        # issues with service detection in servicehelper two implementation
+        # all rules calling new servicehelper must specify the service target
+        # context  and they all currently do not. system/ is where all
+        # system services run. currently servicehelper two cannot look for
+        # user context services when being run in admin mode anyway, so this
+        # is just a best-effort workaround until servicehelper two can
+        # be redesigned or all the rules changed to prepend system/ in
+        # their servicehelper calls
+        cmd = {"print": ["system/" + target]}
+        success, stdout, stderr, _ = self.runSubCommand(cmd)
 
-        if re.search("Could not find service", stderr) and re.search("in domain for system", stderr):
+        if re.search("Could not find service", stderr) and \
+           re.search("in domain for system", stderr):
             success = False
 
         return success, stdout
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def printCache(self):
         '''
@@ -1063,16 +1109,17 @@ class LaunchCtl(object):
 
         @author: Roy Nielsen
         '''
-        success = False
-
-        cmd = { "print-cache" : [] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        cmd = {"print-cache": []}
+        success, stdout, _, _ = self.runSubCommand(cmd)
+        if success:
+            self.logger.log(lp.DEBUG, str(success))
+            self.logger.log(lp.DEBUG, str(stdout))
 
         return success, stdout
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
-    def printDisabled(self):
+    def printDisabled(self, target=''):
         '''
         @note: From the launchctl man page:
           print-disabled
@@ -1081,13 +1128,14 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
-
-        cmd = { "print-disabled" : [] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        stdout = ''
+        if target and isinstance(target, basestring):
+            cmd = {"print-disabled": [target]}
+            success, stdout, _, _ = self.runSubCommand(cmd)
 
         return success, stdout
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def procInfo(self, pid):
         '''
@@ -1110,12 +1158,12 @@ class LaunchCtl(object):
         if not isinstance(pid, int):
             return success
 
-        cmd = { "procinfo" : [pid] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        cmd = {"procinfo": [pid]}
+        success, stdout, _, _ = self.runSubCommand(cmd)
 
         return success, stdout
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def hostinfo(self):
         '''
@@ -1127,14 +1175,12 @@ class LaunchCtl(object):
 
         @author: Roy Nielsen
         '''
-        success = False
+        cmd = {"hostinfo": []}
+        _, stdout, _, _ = self.runSubCommand(cmd)
 
-        cmd = { "hostinfo" : [] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        return stdout
 
-        return success
-
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def resolvePort(self, ownerPid, portName):
         '''
@@ -1151,17 +1197,16 @@ class LaunchCtl(object):
         # Input validation.
         if not isinstance(ownerPid, int) or not isinstance(portName, basestring):
             return success
-        
-        cmd = { "rsolveport" : [ownerPid, portName] }
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
-        return success
+        cmd = {"rsolveport": [ownerPid, portName]}
+        _, stdout, _, _ = self.runSubCommand(cmd)
 
-    #-------------------------------------------------------------------------
+        return stdout
 
-    def reboot(self, context, mountPoint, single=False):
+    # -------------------------------------------------------------------------
+
+    def reboot(self, context, mountPoint):
         '''
-        
         @note: From the launchctl man page:
           reboot [system|userspace|halt|logout|apps|reroot <mount-point>]
               Instructs launchd to begin tearing down userspace. With no
@@ -1219,17 +1264,17 @@ class LaunchCtl(object):
         '''
         success = False
         validContexts = ['System', 'users', 'halt', 'logout', 'apps', 'reroot']
-        
+
         if not isinstance(context, basestring) or \
            not context in validContexts:
             return success
         if mountPoint and isinstance(mountPoint, basestring):
-            cmd = { "reboot" : [context, mountPoint] }
+            cmd = {"reboot": [context, mountPoint]}
         elif not mountPoint:
-            cmd = { "reboot" : [context] }
+            cmd = {"reboot": [context]}
         else:
             return success
 
-        success, stdout, stderr, retcode = self.runSubCommand(cmd)
+        success, _, _, _ = self.runSubCommand(cmd)
 
         return success
