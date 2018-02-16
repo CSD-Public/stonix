@@ -34,6 +34,7 @@ well-managed web server is recommended.
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 @change: 2017/10/23 rsn - Changing for new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/02/16 bgonz12 - Fix function call to disableService
 '''
 
 from __future__ import absolute_import
@@ -148,8 +149,7 @@ well-managed web server is recommended.
 
                 #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
                 #    self.rulesuccess = False
-                if not self.svchelper.disableService(self.maclongname, self.macshortname):
-
+                if not self.svchelper.disableService(self.maclongname, servicename=self.macshortname):
                     self.rulesuccess = False
 
                 self.id += 1
