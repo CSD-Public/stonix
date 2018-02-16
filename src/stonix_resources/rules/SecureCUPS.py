@@ -257,36 +257,41 @@ class SecureCUPS(Rule):
             if self.DisableGenericPort.getcurrvalue():
                 self.cupsdconfremopts = {"Port": "631"}
 
-            ## create kveditor objects
-            if os.path.exists(self.cupsfilesconf):
-                kvtype1 = "conf"
-                path1 = self.cupsfilesconf
-                tmpPath1 = path1 + ".stonixtmp"
-                data1 = self.cupsfilesopts
-                intent1 = "present"
-                configType1 = "space"
-                self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
-                                                  data1, intent1, configType1)
+            # this line added to prevent kvaconf trying to load files
+            # it can't access during __init__, if the program is being
+            # run in user mode
+            if self.environ.geteuid() == 0:
 
-            if os.path.exists(self.cupsdconf):
-                kvtype2 = "conf"
-                path2 = self.cupsdconf
-                tmpPath2 = path2 + ".stonixtmp"
-                data2 = self.cupsdconfopts
-                intent2 = "present"
-                configType2 = "space"
-                self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
-                                              data2, intent2, configType2)
-
-                if self.cupsdconfremopts:
-                    kvtype3 = "conf"
-                    path3 = self.cupsdconf
-                    tmpPath3 = path3 + ".stonixtmp"
-                    data3 = self.cupsdconfremopts
-                    intent3 = "notpresent"
-                    configType3 = "space"
-                    self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
-                                                  data3, intent3, configType3)
+                ## create kveditor objects
+                if os.path.exists(self.cupsfilesconf):
+                    kvtype1 = "conf"
+                    path1 = self.cupsfilesconf
+                    tmpPath1 = path1 + ".stonixtmp"
+                    data1 = self.cupsfilesopts
+                    intent1 = "present"
+                    configType1 = "space"
+                    self.KVcupsfiles = KVEditorStonix(self.statechglogger, self.logger, kvtype1, path1, tmpPath1, 
+                                                      data1, intent1, configType1)
+    
+                if os.path.exists(self.cupsdconf):
+                    kvtype2 = "conf"
+                    path2 = self.cupsdconf
+                    tmpPath2 = path2 + ".stonixtmp"
+                    data2 = self.cupsdconfopts
+                    intent2 = "present"
+                    configType2 = "space"
+                    self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
+                                                  data2, intent2, configType2)
+    
+                    if self.cupsdconfremopts:
+                        kvtype3 = "conf"
+                        path3 = self.cupsdconf
+                        tmpPath3 = path3 + ".stonixtmp"
+                        data3 = self.cupsdconfremopts
+                        intent3 = "notpresent"
+                        configType3 = "space"
+                        self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
+                                                      data3, intent3, configType3)
 
             # policy blocks
             self.serveraccess = """# Restrict access to the server...

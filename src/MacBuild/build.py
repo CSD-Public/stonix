@@ -524,6 +524,7 @@ class SoftwareBuilder():
                 # Change version string of the app
                 print "Changing .app version string..."
                 self.mbl.modplist(plist, "CFBundleShortVersionString", self.APPVERSION)
+                self.mbl.changeViewControllerTitle("stonix4mac " + str(self.APPVERSION))
             os.chdir(returnDir)
         except:
             print traceback.format_exc()

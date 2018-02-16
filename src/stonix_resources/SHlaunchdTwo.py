@@ -42,7 +42,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
     @author: rsn
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, environment, logdispatcher):
         '''
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.

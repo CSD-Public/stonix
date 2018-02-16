@@ -26,6 +26,7 @@ Created on Apr 20, 2016
 @author: dwalker
 @change: 2016/06/06 dwalker updated applicability to not run on Mac until
     configuration on Mac OS X is fully researched.
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -67,7 +68,7 @@ class SetTFTPDSecureMode(Rule):
         self.editor = ""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.10']}}
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.10.10']}}
         
     def report(self):
         try:

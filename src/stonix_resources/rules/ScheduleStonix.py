@@ -39,15 +39,17 @@ per day
 @change 2017/01/31 Breen Malmberg removed superfluous logging entries (now contained
         within ServiceHelper and SHlaunchd)
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2017/11/27 Breen Malmberg removed print statements
 '''
 
 from __future__ import absolute_import
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import readFile
+from ..stonixutilityfunctions import readFile, findUserLoggedIn
 from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
+from ..CommandHelper import CommandHelper
 
 import random
 import os
@@ -451,6 +453,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         self.compliant = True
         self.detailedresults = ""
+        self.ch = CommandHelper(self.logger)
 
         try:
 
@@ -494,6 +497,8 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                      self.stonixplistfix,
                      '/Library/LaunchAgents/gov.lanl.stonix.user.plist':
                      self.stonixplistuser}
+        systemservicetargets = ["gov.lanl.stonix.fix", "gov.lanl.stonix.report"]
+        userservicetargets = ["gov.lanl.stonix.user"]
 
         try:
 
@@ -523,11 +528,25 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                                 retval = False
                                 self.detailedresults += "integer line wrong: " + str(contents[i]) + " in file: " + str(path) + "\n"
 
-            for item in plistdict:
-                itemlong = item
-                itemshort = item.split('/')[3][:-6]
-                if not self.svchelper.auditService(itemlong, serviceTarget=itemshort):
-                    retval = False
+            # This part needs to be changed to work with re-designed servicehelperTwo
+            self.ch.executeCommand("/bin/launchctl print-disabled system/")
+            disabledserviceslist = self.ch.getOutput()
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                errmsg = self.ch.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errmsg)
+            for line in disabledserviceslist:
+                for item in systemservicetargets:
+                    if re.search(item + '\"\s+\=\>\s+true', line, re.IGNORECASE):
+                        retval = False
+                        self.detailedresults += "\nA required STONIX service: gov.lanl.stonix.user.plist is currently disabled"
+#             for item in plistdict:
+#                 itemlong = item
+#                 if not re.search('user', itemlong, re.IGNORECASE):
+#                     itemshort = item.split('/')[3][:-6]
+#                 if not self.svchelper.auditService(itemlong, serviceTarget=itemshort):
+#                     retval = False
+#                     self.detailedresults += "\nRequired Stonix job: " + str(item) + " is not scheduled to run"
 
         except Exception:
             raise
@@ -607,8 +626,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         @author: Breen Malmberg
         '''
 
-        print "\nENTERING FIXLINUX()\n"
-
         retval = True
         legacystonixcron = '/etc/legacy_stonix_cron'
         userscriptdir = '/etc/profile.d/user-stonix.py'
@@ -643,8 +660,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             os.chown(self.cronfilelocation, 0, 0)
             os.chmod(self.cronfilelocation, 0644)
         else:
-
-            print "\nCRON FILE IS: " + str(self.cronfilelocation) + "\n"
 
             contents = self.getFileContents(self.cronfilelocation)
     
@@ -783,8 +798,12 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             os.chmod('/Library/LaunchAgents/gov.lanl.stonix.user.plist', 0o644)
             self.detailedresults += "Wrote the user plist\n"
 
+            # This part needs to be changed to work with re-designed servicehelperTwo
             for item in servicedict:
-                self.svchelper.enableService(item, serviceTarget=servicedict[item])
+                if re.search("user", item, re.IGNORECASE):
+                    self.ch.executeCommand("/bin/launchctl load " + item)
+                else:
+                    self.ch.executeCommand("/bin/launchctl enable system/" + str(servicedict[item]))
 
         except Exception:
             retval = False
