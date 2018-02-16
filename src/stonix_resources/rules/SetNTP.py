@@ -592,6 +592,7 @@ class SetNTP(Rule):
             # defaults
             fixresult = True
             conffiles = ['/etc/chrony.conf', '/etc/chrony/chrony.conf', '/etc/ntp.conf']
+            conffile = ''
 
             if self.useschrony:
 

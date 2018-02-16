@@ -582,16 +582,23 @@ class Controller(Observable):
             self.currulenum = rule.getrulenum()
             self.currulename = rule.getrulename()
             try:
+                self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(self.currulename) + " ******************")
                 starttime = time.time()
+                self.logger.log(LogPriority.DEBUG, "=================== START REPORT ===================")
                 rule.report()
+                self.logger.log(LogPriority.DEBUG, "==================== END REPORT ====================")
                 if not rule.getrulesuccess():
                     self.logger.log(LogPriority.ERROR,
                                     [rule.getrulename(),
                                      rule.getdetailedresults()])
                 elif not rule.iscompliant():
+                    self.logger.log(LogPriority.DEBUG, "=================== START FIX ===================")
                     rule.fix()
+                    self.logger.log(LogPriority.DEBUG, "==================== END FIX ====================")
                     if rule.getrulesuccess():
+                        self.logger.log(LogPriority.DEBUG, "=================== START REPORT ===================")
                         rule.report()
+                        self.logger.log(LogPriority.DEBUG, "==================== END REPORT ====================")
                         if not rule.getrulesuccess():
                             self.logger.log(LogPriority.ERROR,
                                             [rule.getrulename(),
@@ -612,6 +619,7 @@ class Controller(Observable):
                 self.logger.log(LogPriority.DEBUG,
                                 [rule.getrulename(),
                                 'Elapsed Time: ' + str(etime)])
+                self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(self.currulename) + " ******************")
             except (KeyboardInterrupt, SystemExit):
             # User initiated exit
                 raise
@@ -637,12 +645,16 @@ class Controller(Observable):
             self.currulenum = rule.getrulenum()
             self.currulename = rule.getrulename()
             try:
+                self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(self.currulename) + " ******************")
                 starttime = time.time()
+                self.logger.log(LogPriority.DEBUG, "=================== START REPORT ===================")
                 rule.report()
+                self.logger.log(LogPriority.DEBUG, "==================== END REPORT ====================")
                 etime = time.time() - starttime
                 self.logger.log(LogPriority.DEBUG,
                                 [rule.getrulename(),
                                 'Elapsed Time: ' + str(etime)])
+                self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(self.currulename) + " ******************")
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
@@ -677,6 +689,8 @@ class Controller(Observable):
         """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
+        rulename = self.getrulenamebynum(ruleid)
+        self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(rulename) + " ******************")
         self.logger.log(LogPriority.DEBUG, ['RunRuleHarden',
                          'Attempting to run ' + str(ruleid)])
 
@@ -690,7 +704,9 @@ class Controller(Observable):
                 else:
                     starttime = time.time()
                     try:
+                        self.logger.log(LogPriority.DEBUG, "=================== START REPORT ===================")
                         rule.report()
+                        self.logger.log(LogPriority.DEBUG, "==================== END REPORT ====================")
                     except (KeyboardInterrupt, SystemExit):
                         # User initiated exit
                         raise
@@ -709,7 +725,9 @@ class Controller(Observable):
                         self.numrulescomplete = self.numrulescomplete + 1
                     elif not rule.iscompliant():
                         try:
+                            self.logger.log(LogPriority.DEBUG, "=================== START FIX ===================")
                             rule.fix()
+                            self.logger.log(LogPriority.DEBUG, "==================== END FIX ====================")
                         except (KeyboardInterrupt, SystemExit):
                             # User initiated exit
                             raise
@@ -724,7 +742,9 @@ class Controller(Observable):
                                             [rule.getrulename(),
                                              rule.getdetailedresults()])
                         try:
+                            self.logger.log(LogPriority.DEBUG, "=================== START REPORT ===================")
                             rule.report()
+                            self.logger.log(LogPriority.DEBUG, "==================== END REPORT ====================")
                         except (KeyboardInterrupt, SystemExit):
                             # User initiated exit
                             raise
@@ -754,6 +774,7 @@ class Controller(Observable):
             + str(ruleid)
             self.logger.log(LogPriority.ERROR,
                             message)
+        self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(rulename) + " ******************")
 
     def runruleaudit(self, ruleid):
         """
@@ -763,6 +784,8 @@ class Controller(Observable):
         @return void :
         @author David Kennel
         """
+        rulename = self.getrulenamebynum(ruleid)
+        self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(rulename) + " ******************")
         message = "Controller:runruleaudit: Entering with rule id " + \
         str(ruleid)
         self.logger.log(LogPriority.DEBUG, message)
@@ -780,7 +803,9 @@ class Controller(Observable):
                 else:
                     starttime = time.time()
                     try:
+                        self.logger.log(LogPriority.DEBUG, "=================== START REPORT ===================")
                         rule.report()
+                        self.logger.log(LogPriority.DEBUG, "==================== END REPORT ====================")
                     except (KeyboardInterrupt, SystemExit):
                         # User initiated exit
                         raise
@@ -809,6 +834,7 @@ class Controller(Observable):
                                      'Elapsed Time: ' + str(etime)])
                     self.set_dirty()
                     self.notify_check()
+        self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(rulename) + " ******************")
 
     def undochangessystem(self):
         """
@@ -919,7 +945,9 @@ class Controller(Observable):
                 self.currulenum = rule.getrulenum()
                 self.currulename = rule.getrulename()
                 try:
+                    self.logger.log(LogPriority.DEBUG, "=================== START FIX ===================")
                     rule.fix()
+                    self.logger.log(LogPriority.DEBUG, "==================== END FIX ====================")
                 except (KeyboardInterrupt, SystemExit):
                     # User initiated exit
                     raise
