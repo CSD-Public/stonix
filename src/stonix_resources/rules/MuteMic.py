@@ -32,9 +32,11 @@ This class handles muting the microphone input levels.
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/03/14 eball Fixed possible casting error, PEP8 cleanup
 @change: 2016/07/19 Breen Malmberg added fixmac() and fixlinux() methods;
-altered report() and fix() methods to init variables to defaults and fix()
-method to use the new fixmac and fixlinux methods
+altered report() and fix() methods to init variables to defaults
+and fix() method to use the new fixmac and fixlinux methods
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/02/16 bgonz12 - change reportLinux() to ignore an amixer error
+that occurs when pulseaudio isn't running
 '''
 from __future__ import absolute_import
 import traceback
@@ -110,7 +112,7 @@ valid exceptions.'
             if os.path.exists(loc):
                 self.sysvscriptname = loc
 
-        self.pulsedefaults = '/etc/pulse/default.pa'
+        self.pulsedefaults = "/etc/pulse/default.pa"
         self.amixer = "/usr/bin/amixer"
         self.systemctl = "/usr/bin/systemctl"
         self.systemdbase = "/usr/lib/systemd/system/"
@@ -306,7 +308,6 @@ valid exceptions.'
         c0Capcontrols = []
 
         try:
-
             if self.soundDeviceExists():
                 self.ch.executeCommand(getc0Controls)
                 output = self.ch.getOutput()
@@ -383,6 +384,7 @@ valid exceptions.'
                             break
             else:
                 self.logger.log(LogPriority.DEBUG, "No capture hardware devices found")
+            
 
             self.ch.executeCommand(getgenCap)
             output = self.ch.getOutput()
@@ -390,15 +392,19 @@ valid exceptions.'
             if retcode != 0:
                 errmsg = self.ch.getErrorString()
                 # if the control does not exist, then there is no problem
+                # if pulseaudio isn't running, then there is no problem
                 # we can't mute/unmute/use a non-existent control
-                if not re.search("Unable to find simple control", errmsg, re.IGNORECASE):
+                errignore0 = "Unable to find simple control"
+                errignore1 = "PulseAudio: Unable to connect: Connection refused"
+                if not re.search(errignore0, errmsg, re.IGNORECASE) and \
+                   not re.search(errignore1, errmsg, re.IGNORECASE):
                     retval = False
                     self.detailedresults += "\nError while running command: " + str(getgenCap) + " :\n" + str(errmsg)
             for line in output:
-                    if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                        if not re.search("\[0\%\]", line, re.IGNORECASE):
-                            retval = False
-                            self.detailedresults += "\nGeneric Capture control does not have its volume level set to 0"
+                if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                    if not re.search("\[0\%\]", line, re.IGNORECASE):
+                        retval = False
+                        self.detailedresults += "\nGeneric Capture control does not have its volume level set to 0"
             for line in output:
                 if re.search("\[on\]", line, re.IGNORECASE):
                     retval = False
