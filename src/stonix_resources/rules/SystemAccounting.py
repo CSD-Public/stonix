@@ -40,6 +40,7 @@ due to departures from the normal system performance curve.
 added some in-line comments to several methods, where needed; changed the CI instructions to be more clear to the end user; added
 messaging to indicate to the user whether the method will run or not, based on current CI status
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -77,7 +78,7 @@ class SystemAccounting(Rule):
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         # set up configuration items for this rule
         datatype = 'bool'

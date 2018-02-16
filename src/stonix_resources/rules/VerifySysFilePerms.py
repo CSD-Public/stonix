@@ -27,6 +27,7 @@ This rule will check the default owners and access permissions for all system
 packages and their associated files as well as the file contents.
 
 @author: Breen Malmberg
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -72,7 +73,7 @@ class VerifySysFilePerms(Rule):
         # ability to check and fix disk permissions, via command line,
         # in os x 10.12 and later
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.11.10']}}
 
         self.findsysvol = '/usr/sbin/bless --info --getBoot'
         self.hasrun = False

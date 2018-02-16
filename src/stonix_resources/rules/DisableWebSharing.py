@@ -33,6 +33,7 @@ well-managed web server is recommended.
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 @change: 2017/10/23 rsn - Changing for new service helper interface
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -58,7 +59,6 @@ well-managed web server is recommended.
         Constructor
         '''
         Rule.__init__(self, config, environ, logger, statechglogger)
-        self.logger = logger
         self.rulenumber = 208
         self.rulename = 'DisableWebSharing'
         self.formatDetailedResults("initialize")
@@ -67,8 +67,8 @@ well-managed web server is recommended.
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
-
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+        self.logger = logger
         # set up CIs
         datatype = 'bool'
         key = 'DISABLEWEBSHARING'
@@ -98,8 +98,12 @@ well-managed web server is recommended.
 
         # init servicehelper object
         if not os.path.exists(self.maclongname):
-            self.detailedresults += '\norg.apache.httpd.plist does not exist'
-            return False
+            self.compliant = True
+            self.detailedresults += '\norg.apache.httpd.plist does not exist.\nThis is fine'
+            self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            return self.compliant
 
         try:
 
@@ -222,3 +226,5 @@ well-managed web server is recommended.
         afterfixsuccessful = True
         afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
         return afterfixsuccessful
+
+

@@ -29,6 +29,7 @@ Created on 09/17/2013
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -57,7 +58,7 @@ class DisableInternetSharing(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.addKVEditor("DisabledInternetSharing",
                          "defaults",
                          "/Library/Preferences/SystemConfiguration/com.apple.nat",

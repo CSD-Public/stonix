@@ -41,6 +41,7 @@ rule class
     owned by a system account, per RHEL 7 STIG
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 import os
@@ -80,6 +81,7 @@ class FilePermissions(Rule):
         self.environ = environ
         self.logger = logger
         self.statechglogger = statechglogger
+        self.compliant = False
         self.rulenumber = 25
         self.rulename = 'FilePermissions'
         self.mandatory = True
@@ -94,7 +96,7 @@ class FilePermissions(Rule):
                          "CCE-RHEL7-CCE-TBD 2.2.3.9"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         # The vars below are local to this rule and are not overrides of the
         # base class
         self.infodir = '/var/local/info'
@@ -1206,6 +1208,8 @@ find / -xdev \( -nouser -o -nogroup \) -print
         @author: dkennel
         '''
 
+        self.detailedresults = ''
+
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [SITELOCALWWWDIRS]
         if not self.checkConsts(constlist):
@@ -1214,8 +1218,8 @@ find / -xdev \( -nouser -o -nogroup \) -print
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
 
-        self.detailedresults = ''
         try:
+
             if not self.hasrunalready or self.firstrun:
                 self.logger.log(LogPriority.DEBUG,
                                 ['FilePermissions.report',
@@ -1255,19 +1259,19 @@ has been called a second time. The previous results are displayed. '''
                 self.detailedresults = note + "\n" + self.wwresults + '\n' + \
                     self.gwresults + '\n' + self.suidresults + '\n' + \
                     self.unownedresults
-            self.formatDetailedResults("report", self.compliant,
-                                       self.detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR,
                             [self.rulename + '.report',
                              self.detailedresults])
             self.rulesuccess = False
+
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
 
     def fix(self):
         """

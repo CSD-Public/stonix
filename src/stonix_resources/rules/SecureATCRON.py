@@ -40,6 +40,7 @@ parts of the code as well
 @change: 2016/08/30 eball Refactored fixLinux() method, PEP8 cleanup
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/10/23 rsn - removed unused service helper
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -84,7 +85,7 @@ class SecureATCRON(Rule):
                          'CCE-4230-9', 'CCE-4445-3']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         # init CIs
         datatype = 'bool'

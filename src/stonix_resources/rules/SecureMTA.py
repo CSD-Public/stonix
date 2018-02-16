@@ -44,6 +44,7 @@ reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/10/08 eball Help text cleanup
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
 from __future__ import absolute_import
@@ -80,7 +81,7 @@ configure needed MTAs as defensively as possible.
                          'CCE 14068-1', 'CCE 15018-5', 'CCE 4293-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         self.postfixfoundlist = []
         self.sendmailfoundlist = []

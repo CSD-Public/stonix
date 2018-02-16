@@ -30,6 +30,7 @@ dictionary
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2015/09/14 eball Fixed paths, separated user and root functionality
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 from __future__ import absolute_import
 import os
@@ -58,7 +59,7 @@ class SecureMailClient(RuleKVEditor):
         self.rootrequired = False
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         mailplist = "/Library/Containers/com.apple.mail/Data/Library/" + \
             "Preferences/com.apple.mail.plist"

@@ -28,6 +28,8 @@ Created on Dec 3, 2014
 @change: 2015/10/07 eball Help text cleanup
 @change: 2015/11/05 ekkehard Added LDAP Entry reporting if not compliant
 @change: 2017/07/26 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/22 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2017/12/04 ekkehard - check for connectivity before acting
 '''
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -43,7 +45,7 @@ class ConfigureComputerName(Rule):
         self.rulenumber = 260
         self.rulename = "ConfigureComputerName"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.9', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.formatDetailedResults("initialize")
         self.mil = None
         self.mandatory = True

@@ -40,13 +40,16 @@
 @change: 2016/08/11 ekkehard bug fixes
 @change: 2016/08/16 ekkehard bug fixes
 @change: 2016/08/19 ekkehard self.lanl_property_web_service updated to csd-web
+@change: 2017/12/04 ekkehard ensure connectivity for network service
 '''
 import os
 import re
 import traceback
 import types
 from CommandHelper import CommandHelper
+from Connectivity import Connectivity
 from logdispatcher import LogPriority
+from sre_constants import SUCCESS
 
 
 class MacInfoLANL():
@@ -71,6 +74,7 @@ class MacInfoLANL():
 # Make sure we have the full path for all commands
         self.logdispatch = logdispatcher
         self.ch = CommandHelper(self.logdispatch)
+        self.connectiviy = None
         self.LANLAssetTagFromProperty = ""
         self.LANLAssetTagNVRAM = ""
         self.LANLAssetTagFilesystem = ""
@@ -96,7 +100,9 @@ class MacInfoLANL():
         self.macAddress = ""
         self.ipAddress = ""
         self.ipAddressActive = []
-        self.ldapnotworking = False
+        self.ldapServer = "ldap.lanl.gov"
+        self.hostmasterNotWorking = False
+        self.propertyNotWorking = False
         self.serialnumber = ""
 # Set all initialization boolean
         self.initializeLANLAssetTagFromPropertyBoolean = False
@@ -119,7 +125,10 @@ class MacInfoLANL():
         self.lanl_property_file = "/Library/Preferences/gov.lanl.asset.tag.txt"
         self.lanl_property_file_old = "/Library/Preferences/lanl_property_number.txt"
         self.lanl_imaged_files = ["/etc/dds.txt", "/var/log/dds.log"]
-        self.lanl_property_web_service = "https://csd-web.lanl.gov/public/getPropertyNumber.php?serial"
+        self.lanl_property_web_service_server = "csd-web.lanl.gov"
+        self.lanl_property_web_service_site = "https://" + self.lanl_property_web_service_server
+        self.lanl_property_web_service_page = "/public/getPropertyNumber.php"
+        self.lanl_property_web_service = self.lanl_property_web_service_site + self.lanl_property_web_service_page + "?serial"
 # Reset messages
         self.messageReset()
 # Initialize Accuracy stuff
@@ -338,6 +347,20 @@ class MacInfoLANL():
         '''
         self.initializeLANLAssetTagFromProperty()
         return str(self.serialnumber)
+
+    def getServiceAvailability(self, serviceType = ""):
+        success = False
+        if self.connectiviy == None:
+            self.connectiviy = Connectivity(self.logdispatch)
+        if serviceType == "hostmaster":
+            success = self.connectiviy.is_site_socket_online(self.ldapServer)
+        elif serviceType == "property":
+            success = self.connectiviy.is_site_socket_online(self.lanl_property_web_service_server)
+            if success:
+                success = self.connectiviy.is_site_available(self.lanl_property_web_service_site, self.lanl_property_web_service_page)
+        else:
+            success = False
+        return success
 
     def getSuggestedAssetTag(self):
         '''
@@ -1065,7 +1088,6 @@ class MacInfoLANL():
                 self.initializeLANLAssetTagFromPropertyBoolean = False
             if not self.initializeLANLAssetTagFromPropertyBoolean:
                 self.initializeLANLAssetTagFromPropertyBoolean = True
-                self.LANLLANLAssetTagFromProperty = ""
                 self.serialnumber = ''
                 command = "/usr/sbin/system_profiler SPHardwareDataType | awk '/Serial/ {print $4}'"
                 self.ch.executeCommand(command)
@@ -1076,12 +1098,17 @@ class MacInfoLANL():
                 if len(output) >= 1:
                     self.serialnumber = output[0].strip()
                 if self.serialnumber <> "":
-                    command = "/usr/bin/curl " + self.lanl_property_web_service + "=" + str(self.serialnumber)
-                    self.ch.executeCommand(command)
-                    errorcode = self.ch.getError()
-                    output = self.ch.getOutput()
-                    if len(output) >= 1:
-                        self.LANLAssetTagFromProperty = output[0].strip()
+                    success = self.initializeLANLAssetTagFromPropertyIsWorking = self.getServiceAvailability("property")
+                    self.propertyNotWorking = not success
+                    if success:
+                        command = "/usr/bin/curl " + self.lanl_property_web_service + "=" + str(self.serialnumber)
+                        self.ch.executeCommand(command)
+                        errorcode = self.ch.getError()
+                        output = self.ch.getOutput()
+                        if len(output) >= 1:
+                            self.LANLAssetTagFromProperty = output[0].strip()
+                    else:
+                        self.initializeLANLAssetTagFromPropertyBoolean = False
             else:
                 success = True
         except (KeyboardInterrupt, SystemExit):
@@ -1323,13 +1350,16 @@ class MacInfoLANL():
         try:
 # lookup in LDAP based on macAddress
             success = True
-            if self.ldapnotworking:
+            if self.hostmasterNotWorking:
+                self.hostmasterNotWorking = self.getServiceAvailability("hostmaster")
+            
+            if self.hostmasterNotWorking:
                 output = []
             else:
                 command = [self.ldap,
                            "-x",
                            "-h",
-                           "ldap.lanl.gov",
+                           self.ldapServer,
                            "-b",
                            "dc=lanl,dc=gov",
                            addressType + "=" + address]
@@ -1337,9 +1367,9 @@ class MacInfoLANL():
                 output = self.ch.getOutput()
                 returncode = self.ch.returncode
                 if returncode == 0:
-                    self.ldapnotworking = False
+                    self.hostmasterNotWorking = False
                 else:
-                    self.ldapnotworking = True
+                    self.hostmasterNotWorking = True
             macAddress = ""
             ipAddress = ""
             computerName = ""
