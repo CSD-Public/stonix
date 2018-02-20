@@ -94,6 +94,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         servicePlist = readPlist(service)
         serviceName = servicePlist["Label"]
+        serviceName = serviceName.strip()
 
         if 'LaunchDaemon' in service:
             target = 'system/' + serviceName
@@ -120,9 +121,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         @author: Roy Nielsen
         '''
         target = False
-        if service:
-            target = self.getTargetFromService(service)
-        elif 'servicename' in kwargs:
+        if 'servicename' in kwargs:
             target = kwargs.get('servicename')
         elif 'serviceName' in kwargs:
             target = kwargs.get('serviceName')
@@ -134,6 +133,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             target = kwargs.get('servicetarget')
         elif 'domainTarget' in kwargs:
             target = kwargs.get('domaintarget')
+        elif service:
+            target = self.getTargetFromService(service)
         else:
             raise ValueError(reportStack(2) + "Either the service (full " +
                              "path to the service) or One of 'servicename', " +
@@ -141,6 +142,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                              ", 'domainTarget', 'servicetarget', " +
                              "'domaintarget' are required for this method.")
 
+        target = target.strip()
         return target
 
     # ----------------------------------------------------------------------
