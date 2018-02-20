@@ -37,6 +37,8 @@ and fix() method to use the new fixmac and fixlinux methods
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/02/16 bgonz12 - change reportLinux() to ignore an amixer error
 that occurs when pulseaudio isn't running
+@change 2018/02/20 bgonz12 - change reportLinux() to ignore an amixer error
+that occurs when system sound card(s) is missing firmware
 '''
 from __future__ import absolute_import
 import traceback
@@ -391,13 +393,18 @@ valid exceptions.'
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 errmsg = self.ch.getErrorString()
-                # if the control does not exist, then there is no problem
-                # if pulseaudio isn't running, then there is no problem
+                # if the control does not exist, then there is no problem:
                 # we can't mute/unmute/use a non-existent control
                 errignore0 = "Unable to find simple control"
+                # if pulseaudio isn't running, then there is no problem:
+                # the system is likely running in headless mode
                 errignore1 = "PulseAudio: Unable to connect: Connection refused"
+                # if amixer unable to access devices, then there is no problem
+                # capture control devices are likely missing firmware
+                errignore2 = "amixer: Mixer attach default error: No such file or directory"
                 if not re.search(errignore0, errmsg, re.IGNORECASE) and \
-                   not re.search(errignore1, errmsg, re.IGNORECASE):
+                   not re.search(errignore1, errmsg, re.IGNORECASE) and \
+                   not re.search(errignore2, errmsg, re.IGNORECASE):
                     retval = False
                     self.detailedresults += "\nError while running command: " + str(getgenCap) + " :\n" + str(errmsg)
             for line in output:
