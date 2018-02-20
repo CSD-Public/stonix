@@ -31,6 +31,8 @@ import os
 import re
 import pwd
 import time
+from plistlib import readPlist
+
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
@@ -87,8 +89,11 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         user = ''
         userUid = ''
 
-        serviceNameList = service.split('/')[-1].split('.')
-        serviceName = ".".join(serviceNameList[:-1]) # remove the .plist
+        # serviceNameList = service.split('/')[-1].split('.')
+        # serviceName = ".".join(serviceNameList[:-1]) # remove the .plist
+
+        servicePlist = readPlist(service)
+        serviceName = servicePlist["Label"]
 
         if 'LaunchDaemon' in service:
             target = 'system/' + serviceName
