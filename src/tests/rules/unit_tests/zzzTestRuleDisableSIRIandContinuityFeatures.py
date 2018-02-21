@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2018.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -22,12 +22,10 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableSIRIandContinuityFeatures
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: bgonz12
+@change: 2018/2/21 Created
 '''
 from __future__ import absolute_import
 import unittest
@@ -37,17 +35,17 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.DisableScreenSavers import DisableScreenSavers
+from src.stonix_resources.rules.DisableSIRIandContinuityFeatures import DisableSIRIandContinuityFeatures
 
 
 class zzzTestRuleDisableScreenSavers(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = DisableScreenSavers(self.config,
-                                        self.environ,
-                                        self.logdispatch,
-                                        self.statechglogger)
+        self.rule = DisableSIRIandContinuityFeatures(self.config,
+                                                     self.environ,
+                                                     self.logdispatch,
+                                                     self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
