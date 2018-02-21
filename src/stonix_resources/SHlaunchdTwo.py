@@ -63,7 +63,28 @@ class SHlaunchdTwo(ServiceHelperTemplate):
     # helper Methods
     # ----------------------------------------------------------------------
 
-    def getTargetFromService(self, service):
+    def isValidServicePath(self, service):
+        '''
+        Check to make sure the path to the service is a valid character string.
+
+        @param: service - Full path to a LaunchAgent or LaunchDaemon.
+
+        @returns: True - path follows normal service path conventions
+                  False - does not follow service path convention.
+
+        @author: Roy Nielsen
+        '''
+        valid = False
+
+        if isinstance(service, basestring) and service and \
+           (re.search("LaunchAgent", service) or
+            re.search("LaunchDaemon", service)) and \
+           re.match("^/[A-Za-z]+[A-Za-z0-9_\-/\.]*$", service):
+            valid = True
+
+        return valid
+
+    def getServiceNameFromService(self, service):
         '''
         Determine the target from the full path to the service.  If it is a
         LaunchAgent, it is in the loaded user space.  If it is a LaunchDaemon,
@@ -81,32 +102,17 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @author: Roy Nielsen
         '''
-        target = None
+        serviceName = None
 
-        if not isinstance(service, basestring) or not service:
-            return target
-
-        user = ''
-        userUid = ''
-
-        # serviceNameList = service.split('/')[-1].split('.')
-        # serviceName = ".".join(serviceNameList[:-1]) # remove the .plist
+        if not isinstance(service, basestring) or not service or \
+           not self.isValidServicePath(service):
+            return serviceName
 
         servicePlist = readPlist(service)
         serviceName = servicePlist["Label"]
         serviceName = serviceName.strip()
 
-        if 'LaunchDaemon' in service:
-            target = 'system/' + serviceName
-
-        if 'LaunchAgent' in service:
-            user = findUserLoggedIn(self.logger)
-            if user:
-                userUid = pwd.getpwnam(user).pw_uid
-            if userUid:
-                target = 'gui/' + str(userUid) + '/' + serviceName
-
-        return target
+        return serviceName
 
     # ----------------------------------------------------------------------
 
@@ -120,27 +126,42 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @author: Roy Nielsen
         '''
-        target = False
+        serviceName = False
         if 'servicename' in kwargs:
-            target = kwargs.get('servicename')
+            serviceName = kwargs.get('servicename')
         elif 'serviceName' in kwargs:
-            target = kwargs.get('serviceName')
+            serviceName = kwargs.get('serviceName')
+        elif 'servicetarget' in kwargs:
+            serviceName = kwargs.get('servicetarget')
         elif 'serviceTarget' in kwargs:
-            target = kwargs.get('serviceTarget')
+            serviceName = kwargs.get('serviceTarget')
+        elif 'domaintarget' in kwargs:
+            serviceName = kwargs.get('domaintarget')
         elif 'domainTarget' in kwargs:
-            target = kwargs.get('domainTarget')
-        elif 'serviceTarget' in kwargs:
-            target = kwargs.get('servicetarget')
-        elif 'domainTarget' in kwargs:
-            target = kwargs.get('domaintarget')
-        elif service:
-            target = self.getTargetFromService(service)
+            serviceName = kwargs.get('domainTarget')
         else:
-            raise ValueError(reportStack(2) + "Either the service (full " +
-                             "path to the service) or One of 'servicename', " +
-                             "'serviceName', 'serviceTarget'" +
-                             ", 'domainTarget', 'servicetarget', " +
-                             "'domaintarget' are required for this method.")
+            self.logger.log(lp.DEBUG, reportStack(2) +
+                            "Either the service (full " +
+                            "path to the service) or One of 'servicename', " +
+                            "'serviceName', 'serviceTarget'" +
+                            ", 'domainTarget', 'servicetarget', " +
+                            "'domaintarget' are expected for this method.")
+
+        if not isinstance(serviceName, basestring) or not serviceName or \
+           not re.match("^[A-Za-z]+[A-Za-z0-9_\-\.]*$", serviceName):
+            serviceName = self.getServiceNameFromService(service)
+
+        user = False
+        userUid = False
+
+        if 'LaunchDaemon' in service:
+            target = 'system/' + serviceName
+        if 'LaunchAgent' in service:
+            user = findUserLoggedIn(self.logger)
+            if user:
+                userUid = pwd.getpwnam(user).pw_uid
+            if userUid:
+                target = 'gui/' + str(userUid) + '/' + serviceName
 
         target = target.strip()
         return target
