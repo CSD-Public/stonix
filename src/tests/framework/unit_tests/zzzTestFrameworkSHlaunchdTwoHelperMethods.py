@@ -64,6 +64,7 @@ if sys.platform == 'darwin':
             self.test_start_time = datetime.now()
 
             self.logger = LogDispatcher(self.environ)
+            self.logger.initializeLogs()
 
             self.sh = SHlaunchdTwo(self.environ, self.logger)
 
@@ -103,24 +104,26 @@ if sys.platform == 'darwin':
             '''
             '''
             for test_key, test_values in target_valid_test_data.iteritems():
-                if re.match("^valid_service_plists", test_key):
+                if re.match("^valid_target_data", test_key):
                     for test_item in test_values:
                         params = {test_item[1]['serviceName'][0]:
                                   test_item[1]['serviceName'][1]}
-                        self.assertTrue(self.sh.targetValid(test_item[0],
-                                                            **params),
-                                        "Target data: " +
-                                        str(test_item) +
-                                        " is not valid.")
-                if re.match("^invalid_service_plists", test_key):
-                    for test_item in test_values:
-                        params = {test_item[1]['serviceName'][0]:
-                                  test_item[1]['serviceName'][1]}
-                        self.assertFalse(self.sh.targetValid(test_item[0],
+                        self.assertEqual(self.sh.targetValid(test_item[0],
                                                              **params),
+                                         test_item[2],
                                          "Target data: " +
                                          str(test_item) +
-                                         " is good!")
+                                         " is not valid.")
+                if re.match("^invalid_target_data", test_key):
+                    for test_item in test_values:
+                        params = {test_item[1]['serviceName'][0]:
+                                  test_item[1]['serviceName'][1]}
+                        self.assertNotEqual(self.sh.targetValid(test_item[0],
+                                                                **params),
+                                            test_item[2],
+                                            "Target data: " +
+                                            str(test_item) +
+                                            " is good!")
 
         @classmethod
         def tearDownClass(self):
