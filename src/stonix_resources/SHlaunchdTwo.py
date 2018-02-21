@@ -79,7 +79,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         if isinstance(service, basestring) and service and \
            (re.search("LaunchAgent", service) or
             re.search("LaunchDaemon", service)) and \
-           re.match("^/[A-Za-z]+[A-Za-z0-9_\-/\.]*$", service):
+           re.match("^/[A-Za-z]+[A-Za-z0-9_\-/\.]*$", service) and \
+           os.path.exists(service):
             valid = True
 
         return valid
@@ -153,17 +154,18 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         user = False
         userUid = False
+        target = ""
+        if serviceName:
+            if 'LaunchDaemon' in service:
+                target = 'system/' + serviceName
+            if 'LaunchAgent' in service:
+                user = findUserLoggedIn(self.logger)
+                if user:
+                    userUid = pwd.getpwnam(user).pw_uid
+                if userUid:
+                    target = 'gui/' + str(userUid) + '/' + serviceName
 
-        if 'LaunchDaemon' in service:
-            target = 'system/' + serviceName
-        if 'LaunchAgent' in service:
-            user = findUserLoggedIn(self.logger)
-            if user:
-                userUid = pwd.getpwnam(user).pw_uid
-            if userUid:
-                target = 'gui/' + str(userUid) + '/' + serviceName
-
-        target = target.strip()
+                target = target.strip()
         return target
 
     # ----------------------------------------------------------------------
