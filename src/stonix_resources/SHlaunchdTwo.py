@@ -37,6 +37,7 @@ from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
 from stonixutilityfunctions import reportStack, findUserLoggedIn
+from src.MacBuild.proto.lib.loggers import LogPriority
 
 class SHlaunchdTwo(ServiceHelperTemplate):
     '''
@@ -314,11 +315,10 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
     def auditService(self, service, **kwargs):
         '''
-        Checks the status of a service and returns a bool indicating whether or
-        not the service is configured to run or not.  Check if the plist
-        exists, and make sure that the file doesn't contain the disabled flag.
-        Also check and make sure it isn't in the currently running domaintarget
-        disabled list.
+        check if the target is a valid file and format
+        if so, check if the file is a service that is running
+        if running, return True
+        if not running, return False
 
         @param: service: full path to the plist file used to manage
                          the service.
@@ -344,8 +344,9 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 com.apple.example, and service-target is
                 gui/501/com.apple.example.
 
-        @return: Bool, True if the service is configured to run
-                 Data, Information about the process, if running
+        @return: success
+        @rtype: bool
+        @author: Roy Nielsen
         '''
 
         success = False
@@ -353,12 +354,34 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         successTwo = False
         successThree = False
 
+        self.logger.log(LogPriority.DEBUG, "Is the target service in a valid format?")
         target = self.targetValid(service, **kwargs)
+
         if target:
+            self.logger.log(LogPriority.DEBUG, "Yes, it is in a valid format")
+
+            # added for potential use in the foundDisabled re.search string (dynamic string building)
+            try:
+                domainTarget = target.split('/')[:-1]
+            except KeyError:
+                return success
+
+            self.logger.log(LogPriority.DEBUG, "Is the target service a file?")
             successOne = os.path.isfile(service)
-            if re.search("LaunchAgents", service) or \
-               re.search("LaunchDaemons", service):
+            if successOne:
+                self.logger.log(LogPriority.DEBUG, "Yes, it is a file")
+            else:
+                self.logger.log(LogPriority.DEBUG, "No, it is not a file")
+
+            self.logger.log(LogPriority.DEBUG, "Is the target service either a Launch Agent or Launch Daemon?")
+            if re.search("LaunchAgents", service):
                 successTwo = True
+                self.logger.log(LogPriority.DEBUG, "Yes, it is a Launch Agent")
+            if re.search("LaunchDaemons", service):
+                successTwo = True
+                self.logger.log(LogPriority.DEBUG, "Yes, it is a Launch Daemon")
+            if not successTwo:
+                self.logger.log(LogPriority.DEBUG, "No, it is neither a Launch Agent nor a Launch Daemon")
 
             try:
                 serviceName = target.split('/')[-1]
@@ -371,20 +394,27 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             else:
                 foundDisabled = False
                 for line in stdout:
-                    if re.match("Could not find service ", line) and \
-                       re.search("%s"%serviceName, line) and \
-                       re.search(" in domain for system", line):
-                        foundDisabled = True
-                        break
+                    if re.search("Could not find service .* in domain for system", line, re.IGNORECASE):
+                        if re.search("%s"%serviceName, line):
+                            foundDisabled = True
+                            break
+
+                self.logger.log(LogPriority.DEBUG, "Is the service currently enabled?")
                 if not foundDisabled:
                     #####
                     # Service is currently enabled.
                     successThree = True
+                    self.logger.log(LogPriority.DEBUG, "Yes, the service is currently enabled")
+                else:
+                    self.logger.log(LogPriority.DEBUG, "No, the service is currently disabled")
 
             if successOne and successTwo and successThree:
                 success = True
             else:
                 success = False
+
+        else:
+            self.logger.log(LogPriority.DEBUG, "No, the target service is not a valid format")
 
         return success
 

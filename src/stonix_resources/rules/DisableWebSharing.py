@@ -38,8 +38,10 @@ well-managed web server is recommended.
 '''
 
 from __future__ import absolute_import
+
 import traceback
 import os
+import re
 
 from ..rule import Rule
 from ..ServiceHelper import ServiceHelper
@@ -111,9 +113,12 @@ well-managed web server is recommended.
             if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
 
                 if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
-                    output = self.cmhelper.getOutput()
-                    if self.checkPlistVal('1', output[0].strip()):
+                    output = self.cmhelper.getOutputString()
+                    if re.search('1', output):
                         self.compliant = True
+                else:
+                    errout = self.cmhelper.getErrorString()
+                    self.logger.log(LogPriority.DEBUG, errout)
             else:
                 self.detailedresults += '\n' + self.maclongname + ' is still loaded/enabled'
 
@@ -173,53 +178,6 @@ well-managed web server is recommended.
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-
-###############################################################################
-    def checkPlistVal(self, val, output):
-        '''
-        check a given value, val, against a list of values, output
-
-        @param: string/list val    given value or list of values to check
-        @param: list output    given list of values to check against
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-
-        try:
-
-            for item in output:
-                output = [c.replace(item, item.strip(')')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip('(')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip('\n')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip(',')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip()) for c in output]
-            for item in output:
-                if item == '':
-                    output.remove(item)
-            if len(output) > 1:
-                for item in output:
-                    if item == '1' or item == '0' or item == 1 or item == 0:
-                        output.remove(item)
-
-            if isinstance(val, list):
-                for item in val:
-                    if item not in output:
-                        retval = False
-
-            elif isinstance(val, basestring):
-                if val not in output:
-                    retval = False
-
-        except Exception:
-            raise
-        return retval
 
 ###############################################################################
     def afterfix(self):
