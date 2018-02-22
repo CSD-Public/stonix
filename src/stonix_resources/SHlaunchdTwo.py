@@ -25,19 +25,19 @@ Created on November 3, 2016
 
 Second generation service helper.
 
-@author: rsn
+@author: Roy Nielsen
 '''
+
 import os
 import re
 import pwd
-import time
-from plistlib import readPlist
 
+from plistlib import readPlist
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
 from stonixutilityfunctions import reportStack, findUserLoggedIn
-from src.MacBuild.proto.lib.loggers import LogPriority
+
 
 class SHlaunchdTwo(ServiceHelperTemplate):
     '''
@@ -354,11 +354,11 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         successTwo = False
         successThree = False
 
-        self.logger.log(LogPriority.DEBUG, "Is the target service in a valid format?")
+        self.logger.log(lp.DEBUG, "Is the target service in a valid format?")
         target = self.targetValid(service, **kwargs)
 
         if target:
-            self.logger.log(LogPriority.DEBUG, "Yes, it is in a valid format")
+            self.logger.log(lp.DEBUG, "Yes, it is in a valid format")
 
             # added for potential use in the foundDisabled re.search string (dynamic string building)
             try:
@@ -366,22 +366,22 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             except KeyError:
                 return success
 
-            self.logger.log(LogPriority.DEBUG, "Is the target service a file?")
+            self.logger.log(lp.DEBUG, "Is the target service a file?")
             successOne = os.path.isfile(service)
             if successOne:
-                self.logger.log(LogPriority.DEBUG, "Yes, it is a file")
+                self.logger.log(lp.DEBUG, "Yes, it is a file")
             else:
-                self.logger.log(LogPriority.DEBUG, "No, it is not a file")
+                self.logger.log(lp.DEBUG, "No, it is not a file")
 
-            self.logger.log(LogPriority.DEBUG, "Is the target service either a Launch Agent or Launch Daemon?")
+            self.logger.log(lp.DEBUG, "Is the target service either a Launch Agent or Launch Daemon?")
             if re.search("LaunchAgents", service):
                 successTwo = True
-                self.logger.log(LogPriority.DEBUG, "Yes, it is a Launch Agent")
+                self.logger.log(lp.DEBUG, "Yes, it is a Launch Agent")
             if re.search("LaunchDaemons", service):
                 successTwo = True
-                self.logger.log(LogPriority.DEBUG, "Yes, it is a Launch Daemon")
+                self.logger.log(lp.DEBUG, "Yes, it is a Launch Daemon")
             if not successTwo:
-                self.logger.log(LogPriority.DEBUG, "No, it is neither a Launch Agent nor a Launch Daemon")
+                self.logger.log(lp.DEBUG, "No, it is neither a Launch Agent nor a Launch Daemon")
 
             try:
                 serviceName = target.split('/')[-1]
@@ -399,14 +399,14 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                             foundDisabled = True
                             break
 
-                self.logger.log(LogPriority.DEBUG, "Is the service currently enabled?")
+                self.logger.log(lp.DEBUG, "Is the service currently enabled?")
                 if not foundDisabled:
                     #####
                     # Service is currently enabled.
                     successThree = True
-                    self.logger.log(LogPriority.DEBUG, "Yes, the service is currently enabled")
+                    self.logger.log(lp.DEBUG, "Yes, the service is currently enabled")
                 else:
-                    self.logger.log(LogPriority.DEBUG, "No, the service is currently disabled")
+                    self.logger.log(lp.DEBUG, "No, the service is currently disabled")
 
             if successOne and successTwo and successThree:
                 success = True
@@ -414,7 +414,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 success = False
 
         else:
-            self.logger.log(LogPriority.DEBUG, "No, the target service is not a valid format")
+            self.logger.log(lp.DEBUG, "No, the target service is not a valid format")
 
         return success
 
