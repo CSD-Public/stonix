@@ -25,6 +25,8 @@ Created on Sep 19, 2012
 
 @author: dkennel
 @change: 2015/10/15 eball Added chk.wait() and chk.returncode == 0 to isrunning
+@change: 2018/02/22 bgonz12 Changed regex in auditService to cut off after the
+                    service's name
 '''
 import subprocess
 import re
@@ -133,7 +135,7 @@ class SHupdaterc(ServiceHelperTemplate):
         for rcdir in ['/etc/rc2.d', '/etc/rc3.d', '/etc/rc4.d', '/etc/rc5.d']:
             sklist = sklist + os.listdir(rcdir)
         for entry in sklist:
-            if re.search('S..' + service, entry):
+            if re.search('S..' + service + '$', entry):
                 running = True
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHupdaterc.auditservice ' + service + ' ' +
