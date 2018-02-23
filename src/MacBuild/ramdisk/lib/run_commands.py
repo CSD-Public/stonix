@@ -260,7 +260,7 @@ class RunWith(object):
 
     ############################################################################
 
-    def waitNpassThruStdout(self, chk_string=None, respawn=False):
+    def waitNpassThruStdout(self, chk_string=None, respawn=False, silent=True):
         """
         Use the subprocess module to execute a command, returning
         the output of the command
@@ -333,12 +333,14 @@ class RunWith(object):
                 self.logger.log(lp.WARNING, str(trace))
                 raise
             else :
-                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
-                self.logger.log(lp.DEBUG, self.printcmd + " Returned with output: " + str(self.output))
-                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error: " + str(self.error))
-                self.retcode = str(proc.returncode)
+                if not silent:
+                    self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                    self.logger.log(lp.DEBUG, self.printcmd + " Returned with output: " + str(self.output))
+                    self.logger.log(lp.DEBUG, self.printcmd + " Returned with error: " + str(self.error))
+                    self.retcode = str(proc.returncode)
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
         else :
             self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
             self.output = None
@@ -496,7 +498,7 @@ class RunWith(object):
 
     ############################################################################
 
-    def liftDown(self, user="", target_dir="") :
+    def liftDown(self, user="", target_dir="", silent=True) :
         """
         Use the lift (elevator) to execute a command from privileged mode
         to a user's context with that user's uid.  Does not require a password.
@@ -547,11 +549,12 @@ class RunWith(object):
 
         if not error:
             success = True
-        for line in output.split('\n'):
-            self.logger.log(lp.DEBUG, "out: " + str(line))
-        for line in error.split('\n'):
-            self.logger.log(lp.DEBUG, "err: " + str(line))
-        self.logger.log(lp.DEBUG, "out: " + str(returncode))
+        if not silent:
+            for line in output.split('\n'):
+                self.logger.log(lp.DEBUG, "out: " + str(line))
+            for line in error.split('\n'):
+                self.logger.log(lp.DEBUG, "err: " + str(line))
+            self.logger.log(lp.DEBUG, "out: " + str(returncode))
 
         if target_dir:
             os.chdir(return_dir)
@@ -603,7 +606,7 @@ class RunWith(object):
 
     ############################################################################
 
-    def runAsWithSudo(self, user="", password="") :
+    def runAsWithSudo(self, user="", password="", silent=True) :
         """
         Use pty method to run "su" to run a command as another user...
 
@@ -720,17 +723,15 @@ class RunWith(object):
                     self.returncode = proc.returncode
                     #print output.strip()
             #output = output.strip()
-            #####
-            # UNCOMMENT ONLY WHEN IN DEVELOPMENT AND DEBUGGING OR YOU MAY REVEAL
-            # MORE THAN YOU WANT TO IN THE LOGS!!!
-            self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
-                            str(self.output) + "\"\n\n")
+            if not silent:
+                self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
+                                str(self.output) + "\"\n\n")
             #print "\n\nLeaving runAs with Sudo: \"" + str(output) + "\"\n\n"
             return output
 
     ############################################################################
 
-    def runWithSudo(self, password="") :
+    def runWithSudo(self, password="", silent=True) :
         """
         Use pty method to run "sudo" to run a command with elevated privilege.
 
@@ -810,11 +811,9 @@ class RunWith(object):
                     self.returncode = proc.returncode
                     #print output.strip()
             #output = output.strip()
-            #####
-            # UNCOMMENT ONLY WHEN IN DEVELOPMENT AND DEBUGGING OR YOU MAY REVEAL
-            # MORE THAN YOU WANT TO IN THE LOGS!!!
-            #self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
-            #                str(output) + "\"\n" + str(self.output) + "\n")
+            if not silent:
+                self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
+                                str(output) + "\"\n" + str(self.output) + "\n")
             #print "\n\nLeaving runAs with Sudo: \"" + str(output) + "\"\n\n"
             return output
 
