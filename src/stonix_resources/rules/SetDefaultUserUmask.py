@@ -413,7 +413,7 @@ class SetDefaultUserUmask(Rule):
 
         retval = True
 
-        user_command = "/usr/bin/launchctl config user umask " + str(self.userumask)
+        user_command = "/bin/launchctl config user umask " + str(self.userumask)
         umask_conf_file = "/private/var/db/com.apple.xpc.launchd/config"
 
         if not os.path.exists(umask_conf_file):
