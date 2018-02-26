@@ -460,7 +460,7 @@ class SoftwareBuilder():
                 # rules imported, so they get included in the python frozen
                 # package
                 currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
-                rulesDir = "/" + "/".join(currentDirPathList[:-1] +
+                rulesDir = self.tmphome + "/src/stonix_resources/rules"
                                           ["stonix_resources", "rules"])
                 self.logger.log(lp.DEBUG, "---------------------+++===")
                 self.logger.log(lp.DEBUG, "---------------------+++===")
