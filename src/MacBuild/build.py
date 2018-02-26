@@ -456,6 +456,22 @@ class SoftwareBuilder():
         try:
             if appName == 'stonix':
                 #####
+                # Build an __init__.py for the rules directory with all of the
+                # rules imported, so they get included in the python frozen
+                # package
+                currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
+                rulesDir = "/" + "/".join(currentDirPathList[:-1] +
+                                          ["stonix_resources", "rules"])
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "rulesDir: " + rulesDir)
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                success = self.mbl.writeInit(rulesDir)
+
+                #####
                 # Acquire hidden imports to include in the pyinstaller
                 # compiled binaries
                 if self.includeHiddenImports:
@@ -508,22 +524,6 @@ class SoftwareBuilder():
                 sleep(1)
                 self.libc.sync()
                 sleep(1)
-
-                #####
-                # Build an __init__.py for the rules directory with all of the
-                # rules imported, so they get included in the python frozen
-                # package
-                currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
-                rulesDir = "/" + "/".join(currentDirPathList[:-1] +
-                                          ["stonix_resources", "rules"])
-                self.logger.log(lp.DEBUG, "---------------------+++===")
-                self.logger.log(lp.DEBUG, "---------------------+++===")
-                self.logger.log(lp.DEBUG, "---------------------+++===")
-                self.logger.log(lp.DEBUG, "rulesDir: " + rulesDir)
-                self.logger.log(lp.DEBUG, "---------------------+++===")
-                self.logger.log(lp.DEBUG, "---------------------+++===")
-                self.logger.log(lp.DEBUG, "---------------------+++===")
-                success = self.mbl.writeInit(rulesDir)
 
                 print str(output)
             elif appName == 'stonix4mac':
