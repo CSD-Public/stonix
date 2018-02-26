@@ -513,7 +513,10 @@ class SoftwareBuilder():
                 # Build an __init__.py for the rules directory with all of the
                 # rules imported, so they get included in the python frozen
                 # package
-                success = self.mbl.writeInit(self.tmphome + "/src/MacBuild/stonix/stonix_resources/rules")
+                currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
+                rulesDirList = "/" + "/".join(currentDirPath[:-1] +
+                                              ["stonix_resources", "rules"])
+                success = self.mbl.writeInit(rulesDir)
 
                 print str(output)
             elif appName == 'stonix4mac':
