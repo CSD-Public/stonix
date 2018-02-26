@@ -514,7 +514,7 @@ class SoftwareBuilder():
                 # rules imported, so they get included in the python frozen
                 # package
                 currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
-                rulesDirList = "/" + "/".join(currentDirPath[:-1] +
+                rulesDirList = "/" + "/".join(currentDirPathList[:-1] +
                                               ["stonix_resources", "rules"])
                 success = self.mbl.writeInit(rulesDir)
 
