@@ -91,7 +91,7 @@ class ServiceHelper(object):
         try:
             self.lc = getLibc()
         except Exception as err:
-            self.logdispatcher.log(LogPriority.ERROR, "Unable to instantiate libc object reference, through getLibc helper\n" + str(err.strerror))
+            self.logdispatcher.log(LogPriority.ERROR, "Unable to instantiate libc object reference, through getLibc helper\n" + str(err))
             raise
 
         # Red Hat, CentOS, SUSE
