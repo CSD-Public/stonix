@@ -50,7 +50,6 @@ import SHlaunchdTwo
 
 from logdispatcher import LogPriority
 from get_libc import getLibc
-from src.MacBuild.proto.lib.loggers import LogPriority
 
 
 class ServiceHelper(object):
