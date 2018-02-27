@@ -102,25 +102,32 @@ well-managed web server is recommended.
         # init servicehelper object
         if not os.path.exists(self.maclongname):
             self.compliant = True
-            self.detailedresults += '\norg.apache.httpd.plist does not exist.\nThis is fine'
-            self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+            self.detailedresults += '\norg.apache.httpd.plist does not exist. Nothing to configure'
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
             self.logdispatch.log(LogPriority.INFO, self.detailedresults)
             return self.compliant
 
         try:
 
+            self.logger.log(LogPriority.DEBUG, "starting audit service for service: " + str(self.maclongname))
             if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
+                self.logger.log(LogPriority.DEBUG, str(self.maclongname) + " is not running/loaded")
 
-                if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
-                    output = self.cmhelper.getOutputString()
-                    if re.search('1', output):
-                        self.compliant = True
-                else:
+                self.logger.log(LogPriority.DEBUG, "Checking if " + str(self.maclongname) + " is disabled in the plist")
+                self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled')
+                retcode = self.cmhelper.getReturnCode()
+                if retcode != 0:
                     errout = self.cmhelper.getErrorString()
                     self.logger.log(LogPriority.DEBUG, errout)
+                else:
+                    output = self.cmhelper.getOutputString()
+                    if re.search('1', output):
+                        self.logger.log(LogPriority.DEBUG, str(self.maclongname) + " is disabled in the plist")
+                        self.compliant = True
+                    else:
+                        self.logger.log(LogPriority.DEBUG, str(self.maclongname) + " is NOT disabled in the plist")
             else:
-                self.detailedresults += '\n' + self.maclongname + ' is still loaded/enabled'
+                self.detailedresults += '\n' + str(self.maclongname) + ' is still loaded/enabled'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -156,16 +163,17 @@ well-managed web server is recommended.
                 #    self.rulesuccess = False
                 if not self.svchelper.disableService(self.maclongname, servicename=self.macshortname):
                     self.rulesuccess = False
-
-                self.id += 1
-                myid = iterate(self.id, self.rulenumber)
-                event = {'eventtype': 'commandstring',
-                         'command': 'defaults delete /System/Library/LaunchDaemons/org.apache.httpd Disabled'}
-
-                self.statechglogger.recordchgevent(myid, event)
+                    self.logger.log(LogPriority.DEBUG, "Failed to disable service: " + str(self.maclongname))
+                else:
+                    self.id += 1
+                    myid = iterate(self.id, self.rulenumber)
+                    event = {'eventtype': 'commandstring',
+                             'command': 'defaults delete /System/Library/LaunchDaemons/org.apache.httpd Disabled'}
+    
+                    self.statechglogger.recordchgevent(myid, event)
 
             else:
-                self.detailedresults += '\nDisableWebSharing set to False, so nothing was done!'
+                self.detailedresults += '\nRule was not enabled, so nothing was done.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
