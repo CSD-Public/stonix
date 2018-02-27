@@ -34,6 +34,7 @@ installed.
         two parameters in each of those methods in the doc strings as well
 @author: 2017-23-2017 rsn modified/simplified to second generation 
         service helper with **kwargs concept
+@change: 2018/02/27 bgonz12 Fixed Traceback caused by using self.logger
 '''
 import os
 import re
@@ -90,7 +91,7 @@ class ServiceHelper(object):
         try:
             self.lc = getLibc()
         except Exception as err:
-            self.logger.log(LogPriority.ERROR, "Unable to instantiate libc object reference, through getLibc helper\n" + str(err.strerror))
+            self.logdispatcher.log(LogPriority.ERROR, "Unable to instantiate libc object reference, through getLibc helper\n" + str(err.strerror))
             raise
 
         # Red Hat, CentOS, SUSE
