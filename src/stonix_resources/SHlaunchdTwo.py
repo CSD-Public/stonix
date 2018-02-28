@@ -481,7 +481,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             else:
                 serviceRunning = True
             self.logger.log(lp.DEBUG, str(data))
-        return servceRunning
+        return serviceRunning
 
     # ----------------------------------------------------------------------
 
