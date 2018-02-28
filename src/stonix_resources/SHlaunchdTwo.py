@@ -461,20 +461,21 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @return: bool, True if the service is already running
         '''
-        success = False
+        serviceRunning = False
         data = None
 
         target = self.targetValid(service, **kwargs)
         if target:
             label = target.split("/")[-1]
-            _, data, _, _ = self.lCtl.list()
+            _, data, _, _ = self.lCtl.list(label)
             for line in data:
-                if re.search("%s"%label, line):
-                    self.logger.log(lp.DEBUG, "Found label: " + str(line))
-                    success = True
-                    break
-            #self.logger.log(lp.DEBUG, str(data))
-        return success
+                if re.search("Could not find service .+ in domain for system",
+                             line, re.IGNORECASE):
+                    if re.search("%s"%label, line):
+                        serviceRunning = False
+                        break
+            self.logger.log(lp.DEBUG, str(data))
+        return servceRunning
 
     # ----------------------------------------------------------------------
 
