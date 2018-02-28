@@ -378,10 +378,10 @@ class SoftwareBuilder():
 
         except (KeyboardInterrupt, SystemExit):
             print traceback.format_exc()
-            self._exit(self.ramdisk, self.luggage, 130)
+            # self._exit(self.ramdisk, self.luggage, 130)
         except Exception:
             print traceback.format_exc()
-            self._exit(self.ramdisk, self.luggage, 1)
+            # self._exit(self.ramdisk, self.luggage, 1)
         else:
             self.tearDown()
 
@@ -459,7 +459,7 @@ class SoftwareBuilder():
                 # Build an __init__.py for the rules directory with all of the
                 # rules imported, so they get included in the python frozen
                 # package
-                currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
+                # currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
                 rulesDir = self.tmphome + "/src/stonix_resources/rules"
                 self.logger.log(lp.DEBUG, "---------------------+++===")
                 self.logger.log(lp.DEBUG, "---------------------+++===")
@@ -468,7 +468,8 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, "---------------------+++===")
                 self.logger.log(lp.DEBUG, "---------------------+++===")
                 self.logger.log(lp.DEBUG, "---------------------+++===")
-                success = self.mbl.writeInit(rulesDir)
+                if not self.mbl.writeInit(rulesDir):
+                    raise ValueError("No success Jim!")
 
                 #####
                 # Acquire hidden imports to include in the pyinstaller
@@ -886,7 +887,7 @@ class SoftwareBuilder():
         sleep(3)
 
         os.chdir(self.buildHome)
-        self._exit(self.ramdisk, self.luggage, 0)
+        # self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
