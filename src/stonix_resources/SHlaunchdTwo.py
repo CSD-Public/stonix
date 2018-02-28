@@ -353,6 +353,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         successOne = False
         successTwo = False
         successThree = False
+        stderr = False
 
         self.logger.log(lp.DEBUG, "Is the target service in a valid format?")
         target = self.targetValid(service, **kwargs)
@@ -392,18 +393,20 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             #####
             # Look for the serviceName to be running
             try:
-                success, stdout, _, _ = self.lCtl.list(serviceName)
+                success, _, stderr, _ = self.lCtl.list(serviceName)
             except KeyError:
                 pass
             else:
                 #####
                 # Launchctl command workd, parsing output to see if it is running
                 foundDisabled = False
-                for line in stdout:
-                    if re.search("Could not find service .+ in domain for system", line, re.IGNORECASE):
-                        if re.search("%s"%serviceName, line):
-                            foundDisabled = True
-                            break
+                if stderr:
+                    for line in stderr:
+                        if re.search("Could not find service .+ in domain for system",
+                                     line, re.IGNORECASE):
+                            if re.search("%s"%serviceName, line):
+                                foundDisabled = True
+                                break
 
                 self.logger.log(lp.DEBUG, "Is the service currently enabled?")
                 if not foundDisabled:
@@ -467,13 +470,16 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         target = self.targetValid(service, **kwargs)
         if target:
             label = target.split("/")[-1]
-            _, data, _, _ = self.lCtl.list(label)
-            for line in data:
-                if re.search("Could not find service .+ in domain for system",
-                             line, re.IGNORECASE):
-                    if re.search("%s"%label, line):
-                        serviceRunning = False
-                        break
+            _, data, error, _ = self.lCtl.list(label)
+            if error:
+                for line in error:
+                    if re.search("Could not find service .+ in domain for system",
+                                 line, re.IGNORECASE):
+                        if re.search("%s"%label, line):
+                            serviceRunning = False
+                            break
+            else:
+                serviceRunning = True
             self.logger.log(lp.DEBUG, str(data))
         return servceRunning
 
