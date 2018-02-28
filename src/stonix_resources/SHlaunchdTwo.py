@@ -383,18 +383,24 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             if not successTwo:
                 self.logger.log(lp.DEBUG, "No, it is neither a Launch Agent nor a Launch Daemon")
 
+            #####
+            # Find just the service name.
             try:
                 serviceName = target.split('/')[-1]
             except KeyError:
                 return success
+            #####
+            # Look for the serviceName to be running
             try:
-                success, stdout, _, _ = self.lCtl.list()
+                success, stdout, _, _ = self.lCtl.list(serviceName)
             except KeyError:
                 pass
             else:
+                #####
+                # Launchctl command workd, parsing output to see if it is running
                 foundDisabled = False
                 for line in stdout:
-                    if re.search("Could not find service .* in domain for system", line, re.IGNORECASE):
+                    if re.search("Could not find service .+ in domain for system", line, re.IGNORECASE):
                         if re.search("%s"%serviceName, line):
                             foundDisabled = True
                             break
