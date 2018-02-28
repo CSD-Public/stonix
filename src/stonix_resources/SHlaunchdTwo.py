@@ -478,6 +478,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                         if re.search("%s"%label, line):
                             serviceRunning = False
                             break
+                    else:
+                        serviceRunning = True
             else:
                 serviceRunning = True
             self.logger.log(lp.DEBUG, str(data))
