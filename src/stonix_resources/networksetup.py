@@ -524,11 +524,18 @@ class networksetup():
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 order = order + 1
 # see if network is enabled
+                linearray = lineprocessed.split()
+                try:
+                    if linearray[2] == "(*)":
+                        networkenabled = False
+                except IndexError:
+                    networkenabled = True
+                '''
                 if re.match("^An asterisk (*) denotes that a network service is disabled.", lineprocessed):
                     networkenabled = False
                 else:
                     networkenabled = True
-                linearray = lineprocessed.split()
+                '''
                 linearray = linearray[1:]
                 servicename = ""
                 for item in linearray:
