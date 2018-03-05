@@ -524,7 +524,7 @@ class networksetup():
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 order = order + 1
 # see if network is enabled
-                if lineprocessed[:3] == "(*)":
+                if re.match("^An asterisk (*) denotes that a network service is disabled.", lineprocessed):
                     networkenabled = False
                 else:
                     networkenabled = True
@@ -569,8 +569,8 @@ class networksetup():
                             self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
 # update dictionary entry for network
                     self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype): (" + \
-                                         str(servicename) + ", " + str(networkenabled) + ", " + \
-                                         str(networktype) + ")")
+                                         str(servicename).strip() + ", " + str(networkenabled) + ", " + \
+                                         str(networktype).strip() + ")")
 # create an ordered list to look up later
                     orderkey = str(order).zfill(4)
                     self.nso[orderkey] = servicename.strip()
@@ -612,9 +612,9 @@ class networksetup():
                 servicename = ""
                 for item in linearray:
                     if servicename == "":
-                        servicename = item
+                        servicename = item.strip()
                     else:
-                        servicename = servicename + " " + item
+                        servicename = servicename + " " + item.strip()
                 if "ethernet" in servicename.lower():
                     networktype = "ethernet"
                 elif "bluetooth" in servicename.lower():
