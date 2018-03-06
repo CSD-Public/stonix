@@ -184,7 +184,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                 success = True
             passfound = False
             for arg in cmd:
-                if re.match('password', arg):
+                if re.match('password', arg) or re.match("pass", arg) or re.match("passwd", arg):
                     passfound = True
                     break
 
