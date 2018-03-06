@@ -34,6 +34,11 @@ macOS (OS X) for use with stonix4mac.
 @change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
 @change: 2017/10/13 ekkehard re-factor updateCurrentNetworkConfigurationDictionary
 @change: 2018/02/06 ekkehard fix traceback
+@change: 2018/03/06 Roy Nielsen - Fixes including stripping variables
+                                  when acquiring data from commands,
+                                  and splitting on non-space values.
+                                  Also making sure commands run
+                                  correctly by Device rather than name.
 '''
 import re
 import types
@@ -524,18 +529,11 @@ class networksetup():
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 order = order + 1
 # see if network is enabled
-                linearray = lineprocessed.split()
-                try:
-                    if linearray[2] == "(*)":
-                        networkenabled = False
-                except IndexError:
-                    networkenabled = True
-                '''
-                if re.match("^An asterisk (*) denotes that a network service is disabled.", lineprocessed):
+                if lineprocessed[:3] == "(*)":
                     networkenabled = False
                 else:
                     networkenabled = True
-                '''
+                linearray = lineprocessed.split()
                 linearray = linearray[1:]
                 servicename = ""
                 for item in linearray:
@@ -1001,6 +999,10 @@ class networksetup():
         @note: None
         @change: Breen Malmberg - 1/12/2017 - doc string edit; added debug logging;
                 default var init success to True; added code to update the Wi-Fi entry;
+        @change: Roy Nielsen - 3/6/2018 - Changed algo to look at 
+                                          'Device' rather than 'name'
+                                          when getting the airport power
+                                          status
 
         '''
         pKey = pKey.strip()
@@ -1034,7 +1036,7 @@ class networksetup():
                 # added for disabling by device name 1/11/2017
                 if key == "Wi-Fi":
                     self.logdispatch.log(LogPriority.DEBUG, "Updating Wi-Fi device entry for: " + str(self.ns[key]["name"]))
-                    command = [self.nsc, "-getairportpower", self.ns[key]["name"]]
+                    command = [self.nsc, "-getairportpower", self.ns[key]["Device"]]
                     self.ch.executeCommand(command)
                     for line in self.ch.getOutput():
                         if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
