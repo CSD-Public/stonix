@@ -171,10 +171,15 @@ class RunWith(object):
 
     ############################################################################
 
-    def communicate(self) :
+    def communicate(self, silent=True) :
         """
         Use the subprocess module to execute a command, returning
         the output of the command
+
+        @param: silent - Whether or not to print the command as part of
+                         standard logging practices.  Silent = True to
+                         not print the command being run.  Silent = False
+                         to print the command.
 
         @author: Roy Nielsen
         """
@@ -196,11 +201,16 @@ class RunWith(object):
                 self.logger.log(lp.WARNING, "stderr: " + str(self.error))
                 raise err
             else :
-                #self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
+                self.logger.log(lp.DEBUG, "Command returned with error/returncode: " + str(proc.returncode))
                 self.returncode = str(proc.returncode)
                 proc.stdout.close()
+            #####
+            # Lines below could reveal a password if it is passed as an
+            # argument to the command.  Could reveal in whatever stream
+            # the logger is set to log (syslog, console, etc, etc.
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
         else :
             self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
             self.output = None
@@ -211,7 +221,7 @@ class RunWith(object):
 
     ############################################################################
 
-    def wait(self) :
+    def wait(self, silent=True) :
         """
         Use subprocess to call a command and wait until it is finished before
         moving on...
@@ -247,7 +257,8 @@ class RunWith(object):
                             str(proc.returncode))
                 proc.stdout.close()
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
                 self.output = str(proc.stdout)
                 #self.error = str(proc.stderr)
                 self.returncode = str(proc.returncode)
@@ -396,7 +407,8 @@ class RunWith(object):
                             str(proc.returncode))
                 proc.stdout.close()
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
         else :
             self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
             self.output = None
