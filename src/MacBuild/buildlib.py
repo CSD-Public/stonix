@@ -757,7 +757,7 @@ class MacBuildLib(object):
         """
         sane = False
         if isinstance(filepath, basestring):
-            if re.match("^[A-Za-z/][A-Za-z0-9/]*", filepath):
+            if re.match("^[A-Za-z/][A-Za-z0-9\.\-_/]*", filepath):
                 sane = True
         return sane
 

@@ -12,6 +12,7 @@ def getLibc():
               find libc on the system.
 
     @author: Roy Nielsen
+    @change: 2018/02/27 bgonz12 - added "/lib64/libc.so.6" to possible_paths
     """
     osFamily = sys.platform.lower().strip()
     #print "---==## OS Family: " + str(osFamily) + " #==---"
@@ -33,6 +34,7 @@ def getLibc():
         # For Linux
         possible_paths = ["/lib/x86_64-linux-gnu/libc.so.6",
                           "/lib/i386-linux-gnu/libc.so.6",
+                          "/lib64/libc.so.6",
                           "/usr/lib64/libc.so.6"]
         for path in possible_paths:
 

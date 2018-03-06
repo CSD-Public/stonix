@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,6 +33,7 @@ macOS (OS X) for use with stonix4mac.
 @change: 2017/09/23 ekkehard __init__ fix
 @change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
 @change: 2017/10/13 ekkehard re-factor updateCurrentNetworkConfigurationDictionary
+@change: 2018/02/06 ekkehard fix traceback
 '''
 import re
 import types
@@ -49,7 +50,7 @@ class networksetup():
     '''
     This objects encapsulates the complexities of the networksetup command
     on macOS (OS X)
-    
+
     @author: ekkehard j. koch
     '''
 
@@ -104,6 +105,9 @@ class networksetup():
         self.domainByPass = PROXYDOMAINBYPASS
         self.ch = CommandHelper(self.logdispatch)
         self.initialized = False
+        self.nameofdevice = ""
+        self.notinservicelist = False
+        self.detailedresults = ""
 
 ###############################################################################
 
@@ -275,7 +279,7 @@ class networksetup():
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.disableNetworkService()...")
 
         success = True
-        networkName = pNetworkName
+        networkName = pNetworkName.strip()
 
         try:
 
@@ -289,13 +293,13 @@ class networksetup():
 
             self.logdispatch.log(LogPriority.DEBUG, "\nnetworkName = " + str(networkName).strip().lower() + "\n")
             self.logdispatch.log(LogPriority.DEBUG, "\nself.nameofdevice = " + str(self.nameofdevice).strip().lower() + "\n")
-            
+
             if str(networkName).strip().lower() == str(self.nameofdevice).strip().lower():
 
                 self.logdispatch.log(LogPriority.DEBUG, "networkName matches self.nameofdevice. Running airportpower disable command...")
-                
+
                 disablecommand = [self.nsc, "-setairportpower", networkName, "off"]
-                
+
                 self.ch.executeCommand(disablecommand)
                 
                 if self.ch.getReturnCode() != 0:
@@ -343,7 +347,7 @@ class networksetup():
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.enableNetwork()...")
 
         success = True
-        networkName = pNetworkName
+        networkName = pNetworkName.strip()
 
         try:
 
@@ -468,8 +472,9 @@ class networksetup():
         @note: None
         '''
         success = False
-        if pLocationName == "":
-            locationName = self.location.lower()
+        pLocationName = pLocationName.strip()
+        if pLocationName == "" or re.match("^\s+$", pLocationName):
+            locationName = self.location.lower().strip()
         else:
             locationName = pLocationName.lower()
         if 'wi-fi' in locationName:
@@ -491,13 +496,14 @@ class networksetup():
 ###############################################################################
 
     def networksetupistnetworkserviceorderoutputprocessing(self, outputLines):
-        
+
         success = True
         order = -1
+        networkenabled = False
         newserviceonnexline = False
         newservice = False
         servicename = ""
-        noinfo = False
+        networktype = False
         for line in outputLines:
             lineprocessed = line.strip()
             if newserviceonnexline:
@@ -518,11 +524,18 @@ class networksetup():
                 self.logdispatch.log(LogPriority.DEBUG, "New service and info line: " + str(line))
                 order = order + 1
 # see if network is enabled
-                if lineprocessed[:3] == "(*)":
+                linearray = lineprocessed.split()
+                try:
+                    if linearray[2] == "(*)":
+                        networkenabled = False
+                except IndexError:
+                    networkenabled = True
+                '''
+                if re.match("^An asterisk (*) denotes that a network service is disabled.", lineprocessed):
                     networkenabled = False
                 else:
                     networkenabled = True
-                linearray = lineprocessed.split()
+                '''
                 linearray = linearray[1:]
                 servicename = ""
                 for item in linearray:
@@ -545,10 +558,10 @@ class networksetup():
                     networktype = "thunderbolt"
                 else:
                     networktype = "unknown"
-                self.ns[servicename] = {"name": servicename,
-                                        "hardware port":  servicename,
+                self.ns[servicename] = {"name": servicename.strip(),
+                                        "hardware port":  servicename.strip(),
                                         "enabled": networkenabled,
-                                        "type": networktype}
+                                        "type": networktype.strip()}
 # determine network type
             elif infoOnThisLine:
                 self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
@@ -563,24 +576,24 @@ class networksetup():
                             self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
 # update dictionary entry for network
                     self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype): (" + \
-                                         str(servicename) + ", " + str(networkenabled) + ", " + \
-                                         str(networktype) + ")")
+                                         str(servicename).strip() + ", " + str(networkenabled) + ", " + \
+                                         str(networktype).strip() + ")")
 # create an ordered list to look up later
                     orderkey = str(order).zfill(4)
-                    self.nso[orderkey] = servicename
-                    self.updateNetworkConfigurationDictionaryEntry(servicename)
+                    self.nso[orderkey] = servicename.strip()
+                    self.updateNetworkConfigurationDictionaryEntry(servicename.strip())
 
         return success
 
 ###############################################################################
 
     def networksetuplistallhardwareportsoutputprocessing(self, outputLines):
-        
+
         success = True
         newserviceonnexline = False
         newservice = False
         servicename = ""
-        noinfo = False
+        # noinfo = False
         for line in outputLines:
             lineprocessed = line.strip()
             if newserviceonnexline:
@@ -606,16 +619,16 @@ class networksetup():
                 servicename = ""
                 for item in linearray:
                     if servicename == "":
-                        servicename = item
+                        servicename = item.strip()
                     else:
-                        servicename = servicename + " " + item
+                        servicename = servicename + " " + item.strip()
                 if "ethernet" in servicename.lower():
                     networktype = "ethernet"
                 elif "bluetooth" in servicename.lower():
                     networktype = "bluetooth"
                 elif "usb" in servicename.lower():
                     networktype = "usb"
-                elif "wi-fi" in item.lower():
+                elif "wi-fi" in servicename.lower():
                     networktype = "wi-fi"
                 elif "firewire" in servicename.lower():
                     networktype = "firewire"
@@ -623,7 +636,9 @@ class networksetup():
                     networktype = "thunderbolt"
                 else:
                     networktype = "unknown"
-                self.ns[servicename] = {"name": servicename, "hardware port": servicename, "type": networktype}
+                self.ns[servicename] = {"name": servicename.strip(),
+                                        "hardware port": servicename.strip(),
+                                        "type": networktype.strip()}
 # determine network type
             elif infoOnThisLine:
                 self.logdispatch.log(LogPriority.DEBUG, "Info line: " + str(line))
@@ -647,7 +662,7 @@ class networksetup():
                         else:
                             valueOfItem = valueOfItem + " " + processedItem
                 if not valueOfItem == "" and not nameOfItem == "":
-                    self.ns[servicename][nameOfItem] = valueOfItem
+                    self.ns[servicename][nameOfItem] = valueOfItem.strip()
         return success
 
 ###############################################################################
@@ -669,7 +684,7 @@ class networksetup():
                     self.detailedresults = messagestring
                 else:
                     self.detailedresults = self.detailedresults + "\n" + \
-                    messagestring
+                                           messagestring
         elif datatype == types.ListType:
             if not (pMessage == []):
                 for item in pMessage:
@@ -700,11 +715,11 @@ class networksetup():
 
 ###############################################################################
 
-    def setAdvancedNetworkSetup(self, pHardwarePort = None) :
+    def setAdvancedNetworkSetup(self, pHardwarePort = None):
         """
         Set proxies up for normal first configuration that has a network
         connection.
-        
+
         @author: Roy Nielsen
         @param self:essential if you override this definition
         @param pNetworkName:name of the network to fix
@@ -731,7 +746,7 @@ class networksetup():
                     self.logdispatch.log(LogPriority.DEBUG, msg)
                     break
         else:
-            networkhardwarePort = pHardwarePort
+            networkhardwarePort = pHardwarePort.strip()
             networkenabled = True
 # Set the DNS servers
         if not networkhardwarePort == "" and networkenabled:
@@ -801,7 +816,7 @@ class networksetup():
         '''
         '''
         #####
-        # Find the interface that needs to be at the top of the self.nso order        
+        # Find the interface that needs to be at the top of the self.nso order
         cmd = ["/sbin/route", "get", "default"]
         
         self.ch.executeCommand(cmd)
@@ -813,8 +828,9 @@ class networksetup():
                 interface_match = re.match("\s+interface:\s+(\w+)", line)
                 defaultInterface = interface_match.group(1)
             except (IndexError, KeyError, AttributeError), err:
-                self.logdispatch.log(LogPriority.DEBUG, str(line))
+                self.logdispatch.log(LogPriority.DEBUG, str(line) + " : " + str(err))
             else:
+                self.logdispatch.log(LogPriority.DEBUG, "Found: " + str(line))
                 break
 
         #####
@@ -844,14 +860,14 @@ class networksetup():
             try:
                 enet_match = re.match("^Ethernet Address:\s+(\w+:\w+:\w+:\w+:\w+:\w+)\s*$", line)
                 enet = enet_match.group(1)
-                #print enet
+                self.logger.log(LogPriority.DEBUG, "enet: " + str(enet))
             except AttributeError, err:
                 pass
 
             if re.match("^$", line) or re.match("^\s+$", line):
-                if re.match("^%s$"%device, defaultInterface):
-                    print device
-                    print defaultInterface
+                if re.match("^%s$"%str(device), str(defaultInterface)):
+                    self.logdispatch.log(LogPriority.DEBUG, device)
+                    self.logdispatch.log(LogPriority.DEBUG,  defaultInterface)
                     break
                 hardwarePort = ""
                 device = ""
@@ -861,10 +877,10 @@ class networksetup():
         # Reset NSO order if the defaultInterface is not at the top of the list
         newnso = {}
         i = 1
-        
-        print str(self.nso)
-        print "hardware port: " + hardwarePort
-                
+
+        self.logdispatch.log(LogPriority.DEBUG, str(self.nso))
+        self.logdispatch.log(LogPriority.DEBUG, "hardware port: " + hardwarePort)
+
         for key, value in sorted(self.nso.iteritems()):
             #print str(key) + " : " + str(value)
             if re.match("^%s$"%hardwarePort.strip(), value.strip()):
@@ -874,12 +890,12 @@ class networksetup():
                 orderkey = str(i).zfill(4)
                 newnso[orderkey] = value
                 i = i + 1
-                print str(newnso)
+                self.logdispatch.log(LogPriority.DEBUG, str(newnso))
         #print str(newnso)
         self.nso = newnso
-        print str(self.nso)
+        self.logdispatch.log(LogPriority.DEBUG, str(self.nso))
         for key, value in sorted(self.nso.iteritems()):
-            print str(key) + " : " + str(value)
+            self.logdispatch.log(LogPriority.DEBUG, str(key) + " : " + str(value))
 
         for item in self.ns: 
             if re.match("^%s$"%hardwarePort.strip(), self.ns[item]["name"]) and self.ns[item]["type"] is "unknown" and re.match("^en", defaultInterface):
@@ -890,7 +906,7 @@ class networksetup():
     def startup(self):
         '''
         startup is designed to implement the startup portion of the stonix rule
-        
+
         @author: ekkehard j. koch
         '''
         disabled = True
@@ -946,7 +962,7 @@ class networksetup():
             success = True
 
 # issue networksetup -listallhardwareports to get all network services
-            if success: 
+            if success:
                 command = [self.nsc, "-listallhardwareports"]
                 self.ch.executeCommand(command)
                 self.logdispatch.log(LogPriority.DEBUG, "Building ns dictionary from command: " + str(command))
@@ -987,7 +1003,7 @@ class networksetup():
                 default var init success to True; added code to update the Wi-Fi entry;
 
         '''
-
+        pKey = pKey.strip()
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.updateNetworkConfigurationDictionaryEntry() with pKey=" + str(pKey) + "...")
 
         success = True
@@ -1040,7 +1056,8 @@ class networksetup():
                             self.ns[key]["enabled"] = False
 
             self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.updateNetworkConfigurationDictionaryEntry() and returning success=" + str(success))
-
+        except KeyError:
+            self.logdispatch.log(LogPriority.DEBUG, "Key error...")
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

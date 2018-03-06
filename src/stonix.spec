@@ -126,6 +126,39 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Wed Feb 28 2018 Derek Walker <dwalker@lanl.gov> - 0.9.16
+- Multiple bug fixes across multiple rules due to discrepancies with helper object that manages services
+- Stonix now turns off software update notifications
+- ConfigureFirefox rule now adds certificate authorities to firefox
+- ConfigureScreenLocking rule now correctly configures gnome to retain desktop settings after reboot and/or logout
+- MuteMic rule now correctly disables microphone on supported linux distributions
+- RestrictMounting now correctly disables gnome automounting on supported linux distributions
+- SecureCUPS rule successfully turns off CUPS service on Debian 9
+
+* Mon Feb 5 2018 Derek Walker <dwalker@lanl.gov> - 0.9.15
+- Automated testing framework documentation created
+- Refinements to automated testing reports
+- Several planning and design meetings for incorporating reporting feature in STONIX
+- New automated testing jobs created for multiple OS's, including: High Sierra, OpenSuSE, CentOS7, Debian9, Fedora27
+- Fixed an issue in the stonix.spec file which was preventing the STONIX rpm build process from succeeding
+- Suppressed the reporting of handled exceptions within STONIX
+- Multiple bug and issue fixes to ServiceHelper two framework
+- Added unit test reporting to daily automatic test reports
+- Changed the AUDITD flush parameter default value to a less resource intensive setting, in the EnableKernelAuditing rule
+- Added the option for the admin to customize the flush parameter (within guidance requirements), to the EnableKernelAuditing rule
+- Added an error logging clarification detail to MuteMic rule when a command error occurs
+- Altered the SetDaemonUmask rule to detect when no default configuration is included with the system install (happens on Fedora 27) and then automatically create it
+- Fixed a traceback error in SetDefaultUserUmask rule where an object was being called before being instantiated
+- Fixed an issue in the GUI code for STONIX in which a module being used was incompatible with a lower version of PyQt4 required on CentOS 6 and RHEL 6 (backwards incompatibility issue in the libraries)
+- Fixed an error in exception handling in KVATaggedConf framework class, which was caused by the code referencing an object it had no knowledge of
+- Fixed an issue where SetDefaultUserUmask was not including the default user umask configuration in login.defs file on linux
+- Fixed an issue with SetNTP where, in rare cases, a certain logic path in the code could lead it to reference a variable before that variable was assigned
+- Fixed a traceback in SoftwarePatching where the applicability code was returning the wrong variable type
+- Re-write of DisableThumbnailers rule in order to fix an NCAF (non-compliant after fix) issue; (code also needed cleaning up)
+- Pre-configured stonix.conf file now distributed to red systems who need custom lanlldap configurations for their environment (via sat server)
+- Fixed a traceback in KVAConf framework class, on RHEL 7
+- Changed STONIX debug logging to be better formatted and more human readable
+
 * Fri Dec 8 2017 Brandon Gonzales <bgonz12@lanl.gov> - 0.9.14
 - Implemented re-design/re-write of servicehelper ("servicehelper two") to accommodate variable number of arguments in methods and account for changes in the way Mac OS X underlying systems handle service reporting and manipulation
 - Fixed a number of bugs in new servicehelper two, affecting multiple rules and other framework interactions

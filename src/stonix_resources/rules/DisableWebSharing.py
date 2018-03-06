@@ -34,11 +34,14 @@ well-managed web server is recommended.
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 @change: 2017/10/23 rsn - Changing for new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/02/16 bgonz12 - Fix function call to disableService
 '''
 
 from __future__ import absolute_import
+
 import traceback
 import os
+import re
 
 from ..rule import Rule
 from ..ServiceHelper import ServiceHelper
@@ -99,22 +102,32 @@ well-managed web server is recommended.
         # init servicehelper object
         if not os.path.exists(self.maclongname):
             self.compliant = True
-            self.detailedresults += '\norg.apache.httpd.plist does not exist.\nThis is fine'
-            self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+            self.detailedresults += '\norg.apache.httpd.plist does not exist. Nothing to configure'
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
             self.logdispatch.log(LogPriority.INFO, self.detailedresults)
             return self.compliant
 
         try:
 
+            self.logger.log(LogPriority.DEBUG, "starting audit service for service: " + str(self.maclongname))
             if not self.svchelper.auditService(self.maclongname, serviceTarget=self.macshortname):
+                self.logger.log(LogPriority.DEBUG, str(self.maclongname) + " is not running/loaded")
 
-                if self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled'):
-                    output = self.cmhelper.getOutput()
-                    if self.checkPlistVal('1', output[0].strip()):
+                self.logger.log(LogPriority.DEBUG, "Checking if " + str(self.maclongname) + " is disabled in the plist")
+                self.cmhelper.executeCommand('defaults read /System/Library/LaunchDaemons/org.apache.httpd Disabled')
+                retcode = self.cmhelper.getReturnCode()
+                if retcode != 0:
+                    errout = self.cmhelper.getErrorString()
+                    self.logger.log(LogPriority.DEBUG, errout)
+                else:
+                    output = self.cmhelper.getOutputString()
+                    if re.search('1', output):
+                        self.logger.log(LogPriority.DEBUG, str(self.maclongname) + " is disabled in the plist")
                         self.compliant = True
+                    else:
+                        self.logger.log(LogPriority.DEBUG, str(self.maclongname) + " is NOT disabled in the plist")
             else:
-                self.detailedresults += '\n' + self.maclongname + ' is still loaded/enabled'
+                self.detailedresults += '\n' + str(self.maclongname) + ' is still loaded/enabled'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -148,19 +161,19 @@ well-managed web server is recommended.
 
                 #if not self.cmhelper.executeCommand('defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true'):
                 #    self.rulesuccess = False
-                if not self.svchelper.disableservice(self.maclongname, self.macshortname):
-
+                if not self.svchelper.disableService(self.maclongname, servicename=self.macshortname):
                     self.rulesuccess = False
-
-                self.id += 1
-                myid = iterate(self.id, self.rulenumber)
-                event = {'eventtype': 'commandstring',
-                         'command': 'defaults delete /System/Library/LaunchDaemons/org.apache.httpd Disabled'}
-
-                self.statechglogger.recordchgevent(myid, event)
+                    self.logger.log(LogPriority.DEBUG, "Failed to disable service: " + str(self.maclongname))
+                else:
+                    self.id += 1
+                    myid = iterate(self.id, self.rulenumber)
+                    event = {'eventtype': 'commandstring',
+                             'command': 'defaults delete /System/Library/LaunchDaemons/org.apache.httpd Disabled'}
+    
+                    self.statechglogger.recordchgevent(myid, event)
 
             else:
-                self.detailedresults += '\nDisableWebSharing set to False, so nothing was done!'
+                self.detailedresults += '\nRule was not enabled, so nothing was done.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -175,56 +188,9 @@ well-managed web server is recommended.
         return self.rulesuccess
 
 ###############################################################################
-    def checkPlistVal(self, val, output):
-        '''
-        check a given value, val, against a list of values, output
-
-        @param: string/list val    given value or list of values to check
-        @param: list output    given list of values to check against
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-
-        try:
-
-            for item in output:
-                output = [c.replace(item, item.strip(')')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip('(')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip('\n')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip(',')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip()) for c in output]
-            for item in output:
-                if item == '':
-                    output.remove(item)
-            if len(output) > 1:
-                for item in output:
-                    if item == '1' or item == '0' or item == 1 or item == 0:
-                        output.remove(item)
-
-            if isinstance(val, list):
-                for item in val:
-                    if item not in output:
-                        retval = False
-
-            elif isinstance(val, basestring):
-                if val not in output:
-                    retval = False
-
-        except Exception:
-            raise
-        return retval
-
-###############################################################################
     def afterfix(self):
         afterfixsuccessful = True
-        afterfixsuccessful &= self.sh.auditservice(self.maclongname, self.macshortname)
+        afterfixsuccessful &= self.svchelper.auditService(self.maclongname)
         return afterfixsuccessful
 
 

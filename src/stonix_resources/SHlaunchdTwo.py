@@ -25,16 +25,19 @@ Created on November 3, 2016
 
 Second generation service helper.
 
-@author: rsn
+@author: Roy Nielsen
 '''
+
 import os
 import re
 import pwd
-import time
+
+from plistlib import readPlist
 from launchctl import LaunchCtl
 from logdispatcher import LogPriority as lp
 from ServiceHelperTemplate import ServiceHelperTemplate
 from stonixutilityfunctions import reportStack, findUserLoggedIn
+
 
 class SHlaunchdTwo(ServiceHelperTemplate):
     '''
@@ -61,7 +64,29 @@ class SHlaunchdTwo(ServiceHelperTemplate):
     # helper Methods
     # ----------------------------------------------------------------------
 
-    def getTargetFromService(self, service):
+    def isValidServicePath(self, service):
+        '''
+        Check to make sure the path to the service is a valid character string.
+
+        @param: service - Full path to a LaunchAgent or LaunchDaemon.
+
+        @returns: True - path follows normal service path conventions
+                  False - does not follow service path convention.
+
+        @author: Roy Nielsen
+        '''
+        valid = False
+
+        if isinstance(service, basestring) and service and \
+           (re.search("LaunchAgent", service) or
+            re.search("LaunchDaemon", service)) and \
+           re.match("^/[A-Za-z]+[A-Za-z0-9_\-/\.]*$", service) and \
+           os.path.exists(service):
+            valid = True
+
+        return valid
+
+    def getServiceNameFromService(self, service):
         '''
         Determine the target from the full path to the service.  If it is a
         LaunchAgent, it is in the loaded user space.  If it is a LaunchDaemon,
@@ -79,28 +104,17 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @author: Roy Nielsen
         '''
-        target = None
+        serviceName = None
 
-        if not isinstance(service, basestring) or not service:
-            return target
+        if not isinstance(service, basestring) or not service or \
+           not self.isValidServicePath(service):
+            return serviceName
 
-        user = ''
-        userUid = ''
+        servicePlist = readPlist(service)
+        serviceName = servicePlist["Label"]
+        serviceName = serviceName.strip()
 
-        serviceNameList = service.split('/')[-1].split('.')
-        serviceName = ".".join(serviceNameList[:-1]) # remove the .plist
-
-        if 'LaunchDaemon' in service:
-            target = 'system/' + serviceName
-
-        if 'LaunchAgent' in service:
-            user = findUserLoggedIn(self.logger)
-            if user:
-                userUid = pwd.getpwnam(user).pw_uid
-            if userUid:
-                target = 'gui/' + str(userUid) + '/' + serviceName
-
-        return target
+        return serviceName
 
     # ----------------------------------------------------------------------
 
@@ -114,28 +128,45 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @author: Roy Nielsen
         '''
-        target = False
-        if service:
-            target = self.getTargetFromService(service)
-        elif 'servicename' in kwargs:
-            target = kwargs.get('servicename')
+        serviceName = False
+        if 'servicename' in kwargs:
+            serviceName = kwargs.get('servicename')
         elif 'serviceName' in kwargs:
-            target = kwargs.get('serviceName')
+            serviceName = kwargs.get('serviceName')
+        elif 'servicetarget' in kwargs:
+            serviceName = kwargs.get('servicetarget')
         elif 'serviceTarget' in kwargs:
-            target = kwargs.get('serviceTarget')
+            serviceName = kwargs.get('serviceTarget')
+        elif 'domaintarget' in kwargs:
+            serviceName = kwargs.get('domaintarget')
         elif 'domainTarget' in kwargs:
-            target = kwargs.get('domainTarget')
-        elif 'serviceTarget' in kwargs:
-            target = kwargs.get('servicetarget')
-        elif 'domainTarget' in kwargs:
-            target = kwargs.get('domaintarget')
+            serviceName = kwargs.get('domainTarget')
         else:
-            raise ValueError(reportStack(2) + "Either the service (full " +
-                             "path to the service) or One of 'servicename', " +
-                             "'serviceName', 'serviceTarget'" +
-                             ", 'domainTarget', 'servicetarget', " +
-                             "'domaintarget' are required for this method.")
+            self.logger.log(lp.DEBUG, reportStack(2) +
+                            "Either the service (full " +
+                            "path to the service) or One of 'servicename', " +
+                            "'serviceName', 'serviceTarget'" +
+                            ", 'domainTarget', 'servicetarget', " +
+                            "'domaintarget' are expected for this method.")
 
+        if not isinstance(serviceName, basestring) or not serviceName or \
+           not re.match("^[A-Za-z]+[A-Za-z0-9_\-\.]*$", serviceName):
+            serviceName = self.getServiceNameFromService(service)
+
+        user = False
+        userUid = False
+        target = ""
+        if serviceName:
+            if 'LaunchDaemon' in service:
+                target = 'system/' + serviceName
+            if 'LaunchAgent' in service:
+                user = findUserLoggedIn(self.logger)
+                if user:
+                    userUid = pwd.getpwnam(user).pw_uid
+                if userUid:
+                    target = 'gui/' + str(userUid) + '/' + serviceName
+
+                target = target.strip()
         return target
 
     # ----------------------------------------------------------------------
@@ -199,7 +230,8 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 successTwo = self.lCtl.bootOut(domain, service)
             else:
                 successTwo = True
-            if self.auditService(service, **kwargs):
+
+            if successTwo:
                 successOne = self.lCtl.disable(target)
             else:
                 successOne = True
@@ -212,7 +244,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                     success = self.lCtl.bootOut(domain, service)
                 else:
                     success = True
-                    
+
         return success
 
     # ----------------------------------------------------------------------
@@ -258,24 +290,17 @@ class SHlaunchdTwo(ServiceHelperTemplate):
             else:
                 options = kwargs.get('options')
             '''
-            if self.auditService(service, **kwargs):
-                successOne = True
-            else:
-                successOne = self.lCtl.enable(target, service)
-                time.sleep(3)
+            successOne = self.lCtl.enable(target, service)
 
-            if self.isRunning(service, **kwargs):
-                successTwo = True
+            domainList = target.split("/")[:-1]
+            if len(domainList) > 1:
+                domain = "/".join(domainList)
             else:
-                domainList = target.split("/")[:-1]
-                if len(domainList) > 1:
-                    domain = "/".join(domainList)
-                else:
-                    domain = domainList[0]
+                domain = domainList[0]
 
-                successTwo = self.lCtl.bootStrap(domain, service)
-                time.sleep(10)
-            if successOne and successTwo: # and successThree:
+            successTwo = self.lCtl.bootStrap(domain, service)
+
+            if successOne and successTwo:
                 success = True
             else:
                 success = False
@@ -290,16 +315,15 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
     def auditService(self, service, **kwargs):
         '''
-        Checks the status of a service and returns a bool indicating whether or
-        not the service is configured to run or not.  Check if the plist
-        exists, and make sure that the file doesn't contain the disabled flag.
-        Also check and make sure it isn't in the currently running domaintarget
-        disabled list.
+        check if the target is a valid file and format
+        if so, check if the file is a service that is running
+        if running, return True
+        if not running, return False
 
         @param: service: full path to the plist file used to manage
                          the service.
         @param: serviceName|serviceTarget|domainTarget can be used
-                interchangably via key value pair in kwargs.  See
+                interchangeably via key value pair in kwargs.  See
                 description below for details on this variable.
 
                system/[service-name]
@@ -320,47 +344,86 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                 com.apple.example, and service-target is
                 gui/501/com.apple.example.
 
-        @return: Bool, True if the service is configured to run
-                 Data, Information about the process, if running
+        @return: success
+        @rtype: bool
+        @author: Roy Nielsen
         '''
+
         success = False
         successOne = False
         successTwo = False
         successThree = False
-        serviceDisabled = True
-        domain = ''
+        stderr = False
 
+        self.logger.log(lp.DEBUG, "Is the target service in a valid format?")
         target = self.targetValid(service, **kwargs)
+
         if target:
+            self.logger.log(lp.DEBUG, "Yes, it is in a valid format")
+
+            # added for potential use in the foundDisabled re.search string (dynamic string building)
+            try:
+                domainTarget = target.split('/')[:-1]
+            except KeyError:
+                return success
+
+            self.logger.log(lp.DEBUG, "Is the target service a file?")
             successOne = os.path.isfile(service)
-            if re.search("LaunchAgents", service) or \
-               re.search("LaunchDaemons", service):
-                successTwo = True
-
-            domainList = target.split("/")[:-1]
-            if len(domainList) > 1:
-                domain = "/".join(domainList)
+            if successOne:
+                self.logger.log(lp.DEBUG, "Yes, it is a file")
             else:
-                domain = domainList[0]
-            # successThree, data = self.lCtl.printDisabled()
-            _, data = self.lCtl.printDisabled(domain)
+                self.logger.log(lp.DEBUG, "No, it is not a file")
 
-            if data:
-                label = target.split("/")[-1]
-                self.logger.log(lp.DEBUG, "label: " + str(label))
-                foundServiceDisabled = False
-                for item in data.split(","):
-                    if re.search("%s"%label, item):
-                        self.logger.log(lp.DEBUG, "Found label: " + str(label))
-                        foundServiceDisabled = True
-                        break
-                if not foundServiceDisabled:
-                    serviceDisabled = False
+            self.logger.log(lp.DEBUG, "Is the target service either a Launch Agent or Launch Daemon?")
+            if re.search("LaunchAgents", service):
+                successTwo = True
+                self.logger.log(lp.DEBUG, "Yes, it is a Launch Agent")
+            if re.search("LaunchDaemons", service):
+                successTwo = True
+                self.logger.log(lp.DEBUG, "Yes, it is a Launch Daemon")
+            if not successTwo:
+                self.logger.log(lp.DEBUG, "No, it is neither a Launch Agent nor a Launch Daemon")
 
-            if successOne and successTwo and not serviceDisabled: # and successThree:
+            #####
+            # Find just the service name.
+            try:
+                serviceName = target.split('/')[-1]
+            except KeyError:
+                return success
+            #####
+            # Look for the serviceName to be running
+            try:
+                success, _, stderr, _ = self.lCtl.list(serviceName)
+            except KeyError:
+                pass
+            else:
+                #####
+                # Launchctl command workd, parsing output to see if it is running
+                foundDisabled = False
+                if stderr:
+                    for line in stderr:
+                        if re.search("Could not find service .+ in domain for system",
+                                     line, re.IGNORECASE):
+                            if re.search("%s"%serviceName, line):
+                                foundDisabled = True
+                                break
+
+                self.logger.log(lp.DEBUG, "Is the service currently enabled?")
+                if not foundDisabled:
+                    #####
+                    # Service is currently enabled.
+                    successThree = True
+                    self.logger.log(lp.DEBUG, "Yes, the service is currently enabled")
+                else:
+                    self.logger.log(lp.DEBUG, "No, the service is currently disabled")
+
+            if successOne and successTwo and successThree:
                 success = True
             else:
                 success = False
+
+        else:
+            self.logger.log(lp.DEBUG, "No, the target service is not a valid format")
 
         return success
 
@@ -401,20 +464,26 @@ class SHlaunchdTwo(ServiceHelperTemplate):
 
         @return: bool, True if the service is already running
         '''
-        success = False
+        serviceRunning = False
         data = None
 
         target = self.targetValid(service, **kwargs)
         if target:
             label = target.split("/")[-1]
-            _, data, _, _ = self.lCtl.list()
-            for line in data:
-                if re.search("%s"%label, line):
-                    self.logger.log(lp.DEBUG, "Found label: " + str(line))
-                    success = True
-                    break
-            #self.logger.log(lp.DEBUG, str(data))
-        return success
+            _, data, error, _ = self.lCtl.list(label)
+            if error:
+                for line in error:
+                    if re.search("Could not find service .+ in domain for system",
+                                 line, re.IGNORECASE):
+                        if re.search("%s"%label, line):
+                            serviceRunning = False
+                            break
+                    else:
+                        serviceRunning = True
+            else:
+                serviceRunning = True
+            self.logger.log(lp.DEBUG, str(data))
+        return serviceRunning
 
     # ----------------------------------------------------------------------
 
