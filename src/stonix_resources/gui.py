@@ -124,10 +124,11 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
 
         # set up search box
         self.searchbox = QLineEdit(self)
-        self.searchbox.resize(240, 30)
+        self.searchbox.resize(250, 30)
         self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
         self.searchbox.textEdited.connect(self.updateSearchResults)
         self.searchbox.setToolTip("Search rule names and descriptions")
+        self.searchbox.setObjectName("SearchBox")
         self.searchbox.show()
 
         # Initialize icon variables
@@ -233,6 +234,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.statusBar().addPermanentWidget(self.pbar)
         self.raise_()
         self.show()
+        self.searchbox.raise_()
         self.getSearchText()
 
     def getSearchText(self):
