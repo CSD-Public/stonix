@@ -130,12 +130,12 @@ class RunWith(object):
             self.environ = env
         else:
             self.environ = None
-        '''
+
         if close_fds is None or not isinstance(close_fds, bool):
             self.cfds = False
         else:
             self.cfds = close_fds
-        '''
+
     ###########################################################################
 
     def getStdout(self):
@@ -276,7 +276,12 @@ class RunWith(object):
         self.stderr = ''
         if self.command:
             try:
-                proc = Popen(self.command, stdout=PIPE, stderr=PIPE)
+                proc = Popen(self.command,
+                             stdout=PIPE, stderr=PIPE,
+                             shell=self.myshell,
+                             env=self.environ,
+                             close_fds=self.cfds)
+                proc.wait()
                 for line in proc.stdout.readline():
                     if line:
                         self.stdout = self.stdout + str(line) + "\n"
@@ -352,8 +357,8 @@ class RunWith(object):
                                 continue
                             else:
                                 if re.search(chk_string, tmpline):
-                                    proc.stdout.close()
-                                    proc.stderr.close()
+                                    # proc.stdout.close()
+                                    # proc.stderr.close()
                                     if respawn:
                                         pass
                                     else:
@@ -369,8 +374,8 @@ class RunWith(object):
                                 found = False
                                 for mystring in chk_string:
                                     if chk_string(mystring, tmpline):
-                                        proc.stdout.close()
-                                        proc.stderr.close()
+                                        # proc.stdout.close()
+                                        # proc.stderr.close()
                                         if respawn:
                                             pass
                                         else:
@@ -398,8 +403,8 @@ class RunWith(object):
                                 continue
                             else:
                                 if re.search(chk_string, tmpline):
-                                    proc.stdout.close()
-                                    proc.stderr.close()
+                                    # proc.stdout.close()
+                                    # proc.stderr.close()
                                     if respawn:
                                         pass
                                     else:
@@ -415,8 +420,8 @@ class RunWith(object):
                                 found = False
                                 for mystring in chk_string:
                                     if chk_string(mystring, tmpline):
-                                        proc.stdout.close()
-                                        proc.stderr.close()
+                                        # proc.stdout.close()
+                                        # proc.stderr.close()
                                         if respawn:
                                             pass
                                         else:
@@ -430,9 +435,9 @@ class RunWith(object):
                                     break
 
                 proc.wait()
-                proc.stdout.close()
-                proc.stderr.close()
-
+                # proc.stdout.close()
+                # proc.stderr.close()
+                self.retcode = proc.returncode
                 self.libc.sync()
 
             except Exception, err:
@@ -442,22 +447,16 @@ class RunWith(object):
                 self.logger.log(lp.WARNING, traceback.format_exc())
                 self.logger.log(lp.WARNING, str(err))
                 raise err
-            else :
+            else:
                 if not silent:
                     self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
-                self.stdout = proc.stdout
-                self.stderr = proc.stderr
-                self.retcode = proc.returncode
-                self.libc.sync()
-                proc.stdout.close()
-                proc.stderr.close()
             finally:
                 self.retcode = proc.returncode
                 if not silent:
                     self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
-                    self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
-                    self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
-                    self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
+                self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
+                self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
+                self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
         else:
             self.logger.log(lp.WARNING,
                             "Cannot run a command that is empty...")
