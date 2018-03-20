@@ -1,0 +1,120 @@
+#####
+# FOR REFERENCE ONLY.
+
+#####
+# Group creation borrowed heavily from Krypted:
+# http://krypted.com/mac-os-x/create-groups-using-dscl/
+# Create a group on the system called builder
+sudo dscl . create /Groups/builder
+sudo dscl . create /Groups/builder "Devs building with the PyQt stack in /opt/tools"
+# Give the group a password
+sudo dscl . create /Groups/builder passwd "******"
+# Give the group a gid
+sudo dscl . create /Groups/builder gid 2000
+# Add a user
+sudo dscl . create /Groups/builder GroupMembership localadmin
+sudo dscl . append /Groups/builder GroupMembership 2ndlocaladmin
+# Read attributes of group
+sudo dscl . read /Groups/builder
+
+
+#####
+# If on proxied network, set the proxies:
+
+export HTTPS_PROXY=http://proxyout.lanl.gov:8080
+export HTTP_PROXY=http://proxyout.lanl.gov:8080
+export https_proxy=http://proxyout.lanl.gov:8080
+export http_proxy=http://proxyout.lanl.gov:8080
+
+#####
+# Create directory structure for build
+sudo mkdir -p /opt/tools/downloads
+sudo mkdir -p /opt/tools/logs
+chown -R localadmin:builder /opt/tools
+chmod -R g+w /opt/tools
+cd /opt/tools
+
+#####
+# Use Curl to download Qt, SIP and PyQt - it is important to use this
+# command as it will follow redirects, where the MacPkgr.py will not.
+
+curl -o downloads/qt-everywhere-opensource-src-5.9.4.tar.xz -L http://download.qt.io/official_releases/qt/5.9/5.9.4/single/qt-everywhere-opensource-src-5.9.4.tar.xz
+tar xvf downloads/qt-everywhere-opensource-src-5.9.4.tar.xz
+
+curl -o downloads/sip-4.19.8.tar.gz -L https://ftp.osuosl.org/pub/gentoo/distfiles/sip-4.19.8.tar.gz
+tar xzvf downloads/sip-4.19.8.tar.gz
+
+curl -o downloads/PyQt5_gpl-5.10.1.tar.gz -L http://gentoo.mirrors.tds.net/gentoo/distfiles/PyQt5_gpl-5.10.1.tar.gz
+# http://gentoo.cs.utah.edu/distfiles/PyQt5_gpl-5.10.1.tar.gz
+# http://gentoo.cs.utah.edu/distfiles/PyQt5_gpl-5.9.2.tar.gz
+tar xzvf downloads/PyQt5_gpl-5.10.1.tar.gz
+
+#####
+# Get pyinstaller
+curl -o downloads/PyInstaller-3.3.1.tar.bz2  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.3.1/PyInstaller-3.3.1.tar.bz2
+tar xjvf downloads/PyInstaller-3.3.1.tar.bz2
+
+#####
+# Build Qt
+cd qt-everywhere-opensource-src-5.9.4
+
+############
+# Make sure the "-sdk" parameter in the .configure command below is
+# specific to the operating system you are building on.
+./configure -opensource -confirm-license -release -no-rpath -prefix /opt/tools/lib/Qt5.9.4 -libdir /opt/tools/lib/Qt5.9.4/lib -nomake examples -nomake tests -bindir /opt/tools/lib/Qt5.9.4/bin -headerdir /opt/tools/lib/Qt5.9.4/includes -plugindir /opt/tools/lib/Qt5.9.4/plugins -importdir /opt/tools/lib/Qt5.9.4/qmlOne -qmldir /opt/tools/lib/Qt5.9.4/qmlTwo -datadir /opt/tools/lib/Qt5.9.4/data -docdir /opt/tools/lib/Qt5.9.4/doc -continue -silent -archdatadir /opt/tools/lib/Qt5.9.4/arch  -no-pkg-config -sdk macosx10.13 2>&1 | tee ../logs/qt-configure-out.txt
+make -j 4 2>&1 | tee ../logs/qt-make.log
+
+sudo make install 2>&1 | tee ../logs/qt-make-install.log
+
+#####
+# Build SIP
+cd /opt/tools/sip-4.19.8
+
+python ./configure.py --bindir /opt/tools/bin --destdir /opt/tools/lib/Python/2.7/site-packages --incdir /opt/tools/lib/Python/2.7/site-packages/sip/includes --sipdir /opt/tools/lib/Python/2.7/site-packages/sip/sips --pyidir /opt/tools/lib/Python/2.7/site-packages/sip/pyis --sdk MacOSX10.13.sdk 2>&1 | tee ../logs/sip-configure.log
+
+make 2>&1 | tee ../logs/sip-make.log
+sudo make install 2>&1 | tee ../logs/sip-make-install.log
+
+
+#####
+# Build PyQt
+# NOTE: http://pyqt.sourceforge.net/Docs/PyQt5/introduction.html#an-explanation-of-version-numbersls /opt/tools/Pyth		
+cd /opt/tools/PyQt5_gpl-5.9.2
+
+python ./configure.py --confirm-license --bindir=/opt/tools/bin --destdir=/opt/tools/lib/Python/2.7/site-packages --no-designer-plugin --no-qml-plugin --no-qsci-api --qmake=/opt/tools/lib/Qt5.9.4/bin/qmake --sip=/opt/tools/bin/sip --sip-incdir=/opt/tools/lib/Python/2.7/site-packages/sip/includes -v /opt/tools/lib/Python/2.7/site-packages/PyQt5/sips --verbose 2>&1 | tee ../logs/pyqt-configure.log
+
+make -j 4 2>&1 | tee ../logs/pyqt-make.log
+sudo make install 2>&1 | tee ../logs/pyqt-make-install.log
+
+cd ..
+
+#####
+# Install Luggage
+
+git clone https://github.com/unixorn/luggage.git
+
+cd luggage
+
+sudo make bootstrap_files
+
+cd ..
+
+
+#####
+# The following needs to be setup up before installing pyinstaller, 
+# as well as being necessary for build scripts:
+export PYTHONPATH=/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages/sip:/opt/tools/python2.7/site-packages:$PYTHONPATH
+export DYLD_LIBRARY_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$DYLD_LIBRARY_PATH
+export DYLD_FRAMEWORK_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$DYLD_FRAMEWORK_PATH
+export LD_FRAMEWORK_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$LD_FRAMEWORK_PATH
+export LD_LIBRARY_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$LD_LIBRARY_PATH
+
+#####
+# Install PyInstaller
+cd /opt/tools/PyInstaller-3.3.1
+
+chmod +x ./setup.py
+
+./setup.py install --install-purelib=/opt/tools/lib/Python/2.7/site-packages --install-scripts=/opt/tools/bin
+
+
