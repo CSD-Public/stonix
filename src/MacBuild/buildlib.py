@@ -34,6 +34,7 @@ import re
 import os
 import sys
 import pwd
+import site
 import tarfile
 import zipfile
 import traceback
@@ -41,6 +42,9 @@ import plistlib as pl
 from glob import glob
 from subprocess import Popen, STDOUT, PIPE
 
+# sys.path.append('/opt/tools/lib/Python/2.7/site-packages/PyInstaller3.3.1-py2.7.egg')
+
+site.addsitedir('/opt/tools/lib/Python/2.7/site-packages')
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
