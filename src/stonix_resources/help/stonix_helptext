@@ -534,3 +534,5 @@ This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionali
 <227>        "This rule will use the 'diskutil repairPermissions' or 'repair_packages' utilities (respectively, depending on OS version) to ensure that each package (and its associated files) has the default ownership and access permissions assigned to it."
 
 <36>        "This rule will securely configure the 'Extended Internet Service Daemon' (xinetd) access control mechanism, if it is present. xinetd is an open-source service dispatcher daemon, which runs on many Unix-like systems and manages Internet-based connectivity. It offers a more secure alternative to the older inetd - which most modern Linux distributions have deprecated."
+
+<131>        "This rule configures user preferences to display the Bluetooth icon in the menu bar. This rule is optional."
