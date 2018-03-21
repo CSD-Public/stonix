@@ -45,6 +45,7 @@ reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/03/21 dwalker - updated rule to prefer postfix over sendmail
 '''
 
 from __future__ import absolute_import
@@ -95,16 +96,6 @@ agent, set the value of SECUREMTA to False.'''
         self.mta.setsimple(True)
 
         self.iditerator = 0
-        self.ds = True
-        self.sndmailed = None
-        self.postfixed = None
-        self.postfixpathlist = ['/etc/postfix/main.cf',
-                                '/private/etc/postfix/main.cf',
-                                '/usr/lib/postfix/main.cf']
-        self.postfixpath = ''
-        for path in self.postfixpathlist:
-            if os.path.exists(path):
-                self.postfixpath = path
 
     def report(self):
         '''
@@ -128,44 +119,55 @@ agent, set the value of SECUREMTA to False.'''
             self.detailedresults = "\nPlease ensure that the constant: MAILRELAYSERVER, in localize.py, is defined and is not None. This rule will not function without it."
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
-
-        self.compliant = True
+        self.ds = True
+        self.sndmailed = None
+        self.postfixed = None
+        compliant = True
         self.postfixfoundlist = []
         self.detailedresults = ""
-        self.postfixlist = ['postfix', 'squeeze', 'squeeze-backports',
-               'wheezy', 'jessie', 'sid', 'CNDpostfix', 'lucid',
-               'lucid-updates', 'lucid-backports', 'precise',
-               'precise-updates', 'quantal', 'quantal-updates',
-               'raring', 'saucy', 'wheezy-backports', 'postfix-current',
-               'trusty', 'trusty-updates', 'vivid', 'wily', 'xenial']
         self.postfixinstalled = False
         self.sendmailinstalled = False
+        self.postfixavailable = False
+        self.sendmailavailable = False
+        self.sendmailremove = False
 
         try:
-
             # instantiate pkghelper object instance only if system is not a mac
             if not self.environ.operatingsystem == "Mac OS X":
                 self.helper = Pkghelper(self.logger, self.environ)
 
                 # check for installed versions of postfix on this system
                 # check for installed sendmail on this system
-                for item in self.postfixlist:
-                    if self.helper.check(item):
-                        self.postfixinstalled = True
-                        self.postfixfoundlist.append(item)
-                if self.helper.check('sendmail'):
-                    self.sendmailinstalled = True
-
-                # if sendmail installed, run check on sendmail configuration
-                if self.sendmailinstalled:
-                    if not self.reportsendmail():
-                        self.compliant = False
-
-                # if postfix installed, run check on postfix configuration
-                if self.postfixinstalled:
+                if self.helper.check('postfix'):
+                    self.postfixinstalled = True
                     if not self.reportpostfix():
-                        self.compliant = False
-
+                        compliant = False
+                    if self.helper.check('sendmail'):
+                        self.sendmailinstalled = True
+                        compliant = False
+                        self.detailedresults += "sendmail is installed and needs to be removed\n"
+                elif self.helper.checkAvailable('postfix'):
+                    self.detailedresults += "postfix not installed but available\n"
+                    compliant = False
+                    self.postfixavailable = True
+                    if self.helper.check('sendmail'):
+                        self.sendmailinstalled = True
+                        compliant = False
+                        self.detailedresults += "sendmail is installed and needs to be removed\n"
+                if not self.postfixinstalled and not self.postfixavailable:
+                    if self.helper.check('sendmail'):
+                        self.sendmailinstalled = True
+                        if not self.reportsendmail():
+                            compliant = False
+                    elif self.helper.checkAvailable('sendmail'):
+                        self.sendmailavailable = True
+                        compliant = False
+                        self.detailedresults += "sendmail not installed but available\n"
+            else:
+                if os.path.exists("/private/etc/postfix/main.cf"):
+                    if not self.reportpostfix():
+                        compliant = False
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -248,7 +250,6 @@ agent, set the value of SECUREMTA to False.'''
         @change: dwalker - ??? - ???
         @change: Breen Malmberg - 12/22/2015 - refactored method
         '''
-
         retval = True
         data = {'inet_interfaces': 'localhost',
                 'default_process_limit': '100',
@@ -267,7 +268,10 @@ agent, set the value of SECUREMTA to False.'''
         kvtype = 'conf'
         conftype = 'openeq'
         intent = 'present'
-
+        self.postfixpathlist = ['/etc/postfix/main.cf',
+                                '/usr/lib/postfix/main.cf'
+                                '/private/etc/postfix/main.cf']
+        self.postfixpath = ''
         for path in self.postfixpathlist:
             if os.path.exists(path):
                 self.postfixpath = path
@@ -276,7 +280,7 @@ agent, set the value of SECUREMTA to False.'''
         try:
 
             if not self.postfixpath:
-                self.detailedresults += '\nCould not locate postfix configuration file.'
+                self.detailedresults += 'Could not locate postfix configuration file.\n'
                 retval = False
                 return retval
 
@@ -288,12 +292,12 @@ agent, set the value of SECUREMTA to False.'''
             # check permissions on postfix configuration file
             if os.path.exists(self.postfixpath):
                 if not checkPerms(self.postfixpath, [0, 0, 420], self.logger):
-                    self.detailedresults += "\nFile: " + str(self.postfixpath) + " has incorrect permissions."
+                    self.detailedresults += "File: " + str(self.postfixpath) + " has incorrect permissions.\n"
                     retval = False
 
             # use kveditor to search the conf file for all the options in postfix data
             if not self.postfixed.report():
-                self.detailedresults += "\nNot all directives were found in " + str(self.postfixpath) + " file."
+                self.detailedresults += "Not all directives were found in " + str(self.postfixpath) + " file.\n"
                 retval = False
 
         except Exception:
@@ -323,20 +327,18 @@ agent, set the value of SECUREMTA to False.'''
         self.logger.log(LogPriority.DEBUG, "Inside main fix() method")
         self.logger.log(LogPriority.DEBUG, "Setting method variable defaults...")
         self.detailedresults = ""
-        fixsuccess = True
+        success = True
         self.iditerator = 0
 
         try:
 
             self.logger.log(LogPriority.DEBUG, "Checking value of CI...")
-
             # if nothing is selected, just exit and inform user
             if not self.mta.getcurrvalue():
                 self.detailedresults += '\nThe CI for this rule is currently disabled. Nothing will be done...'
-                fixsuccess = True
-                self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+                self.formatDetailedResults("fix", success, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return fixsuccess
+                return success
 
             self.logger.log(LogPriority.DEBUG, "Finding and deleting old event entries...")
             # clear out event history so only the latest fix is recorded
@@ -348,36 +350,64 @@ agent, set the value of SECUREMTA to False.'''
             if self.postfixed:
                 self.logger.log(LogPriority.DEBUG, "Running fixpostfix() method...")
                 if not self.fixpostfix():
-                    fixsuccess = False
-                    self.detailedresults += '\nThe fix for postfix failed.'
-
+                    success = False
+                    self.detailedresults += 'The fix for postfix failed.\n'
+                elif self.sendmailinstalled:
+                    if not self.helper.remove('sendmail'):
+                        success = False
+                        self.detailedresults += "Unable to remove sendmail\n"
+            elif self.postfixavailable:
+                if self.helper.install('postfix'):
+                    self.postfixinstalled = True
+                    if not self.reportpostfix():
+                        if self.postfixed:
+                            if not self.fixpostfix():
+                                success = False
+                                self.detailedresults += 'The fix for postfix failed.\n'
+                            elif self.sendmailinstalled:
+                                if not self.helper.remove('sendmail'):
+                                    success = False
+                                    self.detailedresults += "Unable to remove sendmail\n"
+                else:
+                    success = False
+                    self.detailedresults += "Unable to install postfix\n"
             # if the kveditor object for sendmail exists, then run the fix sendmail method
-            if self.sndmailed:
+            elif self.sndmailed:
                 self.logger.log(LogPriority.DEBUG, "Running fixsendmail() method...")
                 if not self.fixsendmail():
-                    fixsuccess = False
+                    success = False
                     self.detailedresults += '\nThe fix for sendmail failed.'
-
+            elif self.sendmailavailable:
+                if self.helper.install('sendmail'):
+                    self.sendmailinstalled = True
+                    if not self.reportsendmail():
+                        if self.sndmailed:
+                            if not self.fixsendmail():
+                                success = False
+                                self.detailedresults += 'The fix for sendmail failed.\n'
+                else:
+                    success = False
+                    self.detailedresults += "Unable to install postfix\n"
             elif self.ds:
                 if os.path.exists('/etc/mail/sendmail.cf'):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms("/etc/mail/sendmail.cf", [0, 0, 420], self.logger, self.statechglogger, myid):
-                        fixsuccess = False
+                        success = False
                         self.detailedresults += '\nCould not correctly set permissions on file: /etc/mail/sendmail.cf'
                 if not self.fixsendmail():
-                    fixsuccess = False
+                    success = False
                     self.detailedresults += '\nThe fix for sendmail failed.'
-
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return fixsuccess
+        return self.rulesuccess
 
 ###############################################################################
     def fixpostfix(self):
@@ -394,11 +424,11 @@ agent, set the value of SECUREMTA to False.'''
         retval = True
 
         try:
-
-            if not self.postfixinstalled:
-                self.detailedresults += '\nNo mail transfer agent detected. Nothing to do...'
-                retval = True
-                return retval
+            if not self.environ.operatingsystem == "Mac OS X":
+                if not self.postfixinstalled:
+                    self.detailedresults += '\nNo mail transfer agent detected. Nothing to do...'
+                    retval = True
+                    return retval
 
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
@@ -407,13 +437,13 @@ agent, set the value of SECUREMTA to False.'''
             if not self.postfixed.fix():
                 debug = "kveditor fix did not run successfully, returning"
                 self.logger.log(LogPriority.DEBUG, debug)
-                self.detailedresults += '\nkveditor failed to run fix method'
+                self.detailedresults += 'kveditor failed to run fix method\n'
                 retval = False
                 return retval
             elif not self.postfixed.commit():
                 debug = "kveditor commit did not run successfully, returning"
                 self.logger.log(LogPriority.DEBUG, debug)
-                self.detailedresults += '\nkveditor failed to commit changes'
+                self.detailedresults += 'kveditor failed to commit changes\n'
                 retval = False
                 return retval
 
@@ -422,9 +452,9 @@ agent, set the value of SECUREMTA to False.'''
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.postfixpath, [0, 0, 420], self.logger, self.statechglogger, myid):
                     retval = False
-                    self.detailedresults += '\nCould not correctly set permissions on file: ' + str(self.postfixpath)
+                    self.detailedresults += 'Could not correctly set permissions on file: ' + str(self.postfixpath) + "\n"
             else:
-                self.detailedresults += '\nPostfix is installed, but could not locate postfix configuration file.'
+                self.detailedresults += 'Postfix is installed, but could not locate postfix configuration file.\n'
                 retval = False
                 return retval
 
@@ -455,7 +485,7 @@ agent, set the value of SECUREMTA to False.'''
 
             self.logger.log(LogPriority.DEBUG, "Checking if sendmail package is installed...")
             if not self.helper.check('sendmail'):
-                self.detailedresults += '\nSendmail is not installed.. no need to configure it.'
+                self.detailedresults += 'Sendmail is not installed.. no need to configure it.\n'
                 success = True
                 return success
 
@@ -482,7 +512,7 @@ agent, set the value of SECUREMTA to False.'''
                             resetsecon(path)
                         else:
                             success = False
-                            self.detailedresults += '\nUnable to write changes to file: ' + str(tpath)
+                            self.detailedresults += 'Unable to write changes to file: ' + str(tpath) + "\n"
 
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -510,7 +540,7 @@ agent, set the value of SECUREMTA to False.'''
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(path, [0, 0, 420], self.logger, self.statechglogger, myid):
                         success = False
-                        self.detailedresults += '\nUnable to set permissions correctly on file: ' + str(path)
+                        self.detailedresults += 'Unable to set permissions correctly on file: ' + str(path) + "\n"
 
             elif self.ds and os.path.exists(path):
                 tpath = path + ".tmp"
@@ -537,9 +567,9 @@ agent, set the value of SECUREMTA to False.'''
                     resetsecon(path)
                 else:
                     success = False
-                    self.detailedresults += '\nUnable to write changes to file: ' + str(tpath)
+                    self.detailedresults += 'Unable to write changes to file: ' + str(tpath) + "\n"
             else:
-                self.detailedresults += '\nSendmail configuration file not in expected location, or does not exist. Will not attempt to create this file. Removing sendmail package...'
+                self.detailedresults += 'Sendmail configuration file not in expected location, or does not exist. Will not attempt to create this file. Removing sendmail package...\n'
                 self.helper.remove('sendmail')
                 success = True
 
