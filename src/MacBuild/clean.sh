@@ -40,4 +40,6 @@ rm -rf dmgs/stonix4mac.*
 rm -rf /tmp/stonix
 rm -rf /tmp/stonix4mac
 find . -iname "*.pyc" -print -exec rm {} \;
+rm -rf /tmp/xcodebuild.py.log
+rm -rf /tmp/build.py.log
 
