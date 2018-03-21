@@ -51,8 +51,8 @@ tar xzvf downloads/PyQt5_gpl-5.10.1.tar.gz
 
 #####
 # Get pyinstaller
-curl -o downloads/PyInstaller-3.3.1.tar.bz2  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.3.1/PyInstaller-3.3.1.tar.bz2
-tar xjvf downloads/PyInstaller-3.3.1.tar.bz2
+curl -o downloads/PyInstaller-3.2.1.tar.bz2  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.2.1/PyInstaller-3.2.1.tar.bz2
+tar xjvf downloads/PyInstaller-3.2.1.tar.bz2
 
 #####
 # Build Qt
@@ -111,10 +111,10 @@ export LD_LIBRARY_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site
 
 #####
 # Install PyInstaller
-cd /opt/tools/PyInstaller-3.3.1
+cd /opt/tools/PyInstaller-3.2.1
 
 chmod +x ./setup.py
 
-./setup.py install --install-purelib=/opt/tools/lib/Python/2.7/site-packages --install-scripts=/opt/tools/bin
+./setup.py install --prefix=/opt/tools
 
 
