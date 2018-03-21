@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2018.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,11 +21,12 @@
 #                                                                             #
 ###############################################################################
 '''
+Created on Mar 20, 2018
+
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
-@author: brandon r. gonzales
-@change: 2018/03/20 bgonz12 Original Implementation
+@author: bgonz12
 '''
 from __future__ import absolute_import
 import traceback
@@ -39,8 +40,8 @@ from ..logdispatcher import LogPriority
 
 class ShowBluetoothIcon(RuleKVEditor):
     '''
-
-    @author: brandon r. gonzales
+    
+    @author: bgonz12
     '''
 
 ###############################################################################
@@ -51,7 +52,7 @@ class ShowBluetoothIcon(RuleKVEditor):
         self.rulenumber = 131
         self.rulename = 'ShowBluetoothIcon'
         self.formatDetailedResults("initialize")
-        self.mandatory = True
+        self.mandatory = False
         self.sethelptext()
         self.rootrequired = False
         self.guidance = []
@@ -86,7 +87,7 @@ class ShowBluetoothIcon(RuleKVEditor):
 
         @return: self.compliant
         @rtype: bool
-        @author: brandon r. gonzales 
+        @author: bgonz12
         '''
         
         self.detailedresults = ""
@@ -123,7 +124,7 @@ class ShowBluetoothIcon(RuleKVEditor):
 
         @return: fixed
         @rtype: bool
-        @author: brandon r. gonzales
+        @author: bgonz12
         '''
         self.detailedresults = ""
         fixed = True
@@ -154,7 +155,7 @@ class ShowBluetoothIcon(RuleKVEditor):
 
         @return: afterfixsuccess
         @rtype: bool
-        @author: brandon r. gonzales
+        @author: bgonz12
         '''
         afterfixsuccess = True
 
