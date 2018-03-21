@@ -177,7 +177,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             '''
             #####
             # Run the command
-            output, error, retcode = self.runWith.wait()
+            output, error, retcode = self.runWith.communicate()
             self.logger.log(lp.INFO, "security cmd ran in current context..")
             
             if not str(error).strip():
