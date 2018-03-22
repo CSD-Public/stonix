@@ -373,6 +373,8 @@ class NoCoreDumps(Rule):
         '''Sub fix method 2 that searches the /etc/sysctl.conf file
         for the following line "fs.suid_dumpable = 0"
         @return: bool
+        @change: bgonz12 - 22/3/2018 - Changed the fix permission logic to not
+                be reliant on self.editor compliance
         '''
         path = "/etc/sysctl.conf"
         success = True
@@ -399,13 +401,13 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-            elif not checkPerms(path, [0, 0, 0o644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(path, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    self.rulesuccess = False
-                    return False
+        if not checkPerms(path, [0, 0, 0o644], self.logger):
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            if not setPerms(path, [0, 0, 0o644], self.logger,
+                            self.statechglogger, myid):
+                self.rulesuccess = False
+                return False
         resetsecon(path)
         return success
 
