@@ -536,3 +536,5 @@ This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionali
 <36>        "This rule will securely configure the 'Extended Internet Service Daemon' (xinetd) access control mechanism, if it is present. xinetd is an open-source service dispatcher daemon, which runs on many Unix-like systems and manages Internet-based connectivity. It offers a more secure alternative to the older inetd - which most modern Linux distributions have deprecated."
 
 <131>        "This rule configures user preferences to display the Bluetooth icon in the menu bar. This rule is optional."
+
+<85>        "This rule prevents users from logging into root directly through virtual console or tty connections. Users can still access root through non-tty connections or by escalating privileges using sudo."
