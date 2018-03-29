@@ -605,9 +605,25 @@ class MacBuildLib(object):
         #####
         # Change to directory where the item to sign resides
         os.chdir(buildDir)
-
+        cfds = False
         os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
-        cmd = ['/usr/bin/xcodebuild', 'build', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+        if not keychain:
+            cmd = ['/usr/bin/xcodebuild', 'clean', 'build', 'CODE_SIGN_IDENTITY=""',
+                   'CODE_SIGNING_REQUIRED=NO', 'CODE_SIGN_ENTITLEMENTS=""', 'CODE_SIGNING_ALLOWED="NO"',
+                   '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+            cfds = True
+        else:
+            targetKeychain = keychain
+            cmd = ['/usr/bin/xcodebuild', 'CODE_SIGNING_ALLOWED="Yes"', 'CODE_SIGNING_REQUIRED=YES', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+            cfds = False
+            #####
+            # Alternate commands for building with xcodebuild and signing
+            #cmd = ['/usr/bin/xcodebuild', '-workspace', appPath + '/' + appName + '.xcodeproj' + "/" + appName + '.xcworkspace', '-scheme', appName, '-configuration', 'RELEASE', 'DEVELOPENT_TEAM', 'Los Alamos National Security, LLC', 'CODE_SIGN_IDENTITY', '"' + str(self.codesignSignature) + '"']
+            # - works with waring: cmd = ['/usr/bin/xcodebuild', '-project', appName + '.xcodeproj', '-configuration', 'RELEASE', 'CODE_SIGN_IDENTITY="Mac Developer"']
+            #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', 'OTHER_CODE_SIGN_FLAGS="-keychain ' + keychain + '"']
+            #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', buildDir + "/src/Macbuild/" + appName + "/" + appName + '.xcodeproj', 'DEVELOPENT_TEAM="Los Alamos National Security, LLC"', "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES='YES'"]
+            #cmd = ['/usr/bin/xcodebuild', '-sdk', 'macosx', '-project', appName + '.xcodeproj', '-skipUnavailableActions']
+            #cmd = ['/usr/bin/xcodebuild', '-configuration', 'Release', 'clean']
 
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
@@ -631,7 +647,7 @@ class MacBuildLib(object):
         self.logger.log(lp.DEBUG, str(cmd))
         
         self.rw.setCommand(cmd)
-        output, error, retcode = self.rw.communicate()
+        output, error, retcode = self.rw.waitNpassThruStdout()
         
         if not error:
             success = True
