@@ -607,7 +607,7 @@ class MacBuildLib(object):
         os.chdir(buildDir)
 
         os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
-        cmd = ['/usr/bin/xcodebuild', 'clean', 'build', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
+        cmd = ['/usr/bin/xcodebuild', 'build', '-sdk', 'macosx', '-project', appName + '.xcodeproj']
 
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
