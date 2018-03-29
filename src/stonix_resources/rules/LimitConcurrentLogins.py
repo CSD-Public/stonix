@@ -89,6 +89,8 @@ class LimitConcurrentLogins(Rule):
                         "correct on " + self.securityfile + "\n"
                 contents = readFile(self.securityfile, self.logger)
                 for line in contents:
+                    if re.match('^#', line) or re.match(r'^\s*$', line):
+                        continue
                     if re.search("maxlogins", line):
                         splitline = line.split()
                         try:
@@ -157,8 +159,12 @@ class LimitConcurrentLogins(Rule):
                     self.statechglogger.recordchgevent(myid, event)
             contents = readFile(self.securityfile, self.logger)
             tempstring = ""
+            print "about to loop\n"
             for line in contents:
-                if re.search("maxlogins", line):
+                if re.match('^#', line) or re.match(r'^\s*$', line):
+                    tempstring += line
+                    continue
+                elif re.search("maxlogins", line):
                     splitline = line.split()
                     try:
                         if len(splitline) > 4:
@@ -173,6 +179,7 @@ class LimitConcurrentLogins(Rule):
                 else:
                     tempstring += line
             if tempstring:
+                print "tempstring: " + str(tempstring) + "\n"
                 tempstring += "*\thard\tmaxlogins\t" + self.cinum.getcurrvalue() + "\n"
                 print "tempstring: " + str(tempstring) + "\n"
                 tmpfile = self.securityfile + ".tmp"
