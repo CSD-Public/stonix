@@ -630,7 +630,7 @@ class MacBuildLib(object):
         os.chdir(buildDir)
         self.logger.log(lp.DEBUG, str(cmd))
         
-        self.rw.setCommand(cmd, close_fds=cfds)
+        self.rw.setCommand(cmd)
         output, error, retcode = self.rw.communicate()
         
         if not error:
