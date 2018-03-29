@@ -541,8 +541,15 @@ class networksetup():
                         servicename = item
                     else:
                         servicename = servicename + " " + item
-                
+
                 if "ethernet" in servicename.lower():
+                    networktype = "ethernet"
+                elif "lan" in servicename.lower():
+                    #####
+                    # The belkin dongles LANL has chosen to use for Apple
+                    # laptops does not identify itself vi convention,
+                    # so this is the choice roy is making to indicate the
+                    # mapping between "Belkin USB-C LAN" and ethernet.
                     networktype = "ethernet"
                 elif "bluetooth" in servicename.lower():
                     networktype = "bluetooth"
@@ -580,7 +587,7 @@ class networksetup():
                     orderkey = str(order).zfill(4)
                     self.nso[orderkey] = servicename.strip()
                     self.updateNetworkConfigurationDictionaryEntry(servicename.strip())
-
+        self.setNetworkServiceOrder()
         return success
 
 ###############################################################################
@@ -621,6 +628,13 @@ class networksetup():
                     else:
                         servicename = servicename + " " + item.strip()
                 if "ethernet" in servicename.lower():
+                    networktype = "ethernet"
+                elif "lan" in servicename.lower():
+                    #####
+                    # The belkin dongles LANL has chosen to use for Apple
+                    # laptops does not identify itself vi convention,
+                    # so this is the choice roy is making to indicate the
+                    # mapping between "Belkin USB-C LAN" and ethernet.
                     networktype = "ethernet"
                 elif "bluetooth" in servicename.lower():
                     networktype = "bluetooth"
@@ -816,9 +830,8 @@ class networksetup():
         #####
         # Find the interface that needs to be at the top of the self.nso order
         cmd = ["/sbin/route", "get", "default"]
-        
+
         self.ch.executeCommand(cmd)
-        
         defaultInterface = None
 
         for line in self.ch.getOutput():
