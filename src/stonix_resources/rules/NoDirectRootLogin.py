@@ -144,7 +144,7 @@ class NoDirectRootLogin(Rule):
                 cmd = "echo -n > " + self.securettypath
                 if not self.ch.executeCommand(cmd):
                     success = False
-                    Self.detailedresults += "Unable to write to " + \
+                    self.detailedresults += "Unable to write to " + \
                                             self.securettypath + "\n"
 
             self.rulesuccess = success
