@@ -55,6 +55,7 @@ from ..stonixutilityfunctions import checkPerms, writeFile
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..KVEditorStonix import KVEditorStonix
+from ..CommandHelper import CommandHelper
 from ..localize import MAILRELAYSERVER
 import os
 import traceback
@@ -278,11 +279,30 @@ agent, set the value of SECUREMTA to False.'''
         tpath = self.postfixpath + '.tmp'
 
         try:
-
             if not self.postfixpath:
-                self.detailedresults += 'Could not locate postfix configuration file.\n'
-                retval = False
-                return retval
+                print "postfix file not found but checking if it's apt-get\n"
+                if self.helper.manager == "apt-get":
+                    print "it is apt-get"
+                    if os.path.exists("/usr/share/postfix/main.cf.debian"):
+                        print "secondary postfix file exists\n"
+                        self.ch = CommandHelper(self.logger)
+                        cmd = ["/bin/cp", "/usr/share/postfix/main.cf.debian",
+                               "/etc/postfix/main.cf"]
+                        if not self.ch.executeCommand(cmd):
+                            self.detailedresults += "Unable to copy postfix " + \
+                                "configuration file to its proper location\n"
+                            return False
+                        else:
+                            print "successfully copied over postfix file\n"
+                            self.postfixpath = "/etc/postfix/main.cf"
+                    else:
+                        self.detailedresults += "postfix configuration file " + \
+                            "doesn't exist.  This file needs to be copied " + \
+                            "over to its proper location.\n"
+                        return False
+                else:
+                    self.detailedresults += 'Could not locate postfix configuration file.\n'
+                    return False
 
             # create the kveditor object
             self.postfixed = KVEditorStonix(self.statechglogger, self.logger,
