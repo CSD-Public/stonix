@@ -280,11 +280,8 @@ agent, set the value of SECUREMTA to False.'''
 
         try:
             if not self.postfixpath:
-                print "postfix file not found but checking if it's apt-get\n"
                 if self.helper.manager == "apt-get":
-                    print "it is apt-get"
                     if os.path.exists("/usr/share/postfix/main.cf.debian"):
-                        print "secondary postfix file exists\n"
                         self.ch = CommandHelper(self.logger)
                         cmd = ["/bin/cp", "/usr/share/postfix/main.cf.debian",
                                "/etc/postfix/main.cf"]
