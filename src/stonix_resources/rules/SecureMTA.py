@@ -264,7 +264,7 @@ agent, set the value of SECUREMTA to False.'''
                 'mynetworks_style': 'host',
                 'smtpd_recipient_restrictions':
                 'permit_mynetworks, reject_unauth_destination',
-                'relayhost': MAILRELAYSERVER}
+                 'relayhost': MAILRELAYSERVER}
 
         kvtype = 'conf'
         conftype = 'openeq'
@@ -290,7 +290,6 @@ agent, set the value of SECUREMTA to False.'''
                                 "configuration file to its proper location\n"
                             return False
                         else:
-                            print "successfully copied over postfix file\n"
                             self.postfixpath = "/etc/postfix/main.cf"
                     else:
                         self.detailedresults += "postfix configuration file " + \
