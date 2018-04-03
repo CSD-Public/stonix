@@ -264,7 +264,7 @@ agent, set the value of SECUREMTA to False.'''
                 'mynetworks_style': 'host',
                 'smtpd_recipient_restrictions':
                 'permit_mynetworks, reject_unauth_destination',
-                'relayhost': MAILRELAYSERVER}
+                 'relayhost': MAILRELAYSERVER}
 
         kvtype = 'conf'
         conftype = 'openeq'
@@ -280,11 +280,8 @@ agent, set the value of SECUREMTA to False.'''
 
         try:
             if not self.postfixpath:
-                print "postfix file not found but checking if it's apt-get\n"
                 if self.helper.manager == "apt-get":
-                    print "it is apt-get"
                     if os.path.exists("/usr/share/postfix/main.cf.debian"):
-                        print "secondary postfix file exists\n"
                         self.ch = CommandHelper(self.logger)
                         cmd = ["/bin/cp", "/usr/share/postfix/main.cf.debian",
                                "/etc/postfix/main.cf"]
@@ -293,7 +290,6 @@ agent, set the value of SECUREMTA to False.'''
                                 "configuration file to its proper location\n"
                             return False
                         else:
-                            print "successfully copied over postfix file\n"
                             self.postfixpath = "/etc/postfix/main.cf"
                     else:
                         self.detailedresults += "postfix configuration file " + \
