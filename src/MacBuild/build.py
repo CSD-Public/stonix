@@ -57,7 +57,7 @@ from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 #####
 # Exception for when the conf file can't be grokked.
-class ConfusingConfigurationError(Exception):
+class ConfusingConfigurationError(BaseException):
     """
     Meant for being thrown when the MacBuilder can't determine configuration
     information.
@@ -65,7 +65,7 @@ class ConfusingConfigurationError(Exception):
     @author: Roy Nielsen
     """
     def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+        BaseException.__init__(self, *args, **kwargs)
 
 
 class SoftwareBuilder():

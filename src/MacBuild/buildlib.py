@@ -57,12 +57,12 @@ from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 from ramdisk.lib.run_commands import RunWith
 
 
-def BadBuildError(Exception):
+class BadBuildError(BaseException):
     """
     Custom Exception
     """
     def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+        BaseException.__init__(self, *args, **kwargs)
 
 class MacBuildLib(object):
     def __init__(self, logger, pypaths=None):
