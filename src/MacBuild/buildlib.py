@@ -649,10 +649,10 @@ class MacBuildLib(object):
         self.rw.setCommand(cmd, close_fds=cfds)
         output, error, retcode = self.rw.communicate()
         
-        if not error:
-            success = True
-        else:
-            raise BadBuildError("Error building program: " + str(retcode))
+        # if not error:
+        #     success = True
+        # else:
+        #     raise BadBuildError("Error building program: " + str(retcode))
         
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
