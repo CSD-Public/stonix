@@ -44,10 +44,8 @@ tar xvf downloads/qt-everywhere-opensource-src-5.9.4.tar.xz
 curl -o downloads/sip-4.19.8.tar.gz -L https://ftp.osuosl.org/pub/gentoo/distfiles/sip-4.19.8.tar.gz
 tar xzvf downloads/sip-4.19.8.tar.gz
 
-curl -o downloads/PyQt5_gpl-5.10.1.tar.gz -L http://gentoo.mirrors.tds.net/gentoo/distfiles/PyQt5_gpl-5.10.1.tar.gz
-# http://gentoo.cs.utah.edu/distfiles/PyQt5_gpl-5.10.1.tar.gz
-# http://gentoo.cs.utah.edu/distfiles/PyQt5_gpl-5.9.2.tar.gz
-tar xzvf downloads/PyQt5_gpl-5.10.1.tar.gz
+curl -o downloads/PyQt5_gpl-5.9.2.tar.gz -L http://gentoo.mirrors.tds.net/gentoo/distfiles/PyQt5_gpl-5.9.2.tar.gz
+tar xzvf downloads/PyQt5_gpl-5.9.2.tar.gz
 
 #####
 # Get pyinstaller
