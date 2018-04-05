@@ -756,7 +756,6 @@ class LaunchCtl(object):
         @author: Roy Nielsen
         '''
         success = False
-        stderr = False
         #####
         # Input validation.
         if not isinstance(serviceTarget, basestring):
@@ -768,13 +767,20 @@ class LaunchCtl(object):
             cmd = {"enable": [serviceTarget]}
 
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
-        if retcode != '0' or stderr or not success:
+        if str(retcode) != '0':
             success = False
             self.logger.log(lp.DEBUG, reportStack() +
                             "- success: " + str(success) +
-                             " stdout: " + str(stdout) +
-                             " stderr: " + str(stderr) +
-                             " retcode: " + str(retcode))
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+        else:
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+            success = True
         return success
 
     # -------------------------------------------------------------------------
@@ -822,11 +828,20 @@ class LaunchCtl(object):
         cmd = {"disable": [serviceTarget]}
         success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
-        if retcode != '0':
-            raise ValueError(reportStack() + "- success: " + str(success) +
-                             " stdout: " + str(stdout) +
-                             " stderr: " + str(stderr) +
-                             " retcode: " + str(retcode))
+        if str(retcode) != '0':
+            success = False
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+        else:
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+            success = True
         return success
 
     #-------------------------------------------------------------------------
@@ -857,8 +872,22 @@ class LaunchCtl(object):
             return success
 
         cmd = {"uncache": [serviceName]}
-        success, _, _, _ = self.runSubCommand(cmd)
+        success, stdout, stderr, retcode = self.runSubCommand(cmd)
 
+        if str(retcode) != '0':
+            success = False
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+        else:
+            self.logger.log(lp.DEBUG, reportStack() +
+                            "- success: " + str(success) +
+                            " stdout: " + str(stdout) +
+                            " stderr: " + str(stderr) +
+                            " retcode: " + str(retcode))
+            success = True
         return success
 
     # -------------------------------------------------------------------------

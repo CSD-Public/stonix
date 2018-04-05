@@ -27,7 +27,7 @@ Enable logging for all attempted access and ftp commands,
 restrict the set of users allowed to access ftp and set the default umask for
 ftp users.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 04/21/2014 dkennel Updated CI invocation, removed bug where second
 copy of Environment was instantiated, fixed bug where CI was not referenced in
 the Fix method.
@@ -36,9 +36,12 @@ the Fix method.
 @change: 2015/04/26 ekkehard Results Formatting
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/03/06 Breen Malmberg - added report function for checking if
+        ftp root is mounted on its own partition
 '''
 
 from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -72,7 +75,6 @@ of users allowed to access ftp and set the default umask for ftp users.
         self.sethelptext()
         self.rootrequired = True
         self.detailedresults = 'The SecureFTP rule has not yet been run'
-        self.compliant = True
         self.guidance = ['CIS', 'CCE 4678-9', 'CCE 4695-3', 'CCE 4510-4',
                          'CCE 4157-4', 'CCE 4677-1', 'CCE 4179-8',
                          'CCE 4589-8', 'CCE 4113-7', 'CCE 4739-9',
@@ -143,8 +145,9 @@ of users allowed to access ftp and set the default umask for ftp users.
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
-        @author bemalmbe
+        @return self.compliant
+        @rtype: bool
+        @author Breen Malmberg
         '''
 
         # defaults
@@ -152,6 +155,7 @@ of users allowed to access ftp and set the default umask for ftp users.
         self.distro = ''
         self.ftpdinstalled = False
         self.allowftpusers = self.AllowUsersList.getcurrvalue()
+        self.compliant = True
 
         try:
 
@@ -174,6 +178,10 @@ of users allowed to access ftp and set the default umask for ftp users.
                     return self.compliant
                 self.compliant = self.reportLinux()
 
+            if not self.reportPart():
+                self.compliant = False
+                self.logger.log(LogPriority.DEBUG, "FTP root is not on mounted on its own partition")
+
         except IOError:
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
@@ -187,13 +195,68 @@ of users allowed to access ftp and set the default umask for ftp users.
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
+    def reportPart(self):
+        '''
+        check whether the ftp root is mounted on its own partition or not
+        return True if mounted on its own partition; False if not
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        separate = True
+        mountpoint = ''
+        dir = ''
+        othermounts = []
+        df = "/bin/df"
+        command1 = "/bin/cat /etc/passwd | grep -i ftp"
+
+        try:
+
+            self.cmhelper.executeCommand(command1)
+            outlist = self.cmhelper.getOutput()
+            for line in outlist:
+                sline = line.split(':')
+                if len(sline) >= 6:
+                    dir = sline[5]
+            command2 = df + " " + str(dir)
+            self.cmhelper.executeCommand(command2)
+            outlist = self.cmhelper.getOutput()
+            for line in outlist:
+                if re.search("Mounted On", line, re.IGNORECASE):
+                    continue
+                else:
+                    sline = line.split()
+                    mountpoint = sline[5]
+    
+            self.cmhelper.executeCommand(df)
+            outlist = self.cmhelper.getOutput()
+            for line in outlist:
+                if re.search("Mounted On", line, re.IGNORECASE):
+                    continue
+                sline = line.split()
+                othermounts.append(sline[5])
+            for item in othermounts:
+                if re.search('.*ftp.*', item, re.IGNORECASE):
+                    continue
+                else:
+                    if mountpoint == item:
+                        separate = False
+
+        except Exception:
+            raise
+
+        return separate
+
 ###############################################################################
     def reportMac(self):
         '''
         method to determine compliance status of only mac os x systems
 
-        @return: bool
-        @author: bemalmbe
+        @return: compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -245,6 +308,11 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def reportLinux(self):
         '''
+        run report actions specific to linux systems
+
+        @return: compliant
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -280,6 +348,11 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def checkFTPDConfig(self):
         '''
+        check the FTP configuration for compliance
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -325,6 +398,11 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def checkFTPUsers(self):
         '''
+        check ftp user config for compliance
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -357,7 +435,9 @@ of users allowed to access ftp and set the default umask for ftp users.
         options listed in self.confoptions, then add them to the file.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @author bemalmbe
+        @return: self.rulesuccess
+        @rtype: bool
+        @author Breen Malmberg
         '''
 
         # defaults
@@ -400,6 +480,9 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def fixLinux(self):
         '''
+        run fix actions specific to linux systems
+
+        @author: Breen Malmberg
         '''
 
         try:
@@ -415,6 +498,9 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def fixMac(self):
         '''
+        run fix actions specific to mac os x systems
+
+        @author: Breen Malmberg
         '''
 
         macoptionslist = ['umask all 077',
@@ -503,6 +589,10 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def configureFTPD(self):
         '''
+        set the proper ftp configuration options
+        (logoptions, allowftpoptions)
+
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -567,6 +657,9 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def configureFTPUsers(self):
         '''
+        set the proper ftp user configuration options
+
+        @author: Breen Malmberg
         '''
 
         # defaults
@@ -621,6 +714,12 @@ of users allowed to access ftp and set the default umask for ftp users.
 ###############################################################################
     def searchList(self, searchterm, searchlist):
         '''
+        search a list of strings for the specified searchterm
+        if found, return True, else return False
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
         '''
 
         # defaults

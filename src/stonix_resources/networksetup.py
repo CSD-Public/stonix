@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -33,6 +33,12 @@ macOS (OS X) for use with stonix4mac.
 @change: 2017/09/23 ekkehard __init__ fix
 @change: 2017/10/04 ekkehard updateCurrentNetworkConfigurationDictionary fix
 @change: 2017/10/13 ekkehard re-factor updateCurrentNetworkConfigurationDictionary
+@change: 2018/02/06 ekkehard fix traceback
+@change: 2018/03/06 Roy Nielsen - Fixes including stripping variables
+                                  when acquiring data from commands,
+                                  and splitting on non-space values.
+                                  Also making sure commands run
+                                  correctly by Device rather than name.
 '''
 import re
 import types
@@ -442,8 +448,8 @@ class networksetup():
         '''
         success = False
         pLocationName = pLocationName.strip()
-        if pLocationName == "":
-            locationName = self.location.lower()
+        if pLocationName == "" or re.match("^\s+$", pLocationName):
+            locationName = self.location.lower().strip()
         else:
             locationName = pLocationName.lower()
         if 'wi-fi' in locationName:
@@ -505,8 +511,15 @@ class networksetup():
                         servicename = item
                     else:
                         servicename = servicename + " " + item
-                
+
                 if "ethernet" in servicename.lower():
+                    networktype = "ethernet"
+                elif "lan" in servicename.lower():
+                    #####
+                    # The belkin dongles LANL has chosen to use for Apple
+                    # laptops does not identify itself vi convention,
+                    # so this is the choice roy is making to indicate the
+                    # mapping between "Belkin USB-C LAN" and ethernet.
                     networktype = "ethernet"
                 elif "bluetooth" in servicename.lower():
                     networktype = "bluetooth"
@@ -538,12 +551,14 @@ class networksetup():
                             self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
 # update dictionary entry for network
                     self.logdispatch.log(LogPriority.DEBUG, "(servicename, enabled, networktype): (" + \
-                                         str(servicename) + ", " + str(networkenabled) + ", " + \
-                                         str(networktype) + ")")
+                                         str(servicename).strip() + ", " + str(networkenabled) + ", " + \
+                                         str(networktype).strip() + ")")
 # create an ordered list to look up later
                     orderkey = str(order).zfill(4)
                     self.nso[orderkey] = servicename.strip()
                     self.updateNetworkConfigurationDictionaryEntry(servicename.strip())
+
+        self.setNetworkServiceOrder()
 
         return success
 
@@ -555,7 +570,7 @@ class networksetup():
         newserviceonnexline = False
         newservice = False
         servicename = ""
-        noinfo = False
+        # noinfo = False
         for line in outputLines:
             lineprocessed = line.strip()
             if newserviceonnexline:
@@ -581,10 +596,17 @@ class networksetup():
                 servicename = ""
                 for item in linearray:
                     if servicename == "":
-                        servicename = item
+                        servicename = item.strip()
                     else:
-                        servicename = servicename + " " + item
+                        servicename = servicename + " " + item.strip()
                 if "ethernet" in servicename.lower():
+                    networktype = "ethernet"
+                elif "lan" in servicename.lower():
+                    #####
+                    # The belkin dongles LANL has chosen to use for Apple
+                    # laptops does not identify itself vi convention,
+                    # so this is the choice roy is making to indicate the
+                    # mapping between "Belkin USB-C LAN" and ethernet.
                     networktype = "ethernet"
                 elif "bluetooth" in servicename.lower():
                     networktype = "bluetooth"
@@ -780,9 +802,8 @@ class networksetup():
         #####
         # Find the interface that needs to be at the top of the self.nso order
         cmd = ["/sbin/route", "get", "default"]
-        
+
         self.ch.executeCommand(cmd)
-        
         defaultInterface = None
 
         for line in self.ch.getOutput():
@@ -828,8 +849,10 @@ class networksetup():
 
             if re.match("^$", line) or re.match("^\s+$", line):
                 if re.match("^%s$"%str(device), str(defaultInterface)):
-                    print device
-                    print defaultInterface
+
+                    self.logdispatch.log(LogPriority.DEBUG, device)
+                    self.logdispatch.log(LogPriority.DEBUG,  defaultInterface)
+
                     break
                 hardwarePort = ""
                 device = ""
@@ -840,8 +863,8 @@ class networksetup():
         newnso = {}
         i = 1
 
-        print str(self.nso)
-        print "hardware port: " + hardwarePort
+        self.logdispatch.log(LogPriority.DEBUG, str(self.nso))
+        self.logdispatch.log(LogPriority.DEBUG, "hardware port: " + hardwarePort)
 
         for key, value in sorted(self.nso.iteritems()):
             #print str(key) + " : " + str(value)
@@ -852,12 +875,12 @@ class networksetup():
                 orderkey = str(i).zfill(4)
                 newnso[orderkey] = value
                 i = i + 1
-                print str(newnso)
+                self.logdispatch.log(LogPriority.DEBUG, str(newnso))
         #print str(newnso)
         self.nso = newnso
-        print str(self.nso)
+        self.logdispatch.log(LogPriority.DEBUG, str(self.nso))
         for key, value in sorted(self.nso.iteritems()):
-            print str(key) + " : " + str(value)
+            self.logdispatch.log(LogPriority.DEBUG, str(key) + " : " + str(value))
 
         for item in self.ns: 
             if re.match("^%s$"%hardwarePort.strip(), self.ns[item]["name"]) and self.ns[item]["type"] is "unknown" and re.match("^en", defaultInterface):
@@ -963,6 +986,10 @@ class networksetup():
         @note: None
         @change: Breen Malmberg - 1/12/2017 - doc string edit; added debug logging;
                 default var init success to True; added code to update the Wi-Fi entry;
+        @change: Roy Nielsen - 3/6/2018 - Changed algo to look at 
+                                          'Device' rather than 'name'
+                                          when getting the airport power
+                                          status
 
         '''
         pKey = pKey.strip()
@@ -996,7 +1023,7 @@ class networksetup():
                 # added for disabling by device name 1/11/2017
                 if key == "Wi-Fi":
                     self.logdispatch.log(LogPriority.DEBUG, "Updating Wi-Fi device entry for: " + str(self.ns[key]["name"]))
-                    command = [self.nsc, "-getairportpower", self.ns[key]["name"]]
+                    command = [self.nsc, "-getairportpower", self.ns[key]["Device"]]
                     self.ch.executeCommand(command)
                     for line in self.ch.getOutput():
                         if re.search("Wi-Fi\s+Power.*On", line, re.IGNORECASE):
@@ -1018,7 +1045,8 @@ class networksetup():
                             self.ns[key]["enabled"] = False
 
             self.logdispatch.log(LogPriority.DEBUG, "Exiting networksetup.updateNetworkConfigurationDictionaryEntry() and returning success=" + str(success))
-
+        except KeyError:
+            self.logdispatch.log(LogPriority.DEBUG, "Key error...")
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise

@@ -2,7 +2,7 @@
 Created on Oct 18, 2012
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2012-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -46,6 +46,8 @@ that access the version variable to use this copy.
 @change: 2017/07/07 - ekkehard - incremented STONIXVERSION = '0.9.10'
 @change: 2017/10/10 - ekkehard - incremented STONIXVERSION = '0.9.13'
 @change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.14'
+@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.16'
+@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.17'
 '''
 
 FISMACAT = 'low'
@@ -57,7 +59,7 @@ FISMACAT = 'low'
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
 # Variable Type: String
-STONIXVERSION = '0.9.15'
+STONIXVERSION = '0.9.17'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.

@@ -477,7 +477,7 @@ This rule will not configure su on Debian distributions."
 
 <68>        "This rule sets the process daemon umask to 022 (0022) to prevent world writability/readability on the system. The settings file '/etc/sysconfig/init' contains settings which apply to all processes started at boot time. The system 'umask' must be set to at least 022, or daemon processes may create world-writable files. The more restrictive umask setting 027 protects files, including temporary files and log files, from unauthorized reading by unprivileged users on the system.  It is not recommended to use any value more restrictive than 027 because this could cause issues with the normal operation of the operating system."
 
-<48>        "This rule sets the default user umask to 027. The default value of 027 can be customised. Mac OS X will have the umask set to 022 because it a more restrictive setting will cause issues on Mac OS X. It is not recommended to use any value more restrictive than 027, under any circumstance, as this could interfere with normal/legitimate use of the system by users."
+<48>        "This rule sets the default user umask to 027. The default value of 027 can be customised. Mac OS X will have the umask set to 022 because it a more restrictive setting will cause issues on Mac OS X. It is not recommended to use any value more restrictive than 027, under any circumstance, as this could interfere with normal/legitimate use of the system by users. Please note that, on Mac OS X, you must reboot your machine after running this rule in fix mode in order for any changes made to take effect."
 
 <21>        "This rule sets the file system mount options for non-root, local partitions and file systems mounted on removable media, removable storage partitions, and temporary storage partitions such as /tmp and /dev/shm in order to help protect against malicious code being run on the system."
 
@@ -534,3 +534,7 @@ This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionali
 <227>        "This rule will use the 'diskutil repairPermissions' or 'repair_packages' utilities (respectively, depending on OS version) to ensure that each package (and its associated files) has the default ownership and access permissions assigned to it."
 
 <36>        "This rule will securely configure the 'Extended Internet Service Daemon' (xinetd) access control mechanism, if it is present. xinetd is an open-source service dispatcher daemon, which runs on many Unix-like systems and manages Internet-based connectivity. It offers a more secure alternative to the older inetd - which most modern Linux distributions have deprecated."
+
+<131>        "This rule configures user preferences to display the Bluetooth icon in the menu bar. This rule is optional."
+
+<85>        "This rule prevents users from logging into root directly through virtual console or tty connections. Users can still access root through non-tty connections or by escalating privileges using sudo."

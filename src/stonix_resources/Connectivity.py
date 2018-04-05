@@ -22,6 +22,7 @@
 #                                                                             #
 ###############################################################################
 """
+
 import re
 import ssl
 import socket
@@ -31,6 +32,7 @@ import urllib2
 
 #--- non-native python libraries in this source tree
 from logdispatcher import LogPriority
+from localize import PROXY
 
 
 class ConnectivityInvalidURL(Exception):
@@ -52,6 +54,7 @@ class Connectivity(object):
         Constructor
         """
         self.logger = logger
+        self.use_proxy = use_proxy
 
         ##########################
         # Make it so this will only work on the yellow.
@@ -90,47 +93,51 @@ class Connectivity(object):
 
     ############################################################
 
-    def is_site_available(self, site="", path=""): #, path):
-        """ This function retreives the status code of a website by requesting
-            HEAD data from the host. This means that it only requests the headers.
-            If the host cannot be reached or something else goes wrong, it returns
-            False.
-
-            This will only work if the self.set_no_proxy method is used before
-            this method is called.
+    def is_site_available(self, site="", path=""):
         """
-        retval = False
+        This function retrieves the status code of a web site by requesting
+        HEAD data from the host. This means that it only requests the headers.
+        If the host cannot be reached or something else goes wrong, it returns
+        False.
+
+        This will only work if the self.set_no_proxy method is used before
+        this method is called.
+
+        @param site: string; fqdn (domain); ex: http://www.google.com/
+        @param path: string; the rest of the URL; ex: docs/about
+        @return: retval
+        @rtype: bool
+        @author: ???
+        @change: 02/12/2018 - Breen Malmberg - added doc string decorators; proxy
+                will now be set for the test if the use_proxy argument in __init__ is
+                True.
+        """
+
+        retval = True
 
         try:
+
+            if self.use_proxy:
+                self.set_proxy()
+
             page = site + path
             req = urllib2.Request(page, headers={'User-Agent' : "Magic Browser"})
             req.add_header('User-agent', 'Firefox/31.5.0')
             request = urllib2.urlopen(req, timeout=3)
-            retval = True
-        except urllib2.URLError, err:
-            msg = "Error trying to get web page type: " + str(err)
-            """
-            ERROR - Not working in macOS Sierra
-            try:
-                self.logger.log(LogPriority.ERROR, msg)
-                if hasattr(err, 'code'):
-                    msg = "code - " + str(err.code)
-                    self.logger.log(LogPriority.ERROR, msg)
-            except socket.gaierror, err:
-                msg = "Can't connect to server, socket problem: " + str(err)
-                self.logger.log(LogPriority.DEBUG, msg)
-            except socket.herror, exerr:
-                msg = "Can't connect to server, socket problem: " + str(err)
-                self.logger.log(LogPriority.DEBUG, msg)
-            except socket.timeout, err:
-                msg = "Can't connect to server, socket problem: " + str(err)
-                self.logger.log(LogPriority.DEBUG, msg)
-            except Exception, err:
-                msg = "General Exception: Can't connect to server: " + str(err)
-                self.logger.log(LogPriority.DEBUG, msg)
-            """
-        else:
-            self.logger.log(LogPriority.DEBUG, "Got the right web page type.")
+            retcode = request.getcode()
+
+            # get the first digit of the return code
+            # if it is not in the 200 range, then an error has occurred
+            # (all http successful response codes are in the 2xx range)
+            idd = int(str(retcode)[:1])
+            if idd != 2:
+                self.logger.log(LogPriority.DEBUG, "Failed to reach specified page: " + str(page) + " with HTTP error code: " + str(retcode))
+
+            if retval:
+                self.logger.log(LogPriority.DEBUG, "Site is available.")
+
+        except Exception:
+            raise
 
         return retval
 
@@ -305,7 +312,6 @@ class Connectivity(object):
 
         return str(host), str(port), str(page)
 
-
     ###########################################################################
     
     def set_no_proxy(self):
@@ -314,9 +320,31 @@ class Connectivity(object):
         to create a "no_proxy" environment for python
     
         @author: Roy Nielsen
-    
         """
+
         proxy_handler = urllib2.ProxyHandler({})
+        opener = urllib2.build_opener(proxy_handler)
+        urllib2.install_opener(opener)
+
+    def set_proxy(self):
+        '''
+        This method configures the proxy for the outgoing connection based on the proxy
+        set in localize.py (PROXY)
+
+        @author: Breen Malmberg
+        '''
+
+        ptype = 'https'
+        psite = ''
+        pport = '8080'
+
+        sproxy = PROXY.split(':')
+        if len(sproxy) == 3:
+            ptype = sproxy[0]
+            psite = sproxy[1].strip('/')
+            pport = sproxy[2]
+
+        proxy_handler = urllib2.ProxyHandler({ptype : psite + ':' + pport})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
 

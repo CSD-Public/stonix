@@ -9,10 +9,8 @@ from __future__ import absolute_import
 import os
 import re
 import pty
-import sys
 import time
 import types
-import ctypes
 import select
 import termios
 import threading
@@ -23,12 +21,30 @@ from .loggers import CyLogger
 from .loggers import LogPriority as lp
 from .get_libc import getLibc
 
-def OSNotValidForRunWith(Exception):
+
+class OSNotValidForRunWith(BaseException):
     """
     Custom Exception
     """
     def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class NotACyLoggerError(BaseException):
+    """
+    Custom Exception
+    """
+    def __init__(self, *args, **kwargs):
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class SetCommandTypeError(BaseException):
+    """
+    Custom Exception
+    """
+    def __init__(self, *args, **kwargs):
+        BaseException.__init__(self, *args, **kwargs)
+
 
 class RunWith(object):
     """
@@ -57,49 +73,70 @@ class RunWith(object):
 
     @author: Roy Nielsen
     """
-    def __init__(self, logger=False):
-        self.logger = logger
+    def __init__(self, logger):
+        if isinstance(logger, CyLogger):
+            self.logger = logger
+        else:
+            raise NotACyLoggerError("Passed in value for logger" +
+                                    " is invalid, try again.")
         self.command = None
-        self.output = None
-        self.error = None
+        self.stdout = None
+        self.stderr = None
+        self.retcode = None
         self.module_version = '20160224.184019.673753'
-        self.returncode = None
         self.printcmd = None
         self.myshell = None
+        self.prompt = ""
+        self.environ = None
+        self.cfds = None
         #####
         # setting up to call ctypes to do a filesystem sync
         self.libc = getLibc()
 
-    def setCommand(self, command, env=False, myshell=False, close_fds=False):
+    def setCommand(self, command, env=None, myshell=None, close_fds=None):
         """
         initialize a command to run
 
         @author: Roy Nielsen
         """
-        if command:
-            self.command = command
         #####
         # Handle Popen's shell, or "myshell"...
-        if isinstance(command, list):
-            self.printcmd = " ".join(command)
+        if command and isinstance(command, list):
+            try:
+                self.printcmd = " ".join(command)
+                self.command = command
+                if myshell is None or not isinstance(myshell, bool):
+                    self.myshell = False
+                else:
+                    self.myshell = myshell
+            except TypeError:
+                raise SetCommandTypeError("Can only be passed a command " +
+                                          "string or a list only containing " +
+                                          "string elements for a command.")
+        elif command and isinstance(command, basestring):
             self.command = command
-        if isinstance(command, basestring) :
-            self.command = command
-            self.printcommand = command
-        if myshell and isinstance(myshell, bool):
-            self.myshell = myshell
+            self.printcmd = command
+            if myshell is None or not isinstance(myshell, bool):
+                self.myshell = True
+            else:
+                self.myshell = myshell
         else:
-            self.myshel = False
+            raise SetCommandTypeError("Command cannot be this type: " +
+                            str(type(command)))
+
+        self.logger.log(lp.DEBUG, "myshell: " + str(self.myshell))
+
         if env and isinstance(env, dict):
             self.environ = env
         else:
             self.environ = None
-        if close_fds and isinstance(close_fds, bool):
-            self.cfds = close_fds
-        else:
-            self.cfds = False
 
-    ############################################################################
+        if close_fds is None or not isinstance(close_fds, bool):
+            self.cfds = False
+        else:
+            self.cfds = close_fds
+
+    ###########################################################################
 
     def getStdout(self):
         """
@@ -107,9 +144,9 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        return self.output
+        return self.stdout
 
-    ############################################################################
+    ###########################################################################
 
     def getStderr(self):
         """
@@ -117,9 +154,9 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        return self.error
+        return self.stderr
 
-    ############################################################################
+    ###########################################################################
 
     def getReturnCode(self):
         """
@@ -127,9 +164,9 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        return self.returncode
+        return self.retcode
 
-    ############################################################################
+    ###########################################################################
 
     def getReturns(self):
         """
@@ -137,9 +174,9 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        return self.output, self.error, self.returncode
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
     def getNlogReturns(self):
         """
@@ -149,12 +186,12 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        self.logger.log(lp.INFO, "Output: " + str(self.output))
-        self.logger.log(lp.INFO, "Error: " + str(self.error))
-        self.logger.log(lp.INFO, "Return code: " + str(self.returncode))
-        return self.output, self.error, self.returncode
+        self.logger.log(lp.INFO, "Output: " + str(self.stdout))
+        self.logger.log(lp.INFO, "Error: " + str(self.stderr))
+        self.logger.log(lp.INFO, "Return code: " + str(self.retcode))
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
     def getNprintReturns(self):
         """
@@ -164,61 +201,82 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        print "Output: " + str(self.output)
-        print "Error: " + str(self.error)
-        print "Return code: " + str(self.returncode)
-        return self.output, self.error, self.returncode
+        print "Output: " + str(self.stdout)
+        print "Error: " + str(self.stderr)
+        print "Return code: " + str(self.retcode)
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
-    def communicate(self) :
+    def communicate(self, silent=True):
         """
         Use the subprocess module to execute a command, returning
         the output of the command
 
+        @param: silent - Whether or not to print the command as part of
+                         standard logging practices.  Silent = True to
+                         not print the command being run.  Silent = False
+                         to print the command.
+
         @author: Roy Nielsen
         """
-        self.output = ''
-        self.error = ''
-        self.returncode = 999
-        if self.command:
+        self.stdout = ''
+        self.stderr = ''
+        self.retcode = 999
+        if self.command and isinstance(silent, bool):
             try:
-                proc = Popen(self.command, stdout=PIPE, stderr=PIPE,
-                             shell=self.myshell, 
-                             env=self.environ,
-                             close_fds=self.cfds)
+                proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell, env=self.environ, close_fds=self.cfds)
+                self.stdout, self.stderr = proc.communicate()
+                self.retcode = proc.returncode
                 self.libc.sync()
-                self.output, self.error = proc.communicate()
-                self.libc.sync()
-            except Exception, err :
-                self.logger.log(lp.WARNING, "- Unexpected Exception: "  + \
-                           str(err)  + " command: " + self.printcmd)
-                self.logger.log(lp.WARNING, "stderr: " + str(self.error))
+            except Exception, err:
+                if not silent:
+                    self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
+                    self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
+                    self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
+                    self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
+                self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
                 raise err
-            else :
-                #self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
-                self.returncode = str(proc.returncode)
-                proc.stdout.close()
+            else:
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
+                self.logger.log(lp.DEBUG, "Command returned with error/returncode: " + str(self.retcode))
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
-        else :
-            self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
-            self.output = None
-            self.error = None
-            self.returncode = None
+                #####
+                # Lines below could reveal a password if it is passed as an
+                # argument to the command.  Could reveal in whatever stream
+                # the logger is set to log (syslog, console, etc, etc.
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                    self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
+                    self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
+                    self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
+        else:
+            self.logger.log(lp.WARNING,
+                            "Cannot run a command that way...")
+            self.stdout = None
+            self.stderr = None
+            self.retcode = None
 
-        return self.output, self.error, self.returncode
+        self.command = None
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
-    def wait(self) :
+    def wait(self, silent=True):
         """
         Use subprocess to call a command and wait until it is finished before
         moving on...
 
         @author: Roy Nielsen
         """
-        if self.command :
+
+        self.stdout = ''
+        self.stderr = ''
+        if self.command:
+
             try:
                 proc = Popen(self.command,
                              stdout=PIPE, stderr=PIPE,
@@ -227,45 +285,63 @@ class RunWith(object):
                              close_fds=self.cfds)
                 proc.wait()
                 for line in proc.stdout.readline():
-                    self.output = self.output + line
-                for line in proc.stderr.readline():
-                    self.error = self.error + line
+
+                    if line:
+                        self.stdout = self.stdout + str(line) + "\n"
+                if proc.stderr:
+                    for line in proc.stderr.readline():
+                        if line:
+                            self.stderr = self.stderr + str(line) + "\n"
+                else:
+                    self.stderr = ""
+                proc.wait()
+                self.retcode = proc.returncode
+                self.libc.sync()
             except Exception, err:
-                self.logger.log(lp.WARNING, "system_call_retval - Unexpected Exception: "  + \
-                           str(err)  + " command: " + str(self.printcmd))
+                if not silent:
+                    self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
+                self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
+
                 raise err
-            else :
-                self.logger.log(lp.DEBUG, str(self.printcmd) + \
-                            " Returned with error/returncode: " + \
-                            str(proc.returncode))
-                proc.stdout.close()
+            else:
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
+                self.logger.log(lp.DEBUG, "Command returned with error/returncode: " + str(self.retcode))
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
-                self.output = str(proc.stdout)
-                self.error = str(proc.stderr)
-                self.returncode = str(proc.returncode)
-        else :
-            self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
+
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                    self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
+                    self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
+                    self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
+        else:
+            self.logger.log(lp.WARNING,
+                            "Cannot run a command that is empty...")
             self.stdout = None
             self.stderr = None
-            self.returncode = None
+            self.retcode = None
 
-    ############################################################################
+        self.command = None
+        return self.stdout, self.stderr, self.retcode
 
-    def waitNpassThruStdout(self, chk_string=None, respawn=False):
+    ###########################################################################
+
+    def waitNpassThruStdout(self, chk_string=None, respawn=False, silent=True):
         """
         Use the subprocess module to execute a command, returning
         the output of the command
-        
+
         Author: Roy Nielsen
         """
-        self.output = ''
-        self.error = ''
+        self.stdout = ''
+        self.stderr = ''
         self.retcode = 999
         if self.command:
             try:
                 proc = Popen(self.command, stdout=PIPE, stderr=PIPE,
-                             shell=self.myshell, 
+                             shell=self.myshell,
                              env=self.environ,
                              close_fds=self.cfds)
                 if proc:
@@ -273,76 +349,135 @@ class RunWith(object):
                         #####
                         # process stdout
                         myout = proc.stdout.readline()
-                        if myout == '' and proc.poll() != None: 
+                        if myout == '' and proc.poll() is not None:
                             break
-                        tmpline = myout
-                        self.output += tmpline
-                        #####
-                        # process stderr
-                        try:
-                            myerr = proc.stderr.readline()
-                            tmperr = myerr
-                            self.error += tmperr
-                        except:
-                            pass
+                        tmpline = myout.strip()
+                        self.stdout += tmpline + "\n"
 
-                        self.logger.log(lp.DEBUG, str(tmpline))
-        
-                        if isinstance(chk_string, str) :
+                        if tmpline and not silent:
+                            self.logger.log(lp.DEBUG, str(tmpline))
+
+                        if isinstance(chk_string, str):
                             if not chk_string:
                                 continue
                             else:
                                 if re.search(chk_string, tmpline):
-                                    proc.stdout.close()
+                                    # proc.stdout.close()
+                                    # proc.stderr.close()
                                     if respawn:
                                         pass
                                     else:
-                                        self.logger.log(lp.INFO, "chk_string found... exiting process.")
+                                        self.logger.log(lp.INFO,
+                                                        "chk_string found" +
+                                                        "... exiting process.")
                                     break
-                        elif isinstance(chk_string, list) :
+
+                        if isinstance(chk_string, list):
                             if not chk_string:
                                 continue
                             else:
-                                for mystring in chk_string :
-                                    if chk_string(chk_string, tmpline):
-                                        proc.stdout.close()
+                                found = False
+                                for mystring in chk_string:
+                                    if chk_string(mystring, tmpline):
+                                        # proc.stdout.close()
+                                        # proc.stderr.close()
                                         if respawn:
                                             pass
                                         else:
-                                            self.logger.log(lp.INFO, "chk_string found... exiting process.")
+                                            self.logger.log(lp.INFO,
+                                                            "chk_string " +
+                                                            "found... " +
+                                                            "exiting process.")
+                                            found = True
                                             break
-                                
-                proc.wait()
-                proc.stdout.close()
 
+                                if found:
+                                    break
+
+                    while True:
+                        myerr = proc.stderr.readline()
+                        if myerr == '' and proc.poll() is not None:
+                            break
+                        tmpline = myerr.strip()
+                        self.stderr += tmpline + "\n"
+
+                        if tmpline and not silent:
+                            self.logger.log(lp.DEBUG, str(tmpline))
+
+                        if isinstance(chk_string, str):
+                            if not chk_string:
+                                continue
+                            else:
+                                if re.search(chk_string, tmpline):
+                                    # proc.stdout.close()
+                                    # proc.stderr.close()
+                                    if respawn:
+                                        pass
+                                    else:
+                                        self.logger.log(lp.INFO,
+                                                        "chk_string found" +
+                                                        "... exiting process.")
+                                    break
+
+                        if isinstance(chk_string, list):
+                            if not chk_string:
+                                continue
+                            else:
+                                found = False
+                                for mystring in chk_string:
+                                    if chk_string(mystring, tmpline):
+                                        # proc.stdout.close()
+                                        # proc.stderr.close()
+                                        if respawn:
+                                            pass
+                                        else:
+                                            self.logger.log(lp.INFO,
+                                                            "chk_string " +
+                                                            "found... " +
+                                                            "exiting process.")
+                                            found = True
+                                            break
+                                if found:
+                                    break
+
+                proc.wait()
+                # proc.stdout.close()
+                # proc.stderr.close()
+                self.retcode = proc.returncode
                 self.libc.sync()
 
             except Exception, err:
-                trace = traceback.format_exc()
-                self.logger.log(lp.WARNING, "- Unexpected Exception: "  + \
-                           str(err)  + " command: " + self.printcmd)
-                self.logger.log(lp.WARNING, "stderr: " + str(self.error))
-                self.logger.log(lp.WARNING, str(trace))
-                raise
-            else :
-                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error/returncode: " + str(proc.returncode))
-                self.logger.log(lp.DEBUG, self.printcmd + " Returned with output: " + str(self.output))
-                self.logger.log(lp.DEBUG, self.printcmd + " Returned with error: " + str(self.error))
-                self.retcode = str(proc.returncode)
-                proc.stdout.close()
+
+                if not silent:
+                    self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
+                self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
+                raise err
+            else:
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
+
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
-        else :
-            self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
-            self.output = None
-            self.error = None
+                self.retcode = proc.returncode
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
+                self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
+                self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
+                self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
+        else:
+            self.logger.log(lp.WARNING,
+                            "Cannot run a command that is empty...")
+            self.stdout = None
+            self.stderr = None
             self.retcode = None
 
-        return self.output, self.error, self.retcode
+        self.command = None
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
-    def killProc(self, proc, timeout) :
+    def killProc(self, proc, timeout):
         """
         Support function for the "runWithTimeout" function below
 
@@ -351,9 +486,9 @@ class RunWith(object):
         timeout["value"] = True
         proc.kill()
 
-    ############################################################################
+    ###########################################################################
 
-    def timeout(self, timout_sec) :
+    def timeout(self, timout_sec, silent=True):
         """
         Run a command with a timeout - return:
         Returncode of the process
@@ -369,36 +504,49 @@ class RunWith(object):
                 proc = Popen(self.command,
                              stdout=PIPE, stderr=PIPE, shell=self.myshell)
 
-                timeout = {"value" : False}
+                timeout = {"value": False}
                 timer = threading.Timer(timout_sec, self.killProc,
                                         [proc, timeout])
                 timer.start()
-                self.output, self.error = proc.communicate()
+                self.stdout, self.stderr = proc.communicate()
                 timer.cancel()
-                self.returncode = proc.returncode
+                self.retcode = proc.returncode
             except Exception, err:
-                self.logger.log(lp.WARNING, "system_call_retval - Unexpected " + \
-                            "Exception: "  + str(err)  + \
-                            " command: " + self.printcmd)
+                if not silent:
+                    self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
+                self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
                 raise err
-            else :
-                self.logger.log(lp.DEBUG, self.printcmd + \
-                            " Returned with error/returncode: " + \
-                            str(proc.returncode))
+            else:
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
+                self.stdout = proc.stdout
+                self.stderr = proc.stderr
+                self.retcode = proc.returncode
+                self.libc.sync()
                 proc.stdout.close()
+                proc.stderr.close()
             finally:
-                self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
-        else :
-            self.logger.log(lp.WARNING, "Cannot run a command that is empty...")
-            self.output = None
-            self.error = None
-            self.returncode = None
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Done with command: " +
+                                    str(self.printcmd))
+                    self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
+                    self.logger.log(lp.DEBUG, "stderr: " + str(self.stderr))
+                    self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
+        else:
+            self.logger.log(lp.WARNING,
+                            "Cannot run a command that is empty...")
+            self.stdout = None
+            self.stderr = None
+            self.retcode = None
 
-        return timeout["value"]
+        self.command = None
+        return self.stdout, self.stderr, self.retcode, timeout["value"]
 
-    ############################################################################
+    ###########################################################################
 
-    def runAs(self, user="", password="") :
+    def runAs(self, user="", password="", silent=True):
         """
         Use pexpect to run "su" to run a command as another user...
 
@@ -406,28 +554,36 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
+
+        self.stdout = ""
+        self.stderr = ""
+        self.retcode = 999
+        # pretcode = 0
+
         if re.match("^\s*$", user) or \
            re.match("^\s*$", password) or \
-           not self.command :
+           not self.command:
             self.logger.log(lp.WARNING, "Cannot pass in empty parameters...")
             self.logger.log(lp.WARNING, "user = \"" + str(user) + "\"")
             self.logger.log(lp.WARNING, "check password...")
-            self.logger.log(lp.WARNING, "command = \"" + str(self.command) + "\"")
-            return(255)
-        else :
+            if not silent:
+                self.logger.log(lp.WARNING,
+                                "command = \"" + str(self.command) + "\"")
+            return 255
+        else:
             output = ""
             internal_command = ["/usr/bin/su", "-", str(user), "-c"]
 
-            if isinstance(self.command, list) :
+
+            if isinstance(self.command, list):
                 internal_command.append(" ".join(self.command))
-                #log_message("Trying to execute: \"" + \
-                #            " ".join(internal_command) + "\"", \
-                #            "verbose", message_level)
-            elif isinstance(self.command, basestring) :
-                internal_command.append(self.command)
-                #log_message("Trying to execute: \"" + \
-                #            str(internal_command) + "\"", \
-                #            "verbose", message_level)
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Trying to execute: \"" +
+                                    " ".join(internal_command) + "\"")
+            elif isinstance(self.command, basestring):
+                internal_command += self.command
+                if not silent:
+                    self.logger.log(lp.DEBUG, "Trying to execute: \"" +
 
             (master, slave) = pty.openpty()
 
@@ -437,45 +593,72 @@ class RunWith(object):
 
             prompt = os.read(master, 10)
 
-            if re.match("^Password:", str(prompt)) :
+            if re.match("^Password:", str(prompt)):
                 os.write(master, password + "\n")
                 line = os.read(master, 512)
                 output = output + line
-                while True :
+                while True:
                     #####
                     # timeout of 0 means "poll"
-                    r,w,e = select.select([master], [], [], 0) 
-                    if r :
+                    ready, _, _ = select.select([master], [], [], 0)
+                    if ready:
                         line = os.read(master, 512)
                         #####
-                        # Warning, uncomment at your own risk - several programs
-                        # print empty lines that will cause this to break and
-                        # the output will be all goofed up.
-                        #if not line :
+                        # Warning, uncomment at your own risk - several
+                        # programs print empty lines that will cause this to
+                        # break and the output will be all goofed up.
+                        # if not line :
                         #    break
-                        #print output.rstrip()
+                        # print output.rstrip()
                         output = output + line
-                    elif proc.poll() is not None :
+                    elif proc.poll() is not None:
+                        break
+                os.close(master)
+                os.close(slave)
+                self.libc.sync()
+                proc.wait()
+                self.libc.sync()
+                self.stdout = proc.stdout
+                self.stderr = proc.stderr
+                self.retcode = proc.returncode
+            else:
+                output = prompt
+                while True:
+                    #####
+                    # timeout of 0 means "poll"
+                    ready, _, _ = select.select([master], [], [], 0)
+                    if ready:
+                        line = os.read(master, 512)
+                        #####
+                        # Warning, uncomment at your own risk - several
+                        # programs print empty lines that will cause this to
+                        # break and the output will be all goofed up.
+                        # if not line :
+                        #    break
+                        # print output.rstrip()
+                        output = output + line
+                    elif proc.poll() is not None:
+
                         break
                 os.close(master)
                 os.close(slave)
                 proc.wait()
-                self.output = proc.stdout
-                self.error = proc.stderr
-                self.returncode = proc.returncode
-            else:
-                self.output = None
-                self.error = None
-                self.returncode = None
-            #print output.strip()
+
+                self.stdout = output
+                self.stderr = str(proc.stderr)
+                self.retcode = proc.returncode
             output = output.strip()
-            #log_message("Leaving runAs with: \"" + str(output) + "\"",
-            #            "debug", message_level)
-            return output, self.error, self.returncode
+            if not silent:
+                self.logger.log(lp.DEBUG, "retcode: " + str(self.stdout))
+                self.logger.log(lp.DEBUG, "retcode: " + str(self.stderr))
+                self.logger.log(lp.DEBUG, "retcode: " + str(self.retcode))
 
-    ############################################################################
+        self.command = None
+        return self.stdout, self.stderr, self.retcode
 
-    def liftDown(self, user="", target_dir="") :
+    ###########################################################################
+
+    def liftDown(self, user="", target_dir="", silent=True):
         """
         Use the lift (elevator) to execute a command from privileged mode
         to a user's context with that user's uid.  Does not require a password.
@@ -485,59 +668,58 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
-        success = False
-        self.output = ""
-        self.error = ""
-        self.returncode = 999
-        if target_dir:
-            return_dir = os.getcwd()
-            os.chdir(target_dir)
-
+        self.stdout = ""
+        self.stderr = ""
+        self.retcode = 999
         user = user.strip()
 
         if os.getuid() != 0:
             self.logger.log("This can only run if running in privileged mode.")
-            return(256)
+            return 256
+
+        if isinstance(target_dir, basestring) and target_dir:
+            return_dir = os.getcwd()
+            if os.path.exists(target_dir):
+                os.chdir(target_dir)
+
         if re.match("^\s*$", user) or not self.command:
             self.logger.log(lp.WARNING, "Cannot pass in empty parameters...")
-            self.logger.log(lp.WARNING, "user = \"" + str(user) + "\"")
-            self.logger.log(lp.WARNING, "command = \"" + str(self.command) + "\"")
-            return(255)
-        else :
-            output = ""
+            self.logger.log(lp.WARNING, "user = " + str(user))
+            if not silent:
+                self.logger.log(lp.WARNING,
+                                "command = \"" + str(self.command) + "\"")
+            return 255
+        else:
             internal_command = ["/usr/bin/su", "-", str(user), "-c"]
 
-            if isinstance(self.command, list) :
+            if isinstance(self.command, list):
                 cmd = []
                 for i in range(len(self.command)):
                     try:
                         cmd.append(str(self.command[i].decode('utf-8')))
-                    except UnicodeDecodeError :
+                    except UnicodeDecodeError:
                         cmd.append(str(self.command[i]))
 
                 internal_command.append(str(" ".join(cmd)))
-                #self.logger.log(lp.ERROR, "cmd: " + str(internal_command))
-            elif isinstance(self.command, basestring) :
+            elif isinstance(self.command, basestring):
                 internal_command.append(self.command)
-                #self.logger.log(lp.ERROR, "cmd: " + str(internal_command))
 
         self.setCommand(internal_command)
-        output, error, returncode = self.communicate()
-
-        if not error:
-            success = True
-        for line in output.split('\n'):
-            self.logger.log(lp.DEBUG, "out: " + str(line))
-        for line in error.split('\n'):
-            self.logger.log(lp.DEBUG, "err: " + str(line))
-        self.logger.log(lp.DEBUG, "out: " + str(returncode))
+        self.stdout, self.stderr, self.retcode = self.communicate()
+        if not silent:
+            for line in self.stdout.split('\n'):
+                self.logger.log(lp.DEBUG, "out: " + str(line))
+            for line in self.err.split('\n'):
+                self.logger.log(lp.DEBUG, "err: " + str(line))
+            self.logger.log(lp.DEBUG, "out: " + str(self.retcode))
 
         if target_dir:
             os.chdir(return_dir)
 
-        return output, error, returncode
+        self.command = None
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
     def getecho (self, fileDescriptor):
         """This returns the terminal echo mode. This returns True if echo is
@@ -551,7 +733,7 @@ class RunWith(object):
             return True
         return False
 
-    ############################################################################
+    ###########################################################################
 
     def waitnoecho (self, fileDescriptor, timeout=3):
         """This waits until the terminal ECHO flag is set False. This returns
@@ -580,9 +762,9 @@ class RunWith(object):
                 timeout = end_time - time.time()
             time.sleep(0.1)
 
-    ############################################################################
+    ###########################################################################
 
-    def runAsWithSudo(self, user="", password="") :
+    def runAsWithSudo(self, user="", password="", silent=True) :
         """
         Use pty method to run "su" to run a command as another user...
 
@@ -595,43 +777,47 @@ class RunWith(object):
         self.logger.log(lp.DEBUG, "\tcmd : \"" + str(self.command) + "\"")
         if re.match("^\s+$", user) or re.match("^\s+$", password) or \
            not user or not password or \
-           not self.command :
+           not self.command:
             self.logger.log(lp.WARNING, "Cannot pass in empty parameters...")
             self.logger.log(lp.WARNING, "user = \"" + str(user) + "\"")
             self.logger.log(lp.WARNING, "check password...")
-            self.logger.log(lp.WARNING, "command = \"" + str(self.command) + "\"")
-            return(255)
-        else :
+            if not silent:
+                self.logger.log(lp.WARNING, "command: " + str(self.command))
+            return 255
+        else:
             output = ""
 
             internal_command = ["/usr/bin/su", str("-m"),
                                 str(user).strip(), str("-c")]
 
-            if isinstance(self.command, list) :
+            if isinstance(self.command, list):
                 cmd = []
                 for i in range(len(self.command)):
                     try:
                         cmd.append(str(self.command[i].decode('utf-8')))
-                    except UnicodeDecodeError :
+                    except UnicodeDecodeError:
                         cmd.append(str(self.command[i]))
 
-                internal_command.append(str("/usr/bin/sudo -S -s '" + \
+                internal_command.append(str("/usr/bin/sudo -S -s '" +
                                             " ".join(cmd) + "'"))
             elif isinstance(self.command, basestring):
                 try:
-                    internal_command.append(str("/usr/bin/sudo -E -S -s " + \
-                                                "'" + \
-                                                str(self.command.decode('utf-8')) + \
+                    internal_command.append(str("/usr/bin/sudo -E -S -s " +
+                                                "'" +
+                                                str(self.command.decode('utf-8')) +
                                                 "'"))
                 except UnicodeDecodeError:
-                    internal_command.append(str("/usr/bin/sudo -E -S -s " + \
-                                                "'" + \
+                    internal_command.append(str("/usr/bin/sudo -E -S -s " +
+                                                "'" +
                                                 str(self.command) + "'"))
 
             try:
                 (master, slave) = pty.openpty()
             except Exception, err:
-                self.logger.log(lp.WARNING, "Error trying to open pty: " + str(err))
+                self.logger.log(lp.WARNING, "Error trying to open pty: " +
+                                str(err))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
                 raise err
             else:
                 try:
@@ -639,15 +825,18 @@ class RunWith(object):
                                  stdin=slave, stdout=slave, stderr=slave,
                                  close_fds=True)
                 except Exception, err:
-                    self.logger.log(lp.WARNING, "Error opening process to pty: " + \
-                                str(err))
+                    self.logger.log(lp.WARNING,
+                                    "Error opening process to pty: " +
+                                    str(err))
+                    self.logger.log(lp.WARNING, traceback.format_exc())
+                    self.logger.log(lp.WARNING, str(err))
                     raise err
                 else:
                     #####
                     # Catch the su password prompt
                     # prompt = os.read(master, 512)
                     self.waitnoecho(master, 3)
-                    prompt = os.read(master, 512)
+                    self.prompt = os.read(master, 512)
 
                     #####
                     # pass in the password
@@ -655,7 +844,7 @@ class RunWith(object):
 
                     #####
                     # catch the password
-                    prompt = os.read(master, 512)
+                    self.prompt = os.read(master, 512)
 
                     #####
                     # Wait for the next password prompt
@@ -663,7 +852,7 @@ class RunWith(object):
 
                     #####
                     # catch the password prompt
-                    prompt = os.read(master, 512)
+                    self.prompt = os.read(master, 512)
 
                     #####
                     # Enter the sudo password
@@ -673,43 +862,42 @@ class RunWith(object):
                     # Catch the password
                     os.read(master, 512)
 
-                    #output = tmp + output
-                    while True :
+                    # output = tmp + output
+                    while True:
                         #####
                         # timeout of 0 means "poll"
-                        r,w,e = select.select([master], [], [], 0)
-                        if r :
+                        ready, _, _ = select.select([master], [], [], 0)
+                        if ready:
                             line = os.read(master, 512)
                             #####
                             # Warning, uncomment at your own risk - several
                             # programs print empty lines that will cause this
                             # to break and the output will be all goofed up.
-                            #if not line :
+                            # if not line :
                             #    break
-                            #print output.rstrip()
+                            # print output.rstrip()
                             output = output + line
-                        elif proc.poll() is not None :
+                        elif proc.poll() is not None:
                             break
-                        #print output.strip()
+                        # print output.strip()
                     os.close(master)
                     os.close(slave)
+                    self.libc.sync()
                     proc.wait()
-                    self.output = proc.stdout
-                    self.error = proc.stderr
-                    self.returncode = proc.returncode
-                    #print output.strip()
-            #output = output.strip()
-            #####
-            # UNCOMMENT ONLY WHEN IN DEVELOPMENT AND DEBUGGING OR YOU MAY REVEAL
-            # MORE THAN YOU WANT TO IN THE LOGS!!!
-            self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
-                            str(self.output) + "\"\n\n")
-            #print "\n\nLeaving runAs with Sudo: \"" + str(output) + "\"\n\n"
-            return output
+                    self.libc.sync()
+                    self.stdout = proc.stdout
+                    self.stderr = proc.stderr
+                    self.retcode = proc.returncode
+                    # print output.strip()
+            if not silent:
+                self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" +
+                                str(self.output) + "\"\n\n")
+        self.command = None
+        return self.stdout, self.stderr, self.retcode
 
-    ############################################################################
+    ###########################################################################
 
-    def runWithSudo(self, password="") :
+    def runWithSudo(self, password="", silent=True) :
         """
         Use pty method to run "sudo" to run a command with elevated privilege.
 
@@ -718,42 +906,50 @@ class RunWith(object):
         @author: Roy Nielsen
         """
         self.logger.log(lp.DEBUG, "Starting runWithSudo: ")
-        self.logger.log(lp.DEBUG, "\tcmd : \"" + str(self.command) + "\"")
-        if re.match("^\s+$", password) or not password or \
-           not self.command :
+        self.logger.log(lp.DEBUG, "\tcmd : " + str(self.command))
+        if re.match("^\s+$", password) or \
+           not password or \
+           not self.command:
             self.logger.log(lp.WARNING, "Cannot pass in empty parameters...")
             self.logger.log(lp.WARNING, "check password...")
-            self.logger.log(lp.WARNING, "command = \"" + str(self.command) + "\"")
+            if not silent:
+                self.logger.log(lp.WARNING, "command: " + str(self.command))
             return(255)
-        else :
+        else:
             output = ""
             cmd = ["/usr/bin/sudo", "-S", "-s"]
 
-            if isinstance(self.command, list) :
+            if isinstance(self.command, list):
                 cmd = cmd + [" ".join(self.command)]
 
-            elif isinstance(self.command, basestring) :
+            elif isinstance(self.command, basestring):
                 cmd = cmd + [self.command]
 
             try:
                 (master, slave) = pty.openpty()
             except Exception, err:
-                self.logger.log(lp.WARNING, "Error trying to open pty: " + str(err))
+                self.logger.log(lp.WARNING, "Error trying to open pty: " +
+                                str(err))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
                 raise err
             else:
                 try:
                     proc = Popen(cmd, stdin=slave, stdout=slave, stderr=slave,
                                  close_fds=True)
                 except Exception, err:
-                    self.logger.log(lp.WARNING, "Error opening process to pty: " + \
-                                str(err))
+                    self.logger.log(lp.WARNING,
+                                    "Error opening process to pty: " +
+                                    str(err))
+                    self.logger.log(lp.WARNING, traceback.format_exc())
+                    self.logger.log(lp.WARNING, str(err))
                     raise err
                 else:
                     #####
                     # Catch the sudo password prompt
                     # prompt = os.read(master, 512)
                     self.waitnoecho(master, 3)
-                    prompt = os.read(master, 512)
+                    self.prompt = os.read(master, 512)
 
                     #####
                     # Enter the sudo password
@@ -763,43 +959,45 @@ class RunWith(object):
                     # Catch the password
                     os.read(master, 512)
 
-                    #output = tmp + output
-                    while True :
+                    # output = tmp + output
+                    while True:
                         #####
                         # timeout of 0 means "poll"
-                        r,w,e = select.select([master], [], [], 0)
-                        if r :
+                        ready, _, _ = select.select([master], [], [], 0)
+                        if ready:
                             line = os.read(master, 512)
                             #####
                             # Warning, uncomment at your own risk - several
                             # programs print empty lines that will cause this
                             # to break and the output will be all goofed up.
-                            #if not line :
+                            # if not line :
                             #    break
-                            #print output.rstrip()
+                            # print output.rstrip()
                             output = output + line
-                        elif proc.poll() is not None :
+                        elif proc.poll() is not None:
                             break
-                        #print output.strip()
+                        # print output.strip()
                     os.close(master)
                     os.close(slave)
+                    self.libc.sync()
                     proc.wait()
-                    self.output = output
-                    self.error = proc.stderr
-                    self.returncode = proc.returncode
+                    self.libc.sync()
+                    self.stdout = output
+                    self.stderr = proc.stderr
+                    self.retcode = proc.returncode
                     #print output.strip()
             #output = output.strip()
-            #####
-            # UNCOMMENT ONLY WHEN IN DEVELOPMENT AND DEBUGGING OR YOU MAY REVEAL
-            # MORE THAN YOU WANT TO IN THE LOGS!!!
-            #self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
-            #                str(output) + "\"\n" + str(self.output) + "\n")
-            #print "\n\nLeaving runAs with Sudo: \"" + str(output) + "\"\n\n"
+            if not silent:
+                #####
+                # ONLY USE WHEN IN DEVELOPMENT AND DEBUGGING OR YOU MAY
+                # REVEAL MORE THAN YOU WANT TO IN THE LOGS!!!
+                self.logger.log(lp.DEBUG, "\n\nLeaving runAs with Sudo: \"" + \
+                                str(output) + "\"\n" + str(self.output) + "\n")
             return output
 
 ##############################################################################
 
-class RunThread(threading.Thread) :
+class RunThread(threading.Thread):
     """
     Use a thread & subprocess.Popen to run something
 
@@ -812,7 +1010,9 @@ class RunThread(threading.Thread) :
 
     @author: Roy Nielsen
     """
-    def __init__(self, command=[], logger=False) :
+
+    def __init__(self, command, logger, myshell=False):
+
         """
         Initialization method
         """
@@ -822,53 +1022,58 @@ class RunThread(threading.Thread) :
         self.reterr = None
         threading.Thread.__init__(self)
 
-        if isinstance(self.command, types.ListType) :
+        if isinstance(self.command, types.ListType):
+
             self.shell = True
             self.printcmd = " ".join(self.command)
-        if isinstance(self.command, types.StringTypes) :
+        if isinstance(self.command, types.StringTypes):
             self.shell = False
             self.printcmd = self.command
 
-        if not isinstance(logger, (bool, CyLogger)):
-            self.logger = CyLogger()
-        else:
+        if isinstance(logger, CyLogger):
+
             self.logger = logger
+        else:
+            raise NotACyLoggerError("Passed in value for logger " +
+                                    "is invalid, try again.")
 
         self.logger.log(lp.INFO, "Initialized runThread...")
 
     ##########################################################################
 
     def run(self):
-        if self.command :
-            try :
+        if self.command:
+            try:
                 p = Popen(self.command, stdout=PIPE,
                                         stderr=PIPE,
                                         shell=self.shell)
-            except Exception, err :
-                self.logger.log(lp.WARNING, "Exception trying to open: " + \
-                            str(self.printcmd))
-                self.logger.log(lp.WARNING, "Associated exception: " + str(err))
+
+                self.retout, self.reterr = p.communicate()
+                self.logger.log(lp.WARNING, "Finished \"run\" of: " +
+                                str(self.command))
+            except Exception, err:
+                self.logger.log(lp.WARNING, "Exception trying to open: " +
+                                str(self.command))
+                self.logger.log(lp.WARNING, traceback.format_exc())
+                self.logger.log(lp.WARNING, str(err))
+
                 raise err
-            else :
+            else:
                 try:
                     self.retout, self.reterr = p.communicate()
-                except Exception, err :
-                    self.logger.log(lp.WARNING, "Exception trying to open: " + \
-                               str(self.printcmd))
-                    self.logger.log(lp.WARNING, "Associated exception: " + str(err))
+                except Exception, err:
+                    self.logger.log(lp.WARNING, "Exception trying to open: " +
+                                    str(self.printcmd))
+                    self.logger.log(lp.WARNING, "Associated exception: " +
+                                    str(err))
                     raise err
-                else :
-                    #logMessage("Return values: ", "debug", self.message_level)
-                    #logMessage("retout: " + str(self.retout),
-                    #           "debug", self.message_level)
-                    #logMessage("reterr: " + str(self.reterr),
-                    #           "debug", self.message_level)
-                    self.logger.log(lp.WARNING, "Finished \"run\" of: " + \
-                                str(self.printcmd))
+                else:
+                    self.logger.log(lp.WARNING, "Finished \"run\" of: " +
+                                    str(self.printcmd))
 
     ##########################################################################
 
-    def getStdout(self) :
+    def getStdout(self):
         """
         Getter for standard output
 
@@ -879,7 +1084,7 @@ class RunThread(threading.Thread) :
 
     ##########################################################################
 
-    def getStderr(self) :
+    def getStderr(self):
         """
         Getter for standard err
 
@@ -890,7 +1095,8 @@ class RunThread(threading.Thread) :
 
 ##############################################################################
 
-def runMyThreadCommand(cmd=[], logger=False) :
+def runMyThreadCommand(cmd, logger, myshell=False):
+
     """
     Use the RunThread class to get the stdout and stderr of a command
 
@@ -898,15 +1104,21 @@ def runMyThreadCommand(cmd=[], logger=False) :
     """
     retval = None
     reterr = None
+    if not isinstance(logger, CyLogger):
+        raise NotACyLoggerError("Passed in value for logger is "
+                                "invalid, try again.")
     print str(cmd)
     print str(logger)
-    if cmd and logger :
-        run_thread = RunThread(cmd, logger)
+
+    if cmd and logger:
+        run_thread = RunThread(cmd, logger, myshell)
+
         run_thread.start()
+        # run_thread.run()
         run_thread.join()
         retval = run_thread.getStdout()
         reterr = run_thread.getStderr()
-    else :
+    else:
         logger.log(lp.INFO, "Invalid parameters, please report this as a bug.")
 
     return retval, reterr

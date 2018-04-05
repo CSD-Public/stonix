@@ -34,6 +34,7 @@ installed.
         two parameters in each of those methods in the doc strings as well
 @author: 2017-23-2017 rsn modified/simplified to second generation 
         service helper with **kwargs concept
+@change: 2018/02/27 bgonz12 Fixed Traceback caused by using self.logger
 '''
 import os
 import re
@@ -49,6 +50,7 @@ import SHlaunchd
 import SHlaunchdTwo
 
 from logdispatcher import LogPriority
+from get_libc import getLibc
 
 
 class ServiceHelper(object):
@@ -69,10 +71,13 @@ class ServiceHelper(object):
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
 
-        @param environment: STONIX environment object
-        @param logdispatcher: STONIX logging object
+        @param environ: environment object reference
+        @param logger: logdispatcher object reference
         @author: ???
         @change: Breen Malmberg - 1/24/2017 - doc string edit
+        @change: Breen Malmberg - 2/27/2018 - added libc object instantiation and
+                call to libc function .sync() to fix an issue with mac os x cacheing
+                related to diable and enable service functions
         '''
         self.environ = environ
         self.logdispatcher = logger
@@ -82,6 +87,13 @@ class ServiceHelper(object):
         self.secondary = None
         self.service = ""
         self.servicename = ""
+
+        try:
+            self.lc = getLibc()
+        except Exception as err:
+            self.logdispatcher.log(LogPriority.ERROR, "Unable to instantiate libc object reference, through getLibc helper\n" + str(err))
+            raise
+
         # Red Hat, CentOS, SUSE
         if os.path.exists('/sbin/chkconfig'):
             ischkconfig = True
@@ -406,6 +418,15 @@ class ServiceHelper(object):
                                '-- END DISABLE(' + service + \
                                ') = ' + str(disabled))
 
+        # sync OS cache to filesystem (force write)
+        # this was added to eliminate the delay on mac between
+        # issuing the service disable command and when the service
+        # actually gets disabled
+        try:
+            self.lc.sync()
+        except Exception:
+            raise
+
         return disabled
 
     #----------------------------------------------------------------------
@@ -467,6 +488,16 @@ class ServiceHelper(object):
         self.logdispatcher.log(LogPriority.DEBUG,
                                '-- END ENABLE(' + service + \
                                ') = ' + str(enabledSuccess))
+
+        # sync OS cache to filesystem (force write)
+        # this was added to eliminate the delay on mac between
+        # issuing the service enable command and when the service
+        # actually gets enabled
+        try:
+            self.lc.sync()
+        except Exception:
+            raise
+
         return enabledSuccess
 
     #----------------------------------------------------------------------

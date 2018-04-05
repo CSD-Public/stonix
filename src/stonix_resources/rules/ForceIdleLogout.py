@@ -33,6 +33,7 @@ Created on May 31, 2016
 @change: 2017/10/23 rsn - removed unused service helper
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2017/11/14 bgonz12 - Changed rule to only run in root space
+@change: 2018/02/27 bgonz12 - Added tag to geditor in fixgnome3
 '''
 from __future__ import absolute_import
 
@@ -509,9 +510,10 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     "not valid!\n"
                 self.rulesuccess = False
                 return False
-            gdirectives = {"sleep-inactive-ac-type": "'logout'",
-                           'sleep-inactive-ac-timeout': str(seconds)}
-            geditor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+            gdirectives = {"org.gnome.settings-daemon.plugins.power": {
+                            "sleep-inactive-ac-type": "'logout'",
+                            'sleep-inactive-ac-timeout': str(seconds)}}
+            geditor = KVEditorStonix(self.statechglogger, self.logger, "tagconf",
                                      self.gnomesettingpath,
                                      self.gnomesettingpath + '.tmp',
                                      gdirectives, "present", "closedeq")

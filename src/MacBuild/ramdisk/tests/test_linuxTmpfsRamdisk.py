@@ -32,6 +32,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 
+@unittest.skipUnless(sys.platform.startswith("linux"), "This test is not valid on this OS")
 class test_linuxTmpfsRamdisk(GenericRamdiskTest):
     """
     Test for the Linux tmpfs Ramdisk interface
@@ -52,11 +53,6 @@ class test_linuxTmpfsRamdisk(GenericRamdiskTest):
         #####
         # Initialize the helper class
         self.initializeHelper = False
-
-        #####
-        # If we don't have a supported platform, skip this test.
-        if not sys.platform.startswith("linux"):
-            raise unittest.SkipTest("This is not valid on this OS")
 
     def setUp(self):
         """

@@ -31,6 +31,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 
+@unittest.skipUnless(sys.platform.startswith("darwin"), "This test is not valid on this OS")
 class test_macRamdisk(GenericRamdiskTest):
     """
     """
@@ -40,12 +41,8 @@ class test_macRamdisk(GenericRamdiskTest):
         """
         Initializer
         """
-        #####
-        # If we don't have a supported platform, skip this test.
-        if not sys.platform.startswith("darwin"):
-            raise unittest.SkipTest("This is not valid on this OS")
+
         self.getLibc()
-        
 
     ##################################
 

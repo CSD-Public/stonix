@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2018.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -22,48 +22,38 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule CheckDupIDs
+This is a Unit Test for Rule DisableSIRIandContinuityFeatures
 
-@author: ekkehard j. koch
-@change: 2013/03/18 Original Implementation
-@change: 2015/10/28 Update name
-@change: 2016/02/10 rsn Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
-@change: 2016/04/27 rsn Added use of ApplicableCheck class
-@change: 2016/04/27 rsn Added use of precursor to manage_user class
-@change: 2016/08/29 eball Added conditional to SkipTest for Python < v2.7
+@author: bgonz12
+@change: 2018/2/21 Created
 '''
 from __future__ import absolute_import
-import sys
 import unittest
+import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.tests.lib.manage_users.macos_users import MacOSUser
-from src.stonix_resources.CheckApplicable import CheckApplicable
-from src.tests.lib.logdispatcher_lite import LogPriority
-from src.stonix_resources.rules.CheckDupIDs import CheckDupIDs
+from src.stonix_resources.CommandHelper import CommandHelper
+from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.rules.DisableSIRIandContinuityFeatures import DisableSIRIandContinuityFeatures
 
 
-class zzzTestRuleCheckDupIDs(RuleTest):
+class zzzTestRuleDisableScreenSavers(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = CheckDupIDs(self.config,
-                                self.environ,
-                                self.logdispatch,
-                                self.statechglogger)
+        self.rule = DisableSIRIandContinuityFeatures(self.config,
+                                                     self.environ,
+                                                     self.logdispatch,
+                                                     self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.users = MacOSUser()
-        #####
-        # Set up an applicable check class
-        self.chkApp = CheckApplicable(self.environ, self.logdispatch)
+        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
         pass
 
-    def test_rule(self):
+    def runTest(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
@@ -85,9 +75,9 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -100,7 +90,7 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
@@ -113,33 +103,11 @@ class zzzTestRuleCheckDupIDs(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
         '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
-    @unittest.skipUnless(sys.platform.startswith("darwin"), "CheckDupID's does nto support this OS.")
-    def test_checkForMacosDuplicateUser(self):
-        """
-        Tests the rule method that uses the /usr/bin/dscl command to
-        check for duplicate User IDs in the local directory service
-        """
-
-        uid = "7000"
-
-        self.users.createBasicUser("AutoTestMacDuplicateUserOne")
-        self.users.createBasicUser("AutoTestMacDuplicateUserTwo")
-
-        successOne = self.users.setUserUid("AutoTestMacDuplicateUserOne",
-                                           str(uid))
-        successTwo = self.users.setUserUid("AutoTestMacDuplicateUserTwo",
-                                           str(uid))
-        self.assertTrue(successOne)
-        self.assertTrue(successTwo)
-        self.assertTrue(successOne == successTwo)
-
-        self.users.rmUser("AutoTestMacDuplicateUserOne")
-        self.users.rmUser("AutoTestMacDuplicateUserTwo")
-
 if __name__ == "__main__":
+    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

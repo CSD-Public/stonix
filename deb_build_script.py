@@ -64,7 +64,7 @@ http://trac.lanl.gov/cgi-bin/external/trac.cgi/wiki/STONIXreleaseNotes
 
 copyrighttext = '''###############################################################################
 #                                                                             #
-# Copyright, 2008, Los Alamos National Security, LLC.                         #
+# Copyright, 2008-2018, Los Alamos National Security, LLC.                    #
 #                                                                             #
 # This software was produced under a U.S. Government contract by Los Alamos   #
 # National Laboratory, which is operated by Los Alamos National Security,     #
