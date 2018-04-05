@@ -20,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+
 '''
 This rule restricts mounting rights and options.
 
@@ -32,10 +33,13 @@ This rule restricts mounting rights and options.
 @change: 2018/2/9   bgonz12 - changed fix make sure dbus-x11 is installed
     before disabling gnome automount in gsettings
 '''
+
 from __future__ import absolute_import
+
 import os
 import re
 import traceback
+
 from ..stonixutilityfunctions import iterate, resetsecon
 from ..stonixutilityfunctions import writeFile, readFile
 from ..rule import Rule
@@ -47,8 +51,15 @@ from ..ServiceHelper import ServiceHelper
 
 
 class RestrictMounting(Rule):
+    '''
+    Class help text
+    '''
 
     def __init__(self, config, enviro, logger, statechglogger):
+        '''
+        Constructor
+        '''
+
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 112
@@ -58,23 +69,27 @@ class RestrictMounting(Rule):
         self.sethelptext()
 
         # Configuration item instantiation
-        datatype = "bool"
-        key = "RESTRICTCONSOLEACCESS"
-        instructions = "To restrict console device access, set " + \
+        datatype1 = "bool"
+        key1 = "RESTRICTCONSOLEACCESS"
+        instructions1 = "To restrict console device access, set " + \
                        "RESTRICTCONSOLEACCESS to True."
-        default = False
-        self.consoleCi = self.initCi(datatype, key, instructions, default)
+        default1 = False
+        self.consoleCi = self.initCi(datatype1, key1, instructions1, default1)
 
-        key = "DISABLEAUTOFS"
-        instructions = "To disable dynamic NFS mounting through the " + \
+        datatype2 = "bool"
+        key2 = "DISABLEAUTOFS"
+        instructions2 = "To disable dynamic NFS mounting through the " + \
                        "autofs service, set DISABLEAUTOFS to True."
-        self.autofsCi = self.initCi(datatype, key, instructions, default)
+        default2 = False
+        self.autofsCi = self.initCi(datatype2, key2, instructions2, default2)
 
-        key = "DISABLEGNOMEAUTOMOUNT"
-        instructions = "To disable the GNOME desktop environment from " + \
+        datatype3 = "bool"
+        key3 = "DISABLEGNOMEAUTOMOUNT"
+        instructions3 = "To disable the GNOME desktop environment from " + \
                        "automounting devices and removable media, set " + \
                        "DISABLEGNOMEAUTOMOUNT to True."
-        self.gnomeCi = self.initCi(datatype, key, instructions, default)
+        default3 = False
+        self.gnomeCi = self.initCi(datatype3, key3, instructions3, default3)
 
         self.guidance = ["NSA 2.2.2.1", "NSA 2.2.2.3", "NSA 2.2.2.4",
                          "CCE 3685-5", "CCE 4072-5", "CCE 4231-7",
@@ -82,57 +97,60 @@ class RestrictMounting(Rule):
         self.applicable = {"type": "white",
                            "family": ["linux"]}
         self.iditerator = 0
+        self.gsettings = "/usr/bin/gsettings"
+        self.gconftool = "/usr/bin/gconftool-2"
+        self.dbuslaunch = "/usr/bin/dbus-launch"
 
     def report(self):
-        try:
-            self.automountMedia = True
-            self.automountDrives = True
-            self.path1 = "/etc/security/console.perms.d/50-default.perms"
-            self.path2 = "/etc/security/console.perms"
-            self.data = {"<console>":
-                         "tty[0-9][0-9]* vc/[0-9][0-9]* :0\.[0-9] :0",
-                         "<xconsole>": "0\.[0-9] :0"}
-            self.ph = Pkghelper(self.logdispatch, self.environ)
-            self.sh = ServiceHelper(self.environ, self.logdispatch)
-            self.ch = CommandHelper(self.logdispatch)
-            compliant = True
-            results = ""
+        '''
+        '''
 
-            if os.path.exists(self.path1):
-                defaultPerms = readFile(self.path1, self.logger)
-                for line in defaultPerms:
+        self.automountMedia = True
+        self.automountDrives = True
+        self.sec_console_perms1 = "/etc/security/console.perms.d/50-default.perms"
+        self.sec_console_perms2 = "/etc/security/console.perms"
+        self.console_perms_temppath = self.sec_console_perms2 + ".stonixtmp"
+        self.data = {"<console>": "tty[0-9][0-9]* vc/[0-9][0-9]* :0\.[0-9] :0",
+                     "<xconsole>": "0\.[0-9] :0"}
+        self.autofspkg = "autofs"
+        self.autofssvc = "autofs"
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.ch = CommandHelper(self.logdispatch)
+        self.compliant = True
+        self.detailedresults = ""
+
+        try:
+
+            if os.path.exists(self.sec_console_perms1):
+                current_config = readFile(self.sec_console_perms1, self.logger)
+                for line in current_config:
                     if re.search("^<[x]?console>", line, re.M):
-                        compliant = False
-                        results += self.path1 + " contains " + \
-                                                "unrestricted device access\n"
+                        self.compliant = False
+                        self.detailedresults += self.sec_console_perms1 + " contains unrestricted device access\n"
                         break
 
-            if os.path.exists(self.path2):
-                self.tmppath = self.path2 + ".tmp"
-                self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                             "conf", self.path2, self.tmppath,
-                                             self.data, "present", "closedeq")
-                kveReport = self.editor.report()
-                if not kveReport:
-                    compliant = False
-                    results += self.path2 + " does not contain " + \
-                                            "the correct values\n"
+            if os.path.exists(self.sec_console_perms2):
+                self.editor2 = KVEditorStonix(self.statechglogger, self.logger, "conf", self.sec_console_perms2, self.console_perms_temppath, self.data, "present", "closedeq")
+                if not self.editor2.report():
+                    self.compliant = False
+                    self.detailedresults += self.sec_console_perms2 + " does not contain the correct values\n"
 
-            if self.ph.check("autofs"):
-                if self.sh.auditService("autofs", _="_"):
-                    compliant = False
-                    results += "autofs is installed and enabled\n"
+            if self.ph.check(self.autofspkg):
+                if self.sh.auditService(self.autofssvc, _="_"):
+                    self.compliant = False
+                    self.detailedresults += "autofs is installed and enabled\n"
 
-            if os.path.exists("/usr/bin/gsettings"):
+            if os.path.exists(self.gsettings):
                 automountOff = False
                 autorunNever = False
-                cmd = ["gsettings", "get", "org.gnome.desktop.media-handling",
+                cmd = [self.gsettings, "get", "org.gnome.desktop.media-handling",
                        "automount"]
                 self.ch.executeCommand(cmd)
                 if re.search("false", self.ch.getOutputString()):
                     automountOff = True
 
-                cmd = ["gsettings", "get", "org.gnome.desktop.media-handling",
+                cmd = [self.gsettings, "get", "org.gnome.desktop.media-handling",
                        "autorun-never"]
                 self.ch.executeCommand(cmd)
                 if re.search("true", self.ch.getOutputString()):
@@ -144,30 +162,36 @@ class RestrictMounting(Rule):
                 self.autorunNever = autorunNever
 
                 if not automountOff or not autorunNever:
-                    compliant = False
-                    results += "GNOME automounting is enabled\n"
+                    self.compliant = False
+                    self.detailedresults += "GNOME automounting is enabled\n"
 
-            if os.path.exists("/usr/bin/gconftool-2"):
-                automountMedia = True
-                automountDrives = True
+            # check for gnome automounting
+            if os.path.exists(self.gconftool):
+                cmd = [self.gconftool, "-R", "/desktop/gnome/volume_manager"]
 
-                cmd = ["gconftool-2", "-R", "/desktop/gnome/volume_manager"]
-                self.ch.executeCommand(cmd)
-                gconf = self.ch.getOutputString()
-                if re.search("automount_media = false", gconf):
-                    automountMedia = False
-                if re.search("automount_drives = false", gconf):
-                    automountDrives = False
+                if os.path.exists("/desktop/gnome/volume_manager"):
+                    self.ch.executeCommand(cmd)
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        self.compliant = False
+                        self.detailedresults += "\nFailed to read gnome volume manager config"
+    
+                    output = self.ch.getOutputString()
+    
+                    if re.search("automount_media.*false", output):
+                        self.automountMedia = False
+                    if re.search("automount_drives.*false", output):
+                        self.automountDrives = False
 
-                self.automountMedia = automountMedia
-                self.automountDrives = automountDrives
+                else:
+                    self.automountMedia = False
+                    self.automountDrives = False
+                mylist = [self.automountMedia, self.automountDrives]
 
-                if automountMedia or automountDrives:
-                    compliant = False
-                    results += "GNOME automounting is enabled\n"
+                if any(mylist):
+                    self.compliant = False
+                    self.detailedresults += "GNOME automounting is enabled\n"
 
-            self.detailedresults = results
-            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -180,45 +204,51 @@ class RestrictMounting(Rule):
         return self.compliant
 
     def fix(self):
+        '''
+        '''
+
+        self.detailedresults = ""
+        self.iditerator = 0
+        self.rulesuccess = True
+        consoleaccess = self.consoleCi.getcurrvalue()
+        autofs = self.autofsCi.getcurrvalue()
+        gnomeautomount = self.gnomeCi.getcurrvalue()
+        mylist = [consoleaccess, autofs, gnomeautomount]
+
         try:
-            if not self.consoleCi.getcurrvalue() and \
-               not self.autofsCi.getcurrvalue() and \
-               not self.gnomeCi.getcurrvalue():
-                return
-            success = True
-            results = ""
-            self.iditerator = 0
+
+            # if none of the CIs are enabled, skip fix
+            if not any(mylist):
+                self.detailedresults += "\nNone of the CI's were enabled. Nothing was done."
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+
+            # clear event list data
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
+            # if restrict console access CI is enabled, restrict console access
             if self.consoleCi.getcurrvalue():
-                if os.path.exists(self.path1):
-                    tmpfile = self.path1 + ".tmp"
-                    defaultPerms = open(self.path1, "r").read()
-                    defaultPerms = re.sub("(<[x]?console>)", r"#\1",
-                                          defaultPerms)
+                if os.path.exists(self.sec_console_perms1):
+                    tmpfile = self.sec_console_perms1 + ".stonixtmp"
+                    defaultPerms = open(self.sec_console_perms1, "r").read()
+                    defaultPerms = re.sub("(<[x]?console>)", r"#\1", defaultPerms)
                     if writeFile(tmpfile, defaultPerms, self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "conf", "filepath": self.path1}
+                        event = {"eventtype": "conf", "filepath": self.sec_console_perms1}
                         self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.path1,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, self.path1)
-                        resetsecon(self.path1)
+                        self.statechglogger.recordfilechange(self.sec_console_perms1, tmpfile, myid)
+                        os.rename(tmpfile, self.sec_console_perms1)
+                        resetsecon(self.sec_console_perms1)
                     else:
                         success = False
-                        results += "Problem writing new contents to " + \
+                        self.detailedresults += "Problem writing new contents to " + \
                                    "temporary file"
-                if os.path.exists(self.path2):
-                    self.tmppath = self.path2 + ".tmp"
-                    self.editor = KVEditorStonix(self.statechglogger,
-                                                 self.logger,
-                                                 "conf", self.path2,
-                                                 self.tmppath,
-                                                 self.data, "present",
-                                                 "closedeq")
+                if os.path.exists(self.sec_console_perms2):
+                    self.editor = KVEditorStonix(self.statechglogger, self.logger, "conf", self.sec_console_perms2, self.console_perms_temppath, self.data, "present", "closedeq")
                     self.editor.report()
                     if self.editor.fixables:
                         if self.editor.fix():
@@ -226,33 +256,34 @@ class RestrictMounting(Rule):
                             myid = iterate(self.iditerator, self.rulenumber)
                             self.editor.setEventID(myid)
                             if self.editor.commit():
-                                debug = self.path2 + "'s contents have been " \
+                                debug = self.sec_console_perms2 + "'s contents have been " \
                                     + "corrected\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
-                                resetsecon(self.path2)
+                                resetsecon(self.sec_console_perms2)
                             else:
                                 debug = "kveditor commit not successful\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 success = False
-                                results += self.path2 + \
+                                self.detailedresults += self.sec_console_perms2 + \
                                     " properties could not be set\n"
                         else:
                             debug = "kveditor fix not successful\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
-                            results += self.path2 + \
+                            self.detailedresults += self.sec_console_perms2 + \
                                 " properties could not be set\n"
 
+            # if autofs CI is enabled, disable autofs
             if self.autofsCi.getcurrvalue():
-                if self.ph.check("autofs") and \
-                   self.sh.auditService("autofs", _="_"):
-                    if self.sh.disableService("autofs", _="_"):
+                if self.ph.check(self.autofspkg) and \
+                   self.sh.auditService(self.autofssvc, _="_"):
+                    if self.sh.disableService(self.autofssvc, _="_"):
                         debug = "autofs service successfully disabled\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         event = {"eventtype": "servicehelper", "servicename":
-                                 "autofs", "startstate": "enabled",
+                                 self.autofssvc, "startstate": "enabled",
                                  "endstate": "disabled"}
                         self.statechglogger.recordchgevent(myid, event)
                     else:
@@ -262,16 +293,16 @@ class RestrictMounting(Rule):
 
             returnCode = 0
             if self.gnomeCi.getcurrvalue():
-                if os.path.exists("/usr/bin/gsettings"):
+                if os.path.exists(self.gsettings):
                     # gsettings requires a D-Bus session bus in order to make
                     # any changes. This is because the dconf daemon must be
                     # activated using D-Bus.
-                    if not os.path.exists("/usr/bin/dbus-launch"):
+                    if not os.path.exists(self.dbuslaunch):
                         self.ph.install("dbus-x11")
                     
-                    if os.path.exists("/usr/bin/dbus-launch"):
+                    if os.path.exists(self.dbuslaunch):
                         if not self.automountOff:
-                            cmd = ["dbus-launch", "gsettings", "set",
+                            cmd = [self.dbuslaunch, self.gsettings, "set",
                                    "org.gnome.desktop.media-handling",
                                    "automount", "false"]
                             self.ch.executeCommand(cmd)
@@ -288,7 +319,7 @@ class RestrictMounting(Rule):
                                 self.statechglogger.recordchgevent(myid, event)
 
                         if not self.autorunNever:
-                            cmd = ["dbus-launch", "gsettings", "set",
+                            cmd = [self.dbuslaunch, "gsettings", "set",
                                    "org.gnome.desktop.media-handling",
                                    "autorun-never", "true"]
                             self.ch.executeCommand(cmd)
@@ -298,7 +329,7 @@ class RestrictMounting(Rule):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
                                 event = {"eventtype": "comm", "command":
-                                        ["dbus-launch", "gsettings", "set",
+                                        [self.dbuslaunch, self.gsettings, "set",
                                          "org.gnome.desktop.media-handling",
                                          "autorun-never", "false"]}
                                 self.statechglogger.recordchgevent(myid, event)
@@ -308,9 +339,9 @@ class RestrictMounting(Rule):
                                 "dbus-x11 is not installed"
                         self.logger.log(LogPriority.DEBUG, debug)
 
-                if os.path.exists("/usr/bin/gconftool-2"):
+                if os.path.exists(self.gconftool):
                     if self.automountMedia:
-                        cmd = ["gconftool-2", "--direct", "--config-source",
+                        cmd = [self.gconftool, "--direct", "--config-source",
                                "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
                                "--type", "bool", "--set",
                                "/desktop/gnome/volume_manager/automount_media",
@@ -322,7 +353,7 @@ class RestrictMounting(Rule):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "comm", "command":
-                                     ["gconftool-2", "--direct",
+                                     [self.gconftool, "--direct",
                                       "--config-source", "xml:readwrite:" +
                                       "/etc/gconf/gconf.xml.mandatory",
                                       "--type", "bool", "--set",
@@ -331,7 +362,7 @@ class RestrictMounting(Rule):
                             self.statechglogger.recordchgevent(myid, event)
 
                     if self.automountDrives:
-                        cmd = ["gconftool-2", "--direct", "--config-source",
+                        cmd = [self.gconftool, "--direct", "--config-source",
                                "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
                                "--type", "bool", "--set",
                                "/desktop/gnome/volume_manager/automount_drives",
@@ -343,7 +374,7 @@ class RestrictMounting(Rule):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "comm", "command":
-                                     ["gconftool-2", "--direct",
+                                     [self.gconftool, "--direct",
                                       "--config-source", "xml:readwrite:" +
                                       "/etc/gconf/gconf.xml.mandatory",
                                       "--type", "bool", "--set",
@@ -354,9 +385,8 @@ class RestrictMounting(Rule):
 
                 if returnCode:
                     success = False
-                    results += "Fix failed to disable GNOME automounting\n"
+                    self.detailedresults += "Fix failed to disable GNOME automounting\n"
 
-            self.detailedresults = results
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
