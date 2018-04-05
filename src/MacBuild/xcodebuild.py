@@ -33,8 +33,6 @@ class Xcodebuild(MacBuildLib):
             self.logger.log(lp.DEBUG, "setUpForSigning failed...")
             raise Exception(traceback.format_exc())
 
-        # self.sign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
-
     def sign(self, psd, itemName, username, password, signature, verbose, keychain):
         self.setUpForSigning(username, password, keychain)
         self.codeSign(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)

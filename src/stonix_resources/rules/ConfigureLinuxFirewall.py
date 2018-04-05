@@ -120,6 +120,7 @@ CONFIGURELINUXFIREWALL to False.'''
         catchall = False
         catchall6 = False
         self.detailedresults = ""
+        self.iptScriptPath = ""
         try:
             if self.isfirewalld:
                 if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
@@ -198,10 +199,11 @@ CONFIGURELINUXFIREWALL to False.'''
                                     ['ConfigureLinuxFirewall.report',
                                      "No acceptable path for a startup " +
                                      "script found"])
-                if os.path.exists(self.iptScriptPath):
-                    scriptExists = True
-                else:
-                    scriptExists = False
+                if self.iptScriptPath:
+                    if os.path.exists(self.iptScriptPath):
+                        scriptExists = True
+                    else:
+                        scriptExists = False
 
                 if not catchall:
                     self.detailedresults += 'This system appears to use ' + \
