@@ -113,6 +113,7 @@ class SoftwareBuilder():
         self.signature = options.sig
         self.includeHiddenImports = options.hiddenImports
         self.keychain = options.keychain
+        self.noExit = options.noExit
 
         # This script needs to be run from [stonixroot]/src/MacBuild; make sure
         # that is our current operating location
@@ -378,10 +379,12 @@ class SoftwareBuilder():
 
         except (KeyboardInterrupt, SystemExit):
             print traceback.format_exc()
-            self._exit(self.ramdisk, self.luggage, 130)
+            if not self.noExit:
+                self._exit(self.ramdisk, self.luggage, 130)
         except Exception:
             print traceback.format_exc()
-            self._exit(self.ramdisk, self.luggage, 1)
+            if not self.noExit:
+                self._exit(self.ramdisk, self.luggage, 1)
         else:
             self.tearDown()
 
@@ -456,6 +459,22 @@ class SoftwareBuilder():
         try:
             if appName == 'stonix':
                 #####
+                # Build an __init__.py for the rules directory with all of the
+                # rules imported, so they get included in the python frozen
+                # package
+                # currentDirPathList = os.path.dirname(os.path.abspath(__file__)).split("/")
+                rulesDir = self.tmphome + "/src/stonix_resources/rules"
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "rulesDir: " + rulesDir)
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                self.logger.log(lp.DEBUG, "---------------------+++===")
+                if not self.mbl.writeInit(rulesDir):
+                    raise ValueError("No success Jim!")
+
+                #####
                 # Acquire hidden imports to include in the pyinstaller
                 # compiled binaries
                 if self.includeHiddenImports:
@@ -508,12 +527,6 @@ class SoftwareBuilder():
                 sleep(1)
                 self.libc.sync()
                 sleep(1)
-
-                #####
-                # Build an __init__.py for the rules directory with all of the
-                # rules imported, so they get included in the python frozen
-                # package
-                success = self.mbl.writeInit(self.tmphome + "/src/MacBuild/stonix/stonix_resources/rules")
 
                 print str(output)
             elif appName == 'stonix4mac':
@@ -877,40 +890,55 @@ class SoftwareBuilder():
         sleep(3)
 
         os.chdir(self.buildHome)
-        self._exit(self.ramdisk, self.luggage, 0)
+        if not self.noExit:
+            self._exit(self.ramdisk, self.luggage, 0)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
+
     parser.add_option("-v", "--version", action="store", dest="version",
                       type="string", default="0",
                       help="Set the STONIX build version number",
                       metavar="version")
+
     parser.add_option("-g", "--gui", action="store_true",
                       dest="compileGui",
                       default=False,
                       help="If set, the PyQt files will be recompiled")
+
     parser.add_option("-i", "--include-hidden-imports", action="store_true",
                       dest="hiddenImports",
                       default=False,
-                      help="Try including the stonix_resources directory as a" + \
-                           "pyinstaller hidden import (kind of like a " + \
-                           "python shelf).")
+                      help="Try including the stonix_resources directory " +
+                      "as a pyinstaller hidden import (kind of like a " +
+                      "python shelf).")
+
     parser.add_option("-k", "--keychain", action="store", dest="keychain",
                       type="string", default="",
-                      help="Keychain to sign with.",
-                      metavar="sig")
+                      help="Keychain to sign with.", metavar="sig")
+
     parser.add_option("-c", "--clean", action="store_true", dest="clean",
                       default=False, help="Clean all artifacts from " +
                       "previous builds and exit")
+
+    parser.add_option("-n", "--no-exit", action="store_true", dest="noExit",
+                      default=False, help="Do not unmount ramdisks on exit.")
+
     parser.add_option("-t", "--test", action="store_true", dest="test",
                       default=False, help="If run in testing mode, " +
                       "the driver method does not execute, allowing for " +
                       "unit testing of functions")
+
     parser.add_option("-d", "--debug", action="store_true", dest="debug",
-                      default=False, help="debug mode, on or off.  Default off.")
+                      default=False, help="debug mode, on or off.  " +
+                      "Default off.")
+
     parser.add_option("-s", "--signature", action="store", dest="sig",
                       type="string", default="",
                       help="Codesign signature to sign with.",
                       metavar="sig")
+
     options, __ = parser.parse_args()
+
     stonix4mac = SoftwareBuilder(options)
+

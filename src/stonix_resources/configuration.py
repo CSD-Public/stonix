@@ -52,10 +52,12 @@ ruleconfiguc = "string"
 Each directive has a user comment (uc) directive associated with it.
 Calls to getconfvalue for non-existent entries will generate a KeyError.
 '''
+
 import ConfigParser
 import sys
 import os
 import re
+import inspect
 
 
 class Configuration:
@@ -101,6 +103,9 @@ class Configuration:
         remaining entries (if any) are configurationitem instances.
         @return  : void
         @author D. Kennel
+        @change: 03/08/2018 - Breen Malmberg - changed 'uckey =' from
+                'UC' + key - to - key + "_UserComments" to be more user-friendly
+                in stonix.conf
         """
         confheader = """# STONIX.CONF
 # STONIX configuration file
@@ -136,7 +141,7 @@ version = 100
                         value = newval
                 except(AttributeError):
                     continue
-                uckey = 'UC' + key
+                uckey = key + '_UserComments'
                 kvline = key + ' = ' + str(value) + newline
                 instruct = instruct + newline
                 usrcomment = usrcomment.replace("\n", r"\n")
@@ -161,9 +166,8 @@ version = 100
             fhandle.write(conf)
             fhandle.close()
             os.chmod(self.configpath, 0644)
-        except (IOError):
-            print "FATAL ERROR: Could not write to config file"
-            print "Check path to " + self.configpath
+        except IOError as err:
+            print "ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err)
             sys.exit(1)
 
     def getusercomment(self, rulename, confkey):
@@ -175,8 +179,11 @@ version = 100
         @param string confkey :
         @return string :
         @author D. Kennel
+        @change: 03/08/2018 - Breen Malmberg - changed uckey from 'uc' + confkey.lower() to
+                confkey.lower() + "_usercomments" so that entry in stonix.conf is more user-friendly
         """
-        uckey = "uc" + confkey.lower()
+
+        uckey = confkey.lower() + "_usercomments"
         usercomment = self.programconfig[rulename][uckey]
         usercomment = usercomment.replace(r"\n", "\n")
         return usercomment
@@ -188,14 +195,23 @@ version = 100
 
         @return  list of dictionaries :
         @author D. Kennel
+        @change: 03/08/2018 - Breen Malmberg - added debug output; added functionality to
+                create an empty stonix.conf if one does not already exist - before attempting
+                to read it (will only attempt to create if running as euid 0)
         """
+
         progconfig = {}
         config = ConfigParser.SafeConfigParser()
+        euid = os.geteuid()
+
         try:
+            if euid == 0:
+                # this will NOT alter any existing stonix.conf file
+                open(self.configpath, 'a').close()
+                os.chmod(self.configpath, 0644)
             config.readfp(open(self.configpath))
-        except (IOError):
-            print "FATAL ERROR: Could not read config file from " \
-            + self.configpath
+        except IOError as err:
+            print "ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err)
             sys.exit(1)
         # print config.sections()
         # print config.options('MAIN')

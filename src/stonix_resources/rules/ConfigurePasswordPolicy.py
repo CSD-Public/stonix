@@ -29,15 +29,15 @@ Created on Feb 10, 2015
 @change: 2017/03/30 dkennel Setting this to FISMA high until Apple fixes bugs
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
+
 from __future__ import absolute_import
 import traceback
 import os
+
 from ..rule import Rule
-from re import search
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
 from ..localize import FISMACAT
 
 

@@ -1,6 +1,6 @@
 .\" Process this file with
 .\" groff -man -Tascii stonix.8
-.TH STONIX 8 "January 2015" "Version 0.8"
+.TH STONIX 8 "March 2018" "Version 0.9.17"
 .SH NAME
 STONIX \- Security Tool On *NIX, Cross platform system hardening tool for
 various Unix and Unix like operating systems.
@@ -126,7 +126,7 @@ in fix mode with verbose and debugging output redirected to the file stonix.out.
 .B stonix \-cfv \-m SetNTP
 To run 
 .B STONIX 
-in module mode for the NTP module with verbose output.
+in module mode for the SetNTP module with verbose output.
 .TP
 .B stonix \-cl 
 To list installed and applicable 
@@ -136,6 +136,7 @@ rules for this platform.
 .SH DIAGNOSTICS
 .B STONIX
 maintains a log of each run in /var/log/stonix-report. User mode reports are stored at ~/.stonix/stonix-report.
+Linux Only: maintains a full debug log of the last run of stonix, in fix mode, at: /var/log/stonix-lastfix.log
 .SH FILES
 .I /etc/stonix.conf
 .RS
@@ -157,5 +158,88 @@ Directory containing backups of original configuration files.
 .B STONIX
 requires Qt4 and PyQt4 for operation of the GUI but is typically packaged without explicit dependencies on those packages to support systems running in a command line only mode. 
 .B STONIX requires Python version 2.7 libraries.
+.SH CI CONFIGURATION
+.TP AuditFirefoxUsage
+.B APPROVEDDOMAINS
+acceptable values: a space-delimited list of fully qualified domain names
+.B DISABLEPROXY
+acceptable values: true, false
+.TP AuditNetworkSniffing
+.B <NONE>
+.TP AuditSSHKeys
+.B <NONE>
+.TP BlockSystemAccounts
+.B BLOCKSYSACCOUNTS
+acceptable values: true, false
+.TP BootLoaderPerms
+.B BOOTLOADERPERMS
+acceptable values: true, false
+.TP BootSecurity
+.B BOOTSECURITY
+acceptable values: true, false
+.TP CheckDupIDs
+.B <NONE>
+.TP CheckParitioning
+.B <NONE>
+.TP CheckRootPath
+.B CHECKROOTPATH
+acceptable values: true, false
+.TP ConfigureAIDE
+.B CONFIGUREAIDE
+acceptable values: true, false
+.B AIDEJOBTIME
+acceptable values: standard cron job time designation format; * means all
+example: * * * 0 5
+example: 0 1 1 2 7
+format: minute hour day-of-month month-of-year day-of-week
+.TP ConfigureAppleSoftwareUpdate
+.B <NONE>
+.TP ConfigureComputerName
+.B CONFIGURECOMPUTERNAME
+acceptable values: true, false
+.TP ConfigureDiagnosticReporting
+.B <NONE>
+.TP ConfigureDotFiles
+.B CONFIGUREDOTFILES
+acceptable values: true, false
+.TP ConfigureFirewall
+.B FIREWALLON
+acceptable values: true, false
+.B FIREWALLLOGINENABLED
+acceptable values: true, false
+.B FIREWALLSTEALTHDISABLED
+acceptable values: true, false
+.TP ConfigureKerberos
+.B CONFIGUREFILES
+acceptable values: true, false
+.TP ConfigureLDAPServer
+.B CONFIGURELDAPSERV
+acceptable values: true, false
+.TP ConfigureLinuxFirewall
+.B CONFIGURELINUXFIREWALL
+acceptable values: true, false
+.TP ConfigureLogging
+.B CONFIGURELOGGING
+acceptable values: true, false
+.B OPENDIRECTORYLOGGING
+acceptable values: true, false
+.TP ConfigureLoginWindow
+.B LOGINNAMEPASSWORD
+acceptable values: true, false
+.B DISABLECONSOLEACCESS
+acceptable values: true, false
+.TP ConfigureMACPolicy
+.B CONFIGUREMAC
+acceptable values: true, false
+.B MODE
+acceptable values: (if using apparmor: complain, enforce), (if using selinux: permissive, enforcing)
+.TP ConfigureNetworks
+.B DISABLEBLUETOOTHINTERFACE
+acceptable values: true, false
+.B DISABLEBLUETOOTHINTERNETSHARING
+acceptable values: true, false
+.TP ConfigurePasswordPolicy
+.B 
+
 .SH AUTHOR
 NIE-CDS Development Services <stonix-dev@lanl.gov>

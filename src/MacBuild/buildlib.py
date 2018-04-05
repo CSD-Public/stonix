@@ -28,12 +28,14 @@ Library of functions used to build Mac applications
 @change: 2015/03/06 eball - Original implementation
 @change: 2015/08/05 eball - Beautification, improving PEP8 compliance
 @change: 2015/08/06 eball - Removed static paths from getpyuicpath()
+@change: 2018/03/21 rsn - Added specific build path for importing PyInstaller
 '''
 
 import re
 import os
 import sys
 import pwd
+import site
 import tarfile
 import zipfile
 import traceback
@@ -41,6 +43,10 @@ import plistlib as pl
 from glob import glob
 from subprocess import Popen, STDOUT, PIPE
 
+#####
+# Hard coded to pre-defined build tool site for
+# buildingBuildToolsCommands-rev5.txt
+site.addsitedir('/opt/tools/lib/Python/2.7/site-packages')
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
@@ -640,8 +646,8 @@ class MacBuildLib(object):
         os.chdir(buildDir)
         self.logger.log(lp.DEBUG, str(cmd))
         
-        self.rw.setCommand(cmd, close_fds=cfds)
-        output, error, retcode = self.rw.communicate()
+        self.rw.setCommand(cmd)
+        output, error, retcode = self.rw.waitNpassThruStdout()
         
         if not error:
             success = True
@@ -757,7 +763,7 @@ class MacBuildLib(object):
         """
         sane = False
         if isinstance(filepath, basestring):
-            if re.match("^[A-Za-z/][A-Za-z0-9/]*", filepath):
+            if re.match("^[A-Za-z/][A-Za-z0-9\.\-_/]*", filepath):
                 sane = True
         return sane
 

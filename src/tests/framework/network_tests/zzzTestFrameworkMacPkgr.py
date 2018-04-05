@@ -52,7 +52,7 @@ class NotApplicableToThisOS(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
-
+@unittest.skipUnless(sys.platform.startswith("darwin"), "RamDisk does not support this OS family")
 class zzzTestFrameworkMacPkgr(unittest.TestCase):
     """
     Class for testing the macpkgr.
@@ -70,11 +70,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         self.logger.log(LogPriority.DEBUG, "### OS Family: " + str(self.osfamily))
         self.logger.log(LogPriority.DEBUG, "##################################")
 
-        if not re.match("^darwin$", self.osfamily.strip()):
-            raise unittest.SkipTest("RamDisk does not support this OS" + \
-                                    " family: " + str(self.osfamily))
-        else:
-            self.libc = ctypes.CDLL("/usr/lib/libc.dylib")
+        self.libc = ctypes.CDLL("/usr/lib/libc.dylib")
 
         self.logger = LogDispatcher(self.environ)
 

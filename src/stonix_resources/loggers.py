@@ -262,7 +262,11 @@ class CyLogger(object):
         if self.syslog:
             #####
             # Set up the SysLogHandler
-            sysHandler = logging.handlers.SysLogHandler()
+            try:
+                sysHandler = logging.handlers.SysLogHandler()
+            except socket.error:
+                print("Socket error, can't connect to syslog...")
+                self.syslog = False
 
         #####
         # Add applicable handlers to the logger
