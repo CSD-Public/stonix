@@ -32,6 +32,7 @@ This rule restricts mounting rights and options.
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2018/2/9   bgonz12 - changed fix make sure dbus-x11 is installed
     before disabling gnome automount in gsettings
+@change: 2018/4/6   bgonz12 - Initialized variable 'success' in fix
 '''
 
 from __future__ import absolute_import
@@ -210,6 +211,7 @@ class RestrictMounting(Rule):
         self.detailedresults = ""
         self.iditerator = 0
         self.rulesuccess = True
+        success = True
         consoleaccess = self.consoleCi.getcurrvalue()
         autofs = self.autofsCi.getcurrvalue()
         gnomeautomount = self.gnomeCi.getcurrvalue()
