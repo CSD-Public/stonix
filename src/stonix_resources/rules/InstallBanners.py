@@ -134,7 +134,7 @@ class InstallBanners(RuleKVEditor):
             output = self.ch.getOutputString()
             if not regex:
                 found = output.find(val)
-                if found != -1:
+                if found not in [-1, 0]:
                     retval = True
             else:
                 if re.search(val, output):
