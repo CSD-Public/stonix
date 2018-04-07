@@ -46,7 +46,7 @@ from subprocess import Popen, STDOUT, PIPE
 #####
 # Hard coded to pre-defined build tool site for
 # buildingBuildToolsCommands-rev5.txt
-site.addsitedir('/opt/tools/lib/Python/2.7/site-packages')
+site.addsitedir('/opt/tools/lib/python2.7/site-packages')
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
@@ -57,12 +57,12 @@ from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 from ramdisk.lib.run_commands import RunWith
 
 
-def BadBuildError(Exception):
+class BadBuildError(BaseException):
     """
     Custom Exception
     """
     def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+        BaseException.__init__(self, *args, **kwargs)
 
 class MacBuildLib(object):
     def __init__(self, logger, pypaths=None):
@@ -646,13 +646,13 @@ class MacBuildLib(object):
         os.chdir(buildDir)
         self.logger.log(lp.DEBUG, str(cmd))
         
-        self.rw.setCommand(cmd, close_fds=cfds)
-        output, error, retcode = self.rw.communicate()
+        self.rw.setCommand(cmd)
+        output, error, retcode = self.rw.waitNpassThruStdout()
         
-        if not error:
-            success = True
-        else:
-            raise BadBuildError("Error building program: " + str(retcode))
+        # if not error:
+        #     success = True
+        # else:
+        #     raise BadBuildError("Error building program: " + str(retcode))
         
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
