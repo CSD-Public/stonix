@@ -34,6 +34,9 @@
 @change: 2015/09/22 ekkehard Uniform logging
 @change: 2017/10/17 rsn Added __calledBy() method for determining the
                         caller of command helper
+@change: 2018/03/29 Breen Malmberg fixed an instance where a variable (commandaborted)
+        was not properly getting set to True when a command would abort due to timeout;
+        
 '''
 
 import inspect
@@ -42,7 +45,6 @@ import subprocess
 import traceback
 import types
 import time
-import sys
 
 from logdispatcher import LogPriority
 
@@ -269,8 +271,7 @@ class CommandHelper(object):
                 for line in self.stdout:
                     stdstring += line + "\n"
             else:
-                self.logdispatcher.log(LogPriority.DEBUG,
-                                       "No stdout string to display")
+                self.logdispatcher.log(LogPriority.DEBUG, "No stdout string to display")
 
         except Exception:
             raise
@@ -557,7 +558,7 @@ class CommandHelper(object):
                             commandobj.terminate()
                             commandobj.returncode = -1
                             self.logdispatcher.log(LogPriority.DEBUG, "Command exceeded specified max. run time of: " + str(self.cmdtimeout) + " seconds! Command aborted!")
-                            commandaborted
+                            commandaborted = True
                             break
                         else:
                             continue

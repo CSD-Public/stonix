@@ -38,6 +38,8 @@ the Fix method.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/03/06 Breen Malmberg - added report function for checking if
         ftp root is mounted on its own partition
+@change: 2018/04/06 bgonz12 - Added df output handling in
+        reportPart for mac systems
 '''
 
 from __future__ import absolute_import
@@ -228,7 +230,10 @@ of users allowed to access ftp and set the default umask for ftp users.
                     continue
                 else:
                     sline = line.split()
-                    mountpoint = sline[5]
+                    if self.environ.getosfamily() == 'darwin':
+                        mountpoint = sline[8]
+                    else:
+                        mountpoint = sline[5]
     
             self.cmhelper.executeCommand(df)
             outlist = self.cmhelper.getOutput()
@@ -236,7 +241,10 @@ of users allowed to access ftp and set the default umask for ftp users.
                 if re.search("Mounted On", line, re.IGNORECASE):
                     continue
                 sline = line.split()
-                othermounts.append(sline[5])
+                if self.environ.getosfamily() == 'darwin':
+                    othermounts.append(sline[8])
+                else:
+                    othermounts.append(sline[5])
             for item in othermounts:
                 if re.search('.*ftp.*', item, re.IGNORECASE):
                     continue

@@ -143,7 +143,7 @@ class ShowBluetoothIcon(RuleKVEditor):
             messagestring = str(err) + " - " + str(traceback.format_exc())
             self.resultAppend(messagestring)
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fixed", fixed, self.detailedresults)
+        self.formatDetailedResults("fix", fixed, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return fixed
 
