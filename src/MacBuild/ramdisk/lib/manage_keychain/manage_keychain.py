@@ -12,10 +12,11 @@ Factory object for acquiring the right keychain manager
 from __future__ import absolute_import
 import sys
 import inspect
+import traceback
 
 from ..loggers import LogPriority as lp
-from ..libHelperExceptions import UnsupportedOSError
-
+from ..loggers import CyLogger
+from ..libHelperExceptions import UnsupportedOSError, NotACyLoggerError
 
 class ManageKeychain(object):
     """
@@ -36,18 +37,22 @@ class ManageKeychain(object):
 
     #----------------------------------------------------------------------
 
-    def __init__(self, logger=False):
+    def __init__(self, logger):
         """
         Class initialization method
         """
         #####
         # Set up logging
-        self.logger = logger
+        if isinstance(logger, CyLogger):
+            self.logger = logger
+        else:
+            raise NotACyLoggerError("Passed in value for logger is invalid, try again.")
+
         self.logger.log(lp.INFO, "Logger: " + str(self.logger))
 
         if sys.platform.lower() == "darwin":
             self.logger.log(lp.DEBUG, "Loading Mac keychain manager...")
-            from .macos_keychain import MacOSKeychain
+            from ..manage_keychain.macos_keychain import MacOSKeychain
             self.keychainMgr = MacOSKeychain(logDispatcher=self.logger)
         else:
             raise UnsupportedOSError("This operating system is not supported...")
@@ -75,6 +80,8 @@ class ManageKeychain(object):
             functionName = str(inspect.stack()[2][3])
             lineNumber = str(inspect.stack()[2][2])
         except Exception, err:
+            self.logger.log(lp.WARNING, traceback.format_exc())
+            self.logger.log(lp.WARNING, str(err))
             raise err
         else:
             self.logger.log(lp.DEBUG, "called by: " + \
@@ -122,7 +129,7 @@ class ManageKeychain(object):
 
         #####
         # Call factory created object's mirror method
-        success, output = self.keychainMgr.listKeychain(*args, **kwargs)
+        success, output = self.keychainMgr.listKeychains(*args, **kwargs)
 
         #####
         # Postprocess logging
