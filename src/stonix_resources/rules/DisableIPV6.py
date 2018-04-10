@@ -38,6 +38,8 @@ Created on Apr 9, 2013
 @change: 2017/08/28 rsn Fixing to use new help text methods
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/04/10 dkennel - commented out module killing code and set
+                        default to False per artf48817
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
