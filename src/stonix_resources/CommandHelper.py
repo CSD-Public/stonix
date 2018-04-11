@@ -403,10 +403,12 @@ class CommandHelper(object):
     def getReturnCode(self):
         '''
         Get return code for last executed command
-        @param self:essential if you override this definition
-        @return: string of return code
+
+        @return: self.returncode
+        @rtype: bool
         @author: ekkehard j. koch
         '''
+
         return self.returncode
 
 ###############################################################################
@@ -414,67 +416,88 @@ class CommandHelper(object):
     def setCommand(self, command):
         '''
         setCommand (command) set the command for the CommandHelper
-        @param self:essential if you override this definition
+
         @param command string: command to set the command property to
-        @return: bool indicating success or failure
+        @return: success
+        @rtype: bool
         @author: ekkehard j. koch
+        @change: Breen Malmberg - 04/11/2018 - fixed a typo in the msg = on line 472;
+                fixed doc string; removed most of the raiseexception calls (they were unnecessary
+                since the entire code block is already encapsulated with a try except; also removed
+                the call to explicit exception type within the except portion as that is
+                automatically detected and reported by python and overriding that can lead to
+                incorrect except type reporting in debug logs; added a logger error log call within
+                the except block with the appropriate message; removed possible variable confusion
+                issue by assigning a unique variable to list items to determine their type
+                rather than assigning the type of each list item to the same variable being used
+                to determine the type of the command parameter being passed in; added default
+                variable initializations to several uninitialized method-scope variables;
+                pulled the default variable initializations outside of the try except (these will
+                never fail); removed repeated instances of command variable checking and made
+                a single check at the beginning of the rule, with debug output; changed the default
+                initialization of the variable 'success' to True which removed the need for several
+                redundant instances of setting it to True when there were also already instances of
+                it being set to False (one or the other; both are not needed explicitly)
         '''
 
-        success = False
+        success = True
+        self.stdout = []
+        self.stderr = []
+        self.output = []
+        msg = ""
+        message = ""
 
         try:
 
-            self.stdout = []
-            self.stderr = []
-            self.output = []
+            if command == "":
+                msg = "The given command string parameter was blank!"
+                raise ValueError(msg)
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
+            if command == []:
+                msg = "The given command list parameter was empty!"
+                raise ValueError(msg)
+                self.logdispatcher.log(LogPriority.DEBUG, msg)
+
             commandtype = type(command)
+
             if (commandtype is types.StringType):
                 self.shell = True
                 if len(command.strip()) > 0:
                     self.commandblank = False
-                else:
-                    self.commandblank = True
-                    msg = "The command of type '" + str(commandtype) + \
-                        "' is blank!"
-                    self.logdispatcher.log(LogPriority.ERROR, msg)
-                    raise ValueError(msg)
                 self.command = command.strip()
-                success = True
                 msg = "Command Set To '" + self.command + "'"
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
+
             elif (commandtype is types.ListType):
                 self.shell = False
                 self.command = []
                 self.commandblank = True
-                success = True
-                if len(command) == 0:
-                    msg = "The command of type '" + str(commandtype) + \
-                        "' is blank!"
-                    self.logdispatcher.log(LogPriority.ERROR, msg)
-                    raise ValueError(msg)
+
                 for commandlistitem in command:
-                    commandtype = type(commandlistitem)
-                    if (commandtype is types.StringType):
+                    commandlitype = type(commandlistitem)
+
+                    if (commandlitype is types.StringType):
                         self.command.append(commandlistitem.strip())
                         if len(commandlistitem.strip()) > 0:
                             self.commandblank = False
                     else:
                         success = False
                         msg = "Command List Item '" + str(commandlistitem) + \
-                            "' has in invalid type of '" + str(commandtype) + "'"
+                            "' has in invalid type of '" + str(commandlitype) + "'"
                         self.logdispatcher.log(LogPriority.DEBUG, msg)
-                        raise TypeError(msg)
+
                 msg = "Command Set To '" + str(self.command) + "'"
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
+
             else:
                 success = False
-                msg = "Command '" + str(command) + "' has in invalid type of '" + \
+                msg = "Command '" + str(command) + "' has an invalid type of '" + \
                     str(commandtype) + "'"
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
-                raise TypeError(msg)
+
         except Exception:
             message = str(self.__calledBy()) + "\nInvalid command input: " + str(traceback.format_exc())
-            raise ValueError(str(message))
+            self.logdispatcher.log(LogPriority.ERROR, message)
         return success
 
 ###############################################################################
@@ -482,9 +505,10 @@ class CommandHelper(object):
     def setLogPriority(self, logpriority=None):
         '''
         Setting log priority use LogPriority.DEBUG, LogPrority.ERROR, etc.
-        @param self:essential if you override this definition
+
         @param logpriority of type LogPriority.xxx
-        @return: bool indicating success or failure
+        @return: success
+        @rtype: bool
         @author: ekkehard j. koch
         '''
 
@@ -528,10 +552,11 @@ class CommandHelper(object):
         '''
 
         commandaborted = False
+        commandobj = None
+        success = True
 
         try:
-            commandobj = None
-            success = True
+
             if (type(command) is not None):
                 success = self.setCommand(command)
             else:
@@ -570,7 +595,7 @@ class CommandHelper(object):
 
                 outlines = []
                 errlines = []
-                outstr = ''
+                outstr = ""
                 # If we are not waiting, we cannot collect stdout and stderr
                 if self.wait:
 
@@ -584,10 +609,12 @@ class CommandHelper(object):
                     self.stdout = outlines
                     self.stderr = errlines
                     self.output = self.stderr + self.stdout
+                    outstr = " ".join(self.output)
 
                     self.returncode = commandobj.returncode
                     msg = "returncode: " + str(self.returncode)
                     self.logdispatcher.log(self.logpriority, msg)
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception, err:
@@ -602,7 +629,8 @@ class CommandHelper(object):
                 if commandobj.stderr is not None:
                     commandobj.stderr.close()
         finally:
-
+            if 'outstr' not in locals():
+                outstr = ""
             msg = "You should not see this. CommandHelper.executeCommand()"
             if self.returncode is not None:
                 msg = "returncode:(" + str(self.returncode) + ") \noutput:(" + str(outstr) + "); command:(" + str(self.command) + ")"
