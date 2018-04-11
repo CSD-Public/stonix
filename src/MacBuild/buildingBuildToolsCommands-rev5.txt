@@ -21,10 +21,10 @@ sudo dscl . read /Groups/builder
 #####
 # If on proxied network, set the proxies:
 
-export HTTPS_PROXY=http://proxyout.lanl.gov:8080
-export HTTP_PROXY=http://proxyout.lanl.gov:8080
-export https_proxy=http://proxyout.lanl.gov:8080
-export http_proxy=http://proxyout.lanl.gov:8080
+export HTTPS_PROXY=<proxy>
+export HTTP_PROXY=<proxy>
+export https_proxy=<proxy>
+export http_proxy=<proxy>
 
 #####
 # Create directory structure for build
