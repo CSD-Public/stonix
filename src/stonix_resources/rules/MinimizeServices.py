@@ -170,7 +170,13 @@ class MinimizeServices(Rule):
                              'syslog',
                              'sysstat',
                              'udev-post',
-                             'xfs']
+                             'xfs',
+                             'udev-post',
+                             'blk-availability',
+                             'cpuspeed',
+                             'lvm2-monitor',
+                             'rdma',
+                             'sysstat']
         self.specials = ['apparmor', 'urandom', 'x11-common', 'sendsigs',
                          'unmountnfs.sh', 'networking', 'umountfs',
                          'umountroot', 'reboot', 'halt', 'killprocs',
