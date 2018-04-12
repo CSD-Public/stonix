@@ -29,7 +29,6 @@ Created on Jun 6, 2017
 '''
 from __future__ import absolute_import
 import unittest
-import os
 import sys
 
 sys.path.append("../../../..")
@@ -51,6 +50,12 @@ class zzzTestRuleSTIGConfigureBluetoothPolicy(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.identifier = '\"Bluetooth Policy\"'
+        if search("10\.11\.*", self.environ.getosver()):
+            self.rule.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                "U_Apple_OS_X_10-11_V1R1_STIG_Bluetooth_Policy.mobileconfig"
+        else:
+            self.rule.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Bluetooth_Policy.mobileconfig"
     def tearDown(self):
         pass
 
