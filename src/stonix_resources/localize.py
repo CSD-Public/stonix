@@ -48,6 +48,7 @@ that access the version variable to use this copy.
 @change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.14'
 @change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.16'
 @change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.17'
+@change: 2018/04/11 - ekkehard - incremented STONIXVERSION = '0.9.18'
 '''
 
 # The Version number of the STONIX application. Modify this only if you need to
@@ -56,7 +57,7 @@ that access the version variable to use this copy.
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = '0.9.17'
+STONIXVERSION = '0.9.18'
 
 # FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
 # is used to determine rule applicability and behavior with the higher the

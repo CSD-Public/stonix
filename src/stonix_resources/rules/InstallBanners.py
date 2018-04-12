@@ -134,8 +134,15 @@ class InstallBanners(RuleKVEditor):
             output = self.ch.getOutputString()
             if not regex:
                 found = output.find(val)
-                if found not in [-1, 0]:
-                    retval = True
+
+                # this re.search is here because gconftool-2 returns 0 on failure
+                # but all other tools/utilities don't
+                if re.search("gconftool-2", cmd, re.IGNORECASE):
+                    if found not in [-1, 0]:
+                        retval = True
+                else:
+                    if found not in [-1, 1]:
+                        retval = True
             else:
                 if re.search(val, output):
                     retval = True
