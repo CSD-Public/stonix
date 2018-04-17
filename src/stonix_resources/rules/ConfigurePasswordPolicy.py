@@ -182,24 +182,24 @@ class ConfigurePasswordPolicy(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
             if self.pwci.getcurrvalue() and not os.path.exists(self.pwprofile):
-                print "profile doesn't exist\n\n"
+                #print "profile doesn't exist\n\n"
                 return False
 #             if self.sci.getcurrvalue() and not os.path.exists(self.secprofile):
 #                 return False
-            print "inside fix\n\n"
+            #print "inside fix\n\n"
             if self.pwci.getcurrvalue():
                 if not self.pwreport:
-                    print "self.pwreport is False\n\n"
+                    #print "self.pwreport is False\n\n"
                     if os.path.exists(self.pwprofile):
-                        print "pwprofile exists\n\n"
+                        #print "pwprofile exists\n\n"
                         if not self.pweditor.fix():
-                            print "kveditor fix failed\n\n"
+                            #print "kveditor fix failed\n\n"
                             success = False
                         elif not self.pweditor.commit():
-                            print "kveditor commit failed\n\n"
+                            #print "kveditor commit failed\n\n"
                             success = False
                         else:
-                            print "installation of profile a success\n\n"
+                            #print "installation of profile a success\n\n"
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             cmd = ["/usr/bin/profiles", "-R", "-p",
