@@ -159,7 +159,7 @@ class LimitConcurrentLogins(Rule):
                     self.statechglogger.recordchgevent(myid, event)
             contents = readFile(self.securityfile, self.logger)
             tempstring = ""
-            print "about to loop\n"
+            #print "about to loop\n"
             for line in contents:
                 if re.match('^#', line) or re.match(r'^\s*$', line):
                     tempstring += line
@@ -179,9 +179,9 @@ class LimitConcurrentLogins(Rule):
                 else:
                     tempstring += line
             if tempstring:
-                print "tempstring: " + str(tempstring) + "\n"
+                #print "tempstring: " + str(tempstring) + "\n"
                 tempstring += "*\thard\tmaxlogins\t" + self.cinum.getcurrvalue() + "\n"
-                print "tempstring: " + str(tempstring) + "\n"
+                #print "tempstring: " + str(tempstring) + "\n"
                 tmpfile = self.securityfile + ".tmp"
                 if not writeFile(tmpfile, tempstring, self.logger):
                     debug = "Unable to write changes to " + tmpfile
