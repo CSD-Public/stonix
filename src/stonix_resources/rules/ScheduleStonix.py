@@ -94,7 +94,7 @@ class ScheduleStonix(Rule):
         self.initVars()
         self.genJobTimes()
 
-        # define the weekly STONIX report launchd job
+        # define the Mac OS X weekly STONIX report launchd job
         self.stonixplistreport = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -108,18 +108,20 @@ class ScheduleStonix(Rule):
         <string>-r</string>
     </array>
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Day</key>
-        <integer>''' + str(self.adminreportday) + '''</integer>
-        <key>Hour</key>
-        <integer>''' + str(self.adminreporthour) + '''</integer>
-        <key>Minute</key>
-        <integer>''' + str(self.adminreportminute) + '''</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Weekday</key>
+            <integer>''' + str(self.adminreportday) + '''</integer>
+            <key>Hour</key>
+            <integer>''' + str(self.adminreporthour) + '''</integer>
+            <key>Minute</key>
+            <integer>''' + str(self.adminreportminute) + '''</integer>
+        </dict>
+    </array>
 </dict>
 </plist>'''
 
-        # define the weekly STONIX fix launchd job
+        # define the Mac OS X weekly STONIX fix launchd job
         self.stonixplistfix = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -133,14 +135,16 @@ class ScheduleStonix(Rule):
         <string>-f</string>
     </array>
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Day</key>
-        <integer>''' + str(self.adminfixday) + '''</integer>
-        <key>Hour</key>
-        <integer>''' + str(self.adminfixhour) + '''</integer>
-        <key>Minute</key>
-        <integer>''' + str(self.adminfixminute) + '''</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Weekday</key>
+            <integer>''' + str(self.adminfixday) + '''</integer>
+            <key>Hour</key>
+            <integer>''' + str(self.adminfixhour) + '''</integer>
+            <key>Minute</key>
+            <integer>''' + str(self.adminfixminute) + '''</integer>
+        </dict>
+    </array>
 </dict>
 </plist>'''
 
@@ -158,12 +162,14 @@ class ScheduleStonix(Rule):
         <string>-f</string>
     </array>
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>''' + str(self.userfixhour) + '''</integer>
-        <key>Minute</key>
-        <integer>''' + str(self.userfixminute) + '''</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>''' + str(self.userfixhour) + '''</integer>
+            <key>Minute</key>
+            <integer>''' + str(self.userfixminute) + '''</integer>
+        </dict>
+    </array>
 </dict>
 </plist>'''
 
@@ -498,7 +504,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                      '/Library/LaunchAgents/gov.lanl.stonix.user.plist':
                      self.stonixplistuser}
         systemservicetargets = ["gov.lanl.stonix.fix", "gov.lanl.stonix.report"]
-        userservicetargets = ["gov.lanl.stonix.user"]
+        #userservicetargets = ["gov.lanl.stonix.user"]
+        self.macadminfixjob = True
+        self.macadminreportjob = True
+        self.macuserjob = True
 
         try:
 
@@ -522,11 +531,23 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                             if contents[i].strip() != scrptcontents[i].strip():
                                 retval = False
                                 self.detailedresults += "line not correct: " + str(contents[i]) + " in file: " + str(path) + "\n"
+                                if re.search('report', path, re.IGNORECASE):
+                                    self.macadminreportjob = False
+                                if re.search('fix', path, re.IGNORECASE):
+                                    self.macadminfixjob = False
+                                if re.search('user', path, re.IGNORECASE):
+                                    self.macuserjob = False
 
                         else:
                             if not re.search('<integer>[0-9][0-9]{0,1}<\/integer>', contents[i]):
                                 retval = False
                                 self.detailedresults += "integer line wrong: " + str(contents[i]) + " in file: " + str(path) + "\n"
+                                if re.search('report', path, re.IGNORECASE):
+                                    self.macadminreportjob = False
+                                if re.search('fix', path, re.IGNORECASE):
+                                    self.macadminfixjob = False
+                                if re.search('user', path, re.IGNORECASE):
+                                    self.macuserjob = False
 
             # This part needs to be changed to work with re-designed servicehelperTwo
             self.ch.executeCommand("/bin/launchctl print-disabled system/")
@@ -741,6 +762,9 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         '''
 
         retval = True
+        self.macadminfixpath = "/Library/LaunchDaemons/gov.lanl.stonix.fix.plist"
+        self.macadminreportpath = "/Library/LaunchDaemons/gov.lanl.stonix.report.plist"
+        self.macuserpath = "/Library/LaunchAgents/gov.lanl.stonix.user.plist"
 
         # Flag that tells STONIX that old, incorrect STONIX launchd jobs
         # have been removed, so don't try to remove them again
@@ -761,42 +785,61 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             # remove old, incorrect STONIX launchd job(s)            
             if not os.path.exists(legacystonixcron):
                 for item in servicedict:
-                    os.remove(item)
+                    if os.path.exists(item):
+                        os.remove(item)
                 f = open(legacystonixcron, 'w')
                 f.write("don't delete me")
                 f.close()
                 os.chown(legacystonixcron, 0, 0)
                 os.chmod(legacystonixcron, 0o600)
-        # we don't care if they don't exist when we try to remove them
+
         except Exception:
             pass
 
         # create the STONIX launchd jobs
         try:
 
-            # create weekly report plist file
-            f = open('/Library/LaunchDaemons/gov.lanl.stonix.report.plist', 'w')
-            f.write(self.stonixplistreport)
-            f.close()
-            os.chown('/Library/LaunchDaemons/gov.lanl.stonix.report.plist', 0, 0)
-            os.chmod('/Library/LaunchDaemons/gov.lanl.stonix.report.plist', 0o644)
-            self.detailedresults += "Wrote the report plist\n"
+            if not self.macadminreportjob:
 
-            # create weekly fix plist file
-            f = open('/Library/LaunchDaemons/gov.lanl.stonix.fix.plist', 'w')
-            f.write(self.stonixplistfix)
-            f.close()
-            os.chown('/Library/LaunchDaemons/gov.lanl.stonix.fix.plist', 0, 0)
-            os.chmod('/Library/LaunchDaemons/gov.lanl.stonix.fix.plist', 0o644)
-            self.detailedresults += "Wrote the fix plist\n"
+                # remove existing job file
+                if os.path.exists(self.macadminreportpath):
+                    os.remove(self.macadminreportpath)
 
-            # create once-daily user context plist file
-            f = open('/Library/LaunchAgents/gov.lanl.stonix.user.plist', 'w')
-            f.write(self.stonixplistuser)
-            f.close()
-            os.chown('/Library/LaunchAgents/gov.lanl.stonix.user.plist', 0, 0)
-            os.chmod('/Library/LaunchAgents/gov.lanl.stonix.user.plist', 0o644)
-            self.detailedresults += "Wrote the user plist\n"
+                # create weekly report plist file
+                f = open(self.macadminreportpath, 'w')
+                f.write(self.stonixplistreport)
+                f.close()
+                os.chown(self.macadminreportpath, 0, 0)
+                os.chmod(self.macadminreportpath, 0o644)
+                self.detailedresults += "Wrote the report plist\n"
+
+            if not self.macadminfixjob:
+
+                # remove existing job file
+                if os.path.exists(self.macadminfixpath):
+                    os.remove(self.macadminfixpath)
+
+                # create weekly fix plist file
+                f = open(self.macadminfixpath, 'w')
+                f.write(self.stonixplistfix)
+                f.close()
+                os.chown(self.macadminfixpath, 0, 0)
+                os.chmod(self.macadminfixpath, 0o644)
+                self.detailedresults += "Wrote the fix plist\n"
+
+            if not self.macuserjob:
+
+                # remove existing job file
+                if os.path.exists(self.macuserpath):
+                    os.remove(self.macuserpath)
+
+                # create once-daily user context plist file
+                f = open(self.macuserpath, 'w')
+                f.write(self.stonixplistuser)
+                f.close()
+                os.chown(self.macuserpath, 0, 0)
+                os.chmod(self.macuserpath, 0o644)
+                self.detailedresults += "Wrote the user plist\n"
 
             # This part needs to be changed to work with re-designed servicehelperTwo
             for item in servicedict:
