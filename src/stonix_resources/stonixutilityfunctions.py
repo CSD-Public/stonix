@@ -912,31 +912,39 @@ def createFile(path, logger):
     Create a blank file with file name = <path>, if <path>
     does not already exist.
 
-    @author: Derek Walker
     @param path: string representing full path to write
     @param logger: logging object
+
     @return: retval
     @rtype: bool
+
+    @author: Derek Walker
     @change: Breen Malmberg - 7/12/2017 - completed doc string; added return var;
-            added return var init; added check to see if path already exists
+            added return var init; added check to see if path already exists;
+            changed the way new files get created to the canonical python way;
+            changed the logging if an exception happens to just log the exception
+            message itself instead of creating an artificial message; added debug
+            logging about the processes of the method; changed the makedirs default
+            permissions so directories will no longer be created with 777, but 755
+            instead
     '''
 
     retval = True
-    debug = ""
 
     try:
 
         pathdir, _ = os.path.split(path)
         if not os.path.exists(pathdir):
-            os.makedirs(pathdir)
-        if not os.path.exists(path):
-            w = open(path, "w")
-            w.close()
+            logger.log(LogPriority.DEBUG, "Parent directory of file does not exist. Creating parent directory(ies)...")
+            os.makedirs(pathdir, 0755)
+        if os.path.exists(path):
+            logger.log(LogPriority.DEBUG, "Path already exists. Will not overwrite it.")
+            retval = False
+        else:
+            open(path, 'a').close()
 
-    except IOError:
-        debug += "Unable to create the file: " + path
-        debug += traceback.format_exc() + "\n"
-        logger.log(LogPriority.DEBUG, debug)
+    except IOError as errmsg:
+        logger.log(LogPriority.WARNING, errmsg)
         retval = False
     return retval
 
