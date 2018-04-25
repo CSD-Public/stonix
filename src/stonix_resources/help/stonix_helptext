@@ -538,3 +538,9 @@ This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionali
 <131>        "This rule configures user preferences to display the Bluetooth icon in the menu bar. This rule is optional."
 
 <85>        "This rule prevents users from logging into root directly through virtual console or tty connections. Users can still access root through non-tty connections or by escalating privileges using sudo."
+
+<330>		"***OPTIONAL RULE***
+
+This rule will limit the number of concurrent login sessions the system can have. The default limit amount is 10. The user can specify what they want this number to be, by entering a different number for the MAXSYSLOGINS configuration item value. This rule is disabled by default.
+
+Users should keep in mind, while setting this number, that login sessions can include how many terminals you currently have open."
