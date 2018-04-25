@@ -21,9 +21,13 @@
 #                                                                             #
 ###############################################################################
 '''
-Created on Mar 22, 2018
+Created on April 25, 2018
 
-@author: Derek Walker
+Limit a system's concurrent logins to 10 (default) or the
+number the end-user specifies
+This is not a mandatory rule
+
+@author: Breen Malmberg
 '''
 
 from __future__ import absolute_import
@@ -33,13 +37,15 @@ import re
 import os
 
 from ..rule import Rule
-from ..stonixutilityfunctions import setPerms, checkPerms, iterate, resetsecon
-from ..stonixutilityfunctions import readFile, writeFile, createFile
+from ..stonixutilityfunctions import iterate, resetsecon
 from ..logdispatcher import LogPriority
 
 
 class LimitConcurrentLogins(Rule):
     '''
+    Limit a system's concurrent logins to 10 (default) or the
+    number the end-user specifies
+    This is not a mandatory rule
     '''
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
@@ -52,25 +58,144 @@ class LimitConcurrentLogins(Rule):
         self.logger = logdispatcher
         self.formatDetailedResults("initialize")
         self.mandatory = True
-        self.helptext = "This rule limits the number of open terminal sessions " + \
-            "for the current user\n"
         self.applicable = {'type': 'white',
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
+        self.conffilesdir = "/etc/security/limits.d"
+        self.sethelptext()
 
         # init CIs
         datatype1 = 'bool'
-        key1 = 'LIMITLOGINS'
-        instructions1 = "To disable this rule, set the value of LIMITLOGINS to False."
+        key1 = 'LIMITCONCURRENTLOGINS'
+        instructions1 = "To enable this rule, set the value of LIMITLOGINS to True."
         default1 = False
         self.ci = self.initCi(datatype1, key1, instructions1, default1)
-        
+
         datatype2 = 'string'
-        key2 = "LOGINNUMBER"
-        instructions2 = "The number of logins to limit to.  Default is 10."
+        key2 = "MAXSYSLOGINS"
+        instructions2 = "Enter the maximum number of login sessions you wish to limit this system to. Please enter a single, positive integer."
         default2 = "10"
         self.cinum = self.initCi(datatype2, key2, instructions2, default2)
-        
+
+    def readFile(self, filepath):
+        '''
+        Read the contents of filepath into a list and return that list
+        Return a blank list if either the filepath argument is not the
+        correct data type, or the filepath does not exist on the operating
+        system
+
+        @param filepath: string; full path to the file to be read
+
+        @return: contentlist
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        contentlist = []
+
+        try:
+    
+            if not os.path.exists(filepath):
+                self.detailedresults += "\nRequired configuration file: " + str(self.configfile) + " does not exist"
+                self.logger.log(LogPriority.DEBUG, "Cannot read file. File does not exist.")
+                return contentlist
+
+            f = open(filepath, 'r')
+            contentlist = f.readlines()
+            f.close()
+
+        except Exception:
+            raise
+
+        return contentlist
+
+    def writeFile(self, path, contents):
+        '''
+        write given contents to a given file path
+        record undo action
+        return true if successful
+        return false if failed
+
+        @param path: string; full path to the file to write to
+        @param contents: list; list of strings to write to file
+
+        @return: success
+        @rtype: bool
+
+        @author: Breen Malmberg
+        '''
+
+        success = True
+        tmppath = path + ".stonixtmp"
+
+        try:
+
+            if not contents:
+                self.logger.log(LogPriority.DEBUG, "Contents was empty")
+                success = False
+                return success
+
+            if not os.path.exists(os.path.abspath(os.path.join(path, os.pardir))):
+                self.logger.log(LogPriority.DEBUG, "Parent directory does not exist")
+                success = False
+                return success
+
+            elif os.path.exists(path):
+
+                tf = open(tmppath, 'w')
+                tf.writelines(contents)
+                tf.close()
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": path}
+
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(path, tmppath, myid)
+                os.rename(tmppath, path)
+                resetsecon(path)
+
+            else:
+
+                f = open(path, 'w')
+                f.writelines(contents)
+                f.close()
+
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": path}
+
+                self.statechglogger.recordchgevent(myid, event)
+
+        except Exception:
+            success = False
+            raise
+
+        return success
+
+    def buildConfFileList(self):
+        '''
+        dynamically build the list of configuration files
+        we need to edit. this includes any *.conf in the
+        /etc/security/limits.d/ directory and the
+        /etc/security/limits.conf file if it exists
+
+        @author: Breen Malmberg
+        '''
+
+        if os.path.exists(self.conffilesdir):
+
+            conffilelist = os.listdir(self.conffilesdir)
+            if conffilelist:
+                self.logger.log(LogPriority.DEBUG, "Building list of configuration files...")
+                for cf in conffilelist:
+                    if re.search("\.conf", cf):
+                        self.logger.log(LogPriority.DEBUG, "Adding file to list: " + cf + " ...")
+                        self.conffiles.append(self.conffilesdir + "/" + cf)
+
     def report(self):
         '''
         LimitConcurrentLogins.report() method to report whether system's
@@ -79,75 +204,63 @@ class LimitConcurrentLogins(Rule):
         @return: self.compliant
         @rtype: bool
 
-        @author: Derek Walker
-        @change: 04/24/2018 - Breen Malmberg - moved all default variable initializations outside of
-                try/except block so they always get set no matter what; removed all middle-man boolean
-                flag assignments in favor of just setting the return variable directly; added check for
-                contents in case readFile method has a problem and returns either an empty list or None;
-                added detailedresults feedback for permissions issues making it clear to the user what
-                is wrong in that case
-                
+        @author: Breen Malmberg
         '''
 
-        self.compliant = True
+        self.compliant = False
         self.detailedresults = ""
-        found = False
-        self.securityfile = "/etc/security/limits.conf"
+        self.userloginsvalue = str(self.cinum.getcurrvalue())
+        self.conffiles = ["/etc/security/limits.conf"]
+        foundcorrectcfg = False
+
+        # if a user enters an invalid value for the MAXSYSLOGINS CI, reset the value
+        # to 10 and inform the user
+        if self.userloginsvalue == "":
+            self.userloginsvalue = "10"
+            self.logger.log(LogPriority.DEBUG, "A blank value was entered for MAXSYSLOGINS. Resetting to default value of 10...")
+        if not self.userloginsvalue.isdigit():
+            self.userloginsvalue = "10"
+            self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXSYSLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
+
+        matchfull = "^\*\s+\-\s+maxsyslogins\s+" + self.userloginsvalue
+        matchincorrect = "^\*\s+.*\s+maxsyslogins\s+((?!" + str(self.userloginsvalue) + ").)"
 
         try:
 
-            if not os.path.exists(self.securityfile):
-                self.detailedresults += self.securityfile + " doesn't exist\n"
-                self.compliant = False
-            else:
-                if not checkPerms(self.securityfile, [0, 0, 420], self.logger):
-                    self.compliant = False
-                    self.detailedresults += "Permissions are incorrect for: " + self.securityfile + "\n"
+            self.buildConfFileList()
 
-                contents = readFile(self.securityfile, self.logger)
+            for cf in self.conffiles:
 
-                if not contents:
-                    self.logger.log(LogPriority.DEBUG, "Unable to read file contents of: " + str(self.securityfile))
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                    self.logger.log(LogPriority.INFO, self.detailedresults)
-                    return self.compliant
+                contentlines = self.readFile(cf)
+    
+                if contentlines:
+                    if not foundcorrectcfg:
+                        for line in contentlines:
+                            if re.search(matchfull, line):
+                                self.detailedresults += "\nFound correct maxsyslogins config line in: " + str(cf)
+                                self.compliant = True
+                                foundcorrectcfg = True
 
-                for line in contents:
-                    if re.match('^#', line) or re.match(r'^\s*$', line):
-                        continue
-                    if re.search("maxlogins", line):
-                        splitline = line.split()
-                        try:
-                            if len(splitline) > 4:
-                                continue
-                            if splitline[0] != "*" or \
-                                splitline[1] != "hard" or \
-                                splitline[2] != "maxlogins" or \
-                                splitline[3] != self.cinum.getcurrvalue():
-                                self.compliant = False
-                                self.detailedresults += "System is not configured with correct number of limiting logins\n"
-                                break
-                            else:
-                                found = True
-                        except IndexError:
+                    # we not only need to find the correct config line
+                    # we also need to make sure that no incorrect config lines exist either
+                    for line in contentlines:
+                        if re.search(matchincorrect, line):
                             self.compliant = False
-                            self.detailedresults += "System is not configured with correct number of limiting logins\n"
-                            break
+                            self.detailedresults += "\nFound an incorrect maxsyslogins config line in: " + str(cf)
 
-            if not found:
-                self.detailedresults += "System is not configured with correct number of limiting logins\n"
-                self.compliant = False
+            if not foundcorrectcfg:
+                self.detailedresults += "\nDid not find the correct maxsyslogins config line"
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.formatDetailedResults('report', self.compliant, self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
+
     def fix(self):
         '''
         Limit the number of concurrent logins to the value of LOGINNUMBER CI
@@ -156,105 +269,70 @@ class LimitConcurrentLogins(Rule):
         @return: self.rulesuccess
         @rtype: bool
 
-        @author: Derek Walker
-        @change: 04/24/2018 - Breen Malmberg - changed the tmpfile to .stonixtmp in keeping
-                with STONIX naming conventions; moved default variable assignments outside of try
-                except block so they always get set/initialized, no matter what; removed unnecessary
-                middle-man variable flag assignments and changed to self.rulesuccess since that is what
-                gets returned; added checking to see if a file existed after the attempt is made to create
-                it (since that attempt can, and was, failing); fixed an incomplete call to a method
-                createFile which had nothing being passed to it, which was causing the rule to fail; changed
-                the bool return flag to false if creating the file fails; moved a section of code (which was
-                logic-path-success-dependent) under neath the if condition which it logically relied on; added
-                default initialization of tempstring variable
+        @author: Breen Malmberg
         '''
 
-        self.detailedresults = ""
-        self.iditerator = 0
         self.rulesuccess = True
-        filecreated = False
-        tempstring = ""
-        tmpfile = self.securityfile + ".stonixtmp"
+        self.detailedresults = ""
+        fixstring = "\n* - maxsyslogins " + self.userloginsvalue
+        matchincorrect = "^\*\s+.*\s+maxsyslogins\s+((?!" + str(self.userloginsvalue) + ").)"
+        self.iditerator = 0
+        contentlines = []
+        wrotecorrectcfg = False
 
         try:
 
-            if not self.ci.getcurrvalue():
-                self.detailedresults += 'The CI for this rule is currently disabled. Nothing will be done...\n'
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                self.logger.log(LogPriority.INFO, self.detailedresults)
-                return self.rulesuccess
+            if self.ci.getcurrvalue():
 
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
+                for cf in self.conffiles:
+                    replaced = False
+                    appended = False
+                    contentlines = []
 
-            if not os.path.exists(self.securityfile):
-                if createFile(self.securityfile, self.logger):
-                    filecreated = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.securityfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                    contents = readFile(self.securityfile, self.logger)
-                    tempstring = ""
-
-                    for line in contents:
-                        if re.match('^#', line) or re.match(r'^\s*$', line):
-                            tempstring += line
-                            continue
-                        elif re.search("maxlogins", line):
-                            splitline = line.split()
-                            try:
-                                if len(splitline) > 4:
-                                    continue
-                                if splitline[0] != "*" or \
-                                    splitline[1] != "hard" or \
-                                    splitline[2] != "maxlogins" or \
-                                    splitline[3] != self.cinum.getcurrvalue():
-                                    continue
-                            except IndexError:
-                                continue
+                    contentlines = self.readFile(cf)
+    
+                    # file was empty. just add the config line
+                    if not contentlines:
+                        if not wrotecorrectcfg:
+                            contentlines.append(fixstring)
+                            appended = True
+                    else:
+    
+                        for line in contentlines:
+        
+                            # check for partial match
+                            if re.search(matchincorrect, line):
+                                # if we already replaced one line with the correct config
+                                # then remove any extra (duplicate) config line entries which
+                                # may exist in the file's contents
+                                if replaced:
+                                    self.logger.log(LogPriority.DEBUG, "Found duplicate config line. Removing...")
+                                    contentlines = [c.replace(line, "\n") for c in contentlines]
+                                # if partial match then replace line with correct config line
+                                else:
+                                    self.logger.log(LogPriority.DEBUG, "Found config line, but it is incorrect. Fixing...")
+                                    contentlines = [c.replace(line, fixstring) for c in contentlines]
+                                    replaced = True
+    
+                    # if we didn't find any partial matches to replace, then
+                    # append the correct config line to the end of the file
+                    if not replaced:
+                        if not wrotecorrectcfg:
+                            self.logger.log(LogPriority.DEBUG, "Didn't find config line. Appending it to end of config file...")
+                            contentlines.append(fixstring)
+                            appended = True
+    
+                    # we only want to write if we actually changed something
+                    if bool(appended or replaced):
+                        if not self.writeFile(cf, contentlines):
+                            self.rulesuccess = False
                         else:
-                            tempstring += line
-                else:
-                    self.logger.log(LogPriority.DEBUG, "Unable to create file: " + str(self.securityfile))
-                    self.rulesuccess = False
+                            wrotecorrectcfg = True
+                    else:
+                        self.logger.log(LogPriority.DEBUG, "Didn't make any changes to the file's contents")
 
-            if tempstring:
-
-                tempstring += "*\thard\tmaxlogins\t" + self.cinum.getcurrvalue() + "\n"
-
-                if not writeFile(tmpfile, tempstring, self.logger):
-                    debug = "Unable to write changes to " + tmpfile
-                    self.detailedresults += debug
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    self.rulesuccess = False
-
-                elif not filecreated:
-                    if not checkPerms(self.securityfile, [0, 0, 420], self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        setPerms(self.securityfile, [0, 0, 0644], self.logger, self.statechglogger, myid)
-                        resetsecon(self.securityfile)
-
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.securityfile}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.securityfile,
-                                                         tmpfile, myid)
-                    os.rename(tmpfile, self.securityfile)
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    setPerms(self.securityfile, [0, 0, 420], self.logger)
-                    resetsecon(self.securityfile)
-                else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    setPerms(self.securityfile, [0, 0, 420], self.logger, self.statechglogger, myid)
-                    resetsecon(self.securityfile)
+            else:
+                self.logger.log(LogPriority.DEBUG, "The CI for this rule was not enabled. Fix will not be performed.")
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -262,6 +340,8 @@ class LimitConcurrentLogins(Rule):
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.formatDetailedResults('fix', self.rulesuccess, self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
+
+
