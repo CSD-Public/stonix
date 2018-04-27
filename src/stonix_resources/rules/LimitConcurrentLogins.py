@@ -95,9 +95,9 @@ class LimitConcurrentLogins(Rule):
         contentlist = []
 
         try:
-    
+
             if not os.path.exists(filepath):
-                self.detailedresults += "\nRequired configuration file: " + str(self.configfile) + " does not exist"
+                self.detailedresults += "\nRequired configuration file: " + str(filepath) + " does not exist"
                 self.logger.log(LogPriority.DEBUG, "Cannot read file. File does not exist.")
                 return contentlist
 
