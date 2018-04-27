@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -28,6 +28,9 @@ number the end-user specifies
 This is not a mandatory rule
 
 @author: Derek Walker, Breen Malmberg
+@change: 04/27/2018 - Breen Malmberg - changed config type to 'maxlogins'; fixed
+        the removal of newline characters between config lines; added permissions
+        checking of config file(s); changed mandatory flag to False
 '''
 
 from __future__ import absolute_import
@@ -37,7 +40,7 @@ import re
 import os
 
 from ..rule import Rule
-from ..stonixutilityfunctions import iterate, resetsecon
+from ..stonixutilityfunctions import iterate, resetsecon, checkPerms
 from ..logdispatcher import LogPriority
 
 
@@ -57,7 +60,7 @@ class LimitConcurrentLogins(Rule):
         self.rulename = 'LimitConcurrentLogins'
         self.logger = logdispatcher
         self.formatDetailedResults("initialize")
-        self.mandatory = True
+        self.mandatory = False
         self.applicable = {'type': 'white',
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
@@ -67,12 +70,12 @@ class LimitConcurrentLogins(Rule):
         # init CIs
         datatype1 = 'bool'
         key1 = 'LIMITCONCURRENTLOGINS'
-        instructions1 = "To enable this rule, set the value of LIMITLOGINS to True."
+        instructions1 = "To enable this rule, set the value of LIMITCONCURRENTLOGINS to True."
         default1 = False
         self.ci = self.initCi(datatype1, key1, instructions1, default1)
 
         datatype2 = 'string'
-        key2 = "MAXSYSLOGINS"
+        key2 = "MAXLOGINS"
         instructions2 = "Enter the maximum number of login sessions you wish to limit this system to. Please enter a single, positive integer."
         default2 = "10"
         self.cinum = self.initCi(datatype2, key2, instructions2, default2)
@@ -155,7 +158,6 @@ class LimitConcurrentLogins(Rule):
                 self.statechglogger.recordchgevent(myid, event)
                 self.statechglogger.recordfilechange(path, tmppath, myid)
                 os.rename(tmppath, path)
-                resetsecon(path)
 
             else:
 
@@ -169,6 +171,10 @@ class LimitConcurrentLogins(Rule):
                          "filepath": path}
 
                 self.statechglogger.recordchgevent(myid, event)
+
+            os.chmod(path, 0600)
+            os.chown(path, 0, 0)
+            resetsecon(path)
 
         except Exception:
             success = False
@@ -213,17 +219,17 @@ class LimitConcurrentLogins(Rule):
         self.conffiles = ["/etc/security/limits.conf"]
         foundcorrectcfg = False
 
-        # if a user enters an invalid value for the MAXSYSLOGINS CI, reset the value
+        # if a user enters an invalid value for the MAXLOGINS CI, reset the value
         # to 10 and inform the user
         if self.userloginsvalue == "":
             self.userloginsvalue = "10"
-            self.logger.log(LogPriority.DEBUG, "A blank value was entered for MAXSYSLOGINS. Resetting to default value of 10...")
+            self.logger.log(LogPriority.DEBUG, "A blank value was entered for MAXLOGINS. Resetting to default value of 10...")
         if not self.userloginsvalue.isdigit():
             self.userloginsvalue = "10"
-            self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXSYSLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
+            self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
 
-        matchfull = "^\*\s+\-\s+maxsyslogins\s+" + self.userloginsvalue
-        matchincorrect = "^\*\s+.*\s+maxsyslogins\s+((?!" + str(self.userloginsvalue) + ").)"
+        matchfull = "^\*\s+\-\s+maxlogins\s+" + self.userloginsvalue
+        matchincorrect = "^\*\s+.*\s+maxlogins\s+((?!" + str(self.userloginsvalue) + ").)"
 
         try:
 
@@ -237,7 +243,7 @@ class LimitConcurrentLogins(Rule):
                     if not foundcorrectcfg:
                         for line in contentlines:
                             if re.search(matchfull, line):
-                                self.detailedresults += "\nFound correct maxsyslogins config line in: " + str(cf)
+                                self.detailedresults += "\nFound correct maxlogins config line in: " + str(cf)
                                 self.compliant = True
                                 foundcorrectcfg = True
 
@@ -246,10 +252,14 @@ class LimitConcurrentLogins(Rule):
                     for line in contentlines:
                         if re.search(matchincorrect, line):
                             self.compliant = False
-                            self.detailedresults += "\nFound an incorrect maxsyslogins config line in: " + str(cf)
+                            self.detailedresults += "\nFound an incorrect maxlogins config line in: " + str(cf)
+
+                if not checkPerms(cf, [0, 0, 0600], self.logger):
+                    self.compliant = False
+                    self.detailedresults += "\nIncorrect permissions on file: " + str(cf)
 
             if not foundcorrectcfg:
-                self.detailedresults += "\nDid not find the correct maxsyslogins config line"
+                self.detailedresults += "\nDid not find the correct maxlogins config line"
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -274,8 +284,9 @@ class LimitConcurrentLogins(Rule):
 
         self.rulesuccess = True
         self.detailedresults = ""
-        fixstring = "\n* - maxsyslogins " + self.userloginsvalue
-        matchincorrect = "^\*\s+.*\s+maxsyslogins\s+((?!" + str(self.userloginsvalue) + ").)"
+        replacestring = "* - maxlogins " + self.userloginsvalue + "\n"
+        appendstring = "\n* - maxlogins " + self.userloginsvalue
+        matchincorrect = "^\*\s+.*\s+maxlogins\s+((?!" + str(self.userloginsvalue) + ").)"
         self.iditerator = 0
         contentlines = []
         wrotecorrectcfg = False
@@ -294,7 +305,7 @@ class LimitConcurrentLogins(Rule):
                     # file was empty. just add the config line
                     if not contentlines:
                         if not wrotecorrectcfg:
-                            contentlines.append(fixstring)
+                            contentlines.append(appendstring)
                             appended = True
                     else:
     
@@ -311,7 +322,7 @@ class LimitConcurrentLogins(Rule):
                                 # if partial match then replace line with correct config line
                                 else:
                                     self.logger.log(LogPriority.DEBUG, "Found config line, but it is incorrect. Fixing...")
-                                    contentlines = [c.replace(line, fixstring) for c in contentlines]
+                                    contentlines = [c.replace(line, replacestring) for c in contentlines]
                                     replaced = True
     
                     # if we didn't find any partial matches to replace, then
@@ -319,7 +330,7 @@ class LimitConcurrentLogins(Rule):
                     if not replaced:
                         if not wrotecorrectcfg:
                             self.logger.log(LogPriority.DEBUG, "Didn't find config line. Appending it to end of config file...")
-                            contentlines.append(fixstring)
+                            contentlines.append(appendstring)
                             appended = True
     
                     # we only want to write if we actually changed something
@@ -343,5 +354,3 @@ class LimitConcurrentLogins(Rule):
         self.formatDetailedResults('fix', self.rulesuccess, self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-
-
