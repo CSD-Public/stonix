@@ -27,7 +27,7 @@ Limit a system's concurrent logins to 10 (default) or the
 number the end-user specifies
 This is not a mandatory rule
 
-@author: Breen Malmberg
+@author: Derek Walker, Breen Malmberg
 '''
 
 from __future__ import absolute_import
@@ -204,7 +204,7 @@ class LimitConcurrentLogins(Rule):
         @return: self.compliant
         @rtype: bool
 
-        @author: Breen Malmberg
+        @author: Derek Walker, Breen Malmberg
         '''
 
         self.compliant = False
@@ -269,7 +269,7 @@ class LimitConcurrentLogins(Rule):
         @return: self.rulesuccess
         @rtype: bool
 
-        @author: Breen Malmberg
+        @author: Derek Walker, Breen Malmberg
         '''
 
         self.rulesuccess = True
