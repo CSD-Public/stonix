@@ -121,6 +121,7 @@ CONFIGURELINUXFIREWALL to False.'''
         catchall6 = False
         self.detailedresults = ""
         self.iptScriptPath = ""
+        scriptExists = ""
         try:
             if self.isfirewalld:
                 if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
