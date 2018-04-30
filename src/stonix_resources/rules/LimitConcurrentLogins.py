@@ -57,6 +57,7 @@ class LimitConcurrentLogins(Rule):
 
         Rule.__init__(self, config, environ, logdispatcher, statechglogger)
         self.rulenumber = 330
+        self.rootrequired = True
         self.rulename = 'LimitConcurrentLogins'
         self.logger = logdispatcher
         self.formatDetailedResults("initialize")
@@ -172,7 +173,7 @@ class LimitConcurrentLogins(Rule):
 
                 self.statechglogger.recordchgevent(myid, event)
 
-            os.chmod(path, 0600)
+            os.chmod(path, 384)
             os.chown(path, 0, 0)
             resetsecon(path)
 
@@ -184,10 +185,12 @@ class LimitConcurrentLogins(Rule):
 
     def buildConfFileList(self):
         '''
-        dynamically build the list of configuration files
-        we need to edit. this includes any *.conf in the
+        Dynamically build the list of configuration files
+        we need to edit. This includes any *.conf in the
         /etc/security/limits.d/ directory and the
         /etc/security/limits.conf file if it exists
+        The "limits" configuration is read as a concatenation
+        of limits.conf and any *.conf files in limits.d/
 
         @author: Breen Malmberg
         '''
@@ -198,7 +201,7 @@ class LimitConcurrentLogins(Rule):
             if conffilelist:
                 self.logger.log(LogPriority.DEBUG, "Building list of configuration files...")
                 for cf in conffilelist:
-                    if re.search("\.conf", cf):
+                    if re.search("\.conf$", cf):
                         self.logger.log(LogPriority.DEBUG, "Adding file to list: " + cf + " ...")
                         self.conffiles.append(self.conffilesdir + "/" + cf)
 
@@ -213,11 +216,14 @@ class LimitConcurrentLogins(Rule):
         @author: Derek Walker, Breen Malmberg
         '''
 
-        self.compliant = False
+        self.compliant = True
         self.detailedresults = ""
         self.userloginsvalue = str(self.cinum.getcurrvalue())
         self.conffiles = ["/etc/security/limits.conf"]
-        foundcorrectcfg = False
+        self.expectedvalues = ['*', 'hard', 'maxlogins', str(self.userloginsvalue)]
+        self.strcfgline = self.expectedvalues[0] + " " + self.expectedvalues[1] + " " + self.expectedvalues[2] + " " + self.expectedvalues[3]
+        self.foundcorrectcfg = False
+        self.foundincorrect = False
 
         # if a user enters an invalid value for the MAXLOGINS CI, reset the value
         # to 10 and inform the user
@@ -228,38 +234,45 @@ class LimitConcurrentLogins(Rule):
             self.userloginsvalue = "10"
             self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
 
-        matchfull = "^\*\s+\-\s+maxlogins\s+" + self.userloginsvalue
-        matchincorrect = "^\*\s+.*\s+maxlogins\s+((?!" + str(self.userloginsvalue) + ").)"
+        correctconfig = "^\s*\*\s+\hard\s+maxlogins\s+" + self.userloginsvalue
 
         try:
 
+            # possibly more than 1 conf file to check
             self.buildConfFileList()
 
             for cf in self.conffiles:
 
                 contentlines = self.readFile(cf)
-    
+
                 if contentlines:
-                    if not foundcorrectcfg:
-                        for line in contentlines:
-                            if re.search(matchfull, line):
-                                self.detailedresults += "\nFound correct maxlogins config line in: " + str(cf)
-                                self.compliant = True
-                                foundcorrectcfg = True
+                    for line in contentlines:
+                        if re.search(correctconfig, line):
+                            if not self.foundcorrectcfg:
+                                self.detailedresults += "\nFound correct maxlogins config line in: " + str(cf) + "\n"
+                                self.foundcorrectcfg = True
 
                     # we not only need to find the correct config line
                     # we also need to make sure that no incorrect config lines exist either
                     for line in contentlines:
-                        if re.search(matchincorrect, line):
-                            self.compliant = False
+                        if self.matchIncorrect(line, self.expectedvalues):
                             self.detailedresults += "\nFound an incorrect maxlogins config line in: " + str(cf)
+                            self.detailedresults += "\nIncorrect line = " + line
+                            self.foundincorrect = True
+
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Configure file: " + str(cf) + " was empty/blank")
 
                 if not checkPerms(cf, [0, 0, 0600], self.logger):
                     self.compliant = False
                     self.detailedresults += "\nIncorrect permissions on file: " + str(cf)
 
-            if not foundcorrectcfg:
+            if not self.foundcorrectcfg:
+                self.compliant = False
                 self.detailedresults += "\nDid not find the correct maxlogins config line"
+
+            if self.foundincorrect:
+                self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -270,6 +283,42 @@ class LimitConcurrentLogins(Rule):
         self.formatDetailedResults('report', self.compliant, self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def matchIncorrect(self, line, expectedvalues):
+        '''
+        find any maxlogins configuration lines which have the incorrect value(s)
+        return True if an incorrect config line is found
+        return False if not
+
+        @param line: string; configuration line to check
+        @param expectedvalues: list; list of correct config line parts
+
+        @return: mismatch
+        @rtype: bool
+
+        @author: Breen Malmberg
+        '''
+
+        mismatch = False
+        i = 0
+
+        try:
+
+            if re.search("^\s*#", line):
+                return mismatch
+            elif re.search("maxlogins", line, re.IGNORECASE):
+                sline = line.split()
+                if len(sline) != len(expectedvalues):
+                    mismatch = True
+                while i < len(sline):
+                    if sline[i] != expectedvalues[i]:
+                        mismatch = True
+                    i+=1
+
+        except IndexError:
+            pass
+
+        return mismatch
 
     def fix(self):
         '''
@@ -284,63 +333,46 @@ class LimitConcurrentLogins(Rule):
 
         self.rulesuccess = True
         self.detailedresults = ""
-        replacestring = "* - maxlogins " + self.userloginsvalue + "\n"
-        appendstring = "\n* - maxlogins " + self.userloginsvalue
-        matchincorrect = "^\*\s+.*\s+maxlogins\s+((?!" + str(self.userloginsvalue) + ").)"
+
         self.iditerator = 0
-        contentlines = []
-        wrotecorrectcfg = False
 
         try:
 
             if self.ci.getcurrvalue():
 
+                # iterate through list of config files
                 for cf in self.conffiles:
-                    replaced = False
-                    appended = False
                     contentlines = []
 
                     contentlines = self.readFile(cf)
-    
-                    # file was empty. just add the config line
-                    if not contentlines:
-                        if not wrotecorrectcfg:
-                            contentlines.append(appendstring)
-                            appended = True
-                    else:
-    
-                        for line in contentlines:
-        
-                            # check for partial match
-                            if re.search(matchincorrect, line):
-                                # if we already replaced one line with the correct config
-                                # then remove any extra (duplicate) config line entries which
-                                # may exist in the file's contents
-                                if replaced:
-                                    self.logger.log(LogPriority.DEBUG, "Found duplicate config line. Removing...")
-                                    contentlines = [c.replace(line, "\n") for c in contentlines]
-                                # if partial match then replace line with correct config line
-                                else:
-                                    self.logger.log(LogPriority.DEBUG, "Found config line, but it is incorrect. Fixing...")
-                                    contentlines = [c.replace(line, replacestring) for c in contentlines]
-                                    replaced = True
-    
-                    # if we didn't find any partial matches to replace, then
-                    # append the correct config line to the end of the file
-                    if not replaced:
-                        if not wrotecorrectcfg:
-                            self.logger.log(LogPriority.DEBUG, "Didn't find config line. Appending it to end of config file...")
-                            contentlines.append(appendstring)
-                            appended = True
-    
-                    # we only want to write if we actually changed something
-                    if bool(appended or replaced):
+
+                    # no limit to number of incorrect entries we can fix
+                    if self.foundincorrect:
+                        contentlines = self.fixIncorrect(contentlines, self.expectedvalues)
+
+                    # we only want to append the config line once to one of the files
+                    # (if it doesn't already exist somewhere else)
+                    if not self.foundcorrectcfg:
+                        contentlines = self.fixMissing(contentlines)
+                        self.foundcorrectcfg = True
+
+                    contentlines = self.fixDuplicates(contentlines)
+
+                    contentlines = self.fixEOF(contentlines)
+
+                    contentlines = self.fixHeading(cf, contentlines)
+
+                    # fix any blank line inflation
+                    contentlines = self.fixDeflate(contentlines)
+
+                    # write all of the changes to the config file
+                    if contentlines:
                         if not self.writeFile(cf, contentlines):
+                            self.logger.log(LogPriority.DEBUG, "Failed to write contents to file")
                             self.rulesuccess = False
-                        else:
-                            wrotecorrectcfg = True
                     else:
-                        self.logger.log(LogPriority.DEBUG, "Didn't make any changes to the file's contents")
+                        self.logger.log(LogPriority.DEBUG, "Failed to write contents to file")
+                        self.rulesuccess = False
 
             else:
                 self.logger.log(LogPriority.DEBUG, "The CI for this rule was not enabled. Fix will not be performed.")
@@ -354,3 +386,150 @@ class LimitConcurrentLogins(Rule):
         self.formatDetailedResults('fix', self.rulesuccess, self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
+
+    def fixIncorrect(self, contentlines, expectedvalues):
+        '''
+        fix any existing, incorrect configuration line entries
+        return the fixed results
+
+        @param contentlines: list; list of strings to examine
+        @param expectedvalues: list; list of correct config value parts
+
+        @return: contentlines
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        # replace string slightly different than appendstring, since we
+        # are replacing a current line and its newline return
+        replacestring = self.strcfgline + "\n"
+
+        for line in contentlines:
+            if self.matchIncorrect(line, expectedvalues):
+                contentlines = [c.replace(line, replacestring) for c in contentlines]
+
+        return contentlines
+
+    def fixMissing(self, contentlines=[]):
+        '''
+        if the contents are completely missing the configuration line
+        append it and return the results
+
+        @param contentlines: list; list of strings to examine
+
+        @return: contentlines
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        # appendstring slightly different than replacestring, since we
+        # are adding a new string plus a new newline return
+        appendstring = "\n" + self.strcfgline + "|n"
+
+        self.logger.log(LogPriority.DEBUG, "Didn't find config line. Appending it to end of config file...")
+        contentlines.append(appendstring)
+
+        return contentlines
+
+    def fixDuplicates(self, contentlines):
+        '''
+        search for and remove any duplicates of the specific configuration
+        line we are looking for. return the results
+
+        @param contentlines: list; list of strings to examine
+        @param expectedvalues: list; list of correct config value parts
+
+        @return: newcontentlines
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        newcontentlines = []
+
+        self.logger.log(LogPriority.DEBUG, "Checking for and fixing any duplicate config line entries...")
+
+        for line in contentlines:
+            if line not in newcontentlines:
+                newcontentlines.append(line)
+
+        return newcontentlines
+
+    def fixDeflate(self, contentlines):
+        '''
+        remove extra blank lines to prevent file inflation
+
+        @param contentlines: list; list of strings to examine
+
+        @return: newcontentlines
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        i = 0
+        newcontentlines = []
+
+        # only allow a maximum of 1 full blank line between lines with actual content
+        # remove all extra blank lines; keep all lines with content in them (all non-blank)
+        self.logger.log(LogPriority.DEBUG, "Removing extra blank lines from file contents...")
+        for line in contentlines:
+            if re.search('^\s*\n$', line):
+                i += 1
+                if i >= 2:
+                    continue
+                else:
+                    newcontentlines.append(line)
+            else:
+                newcontentlines.append(line)
+                i = 0
+
+        return newcontentlines
+
+    def fixEOF(self, contentlines):
+        '''
+        move the end of file comment to the end of the file
+
+        @param contentlines: list; list of strings to examine
+
+        @return: contentlines
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        eofstring = "\n# End of File\n"
+
+        for line in contentlines:
+            if re.search("^\s*#\s*End\s+of\s+File", line, re.IGNORECASE):
+                contentlines = [c.replace(line, "") for c in contentlines]
+
+        contentlines.append(eofstring)
+
+        return contentlines
+
+    def fixHeading(self, filepath, contentlines):
+        '''
+        insert the file comment heading if it does not exist
+
+        @param filepath: string; full path to the file
+        @param contentlines: list; list of strings to examine
+
+        @return: contentlines
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        foundheading = False
+
+        for line in contentlines:
+            if re.search('^\s*#\s*' + filepath, line):
+                foundheading = True
+
+        if not foundheading:
+            contentlines.insert(0, '# ' + filepath + '\n\n')
+
+        return contentlines
