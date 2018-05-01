@@ -170,13 +170,7 @@ class MinimizeServices(Rule):
                              'syslog',
                              'sysstat',
                              'udev-post',
-                             'xfs',
-                             'udev-post',
-                             'blk-availability',
-                             'cpuspeed',
-                             'lvm2-monitor',
-                             'rdma',
-                             'sysstat']
+                             'xfs']
         self.specials = ['apparmor', 'urandom', 'x11-common', 'sendsigs',
                          'unmountnfs.sh', 'networking', 'umountfs',
                          'umountroot', 'reboot', 'halt', 'killprocs',
@@ -483,20 +477,23 @@ elements should be space separated.'''
 
         self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Starting platform detection"])
 
-        if os.path.exists('/bin/systemctl'):
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found using systemd list"])
+        self.environ.setsystemtype()
+        systemtype = self.environ.getsystemtype()
+
+        if systemtype == "systemd" or os.path.exists("/bin/systemctl"):
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found. Using systemd list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.systemddefault)
 
         elif self.environ.getosfamily() == 'linux':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Linux OS found using Linux default list"])
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Linux OS found. Using Linux default list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
 
         elif self.environ.getosfamily() == 'solaris':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Solaris OS found using Solaris list"])
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Solaris OS found. Using Solaris list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.soldefault)
 
         elif self.environ.getosfamily() == 'freebsd':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "FreeBSD OS found using BSD list"])
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "FreeBSD OS found. Using BSD list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.bsddefault)
 
         else:

@@ -105,7 +105,6 @@ LANL-stonix."""
         self.targetstate = "configured"
         self.guidance = []
         self.auditonly = False
-        self.sethelptext()
 
     def fix(self):
         """
