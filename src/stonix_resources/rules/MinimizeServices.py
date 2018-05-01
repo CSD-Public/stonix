@@ -480,7 +480,7 @@ elements should be space separated.'''
         self.environ.setsystemtype()
         systemtype = self.environ.getsystemtype()
 
-        if systemtype == "systemd" or os.path.exists("/bin/systemctl"):
+        if systemtype == "systemd":
             self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found. Using systemd list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.systemddefault)
 
