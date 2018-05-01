@@ -426,7 +426,7 @@ class LimitConcurrentLogins(Rule):
 
         # appendstring slightly different than replacestring, since we
         # are adding a new string plus a new newline return
-        appendstring = "\n" + self.strcfgline + "|n"
+        appendstring = "\n" + self.strcfgline + "\n"
 
         self.logger.log(LogPriority.DEBUG, "Didn't find config line. Appending it to end of config file...")
         contentlines.append(appendstring)
