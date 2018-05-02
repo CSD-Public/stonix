@@ -48,7 +48,6 @@ import re
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
 
 
 class MinimizeServices(Rule):
@@ -515,13 +514,6 @@ elements should be space separated.'''
         running = False # default init var
 
         try:
-
-            # debugging an issue with automated testing
-            self.ch = CommandHelper(self.logger)
-            self.ch.executeCommand("hostname")
-            outstr = self.ch.getOutputString()
-            self.logger.log(LogPriority.DEBUG, """\n\n\nHOSTNAME = """ + outstr + """\n\n\n""")
-            # debugging an issue with automated testing
 
             self.detailedresults = ""
             servicelist = self.servicehelper.listServices()
