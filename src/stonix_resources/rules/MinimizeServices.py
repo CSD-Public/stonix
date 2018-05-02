@@ -39,15 +39,16 @@ ubuntu 16.04.
 @change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
 @change: 2017/10/24 rsn changing to use service helper, second gen
 '''
+
 from __future__ import absolute_import
 
-import os
 import traceback
 import re
 
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
+from ..CommandHelper import CommandHelper
 
 
 class MinimizeServices(Rule):
@@ -514,6 +515,13 @@ elements should be space separated.'''
         running = False # default init var
 
         try:
+
+            # debugging an issue with automated testing
+            self.ch = CommandHelper(self.logger)
+            self.ch.executeCommand("hostname")
+            outstr = self.ch.getOutputString()
+            self.logger.log(LogPriority.DEBUG, """\n\n\nHOSTNAME = """ + outstr + """\n\n\n""")
+            # debugging an issue with automated testing
 
             self.detailedresults = ""
             servicelist = self.servicehelper.listServices()
