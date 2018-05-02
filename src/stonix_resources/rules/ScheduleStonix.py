@@ -46,7 +46,7 @@ from __future__ import absolute_import
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import readFile, findUserLoggedIn
+from ..stonixutilityfunctions import readFile
 from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
@@ -64,10 +64,18 @@ class ScheduleStonix(Rule):
     context
 
     @author: Breen Malmberg
+
     @change: 09/25/2017 - Breen Malmberg - Eliminated redundant code; separated out
             some code into its own methods; Improved method comment blocks; Improved
             in-line code comments; Added logic to ensure that no two STONIX jobs can
             end up being scheduled to run at the same time
+    @change: 04/17/2018 - Breen Malmberg - Fixed the key being specified in the mac os
+            dict for the jobs from "Day" to "Weekday"
+    @change: 05/02/2018 - Breen Malmberg - Fixed a missed logic path for setting a flag
+            to False indicating that the config file(s) needed to be created on mac os
+            (they were never getting created the paths didn't exist to begin with; this
+            appears to have been a recent regression); added debug logging to the fixmac()
+            method; removed an unused import "FindUserLoggedIn"
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -259,7 +267,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         initialize all of the time variables
         to be used by the class
 
-        @return: void
         @author: Breen Malmberg
         '''
 
@@ -308,6 +315,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return: try_again
         @rtype: bool
+
         @author: Breen Malmberg
         '''
 
@@ -326,7 +334,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         Generate random times to run the launchd
         STONIX jobs on Mac OS X
 
-        @return: void
         @author: Breen Malmberg
         '''
 
@@ -351,8 +358,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         Return empty list if given filepath does not exist
 
         @param filepath: string; full path to file, from which to read
+
         @return: contents
         @rtype: list
+
         @author: Breen Malmberg
         '''
 
@@ -371,6 +380,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return: retval
         @rtype: bool
+
         @author: Breen Malmberg
         '''
 
@@ -454,6 +464,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return: self.compliant
         @rtype: bool
+
         @author: Breen Malmberg
         '''
 
@@ -488,6 +499,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return retval
         @rtype: bool
+
         @author Breen Malmberg
         '''
 
@@ -516,6 +528,12 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                 if not os.path.exists(path):
                     retval = False
                     self.detailedresults += "Path doesn't exist: " + path + "\n"
+                    if path == '/Library/LaunchDaemons/gov.lanl.stonix.report.plist':
+                        self.macadminreportjob = False
+                    elif path == '/Library/LaunchDaemons/gov.lanl.stonix.fix.plist':
+                        self.macadminfixjob = False
+                    elif path == '/Library/LaunchAgents/gov.lanl.stonix.user.plist':
+                        self.macuserjob = False
 
                 # if path exists, check for required plist content
                 else:
@@ -580,6 +598,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return: crontimedict
         @rtype: dict
+
         @author: Breen Malmberg
         '''
 
@@ -606,25 +625,24 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         Mac OS X: Create or edit STONIX launchd jobs as necessary
         Linux: Create or edit STONIX Cron job entries as necessary
 
-        @return: fixresult
+        @return: self.rulesuccess
         @rtype: bool
+
         @author: Breen Malmberg
         '''
 
         self.detailedresults = ""
-        fixresult = True
+        self.rulesuccess = True
 
         try:
 
             # If Mac OS, do fixes for Mac
             if self.environ.getostype() == "Mac OS X":
                 if not self.fixMac():
-                    fixresult = False
                     self.rulesuccess = False
             # else do fixes for Linux
             else:
                 if not self.fixLinux():
-                    fixresult = False
                     self.rulesuccess = False
 
         except(KeyboardInterrupt, SystemExit):
@@ -632,11 +650,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            fixresult = False
             self.rulesuccess = False
-        self.formatDetailedResults("fix", fixresult, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return fixresult
+        return self.rulesuccess
 
     def fixLinux(self):
         '''
@@ -644,6 +661,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return: retval
         @rtype: bool
+
         @author: Breen Malmberg
         '''
 
@@ -758,6 +776,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         @return: retval
         @rtype: bool
+
         @author Breen Malmberg
         '''
 
@@ -778,6 +797,8 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                        'gov.lanl.stonix.fix',
                        '/Library/LaunchAgents/gov.lanl.stonix.user.plist':
                        'gov.lanl.stonix.user'}
+
+        self.logger.log(LogPriority.DEBUG, "Running fixes for Mac OS")
 
         # the following code should only ever be run once on
         # any system
@@ -800,6 +821,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         try:
 
             if not self.macadminreportjob:
+                self.logger.log(LogPriority.DEBUG, "The admin report job is either missing or incorrect. Fixing...")
 
                 # remove existing job file
                 if os.path.exists(self.macadminreportpath):
@@ -811,9 +833,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                 f.close()
                 os.chown(self.macadminreportpath, 0, 0)
                 os.chmod(self.macadminreportpath, 0o644)
-                self.detailedresults += "Wrote the report plist\n"
+                self.logger.log(LogPriority.DEBUG, "Admin report job has been created and configured")
 
             if not self.macadminfixjob:
+                self.logger.log(LogPriority.DEBUG, "The admin fix job is either missing or incorrect. Fixing...")
 
                 # remove existing job file
                 if os.path.exists(self.macadminfixpath):
@@ -825,9 +848,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                 f.close()
                 os.chown(self.macadminfixpath, 0, 0)
                 os.chmod(self.macadminfixpath, 0o644)
-                self.detailedresults += "Wrote the fix plist\n"
+                self.logger.log(LogPriority.DEBUG, "Admin fix job has been created and configured")
 
             if not self.macuserjob:
+                self.logger.log(LogPriority.DEBUG, "The user job is either missing or incorrect. Fixing...")
 
                 # remove existing job file
                 if os.path.exists(self.macuserpath):
@@ -839,13 +863,19 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                 f.close()
                 os.chown(self.macuserpath, 0, 0)
                 os.chmod(self.macuserpath, 0o644)
-                self.detailedresults += "Wrote the user plist\n"
+                self.logger.log(LogPriority.DEBUG, "User job has been created and configured")
 
+            self.logger.log(LogPriority.DEBUG, "Loading STONIX jobs...")
             # This part needs to be changed to work with re-designed servicehelperTwo
             for item in servicedict:
                 if re.search("user", item, re.IGNORECASE):
+                    self.logger.log(LogPriority.DEBUG, "Loading user job...")
                     self.ch.executeCommand("/bin/launchctl load " + item)
                 else:
+                    if re.search("fix", item, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "Loading admin fix job...")
+                    if re.search("report", item, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "Loading admin report job...")
                     self.ch.executeCommand("/bin/launchctl enable system/" + str(servicedict[item]))
 
         except Exception:
