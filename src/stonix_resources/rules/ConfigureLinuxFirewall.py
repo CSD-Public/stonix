@@ -363,6 +363,7 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget)
                     self.detailedresults += "Firewall configured.\n "
                 elif self.isufw:
+                    self.logger.log(LogPriority.DEBUG, "System uses ufw. Running ufw commands...")
                     cmdufw = '/usr/sbin/ufw status'
                     if not self.cmdhelper.executeCommand(cmdufw):
                         self.detailedresults += "Unable to run " + \
@@ -413,6 +414,7 @@ CONFIGURELINUXFIREWALL to False.'''
 #                         self.detailedresults += "Firewall configured.\n "
                 elif os.path.exists('/usr/bin/system-config-firewall') or \
                      os.path.exists('/usr/bin/system-config-firewall-tui'):
+                    self.logger.log(LogPriority.DEBUG, "System uses system-config-firewall. Writing system-config-firewall file configuration...")
 
                     systemconfigfirewall = '''# Configuration file for system-config-firewall
 
@@ -492,6 +494,7 @@ COMMIT
                     self.detailedresults += "Firewall configured.\n "
                 elif os.path.exists(self.iprestore) and \
                      os.path.exists(self.ip6restore):
+                    self.logger.log(LogPriority.DEBUG, "System uses iptables-restore. Running iptables-restore commands...")
                     iptables = '''*filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -579,6 +582,8 @@ fw_custom_after_finished() {
                         "firewall for this system. The system " + \
                         "administrator should configure an iptables firewall.\n"
                     self.rulesuccess = False
+                if not success:
+                    self.rulesuccess = False
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
@@ -590,6 +595,8 @@ fw_custom_after_finished() {
                 self.rulesuccess = False
                 self.logger.log(LogPriority.ERROR,
                                 self.detailedresults)
+        else:
+            self.logger.log(LogPriority.DEBUG, "Rule was not enabled. Nothing will be done.")
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
