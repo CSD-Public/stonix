@@ -40,6 +40,8 @@ the Fix method.
         ftp root is mounted on its own partition
 @change: 2018/04/06 bgonz12 - Added df output handling in
         reportPart for mac systems
+@change: 2018/05/04 bgonz12 - Added detailed results message to ignore 
+        non-compliancy if ftp is not on it's own partition
 '''
 
 from __future__ import absolute_import
@@ -183,7 +185,9 @@ of users allowed to access ftp and set the default umask for ftp users.
             if not self.reportPart():
                 self.compliant = False
                 self.logger.log(LogPriority.DEBUG, "FTP root is not on mounted on its own partition")
-
+                self.detailedresults += '\n\nIf ftpd is not being ' + \
+                    'used on this system, the administrator can ' + \
+                    'disregard this non-compliancy.'
         except IOError:
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
