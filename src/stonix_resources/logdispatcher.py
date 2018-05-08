@@ -423,9 +423,9 @@ Subject: STONIX Error Report: ''' + prefix + '''
 
         @author: dkennel
         '''
+
         self.metadataopen = True
-        self.log(LogPriority.WARNING,
-                 ['RuleCount', self.environment.getnumrules()])
+        self.log(LogPriority.DEBUG, ['RuleCount', self.environment.getnumrules()])
         self.metadataopen = False
 
     def __initializelogs(self):

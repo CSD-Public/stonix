@@ -50,6 +50,8 @@ class zzzTestRuleSTIGConfigureApplicationRestrictionsPolicy(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.identifier = "mil.disa.STIG.Application_Restrictions.alacarte"
+        self.rule.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+            "U_Apple_OS_X_10-11_V1R1_STIG_Application_Restrictions_Policy.mobileconfig"
         
     def tearDown(self):
         pass

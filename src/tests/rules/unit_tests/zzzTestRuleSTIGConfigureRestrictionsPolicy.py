@@ -50,6 +50,16 @@ class zzzTestRuleSTIGConfigureRestrictionsPolicy(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
         self.identifier = "mil.disa.STIG.Restrictions.alacarte"
+        if search("10\.10.*", self.environ.getosver()):
+            self.rule.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                         "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Restrictions_Policy.mobileconfig"
+        elif search("10\.11\.*", self.environ.getosver()):
+            self.rule.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                         "U_Apple_OS_X_10-11_V1R1_STIG_Restrictions_Policy.mobileconfig"
+        else:
+            self.rule.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Restrictions_Policy.mobileconfig"
+
     def tearDown(self):
         pass
 

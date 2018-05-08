@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -38,6 +38,10 @@ the Fix method.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/03/06 Breen Malmberg - added report function for checking if
         ftp root is mounted on its own partition
+@change: 2018/04/06 bgonz12 - Added df output handling in
+        reportPart for mac systems
+@change: 2018/05/04 bgonz12 - Added detailed results message to ignore 
+        non-compliancy if ftp is not on it's own partition
 '''
 
 from __future__ import absolute_import
@@ -181,7 +185,9 @@ of users allowed to access ftp and set the default umask for ftp users.
             if not self.reportPart():
                 self.compliant = False
                 self.logger.log(LogPriority.DEBUG, "FTP root is not on mounted on its own partition")
-
+                self.detailedresults += '\n\nIf ftpd is not being ' + \
+                    'used on this system, the administrator can ' + \
+                    'disregard this non-compliancy.'
         except IOError:
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
@@ -228,7 +234,10 @@ of users allowed to access ftp and set the default umask for ftp users.
                     continue
                 else:
                     sline = line.split()
-                    mountpoint = sline[5]
+                    if self.environ.getosfamily() == 'darwin':
+                        mountpoint = sline[8]
+                    else:
+                        mountpoint = sline[5]
     
             self.cmhelper.executeCommand(df)
             outlist = self.cmhelper.getOutput()
@@ -236,7 +245,10 @@ of users allowed to access ftp and set the default umask for ftp users.
                 if re.search("Mounted On", line, re.IGNORECASE):
                     continue
                 sline = line.split()
-                othermounts.append(sline[5])
+                if self.environ.getosfamily() == 'darwin':
+                    othermounts.append(sline[8])
+                else:
+                    othermounts.append(sline[5])
             for item in othermounts:
                 if re.search('.*ftp.*', item, re.IGNORECASE):
                     continue

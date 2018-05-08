@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -93,7 +93,8 @@ class InstallBanners(RuleKVEditor):
             "set the value of InstallBanners to False.\n\n!DEBIAN USERS! Due to " + \
             "a bug in gdm3 (gnome 3) which has not been patched on debian, we are forced to " + \
             "change the user's display manager to something else in order to be compliant " + \
-            "with the login banner requirement."
+            "with the login banner requirement. As a result, the login banner changes will " + \
+            "only take effect after a system reboot."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -134,8 +135,15 @@ class InstallBanners(RuleKVEditor):
             output = self.ch.getOutputString()
             if not regex:
                 found = output.find(val)
-                if found != -1:
-                    retval = True
+
+                # this re.search is here because gconftool-2 returns 0 on failure
+                # but all other tools/utilities don't
+                if re.search("gconftool-2", cmd, re.IGNORECASE):
+                    if found not in [-1, 0]:
+                        retval = True
+                else:
+                    if found not in [-1, 1]:
+                        retval = True
             else:
                 if re.search(val, output):
                     retval = True
@@ -159,11 +167,16 @@ class InstallBanners(RuleKVEditor):
 
         try:
             if self.environ.getosfamily() == 'linux':
+
                 self.setlinuxcommon()
+
                 self.isgnome2()
-                self.isgnome3()
-                self.iskde()
-                self.islightdm()
+                if not self.gnome2:
+                    self.isgnome3()
+                if not self.gnome3:
+                    self.iskde()
+                if not self.kde:
+                    self.islightdm()
         except Exception:
             raise
 
@@ -486,6 +499,8 @@ class InstallBanners(RuleKVEditor):
             if self.checkCommand(cmd1, val1):
                 if self.checkCommand(cmd2, val2):
                     self.setgnome2()
+                    retval = True
+                    self.logger.log(LogPriority.DEBUG, "System is gnome2-based. Configuring gnome2 banners...")
         except Exception:
             raise
         return retval
@@ -512,10 +527,16 @@ class InstallBanners(RuleKVEditor):
             if self.checkCommand(cmd1, val1):
                 if self.checkCommand(cmd2, val2):
                     self.setgnome3()
+                    retval = True
+                    self.logger.log(LogPriority.DEBUG, "System is gnome3-based. Configuring gnome3 banners...")
             if self.checkCommand(cmd3, val3):
                 self.setgnome3()
+                retval = True
+                self.logger.log(LogPriority.DEBUG, "System is gnome3-based. Configuring gnome3 banners...")
             if self.checkCommand(cmd4, val4):
                 self.setgnome3()
+                retval = True
+                self.logger.log(LogPriority.DEBUG, "System is gnome3-based. Configuring gnome3 banners...")
         except Exception:
             raise
         return retval
@@ -533,6 +554,7 @@ class InstallBanners(RuleKVEditor):
         try:
             if self.checkCommand(cmd1, val1):
                 self.setlightdm()
+                self.logger.log(LogPriority.DEBUG, "System is lightdm-based. Configuring lightdm banners...")
         except Exception:
             raise
 
@@ -548,7 +570,8 @@ class InstallBanners(RuleKVEditor):
 
         try:
             if self.checkCommand(cmd1, val1):
-                self.kde = True
+                self.setkde()
+                self.logger.log(LogPriority.DEBUG, "System is kde-based. Configuring kde banners...")
         except Exception:
             raise
 
@@ -562,6 +585,7 @@ class InstallBanners(RuleKVEditor):
         try:
             if self.environ.getosfamily() == 'darwin':
                 self.setmac()
+                self.logger.log(LogPriority.DEBUG, "System is Mac OS. Configuring Mac banners...")
         except Exception:
             raise
 
@@ -1073,12 +1097,31 @@ class InstallBanners(RuleKVEditor):
                 self.gnome2undocmdlist.append(gconfremove + opt3)
             self.gnome2undocmdlist.append(gconfset + opt3type + ' ' + undoval3)
 
+            # cannot use method checkcommand() for commands which use the tool: gconftool-2
+            # because it can report 0 even when the command fails (or succeeds)
             for cmd in self.gnome2reportdict:
-                if not self.checkCommand(cmd, self.gnome2reportdict[cmd],
-                                         False):
+                self.ch.executeCommand(cmd)
+                retcode = self.ch.getReturnCode()
+                if retcode in [-1,1]:
+                    errmsg = self.ch.getErrorString()
                     retval = False
-                    self.detailedresults += '\nCommand: ' + str(cmd) + \
-                        ' did not return the correct output.'
+                    self.detailedresults += "\nCommand " + str(cmd) + " failed with error message:\n" + str(errmsg)
+                else:
+                    outputstr = self.ch.getOutputString()
+                    self.logger.log(LogPriority.DEBUG, "Output string was:\n" + outputstr)
+                    self.logger.log(LogPriority.DEBUG, "Looking for value:\n" + str(self.gnome2reportdict[cmd]) + "\n\nin output string")
+                    found = outputstr.find(self.gnome2reportdict[cmd])
+                    # str.find() does not return a 0 on success, but instead the index where the string was found
+                    # str.find() returns a -1 on failure
+                    if found == -1:
+                        retval = False
+                        configoptsplit = cmd.split('/')
+                        self.detailedresults += '\nConfiguration value is incorrect for ' + str(configoptsplit[10])
+                        self.detailedresults += '\n\tExpected: ' + str(self.gnome2reportdict[cmd]) + '\nGot: ' + outputstr + '\n'
+                    else:
+                        configoptsplit = cmd.split('/')
+                        self.detailedresults += '\nConfiguration value: ' + str(configoptsplit[10]) + ' is correct'
+
         except Exception:
             raise
         return retval

@@ -8,9 +8,11 @@ from __future__ import absolute_import
 import os
 import sys
 import inspect
+import traceback
 
-from ..loggers import LogPriority as lp
-from ..libHelperExceptions import UnsupportedOSError
+from .. loggers import LogPriority as lp
+from .. loggers import CyLogger
+from .. libHelperExceptions import UnsupportedOSError, NotACyLoggerError
 
 
 class ManageUser(object):
@@ -25,7 +27,10 @@ class ManageUser(object):
         """
         #####
         # Set up logging
-        self.logger = logger
+        if isinstance(logger, CyLogger):
+            self.logger = logger
+        else:
+            raise NotACyLoggerError("Passed in value for logger is invalid, try again.")
         self.logger.log(lp.INFO, "Logger: " + str(self.logger))
 
         if sys.platform.lower() == "darwin":
@@ -57,6 +62,8 @@ class ManageUser(object):
             functionName = str(inspect.stack()[2][3])
             lineNumber = str(inspect.stack()[2][2])
         except Exception, err:
+            self.logger.log(lp.WARNING, traceback.format_exc())
+            self.logger.log(lp.WARNING, str(err))
             raise err
         else:
             self.logger.log(lp.DEBUG, "called by: " + \
@@ -131,6 +138,26 @@ class ManageUser(object):
         # Postprocess logging
         self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
         return success
+
+    #----------------------------------------------------------------------
+
+    def getUserProperties(self, userName=""):
+        """
+        Get information about the passed in user.
+        """
+        success = False
+        properties = {}
+        #####
+        # Preprocess logging
+        self.logger.log(lp.DEBUG, "processing:" + "")
+        self.__calledBy()
+        #####
+        # Call factory created object's mirror method
+        success, properties = self.userMgr.getUserProperties(userName)
+        #####
+        # Postprocess logging
+        self.logger.log(lp.DEBUG, "processing complete with success: " + str(success))
+        return success, properties
 
     #----------------------------------------------------------------------
 

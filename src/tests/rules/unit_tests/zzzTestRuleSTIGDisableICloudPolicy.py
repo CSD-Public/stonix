@@ -51,8 +51,14 @@ class zzzTestRuleSTIGDisableICloudPolicy(RuleTest):
         self.ch = CommandHelper(self.logdispatch)
         self.identifier = "mil.disa.STIG.Disable_iCloud_Prompt.alacarte"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.11.6']},
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.13.10']},
                            'fisma': 'high'}
+        if search("10\.11\.*", self.environ.getosver()):
+            self.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                         "U_Apple_OS_X_10-11_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
+        else:
+            self.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \
+                         "U_Apple_macOS_10-12_V1R1_STIG_Disable_iCloud_Policy.mobileconfig"
     def tearDown(self):
         pass
 

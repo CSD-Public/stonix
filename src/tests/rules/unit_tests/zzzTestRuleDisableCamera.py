@@ -22,7 +22,7 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule DisableCamera
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
@@ -30,8 +30,8 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
                         file as well as with the test harness.
 '''
 from __future__ import absolute_import
+from re import search, escape
 import unittest
-import os
 import sys
 
 sys.path.append("../../../..")
@@ -57,13 +57,10 @@ class zzzTestRuleDisableCamera(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
-        self.cmd = 'chmod a+r '
-        self.paths = ['/System/Library/QuickTime/QuickTimeUSBVDCDigitizer.component/Contents/MacOS/QuickTimeUSBVDCDigitizer',
-                     '/System/Library/PrivateFrameworks/CoreMediaIOServicesPrivate.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-                     '/System/Library/PrivateFrameworks/CoreMediaIOServices.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-                     '/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/VDC.plugin/Contents/MacOS/VDC',
-                     '/Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/MacOS/AppleCamera']
-
+        self.identifier = "041AD784-F0E2-40F5-9433-08ED6B105DDA"
+        self.rule.camprofile = "/Users/vagrant/stonix/src/stonix_resources/" + \
+            "files/stonix4macCameraDisablement.mobileconfig"
+        self.rule.ci.updatecurrvalue(True)
     def tearDown(self):
         pass
 
@@ -80,13 +77,19 @@ class zzzTestRuleDisableCamera(RuleTest):
         the new functionality of DisableCamera.py
         '''
         success = True
-
-        for path in self.paths:
-            if os.path.exists(path):
-                self.ch.executeCommand(self.cmd + path)
-                error = self.ch.getErrorString()
-                if error:
-                    success = False
+        self.detailedresults = ""
+        cmd = ["/usr/bin/profiles", "-P"]
+        if not self.ch.executeCommand(cmd):
+            success = False
+            self.detailedresults += "Unable to run profiles command\n"
+        else:
+            output = self.ch.getOutput()
+            if output:
+                for line in output:
+                    if search(escape(self.identifier), line.strip()):
+                        cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
+                        if not self.ch.executeCommand(cmd):
+                            success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

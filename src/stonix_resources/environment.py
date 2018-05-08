@@ -83,6 +83,7 @@ class Environment:
         self.major_ver = ''
         self.minor_ver = ''
         self.trivial_ver = ''
+        self.systemtype = ''
         self.numrules = 0
         self.stonixversion = STONIXVERSION
         self.euid = os.geteuid()
@@ -96,6 +97,65 @@ class Environment:
         self.debugmode = False
         self.runtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self.collectinfo()
+
+    def setsystemtype(self):
+        '''
+        determine whether the current system is based on:
+        launchd
+        systemd
+        sysvinit (init)
+        or upstart
+        set the variable self.systemtype equal to the result
+
+        @author: Breen Malmberg
+        '''
+
+        validtypes = ['launchd', 'systemd', 'init', 'upstart']
+        cmdlocs = ["/usr/bin/ps", "/bin/ps"]
+        cmdbase = ""
+        cmd = ""
+
+        # buld the command
+        for cl in cmdlocs:
+            if os.path.exists(cl):
+                cmdbase = cl
+        if cmdbase:
+            cmd = cmdbase + " -p1"
+
+        try:
+
+            if cmd:
+                # run the command
+                cmdoutput = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
+                outputlines = cmdoutput.stdout.readlines()
+                for line in outputlines:
+                    for vt in validtypes:
+                        if re.search(vt, line, re.IGNORECASE):
+                            self.systemtype = vt
+
+            else:
+                print str(__name__) + ":Unable to determine systemtype. Required utility 'ps' does not exist on this system"
+        except OSError:
+            print str(__name__) + ":Unable to determine systemtype. Required utility 'ps' does not exist on this system"
+
+        if self.systemtype not in validtypes:
+            print str(__name__) + ":This system is based on an unknown architecture"
+        else:
+            print str(__name__) + ":Determined that this system is based on " + str(self.systemtype) + " architecture"
+
+    def getsystemtype(self):
+        '''
+        return the systemtype - either:
+        launchd, systemd, init, or upstart
+        (could potentially return a blank string)
+
+        @return: self.systemtype
+        @rtype: string
+
+        @author: Breen Malmberg
+        '''
+
+        return self.systemtype
 
     def setinstallmode(self, installmode):
         """
@@ -278,6 +338,9 @@ class Environment:
         # print 'Environment running guessnetwork'
         self.guessnetwork()
         self.collectpaths()
+
+        self.determinefismacat()
+        self.setsystemtype()
 
     def discoveros(self):
         """

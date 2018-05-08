@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # Copyright 2015.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
@@ -38,6 +38,8 @@ Created on Apr 9, 2013
 @change: 2017/08/28 rsn Fixing to use new help text methods
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/04/10 dkennel - commented out module killing code and set
+                        default to False per artf48817
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -72,7 +74,7 @@ class DisableIPV6(Rule):
         key = 'DISABLEIPV6'
         instructions = "To disable this rule set the value of DISABLEIPV6 " + \
             "to False."
-        default = True
+        default = False
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.iditerator = 0
@@ -81,6 +83,7 @@ class DisableIPV6(Rule):
         self.editor1, self.editor2, self.editor3 = "", "", ""
         self.sh = ServiceHelper(self.environ, self.logger)
         self.sethelptext()
+
     def report(self):
         try:
             self.detailedresults = ""
@@ -361,9 +364,9 @@ and/or wasn't able to be created\n"
         ifacefile = ""
         self.editor1, self.editor2, self.editor3 = "", "", ""
         sysctl = "/etc/sysctl.conf"
-        modprobecompliant = True
-        modprobefile = "/etc/modprobe.conf"
-        modprobedir = "/etc/modprobe.d/"
+#         modprobecompliant = True
+#         modprobefile = "/etc/modprobe.conf"
+#         modprobedir = "/etc/modprobe.d/"
         interface = {"IPV6INIT": "no",
                      "NETWORKING_IPV6": "no"}
         self.rulesuccess = True
@@ -388,7 +391,7 @@ and/or wasn't able to be created\n"
                         self.detailedresults += "/etc/netconfig file contains " + \
                             "lines we don't want present\n"
                         compliant = False
-                
+
         if self.helper.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             if not os.path.exists(ifacefile):
@@ -400,16 +403,16 @@ and/or wasn't able to be created\n"
             ifacefile = "/etc/sysconfig/network/"
             if not os.path.exists(ifacefile):
                 ifacefile = ""
-        if self.sh.auditService("ip6tables", _="_"):
-            compliant = False
-            debug = "ip6tables is still set to run\n"
-            self.logger.log(LogPriority.DEBUG, debug)
+#         if self.sh.auditService("ip6tables", _="_"):
+#             compliant = False
+#             debug = "ip6tables is still set to run\n"
+#             self.logger.log(LogPriority.DEBUG, debug)
         # we will search for directives2 in any file in modprobe.d and
         # modprobe.conf
-        self.modprobes1 = {"options ipv6 disable": "1"}
-        self.modprobes2 = {"options ipv6 disable": "1"}
-        remove1 = []
-        remove2 = []
+#         self.modprobes1 = {"options ipv6 disable": "1"}
+#         self.modprobes2 = {"options ipv6 disable": "1"}
+#         remove1 = []
+#         remove2 = []
         # "ifconfig"has been deprecated on Debian9 so use "ip addr" instead
         if os.path.exists("/sbin/ifconfig"):
             cmd = ["/sbin/ifconfig"]
@@ -451,130 +454,130 @@ and/or wasn't able to be created\n"
                 self.detailedresults += "/etc/sysctl file doesn't contain \
 the correct contents\n"
                 compliant = False
-#---------------------check out /etc/modprobe.conf----------------------------#
-        # this file is optional so if it doesn't exist, no harm done, however
-        # if it does exist, it needs to be configured correctly
-        if os.path.exists(modprobefile):  # optional file
-            contents = []
-            if not checkPerms(modprobefile, [0, 0, 420], self.logger):
-                compliant = False
-            contents = readFile(modprobefile, self.logger)
-            if contents:
-                for key, val in self.modprobes1.iteritems():
-                    found = False
-                    blfound = ""
-                    for line in contents:
-                        if re.search("^" + key, line.strip()):
-                            if key == "options ipv6 disable":
-                                if re.search("=", line):
-                                    temp = line.split("=")
-                                    if len(temp) == 2:
-                                        if temp[1] == val:
-                                            found = True
-                                        else:
-                                            self.detailedresults += \
-"/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-                                            found = False
-                                            break
-                                    else:
-                                        self.detailedresults += modprobefile + \
-" is in bad format at line: " + line + "\n"
-                                        found = False
-                            elif key == "blacklist":
-                                temp = line.strip().split()
-                                if len(temp) == 2:
-                                    if temp[1] == val:
-                                        blfound = True
-                                        found = True
-                                        break
-                            else:
-                                templine = line.split()
-                                tempval = templine[-1]
-                                if tempval == val:
-                                    found = True
-                                else:
-                                    found = False
-                                    self.detailedresults += \
-"/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-                                    break
-                    if blfound != "":
-                        if not blfound:
-                            self.detailedresults += "didn't find the \
-blacklist item: " + key + "\n"
-                    if not found:
-                        compliant = False
-                    else:
-                        remove1.append(key)
-                for item in remove1:
-                    del(self.modprobes1[item])
-#-----------------------------------------------------------------------------#
-        if os.path.exists(modprobedir):
-            contents = []
-            dirs = glob.glob(modprobedir + '*')
-            for key, val in self.modprobes2.iteritems():
-                blfound = ""
-                found = False
-                valwrong = False
-                for loc in dirs:
-                    contents = readFile(loc, self.logger)
-                    if contents:
-                        for line in contents:
-                            if re.search("^" + key, line.strip()):
-                                if key == "options ipv6 disable":
-                                    if re.search("=", line):
-                                        temp = line.split("=")
-                                        if len(temp) == 2:
-                                            if temp[1].strip() == val:
-                                                found = True
-                                            else:
-                                                self.detailedresults += \
-"/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-                                                valwrong = True
-                                                found = False
-                                                break
-                                        else:
-                                            self.detailedresults += loc + \
-" is in bad format on line: " + line + "\n"
-                                elif key == "blacklist":
-                                    temp = line.strip().split()
-                                    if len(temp) == 2:
-                                        if temp[1] == val:
-                                            blfound = True
-                                            found = True
-                                            break
-                                else:
-                                    templine = line.split()
-                                    tempval = templine[-1].strip()
-                                    if tempval == val:
-                                        found = True
-                                    else:
-                                        self.detailedresults += \
-"/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-                                        valwrong = True
-                                        found = False
-                                        break
-                        if valwrong:
-                            compliant = False
-                            modprobecompliant = False
-                            break
-                if blfound != "":
-                    if not blfound:
-                        self.detailedresults += "didn't find the \
-blacklist item: " + key + "\n"
-                if not found:
-                    compliant = False
-                    modprobecompliant = False
-                else:
-                    remove2.append(key)
-            for item in remove2:
-                del(self.modprobes2[item])
-            filename = modprobedir + 'stonix-blacklist.conf'
-            if not modprobecompliant:
-                if not os.path.exists(filename):
-                    self.detailedresults += filename + " does not exist\n"
-                    compliant = False
-        else:
-            compliant = False
+# #---------------------check out /etc/modprobe.conf----------------------------#
+#         # this file is optional so if it doesn't exist, no harm done, however
+#         # if it does exist, it needs to be configured correctly
+#         if os.path.exists(modprobefile):  # optional file
+#             contents = []
+#             if not checkPerms(modprobefile, [0, 0, 420], self.logger):
+#                 compliant = False
+#             contents = readFile(modprobefile, self.logger)
+#             if contents:
+#                 for key, val in self.modprobes1.iteritems():
+#                     found = False
+#                     blfound = ""
+#                     for line in contents:
+#                         if re.search("^" + key, line.strip()):
+#                             if key == "options ipv6 disable":
+#                                 if re.search("=", line):
+#                                     temp = line.split("=")
+#                                     if len(temp) == 2:
+#                                         if temp[1] == val:
+#                                             found = True
+#                                         else:
+#                                             self.detailedresults += \
+# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
+#                                             found = False
+#                                             break
+#                                     else:
+#                                         self.detailedresults += modprobefile + \
+# " is in bad format at line: " + line + "\n"
+#                                         found = False
+#                             elif key == "blacklist":
+#                                 temp = line.strip().split()
+#                                 if len(temp) == 2:
+#                                     if temp[1] == val:
+#                                         blfound = True
+#                                         found = True
+#                                         break
+#                             else:
+#                                 templine = line.split()
+#                                 tempval = templine[-1]
+#                                 if tempval == val:
+#                                     found = True
+#                                 else:
+#                                     found = False
+#                                     self.detailedresults += \
+# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
+#                                     break
+#                     if blfound != "":
+#                         if not blfound:
+#                             self.detailedresults += "didn't find the \
+# blacklist item: " + key + "\n"
+#                     if not found:
+#                         compliant = False
+#                     else:
+#                         remove1.append(key)
+#                 for item in remove1:
+#                     del(self.modprobes1[item])
+# #-----------------------------------------------------------------------------#
+#         if os.path.exists(modprobedir):
+#             contents = []
+#             dirs = glob.glob(modprobedir + '*')
+#             for key, val in self.modprobes2.iteritems():
+#                 blfound = ""
+#                 found = False
+#                 valwrong = False
+#                 for loc in dirs:
+#                     contents = readFile(loc, self.logger)
+#                     if contents:
+#                         for line in contents:
+#                             if re.search("^" + key, line.strip()):
+#                                 if key == "options ipv6 disable":
+#                                     if re.search("=", line):
+#                                         temp = line.split("=")
+#                                         if len(temp) == 2:
+#                                             if temp[1].strip() == val:
+#                                                 found = True
+#                                             else:
+#                                                 self.detailedresults += \
+# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
+#                                                 valwrong = True
+#                                                 found = False
+#                                                 break
+#                                         else:
+#                                             self.detailedresults += loc + \
+# " is in bad format on line: " + line + "\n"
+#                                 elif key == "blacklist":
+#                                     temp = line.strip().split()
+#                                     if len(temp) == 2:
+#                                         if temp[1] == val:
+#                                             blfound = True
+#                                             found = True
+#                                             break
+#                                 else:
+#                                     templine = line.split()
+#                                     tempval = templine[-1].strip()
+#                                     if tempval == val:
+#                                         found = True
+#                                     else:
+#                                         self.detailedresults += \
+# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
+#                                         valwrong = True
+#                                         found = False
+#                                         break
+#                         if valwrong:
+#                             compliant = False
+#                             modprobecompliant = False
+#                             break
+#                 if blfound != "":
+#                     if not blfound:
+#                         self.detailedresults += "didn't find the \
+# blacklist item: " + key + "\n"
+#                 if not found:
+#                     compliant = False
+#                     modprobecompliant = False
+#                 else:
+#                     remove2.append(key)
+#             for item in remove2:
+#                 del(self.modprobes2[item])
+#             filename = modprobedir + 'stonix-blacklist.conf'
+#             if not modprobecompliant:
+#                 if not os.path.exists(filename):
+#                     self.detailedresults += filename + " does not exist\n"
+#                     compliant = False
+#         else:
+#             compliant = False
 
         if ifacefile:
             dirs = glob.glob(ifacefile + '*')
@@ -736,14 +739,14 @@ contain the correct contents\n"
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
 #-------------------------disableipv6 from loading----------------------------#
-        if self.sh.auditService("ip6tables", _="_"):
-            debug = "auditservice returned: " + \
-                str(self.sh.auditService("ip6tables", _="_")) + "\n\n\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            if not self.sh.disableService("ip6tables", _="_"):
-                success = False
-                debug = "Unable to disable ip6tables service\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+#         if self.sh.auditService("ip6tables", _="_"):
+#             debug = "auditservice returned: " + \
+#                 str(self.sh.auditService("ip6tables", _="_")) + "\n\n\n"
+#             self.logger.log(LogPriority.DEBUG, debug)
+#             if not self.sh.disableService("ip6tables", _="_"):
+#                 success = False
+#                 debug = "Unable to disable ip6tables service\n"
+#                 self.logger.log(LogPriority.DEBUG, debug)
 #---------------------------fix Sysctl----------------------------------------#
         if not os.path.exists(sysctl):
             if createFile(sysctl, self.logger):
@@ -797,189 +800,192 @@ contain the correct contents\n"
                         debug = "Unable to reset sysctl\n"
                         self.logger.log(LogPriority.DEBUG, debug)
 #--------------------------fix /etc/modprobe.conf-----------------------------#
-        tempstring = ""
-        tmpfile = modprobefile + ".tmp"
-        found = False
-        if os.path.exists(modprobefile):
-            if not checkPerms(modprobefile, [0, 0, 420], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(modprobefile, [0, 0, 420], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-                    debug = "Unable to set permissions on " + modprobefile + \
-                        "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-            contents = readFile(modprobefile, self.logger)
-            if contents:
-                for key, val in self.modprobes1.iteritems():
-                    found = False
-                    if contents:
-                        i = 0
-                        for line in contents:
-                            if re.search("^" + key, line.strip()):
-                                if key == "options ipv6 disable":
-                                    if re.search("=", line):
-                                        temp = line.split("=")
-                                        if temp[1] == val:
-                                            found = True
-                                            i += 1
-                                        else:
-                                            contents.pop(i)
-                                            filechanged = True
-                                            break
-                                    else:
-                                        i += 1
-                                else:
-                                    if re.search("^" + key, line.strip()):
-                                        templine = line.split()
-                                        tempval = templine[-1]
-                                        if tempval == val:
-                                            found = True
-                                            i += 1
-                                        else:
-                                            contents.pop(i)
-                                            filechanged = True
-                                            break
-                                    else:
-                                        i += 1
-                        if filechanged:
-                            for line in contents:
-                                tempstring += line
-                            if writeFile(tmpfile, tempstring, self.logger):
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": modprobefile}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(modprobefile, tmpfile, myid)
-                                os.rename(tmpfile, modprobefile)
-                                os.chown(modprobefile, 0, 0)
-                                os.chmod(modprobefile, 420)
-                                resetsecon(modprobefile)
-                            else:
-                                success = False
-                                debug = "Unable to write to file " + \
-                                    modprobefile + "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                    if found:
-                        del(self.modprobes1[key])  # may need to get rid of these two lines
-        else:
-            info = "modprobe.conf file doesn't exist but this file is \
-optional so your system's compliance is not effected by it's absence\n"
-            self.logger.log(LogPriority.INFO, info)
+#         tempstring = ""
+#         tmpfile = modprobefile + ".tmp"
+#         found = False
+#         if os.path.exists(modprobefile):
+#             if not checkPerms(modprobefile, [0, 0, 420], self.logger):
+#                 self.iditerator += 1
+#                 myid = iterate(self.iditerator, self.rulenumber)
+#                 if not setPerms(modprobefile, [0, 0, 420], self.logger,
+#                                 self.statechglogger, myid):
+#                     success = False
+#                     debug = "Unable to set permissions on " + modprobefile + \
+#                         "\n"
+#                     self.logger.log(LogPriority.DEBUG, debug)
+#             contents = readFile(modprobefile, self.logger)
+#             if contents:
+#                 for key, val in self.modprobes1.iteritems():
+#                     found = False
+#                     if contents:
+#                         i = 0
+#                         for line in contents:
+#                             if re.search("^" + key, line.strip()):
+#                                 if key == "options ipv6 disable":
+#                                     if re.search("=", line):
+#                                         temp = line.split("=")
+#                                         if temp[1] == val:
+#                                             found = True
+#                                             i += 1
+#                                         else:
+#                                             contents.pop(i)
+#                                             filechanged = True
+#                                             break
+#                                     else:
+#                                         i += 1
+#                                 else:
+#                                     if re.search("^" + key, line.strip()):
+#                                         templine = line.split()
+#                                         tempval = templine[-1]
+#                                         if tempval == val:
+#                                             found = True
+#                                             i += 1
+#                                         else:
+#                                             contents.pop(i)
+#                                             filechanged = True
+#                                             break
+#                                     else:
+#                                         i += 1
+#                         if filechanged:
+#                             for line in contents:
+#                                 tempstring += line
+#                             if writeFile(tmpfile, tempstring, self.logger):
+#                                 self.iditerator += 1
+#                                 myid = iterate(self.iditerator, self.rulenumber)
+#                                 event = {"eventtype": "conf",
+#                                          "filepath": modprobefile}
+#                                 self.statechglogger.recordchgevent(myid, event)
+#                                 self.statechglogger.recordfilechange(modprobefile, tmpfile, myid)
+#                                 os.rename(tmpfile, modprobefile)
+#                                 os.chown(modprobefile, 0, 0)
+#                                 os.chmod(modprobefile, 420)
+#                                 resetsecon(modprobefile)
+#                             else:
+#                                 success = False
+#                                 debug = "Unable to write to file " + \
+#                                     modprobefile + "\n"
+#                                 self.logger.log(LogPriority.DEBUG, debug)
+#                     if found:
+#                         del(self.modprobes1[key])  # may need to get rid of these two lines
+#         else:
+#             info = "modprobe.conf file doesn't exist but this file is \
+# optional so your system's compliance is not effected by it's absence\n"
+#             self.logger.log(LogPriority.INFO, info)
 #-----------------fix modprobe.d----------------------------------------------#
-        filename = modprobedir + 'stonix-blacklist.conf'
-        tmpfile = filename + ".tmp"
-        if os.path.exists(modprobedir):
-            tempstring = ""
-            contents = []
-            dirs = glob.glob(modprobedir + '*')
-            for loc in dirs:
-                contents = readFile(loc, self.logger)
-                filechanged = False
-                for key, val in self.modprobes2.iteritems():
-                    if key == "blacklist":
-                        continue
-                    if contents:
-                        i = 0
-                        for line in contents:
-                            if re.search("^" + key, line.strip()):
-                                if key == "options ipv6 disable":
-                                    if re.search("=", line):
-                                        temp = line.split("=")
-                                        if temp[1] != val:
-                                            contents.pop(i)
-                                            filechanged = True
-                                            i += 1
-                                    else:
-                                        i += 1
-                                else:
-                                    templine = line.split()
-                                    tempval = templine[-1]
-                                    if tempval != val:
-                                        val = contents.pop(i)
-                                        filechanged = True
-                                        i += 1
-                            else:
-                                i += 1
-                if filechanged:
-                    for line in contents:
-                        tempstring += line
-                    tmpfile = loc + ".tmp"
-                    if writeFile(tmpfile, tempstring, self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "conf",
-                                 "filepath": loc}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(loc, tmpfile,
-                                                             myid)
-                        os.rename(tmpfile, loc)
-                        os.chown(loc, 0, 0)
-                        os.chmod(loc, 420)
-                        resetsecon(loc)
-                    else:
-                        success = False
-                        debug = "Unable to write to file " + loc + "\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-            if self.modprobes2:
-                for key, val in self.modprobes2.iteritems():
-                    if key == "options ipv6 disable":
-                        tempstring1 += key + "=" + val + "\n"
-                    else:
-                        tempstring1 += key + " " + val + "\n"
-            if not os.path.exists(filename):
-                if createFile(filename, self.logger):
-                    self.created2 = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": filename}
-                    self.statechglogger.recordchgevent(myid, event)
-                    if tempstring1:
-                        if writeFile(tmpfile, tempstring1, self.logger):
-                            os.rename(tmpfile, filename)
-                            os.chown(filename, 0, 0)
-                            os.chmod(filename, 420)
-                            resetsecon(filename)
-                        else:
-                            success = False
-                            debug = "Unable to write to file " + filename + "\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                else:
-                    success = False
-                    debug = "Could not create " + filename + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-            else:
-                contents = readFile(filename, self.logger)
-
-                for line in contents:
-                    if line == universal:
-                        continue
-                    else:
-                        tempstring2 += line
-                tempstring2 += universal + tempstring1
-                if writeFile(tmpfile, tempstring2, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": filename}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(filename, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, filename)
-                    os.chown(filename, 0, 0)
-                    os.chmod(filename, 420)
-                    resetsecon(filename)
-                else:
-                    success = False
-                    debug = "Unable to write to file " + filename + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-        else:
-            debug = "modprobe.d doesn't exist\n"
-            success = False
-            self.logger.log(LogPriority.DEBUG, debug)
+##
+#    Commented out 2018/04/10 by D. Kennel for artf48817
+##
+#         filename = modprobedir + 'stonix-blacklist.conf'
+#         tmpfile = filename + ".tmp"
+#         if os.path.exists(modprobedir):
+#             tempstring = ""
+#             contents = []
+#             dirs = glob.glob(modprobedir + '*')
+#             for loc in dirs:
+#                 contents = readFile(loc, self.logger)
+#                 filechanged = False
+#                 for key, val in self.modprobes2.iteritems():
+#                     if key == "blacklist":
+#                         continue
+#                     if contents:
+#                         i = 0
+#                         for line in contents:
+#                             if re.search("^" + key, line.strip()):
+#                                 if key == "options ipv6 disable":
+#                                     if re.search("=", line):
+#                                         temp = line.split("=")
+#                                         if temp[1] != val:
+#                                             contents.pop(i)
+#                                             filechanged = True
+#                                             i += 1
+#                                     else:
+#                                         i += 1
+#                                 else:
+#                                     templine = line.split()
+#                                     tempval = templine[-1]
+#                                     if tempval != val:
+#                                         val = contents.pop(i)
+#                                         filechanged = True
+#                                         i += 1
+#                             else:
+#                                 i += 1
+#                 if filechanged:
+#                     for line in contents:
+#                         tempstring += line
+#                     tmpfile = loc + ".tmp"
+#                     if writeFile(tmpfile, tempstring, self.logger):
+#                         self.iditerator += 1
+#                         myid = iterate(self.iditerator, self.rulenumber)
+#                         event = {"eventtype": "conf",
+#                                  "filepath": loc}
+#                         self.statechglogger.recordchgevent(myid, event)
+#                         self.statechglogger.recordfilechange(loc, tmpfile,
+#                                                              myid)
+#                         os.rename(tmpfile, loc)
+#                         os.chown(loc, 0, 0)
+#                         os.chmod(loc, 420)
+#                         resetsecon(loc)
+#                     else:
+#                         success = False
+#                         debug = "Unable to write to file " + loc + "\n"
+#                         self.logger.log(LogPriority.DEBUG, debug)
+#             if self.modprobes2:
+#                 for key, val in self.modprobes2.iteritems():
+#                     if key == "options ipv6 disable":
+#                         tempstring1 += key + "=" + val + "\n"
+#                     else:
+#                         tempstring1 += key + " " + val + "\n"
+#             if not os.path.exists(filename):
+#                 if createFile(filename, self.logger):
+#                     self.created2 = True
+#                     self.iditerator += 1
+#                     myid = iterate(self.iditerator, self.rulenumber)
+#                     event = {"eventtype": "creation",
+#                              "filepath": filename}
+#                     self.statechglogger.recordchgevent(myid, event)
+#                     if tempstring1:
+#                         if writeFile(tmpfile, tempstring1, self.logger):
+#                             os.rename(tmpfile, filename)
+#                             os.chown(filename, 0, 0)
+#                             os.chmod(filename, 420)
+#                             resetsecon(filename)
+#                         else:
+#                             success = False
+#                             debug = "Unable to write to file " + filename + "\n"
+#                             self.logger.log(LogPriority.DEBUG, debug)
+#                 else:
+#                     success = False
+#                     debug = "Could not create " + filename + "\n"
+#                     self.logger.log(LogPriority.DEBUG, debug)
+#             else:
+#                 contents = readFile(filename, self.logger)
+# 
+#                 for line in contents:
+#                     if line == universal:
+#                         continue
+#                     else:
+#                         tempstring2 += line
+#                 tempstring2 += universal + tempstring1
+#                 if writeFile(tmpfile, tempstring2, self.logger):
+#                     self.iditerator += 1
+#                     myid = iterate(self.iditerator, self.rulenumber)
+#                     event = {"eventtype": "conf",
+#                              "filepath": filename}
+#                     self.statechglogger.recordchgevent(myid, event)
+#                     self.statechglogger.recordfilechange(filename, tmpfile,
+#                                                          myid)
+#                     os.rename(tmpfile, filename)
+#                     os.chown(filename, 0, 0)
+#                     os.chmod(filename, 420)
+#                     resetsecon(filename)
+#                 else:
+#                     success = False
+#                     debug = "Unable to write to file " + filename + "\n"
+#                     self.logger.log(LogPriority.DEBUG, debug)
+#         else:
+#             debug = "modprobe.d doesn't exist\n"
+#             success = False
+#             self.logger.log(LogPriority.DEBUG, debug)
 #--------------------------------fix ifcfg files------------------------------#
         if ifacefile:
             if os.path.exists(ifacefile):

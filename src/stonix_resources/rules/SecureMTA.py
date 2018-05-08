@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -55,6 +55,7 @@ from ..stonixutilityfunctions import checkPerms, writeFile
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..KVEditorStonix import KVEditorStonix
+from ..CommandHelper import CommandHelper
 from ..localize import MAILRELAYSERVER
 import os
 import traceback
@@ -263,7 +264,7 @@ agent, set the value of SECUREMTA to False.'''
                 'mynetworks_style': 'host',
                 'smtpd_recipient_restrictions':
                 'permit_mynetworks, reject_unauth_destination',
-                'relayhost': MAILRELAYSERVER}
+                 'relayhost': MAILRELAYSERVER}
 
         kvtype = 'conf'
         conftype = 'openeq'
@@ -278,11 +279,26 @@ agent, set the value of SECUREMTA to False.'''
         tpath = self.postfixpath + '.tmp'
 
         try:
-
             if not self.postfixpath:
-                self.detailedresults += 'Could not locate postfix configuration file.\n'
-                retval = False
-                return retval
+                if self.helper.manager == "apt-get":
+                    if os.path.exists("/usr/share/postfix/main.cf.debian"):
+                        self.ch = CommandHelper(self.logger)
+                        cmd = ["/bin/cp", "/usr/share/postfix/main.cf.debian",
+                               "/etc/postfix/main.cf"]
+                        if not self.ch.executeCommand(cmd):
+                            self.detailedresults += "Unable to copy postfix " + \
+                                "configuration file to its proper location\n"
+                            return False
+                        else:
+                            self.postfixpath = "/etc/postfix/main.cf"
+                    else:
+                        self.detailedresults += "postfix configuration file " + \
+                            "doesn't exist.  This file needs to be copied " + \
+                            "over to its proper location.\n"
+                        return False
+                else:
+                    self.detailedresults += 'Could not locate postfix configuration file.\n'
+                    return False
 
             # create the kveditor object
             self.postfixed = KVEditorStonix(self.statechglogger, self.logger,

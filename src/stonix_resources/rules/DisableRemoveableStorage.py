@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -119,8 +119,16 @@ class DisableRemoveableStorage(Rule):
             if self.environ.getostype() == "Mac OS X":
                 compliant = self.reportMac()
             else:
+                lsmodcmd = ""
                 self.mvcmd = "/bin/mv"
+                if os.path.exists("/sbin/lsmod"):
+                    lsmodcmd = "/sbin/lsmod"
+                elif os.path.exists("/usr/bin/lsmod"):
+                    lsmodcmd = "/usr/bin/lsmod"
+                self.lsmod = False
                 removeables = []
+                usbmods = ["usb_storage",
+                           "usb-storage"]
                 self.ph = Pkghelper(self.logger, self.environ)
                 self.ch = CommandHelper(self.logger)
                 self.detailedresults = ""
@@ -148,79 +156,59 @@ class DisableRemoveableStorage(Rule):
                         self.detailedresults += item + " is installed " + \
                             "and shouldn't be\n"
                         compliant = False
+                if lsmodcmd:
+                    for usb in usbmods:
+                        cmd = [lsmodcmd, "|", "grep", usb]
+                        self.ch.executeCommand(cmd)
+                        if self.ch.getReturnCode() == "0":
+                            compliant = False
+                            self.detailedresults += "lsmod command shows usb not disabled\n"
+                            break
                 found = True
                 self.blacklist = {}
-                # directives are different for different distros
-                if self.ph.manager == "apt-get" or \
-                   self.ph.manager == "zypper":
-                    self.blacklist["blacklist usb_storage"] = False
-                    self.blacklist["install usbcore /bin/true"] = False
-                elif self.ph.manager == "yum":
-                    self.blacklist["blacklist usb-storage"] = False
-                    self.blacklist["install usb-storage /bin/true"] = False
+                self.blacklist["blacklist usb_storage"] = False
+                self.blacklist["install usbcore /bin/true"] = False
+                self.blacklist["blacklist usb-storage"] = False
+                self.blacklist["install usb-storage /bin/true"] = False
                 # first check for files in modprobe.d, first choice
+                self.blacklist["blacklist uas"] = False
                 self.blacklist["blacklist firewire-ohci"] = False
                 self.blacklist["blacklist firewire-sbp2"] = False
                 if os.path.exists("/etc/modprobe.d"):
-                    # for zypper the file name is important, directives must be
-                    # placed in /etc/modprobe.d/50-blacklist.conf
-                    if self.ph.manager == "zypper":
-                        if os.path.exists("/etc/modprobe.d/50-blacklist.conf"):
-                            contents = readFile("/etc/modprobe.d/50-blacklist.conf", self.logger)
-                            for item in self.blacklist:
-                                for line in contents:
-                                    if re.search("^" + item, line.strip()):
-                                        self.blacklist[item] = True
-
-                            for item in self.blacklist:
-                                if not self.blacklist[item]:
-                                    compliant = False
-                        else:
-                            # this file should be present but if not, create it
-                            # and set a var self.created = True, this var keeps
-                            # track of whether the file was already there or
-                            # not for statechlogger purposes
-                            if createFile("/etc/modprobe.d/50-blacklist.conf"):
-                                self.created = True
-                            debug += "/etc/modrobe.d/50-blacklist.conf " + \
-                                "file doesn't exist\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            compliant = False
-                    else:
-                        dirs = glob.glob("/etc/modprobe.d/*")
-                        # since file name doesn't matter for non zypper systems
-                        # i.e. all files are read and treated the same in
-                        # modprobe.d, if both directives are found in any of
-                        # the files inside this directory, where both don't
-                        # have to be in the same file, the system is compliant
-                        for directory in dirs:
-                            contents = readFile(directory, self.logger)
-                            for item in self.blacklist:
-                                for line in contents:
-                                    if re.search("^" + item, line.strip()):
-                                        self.blacklist[item] = True
-                        # if we don't find both in any of the files in
-                        # modprobe.d, we will now check /etc/modprobe.conf
-                        # we will still keep track of whether we already found
-                        # one directive in one of the files in modprobe.d
+                    dirs = glob.glob("/etc/modprobe.d/*")
+                    # since file name doesn't matter
+                    # i.e. all files are read and treated the same in
+                    # modprobe.d, if directives are found in any of
+                    # the files inside this directory, where they don't
+                    # have to be in the same file, the system is compliant
+                    for directory in dirs:
+                        contents = readFile(directory, self.logger)
+                        for item in self.blacklist:
+                            for line in contents:
+                                if re.search("^" + item, line.strip()):
+                                    self.blacklist[item] = True
+                    # if we don't find directives in any of the files in
+                    # modprobe.d, we will now check /etc/modprobe.conf
+                    # we will still keep track of whether we already found
+                    # one directive in one of the files in modprobe.d
+                    for item in self.blacklist:
+                        if not self.blacklist[item]:
+                            found = False
+                    if not found:
+                        if os.path.exists("/etc/modprobe.conf"):
+                            contents = readFile("/etc/modprobe.conf")
+                            if contents:
+                                for item in self.blacklist:
+                                    for line in contents:
+                                        if re.search("^" + item,
+                                                     line.strip()):
+                                            self.blacklist[item] = True
                         for item in self.blacklist:
                             if not self.blacklist[item]:
-                                found = False
-                        if not found:
-                            if os.path.exists("/etc/modprobe.conf"):
-                                contents = readFile("/etc/modprobe.conf")
-                                if contents:
-                                    for item in self.blacklist:
-                                        for line in contents:
-                                            if re.search("^" + item,
-                                                         line.strip()):
-                                                self.blacklist[item] = True
-                            for item in self.blacklist:
-                                if not self.blacklist[item]:
-                                    debug = "modprobe.conf nor blacklist " + \
-                                        "files contain " + item + "\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    compliant = False
+                                debug = "modprobe.conf nor blacklist " + \
+                                    "files contain " + item + "\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                compliant = False
 
                 elif os.path.exists("/etc/modprobe.conf"):
                     contents = readFile("/etc/modprobe.conf", self.logger)
@@ -583,91 +571,54 @@ class DisableRemoveableStorage(Rule):
                             else:
                                 success = False
                     tempstring = ""
-                    # this portion only for zypper based systems (opensuse)
-                    if self.ph.manager == "zypper":
-                        if self.blacklist:
-                            modfile = "/etc/modprobe.d/50-blacklist.conf"
-                            contents = readFile(modfile, self.logger)
-                            if self.created:
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "creation",
-                                         "filepath": modfile}
-                                self.statechglogger.recordchgevent(myid, event)
-                            else:
-                                if not checkPerms(modfile, [0, 0, 420],
-                                                  self.logger):
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator,
-                                                   self.rulenumber)
-                                    if not setPerms(modfile, [0, 0, 420],
-                                       self.logger, self.statechglogger, myid):
-                                        success = False
-                                for line in contents:
-                                    tempstring += line
-                            for item in self.blacklist:
-                                tempstring += item + "\n"
-                            tmpfile = modfile + ".tmp"
-                            if writeFile(tmpfile, tempstring, self.logger):
-                                if not self.created:
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator,
-                                                   self.rulenumber)
-                                    event = {"eventtype": "conf",
-                                             "filepath": modfile}
-                                    self.statechglogger.recordchgevent(myid,
-                                                                       event)
-                                    self.statechglogger.recordfilechange(modfile,
-                                                                         tmpfile,
-                                                                         myid)
-                                os.rename(tmpfile, modfile)
-                                os.chown(modfile, 0, 0)
-                                os.chmod(modfile, 420)
-                                resetsecon(modfile)
-                    else:
                         # Check if self.blacklist still contains values, if it
                         # does, then we didn't find all the blacklist values
                         # in report
-                        if self.blacklist:
-                            # didn't find one or both directives in the files
-                            # inside modprobe.d so we now check an alternate
-                            # so create stonixblacklist file if it doesn't
-                            # exist and put remaining unfound blacklist
-                            # items there
-                            if not os.path.exists(blacklistf):
-                                createFile(blacklistf, self.logger)
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "creation",
-                                         "filepath": blacklistf}
-                                self.statechglogger.recordchgevent(myid, event)
-                            else:
-                                if not checkPerms(blacklistf, [0, 0, 420],
-                                                  self.logger):
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator,
-                                                   self.rulenumber)
-                                    if not setPerms(blacklistf, [0, 0, 420],
-                                                    self.logger,
-                                                    self.statechglogger, myid):
-                                        success = False
-                            for item in self.blacklist:
-                                tempstring += item + "\n"
-                            tmpfile = blacklistf + ".tmp"
-                            if writeFile(tmpfile, tempstring,
-                                         self.logger):
+                    if self.blacklist:
+                        # didn't find one or both directives in the files
+                        # inside modprobe.d so we now check an alternate
+                        # so create stonixblacklist file if it doesn't
+                        # exist and put remaining unfound blacklist
+                        # items there
+                        if not os.path.exists(blacklistf):
+                            createFile(blacklistf, self.logger)
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "creation",
+                                     "filepath": blacklistf}
+                            self.statechglogger.recordchgevent(myid, event)
+                        else:
+                            if not checkPerms(blacklistf, [0, 0, 420],
+                                              self.logger):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator,
                                                self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": blacklistf}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(blacklistf,
-                                                                     tmpfile, myid)
-                                os.rename(tmpfile, blacklistf)
-                                os.chown(blacklistf, 0, 0)
-                                os.chmod(blacklistf, 420)
-                                resetsecon(blacklistf)
+                                if not setPerms(blacklistf, [0, 0, 420],
+                                                self.logger,
+                                                self.statechglogger, myid):
+                                    success = False
+                        for item in self.blacklist:
+                            tempstring += item + "\n"
+                        tmpfile = blacklistf + ".tmp"
+                        if writeFile(tmpfile, tempstring,
+                                     self.logger):
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator,
+                                           self.rulenumber)
+                            event = {"eventtype": "conf",
+                                     "filepath": blacklistf}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(blacklistf,
+                                                                 tmpfile, myid)
+                            os.rename(tmpfile, blacklistf)
+                            os.chown(blacklistf, 0, 0)
+                            os.chmod(blacklistf, 420)
+                            resetsecon(blacklistf)
+                        if self.ph.manager == "apt-get":
+                            cmd = ["/usr/sbin/update-initramfs", "-u"]
+                            if not self.ch.executeCommand(cmd):
+                                success = False
+                                self.detailedresults += "Unable to run update-initramfs command\n"
                     for item in self.pcmcialist:
                         if self.ph.check(item):
                             self.ph.remove(item)
