@@ -72,7 +72,7 @@ class Solaris(object):
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
-            print err
+            #print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO,
                             ['Solaris.install',self.detailedresults])
@@ -105,7 +105,7 @@ class Solaris(object):
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
-            print err
+            #print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO,
                             ["Solaris.remove",self.detailedresults])
@@ -139,7 +139,7 @@ class Solaris(object):
         except(KeyboardInterrupt,SystemExit):
             raise
         except Exception, err:
-            print err
+            #print err
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO,
                             ["Solaris.check",self.detailedresults])   

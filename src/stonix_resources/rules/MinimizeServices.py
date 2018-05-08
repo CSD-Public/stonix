@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -39,9 +39,9 @@ ubuntu 16.04.
 @change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
 @change: 2017/10/24 rsn changing to use service helper, second gen
 '''
+
 from __future__ import absolute_import
 
-import os
 import traceback
 import re
 
@@ -476,30 +476,25 @@ elements should be space separated.'''
 
         self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Starting platform detection"])
 
-        if os.path.exists('/bin/systemctl'):
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                             "systemctl found using systemd list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                          self.systemddefault)
+        self.environ.setsystemtype()
+        systemtype = self.environ.getsystemtype()
+
+        if systemtype == "systemd":
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found. Using systemd list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.systemddefault)
+
         elif self.environ.getosfamily() == 'linux':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                             "Linux OS found using Linux default list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                          self.linuxdefault)
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Linux OS found. Using Linux default list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
+
         elif self.environ.getosfamily() == 'solaris':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                             "Solaris OS found using Solaris list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                          self.soldefault)
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Solaris OS found. Using Solaris list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.soldefault)
+
         elif self.environ.getosfamily() == 'freebsd':
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                             "FreeBSD OS found using BSD list"])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                          self.bsddefault)
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "FreeBSD OS found. Using BSD list"])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.bsddefault)
+
         else:
             self.logger.log(LogPriority.DEBUG,
                             ['MinimizeServices.__init__',

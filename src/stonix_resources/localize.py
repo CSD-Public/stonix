@@ -48,6 +48,7 @@ that access the version variable to use this copy.
 @change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.14'
 @change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.16'
 @change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.17'
+@change: 2018/04/11 - ekkehard - incremented STONIXVERSION = '0.9.18'
 '''
 
 FISMACAT = 'low'
@@ -59,7 +60,7 @@ FISMACAT = 'low'
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
 # Variable Type: String
-STONIXVERSION = '0.9.17'
+STONIXVERSION = '0.9.18'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.

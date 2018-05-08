@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2017.  Los Alamos National Security, LLC. This material was  #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -23,7 +23,7 @@
 '''
 Created on Feb 10, 2015
 
-@author: dwalker
+@author: Derek Walker
 @change: 2015/04/14 dkennel updated for new isApplicable
 @change: 2016/04/06 eball Changed rule name to ConfigureProfileManagement
 @change: 2017/03/30 dkennel Setting this to FISMA high until Apple fixes bugs
@@ -51,6 +51,7 @@ class ConfigurePasswordPolicy(Rule):
         '''
         Constructor
         '''
+
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
@@ -76,7 +77,6 @@ class ConfigurePasswordPolicy(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        self.pwreport = True
         
         if self.fismacat == "high":
             self.passidentifier = "gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.high"
@@ -100,23 +100,27 @@ class ConfigurePasswordPolicy(Rule):
 
     def report(self):
         '''
-        @since: 3/9/2016
-        @author: dwalker
         first item in dictionary - identifier (multiple can exist)
-            first item in second nested dictionary - key identifier within
-                opening braces in output
-            first item in nested list is the expected value after the = in
-                output (usually a number, in quotes "1"
-            second item in nested list is accepted datatype of value after
-                the = ("bool", "int")
-            third item in nested list (if int) is whether the allowable value
-                is allowed to be more or less and still be ok
-                "more", "less"
-                '''
+        first item in second nested dictionary - key identifier within
+            opening braces in output
+        first item in nested list is the expected value after the = in
+            output (usually a number, in quotes "1"
+        second item in nested list is accepted datatype of value after
+            the = ("bool", "int")
+        third item in nested list (if int) is whether the allowable value
+            is allowed to be more or less and still be ok
+            "more", "less"
+
+        @author: Derek Walker
+        '''
+
+        self.compliant = True
+        self.detailedresults = ""
+        self.pweditor, self.seceditor = "", ""
+        self.pwreport = True
+
         try:
-            compliant = True
-            self.detailedresults = ""
-            self.pweditor, self.seceditor = "", ""
+
             if self.fismacat == "high":
                 self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                       {"allowSimple": ["0", "bool"],
@@ -147,92 +151,86 @@ class ConfigurePasswordPolicy(Rule):
                                                "profiles", self.pwprofile, "",
                                                self.pwprofiledict, "", "")
             '''Run the system_proflier command'''
-            if not self.pweditor.report():
+            self.pweditor.report()
+            if self.pweditor.fixables:
                 self.pwreport = False
-                self.detailedresults += "password profile is either uninstalled or weak\n"
-                compliant = False
-#             if not self.seceditor.report():
-#                 self.secreport = False
-#                 self.detailedresults += "security profile is either uninstalled or weak\n"
-#                 compliant = False
-            self.compliant = compliant
+                self.detailedresults += "The following configuration items need fixing:\n" + "\n".join(self.pweditor.fixables)
+                self.compliant = False
+            else:
+                self.detailedresults += "All password profile configuration items are correct and profile is installed."
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
 ###############################################################################
 
     def fix(self):
+        '''
+        Configure and install the password policy profile for Mac OS X
+
+        @author: Derek Walker
+        @change: 04/19/2018 - Breen Malmberg - added doc string; cleaned up redundant code;
+                added more logging; added in-line comments; removed dead-end logic paths which
+                blocked correct code from running at all (ever); corrected the return variable;
+                added detailedresults formatting if exiting method early due to CI not being set
+        '''
+
+        self.rulesuccess = True
+        self.detailedresults = ""
+        self.iditerator = 0
+
         try:
-            if not self.pwci.getcurrvalue():# and not self.sci.getcurrvalue():
-                return
-            #if self.pwci.getcurrvalue() or self.sci.getcurrvalue():
-            success = True
-            self.detailedresults = ""
-            self.iditerator = 0
+
+            if not self.pwci.getcurrvalue():
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                self.detailedresults += "\nFix was not enabled for this rule. Nothing will be done."
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+
+            # clear previous undo events
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            self.logdispatch.log(LogPriority.DEBUG, "Removing previous stored undo events (if any)...")
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if self.pwci.getcurrvalue() and not os.path.exists(self.pwprofile):
-                print "profile doesn't exist\n\n"
-                return False
-#             if self.sci.getcurrvalue() and not os.path.exists(self.secprofile):
-#                 return False
-            print "inside fix\n\n"
+
+            # if the primary rule CI is enabled, then run the fix actions for this rule
             if self.pwci.getcurrvalue():
+                self.logdispatch.log(LogPriority.DEBUG, "Fix enabled. Running fix...")
                 if not self.pwreport:
-                    print "self.pwreport is False\n\n"
                     if os.path.exists(self.pwprofile):
-                        print "pwprofile exists\n\n"
+                        self.logdispatch.log(LogPriority.DEBUG, "Found required password profile. Installing...")
+
                         if not self.pweditor.fix():
-                            print "kveditor fix failed\n\n"
-                            success = False
+                            self.rulesuccess = False
+                            self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                         elif not self.pweditor.commit():
-                            print "kveditor commit failed\n\n"
-                            success = False
+                            self.rulesuccess = False
+                            self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
                         else:
-                            print "installation of profile a success\n\n"
+
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-R", "-p",
-                                   self.passidentifier]
+                            undocmd = ["/usr/bin/profiles", "-R", "-p", self.passidentifier]
                             event = {"eventtype": "comm",
-                                     "command": cmd}
+                                     "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event) 
                     else:
-                        self.detailedresults += "You don't have password " + \
-                            "profile needed to be installed\n"
-                        success = False
-#             if self.sci.getcurrvalue():
-#                 if not self.secreport:
-#                     if os.path.exists(self.secprofile):
-#                         self.iditerator += 1
-#                         myid = iterate(self.iditerator, self.rulenumber)
-#                         self.pweditor.setEventID(myid)
-#                         if not self.pweditor.fix():
-#                             success = False
-#                         elif not self.pweditor.commit():
-#                             success = False
-#                     else:
-#                         self.detailedresults += "You don't have security " + \
-#                             "profile needed to be installed\n"
-#                         success = False
-            self.rulesuccess = success
+                        self.detailedresults += "\nCould not locate required password profile: " + str(self.pwprofile)
+                        self.rulesuccess = False
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
