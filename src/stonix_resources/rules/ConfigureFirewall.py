@@ -41,6 +41,7 @@ from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
+from re import search
 
 
 class ConfigureFirewall(RuleKVEditor):
@@ -98,7 +99,30 @@ class ConfigureFirewall(RuleKVEditor):
                          None,
                          False,
                          {"stealthenabled": ["1", "-int 1"]})
-
+        cmd = ["/usr/libexec/ApplicationFirewall/socketfilterfw", "--listapps"]
+        try:
+            appcilist = []
+            self.ch.executeCommand(cmd)
+            output = self.ch.getOutput()
+            for line in output:
+                if search("^\d+$\ :", line) and search("/", line):
+                    appsplit = line.split("/")
+                    try:
+                        app = appsplit[-1:]
+                        appcilist.append(app)
+                    except IndexError:
+                        continue
+            datatype = 'list'
+            key = 'ALLOWEDAPPS'
+            instructions = "Space separated list of Applications allowed by the firewall"
+            default = appcilist
+            self.ci = self.initCi(datatype, key, instructions, default)
+        except OSError:
+            datatype = 'string'
+            key = "ALLOWEDAPPS"
+            instructions = "Space separated list of Applications allowed by the firewall"
+            default = "Unable to run command to obtain allowed applications"
+            self.ci = self.initCi(datatype, key, instructions, default)
     def afterfix(self):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
