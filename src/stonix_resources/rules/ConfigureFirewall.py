@@ -20,7 +20,6 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-from StdSuites.AppleScript_Suite import app
 '''
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
@@ -181,6 +180,8 @@ class ConfigureFirewall(RuleKVEditor):
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
+            if not RuleKVEditor.fix(self, True):
+                success = False
             if self.allowedapps and isinstance(self.allowedapps, "list"):
                 for app in self.allowedapps:
                     if app not in self.applist:
