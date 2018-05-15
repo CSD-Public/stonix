@@ -20,6 +20,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+from StdSuites.AppleScript_Suite import app
 '''
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
@@ -41,8 +42,10 @@ from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
+from ..logdispatcher import LogPriority
+from ..stonixutilityfunctions import iterate
 from re import search
-
+import traceback
 
 class ConfigureFirewall(RuleKVEditor):
     '''
@@ -66,6 +69,16 @@ class ConfigureFirewall(RuleKVEditor):
                            'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
+        self.fwcmd = "/usr/libexec/ApplicationFirewall/socketfilterfw"
+        self.list = self.fwcmd + " -listapps"
+        self.add = self.fwcmd + " --add "
+        self.rmv = self.fwcmd + "--remove "
+        self.iditerator = 0
+        datatype = 'bool'
+        key = 'CONFIGUREFIREWALL'
+        instructions = "To disable this rule set CONFIGUREFIREWALL to False\n"
+        default = True
+        self.ci = self.initCi(datatype, key, instructions, default)
         self.addKVEditor("FirewallOn",
                          "defaults",
                          "/Library/Preferences/com.apple.alf",
@@ -99,30 +112,114 @@ class ConfigureFirewall(RuleKVEditor):
                          None,
                          False,
                          {"stealthenabled": ["1", "-int 1"]})
-        cmd = ["/usr/libexec/ApplicationFirewall/socketfilterfw", "--listapps"]
         try:
-            appcilist = []
-            self.ch.executeCommand(cmd)
+            self.applist = []
+            self.ch.executeCommand(self.list)
             output = self.ch.getOutput()
             for line in output:
-                if search("^\d+$\ :", line) and search("/", line):
+                if search("^\d+\ :\s+/Applications", line) and search("/", line):
                     appsplit = line.split("/")
                     try:
-                        app = appsplit[-1:]
-                        appcilist.append(app)
+                        app = appsplit[-1].strip()
+                        self.applist.append(app)
                     except IndexError:
                         continue
             datatype = 'list'
             key = 'ALLOWEDAPPS'
             instructions = "Space separated list of Applications allowed by the firewall"
-            default = appcilist
-            self.ci = self.initCi(datatype, key, instructions, default)
+            default = self.applist
+            self.appci = self.initCi(datatype, key, instructions, default)
         except OSError:
             datatype = 'string'
             key = "ALLOWEDAPPS"
             instructions = "Space separated list of Applications allowed by the firewall"
             default = "Unable to run command to obtain allowed applications"
-            self.ci = self.initCi(datatype, key, instructions, default)
+            self.appci = self.initCi(datatype, key, instructions, default)
+
+    def report(self):
+        try:
+            compliant = True
+            self.detailedresults = ""
+            if not RuleKVEditor.report(self, True):
+                compliant = False
+            self.allowedapps = self.appci.getcurrvalue()
+            '''There are '''
+            if self.allowedapps and isinstance(self.allowedapps, "list"):
+                for app in self.allowedapps:
+                    if app not in self.applist:
+                        compliant = False
+                        self.detailedresults += "Connections from " + app + \
+                            "not allowed but should be.\n"
+                    else:
+                        self.applist.remove(app)
+                if self.applist:
+                    compliant = False
+                    for item in self.applist:
+                        self.detailedresults += item +  " is allowed but shouldn't be\n"
+            elif self.applist:
+                '''self.allowedapps is blank but there are apps being allowed through
+                the firewall.  We must remove these from being allowed.'''
+                compliant = False
+                for item in self.applist:
+                    self.detailedresults += item +  " is allowed but shouldn't be\n"
+            self.compliant = compliant
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
+
+    def fix(self):
+        try:
+            success = True
+            self.detailedresults = ""
+            if not self.ci.getcurrvalue():
+                return
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            if self.allowedapps and isinstance(self.allowedapps, "list"):
+                for app in self.allowedapps:
+                    if app not in self.applist:
+                        if not self.ch.executeCommand(self.add + "/Applications/" + app):
+                            success = False
+                            self.detailedresults += "Unable to add " + \
+                                app + " to firewall allowed list\n"
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            undocmd = self.rmv + "/Applications/" + app
+                            event = {"eventtype": "comm",
+                                     "command": undocmd}
+                            self.statechglogger.recordchgevent(myid, event)
+            elif self.applist:
+                for app in self.applist:
+                    if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                        success = False
+                        self.detailedresults += "Unable to remove " + \
+                            app + " from firewall allowed list\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        undocmd = self.add + "/Applications/" + app
+                        event = {"eventtype": "comm",
+                                 "command": undocmd}
+                        self.statechglogger.recordchgevent(myid, event)
+            self.rulesuccess = success
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
     def afterfix(self):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
