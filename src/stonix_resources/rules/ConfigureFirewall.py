@@ -143,7 +143,7 @@ class ConfigureFirewall(RuleKVEditor):
                 compliant = False
             self.allowedapps = self.appci.getcurrvalue()
             '''There are '''
-            if self.allowedapps and isinstance(self.allowedapps, "list"):
+            if self.allowedapps and isinstance(self.allowedapps, list):
                 for app in self.allowedapps:
                     if app not in self.applist:
                         compliant = False
@@ -182,7 +182,7 @@ class ConfigureFirewall(RuleKVEditor):
                 self.statechglogger.deleteentry(event)
             if not RuleKVEditor.fix(self, True):
                 success = False
-            if self.allowedapps and isinstance(self.allowedapps, "list"):
+            if self.allowedapps and isinstance(self.allowedapps, list):
                 for app in self.allowedapps:
                     if app not in self.applist:
                         if not self.ch.executeCommand(self.add + "/Applications/" + app):
