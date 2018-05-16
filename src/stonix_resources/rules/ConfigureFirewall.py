@@ -112,6 +112,7 @@ class ConfigureFirewall(RuleKVEditor):
                          False,
                          {"stealthenabled": ["1", "-int 1"]})
         try:
+            #variable to hold apps currently allowed by firewall
             self.applist = []
             self.ch.executeCommand(self.list)
             output = self.ch.getOutput()
@@ -141,16 +142,22 @@ class ConfigureFirewall(RuleKVEditor):
             self.detailedresults = ""
             if not RuleKVEditor.report(self, True):
                 compliant = False
+            #variable to hold apps that user wants to allow
             self.allowedapps = self.appci.getcurrvalue()
             '''There are '''
             if self.allowedapps and isinstance(self.allowedapps, list):
+                templist = []
                 for app in self.allowedapps:
                     if app not in self.applist:
                         compliant = False
                         self.detailedresults += "Connections from " + app + \
-                            "not allowed but should be.\n"
+                            " not allowed but should be.\n"
                     else:
+                        templist.append(app)
                         self.applist.remove(app)
+                if templist:
+                    for item in templist:
+                        self.allowedapps.remove(item)
                 if self.applist:
                     compliant = False
                     for item in self.applist:
@@ -193,6 +200,19 @@ class ConfigureFirewall(RuleKVEditor):
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             undocmd = self.rmv + "/Applications/" + app
+                            event = {"eventtype": "comm",
+                                     "command": undocmd}
+                            self.statechglogger.recordchgevent(myid, event)
+                if self.applist:
+                    for app in self.applist:
+                        if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                            success = False
+                            self.detailedresults += "Unable to remove " + \
+                                app + " from firewall allowed list\n"
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            undocmd = self.add + "/Applications/" + app
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
