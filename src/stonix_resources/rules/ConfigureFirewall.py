@@ -197,6 +197,7 @@ class ConfigureFirewall(RuleKVEditor):
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
             elif self.applist:
+                tmp = []
                 for app in self.applist:
                     if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
                         success = False
@@ -209,6 +210,9 @@ class ConfigureFirewall(RuleKVEditor):
                         event = {"eventtype": "comm",
                                  "command": undocmd}
                         self.statechglogger.recordchgevent(myid, event)
+                        tmp.append(app)
+                for app in tmp:
+                    self.applist.remove(app)
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
