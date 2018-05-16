@@ -69,7 +69,7 @@ class ConfigureFirewall(RuleKVEditor):
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fwcmd = "/usr/libexec/ApplicationFirewall/socketfilterfw"
-        self.list = self.fwcmd + " -listapps"
+        self.list = self.fwcmd + " --listapps"
         self.add = self.fwcmd + " --add "
         self.rmv = self.fwcmd + "--remove "
         self.iditerator = 0
