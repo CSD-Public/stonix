@@ -71,7 +71,7 @@ class ConfigureFirewall(RuleKVEditor):
         self.fwcmd = "/usr/libexec/ApplicationFirewall/socketfilterfw"
         self.list = self.fwcmd + " --listapps"
         self.add = self.fwcmd + " --add "
-        self.rmv = self.fwcmd + "--remove "
+        self.rmv = self.fwcmd + " --remove "
         self.iditerator = 0
         datatype = 'bool'
         key = 'CONFIGUREFIREWALL'
@@ -115,15 +115,12 @@ class ConfigureFirewall(RuleKVEditor):
             self.applist = []
             self.ch.executeCommand(self.list)
             output = self.ch.getOutput()
-            print "Output: " + str(output) + "\n"
             for line in output:
                 if search("^\d+\ :\s+/Applications", line) and search("/", line):
-                    print "we found an allowed application: " + str(line) + "\n"
                     appsplit = line.split("/")
                     try:
                         app = appsplit[-1].strip()
                         self.applist.append(app)
-                        print "self.applist: " + str(self.applist) + "\n"
                     except IndexError:
                         continue
             datatype = 'list'
@@ -224,6 +221,7 @@ class ConfigureFirewall(RuleKVEditor):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
+
     def afterfix(self):
         afterfixsuccessful = True
         service = "/System/Library/LaunchDaemons/com.apple.alf.plist"
