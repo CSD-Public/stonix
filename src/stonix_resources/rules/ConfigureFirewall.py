@@ -115,12 +115,15 @@ class ConfigureFirewall(RuleKVEditor):
             self.applist = []
             self.ch.executeCommand(self.list)
             output = self.ch.getOutput()
+            print "Output: " + str(output) + "\n"
             for line in output:
                 if search("^\d+\ :\s+/Applications", line) and search("/", line):
+                    print "we found an allowed application: " + str(line) + "\n"
                     appsplit = line.split("/")
                     try:
                         app = appsplit[-1].strip()
                         self.applist.append(app)
+                        print "self.applist: " + str(self.applist) + "\n"
                     except IndexError:
                         continue
             datatype = 'list'
