@@ -144,8 +144,10 @@ class ConfigureFirewall(RuleKVEditor):
                 compliant = False
             #variable to hold apps that user wants to allow
             self.allowedapps = self.appci.getcurrvalue()
-            print "self.allowedapps: " + str(self.allowedapps) + "\n"
-            print "self.allowedapps is the value obtained from the text field\n"
+            debug = "self.allowedapps: " + str(self.allowedapps) + "\n"
+            self.logdispatch.log(LogPriority.DEBUG, debug)
+            debug = "self.allowedapps is the value obtained from the text field\n"
+            self.logdispatch.log(LogPriority.DEBUG, debug)
             if self.allowedapps and isinstance(self.allowedapps, list):
                 templist = []
                 for app in self.allowedapps:
@@ -159,10 +161,13 @@ class ConfigureFirewall(RuleKVEditor):
                 if templist:
                     for item in templist:
                         self.allowedapps.remove(item)
-                print "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
+                debug = "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
                 if self.applist:
-                    print "There are still items left in self.applist\n"
-                    print "self.applist: " + str(self.applist) +"\n"
+                    debug =  "There are still items left in self.applist\n"
+                    self.logdispatch.log(LogPriority.DEBUG, debug)
+                    debug =  "self.applist: " + str(self.applist) +"\n"
+                    self.logdispatch.log(LogPriority.DEBUG, debug)
                     compliant = False
                     for item in self.applist:
                         self.detailedresults += item +  " is allowed but shouldn't be\n"
@@ -194,7 +199,8 @@ class ConfigureFirewall(RuleKVEditor):
             if not RuleKVEditor.fix(self, True):
                 success = False
             if self.allowedapps and isinstance(self.allowedapps, list):
-                print "self.allowedapps in fix: " + str(self.allowedapps) + "\n"
+                debug = "self.allowedapps in fix: " + str(self.allowedapps) + "\n"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
                 for app in self.allowedapps:
                     if app not in self.applist:
                         if not self.ch.executeCommand(self.add + "/Applications/" + app):
