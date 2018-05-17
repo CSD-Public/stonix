@@ -144,7 +144,8 @@ class ConfigureFirewall(RuleKVEditor):
                 compliant = False
             #variable to hold apps that user wants to allow
             self.allowedapps = self.appci.getcurrvalue()
-            '''There are '''
+            print "self.allowedapps: " + str(self.allowedapps) + "\n"
+            print "self.allowedapps is the value obtained from the text field\n"
             if self.allowedapps and isinstance(self.allowedapps, list):
                 templist = []
                 for app in self.allowedapps:
@@ -158,7 +159,10 @@ class ConfigureFirewall(RuleKVEditor):
                 if templist:
                     for item in templist:
                         self.allowedapps.remove(item)
+                print "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
                 if self.applist:
+                    print "There are still items left in self.applist\n"
+                    print "self.applist: " + str(self.applist) +"\n"
                     compliant = False
                     for item in self.applist:
                         self.detailedresults += item +  " is allowed but shouldn't be\n"
@@ -190,6 +194,7 @@ class ConfigureFirewall(RuleKVEditor):
             if not RuleKVEditor.fix(self, True):
                 success = False
             if self.allowedapps and isinstance(self.allowedapps, list):
+                print "self.allowedapps in fix: " + str(self.allowedapps) + "\n"
                 for app in self.allowedapps:
                     if app not in self.applist:
                         if not self.ch.executeCommand(self.add + "/Applications/" + app):
