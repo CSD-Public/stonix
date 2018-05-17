@@ -158,9 +158,9 @@ class ConfigureFirewall(RuleKVEditor):
                     else:
                         templist.append(app)
                         self.applist.remove(app)
-                if templist:
-                    for item in templist:
-                        self.allowedapps.remove(item)
+#                 if templist:
+#                     for item in templist:
+#                         self.allowedapps.remove(item)
                 debug = "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 if self.applist:
