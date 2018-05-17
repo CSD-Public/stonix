@@ -149,18 +149,13 @@ class ConfigureFirewall(RuleKVEditor):
             debug = "self.allowedapps is the value obtained from the text field\n"
             self.logdispatch.log(LogPriority.DEBUG, debug)
             if self.allowedapps and isinstance(self.allowedapps, list):
-                templist = []
                 for app in self.allowedapps:
                     if app not in self.applist:
                         compliant = False
                         self.detailedresults += "Connections from " + app + \
                             " not allowed but should be.\n"
                     else:
-                        templist.append(app)
                         self.applist.remove(app)
-#                 if templist:
-#                     for item in templist:
-#                         self.allowedapps.remove(item)
                 debug = "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 if self.applist:
