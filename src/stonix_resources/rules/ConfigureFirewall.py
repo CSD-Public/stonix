@@ -154,8 +154,6 @@ class ConfigureFirewall(RuleKVEditor):
                         compliant = False
                         self.detailedresults += "Connections from " + app + \
                             " not allowed but should be.\n"
-                    else:
-                        self.applist.remove(app)
                 debug = "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 if self.applist:
@@ -193,9 +191,11 @@ class ConfigureFirewall(RuleKVEditor):
                 self.statechglogger.deleteentry(event)
             if not RuleKVEditor.fix(self, True):
                 success = False
+            debug = "self.allowedapps in fix: " + str(self.allowedapps) + "\n"
+            self.logdispatch.log(LogPriority.DEBUG, debug)
+            debug = "self.applist in fix: " + str(self.applist) + "\n"
+            self.logdispatch.log(LogPriority.DEBUG, debug)
             if self.allowedapps and isinstance(self.allowedapps, list):
-                debug = "self.allowedapps in fix: " + str(self.allowedapps) + "\n"
-                self.logdispatch.log(LogPriority.DEBUG, debug)
                 for app in self.allowedapps:
                     if app not in self.applist:
                         if not self.ch.executeCommand(self.add + "/Applications/" + app):
