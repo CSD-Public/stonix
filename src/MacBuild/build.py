@@ -826,7 +826,7 @@ class SoftwareBuilder():
                    '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
                    '-d',
                    '-v', self.codesignVerbose,
-                   '-s', '"' + self.signature + '"',
+                   '-s', '"Developer ID Installer"',
                    '--keychain', self.keychain]
 
             self.logger.log(lp.DEBUG, '.')
@@ -855,8 +855,17 @@ class SoftwareBuilder():
             print "Moving dmg and pkg to the dmgs directory."
             #dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"
             pkgname = self.STONIX4MAC + "-" + self.APPVERSION + ".pkg"
+            self.product = self.tmphome + "/src/Macbuild/" + self.STONIX4MAC + "/" + pkgname
             #os.rename(dmgname, dmgsPath + "/" + dmgname)
-            copy2(pkgname, dmgsPath + "/" + pkgname)
+            self.logger.log(lp.DEBUG, "Copying: " + str(pkgname) + " to: " + dmgsPath + "/" + pkgname)
+            copy2(self.product, dmgsPath)
+
+            sleep(2)
+            self.libc.sync()
+            sleep(3)
+            self.libc.sync()
+            sleep(2)
+            self.libc.sync()
 
             os.chdir(returnDir)
         except Exception:
@@ -873,6 +882,7 @@ class SoftwareBuilder():
         '''
         Disconnect ramdisk, unloading data to pre-build location.
         '''
+        self.logger.log(lp.DEBUG, "===== Entering tearDown =====")
         self.mbl.chownR(self.keyuser, self.tmphome + "/src")
 
         # chmod so it's readable by everyone, writable by the group
@@ -880,8 +890,13 @@ class SoftwareBuilder():
                         stat.S_IWGRP, self.tmphome + "/src", "append")
         self.libc.sync()
         self.libc.sync()
-        # Copy back to pseudo-build directory
-        output, error = Popen([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome], stdout=PIPE, stderr=STDOUT).communicate()
+        # Copy bopy back to pseudo-build directory
+        productDest= self.buildHome + "/dmgs"
+        if not os.path.isdir(productDest):
+             os.makedirs(productDest)
+        cmd = [self.RSYNC, "-avp", self.product, productDest]
+        self.logger.log(lp.DEBUG, str(cmd))
+        output, error = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
         if error:
@@ -889,7 +904,9 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, str(line))
         self.libc.sync()
         self.libc.sync()
-        output, error = Popen([self.RSYNC, "-aqp", self.tmphome + "/src/", self.buildHome + "/builtSrc"], stdout=PIPE, stderr=STDOUT).communicate()
+        cmd = [self.RSYNC, "-avp", self.tmphome + "/src/", self.buildHome + "/builtSrc"]
+        self.logger.log(lp.DEBUG, str(cmd))
+        output, error = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
         for line in output.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
         if error:
