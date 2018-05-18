@@ -484,6 +484,10 @@ class MacBuildLib(object):
             if deep:
                 cmd += ['--deep']
             cmd += ['-f', '-s', sig, '--keychain', signingKeychain, itemName]
+            self.logger.log(lp.DEBUG, "================================================================================")
+            self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
+            self.logger.log(lp.DEBUG, "Command: " + str(cmd))
+            self.logger.log(lp.DEBUG, "================================================================================")
             self.rw.setCommand(cmd)
 
             #####
@@ -649,9 +653,10 @@ class MacBuildLib(object):
         self.rw.setCommand(cmd)
         output, error, retcode = self.rw.waitNpassThruStdout()
         
-        # if not error:
-        #     success = True
-        # else:
+        if not error:
+            success = True
+        else:
+            success = False
         #     raise BadBuildError("Error building program: " + str(retcode))
         
         for line in output.split("\n"):

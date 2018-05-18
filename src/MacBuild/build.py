@@ -379,13 +379,9 @@ class SoftwareBuilder():
 
         except (KeyboardInterrupt, SystemExit):
             print traceback.format_exc()
-            if not self.noExit:
-                self._exit(self.ramdisk, self.luggage, 130)
         except Exception:
             print traceback.format_exc()
-            if not self.noExit:
-                self._exit(self.ramdisk, self.luggage, 1)
-        else:
+        finally:
             self.tearDown()
 
     #--------------------------------------------------------------------------
@@ -592,7 +588,8 @@ class SoftwareBuilder():
                            '--keychain', self.keychain]
 
                     self.rw.setCommand(cmd)
-                    output, error, retcode = self.rw.waitNpassThruStdout()
+                    output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd())
+                    # output, error, retcode = self.rw.waitNpassThruStdout()
                     print "Output: " + output
                     print "Error: " + error
                     print "Return Code: " + str(retcode)
@@ -605,7 +602,8 @@ class SoftwareBuilder():
                            '--keychain', self.keychain]
                     self.rw.setCommand(cmd)
                     workingDir = os.getcwd()
-                    output, error, retcode = self.rw.waitNpassThruStdout()
+                    # output, error, retcode = self.rw.waitNpassThruStdout()
+                    output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd())
                     print "Output: " + output
                     print "Error: " + error
                     print "Return Code: " + str(retcode)
@@ -770,8 +768,8 @@ class SoftwareBuilder():
                 #####
                 # Run the xcodebuild script to codesign the mac installer package
                 self.rw.setCommand(cmd)
-                #output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
-                output, error, retcode = self.rw.communicate()
+                output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
+                # output, error, retcode = self.rw.communicate()
                 self.logger.log(lp.DEBUG, "Codesign returns: " + str(retcode))
                 for line in output.split('\n'):
                     self.logger.log(lp.DEBUG, line)
@@ -811,18 +809,18 @@ class SoftwareBuilder():
             output = Popen(makepkg, stdout=PIPE, stderr=STDOUT).communicate()[0]
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
-
+            sleep(2)
             self.libc.sync()
-            sleep(1)
+            sleep(2)
             self.libc.sync()
-            sleep(1)
+            sleep(3)
             self.libc.sync()
-            sleep(1)
+            sleep(3)
 
             #####
             # Perform a codesigning on the stonix4mac application
             cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                   '--psd', self.tmphome + '/src/MacBuild/stonix4mac/build/Release',
+                   '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
                    '-c',
                    '-p', self.ordPass, '-u', self.keyuser,
                    '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
@@ -833,33 +831,36 @@ class SoftwareBuilder():
 
             self.logger.log(lp.DEBUG, '.')
             self.logger.log(lp.DEBUG, '.')
-            self.logger.log(lp.DEBUG, "Working dir: " + buildDir)
+            self.logger.log(lp.DEBUG, "Working dir: " + os.getcwd())
             self.logger.log(lp.DEBUG, '.')
             self.logger.log(lp.DEBUG, '.')
 
             #####
             # Run the xcodebuild script to codesign the mac installer package
             self.rw.setCommand(cmd)
-            output, error, retcode = self.rw.communicate()
-
+            # output, error, retcode = self.rw.communicate()
+            output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
+            # output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd())
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
             for line in error.split('\n'):
                 self.logger.log(lp.DEBUG, line)
-
+            sleep(2)
             self.libc.sync()
             sleep(3)
             self.libc.sync()
-            sleep(5)
+            sleep(2)
+            self.libc.sync()
 
             print "Moving dmg and pkg to the dmgs directory."
             #dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"
             pkgname = self.STONIX4MAC + "-" + self.APPVERSION + ".pkg"
             #os.rename(dmgname, dmgsPath + "/" + dmgname)
-            os.rename(pkgname, dmgsPath + "/" + pkgname)
+            copy2(pkgname, dmgsPath + "/" + pkgname)
 
             os.chdir(returnDir)
         except Exception:
+            print traceback.format_exc()
             raise
         print "buildStonix4MacAppPkg... Finished"
 
@@ -880,8 +881,20 @@ class SoftwareBuilder():
         self.libc.sync()
         self.libc.sync()
         # Copy back to pseudo-build directory
-        call([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome])
-        call([self.RSYNC, "-aqp", self.tmphome + "/src/", self.buildHome + "/builtSrc"])
+        output, error = Popen([self.RSYNC, "-aqp", self.tmphome + "/src/MacBuild/dmgs", self.buildHome], stdout=PIPE, stderr=STDOUT).communicate()
+        for line in output.split("\n"):
+            self.logger.log(lp.DEBUG, str(line))
+        if error:
+            for line in error.split("\n"):
+                self.logger.log(lp.DEBUG, str(line))
+        self.libc.sync()
+        self.libc.sync()
+        output, error = Popen([self.RSYNC, "-aqp", self.tmphome + "/src/", self.buildHome + "/builtSrc"], stdout=PIPE, stderr=STDOUT).communicate()
+        for line in output.split("\n"):
+            self.logger.log(lp.DEBUG, str(line))
+        if error:
+            for line in error.split("\n"):
+                self.logger.log(lp.DEBUG, str(line))
         self.libc.sync()
         sleep(1)
         self.libc.sync()
