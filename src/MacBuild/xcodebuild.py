@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     keychainPass = False
 
-    self.logger.log(lp.DEBUG, "tmpenc: " + str(opts.password))
+    logger.log(lp.DEBUG, "tmpenc: " + str(opts.password))
 
     if opts.password:
         #####
