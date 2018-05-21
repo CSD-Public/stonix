@@ -573,11 +573,7 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
 
-                if self.keypass:
-                    #####
-                    # Get a translated password
-                    ordPass = self.getOrdPass(self.keypass)
-
+                if self.ordPass:
                     #####
                     # Run the xcodebuild script to build stonix4mac
                     cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
@@ -730,10 +726,6 @@ class SoftwareBuilder():
             os.chdir(appPath + "/" + appName)
 
             #####
-            # Get a translated password
-            ordPass = self.getOrdPass(self.keypass)
-
-            #####
             # Optional codesign
             self.libc.sync()
             self.libc.sync()
@@ -839,7 +831,7 @@ class SoftwareBuilder():
             # Run the xcodebuild script to codesign the mac installer package
             self.rw.setCommand(cmd)
             # output, error, retcode = self.rw.communicate()
-            output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
+            output, error, retcode = self.rw.liftDown(self.keyuser, buildDir, silent=False)
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
             for line in error.split('\n'):
