@@ -39,7 +39,7 @@ class Xcodebuild(MacBuildLib):
 
     def productSign(self, psd, itemName, username, password, signature, newPkgName, keychain):
         self.setUpForSigning(username, password, keychain)
-        self.codeSign(psd, username, password, signature, itemName=itemName, newPkgName=newPkgName, keychain=keychain)
+        self.productSign(psd, username, password, signature, itemName, newPkgName, keychain)
 
 if __name__ == '__main__':
 
