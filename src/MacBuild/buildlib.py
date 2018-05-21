@@ -438,7 +438,7 @@ class MacBuildLib(object):
         print "checkBuildUser Finished..."
         return CURRENT_USER, RUNNING_ID
 
-    def codeSignTargetself, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
+    def codeSignTarget(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
         '''
         For codesigning on the Mac.
         
