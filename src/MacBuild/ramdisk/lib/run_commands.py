@@ -697,7 +697,7 @@ class RunWith(object):
         if not silent:
             for line in self.stdout.split('\n'):
                 self.logger.log(lp.DEBUG, "out: " + str(line))
-            for line in self.err.split('\n'):
+            for line in self.stderr.split('\n'):
                 self.logger.log(lp.DEBUG, "err: " + str(line))
             self.logger.log(lp.DEBUG, "out: " + str(self.retcode))
 
