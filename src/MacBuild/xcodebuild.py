@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.add_option("--tmpenc", dest="password",
                       default="",
                       help=SUPPRESS_HELP)
-    parser.add_option("--productsign", dest="productSign",
+    parser.add_option("--productsign", dest="productSign", action="store_true",
                       default=False,
                       help=SUPPRESS_HELP)
     parser.add_option("--psd", dest="parentOfItemToBeProcessed",
