@@ -438,7 +438,7 @@ class MacBuildLib(object):
         print "checkBuildUser Finished..."
         return CURRENT_USER, RUNNING_ID
 
-    def codeSign(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
+    def codeSignTargetself, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
         '''
         For codesigning on the Mac.
         
@@ -502,13 +502,11 @@ class MacBuildLib(object):
 
         return success
 
-    def productSign(self, parentDirOfItemToSign, username, password, sig='', itemName='', newPkgName='', keychain=''):
+    def productSignTarget(self, parentDirOfItemToSign, username, password, sig='', itemName='', newPkgName='', keychain=''):
         '''
         For codesigning on the Mac.
         
         @param: Signature to sign with (string)
-        @param: How verbose to be: 'v', 'vv', 'vvv' or 'vvvv' (string)
-        @param: Whether or not to do a 'deep' codesign or not. (bool)
         @param: App name (ending in .app)
 
         @returns: True for success, False otherwise.
