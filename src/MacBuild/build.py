@@ -831,7 +831,7 @@ class SoftwareBuilder():
             # Run the xcodebuild script to codesign the mac installer package
             self.rw.setCommand(cmd)
             # output, error, retcode = self.rw.communicate()
-            output, error, retcode = self.rw.liftDown(self.keyuser, buildDir, silent=False)
+            output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
             for line in error.split('\n'):

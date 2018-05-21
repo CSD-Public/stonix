@@ -102,8 +102,6 @@ if __name__ == '__main__':
 
     keychainPass = False
 
-    logger.log(lp.DEBUG, "tmpenc: " + str(opts.password))
-
     if opts.password:
         #####
         # On the other end, each character was translated by 'ord' to a number,
