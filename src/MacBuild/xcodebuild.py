@@ -58,7 +58,7 @@ if __name__ == '__main__':
                       default="",
                       help=SUPPRESS_HELP)
     parser.add_option("--productsign", dest="productSign",
-                      default="",
+                      default=False,
                       help=SUPPRESS_HELP)
     parser.add_option("--psd", dest="parentOfItemToBeProcessed",
                       default="",
@@ -71,7 +71,7 @@ if __name__ == '__main__':
                       help="Run a codesign rather than a xcodebuild.")
     parser.add_option("-d", "--debug", action="store_true", dest="debug",
                       default=0, help="Print debug messages")
-    parser.add_option("--deep", action="store_true", dest="debug",
+    parser.add_option("--deep", action="store_true", dest="deep",
                       default=True, help="Perform a 'deep' signing if codesigning.")
     parser.add_option("--project_directory", dest="project_directory",
                       default='', help="full path to the <project>.xcodeproj")
@@ -101,6 +101,8 @@ if __name__ == '__main__':
     os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
 
     keychainPass = False
+
+    self.logger.log(lp.DEBUG, "tmpenc: " + str(opts.password))
 
     if opts.password:
         #####
