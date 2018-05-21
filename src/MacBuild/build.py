@@ -821,11 +821,11 @@ class SoftwareBuilder():
             # Perform a codesigning on the stonix4mac application
             cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
                    '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
-                   '-c',
+                   '--productsign',
                    '-p', self.ordPass, '-u', self.keyuser,
                    '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
+                   '-n', appName + '.' + str(self.STONIXVERSION) + ".pkg"
                    '-d',
-                   '-v', self.codesignVerbose,
                    '-s', '"Developer ID Installer"',
                    '--keychain', self.keychain]
 
@@ -840,7 +840,6 @@ class SoftwareBuilder():
             self.rw.setCommand(cmd)
             # output, error, retcode = self.rw.communicate()
             output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
-            # output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd())
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
             for line in error.split('\n'):
@@ -853,10 +852,8 @@ class SoftwareBuilder():
             self.libc.sync()
 
             print "Moving dmg and pkg to the dmgs directory."
-            #dmgname = self.STONIX4MAC + "-" + self.STONIX4MACVERSION + ".dmg"
-            pkgname = self.STONIX4MAC + "-" + self.APPVERSION + ".pkg"
+            pkgname = self.STONIX4MAC + "." + self.APPVERSION + ".pkg"
             self.product = self.tmphome + "/src/Macbuild/" + self.STONIX4MAC + "/" + pkgname
-            #os.rename(dmgname, dmgsPath + "/" + dmgname)
             self.logger.log(lp.DEBUG, "Copying: " + str(pkgname) + " to: " + dmgsPath + "/" + pkgname)
             copy2(self.product, dmgsPath)
 
