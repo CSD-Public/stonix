@@ -54,7 +54,7 @@ if __name__ == '__main__':
     parser.add_option("-u", "--user-name", dest="userName",
                       default="",
                       help="Name oName of the mountpoint you want to mount to")
-    parser.add_option("-p", dest="password",
+    parser.add_option("--tmpenc", dest="password",
                       default="",
                       help=SUPPRESS_HELP)
     parser.add_option("--productsign", dest="productSign",

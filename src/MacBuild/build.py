@@ -581,7 +581,7 @@ class SoftwareBuilder():
                     #####
                     # Run the xcodebuild script to build stonix4mac
                     cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                           '-p', self.ordPass, '-u', self.keyuser,
+                           '--tmpenc', self.ordPass, '-u', self.keyuser,
                            '-i', appName,
                            '-d',
                            '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
@@ -752,7 +752,7 @@ class SoftwareBuilder():
                 cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
                        '--psd', self.tmphome + '/src/MacBuild/stonix4mac/build/Release',
                        '-c',
-                       '-p', self.ordPass, '-u', self.keyuser,
+                       '--tmpenc', self.ordPass, '-u', self.keyuser,
                        '-i', appName + '.app',
                        '-d',
                        '-v', self.codesignVerbose,
@@ -822,7 +822,7 @@ class SoftwareBuilder():
             cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
                    '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
                    '--productsign',
-                   '-p', self.ordPass, '-u', self.keyuser,
+                   '--tmpenc', self.ordPass, '-u', self.keyuser,
                    '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
                    '-n', appName + '.' + str(self.STONIXVERSION) + ".pkg"
                    '-d',
