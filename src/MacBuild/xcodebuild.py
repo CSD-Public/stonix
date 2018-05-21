@@ -33,9 +33,13 @@ class Xcodebuild(MacBuildLib):
             self.logger.log(lp.DEBUG, "setUpForSigning failed...")
             raise Exception(traceback.format_exc())
 
-    def sign(self, psd, itemName, username, password, signature, verbose, keychain):
+    def codeSign(self, psd, itemName, username, password, signature, verbose, keychain):
         self.setUpForSigning(username, password, keychain)
         self.codeSign(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)
+
+    def productSign(self, psd, itemName, username, password, signature, newPkgName, keychain):
+        self.setUpForSigning(username, password, keychain)
+        self.codeSign(psd, username, password, signature, itemName=itemName, newPkgName=newPkgName, keychain=keychain)
 
 if __name__ == '__main__':
 
@@ -44,10 +48,16 @@ if __name__ == '__main__':
     parser.add_option("-i", "--item-name", dest="itemName",
                       default='',
                       help="Name of the item to be processed")
+    parser.add_option("-n", "--new-pkg-name", dest="newPkgName",
+                      default='',
+                      help="Target name for the signed package.")
     parser.add_option("-u", "--user-name", dest="userName",
                       default="",
                       help="Name oName of the mountpoint you want to mount to")
     parser.add_option("-p", dest="password",
+                      default="",
+                      help=SUPPRESS_HELP)
+    parser.add_option("--productsign", dest="productSign",
                       default="",
                       help=SUPPRESS_HELP)
     parser.add_option("--psd", dest="parentOfItemToBeProcessed",
@@ -111,7 +121,9 @@ if __name__ == '__main__':
         
     xb = Xcodebuild(logger)
     if opts.codesign:
-        xb.sign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+        xb.codeSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+    elif opts.productSign:
+        xb.productSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.newPkgName, opts.keychain)
     else:
         xb.buildApp(opts.itemName, opts.parentOfItemToBeProcessed, opts.userName, keychainPass, opts.keychain)
 

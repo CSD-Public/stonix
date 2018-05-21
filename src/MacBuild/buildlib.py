@@ -502,6 +502,65 @@ class MacBuildLib(object):
 
         return success
 
+    def productSign(self, parentDirOfItemToSign, username, password, sig='', itemName='', newPkgName='', keychain=''):
+        '''
+        For codesigning on the Mac.
+        
+        @param: Signature to sign with (string)
+        @param: How verbose to be: 'v', 'vv', 'vvv' or 'vvvv' (string)
+        @param: Whether or not to do a 'deep' codesign or not. (bool)
+        @param: App name (ending in .app)
+
+        @returns: True for success, False otherwise.
+        '''
+        success = False
+        requirementMet = False
+        returncode = ""
+
+        if os.path.isdir(parentDirOfItemToSign) and sig:
+            #####
+            # Get the directory we need to return to after signing is complete
+            returnDir = os.getcwd()
+            #####
+            # Change to directory where the item to sign resides
+            os.chdir(parentDirOfItemToSign)
+            
+            #####
+            # if the keychain to sign with is empty, default to the login
+            # keychain of the username passed in.
+            if not keychain:
+                userHome = self.manage_user.getUserHomeDir(username)
+                signingKeychain = userHome + "/Library/Keychains/login.keychain"
+            else:
+                signingKeychain = keychain
+
+            #####
+            # Make sure the keychain is unlocked
+            #self.manage_keychain.setUser(username)
+            #self.manage_keychain.unlockKeychain(password, keychain)
+
+            #####
+            # Build the codesign command
+            cmd = ['/usr/bin/productsign']
+            cmd += ['--sign', sig, '--keychain', signingKeychain, itemName, newPkgName]
+            self.logger.log(lp.DEBUG, "================================================================================")
+            self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
+            self.logger.log(lp.DEBUG, "Command: " + str(cmd))
+            self.logger.log(lp.DEBUG, "================================================================================")
+            self.rw.setCommand(cmd)
+
+            #####
+            # Check the UID and run the command appropriately
+            output, error, retcode = self.rw.waitNpassThruStdout()
+
+            #####
+            # Return to the working directory
+            os.chdir(returnDir)
+
+            self.logger.log(lp.INFO, "Output from trying to productsign: " + str(output))
+
+        return success
+
     def unlockKeychain(self, username, password, keychain=''):
         '''
         Unlock the appropriate keychain for signing purposes
