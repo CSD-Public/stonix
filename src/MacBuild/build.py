@@ -816,7 +816,7 @@ class SoftwareBuilder():
                    '--productsign',
                    '--tmpenc', self.ordPass, '-u', self.keyuser,
                    '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
-                   '-n', appName + '.' + str(self.STONIXVERSION) + ".pkg"
+                   '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
                    '-d',
                    '-s', '"Developer ID Installer"',
                    '--keychain', self.keychain]
