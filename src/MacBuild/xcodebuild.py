@@ -100,6 +100,8 @@ if __name__ == '__main__':
 
     os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
 
+    keychainPass = False
+
     if opts.password:
         #####
         # On the other end, each character was translated by 'ord' to a number,

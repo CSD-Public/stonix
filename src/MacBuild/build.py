@@ -730,6 +730,10 @@ class SoftwareBuilder():
             os.chdir(appPath + "/" + appName)
 
             #####
+            # Get a translated password
+            ordPass = self.getOrdPass(self.keypass)
+
+            #####
             # Optional codesign
             self.libc.sync()
             self.libc.sync()
@@ -742,10 +746,6 @@ class SoftwareBuilder():
                 os.chdir(self.tmphome + '/src/Macbuild/stonix4mac')
                 buildDir = os.getcwd()
                 print buildDir
-
-                #####
-                # Get a translated password
-                ordPass = self.getOrdPass(self.keypass)
 
                 #####
                 # Perform a codesigning on the stonix4mac application
