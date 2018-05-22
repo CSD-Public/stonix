@@ -148,21 +148,24 @@ class ConfigureFirewall(RuleKVEditor):
             self.logdispatch.log(LogPriority.DEBUG, debug)
             debug = "self.allowedapps is the value obtained from the text field\n"
             self.logdispatch.log(LogPriority.DEBUG, debug)
+            self.templist = self.applist
             if self.allowedapps and isinstance(self.allowedapps, list):
                 for app in self.allowedapps:
                     if app not in self.applist:
                         compliant = False
                         self.detailedresults += "Connections from " + app + \
                             " not allowed but should be.\n"
+                    else:
+                        self.templist.remove(app)
                 debug = "self.allowedapps after removing: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
-                if self.applist:
-                    debug =  "There are still items left in self.applist\n"
+                if self.templist:
+                    debug =  "There are still items left in self.templist\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
-                    debug =  "self.applist: " + str(self.applist) +"\n"
+                    debug =  "self.templist: " + str(self.applist) +"\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
                     compliant = False
-                    for item in self.applist:
+                    for item in self.templist:
                         self.detailedresults += item +  " is allowed but shouldn't be\n"
             elif self.applist:
                 '''self.allowedapps is blank but there are apps being allowed through
@@ -198,6 +201,7 @@ class ConfigureFirewall(RuleKVEditor):
             self.logdispatch.log(LogPriority.DEBUG, debug)
             debug = "self.applist in fix: " + str(self.applist) + "\n"
             self.logdispatch.log(LogPriority.DEBUG, debug)
+            self.templist = self.applist
             if self.allowedapps and isinstance(self.allowedapps, list):
                 for app in self.allowedapps:
                     if app not in self.applist:
@@ -212,8 +216,10 @@ class ConfigureFirewall(RuleKVEditor):
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
-                if self.applist:
-                    for app in self.applist:
+                    else:
+                        self.templist.remove(app)
+                if self.templist:
+                    for app in self.templist:
                         if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
                             success = False
                             self.detailedresults += "Unable to remove " + \
