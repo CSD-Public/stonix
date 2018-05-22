@@ -138,11 +138,13 @@ class ConfigureFirewall(RuleKVEditor):
 
     def report(self):
         try:
+            print "self.applist: " + str(self.applist) + "\n"
             compliant = True
             self.detailedresults = ""
             if not RuleKVEditor.report(self, True):
                 compliant = False
             #variable to hold apps that user wants to allow
+            self.appci.updatecurrvalue(self.applist)
             self.allowedapps = self.appci.getcurrvalue()
             debug = "self.allowedapps: " + str(self.allowedapps) + "\n"
             self.logdispatch.log(LogPriority.DEBUG, debug)
