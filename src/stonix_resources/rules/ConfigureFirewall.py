@@ -167,6 +167,9 @@ class ConfigureFirewall(RuleKVEditor):
             elif self.applist:
                 '''self.allowedapps is blank but there are apps being allowed through
                 the firewall.  We must remove these from being allowed.'''
+                debug = "inside the elif block of report"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
+                self.logger.l
                 compliant = False
                 for item in self.applist:
                     self.detailedresults += item +  " is allowed but shouldn't be\n"
