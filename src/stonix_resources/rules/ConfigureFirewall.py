@@ -141,6 +141,7 @@ class ConfigureFirewall(RuleKVEditor):
 
     def report(self):
         try:
+            self.rulesuccess = True
             compliant = True
             self.detailedresults = ""
             if not RuleKVEditor.report(self, True):
