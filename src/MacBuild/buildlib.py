@@ -438,7 +438,7 @@ class MacBuildLib(object):
         print "checkBuildUser Finished..."
         return CURRENT_USER, RUNNING_ID
 
-    def codeSign(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
+    def codeSignTarget(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
         '''
         For codesigning on the Mac.
         
@@ -484,6 +484,10 @@ class MacBuildLib(object):
             if deep:
                 cmd += ['--deep']
             cmd += ['-f', '-s', sig, '--keychain', signingKeychain, itemName]
+            self.logger.log(lp.DEBUG, "================================================================================")
+            self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
+            self.logger.log(lp.DEBUG, "Command: " + str(cmd))
+            self.logger.log(lp.DEBUG, "================================================================================")
             self.rw.setCommand(cmd)
 
             #####
@@ -495,6 +499,63 @@ class MacBuildLib(object):
             os.chdir(returnDir)
 
             self.logger.log(lp.INFO, "Output from trying to codesign: " + str(output))
+
+        return success
+
+    def productSignTarget(self, parentDirOfItemToSign, username, password, sig='', itemName='', newPkgName='', keychain=''):
+        '''
+        For codesigning on the Mac.
+        
+        @param: Signature to sign with (string)
+        @param: App name (ending in .app)
+
+        @returns: True for success, False otherwise.
+        '''
+        success = False
+        requirementMet = False
+        returncode = ""
+
+        if os.path.isdir(parentDirOfItemToSign) and sig:
+            #####
+            # Get the directory we need to return to after signing is complete
+            returnDir = os.getcwd()
+            #####
+            # Change to directory where the item to sign resides
+            os.chdir(parentDirOfItemToSign)
+            
+            #####
+            # if the keychain to sign with is empty, default to the login
+            # keychain of the username passed in.
+            if not keychain:
+                userHome = self.manage_user.getUserHomeDir(username)
+                signingKeychain = userHome + "/Library/Keychains/login.keychain"
+            else:
+                signingKeychain = keychain
+
+            #####
+            # Make sure the keychain is unlocked
+            #self.manage_keychain.setUser(username)
+            #self.manage_keychain.unlockKeychain(password, keychain)
+
+            #####
+            # Build the codesign command
+            cmd = ['/usr/bin/productsign']
+            cmd += ['--sign', sig, '--keychain', signingKeychain, itemName, newPkgName]
+            self.logger.log(lp.DEBUG, "================================================================================")
+            self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
+            self.logger.log(lp.DEBUG, "Command: " + str(cmd))
+            self.logger.log(lp.DEBUG, "================================================================================")
+            self.rw.setCommand(cmd)
+
+            #####
+            # Check the UID and run the command appropriately
+            output, error, retcode = self.rw.waitNpassThruStdout()
+
+            #####
+            # Return to the working directory
+            os.chdir(returnDir)
+
+            self.logger.log(lp.INFO, "Output from trying to productsign: " + str(output))
 
         return success
 
@@ -649,9 +710,10 @@ class MacBuildLib(object):
         self.rw.setCommand(cmd)
         output, error, retcode = self.rw.waitNpassThruStdout()
         
-        # if not error:
-        #     success = True
-        # else:
+        if not error:
+            success = True
+        else:
+            success = False
         #     raise BadBuildError("Error building program: " + str(retcode))
         
         for line in output.split("\n"):

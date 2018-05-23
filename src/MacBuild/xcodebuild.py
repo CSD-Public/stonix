@@ -33,9 +33,13 @@ class Xcodebuild(MacBuildLib):
             self.logger.log(lp.DEBUG, "setUpForSigning failed...")
             raise Exception(traceback.format_exc())
 
-    def sign(self, psd, itemName, username, password, signature, verbose, keychain):
+    def codeSign(self, psd, itemName, username, password, signature, verbose, keychain):
         self.setUpForSigning(username, password, keychain)
-        self.codeSign(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)
+        self.codeSignTarget(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)
+
+    def productSign(self, psd, itemName, username, password, signature, newPkgName, keychain):
+        self.setUpForSigning(username, password, keychain)
+        self.productSignTarget(psd, username, password, signature, itemName, newPkgName, keychain)
 
 if __name__ == '__main__':
 
@@ -44,11 +48,17 @@ if __name__ == '__main__':
     parser.add_option("-i", "--item-name", dest="itemName",
                       default='',
                       help="Name of the item to be processed")
+    parser.add_option("-n", "--new-pkg-name", dest="newPkgName",
+                      default='',
+                      help="Target name for the signed package.")
     parser.add_option("-u", "--user-name", dest="userName",
                       default="",
                       help="Name oName of the mountpoint you want to mount to")
-    parser.add_option("-p", dest="password",
+    parser.add_option("--tmpenc", dest="password",
                       default="",
+                      help=SUPPRESS_HELP)
+    parser.add_option("--productsign", dest="productSign", action="store_true",
+                      default=False,
                       help=SUPPRESS_HELP)
     parser.add_option("--psd", dest="parentOfItemToBeProcessed",
                       default="",
@@ -61,7 +71,7 @@ if __name__ == '__main__':
                       help="Run a codesign rather than a xcodebuild.")
     parser.add_option("-d", "--debug", action="store_true", dest="debug",
                       default=0, help="Print debug messages")
-    parser.add_option("--deep", action="store_true", dest="debug",
+    parser.add_option("--deep", action="store_true", dest="deep",
                       default=True, help="Perform a 'deep' signing if codesigning.")
     parser.add_option("--project_directory", dest="project_directory",
                       default='', help="full path to the <project>.xcodeproj")
@@ -90,6 +100,8 @@ if __name__ == '__main__':
 
     os.environ['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
 
+    keychainPass = False
+
     if opts.password:
         #####
         # On the other end, each character was translated by 'ord' to a number,
@@ -111,7 +123,9 @@ if __name__ == '__main__':
         
     xb = Xcodebuild(logger)
     if opts.codesign:
-        xb.sign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+        xb.codeSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+    elif opts.productSign:
+        xb.productSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.newPkgName, opts.keychain)
     else:
         xb.buildApp(opts.itemName, opts.parentOfItemToBeProcessed, opts.userName, keychainPass, opts.keychain)
 
