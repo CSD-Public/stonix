@@ -141,6 +141,7 @@ class ConfigureFirewall(RuleKVEditor):
 
     def report(self):
         try:
+            self.iditerator = 0
             self.rulesuccess = True
             compliant = True
             self.detailedresults = ""
@@ -283,3 +284,4 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful &= self.sh.disableService(service, servicename=servicename)
         afterfixsuccessful &= self.sh.enableService(service, servicename=servicename)
         return afterfixsuccessful
+    
