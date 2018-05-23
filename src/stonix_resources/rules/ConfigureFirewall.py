@@ -212,6 +212,8 @@ class ConfigureFirewall(RuleKVEditor):
                 success = False
             self.templist = self.applist[:]
             if self.allowedapps and isinstance(self.allowedapps, list):
+                debug = "there are allowedapps in fix: " + str(self.allowedapps) + "\n"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
                 for app in self.allowedapps:
                     if app not in self.applist:
                         if not self.ch.executeCommand(self.add + "/Applications/" + app):
@@ -219,6 +221,7 @@ class ConfigureFirewall(RuleKVEditor):
                             self.detailedresults += "Unable to add " + \
                                 app + " to firewall allowed list\n"
                         else:
+                            self.templist.remove(app)
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             undocmd = self.rmv + "/Applications/" + app
@@ -229,6 +232,7 @@ class ConfigureFirewall(RuleKVEditor):
                         self.templist.remove(app)
                 if self.templist:
                     for app in self.templist:
+                        debug = app + " isn't in " + str(self.allowedapps) + " so we're going to remove it\n"
                         if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
                             success = False
                             self.detailedresults += "Unable to remove " + \
