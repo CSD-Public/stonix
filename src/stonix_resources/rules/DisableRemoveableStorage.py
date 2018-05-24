@@ -23,10 +23,10 @@
 '''
 Created on Mar 4, 2013
 
-Disable USB storage. This rule is optional, and disables USB storage devices
-from accessing, or being able to be accessed from the system.
+Disable removeable storage. This rule is optional, and disables USB, thunderbolt and firewire
+storage devices from accessing, or being accessed, by the system.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 02/14/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/14/2014 ekkehard Implemented isapplicable
 @change: 02/14/2014 ekkehard blacklisted darwin no os x implementation
@@ -49,25 +49,35 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 '''
 
 from __future__ import absolute_import
+
 import os
 import re
 import traceback
 import glob
+import sys
+
 from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..stonixutilityfunctions import readFile, setPerms, createFile
 from ..stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-import sys
 
 
 class DisableRemoveableStorage(Rule):
     '''
-    classdocs
+    Disable removeable storage. This rule is optional, and disables USB, thunderbolt and firewire
+    storage devices from accessing, or being accessed, by the system.
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
+        '''
+
+        @param config:
+        @param environ:
+        @param logger:
+        @param statechglogger:
+        '''
         Rule.__init__(self, config, environ, logger, statechglogger)
 
         self.logger = logger
@@ -83,11 +93,11 @@ class DisableRemoveableStorage(Rule):
 
         # configuration item instantiation
         datatype = "bool"
-        key = "DISABLESTORAGE"
-        instructions = "To disable removeable storage devices on this " + \
-            "system, set the value of DISABLESTORAGE to True"
+        key = "DISABLEREMOVEABLESTORAGE"
+        instructions = "To disable removeable storage devices on this system, set the value of DISABLEREMOVEABLESTORAGE to True"
         default = False
         self.storageci = self.initCi(datatype, key, instructions, default)
+
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
         self.iditerator = 0
@@ -98,11 +108,14 @@ class DisableRemoveableStorage(Rule):
     def report(self):
         '''
         report the current rule-compliance status of this system. update
-        self.rulesuccess if method does not succeed. update self.currstate and
-        self.compliant if rule succeeds and reports true.
+        self.rulesuccess if method does not succeed. self.compliant if
+        rule succeeds and reports true.
 
-        @return bool
-        @author bemalmbe
+        @return: self.compliant
+        @rtype: bool
+
+        @author: Breen Malmberg
+
         @change: dwalker - implementing kveditor and completely revamped rule
             logic. added event deletion at the beginning of the fix
         @change: dwalker 8/13/2014 changed name of rule to
@@ -235,26 +248,26 @@ class DisableRemoveableStorage(Rule):
                         removeables.append(item)
                 for item in removeables:
                     del(self.blacklist[item])
-            found2 = False
-            if os.path.exists(self.udevfile):
-                if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
-                    self.detailedresults += "Permissions not correct " + \
-                        "on " + self.udevfile + "\n"
-                    compliant = False
-                contents = readFile(self.udevfile, self.logger)
-                for line in contents:
-                    if re.search("ACTION\=\=\"add\"\, SUBSYSTEMS\=\=\"usb\"\, RUN\+\=\"/bin/sh \-c \'for host in /sys/bus/usb/devices/usb\*\; do echo 0 \> \$host/authorized\_default\; done\'\"", line.strip()):
-                        found2 = True
-                if not found2:
-                    self.detailedresults += "Udev rule not found to disable usb at boot\n"
-                    debug = "Udev rule not found to disable usb at boot\n"
+                found2 = False
+                if os.path.exists(self.udevfile):
+                    if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
+                        self.detailedresults += "Permissions not correct " + \
+                            "on " + self.udevfile + "\n"
+                        compliant = False
+                    contents = readFile(self.udevfile, self.logger)
+                    for line in contents:
+                        if re.search("ACTION\=\=\"add\"\, SUBSYSTEMS\=\=\"usb\"\, RUN\+\=\"/bin/sh \-c \'for host in /sys/bus/usb/devices/usb\*\; do echo 0 \> \$host/authorized\_default\; done\'\"", line.strip()):
+                            found2 = True
+                    if not found2:
+                        self.detailedresults += "Udev rule not found to disable usb at boot\n"
+                        debug = "Udev rule not found to disable usb at boot\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        compliant = False
+                else:
+                    self.detailedresults += "Udev file doesn't exist to disable usb at boot\n"
+                    debug = "Udev file doesn't exist to disable usb at boot\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
-            else:
-                self.detailedresults += "Udev file doesn't exist to disable usb at boot\n"
-                debug = "Udev file doesn't exist to disable usb at boot\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
             self.compliant = compliant
         except OSError:
             self.detailedresults = traceback.format_exc()
@@ -300,7 +313,7 @@ class DisableRemoveableStorage(Rule):
         attempt to perform necessary operations to bring the system into
         compliance with this rule.
 
-        @author bemalmbe
+        @author Breen Malmberg
         @change: dwalker - implemented event deletion at the beginning of fix,
             also implemented a check for the ci value to see if fix should
             even be run.
@@ -337,8 +350,8 @@ class DisableRemoveableStorage(Rule):
                                                 self.statechglogger, myid):
                                     success = False
                         contents = readFile(grub, self.logger)
+                        kernellinefound = False
                         if contents:
-                            kernellinefound = False
                             for line in contents:
                                 if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
                                     or re.search("^linux16", line.strip()):
@@ -354,8 +367,8 @@ class DisableRemoveableStorage(Rule):
                                     tempstring += line
                         if not kernellinefound:
                             changed = False
-                            self.detailedresults += "grub file doesn't contain kernel line\n" + \
-                                "Unable to fully fix system for this rule\n"
+                            self.detailedresults += "The grub file doesn't contain kernel line\n" + \
+                                "Unable to fully implement fixes in this rule\n"
                             success = False
                         if changed:
                             tmpfile = grub + ".tmp"
@@ -506,7 +519,7 @@ class DisableRemoveableStorage(Rule):
         disabled and if the kernel is no longer where it should be, we will
         check the disabled extensions folder to see if it was previously
         disabled.  If it's in that folder, we will move it back.
-        @author: bemalmbe
+        @author: Breen Malmberg
         @return: bool
         @change: dwalker 8/19/2014
         '''
