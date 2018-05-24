@@ -44,18 +44,16 @@ per day
 
 from __future__ import absolute_import
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import readFile
-from ..ServiceHelper import ServiceHelper
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-
 import random
 import os
 import re
-import pwd
 import traceback
+
+from ..rule import Rule
+from ..logdispatcher import LogPriority
+from ..stonixutilityfunctions import readFile, getOctalPerms
+from ..ServiceHelper import ServiceHelper
+from ..CommandHelper import CommandHelper
 
 
 class ScheduleStonix(Rule):
@@ -97,10 +95,90 @@ class ScheduleStonix(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.9', '+']}}
 
-        self.svchelper = ServiceHelper(self.environ, self.logger)
+        datatype = "int"
+        keyfd = "FIXDAY"
+        keyfh = "FIXHOUR"
+        keyfm = "FIXMINUTE"
+        keyrd = "REPORTDAY"
+        keyrh = "REPORTHOUR"
+        keyrm = "REPORTMINUTE"
+        keyufh = "USERCONTEXTFIXHOUR"
+        keyufm = "USERCONTEXTFIXMINUTE"
+        instruct_fd = "Enter the day of the week you would like the fix job to run (1-7). 1 = Monday. 7 = Sunday. This value cannot be the same as REPORTDAY value."
+        instruct_fh = "Enter the hour of the day you would like the fix job to run (0-23). 0 = Midnight. This value cannot be the same as USERCONTEXTFIXHOUR value."
+        instruct_fm = "Enter the minute of the hour you would like the fix job to run (0-59)."
+        instruct_rd = "Enter the day of the week you would like the report job to run (1-7) 1 = Monday. 7 = Sunday. This value cannot be the same as FIXDAY value."
+        instruct_rh = "Enter the hour of the day you would like the report job to run (0-23) 0 = Midnight. This value cannot be the same as USERCONTEXTFIXHOUR value."
+        instruct_rm = "Enter the minute of the hour you would like the report job to run (0-59)."
+        instruct_ufh = "Enter the hour of the day you would like the user-context fix job to run (0-23). This value cannot be the same as FIXHOUR value or REPORTHOUR value."
+        instruct_ufm = "Enter the minute of the hour you would like the user-context fix job to run (0-59)."
+        default = 0
+
+        datatype2 = "bool"
+        key2 = "CONFIGUREJOBTIMESMANUALLY"
+        instruct2 = "Set the value of CONFIGUREJOBTIMESMANUALLY to True, in order to manually specify when each STONIX job should run (as opposed to using randomly generated times)."
+        default2 = False
+        self.manualjobtimesCI = self.initCi(datatype2, key2, instruct2, default2)
+
+        self.fixdayCI = self.initCi(datatype, keyfd, instruct_fd, default)
+        self.fixhourCI = self.initCi(datatype, keyfh, instruct_fh, default)
+        self.fixminuteCI = self.initCi(datatype, keyfm, instruct_fm, default)
+        self.reportdayCI = self.initCi(datatype, keyrd, instruct_rd, default)
+        self.reporthourCI = self.initCi(datatype, keyrh, instruct_rh, default)
+        self.reportminuteCI = self.initCi(datatype, keyrm, instruct_rm, default)
+        self.userfixhourCI = self.initCi(datatype, keyufh, instruct_ufh, default)
+        self.userfixminuteCI = self.initCi(datatype, keyufm, instruct_ufm, default)
 
         self.initVars()
-        self.genJobTimes()
+        if self.firstRun():
+            self.genJobTimes("all")
+            self.syncCITimes()
+
+    def syncCITimes(self):
+        '''
+
+        @return:
+        '''
+
+        self.fixdayCI.updatecurrvalue(self.adminfixday)
+        self.fixhourCI.updatecurrvalue(self.adminfixhour)
+        self.fixminuteCI.updatecurrvalue(self.adminfixminute)
+        self.reportdayCI.updatecurrvalue(self.adminreportday)
+        self.reporthourCI.updatecurrvalue(self.adminreporthour)
+        self.reportminuteCI.updatecurrvalue(self.adminreportminute)
+        self.userfixhourCI.updatecurrvalue(self.userfixhour)
+        self.userfixminuteCI.updatecurrvalue(self.userfixminute)
+
+    def firstRun(self):
+        '''
+
+        @return:
+        '''
+
+        firstrun = True
+        total = 0
+
+        total = self.fixdayCI.getcurrvalue() + \
+        self.fixhourCI.getcurrvalue() + \
+        self.fixminuteCI.getcurrvalue() + \
+        self.reportdayCI.getcurrvalue() + \
+        self.reporthourCI.getcurrvalue() + \
+        self.reportminuteCI.getcurrvalue() + \
+        self.userfixhourCI.getcurrvalue() + \
+        self.userfixminuteCI.getcurrvalue()
+
+        if total > 0:
+            firstrun = False
+
+        return firstrun
+
+    def buildFiles(self):
+        '''
+        dynamically build the conf and script files
+        based on the generated or entered times
+
+        @author: Breen Malmberg
+        '''
 
         # define the Mac OS X weekly STONIX report launchd job
         self.stonixplistreport = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -270,86 +348,283 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         @author: Breen Malmberg
         '''
 
-        # possible locations where the root cron tab may be located
-        # (system-dependent)
-        self.cronfilelocations = ['/etc/crontab',
-                                  '/var/spool/cron/root',
-                                  '/usr/lib/cron/tabs/root',
-                                  '/var/cron/tabs/root',
-                                  '/var/spool/cron/crontabs/root']
+        self.svchelper = ServiceHelper(self.environ, self.logger)
 
         # init cronfilelocation to blank
-        self.cronfilelocation = ''
+        self.cronfilelocation = "/etc/crontab"
 
-        # find correct location out of possible locations
-        for location in self.cronfilelocations:
-            if os.path.exists(location):
-                self.cronfilelocation = location
+        self.userscriptfile = "/etc/profile.d/user-stonix.py"
+
+        self.crontimedict = {}
 
         # get the STONIX executable path
         self.stonixpath = self.environ.get_script_path()
 
-        self.userlist = []
-
-        for p in pwd.getpwall():
-            if re.search('^/home/', p[5]) or re.search('^/Users/', p[5]):
-                self.userlist.append(p[0].strip())
-
+        self.userfixhour = 0
+        self.userfixminute = 0
         self.adminfixday = 0
         self.adminfixhour = 0
         self.adminfixminute = 0
-
         self.adminreportday = 0
         self.adminreporthour = 0
         self.adminreportminute = 0
 
-        self.userfixhour = 0
-        self.userfixminute = 0
+    def setUserTimes(self):
+        '''
+        '''
 
-    def checkJobTimes(self):
+        self.adminfixday = self.fixdayCI.getcurrvalue()
+        self.adminfixhour = self.fixhourCI.getcurrvalue()
+        self.adminfixminute = self.fixminuteCI.getcurrvalue()
+        self.adminreportday = self.reportdayCI.getcurrvalue()
+        self.adminreporthour = self.reporthourCI.getcurrvalue()
+        self.adminreportminute = self.reportminuteCI.getcurrvalue()
+        self.userfixhour = self.userfixhourCI.getcurrvalue()
+        self.userfixminute = self.userfixminuteCI.getcurrvalue()
+
+        self.crontimedict['report'] = str(self.adminreportminute) + ' ' + str(self.adminreporthour) + ' \* \* ' + str(
+            self.adminreportday)
+        self.crontimedict['fix'] = str(self.adminfixminute) + ' ' + str(self.adminfixhour) + ' \* \* ' + str(
+            self.adminfixday)
+
+    def checkJobCollisions(self):
         '''
         check to make sure none of the generated
-        job times overlap
-        return true if they overlap
-        return false if they do NOT overlap
+        job times overlap, or are invalid
+        return True if invalid or overlap
+        return False if valid and not overlap
 
-        @return: try_again
+        @return: collisions
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Checking for job time collisions...")
+
+        collisions = []
+
+        # job collision validation
+        if self.fixdayCI.getcurrvalue() == self.reportdayCI.getcurrvalue():
+            collisions.append("afd")
+        if self.userfixhourCI.getcurrvalue() == self.fixhourCI.getcurrvalue():
+            collisions.append("ufh")
+        if self.userfixhourCI.getcurrvalue() == self.reporthourCI.getcurrvalue():
+            collisions.append("arh")
+
+        if collisions:
+            self.logger.log(LogPriority.DEBUG, "Job time collision detected.")
+
+        return collisions
+
+    def validateUserTimes(self):
+        '''
+        check the entered user-defined cron job times to see if they are valid
+
+        @return: valid
         @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        valid = True
+        formatvalid = True
+        rangevalid = True
+        collisions = []
+
+        fixday = self.fixdayCI.getcurrvalue()
+        fixhour = self.fixhourCI.getcurrvalue()
+        fixminute = self.fixminuteCI.getcurrvalue()
+        reportday = self.reportdayCI.getcurrvalue()
+        reporthour = self.reporthourCI.getcurrvalue()
+        reportminute = self.reportminuteCI.getcurrvalue()
+        userfixhour = self.userfixhourCI.getcurrvalue()
+        userfixminute = self.userfixminuteCI.getcurrvalue()
+
+        self.logger.log(LogPriority.DEBUG, "Validating user-entered job times...")
+
+        self.logger.log(LogPriority.DEBUG, "Checking job times format (integer length).")
+
+        # length (digits) input validation
+        il = []
+        if len(str(fixday).lstrip("0")) > 1:
+            formatvalid = False
+            il.append("fixday should be 1 integer in length")
+        if len(str(reportday).lstrip("0")) > 1:
+            formatvalid = False
+            il.append("reportday should be 1 integer in length")
+        if len(str(fixhour).lstrip("0")) > 2:
+            formatvalid = False
+            il.append("fixhour should be no more than 2 integers in length")
+        if len(str(fixminute).lstrip("0")) > 2:
+            formatvalid = False
+            il.append("fixminute should be no more than 2 integers in length")
+        if len(str(reporthour).lstrip("0")) > 2:
+            formatvalid = False
+            il.append("reporthour should be no more than 2 integers in length")
+        if len(str(reportminute).lstrip("0")) > 2:
+            formatvalid = False
+            il.append("reportminute should be no more than 2 integers in length")
+        if len(str(userfixhour).lstrip("0")) > 2:
+            formatvalid = False
+            il.append("userfixhour should be no more than 2 integers in length")
+        if len(str(userfixminute).lstrip("0")) > 2:
+            formatvalid = False
+            il.append("userfixminute should be no more than 2 integers in length")
+
+        if not formatvalid:
+            self.detailedresults += "\nIncorrect job time format detected. Incorrect integer length:\n" + "\n".join(il)
+
+        # range input validation
+        oor = []
+        if fixday not in range(1, 8):
+            rangevalid = False
+            oor.append("fixday: " + str(fixday))
+        if reportday not in range(1, 8):
+            rangevalid = False
+            oor.append("reportday: " + str(reportday))
+        if fixhour not in range(0, 24):
+            rangevalid = False
+            oor.append("fixhour: " + str(fixhour))
+        if reporthour not in range(0, 24):
+            rangevalid = False
+            oor.append("reporthour: " + str(reporthour))
+        if fixminute not in range(0, 60):
+            rangevalid = False
+            oor.append("fixminute: " + str(fixminute))
+        if reportminute not in range(0, 60):
+            rangevalid = False
+            oor.append("reportminute: " + str(reportminute))
+        if userfixhour not in range(0, 24):
+            rangevalid = False
+            oor.append("userfixhour: " + str(userfixhour))
+        if userfixminute not in range(0, 60):
+            oor.append("userfixminute: " + str(userfixminute))
+
+        if not rangevalid:
+            self.detailedresults += "\nIncorrect job time format detected. Job time(s) outside valid range:\n" + "\n".join(oor)
+
+        # fix any job time collisions
+        collisions = self.checkJobCollisions()
+        if collisions:
+            if "afd" in collisions:
+                self.detailedresults += "\nThere is a time collision between admin fix day and admin report day"
+            if "ufh" in collisions:
+                self.detailedresults += "\nThere is a time collision between user fix hour and admin fix hour"
+            if "urh" in collisions:
+                self.detailedresults += "\nThere is a time collision between user fix hour and admin report hour"
+
+        if not rangevalid:
+            valid = False
+        if not formatvalid:
+            valid = False
+        if collisions:
+            valid = False
+
+        if valid:
+            self.detailedresults += "\nAll user-entered job times are valid. Proceeding..."
+        else:
+            self.detailedresults += "\nUser-entered job time(s) not valid. Please correct the issue(s) and run fix again, to set your custom job time(s)."
+
+        return valid
+
+    def randomExcept(self, lowest, highest, exclude=None):
+        '''
+        generate a random number between lowest and highest (including lowest)
+        but excluding the given number exclude
+        (result will never be = highest)
+
+        @param lowest: int; lower bound
+        @param highest: int; upper bound
+        @param exclude: int|list; integer or range of integers to exclude from result
+                default value for exclude is None
+
+        @return: x
+        @rtype: int
 
         @author: Breen Malmberg
         '''
 
-        try_again = False
+        x = 0
 
-        if self.adminfixday == self.adminreportday:
-            try_again = True
-        if self.userfixhour == self.adminfixhour:
-            try_again = True
-        if self.userfixhour == self.adminreporthour:
-            try_again = True
-        return try_again
+        if lowest == highest:
+            self.logger.log(LogPriority.WARNING, "lowest argument must be less than highest argument")
+            if lowest != exclude:
+                x = lowest
+            return x
 
-    def genJobTimes(self):
+        if lowest > highest:
+            self.logger.log(LogPriority.WARNING, "lowest argument must be less than highest argument")
+            return x
+
+        if type(exclude).__name__ == "str":
+            exclude = int(exclude)
+        elif type(exclude).__name__ == "NoneType":
+            pass
+        else:
+            self.logger.log(LogPriority.WARNING, "Incorrect type for argument: exclude. Needs to be either list or int. Got: " + type(exclude).__name__)
+            return x
+
+        x = random.randrange(lowest, highest)
+        if exclude == None:
+            return x
+
+        if type(exclude).__name__ == "list":
+            if x in exclude:
+                x = self.randomExcept(lowest, highest, exclude)
+        elif type(exclude).__name__ == "int":
+            if x == exclude:
+                x = self.randomExcept(lowest, highest, exclude)
+
+        return x
+
+    def genJobTimes(self, *args):
         '''
-        Generate random times to run the launchd
-        STONIX jobs on Mac OS X
+        Generate random times to run the STONIX jobs
+        Build the crontimedict used by Linux
 
         @author: Breen Malmberg
         '''
 
-        self.adminfixday = random.randrange(1, 7)
-        self.adminfixhour = random.randrange(17, 23)
-        self.adminfixminute = random.randrange(1, 59)
+        genall = False
 
-        self.adminreportday = random.randrange(1, 7)
-        self.adminreporthour = random.randrange(17, 23)
-        self.adminreportmin = random.randrange(1, 59)
+        self.logger.log(LogPriority.DEBUG, "Generating new, random job times...")
 
-        self.userfixhour = random.randrange(17, 23)
-        self.userfixminute = random.randrange(1, 59)
+        if "all" in args:
+            genall = True
+        elif not args:
+            genall = True
+        else:
+            if "afd" in args:
+                self.adminfixday = random.randrange(1, 8)
+            if "afh" in args:
+                self.adminfixhour = random.randrange(17, 24)
+            if "afm" in args:
+                self.adminfixminute = random.randrange(0, 60)
+            if "ard" in args:
+                self.adminreportday = random.randrange(1, 8)
+            if "arh" in args:
+                self.adminreporthour = random.randrange(17, 24)
+            if "arm" in args:
+                self.adminreportminute = random.randrange(0, 60)
+            if "ufh" in args:
+                self.userfixhour = random.randrange(17, 24)
+            if "ufm" in args:
+                self.userfixminute = random.randrange(0, 60)
 
-        if self.checkJobTimes():
-            self.genJobTimes()
+        if genall:
+            self.adminfixday = random.randrange(1, 8)
+            self.adminfixhour = random.randrange(17, 24)
+            self.adminfixminute = random.randrange(0, 60)
+
+            self.adminreportday = random.randrange(1, 8)
+            self.adminreporthour = random.randrange(17, 24)
+            self.adminreportminute = random.randrange(0, 60)
+
+            self.userfixhour = random.randrange(17, 24)
+            self.userfixminute = random.randrange(0, 60)
+
+        self.crontimedict['report'] = str(self.adminreportminute) + ' ' + str(self.adminreporthour) + ' * * ' + str(self.adminreportday)
+        self.crontimedict['fix'] = str(self.adminfixminute) + ' ' + str(self.adminfixhour) + ' * * ' + str(self.adminfixday)
 
     def getFileContents(self, filepath):
         '''
@@ -357,7 +632,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         Return the list (of strings)
         Return empty list if given filepath does not exist
 
-        @param filepath: string; full path to file, from which to read
+        @param: filepath: string; full path to file, from which to read
 
         @return: contents
         @rtype: list
@@ -373,84 +648,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             f.close()
 
         return contents
-
-    def reportLinux(self):
-        '''
-        Check for STONIX Cron job entries in the Linux crontab
-
-        @return: retval
-        @rtype: bool
-
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-
-        self.cronfileexists = True
-        self.reportjob = False
-        self.fixjob = False
-        self.userjob = True
-        self.userscriptexists = True
-        stonixreportjob = 'root nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cr'
-        stonixfixjob = 'root nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cdf'
-        stonixuserjobpath = '/etc/profile.d/user-stonix.py'
-
-        # check for existence of Cron file
-        if not os.path.exists(self.cronfilelocation):
-            self.cronfileexists = False
-            self.detailedresults += '\nCron file not found'
-
-        # check for STONIX job entries
-        contents = self.getFileContents(self.cronfilelocation)
-        if not contents:
-            self.detailedresults += '\nSTONIX report job not found'
-            self.detailedresults += '\nSTONIX fix job not found'
-        else:
-            # report entry
-            for line in contents:
-                if re.search(stonixreportjob, line, re.IGNORECASE):
-                    self.reportjob = True
-            if not self.reportjob:
-                self.detailedresults += '\nSTONIX report job not found'
-            else:
-                self.detailedresults += '\nSTONIX report job found'
-
-            # fix entry
-            for line in contents:
-                if re.search(stonixfixjob, line, re.IGNORECASE):
-                    self.fixjob = True
-            if not self.fixjob:
-                self.detailedresults += '\nSTONIX fix job not found'
-            else:
-                self.detailedresults += '\nSTONIX fix job found'
-
-        # user script
-        if not os.path.exists(stonixuserjobpath):
-            self.userscriptexists = False
-            self.detailedresults += '\nSTONIX user script not found'
-        else:
-            self.detailedresults += '\nSTONIX user script found'
-            contents = self.getFileContents(stonixuserjobpath)
-            userstonixscriptlist = self.userstonixscript.splitlines(True)
-    
-            if cmp(contents, userstonixscriptlist) != 0:
-                self.userjob = False
-                self.detailedresults += '\nSTONIX user script has incorrect contents'
-            else:
-                self.detailedresults += '\nSTONIX user script has correct contents'
-
-        if not self.cronfileexists:
-            retval = False
-        if not self.reportjob:
-            retval = False
-        if not self.fixjob:
-            retval = False
-        if not self.userjob:
-            retval = False
-        if not self.userscriptexists:
-            retval = False
-
-        return retval
 
     def report(self):
         '''
@@ -472,14 +669,35 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         self.detailedresults = ""
         self.ch = CommandHelper(self.logger)
 
+        if self.manualjobtimesCI.getcurrvalue():
+            self.logger.log(LogPriority.DEBUG, "Using user-configured job times...")
+            if self.validateUserTimes():
+                self.setUserTimes()
+            else:
+                self.compliant = False
+                self.detailedresults += "\nThe user-specified cron job time was invalid."
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logger.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
+        else:
+            self.logger.log(LogPriority.DEBUG, "Using randomly generated job times...")
+            if self.checkJobCollisions():
+                self.genJobTimes()
+                self.syncCITimes()
+
+        self.logger.log(LogPriority.DEBUG, "Building configuration files text, using job times...")
+        self.buildFiles()
+
+        self.logger.log(LogPriority.DEBUG, "STONIX path set to: " + str(self.stonixpath))
+
         try:
 
-            # if Mac OS, check Mac launchd jobs
+            # if Mac OS, check Mac launch daemon and agent jobs
             if self.environ.getostype() == "Mac OS X":
                 if not self.reportMac():
                     self.compliant = False
             else:
-                self.pkghelper = Pkghelper(self.logger, self.environ)
+                # else check Linux cron jobs
                 if not self.reportLinux():
                     self.compliant = False
 
@@ -489,15 +707,119 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def reportLinux(self):
+        '''
+        Check for STONIX Cron job entries in the Linux crontab
+
+        @return: retval
+        @rtype: bool
+
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        self.cronfileexists = True
+        self.reportjob = False
+        self.fixjob = False
+        self.userjob = True
+        stonixreportjob = ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cr'
+        stonixfixjob = ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py -cdf'
+
+        # check for existence of system crontab file
+        if not os.path.exists(self.cronfilelocation):
+            self.cronfileexists = False
+            self.detailedresults += '\nSystem crontab file does not exist'
+        else:
+            # check for STONIX cron job entries
+            contents = self.getFileContents(self.cronfilelocation)
+            if not contents:
+                self.detailedresults += '\nSystem crontab file was empty'
+            else:
+                # report entry
+                for line in contents:
+                    self.logger.log(LogPriority.DEBUG, "Comparing line:\n" + str(line) + "to stonixreportjob:\n" + str(stonixreportjob))
+                    if re.search(stonixreportjob, line, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "REPORT JOB FOUND")
+                        self.reportjob = True
+                    else:
+                        self.logger.log(LogPriority.DEBUG, "Lines do NOT match")
+
+                if not self.reportjob:
+                    self.detailedresults += '\nSTONIX report job not found\n'
+                else:
+                    self.detailedresults += '\nSTONIX report job found\n'
+
+                self.logger.log(LogPriority.DEBUG, "After report entry check: reportjob is " + str(self.reportjob))
+
+                # fix entry
+                for line in contents:
+                    self.logger.log(LogPriority.DEBUG, "Comparing line:\n" + str(line) + "to stonixfixjob:\n" + str(stonixfixjob))
+                    if re.search(stonixfixjob, line, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "FIX JOB FOUND")
+                        self.fixjob = True
+                    else:
+                        self.logger.log(LogPriority.DEBUG, "Lines do NOT match")
+
+                if not self.fixjob:
+                    self.detailedresults += '\nSTONIX fix job not found\n'
+                else:
+                    self.detailedresults += '\nSTONIX fix job found\n'
+
+                self.logger.log(LogPriority.DEBUG, "After fix entry check: fixjob is " + str(self.fixjob))
+
+            self.logger.log(LogPriority.DEBUG, "Before permissions check: retval is " + str(retval))
+
+            # check perms of system crontab
+            crontabperms = getOctalPerms(self.cronfilelocation)
+            if crontabperms != 600:
+                self.logger.log(LogPriority.DEBUG, "crontab perms should be 600. Got: " + str(crontabperms))
+                self.detailedresults += "\nIncorrect permissions detected on system crontab file"
+                retval = False
+
+        self.logger.log(LogPriority.DEBUG, "Before user script checks: retval is " + str(retval))
+
+        # check user script
+        if not os.path.exists(self.userscriptfile):
+            self.userjob = False
+            self.detailedresults += '\nSTONIX user script not found'
+        else:
+            self.detailedresults += '\nSTONIX user script found'
+            contents = self.getFileContents(self.userscriptfile)
+            userstonixscriptlist = self.userstonixscript.splitlines(True)
+
+            if cmp(contents, userstonixscriptlist) != 0:
+                self.userjob = False
+                self.detailedresults += '\nSTONIX user script has incorrect contents'
+            else:
+                self.detailedresults += '\nSTONIX user script has correct contents'
+            # check perms on user script file
+            userscriptperms = getOctalPerms(self.userscriptfile)
+            if userscriptperms != 755:
+                self.detailedresults += "\nIncorrect permissions detected on user script file: " + str(self.userscriptfile)
+
+        self.logger.log(LogPriority.DEBUG, "Before Final Checks: retval is " + str(retval))
+
+        if not self.cronfileexists:
+            retval = False
+        if not self.reportjob:
+            retval = False
+        if not self.fixjob:
+            retval = False
+        if not self.userjob:
+            retval = False
+
+        return retval
 
     def reportMac(self):
         '''
         Check for the existence of the necessary STONIX launchd jobs
         Check that each STONIX launchd job contains the correct contents
 
-        @return retval
+        @return: retval
         @rtype: bool
 
         @author Breen Malmberg
@@ -516,7 +838,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                      '/Library/LaunchAgents/gov.lanl.stonix.user.plist':
                      self.stonixplistuser}
         systemservicetargets = ["gov.lanl.stonix.fix", "gov.lanl.stonix.report"]
-        #userservicetargets = ["gov.lanl.stonix.user"]
         self.macadminfixjob = True
         self.macadminreportjob = True
         self.macuserjob = True
@@ -579,46 +900,10 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                     if re.search(item + '\"\s+\=\>\s+true', line, re.IGNORECASE):
                         retval = False
                         self.detailedresults += "\nA required STONIX service: gov.lanl.stonix.user.plist is currently disabled"
-#             for item in plistdict:
-#                 itemlong = item
-#                 if not re.search('user', itemlong, re.IGNORECASE):
-#                     itemshort = item.split('/')[3][:-6]
-#                 if not self.svchelper.auditService(itemlong, serviceTarget=itemshort):
-#                     retval = False
-#                     self.detailedresults += "\nRequired Stonix job: " + str(item) + " is not scheduled to run"
 
         except Exception:
             raise
         return retval
-
-    def genRandCronTime(self):
-        '''
-        Generate a random time within 1 week period, format it for cron
-        and return it as a string
-
-        @return: crontimedict
-        @rtype: dict
-
-        @author: Breen Malmberg
-        '''
-
-        crontimedict = {}
-
-        reportday = random.randrange(1, 7)
-        reporthour = random.randrange(17, 23)
-        reportminute = random.randrange(1, 59)
-
-        fixday = random.randrange(1, 7)
-        fixhour = random.randrange(17, 23)
-        fixminute = random.randrange(1, 59)
-
-        if reportday == fixday:
-            self.genRandCronTime()
-
-        crontimedict['report'] = str(reportminute) + ' ' + str(reporthour) + ' * * ' + str(reportday)
-        crontimedict['fix'] = str(fixminute) + ' ' + str(fixhour) + ' * * ' + str(fixday)
-
-        return crontimedict
 
     def fix(self):
         '''
@@ -636,6 +921,14 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         try:
 
+            if self.manualjobtimesCI.getcurrvalue():
+                if not self.validateUserTimes():
+                    self.rulesuccess = False
+                    self.detailedresults += "\nThe user-specified cron job time was incorrectly specified."
+                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                    self.logger.log(LogPriority.INFO, self.detailedresults)
+                    return self.rulesuccess
+
             # If Mac OS, do fixes for Mac
             if self.environ.getostype() == "Mac OS X":
                 if not self.fixMac():
@@ -652,7 +945,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             self.logger.log(LogPriority.ERROR, self.detailedresults)
             self.rulesuccess = False
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
     def fixLinux(self):
@@ -666,106 +959,89 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         '''
 
         retval = True
-        legacystonixcron = '/etc/legacy_stonix_cron'
-        userscriptdir = '/etc/profile.d/user-stonix.py'
-
-        crontimedict = self.genRandCronTime()
-
-        # if the Cron time dictionary is empty, do not continue
-        if len(crontimedict) == 0:
-            fixresult = False
-            self.rulesuccess = False
-            self.detailedresults += "\nFailed to generate random times for Cron jobs!"
-            self.formatDetailedResults("fix", fixresult, self.detailedresults)
-            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-            return fixresult
 
         # create the report and fix Cron entry strings
-        reportstring = '\n' + str(crontimedict['report']) + ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cr'
-        fixstring = '\n' + str(crontimedict['fix']) + ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cdf &> /var/log/stonix-lastfix.log\n'
+        reportstring = '\n' + str(self.reportminuteCI.getcurrvalue()) + ' ' + str(self.reporthourCI.getcurrvalue()) + ' * * ' + str(
+            self.reportdayCI.getcurrvalue()) + ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cr'
+        fixstring = '\n' + str(self.fixminuteCI.getcurrvalue()) + ' ' + str(self.fixhourCI.getcurrvalue()) + ' * * ' + str(
+            self.fixdayCI.getcurrvalue()) + ' root nice -n 19 ' + str(self.stonixpath) + '/stonix.py' + ' -cdf &> /var/log/stonix-lastfix.log\n'
 
         # create Cron file if it doesn't exist
         if not self.cronfileexists:
             contents = []
             f = open(self.cronfilelocation, 'w')
             contents.append('## This file created by STONIX\n\n')
-            contents.append('SHELL=/bin/bash\n')
-            contents.append('PATH=/sbin:/bin:/usr/sbin:/usr/bin\n')
-            contents.append('MAILTO=root\n')
             contents.append(reportstring)
             contents.append(fixstring)
             f.writelines(contents)
             f.close()
-            os.chown(self.cronfilelocation, 0, 0)
-            os.chmod(self.cronfilelocation, 0644)
         else:
 
             contents = self.getFileContents(self.cronfilelocation)
-    
-            # remove old, incorrect STONIX Cron entry(ies)
-            # (this should only run once per machine)
-            if not os.path.exists(legacystonixcron):
+
+            # add report line if it doesn't exist
+            if not self.reportjob:
+                # remove any existing erroneous job times
                 for line in contents:
-                    if re.search('stonix.py', line, re.IGNORECASE):
+                    if re.search("stonix.*-cr", line, re.IGNORECASE):
                         contents = [c.replace(line, '') for c in contents]
-                f = open(legacystonixcron, 'w')
-                f.write("don't delete me")
-                f.close()
-                os.chown(legacystonixcron, 0, 0)
-                os.chmod(legacystonixcron, 0640)
-    
-            # edit Cron file if it has incorrect or missing entries
-            if not (self.reportjob and self.fixjob):
-                contents.append('\n# Following line(s) added by STONIX\n')
-    
-                # add report line if it doesn't exist
-                if not self.reportjob:
-                    contents.append(reportstring)
+                contents.append(reportstring)
         
-                # add fix line if it doesn't exist
-                if not self.fixjob:
-                    contents.append(fixstring)
-        
-                f = open(self.cronfilelocation, 'w')
-                f.writelines(contents)
-                f.close()
-                os.chown(self.cronfilelocation, 0, 0)
-                os.chmod(self.cronfilelocation, 0644)
+            # add fix line if it doesn't exist
+            if not self.fixjob:
+                # remove any existing erroneous job times
+                for line in contents:
+                    if re.search("stonix.*-cdf", line, re.IGNORECASE):
+                        contents = [c.replace(line, '') for c in contents]
+                contents.append(fixstring)
 
-        # create the user script if it doesn't exist
-        if not os.path.exists(userscriptdir):
-            try:
-                if not os.path.exists('/etc/profile.d'):
-                    os.makedirs('/etc/profile.d', 0755)
-                    os.chown('/etc/profile.d', 0, 0)
+            f = open(self.cronfilelocation, 'w')
+            f.writelines(contents)
+            f.close()
+            os.chown(self.cronfilelocation, 0, 0)
+            os.chmod(self.cronfilelocation, 0600)
 
-                f = open(userscriptdir, 'w')
-                f.write(self.userstonixscript)
-                f.close()
+        if not self.userjob:
+            self.logger.log(LogPriority.DEBUG, "Fixing the STONIX user script...")
+            # create the user script
+            if not os.path.exists(self.userscriptfile):
+                try:
+                    if not os.path.exists('/etc/profile.d'):
+                        os.makedirs('/etc/profile.d', 0755)
+                        os.chown('/etc/profile.d', 0, 0)
 
-                os.chown(userscriptdir, 0, 0)
-                os.chmod(userscriptdir, 0750)
-            except Exception:
-                retval = False
-
-        # else edit the contents if it does exist
-        else:
-            contentlines = self.getFileContents(userscriptdir)
-
-            userstonixscriptlist = self.userstonixscript.splitlines(True)
-
-            try:
-
-                if cmp(contentlines, userstonixscriptlist) != 0:
-                    f = open(userscriptdir, 'w')
-                    f.writelines(userstonixscriptlist)
+                    self.logger.log(LogPriority.DEBUG, "Creating user script file and writing correct contents...")
+                    f = open(self.userscriptfile, 'w')
+                    f.write(self.userstonixscript)
                     f.close()
 
-                    os.chown(userscriptdir, 0, 0)
-                    os.chmod(userscriptdir, 0750)
+                    os.chown(self.userscriptfile, 0, 0)
+                    os.chmod(self.userscriptfile, 0755)
+                except Exception:
+                    retval = False
+                    self.logger.log(LogPriority.DEBUG, "Failed to create user script file")
 
-            except Exception:
-                retval = False
+            # write correct contents
+            else:
+
+                try:
+
+                    self.logger.log(LogPriority.DEBUG, "Writing correct contents to user script file...")
+                    f = open(self.userscriptfile, 'w')
+                    f.write(self.userstonixscript)
+                    f.close()
+
+                    os.chown(self.userscriptfile, 0, 0)
+                    os.chmod(self.userscriptfile, 0755)
+
+                except Exception:
+                    retval = False
+                    self.logger.log(LogPriority.DEBUG, "Failed to write contents to user script file")
+
+        self.logger.log(LogPriority.DEBUG, "Setting Permissions and Ownership on crontab file...")
+
+        os.chown(self.cronfilelocation, 0, 0)
+        os.chmod(self.cronfilelocation, 0600)
 
         return retval
 
@@ -785,11 +1061,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         self.macadminreportpath = "/Library/LaunchDaemons/gov.lanl.stonix.report.plist"
         self.macuserpath = "/Library/LaunchAgents/gov.lanl.stonix.user.plist"
 
-        # Flag that tells STONIX that old, incorrect STONIX launchd jobs
-        # have been removed, so don't try to remove them again
-        # (This is to fix an artifact of previous STONIX ScheduleStonix.py versions)
-        legacystonixcron = '/etc/legacy_stonix_cron'
-
         # defaults
         servicedict = {'/Library/LaunchDaemons/gov.lanl.stonix.report.plist':
                        'gov.lanl.stonix.report',
@@ -799,23 +1070,6 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                        'gov.lanl.stonix.user'}
 
         self.logger.log(LogPriority.DEBUG, "Running fixes for Mac OS")
-
-        # the following code should only ever be run once on
-        # any system
-        try:
-            # remove old, incorrect STONIX launchd job(s)            
-            if not os.path.exists(legacystonixcron):
-                for item in servicedict:
-                    if os.path.exists(item):
-                        os.remove(item)
-                f = open(legacystonixcron, 'w')
-                f.write("don't delete me")
-                f.close()
-                os.chown(legacystonixcron, 0, 0)
-                os.chmod(legacystonixcron, 0o600)
-
-        except Exception:
-            pass
 
         # create the STONIX launchd jobs
         try:
