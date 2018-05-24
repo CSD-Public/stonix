@@ -387,7 +387,7 @@ This rule designates an alternate user account to send root mail to. Normally ro
 
 <268>        "***CANNOT BE UNDONE***
 
-This rule will schedule a random time (after business hours) for STONIX to run in admin/root context, once per week, and once per day in user context."
+This rule will schedule a time for STONIX to run in admin/root context, once per week, and once per day in user context. You can configure these values yourself, or have them generated randomly, by STONIX."
 
 <136>        "This rule will apply secure configurations to the Apache web server conf file 'httpd.conf' and included files in conf.d directory, or other configuration directories. It also applies secure configurations to the PHP interpreter's 'php.ini' file, if present. There are a series of config options for this rule. In general, the Apache web server should not be running on desktop systems and should be disabled by the 'MinimizeServices' rule. On servers and in the case where a developer needs a local instance of the web server running, it should be properly configured.
 
