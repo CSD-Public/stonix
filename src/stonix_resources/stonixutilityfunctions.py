@@ -483,8 +483,10 @@ def getOctalPerms(filepath):
     @rtype: int
     @author: Breen Malmberg
     @param filepath: path of file to check
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
-            added default return var init
+    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added
+            try/except; added default return var init
+    @change: Brandon R. Gonzales - 5/29/2018 - Now works with directory
+            file paths
     '''
 
     octperms = 0
@@ -493,7 +495,7 @@ def getOctalPerms(filepath):
 
         rawresult = os.stat(filepath).st_mode
 
-        if stat.S_ISREG(rawresult):
+        if stat.S_ISREG(rawresult) or stat.S_ISDIR(rawresult):
             octperms = oct(stat.S_IMODE(rawresult))
             while len(octperms) > 3:
                     octperms = octperms[1:]
