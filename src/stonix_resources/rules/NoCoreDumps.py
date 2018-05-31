@@ -185,7 +185,7 @@ class NoCoreDumps(Rule):
         @return: bool
         '''
         match = False
-        lookfor = "(^\*)(\s)* hard core 0?"
+        lookfor = "(^\*)\s+hard\s+core\s+0?"
         path = "/etc/security/limits.conf"
         compliant = True
         if not os.path.exists(path):
@@ -200,13 +200,14 @@ class NoCoreDumps(Rule):
             if not contents:
                 return False
             for line in contents:
-                if re.match(lookfor, line):
+                if re.match(lookfor, line.strip()):
                     match = True
                     break
-        if match and compliant:
-            return True
-        else:
-            return False
+        if not match:
+            compliant = False
+            self.detailedresults += "Didn't find desired line in " + \
+                path + "\n"
+        return compliant
 
 ###############################################################################
 
@@ -322,15 +323,13 @@ class NoCoreDumps(Rule):
         @return: bool
         '''
         path = "/etc/security/limits.conf"
-        lookfor = "(^\*)(\s)* hard core 0?"
+        lookfor = "(^\*)\s+hard\s+core\s+0?"
         tempstring = ""
         success, found = True, False
 
         if not os.path.exists(path):
             createFile(path, self.logger)
             self.created1 = True
-            setPerms(path, [0, 0, 0o644], self.logger)
-
         contents = readFile(path, self.logger)
         for line in contents:
             if re.match(lookfor, line):
@@ -339,7 +338,7 @@ class NoCoreDumps(Rule):
             else:
                 tempstring += line
         if not found:
-            tempstring += "* hard core 0 \n"
+            tempstring += "*\thard\tcore\t0\n"
 
         tmpfile = path + ".tmp"
         if not writeFile(tmpfile, tempstring, self.logger):
@@ -352,7 +351,8 @@ class NoCoreDumps(Rule):
                      "filepath": path}
             self.statechglogger.recordchgevent(myid, event)
             os.rename(tmpfile, path)
-        elif tempstring != "".join(contents):
+            setPerms(path, [0, 0, 0o644], self.logger)
+        else:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {'eventtype': "conf",
