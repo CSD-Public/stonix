@@ -617,11 +617,11 @@ development but some existing applications may use insecure side effects.'''
             self.statechglogger.recordchgevent(myid1, event1)
             os.rename(tempfile, conffile)
             if self.environ.getosfamily == 'solaris':
-                if owner != 0 or group != 2 or mode != 420:
+                if owner != 0 or group != 2 or mode != 416:
                     self.logdispatch.log(LogPriority.DEBUG,
                                     ['SecureApacheWebserver.__fixapacheglobals',
                                      'Applying Solaris permissions'])
-                    myend2 = [0, 2, 420]
+                    myend2 = [0, 2, 416]
                     mytype2 = 'perm'
                     mystart2 = [owner, group, mode]
                     myid2 = eventid2
@@ -631,8 +631,8 @@ development but some existing applications may use insecure side effects.'''
                     self.statechglogger.recordchgevent(myid2, event2)
                     os.chown(conffile, myend2[0], myend2[1])
                     os.chmod(conffile, myend2[2])
-            elif owner != 0 or group != 0 or mode != 420:
-                myend2 = [0, 0, 420]
+            elif owner != 0 or group != 0 or mode != 416:
+                myend2 = [0, 0, 416] # TODO: change 416 value to be whatever the current file perm is
                 mytype2 = 'perm'
                 mystart2 = [owner, group, mode]
                 myid2 = eventid2
@@ -909,10 +909,10 @@ development but some existing applications may use insecure side effects.'''
                                     ['SecureApacheWebserver.__fixapachemodules',
                                      'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
                 os.rename(tempfile2, conffile)
-                if owner != 0 or group != 0 or mode != 420:
+                if owner != 0 or group != 0 or mode != 416:
                     mytype2 = 'perm'
                     mystart2 = [owner, group, mode]
-                    myend2 = [0, 0, 420]
+                    myend2 = [0, 0, 416]
                     myid2 = eventid2
                     event2 = {'eventtype': mytype2,
                               'startstate': mystart2,
@@ -920,7 +920,7 @@ development but some existing applications may use insecure side effects.'''
                               'myfile': conffile}
                     self.statechglogger.recordchgevent(myid2, event2)
                 os.chown(conffile, 0, 0)
-                os.chmod(conffile, 420)
+                os.chmod(conffile, 416)
                 resetsecon(conffile)
 
     def __fixsslconfig(self, sslfile, eventid1, eventid2):
