@@ -136,14 +136,14 @@ class Environment:
                             self.systemtype = vt
 
             else:
-                print str(__name__) + ":Unable to determine systemtype. Required utility 'ps' does not exist on this system"
+                "Unable to determine systemtype. Required utility 'ps' does not exist on this system"
         except OSError:
-            print str(__name__) + ":Unable to determine systemtype. Required utility 'ps' does not exist on this system"
+            "Unable to determine systemtype. Required utility 'ps' does not exist on this system"
 
         if self.systemtype not in validtypes:
-            print str(__name__) + ":This system is based on an unknown architecture"
+            "This system is based on an unknown architecture"
         else:
-            print str(__name__) + ":Determined that this system is based on " + str(self.systemtype) + " architecture"
+            "Determined that this system is based on " + str(self.systemtype) + " architecture"
 
     def getsystemtype(self):
         '''

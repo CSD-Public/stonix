@@ -150,6 +150,7 @@ class Yum(object):
         '''
 
         installed = True
+        errstr = ""
 
         try:
 
@@ -161,7 +162,7 @@ class Yum(object):
                     raise repoError('yum', retcode, str(errstr))
             except repoError as repoerr:
                 if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    self.logger.log(LogPriority.WARNING, str(repoerr))
                     installed = False
 
             if installed:

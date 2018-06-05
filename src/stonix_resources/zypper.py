@@ -155,6 +155,7 @@ class Zypper(object):
         '''
 
         installed = True
+        errstr = ""
 
         try:
 

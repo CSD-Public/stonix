@@ -169,6 +169,7 @@ class AptGet(object):
 
         installed = False
         stringToMatch = "ii\s+" + str(package)
+        outputstr = ""
 
         try:
 
@@ -181,7 +182,7 @@ class AptGet(object):
                     raise repoError('apt', retcode, str(errstr))
             except repoError as repoerr:
                 if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    self.logger.log(LogPriority.WARNING, str(repoerr))
                     return False
 
             if re.search(stringToMatch, outputstr, re.IGNORECASE):
