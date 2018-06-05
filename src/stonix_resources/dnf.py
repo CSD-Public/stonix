@@ -143,6 +143,8 @@ class Dnf(object):
         '''
 
         installed = False
+        errstr = ""
+        outputstr = ""
 
         try:
 
