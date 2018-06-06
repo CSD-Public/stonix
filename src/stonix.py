@@ -192,11 +192,6 @@ class Controller(Observable):
             self.prog_args = ProgramArguments()
             self.processargs()
         self.config = Configuration(self.environ)
-        try:
-            fismacategory = self.config.getconfvalue('main', 'fismacat')
-            self.environ.setsystemfismacat(fismacategory)
-        except(KeyError):
-            pass
         self.numrulesrunning = 0
         self.numrulescomplete = 0
         self.currulename = ''
@@ -212,8 +207,8 @@ class Controller(Observable):
             applicable2PyQt4 = {'type': 'black',
                                'family': ['darwin']}
             self.chkapp = CheckApplicable(self.environ, self.logger)
-
-            if self.chkapp.isApplicable(applicable2PyQt5):
+            
+            if self.chkapp.isapplicable(applicable2PyQt5):
                 #####
                 # Appropriate to OS that supports PyQt5
                 try:
@@ -242,6 +237,7 @@ class Controller(Observable):
                     app.processEvents()
 
             if self.chkapp.isApplicable(applicable2PyQt4):
+
                 #####
                 # Appropriate to OS that supports PyQt4
                 try:
