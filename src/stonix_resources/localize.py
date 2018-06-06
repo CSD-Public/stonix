@@ -52,7 +52,7 @@ that access the version variable to use this copy.
 @change: 2018/05/08 - ekkehard - incremented STONIXVERSION = '0.9.19'
 '''
 
-FISMACAT = 'low'
+FISMACAT = 'med'
 
 # The Version number of the STONIX application. Modify this only if you need to
 # define a local version number. Caution should be used to not conflict with
@@ -61,7 +61,7 @@ FISMACAT = 'low'
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 
 # Variable Type: String
-STONIXVERSION = '0.9.19'
+STONIXVERSION = '0.9.2-'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
