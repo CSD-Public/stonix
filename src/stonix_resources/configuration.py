@@ -51,8 +51,6 @@ type and it is up to the rule to validate the contents.
 ruleconfiguc = "string"
 Each directive has a user comment (uc) directive associated with it.
 Calls to getconfvalue for non-existent entries will generate a KeyError.
-
-@change: 2017/03/07 Added fismacat to [MAIN]
 '''
 
 import ConfigParser
@@ -115,14 +113,7 @@ class Configuration:
 # documentation for this file with man stonix.conf.
 [MAIN]
 version = 100
-
-# fismacat
-# Global variable that affects the rules selection and behavior.
-# fismacat is the FIPS 199 risk categorization for the system on which STONIX
-# is running. Valid values are 'low', 'med' and 'high'. The value cannot be set
-# lower than the default set in localize.py. The higher the fismacat value
-# the more stringent STONIX's behavior becomes.
-# fismacat = 'low'"""
+"""
         conf = ''
         newline = '\n'
         conf = conf + confheader

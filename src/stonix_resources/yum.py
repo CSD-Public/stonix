@@ -153,7 +153,6 @@ class Yum(object):
         errstr = ""
 
         try:
-
             try:
                 self.ch.executeCommand(self.listinstalled + package)
                 retcode = self.ch.getReturnCode()

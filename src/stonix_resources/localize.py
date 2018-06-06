@@ -52,89 +52,100 @@ that access the version variable to use this copy.
 @change: 2018/05/08 - ekkehard - incremented STONIXVERSION = '0.9.19'
 '''
 
+FISMACAT = 'low'
+
 # The Version number of the STONIX application. Modify this only if you need to
 # define a local version number. Caution should be used to not conflict with
 # the upstream versioning numbers. The version is handled as a string so
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
+
 # Variable Type: String
 STONIXVERSION = '0.9.19'
 
-# FISMACAT is the FISMA/FIPS 199 risk categorization of the system. This value
-# is used to determine rule applicability and behavior with the higher the
-# risk value is causing more rules to activate and active rules to be more
-# stringent. This can be overridden by the System Administrator via the conf
-# file but may never be lower than the value specified here. Valid values are
-# 'low', 'med' and 'high'
-
-FISMACAT = 'low'
-
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
-# Variable Type: String
-REPORTSERVER = None
+REPORTSERVER = 'foo.bar.com'
 
 # If you are not using a central report server then set the value of
 # sendreports to False. Please note no quotes.
 # sendreports = False
-# Variable Type: Boolean
 SENDREPORTS = True
 
 # The SoftwarePatching rule will check to see if local update sources are being
 # used. If you have local update sources list them here. This check will be
 # skipped if the list is empty. The list is in python list format:
 # updateservers = ['myserver1.mydomain.tld', 'myserver2.mydomain.tld']
-# Variable Type: List (of strings)
-UPDATESERVERS = None
+UPDATESERVERS = ['foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com',
+                 'foo.bar.com']
 
 # Stonix can set OS X systems to use a local Apple Software Update Server
 # if you have an ASUS server on your network enter its FQDN here. A zero
 # length entry will be ignored.
-# Variable Type: String
-# ex: "http://foo.bar.domain:port/"
-APPLESOFTUPDATESERVER = None
+APPLESOFTUPDATESERVER = 'http://asus.lanl.gov:8088/'
 
 # Repository used by the package helper to retrieve software for installation.
 # Currently only uses "https" as a valid protocol
-# Variable Type: String
-MACREPOROOT = None
+MACREPOROOT = 'https://example.com/reporoot/'
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
-# Variable Type: String
-CENTRALLOGHOST = None
+CENTRALLOGHOST = 'foo.bar.com'
 
 # Warning Banners are site-specific
 # You may edit the text of the warning banner here to reflect your particular
 # site
-# Variable Type: String
-# Full warning banner text
-WARNINGBANNER = None
+WARNINGBANNER = "**WARNING**WARNING**WARNING**WARNING**WARNING**\n\n" + \
+"This is a Department of Energy (DOE) computer system. DOE computer\n" + \
+"systems are provided for the processing of official U.S. Government\n" + \
+"information only. All data contained within DOE computer systems is\n" + \
+"owned by the DOE, and may be audited, intercepted, recorded, read,\n" + \
+"copied, or captured in any manner and disclosed in any manner, by\n" + \
+"authorized personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM.\n" + \
+"System personnel may disclose any potential evidence of crime found on\n" + \
+"DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY\n" + \
+"ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\n" + \
+"AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\n" + \
+"DISCLOSURE OF COMPUTER ACTIVITY.\n\n" + \
+"**WARNING**WARNING**WARNING**WARNING**WARNING**\n"
 
-# Variable Type: String
-# Shorter version of warning banner
-# Needed on some systems which have limited warning banner display area
-ALTWARNINGBANNER = None
+ALTWARNINGBANNER = "This is a Department of Energy (DOE) computer system. DOE computer\n" + \
+"systems are provided for the processing of official U.S. Government\n" + \
+"information only. All data contained within DOE computer systems is\n" + \
+"owned by the DOE, and may be audited, intercepted, recorded, read,\n" + \
+"copied, or captured in any manner and disclosed in any manner, by\n" + \
+"authorized personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM.\n" + \
+"System personnel may disclose any potential evidence of crime found on\n" + \
+"DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY\n" + \
+"ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS\n" + \
+"AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and\n" + \
+"DISCLOSURE OF COMPUTER ACTIVITY.\n\n"
 
 # Warning Banners abbreviated for OS X login Screen
-# Variable Type: String
-OSXSHORTWARNINGBANNER = None
+OSXSHORTWARNINGBANNER = "This is a U.S. Government Federal computer " + \
+"system. Authorized use only. Users have no explicit/implicit expectation " + \
+"of privacy. By using this system the user consents to monitoring and " + \
+"disclosure. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR UNAUTHORIZED, " + \
+"CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, " + \
+"COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. " + \
+"See http://foo.bar.com/copyright.shtml#disclaimers"
 
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
-# Variable Type: String
-MAILRELAYSERVER = None
+MAILRELAYSERVER = 'foo.bar.com'
 
 # STONIX Error Message Source Address
 # Set this to the email address that STONIX error messages should appear to
 # come from.
-# Variable Type: String
-STONIXERR = None
+STONIXERR = 'stonixerr@bar.com'
 
 # STONIX Error Message Destination
 # Set the email address that STONIX error messages should be delivered to.
-# Variable Type: String
-STONIXDEVS = None
+STONIXDEVS = 'stonix-dev@bar.com'
 
 # Set the URL and port of your proxy server if one is in use.
 # If you do not use a proxy server set this to None.
@@ -151,51 +162,83 @@ PROXYDOMAIN = None
 PROXYDOMAINBYPASS = None
 
 # Domain Name Server (DNS) defaults
-# Variable Type: String
 DNS = "192.168.0.1 192.168.0.2"
 
 # (for redhat 7 and later) Specify a subnet to allow services access to in /etc/hosts.allow
-# Variably Type: List (of strings)
 ALLOWNETS = ['192.168.0.1/24']
 
 # Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
-# Variable Type: String
 XINETDALLOW = '192.168.0.1/24'
 
 # Specify a subnet to allow printer browsing on
 # This will be written in the cups config file for the system
-# Variable Type: String
 PRINTBROWSESUBNET = '192.168.0.1/24'
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
-# Variable Type: List (of strings)
-NTPSERVERSINTERNAL = None
+NTPSERVERSINTERNAL = ["foo.bar.com", "foo.bar.com"]
 
 # Specify a list of external Network Time Protocol (NTP) Servers
-# Variable Type: List (of strings)
 NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
                       "2.us.pool.ntp.org", "3.us.pool.ntp.org"]
 
 # List Of Corporate Network Servers used to determine if we are on the
 # corporate network they need to be reachable only internally on port 80
-# Variable Type: List (of strings)
-CORPORATENETWORKSERVERS = None
+CORPORATENETWORKSERVERS = ["foo.bar.com"]
 
 # Content of the kerb5.conf file
-# Variable Type: String
-MACKRB5 = None
+MACKRB5 = '''[libdefaults]
+    default_realm = bar.com
+    allow_weak_crypto = true
+    forwardable = true
+[realms]
+    bar.com = {
+    kdc = foo.bar.com
+    kdc = foo.bar.com
+    admin_server = foo.bar.com
+    }
+[pam]
+    debug = false
+    krb4_convert = false
+[domain_realm]
+    foo.bar.com = FOO.BAR.COM
+    .example.com = EXAMPLE.COM
+    example.com = EXAMPLE.COM
+'''
 
-# Content of the kerb5.conf file
-# Variable Type: String
-LINUXKRB5 = None
+LINUXKRB5 = '''[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = bar.com
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+ allow_weak_crypto = true
+ clockslew = 300
+
+[realms]
+
+ bar.com = {
+  kdc = foo.bar.com
+    kdc = foo.bar.com
+  admin_server = foo.bar.com
+  default_domain = bar.com
+ }
+
+[domain_realm]
+ bar.com = bar.com
+ .bar.com = bar.com
+'''
 
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
 # management like yum and apt-get.
-# Variable Type: String
-SELFUPDATESERVER = None
+SELFUPDATESERVER = "foo.bar.com"
 
-# Variable Type: String
 HOSTSDENYDEFAULT = """##########################################################################
 #
 # FILENAME: hosts.deny
@@ -213,7 +256,6 @@ HOSTSDENYDEFAULT = """##########################################################
 all : all : banners /etc/banners : DENY
 """
 
-# Variable Type: String
 HOSTSALLOWDEFAULT = """##########################################################################
 ## Filename:            hosts.allow
 ## Description:         Access control file for TCP Wrappers 7.6
@@ -264,17 +306,14 @@ all : all : DENY
 """
 
 # This is used in the SecureMailClient Rule to set up DomainForMatching
-# Variable Type: String
-APPLEMAILDOMAINFORMATCHING = None
+APPLEMAILDOMAINFORMATCHING = "bar.com"
 
 # This list contains quoted strings that are fully qualified paths to
 # world writable directories that are common at your site (possibly due to
 # widely deployed software).
-# Variable Type: List (of strings)
-SITELOCALWWWDIRS = None
+SITELOCALWWWDIRS = []
 
 # Default messages for self.detailedresults initialization, report, fix, undo
-# Variables Type: String
 DRINITIAL = "Neither report, fix, or revert have been run yet."
 DRREPORTCOMPIANT = "Rule is Compliant."
 DRREPORTNOTCOMPIANT = "Rule is not Compliant."
@@ -287,29 +326,21 @@ DRUNDOSUCCESSFUL = "Revert was completed successfully."
 DRUNDOFAILED = "The revert for this Rule failed."
 DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
 GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
-# EX: "logrotate.foo.bar"
-WINLOG = None
-
-# This is for LANL use only
-# included for code compatibility
-LANLLOGROTATE = None
+WINLOG = "@@foo.bar.com"
+LANLLOGROTATE = "700.lanl.logrotate"
 
 # These are accounts to exclude from DisableInactiveAccounts rule
-# Variable Type: List (of strings)
-EXCLUDEACCOUNTS = None
+EXCLUDEACCOUNTS = []
 
 # The following list is used by AuditFirefoxUsage(84). It lists domains that
 # are approved for browsing by the root user.
-# Variable Type: List (of strings)
-# ex: ["127.0.0.1", "localhost", "bar.com"]
-LOCALDOMAINS = None
+LOCALDOMAINS = ["127.0.0.1", "localhost", "bar.com"]
 
 # these options will be set in /etc/dhcp/dhclient.conf
 # a value of 'request' will cause the client to request that
 # option's configuration from the dhcp server. a value of
 # 'supersede' will cause the client to use the locally-defined
 # value in the dhclient.conf configuration file
-# Variable Type: Dictionary (of string keys and string values)
 DHCPDict = {'subnet-mask': 'request',
             'broadcast-address': 'supersede',
             'time-offset': 'supersede',
@@ -325,35 +356,17 @@ DHCPDict = {'subnet-mask': 'request',
 # 'supersede' is specified for one of the options in
 # DCHPDict. Change these to reflect your organization's
 # actual servers/domains/settings
-# Variable Type: Dictionary (of string keys and string values)
-# EX:
-# {'broadcast-address': '192.168.',
-#            'time-offset': '3',
-#            'routers': 'routername.foo.bar',
-#            'domain-name': 'foo.bar',
-#            'domain-name-servers': 'dns.foo.bar',
-#            'host-name': 'host.foo.bar',
-#            'nis-domain': 'foo.nis',
-#            'nis-servers': 'nis.foo.bar',
-#            'ntp-servers': 'ntp.foo.bar'}
-DHCPSup = None
-PWQUALITY_HIGH_REGEX =  "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-PWQUALITY_REGEX = regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-CRACKLIB_HIGH_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-CRACKLIB_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
-    "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
-PAMFAIL_REGEX = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
-                        "deny=5 unlock_time=900 fail_interval=900"
-PAMTALLY_REGEX = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
-                        "unlock_time=900 onerr=fail"
-# Variable Type: String
+DHCPSup = {'subnet-mask': '"example.com"',
+           'broadcast-address': '192.168.1.255',
+           'time-offset': '-18000',
+           'routers': '192.168.1.1',
+           'domain-name': '"example.com"',
+           'domain-name-servers': '192.168.1.2',
+           'host-name': '"localhost"',
+           'nis-domain': '""',
+           'nis-servers': '""',
+           'ntp-servers': '"ntp.example.com"'}
+
 AUTH_APT = '''auth        required      pam_env.so
 auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
 auth        sufficient    pam_unix.so try_first_pass
@@ -362,7 +375,6 @@ auth        sufficient    pam_krb5.so use_first_pass
 auth        required      pam_deny.so
 '''
 
-# Variable Type: String
 ACCOUNT_APT = '''account     required      pam_tally2.so
 account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
@@ -372,9 +384,8 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
 
-# Variable Type: String
 PASSWORD_APT = '''password    requisite     \
-pam_pwquality.so minlen=8 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
@@ -382,7 +393,6 @@ password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
 
-# Variable Type: String
 SESSION_APT = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond \
@@ -392,7 +402,6 @@ session     optional      pam_krb5.so
 -session    optional      pam_systemd.so
 '''
 
-# Variable Type: String
 SESSION_HOME_APT = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond \
@@ -403,7 +412,6 @@ session     optional      pam_krb5.so
 session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
 
-# Variable Type: String
 AUTH_ZYPPER = '''auth    required        pam_env.so
 auth    required        pam_tally2.so deny=5 unlock_time=900 onerr=fail
 auth    optional        pam_gnome_keyring.so
@@ -411,15 +419,13 @@ auth    sufficient      pam_unix.so     try_first_pass
 auth    required        pam_sss.so      use_first_pass
 '''
 
-# Variable Type: String
 ACCOUNT_ZYPPER = '''account requisite       pam_unix.so     try_first_pass
 account sufficient      pam_localuser.so
 account required        pam_sss.so      use_first_pass
 '''
 
-# Variable Type: String
 PASSWORD_ZYPPER = '''password        requisite       \
-pam_pwquality.so minlen=8 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 \
+pam_pwquality.so minlen=14 minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 \
 ocredit=0 retry=3 maxrepeat=3
 password        sufficient      pam_unix.so sha512 shadow \
 try_first_pass use_authtok remember=10
@@ -427,7 +433,6 @@ password        optional        pam_gnome_keyring.so    use_authtok
 password        required        pam_sss.so      use_authtok
 '''
 
-# Variable Type: String
 SESSION_ZYPPER = '''session required        pam_limits.so
 session required        pam_unix.so     try_first_pass
 session optional        pam_sss.so
@@ -438,7 +443,6 @@ only_if=gdm,gdm-password,lxdm,lightdm
 session optional        pam_env.so
 '''
 
-# Variable Type: String
 SESSION_HOME_ZYPPER = '''session required        pam_limits.so
 session required        pam_unix.so     try_first_pass
 session optional        pam_sss.so
@@ -450,7 +454,6 @@ session optional        pam_env.so
 session     required      pam_mkhomedir.so skel=/etc/skel umask=0077
 '''
 
-# Variable Type: String
 AUTH_NSLCD = '''auth        required      pam_env.so
 auth        required      pam_faillock.so preauth silent audit deny=5 \
 unlock_time=900 fail_interval=900
@@ -461,7 +464,7 @@ auth        [default=die] pam_faillock.so authfail audit deny=5 \
 unlock_time=900 fail_interval=900
 auth        required      pam_deny.so
 '''
-# Variable Type: String
+
 ACCOUNT_NSLCD = '''account     required      pam_faillock.so
 account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
@@ -471,16 +474,14 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
 
-# Variable Type: String
-PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=8 \
-minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow \
 try_first_pass use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
 
-# Variable Type: String
 SESSION_NSLCD = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond \
@@ -489,7 +490,6 @@ session     required      pam_unix.so
 session     optional      pam_krb5.so
 '''
 
-# Variable Type: String
 SESSION_HOME_NSLCD = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     optional      pam_mkhomedir.so umask=0077
@@ -499,7 +499,6 @@ session     required      pam_unix.so
 session     optional      pam_krb5.so
 '''
 
-# Variable Type: String
 AUTH_YUM = '''auth        required      pam_env.so
 auth        required      pam_faillock.so preauth silent audit deny=5 \
 unlock_time=900 fail_interval=900
@@ -512,7 +511,6 @@ unlock_time=900 fail_interval=900
 auth        required      pam_deny.so
 '''
 
-# Variable Type: String
 ACCOUNT_YUM = '''account     required      pam_faillock.so
 account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
@@ -523,9 +521,8 @@ account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
 
-# Variable Type: String
-PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=8 \
-minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
+PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=14 \
+minclass=4 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
 password    sufficient    pam_sss.so use_authtok
@@ -533,7 +530,6 @@ password    sufficient    pam_krb5.so use_authtok
 password    required      pam_deny.so
 '''
 
-# Variable Type: String
 SESSION_YUM = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 -session    optional      pam_systemd.so
@@ -544,7 +540,6 @@ session     optional      pam_sss.so
 session     optional      pam_krb5.so
 '''
 
-# Variable Type: String
 SESSION_HOME_YUM = '''session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 -session    optional      pam_systemd.so

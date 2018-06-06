@@ -148,17 +148,6 @@ class ConfigureMACPolicy(Rule):
         self.aaprofiledir = '/etc/apparmor.d/'
         self.aastatuscmd = '/usr/sbin/apparmor_status'
         self.aaunconf = '/usr/sbin/aa-unconfined'
-        self.grubbootdir = '/boot/grub2/grub.cfg'
-        grubupdatecmds = ['/usr/sbin/update-grub', '/usr/sbin/grub2-mkconfig', '/usr/sbin/grub-mkconfig']
-        self.updategrubcmd = ''
-        self.updategrubbase = ''
-        for cmd in grubupdatecmds:
-            if os.path.exists(cmd):
-                self.updategrubbase = cmd
-        if self.updategrubbase == '/usr/sbin/update-grub':
-            self.updategrubcmd = self.updategrubbase
-        else:
-            self.updategrubcmd = self.updategrubbase + ' -o ' + self.grubbootdir
 
     def initobjs(self):
         '''
@@ -417,8 +406,7 @@ class ConfigureMACPolicy(Rule):
         self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
         self.aadefscmd = 'update-rc.d apparmor defaults'
         self.aastatuscmd = '/usr/sbin/aa-status'
-        if not self.updategrubcmd:
-            self.updategrubcmd = '/usr/sbin/update-grub'
+        self.updategrubcmd = '/usr/sbin/update-grub'
 
     def setopensuse(self):
         '''
@@ -474,8 +462,6 @@ class ConfigureMACPolicy(Rule):
         self.aareloadprofscmd = 'invoke-rc.d apparmor reload'
         self.aadefscmd = 'update-rc.d apparmor defaults'
         self.aastatuscmd = '/usr/sbin/aa-status'
-        if not self.updategrubcmd:
-            self.updategrubcmd = '/usr/sbin/update-grub'
 
     def report(self):
         '''
@@ -975,222 +961,12 @@ the sestatus command to see if SELinux is configured properly\n"
                 if not self.pkgdict[pkg]:
                     if not self.pkghelper.install(pkg):
                         retval = False
-                        self.detailedresults += '\nFailed to install required package: ' + str(pkg) + '\n'
-            if not retval:
-                self.detailedresults += "|nFailed to install one or more required packages. Please check your network connection and ensure that you can reach your repository(ies)."
+                        self.detailedresults += 'Failed to install ' + \
+                            'package: ' + str(pkg) + '\n'
 
         except Exception:
             raise
         return retval
-
-    def getFileContents(self, filepath):
-        '''
-        retrieve and return contents of given filepath
-        in list form
-
-        @param filepath: string; full path to file from which to
-                read contents
-        @return: contents
-        @rtype: list
-        @author: Breen Malmberg
-        '''
-
-        contents = []
-
-        try:
-
-            if not filepath:
-                self.logger.log(LogPriority.DEBUG, "Parameter: filepath was blank!")
-                return contents
-            if not isinstance(filepath, basestring):
-                self.logger.log(LogPriority.DEBUG, "Parameter: filepath needs to be type: string. Got: " + str(type(filepath)))
-                return contents
-            if not os.path.exists(filepath):
-                self.logger.log(LogPriority.DEBUG, "The specified filepath does not exist. Nothing to retrieve.")
-                return contents
-
-            f = open(filepath, 'r')
-            contents = f.readlines()
-            f.close()
-
-        except Exception:
-            raise
-        return contents
-
-    def fixGrub(self):
-        '''
-        determine if system uses /etc/default/grub and
-        /boot/grub2/grub.cfg - or - /etc/grub.conf
-        and run fix actions to ensure
-        that either one have the required configuration
-        options correctly specified in them
-
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        success = True
-        owner = [0, 0]
-        perms = 0644
-
-        try:
-
-            if os.path.exists('/etc/default/grub'):
-    
-                grubpath = '/etc/default/grub'
-    
-                self.logger.log(LogPriority.DEBUG, "Grub configuration file detected as: " + str(grubpath))
-    
-                self.logger.log(LogPriority.DEBUG, "Reading grub configuration file...")
-    
-                grubcontents = self.getFileContents(grubpath)
-    
-                self.logger.log(LogPriority.DEBUG, "Got grub configuration file contents. Looking for required AppArmor kernel config line...")
-    
-                # if the grub configuration file was empty, or
-                # we failed to get the contents, then we will not
-                # attempt to recreate the entire file because this
-                # could be destructive to the target system
-                if not grubcontents:
-                    self.logger.log(LogPriority.DEBUG, "Could not retrieve the contents of the grub boot configuration! Giving up...")
-                    success = False
-                    return success
-    
-                for line in grubcontents:
-                    if re.search('^GRUB_CMDLINE_LINUX_DEFAULT="', line, re.IGNORECASE):
-                        if not re.search('apparmor=1 security=apparmor', line):
-                            self.logger.log(LogPriority.DEBUG, "Required AppArmor kernel line not found. Adding it...")
-                            grubcontents = [c.replace(line, line[:-2] + ' apparmor=1 security=apparmor"\n') for c in grubcontents]
-                            self.editedgrub = True
-                        else:
-                            apparmorfound = True
-    
-                if not self.editedgrub and not apparmorfound:
-                    grubcontents.append('\n# Following line was modified by STONIX\n')
-                    grubcontents.append('GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor"\n')
-                    self.editedgrub = True
-    
-                if self.editedgrub:
-                    self.logger.log(LogPriority.DEBUG, "Added AppArmor kernel config line to contents. Writing contents to grub config file...")
-                    
-                    if not self.writeFileContents(grubcontents, grubpath, owner, perms):
-                        success = False
-                        self.logger.log(LogPriority.DEBUG, "Failed to write configuration changes to file: " + str(grubpath))
-                        return success
-                    
-                    self.logger.log(LogPriority.DEBUG, "Finished writing AppArmor kernel config line to grub config file")
-                    self.needsrestart = True
-    
-                    self.logger.log(LogPriority.DEBUG, "Running update-grub command to update grub kernel boot configuration...")
-                    self.cmdhelper.executeCommand(self.updategrubcmd)
-                    retcode = self.cmdhelper.getReturnCode()
-                    if retcode != 0:
-                        errout = self.cmdhelper.getErrorString()
-                        success = False
-                        self.detailedresults += '\nError updating grub configuration: ' + str(errout)
-                        self.logger.log(LogPriority.DEBUG, "Error executing " + str(self.updategrubcmd) + "\nError was: " + str(errout))
-                    self.logger.log(LogPriority.DEBUG, "Finished successfully updating grub kernel boot configuration...")
-
-            else:
-
-                grubpath = '/etc/grub.conf'
-
-                if os.path.exists('/boot/grub/grub.conf'):
-                    grubpath = '/boot/grub/grub.conf'
-
-                grubcontents = self.getFileContents(grubpath)
-                for line in grubcontents:
-                    if re.search('^\s+kernel\s+', line, re.IGNORECASE):
-                        if not re.search('apparmor=1', line, re.IGNORECASE):
-                            grubcontents = [c.replace(line, line[:-2] + ' apparmor=1\n') for c in grubcontents]
-                            self.editedgrub = True
-                        if not re.search('security=apparmor', line, re.IGNORECASE):
-                            grubcontents = [c.replace(line, line[:-2] + ' security=apparmor\n') for c in grubcontents]
-                            self.editedgrub = True
-                if self.editedgrub:
-                    if not self.writeFileContents(grubcontents, grubpath, owner, perms):
-                        success = False
-                        self.logger.log(LogPriority.DEBUG, "Failed to write configuration changes to file: " + str(grubpath))
-                        return success
-
-        except Exception:
-            raise
-        return success
-
-    def writeFileContents(self, contents, filepath, owner, perms):
-        '''
-        write contents to a temporary file, then rename to the
-        given filepath, after recording a change event (for undo)
-        give the filepath the specified owner and perms and then
-        reset the security of the file (resetsecon)
-
-        @param contents: list; string list to write to filepath
-        @param filepath: string; full path to file to write to
-        @param owner: list; integer list (of exactly len=2) representing
-                the owner and group uids to apply to filepath
-        @param perms: int; 4 digit octal integer representing the permissions
-                to apply to filepath
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        success = True
-        eventtype = 'conf'
-        tmpfile = filepath + '.stonixtmp'
-
-        if not filepath:
-            self.logger.log(LogPriority.DEBUG, "Parameter: filepath was blank!")
-            success = False
-        if not os.path.exists(os.path.dirname(filepath)):
-            self.logger.log(LogPriority.DEBUG, "Base directory for given filepath does not exist and there is insufficient information to create it.")
-            success = False
-        if not isinstance(filepath, basestring):
-            self.logger.log(LogPriority.DEBUG, "Parameter: filepath must be type: string. Got: " + str(type(filepath)))
-            success = False
-
-        if not contents:
-            self.logger.log(LogPriority.DEBUG, "Parameter: contents was blank!")
-            success = False
-        if not isinstance(contents, list):
-            self.logger.log(LogPriority.DEBUG, "Parameter: contents must be type: list. Got: " + str(type(contents)))
-            success = False
-
-        if not owner:
-            self.logger.log(LogPriority.DEBUG, "Parameter: owner was blank!")
-            success = False
-        if not isinstance(owner, list):
-            self.logger.log(LogPriority.DEBUG, "Parameter: owner must be type: list. Got: " + str(type(owner)))
-            success = False
-        if len(owner) < 2:
-            self.logger.log(LogPriority.DEBUG, "Parameter: owner must be a list of exactly 2 integers.")
-
-        if not perms:
-            self.logger.log(LogPriority.DEBUG, "Parameter: perms was blank!")
-            success = False
-        if not isinstance(perms, int):
-            self.logger.log(LogPriority.DEBUG, "Parameter: perms must be type: int. Got: " + str(type(perms)))
-            success = False
-
-        if not success:
-            return success
-
-        tf = open(tmpfile, 'w')
-        tf.writelines(contents)
-        tf.close()
-        
-        self.iditerator += 1
-        myid = iterate(self.iditerator, self.rulenumber)
-        event = {'eventtype': eventtype,
-                 'filepath': filepath}
-        self.statechglogger.recordchgevent(myid, event)
-        self.statechglogger.recordfilechange(tmpfile, filepath, myid)
-
-        os.rename(tmpfile, filepath)
-        os.chmod(filepath, perms)
-        os.chown(filepath, owner[0], owner[1])
-        resetsecon(filepath)
 
     def fixAAstatus(self):
         '''
@@ -1202,90 +978,209 @@ the sestatus command to see if SELinux is configured properly\n"
         '''
 
         retval = True
+        self.editedgrub = False
+        apparmorfound = False
 
         try:
 
             if self.ubuntu or self.debian:
 
-                self.logger.log(LogPriority.DEBUG, "Detected that this is an apt-get based system. Looking for grub configuration file...")
+                self.logger.log(LogPriority.DEBUG,
+                                "Detected that this is an apt-get based " +
+                                "system. Looking for grub configuration " +
+                                "file...")
 
-                if not self.fixGrub():
-                    retval = False
-                    return retval
+                if os.path.exists('/etc/default/grub'):
 
-                self.logger.log(LogPriority.DEBUG, "Checking if the system needs to be restarted first in order to continue...")
+                    grubpath = '/etc/default/grub'
+                    tmpgrubpath = grubpath + '.stonixtmp'
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Grub configuration file found at: " +
+                                    str(grubpath))
+
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Reading grub configuration file...")
+                    fr = open(grubpath, 'r')
+                    contentlines = fr.readlines()
+                    fr.close()
+
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Got grub configuration file contents. " +
+                                    "Looking for required AppArmor kernel " +
+                                    "config line...")
+
+                    for line in contentlines:
+                        if re.search('GRUB_CMDLINE_LINUX_DEFAULT="', line):
+                            if not re.search('apparmor=1 security=apparmor',
+                                             line):
+                                self.logger.log(LogPriority.DEBUG,
+                                                "Required AppArmor kernel " +
+                                                "line not found. Adding it...")
+                                contentlines = [c.replace(line,
+                                                          line[:-2] +
+                                                          ' apparmor=1 ' +
+                                                          'security=apparmor"\n')
+                                                for c in contentlines]
+                                self.editedgrub = True
+                            else:
+                                apparmorfound = True
+                    if not self.editedgrub and not apparmorfound:
+                        contentlines.append('\nGRUB_CMDLINE_LINUX_DEFAULT=' +
+                                            '"apparmor=1 security=apparmor"\n')
+                        self.editedgrub = True
+
+                    if self.editedgrub:
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Added AppArmor kernel config line " +
+                                        "to contents. Writing contents to " +
+                                        "grub config file...")
+                        tfw = open(tmpgrubpath, 'w')
+                        tfw.writelines(contentlines)
+                        tfw.close()
+
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'conf',
+                                 'filepath': grubpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(tmpgrubpath,
+                                                             grubpath, myid)
+
+                        os.rename(tmpgrubpath, grubpath)
+                        os.chmod(grubpath, 0644)
+                        os.chown(grubpath, 0, 0)
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Finished writing AppArmor kernel " +
+                                        "config line to grub config file")
+                        self.needsrestart = True
+
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Running update-grub command to " +
+                                        "update grub kernel boot " +
+                                        "configuration...")
+                        self.cmdhelper.executeCommand(self.updategrubcmd)
+                        retcode = self.cmdhelper.getReturnCode()
+                        if retcode != 0:
+                            errout = self.cmdhelper.getErrorString()
+                            retval = False
+                            self.detailedresults += '\nError updating ' + \
+                                'grub configuration: ' + str(errout)
+                            self.logger.log(LogPriority.DEBUG,
+                                            "Error executing " +
+                                            str(self.updategrubcmd) + "\nError was: " +
+                                            str(errout))
+                            return retval
+                        self.logger.log(LogPriority.DEBUG,
+                                        "Finished successfully updating " +
+                                        "grub kernel boot configuration...")
+
+                else:
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Unable to locate grub configuration file")
+
+                self.logger.log(LogPriority.DEBUG,
+                                "Checking if the system needs to be " +
+                                "restarted first in order to continue...")
 
                 if not self.needsrestart:
 
-                    self.logger.log(LogPriority.DEBUG, "System does not require restart to continue configuring AppArmor. Proceeding...")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "System does not require restart to " +
+                                    "continue configuring AppArmor. " +
+                                    "Proceeding...")
 
                     self.cmdhelper.executeCommand(self.aadefscmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error setting apparmor defaults'
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aadefscmd) + '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                     self.cmdhelper.executeCommand(self.aaprofcmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error setting the apparmor mode'
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aaprofcmd) + '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                     self.cmdhelper.executeCommand(self.aareloadprofscmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
                         retval = False
-                        self.detailedresults += '\nThere was an error updating the apparmor profile'
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aareloadprofscmd) + \
+                            '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                     self.cmdhelper.executeCommand(self.aaupdatecmd)
                     errout = self.cmdhelper.getErrorString()
                     if re.search('error|Traceback', errout):
+                        retval = False
+                        self.detailedresults += 'There was an error ' + \
+                            'running command: ' + str(self.aaupdatecmd) + '\n'
+                        self.detailedresults += 'The error was: ' + \
+                            str(errout) + '\n'
 
                         self.cmdhelper.executeCommand(self.aastartcmd)
                         errout2 = self.cmdhelper.getErrorString()
                         if re.search('error|Traceback', errout2):
                             retval = False
-                            self.detailedresults += '\nThere was an error starting apparmor'
+                            self.detailedresults += 'There was an error ' + \
+                                'running command: ' + str(self.aastartcmd) + \
+                                '\n'
+                            self.detailedresults += 'The error was: ' + \
+                                str(errout2) + '\n'
 
                 else:
-
-                    self.logger.log(LogPriority.DEBUG, "System requires a restart before continuing to configure AppArmor. Will NOT restart automatically.")
-                    self.detailedresults += '\n\nAppArmor was just installed and/or added to the kernel boot config. You will need to restart your system and run this rule ' + \
-                        'fix again before it can finish properly configuring your system.\n\n'
+                    self.logger.log(LogPriority.DEBUG,
+                                    "System requires a restart before " +
+                                    "continuing to configure AppArmor. Will " +
+                                    "NOT restart automatically.")
+                    self.detailedresults += 'AppArmor was just installed ' + \
+                        'and/or added to the kernel boot config. You will ' + \
+                        'need to restart your system and run this rule in ' + \
+                        'fix again before it can configure properly.\n'
                     retval = False
                     return retval
 
             elif self.opensuse:
 
-                if not self.fixGrub():
-                    retval = False
-                    return retval
-
                 self.cmdhelper.executeCommand(self.aaprofcmd)
                 errout = self.cmdhelper.getErrorString()
                 if re.search('error|Traceback', errout):
                     retval = False
-                    self.detailedresults += 'There was an error running command: ' + str(self.aaprofcmd) + '\n'
-                    self.detailedresults += 'The error was: ' + str(errout) + '\n'
+                    self.detailedresults += 'There was an error running ' + \
+                        'command: ' + str(self.aaprofcmd) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
 
                 self.cmdhelper.executeCommand(self.aareloadprofscmd)
                 errout = self.cmdhelper.getErrorString()
                 if re.search('error|Traceback', errout):
                     retval = False
-                    self.detailedresults += 'There was an error running command: ' + str(self.aareloadprofscmd) + '\n'
-                    self.detailedresults += 'The error was: ' + str(errout) + '\n'
+                    self.detailedresults += 'There was an error ' + \
+                        'running command: ' + str(self.aareloadprofscmd) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
 
                 self.cmdhelper.executeCommand(self.aastartcmd)
                 errout = self.cmdhelper.getErrorString()
                 if re.search('error|Traceback', errout):
                     retval = False
-                    self.detailedresults += 'There was an error running command: ' + str(self.aastartcmd) + '\n'
-                    self.detailedresults += 'The error was: ' + str(errout) + '\n'
-
+                    self.detailedresults += 'There was an error running ' + \
+                        'command: ' + str(self.aastartcmd) + '\n'
+                    self.detailedresults += 'The error was: ' + str(errout) + \
+                        '\n'
             else:
-                self.detailedresults += "\nCould not identify your OS type, or OS not supported!"
+                self.detailedresults += "Could not identify your OS type, " + \
+                    "or OS not supported\n"
                 retval = False
-
+                return retval
         except Exception:
             raise
         return retval

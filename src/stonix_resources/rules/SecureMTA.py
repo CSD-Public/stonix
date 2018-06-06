@@ -333,13 +333,6 @@ agent, set the value of SECUREMTA to False.'''
         @change: Breen Malmberg - 12/22/2015 - refactored method
         '''
 
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [MAILRELAYSERVER]
-        if not self.checkConsts(constlist):
-            fixsuccess = False
-            self.formatDetailedResults("fix", fixsuccess, self.detailedresults)
-            return fixsuccess
-
         self.logger.log(LogPriority.DEBUG, "Inside main fix() method")
         self.logger.log(LogPriority.DEBUG, "Setting method variable defaults...")
         self.detailedresults = ""

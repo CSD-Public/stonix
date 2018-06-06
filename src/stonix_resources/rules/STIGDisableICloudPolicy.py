@@ -36,7 +36,6 @@ from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..CommandHelper import CommandHelper
 
-
 class STIGDisableICloudPolicy(Rule):
 
     def __init__(self, config, environ, logdispatch, statechglogger):
@@ -128,12 +127,10 @@ class STIGDisableICloudPolicy(Rule):
                 else:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
+                    cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
                     event = {"eventtype": "comm",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
-            else:
-                success = False
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise

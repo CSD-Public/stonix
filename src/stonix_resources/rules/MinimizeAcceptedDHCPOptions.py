@@ -217,15 +217,6 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         @rtype: bool
         @author: Breen Malmberg
         '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [DHCPDict, DHCPSup]
-        if not self.checkConsts(constlist):
-            self.compliant = False
-            self.detailedresults = "\nPlease ensure that the constants: DHCPDict, DHCPSup, in localize.py, are defined and are not None. This rule will not function without them."
-            self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            return self.compliant
-
         self.localize()
 
         # defaults
@@ -272,13 +263,6 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         @rtype: bool
         @author: Breen Malmberg
         '''
-
-        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
-        constlist = [DHCPDict, DHCPSup]
-        if not self.checkConsts(constlist):
-            success = False
-            self.formatDetailedResults("fix", success, self.detailedresults)
-            return success
 
         # defaults
         self.detailedresults = ""

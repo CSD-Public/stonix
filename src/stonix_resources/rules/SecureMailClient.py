@@ -123,29 +123,26 @@ class SecureMailClient(RuleKVEditor):
                                          False,
                                          {"AlertForNonmatchingDomains":
                                           ["0", "-bool no"]})
-                        if self.checkConsts([APPLEMAILDOMAINFORMATCHING]):
-                            self.addKVEditor("AppleMailDomainForMatching",
-                                             "defaults",
-                                             fullpath2,
-                                             "",
-                                             {"DomainForMatching":
-                                              [APPLEMAILDOMAINFORMATCHING,
-                                               "-array " +
-                                               APPLEMAILDOMAINFORMATCHING]},
-                                             "present",
-                                             "",
-                                             "Alert User about email addresses " +
-                                             "that do not match " +
-                                             APPLEMAILDOMAINFORMATCHING +
-                                             " domain for the Apple Mail Client.",
-                                             None,
-                                             False,
-                                             {"DomainForMatching":
-                                              [re.escape("~" + sharedplist +
-                                                         ", DomainForMatching " +
-                                                         "does not exist"), None]})
-                        else:
-                            self.detailedresults += "\nThe functionality for Apple Mail Domain Matching requires the following constant be defined and not None, in localize.py : APPLEMAILDOMAINFORMATCHING."
+                        self.addKVEditor("AppleMailDomainForMatching",
+                                         "defaults",
+                                         fullpath2,
+                                         "",
+                                         {"DomainForMatching":
+                                          [APPLEMAILDOMAINFORMATCHING,
+                                           "-array " +
+                                           APPLEMAILDOMAINFORMATCHING]},
+                                         "present",
+                                         "",
+                                         "Alert User about email addresses " +
+                                         "that do not match " +
+                                         APPLEMAILDOMAINFORMATCHING +
+                                         " domain for the Apple Mail Client.",
+                                         None,
+                                         False,
+                                         {"DomainForMatching":
+                                          [re.escape("~" + sharedplist +
+                                                     ", DomainForMatching " +
+                                                     "does not exist"), None]})
 
         else:
             fullpath1 = self.environ.geteuidhome() + mailplist
@@ -192,28 +189,25 @@ class SecureMailClient(RuleKVEditor):
                                  False,
                                  {"AlertForNonmatchingDomains":
                                   ["0", "-bool no"]})
-                if self.checkConsts([APPLEMAILDOMAINFORMATCHING]):
-                    self.addKVEditor("AppleMailDomainForMatching",
-                                     "defaults",
-                                     fullpath2,
-                                     "",
-                                     {"DomainForMatching":
-                                      [APPLEMAILDOMAINFORMATCHING,
-                                       "-array " + APPLEMAILDOMAINFORMATCHING]},
-                                     "present",
-                                     "",
-                                     "Alert User about email addresses that " +
-                                     "do not match " +
-                                     APPLEMAILDOMAINFORMATCHING + " domain " +
-                                     "for the Apple Mail Client.",
-                                     None,
-                                     False,
-                                     {"DomainForMatching":
-                                      [re.escape("~" + sharedplist +
-                                                 ", DomainForMatching does " +
-                                                 "not exist"), None]})
-                else:
-                    self.detailedresults += "\nThe functionality for Apple Mail Domain Matching requires the following constant be defined and not None, in localize.py : APPLEMAILDOMAINFORMATCHING."
+                self.addKVEditor("AppleMailDomainForMatching",
+                                 "defaults",
+                                 fullpath2,
+                                 "",
+                                 {"DomainForMatching":
+                                  [APPLEMAILDOMAINFORMATCHING,
+                                   "-array " + APPLEMAILDOMAINFORMATCHING]},
+                                 "present",
+                                 "",
+                                 "Alert User about email addresses that " +
+                                 "do not match " +
+                                 APPLEMAILDOMAINFORMATCHING + " domain " +
+                                 "for the Apple Mail Client.",
+                                 None,
+                                 False,
+                                 {"DomainForMatching":
+                                  [re.escape("~" + sharedplist +
+                                             ", DomainForMatching does " +
+                                             "not exist"), None]})
 
     def afterfix(self):
         for path in self.permsdict:

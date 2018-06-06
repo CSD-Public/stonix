@@ -272,9 +272,11 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
+
         self.stdout = ''
         self.stderr = ''
         if self.command:
+
             try:
                 proc = Popen(self.command,
                              stdout=PIPE, stderr=PIPE,
@@ -283,6 +285,7 @@ class RunWith(object):
                              close_fds=self.cfds)
                 proc.wait()
                 for line in proc.stdout.readline():
+
                     if line:
                         self.stdout = self.stdout + str(line) + "\n"
                 if proc.stderr:
@@ -300,12 +303,14 @@ class RunWith(object):
                 self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
                 self.logger.log(lp.WARNING, traceback.format_exc())
                 self.logger.log(lp.WARNING, str(err))
+
                 raise err
             else:
                 if not silent:
                     self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
                 self.logger.log(lp.DEBUG, "Command returned with error/returncode: " + str(self.retcode))
             finally:
+
                 if not silent:
                     self.logger.log(lp.DEBUG, "Done with command: " + self.printcmd)
                     self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
@@ -385,6 +390,7 @@ class RunWith(object):
                                                             "exiting process.")
                                             found = True
                                             break
+
                                 if found:
                                     break
 
@@ -441,6 +447,7 @@ class RunWith(object):
                 self.libc.sync()
 
             except Exception, err:
+
                 if not silent:
                     self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
                 self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
@@ -450,6 +457,7 @@ class RunWith(object):
             else:
                 if not silent:
                     self.logger.log(lp.DEBUG, "Done with: " + self.printcmd)
+
             finally:
                 self.retcode = proc.returncode
                 if not silent:
@@ -546,10 +554,12 @@ class RunWith(object):
 
         @author: Roy Nielsen
         """
+
         self.stdout = ""
         self.stderr = ""
         self.retcode = 999
         # pretcode = 0
+
         if re.match("^\s*$", user) or \
            re.match("^\s*$", password) or \
            not self.command:
@@ -562,7 +572,8 @@ class RunWith(object):
             return 255
         else:
             output = ""
-            internal_command = ["/usr/bin/su", "-", str(user.strip()), "-c"]
+            internal_command = ["/usr/bin/su", "-", str(user), "-c"]
+
 
             if isinstance(self.command, list):
                 internal_command.append(" ".join(self.command))
@@ -573,7 +584,6 @@ class RunWith(object):
                 internal_command += self.command
                 if not silent:
                     self.logger.log(lp.DEBUG, "Trying to execute: \"" +
-                                    " ".join(internal_command) + "\"")
 
             (master, slave) = pty.openpty()
 
@@ -628,10 +638,12 @@ class RunWith(object):
                         # print output.rstrip()
                         output = output + line
                     elif proc.poll() is not None:
+
                         break
                 os.close(master)
                 os.close(slave)
                 proc.wait()
+
                 self.stdout = output
                 self.stderr = str(proc.stderr)
                 self.retcode = proc.returncode
@@ -998,7 +1010,9 @@ class RunThread(threading.Thread):
 
     @author: Roy Nielsen
     """
+
     def __init__(self, command, logger, myshell=False):
+
         """
         Initialization method
         """
@@ -1006,10 +1020,10 @@ class RunThread(threading.Thread):
         self.logger = logger
         self.retout = None
         self.reterr = None
-        self.shell = myshell
         threading.Thread.__init__(self)
 
         if isinstance(self.command, types.ListType):
+
             self.shell = True
             self.printcmd = " ".join(self.command)
         if isinstance(self.command, types.StringTypes):
@@ -1017,6 +1031,7 @@ class RunThread(threading.Thread):
             self.printcmd = self.command
 
         if isinstance(logger, CyLogger):
+
             self.logger = logger
         else:
             raise NotACyLoggerError("Passed in value for logger " +
@@ -1032,6 +1047,7 @@ class RunThread(threading.Thread):
                 p = Popen(self.command, stdout=PIPE,
                                         stderr=PIPE,
                                         shell=self.shell)
+
                 self.retout, self.reterr = p.communicate()
                 self.logger.log(lp.WARNING, "Finished \"run\" of: " +
                                 str(self.command))
@@ -1040,6 +1056,7 @@ class RunThread(threading.Thread):
                                 str(self.command))
                 self.logger.log(lp.WARNING, traceback.format_exc())
                 self.logger.log(lp.WARNING, str(err))
+
                 raise err
             else:
                 try:
@@ -1079,6 +1096,7 @@ class RunThread(threading.Thread):
 ##############################################################################
 
 def runMyThreadCommand(cmd, logger, myshell=False):
+
     """
     Use the RunThread class to get the stdout and stderr of a command
 
@@ -1091,8 +1109,10 @@ def runMyThreadCommand(cmd, logger, myshell=False):
                                 "invalid, try again.")
     print str(cmd)
     print str(logger)
+
     if cmd and logger:
         run_thread = RunThread(cmd, logger, myshell)
+
         run_thread.start()
         # run_thread.run()
         run_thread.join()

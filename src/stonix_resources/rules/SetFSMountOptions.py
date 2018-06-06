@@ -1,3 +1,4 @@
+'''
 ###############################################################################
 #                                                                             #
 # Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
@@ -20,7 +21,7 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
+
 Created on Apr 10, 2013
 
 SetFSMountOptions sets the file system mount options for non-Root local
@@ -28,7 +29,7 @@ partitions, file systems mounted on removable media, removable storage
 partitions, and temporary storage partitions such as /tmp and /dev/shm in
 order to help protect against malicious code being run on the system.
 
-@author: Breen Malmberg
+@author: bemalmbe
 @change: 02/13/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/13/2014 ekkehard Implemented isapplicable
 @change: 04/18/2014 ekkehard ci updates and ci fix method implementation
@@ -114,8 +115,7 @@ class SetFSMountOptions(Rule):
         self.removeablelist = ['nodev', 'nosuid', 'noexec']
 
         # config line to check for
-        self.fixbindmnttmp = '/tmp /var/tmp none rw,noexec,nosuid,nodev,bind 0 0'
-        self.reportbindmnttmp = '/tmp\s+/var/tmp\s+none\s+rw,noexec,nosuid,nodev,bind\s+0\s+0'
+        self.bindmnttmp = '/tmp /var/tmp none rw,noexec,nosuid,nodev,bind 0 0'
 
         # possible locations of fstab file
         fstablocations = ['/etc/fstab', '/etc/vfstab']
@@ -152,7 +152,7 @@ class SetFSMountOptions(Rule):
         return contentlines
 
     def report(self):
-        '''
+        """
         The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
@@ -164,7 +164,7 @@ class SetFSMountOptions(Rule):
         @author: Breen Malmberg
         @change: Breen Malmberg 09/05/2014 rewritten rule to be more atomic, less
                 complex and more human-readable
-        '''
+        """
 
         # defaults
         self.detailedresults = ""
@@ -207,7 +207,7 @@ class SetFSMountOptions(Rule):
 
             if not foundcfgline:
                 self.compliant = False
-                self.detailedresults += "\nA required configuration line:\n" + str(self.fixbindmnttmp) + "\n was not found"
+                self.detailedresults += "\nA required configuration line:\n" + str(self.bindmnttmp) + "\n was not found"
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -461,18 +461,18 @@ class SetFSMountOptions(Rule):
         return success
 
     def fix(self):
-        '''
+        """
         The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @author Breen Malmberg
+        @author bemalmbe
         @change: 2014/06/02 dkennel - line 180 changed
         if os.path.exists():
         to
         if os.path.exists(filename):
-        @change: 2014/09/09 Breen Malmberg - method rewritten to use new method
+        @change: 2014/09/09 bemalmbe - method rewritten to use new method
                 dictFix()
-        '''
+        """
 
         # defaults
         self.iditerator = 0
@@ -517,11 +517,11 @@ class SetFSMountOptions(Rule):
 
                     contentlines = [c.replace(line, newLine) for c in contentlines]
 
-                    if re.search('^' + self.reportbindmnttmp, line):
+                    if re.search('^' + self.bindmnttmp, line):
                         bindtmplinefound = True
 
                 if not bindtmplinefound:
-                    contentlines.append('\n' + self.fixbindmnttmp + '\n')
+                    contentlines.append('\n' + self.bindmnttmp + '\n')
 
                 self.makeFileChanges("conf", self.filepath, tmpfile, contentlines, 0, 0, 0644)
 
