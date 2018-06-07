@@ -105,27 +105,30 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                            'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
 
         if self.environ.getostype() == "Mac OS X":
-            self.addKVEditor("ConfigureCatalogURL",
-                             "defaults",
-                             "/Library/Preferences/com.apple.SoftwareUpdate",
-                             "",
-                             {"CatalogURL": [str(APPLESOFTUPDATESERVER),
-                                             str(APPLESOFTUPDATESERVER)]},
-                             "present",
-                             "",
-                             "Set software update server (CatalogURL) to '" +
-                             str(APPLESOFTUPDATESERVER) +
-                             "'. This should always be enabled. If disabled " + \
-                             " it will point to the Apple Software Update " + \
-                             "Server. NOTE: your system will report as not " + \
-                             "compliant if you disable this option.",
-                             None,
-                             False,
-                             {"CatalogURL":
-                              [re.escape("The domain/default pair of (/Library" + \
-                                         "/Preferences/com.apple.Software" + \
-                                         "Update, CatalogURL) does not exist"),
-                               None]})
+            if self.checkConsts([APPLESOFTUPDATESERVER]):
+                self.addKVEditor("ConfigureCatalogURL",
+                                 "defaults",
+                                 "/Library/Preferences/com.apple.SoftwareUpdate",
+                                 "",
+                                 {"CatalogURL": [str(APPLESOFTUPDATESERVER),
+                                                 str(APPLESOFTUPDATESERVER)]},
+                                 "present",
+                                 "",
+                                 "Set software update server (CatalogURL) to '" +
+                                 str(APPLESOFTUPDATESERVER) +
+                                 "'. This should always be enabled. If disabled " + \
+                                 " it will point to the Apple Software Update " + \
+                                 "Server. NOTE: your system will report as not " + \
+                                 "compliant if you disable this option.",
+                                 None,
+                                 False,
+                                 {"CatalogURL":
+                                  [re.escape("The domain/default pair of (/Library" + \
+                                             "/Preferences/com.apple.Software" + \
+                                             "Update, CatalogURL) does not exist"),
+                                   None]})
+            else:
+                self.detailedresults += "\nThe Configure Catalogue URL portion of this rule requires that the constant: APPLESOFTWAREUPDATESERVER be defined and not None. Please ensure this constant is set properly in localize.py"
             osxversion = str(self.environ.getosver())
             if osxversion.startswith("10.9"):
                 self.addKVEditor("DisableAutomaticDownload",

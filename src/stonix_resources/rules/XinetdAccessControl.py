@@ -78,8 +78,11 @@ class XinetdAccessControl(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
+        self.constlist = [XINETDALLOW]
+
         # set up class var's
-        self.setvars()
+        if self.checkConsts(self.constlist):  
+            self.setvars()
 
     def setvars(self):
         '''
@@ -354,6 +357,15 @@ class XinetdAccessControl(Rule):
         @author: Breen Malmberg
         '''
 
+        self.detailedresults = ""
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.compliant = False
+            self.detailedresults += "\nThis rule requires that the following constants, in localize.py, be defined and not None: XINETDALLOW"
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         self.logger.log(LogPriority.DEBUG,
                         "inside report() method for XinetdAccessControl class")
 
@@ -416,6 +428,12 @@ class XinetdAccessControl(Rule):
         @rtype: bool
         @author: Breen Malmberg
         '''
+
+        # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
+        if not self.checkConsts(self.constlist):
+            self.rulesuccess = False
+            self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+            return self.rulesuccess
 
         self.logger.log(LogPriority.DEBUG,
                         "inside fix() method for XinetdAccessControl class")

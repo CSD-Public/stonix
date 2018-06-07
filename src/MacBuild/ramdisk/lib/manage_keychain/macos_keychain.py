@@ -165,7 +165,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             #####
             # set up the command
             self.runWith.setCommand(cmd)
-            
+            '''
             if re.match("^0$", str(uid)):
                 #####
                 # Run the command, lift down...
@@ -181,17 +181,14 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
                 if not str(error).strip():
                     success = True
-
             '''
             #####
             # Run the command
             output, error, retcode = self.runWith.communicate()
             self.logger.log(lp.INFO, "security cmd ran in current context..")
-            '''
 
             if not str(error).strip():
                 success = True
-
             passfound = False
             for arg in cmd:
                 if re.match('password', arg) or re.match("pass", arg) or re.match("passwd", arg):
@@ -393,7 +390,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     # -------------------------------------------------------------------------
 
-    def lockKeychain(self, keychain="", all=False):
+    def lockKeychain(self, keychain="", allKeychains=False):
         """
         Lock the defined keychain
 
@@ -408,14 +405,13 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         keychain = keychain.strip()
         #####
         # Input validation for the file keychain.
-        if self.isSaneFilePath(keychain):
+        if self.isSaneFilePath(keychain) or allKeychains:
             #####
             # Command setup - note that the keychain deliberately has quotes
             # around it - there could be spaces in the path to the keychain,
             # so the quotes are required to fully resolve the file path.
             # Note: this is done in the build of the command, rather than
             # the build of the variable.
-
             if allKeychains:
                 cmd = {"lock-keychain": ["-a"]}
             else:
@@ -442,6 +438,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         success = False
         keychain = keychain.strip()
         passwd = passwd.strip()
+        output = ""
         #####
         # Input validation for the file keychain.
         if self.isSaneFilePath(keychain) and isinstance(passwd, basestring):

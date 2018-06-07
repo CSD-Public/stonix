@@ -66,8 +66,11 @@ class AuditFirefoxUsage(Rule):
         instructions = """This is a list of domains which the root user is \
 approved to browse."""
         default = LOCALDOMAINS
-        self.approvedDomainsCi = self.initCi(datatype, key, instructions,
-                                             default)
+        if default == None:
+            default = ["localhost"]
+        elif not default:
+            default = ["localhost"]
+        self.approvedDomainsCi = self.initCi(datatype, key, instructions, default)
 
         datatype = 'bool'
         key = 'DISABLEPROXY'
@@ -86,6 +89,15 @@ DISABLEPROXY to True."""
         @param self - essential if you override this definition
         @return: bool - True if system is compliant, False if it isn't
         '''
+
+        # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
+        constlist = [LOCALDOMAINS]
+        if not self.checkConsts(constlist):
+            self.compliant = False
+            self.detailedresults = "\nPlease ensure that the constant: LOCALDOMAINS, in localize.py, is defined and is not None. This rule will not function without it."
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            return self.compliant
+
         try:
             self.detailedresults = ""
             compliant = True

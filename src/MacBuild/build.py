@@ -53,6 +53,7 @@ from ramdisk.lib.loggers import LogPriority as lp
 from ramdisk.lib.get_libc import getLibc
 from ramdisk.lib.run_commands import RunWith
 from ramdisk.lib.manage_user.manage_user import ManageUser
+from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 #####
 # Exception for when the conf file can't be grokked.
@@ -103,6 +104,7 @@ class SoftwareBuilder():
         self.logger.initializeLogs()
         self.rw = RunWith(self.logger)
         self.mu = ManageUser(self.logger)
+        self.mk = ManageKeychain(self.logger)
         self.ramdisk_size = ramdisk_size
         self.libc = getLibc()
 
@@ -155,7 +157,6 @@ class SoftwareBuilder():
         print " "
 
         if self.signature:
-
             count = 0
             while count < 3:
                 success = False
@@ -171,7 +172,6 @@ class SoftwareBuilder():
                 count += 1
             if not success:
                 sys.exit(1)
-
             #####
             # Get a translated password
             self.ordPass = self.getOrdPass(self.keypass)
@@ -879,7 +879,6 @@ class SoftwareBuilder():
                         stat.S_IWGRP, self.tmphome + "/src", "append")
         self.libc.sync()
         self.libc.sync()
-
         # Copy bopy back to pseudo-build directory
         productDest= self.buildHome + "/dmgs"
         if not os.path.isdir(productDest):
@@ -902,7 +901,6 @@ class SoftwareBuilder():
         if error:
             for line in error.split("\n"):
                 self.logger.log(lp.DEBUG, str(line))
-
         self.libc.sync()
         sleep(1)
         self.libc.sync()
