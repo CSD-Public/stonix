@@ -160,6 +160,7 @@ class MinimizeServices(Rule):
                              'rmnologin',
                              'rpcgssd', 'rpcidmapd', 'rpcbind',
                              'rsyslog',
+                             'rsyslogd',
                              'sendmail',
                              'setroubleshoot',
                              'smartd',
@@ -286,7 +287,8 @@ class MinimizeServices(Rule):
                                'auditd.service',
                                'auth-rpcgss-module.service',
                                'brandbot.service',
-                               'chronyd.service',
+                               'chronyd.service', 'chronyd',
+                               'chrony.service', 'chrony',
                                'colord.service',
                                'cron', 'cron.service',
                                'crond.service', 'cups', 'cups.service',
@@ -345,6 +347,7 @@ class MinimizeServices(Rule):
                                'nfs-utils.service',
                                'nfs-lock.service', 'nslcd.service',
                                'ntpd.service', 'ntpdate.service',
+                               'ntp.service', 'ntp', 'ntpd',
                                'ondemand.service',
                                'pcscd', 'pcscd.service', 'postfix',
                                'polkit.service', 'purge-kernels.service',
@@ -369,17 +372,15 @@ class MinimizeServices(Rule):
                                'rhel-autorelabel-mark.service',
                                'rhel-autorelabel.service',
                                'rhsmcertd.service',
-                               'rsyslog.service', 'rtkit-daemon.service',
-                               'rhnsd',
+                               'rsyslog.service', 'rsyslog', 'rsyslogd',
+                               'rtkit-daemon.service', 'rhnsd',
                                'rngd.service', 'rpcbind.service',
                                'rpc-gssd.service', 'rpc-statd-notify.service',
                                'rpc-statd.service', 'rpc-svcgssd.service',
                                'sendmail.service', 'sm-client.service',
                                'spice-vdagentd.service',
-                               'ssh',
-                               'ssh.service',
-                               'sshd',
-                               'sshd.service',
+                               'ssh', 'ssh.service',
+                               'sshd', 'sshd.service',
                                'sshd-keygen.service',
                                'stonix-mute-mic.service',
                                'stonix-mute-mic',
@@ -496,12 +497,8 @@ elements should be space separated.'''
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.bsddefault)
 
         else:
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.__init__',
-                             "Detection fell through. Return from ENV:" +
-                             self.environ.getosfamily()])
-            self.svcslistci = self.initCi(datatype2, key2, instructions2,
-                                          self.linuxdefault)
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
+            self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
 
     def report(self):
         """
@@ -589,10 +586,16 @@ elements should be space separated.'''
             try:
                 servicelist = self.servicehelper.listServices()
                 allowedlist = self.svcslistci.getcurrvalue()
+
+                # make sure you're not dealing with any return garbage
+                # in the comparisons below
+                allowedlist = [i.rstrip() for i in allowedlist]
+                servicelist = [i.rstrip() for i in servicelist]
+
                 for service in servicelist:
                     if service in allowedlist:
                         continue
-                    if re.search('user@[0-9]*.service', service):
+                    elif re.search('user@[0-9]*.service', service):
                         # these are systemd usermanagers started by PAM
                         # they are OK.
                         continue
