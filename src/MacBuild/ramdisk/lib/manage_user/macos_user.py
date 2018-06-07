@@ -596,8 +596,8 @@ class MacOSUser(ManageUserTemplate):
             self.logger.log(lp.INFO, "user = \"" + str(user) + "\"")
             self.logger.log(lp.INFO, "check password...")
         else:
-            self.runner.setCommand(['/bin/echo', 'HelloWorld'])
-            output, error, retcode = self.runner.runAs(user.strip(), password.strip())
+            self.runWith.setCommand(['/bin/echo', 'HelloWorld'])
+            output, error, retcode = self.runWith.runAs(user.strip(), password.strip())
             
             output, error, retcode = self.runWith.communicate()
             
@@ -782,17 +782,11 @@ class MacOSUser(ManageUserTemplate):
         success = False
         reterr = ""
         if user:
-<<<<<<< HEAD
-            cmd = ["/usr/sbin/createhomedir", "-c", " -u", + str(user)]
+
+            cmd = ["/usr/sbin/createhomedir", "-c", " -u", str(user)]
             self.runWith.setCommand(cmd)
             self.runWith.communicate()
             retval, reterr, retcode = self.runWith.getNlogReturns()
-=======
-            cmd = ["/usr/sbin/createhomedir", "-c", " -u", str(user)]
-            self.runner.setCommand(cmd)
-            self.runner.communicate()
-            retval, reterr, retcode = self.runner.getNlogReturns()
->>>>>>> stonix-0.9.18
 
             if not reterr:
                 success = True
