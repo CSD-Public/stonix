@@ -32,6 +32,9 @@ updating automatically from a scheduled job where feasible.
 @change: 2015/04/20 dkennel updated to check rpmrc files for "nosignature"
          option per DISA STIG.
 @change: 2015/09/11 eball Fix apt-get compatibility
+@change: 2017/04/12 Breen Malmberg changed applicability to exclude opensuse
+        for the time being, until the problems discovered in 0.9.7 triage can
+        be fixed for it
 '''
 
 from __future__ import absolute_import
@@ -94,6 +97,7 @@ class SoftwarePatching(Rule):
         self.caveats = ''
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
+        self.constlist = [PROXY, UPDATESERVERS]
 
     def updated(self):
         '''
@@ -131,9 +135,11 @@ class SoftwarePatching(Rule):
         '''
         Method to report on the configuration status of the system.
 
-        @return: bool
+        @return: self.compliant
+        @rtype: bool
         @author: dkennel
         '''
+
         self.detailedresults = ""
         self.caveats = ""
 
@@ -361,9 +367,11 @@ class SoftwarePatching(Rule):
         '''Method to set system settings to configure software update sources
         and schedule updates.
 
-        @return: bool
+        @return: self.rulesuccess
+        @rtype: bool
         @author: dkennel
         '''
+
         if not self.checkConsts(self.constlist):
             self.rulesuccess = False
             self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
