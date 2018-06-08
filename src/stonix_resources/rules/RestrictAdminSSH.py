@@ -32,6 +32,7 @@ Created on Dec 16, 2013
 @change: 2015/09/09 eball OS X El Capitan compatibility
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
@@ -62,7 +63,7 @@ RESTRICTADMINSSH to False.'''
         self.ssh = {"DenyGroups": "admin"}
         self.iditerator = 0
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
     def usesSip(self):
         """

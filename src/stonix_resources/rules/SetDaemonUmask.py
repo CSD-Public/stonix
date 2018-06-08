@@ -38,6 +38,7 @@ referenced in fix.
 @change: 2015/04/17 dkennel updated for new isApplicable
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 
 from __future__ import absolute_import
@@ -98,7 +99,7 @@ set the value of SetDaemonUmask to False.'
 
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
     def fix(self):
         """

@@ -27,6 +27,7 @@ Created on Jan 13, 2015
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 rsn Fixing to use new help text methods
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -48,7 +49,7 @@ class DisableOpenSafeSafari(RuleKVEditor):
         self.logger = self.logdispatch
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         # init CIs
         datatype = 'bool'
         key = 'SAFESAFARI'

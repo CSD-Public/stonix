@@ -27,6 +27,7 @@ This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
 @author: bgonz12
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import traceback
@@ -58,7 +59,7 @@ class ShowBluetoothIcon(RuleKVEditor):
         self.guidance = []
         self.statechglogger = statechglogger
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.ch = CommandHelper(self.logdispatch)
         
         self.systemuiserver = ""

@@ -38,6 +38,7 @@ authorization after a successful sudo authorization is made.
 @change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import re

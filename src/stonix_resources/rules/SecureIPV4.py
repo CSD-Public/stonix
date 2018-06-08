@@ -38,6 +38,7 @@ variable.
 @change: 2016/07/08 ekkehard complete renaming to SecureIPV4
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -75,7 +76,7 @@ class SecureIPV4(Rule):
         self.guidance = ["NSA 2.5.1.1", "NSA 2.5.1.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.iditerator = 0
         self.rep1success = True
         self.rep2success = True

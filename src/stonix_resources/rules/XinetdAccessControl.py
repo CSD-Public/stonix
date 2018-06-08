@@ -31,6 +31,7 @@ present.
 @change: 2016/06/21 eball Fixed perm undo event, full PEP8 compliance
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 
 from __future__ import absolute_import
@@ -69,7 +70,7 @@ class XinetdAccessControl(Rule):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         # init CIs
         datatype = 'bool'
         key = 'XINETDACCESSCONTROL'

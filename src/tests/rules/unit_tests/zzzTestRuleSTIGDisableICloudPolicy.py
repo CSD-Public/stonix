@@ -26,6 +26,7 @@ This is a unit test for rule STIGDisableICloudPolicy
 Created on Jun 6, 2017
 
 @author: dwalker
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import unittest
@@ -51,7 +52,7 @@ class zzzTestRuleSTIGDisableICloudPolicy(RuleTest):
         self.ch = CommandHelper(self.logdispatch)
         self.identifier = "mil.disa.STIG.Disable_iCloud_Prompt.alacarte"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.13.10']},
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.14.10']},
                            'fisma': 'high'}
         if search("10\.11\.*", self.environ.getosver()):
             self.profile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \

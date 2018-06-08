@@ -50,6 +50,7 @@ Created on Jul 11, 2013
     for configuring dconf settings on rpm systems
 @change: 2018/02/14 bgonz12 - changed fixGnome to set dconf settings with conf
     files instead of gsettings
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
@@ -79,7 +80,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.effectiveUserID = self.environ.geteuid()
         self.sethelptext()
         self.formatDetailedResults("initialize")
