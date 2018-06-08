@@ -50,6 +50,7 @@ that access the version variable to use this copy.
 @change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.17'
 @change: 2018/04/11 - ekkehard - incremented STONIXVERSION = '0.9.18'
 @change: 2018/05/08 - ekkehard - incremented STONIXVERSION = '0.9.19'
+@change: 2018/06/08 - ekkehard - incremented STONIXVERSION = '0.9.20'
 '''
 
 FISMACAT = 'med'
