@@ -73,7 +73,7 @@ class ReduceSudoTimeout(Rule):
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         datatype = 'bool'
         key = 'REDUCESUDOTIMEOUT'
         instructions = "If set to true, the REDUCESUDOTIMEOUT " + \
