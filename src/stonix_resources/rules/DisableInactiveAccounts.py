@@ -95,6 +95,36 @@ class DisableInactiveAccounts(Rule):
 
         self.cmdhelper = CommandHelper(self.logger)
 
+    def getEnabledAccounts(self):
+        '''
+        return a list of all currently enabled accounts
+
+        @return: enabledaccounts
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        allaccounts = []
+        enabledaccounts = []
+        getallaccounts = "/usr/bin/dscl . -list /Users"
+        getenabled = "/usr/bin/pwpolicy -u {username} --get-effective-policy"
+
+        try:
+
+            self.cmdhelper.executeCommand(getallaccounts)
+            allaccounts = self.cmdhelper.getOutput()
+            if allaccounts:
+                for acc in allaccounts:
+                    self.cmdhelper.executeCommand(getenabled.replace("{username}", acc))
+                    outputstr = self.cmdhelper.getOutputString()
+                    if re.search("isDisabled=false", outputstr, re.IGNORECASE):
+                        enabledaccounts.append(acc)
+
+        except Exception:
+            raise
+
+        return enabledaccounts
+
     def report(self):
         '''
         get a list of users
@@ -114,10 +144,9 @@ class DisableInactiveAccounts(Rule):
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             return self.compliant
 
-        # defaults
         self.compliant = True
         self.detailedresults = ''
-        getuserscmd = '/usr/bin/dscl . -ls /Users'
+
         # do not check any accounts with these regex terms found in them
         # these are accounts which would not have the passwordlastsettime key
         # in their accountpolicydata, and accounts which we do not want to
@@ -129,8 +158,7 @@ class DisableInactiveAccounts(Rule):
 
         try:
 
-            self.cmdhelper.executeCommand(getuserscmd)
-            userlist = self.cmdhelper.getOutput()
+            userlist = self.getEnabledAccounts()
 
             if self.cmdhelper.getReturnCode() != 0:
                 self.rulesuccess = False
@@ -266,6 +294,7 @@ class DisableInactiveAccounts(Rule):
         fixsuccess = True
         self.detailedresults = ''
         self.iditerator = 0
+        disabledaccounts = []
 
         try:
 
@@ -273,30 +302,28 @@ class DisableInactiveAccounts(Rule):
 
                 if self.inactiveaccounts:
                     for user in self.inactiveaccounts:
-                        self.cmdhelper.executeCommand('/usr/bin/pwpolicy ' +
-                                                      '-disableuser -u ' + user)
+                        self.cmdhelper.executeCommand('/usr/bin/pwpolicy -disableuser -u ' + user)
                         errout = self.cmdhelper.getErrorString()
                         rc = self.cmdhelper.getReturnCode()
                         if rc != 0:
-                            self.detailedresults += '\nThere was an issue ' + \
-                                'trying to disable user account: ' + user
+                            self.detailedresults += '\nThere was an issue trying to disable user account: ' + user
                             self.logger.log(LogPriority.DEBUG, errout)
                             fixsuccess = False
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {'eventtype': 'commandstring',
-                                     'command': '/usr/bin/pwpolicy -enableuser -u '
-                                                + user}
+                                     'command': '/usr/bin/pwpolicy -enableuser -u ' + user}
                             self.statechglogger.recordchgevent(myid, event)
-
+                            disabledaccounts.append(user)
+                            self.logger.log(LogPriority.DEBUG, "Disabling user account: " + str(user) + " ...")
+                    if disabledaccounts:
+                        self.detailedresults += "\nDisabled the following accounts: " + "\n- ".join(disabledaccounts)
                 else:
-                    self.detailedresults += '\nNo inactive accounts ' + \
-                        'detected. Nothing to do.'
+                    self.detailedresults += '\nNo inactive accounts detected. No accounts were disabled.'
 
             else:
-                self.detailedresults += '\nThe CI for this rule was not ' + \
-                    'enabled. Nothing was done.'
+                self.detailedresults += '\nThe CI for this rule was not enabled. Nothing was done.'
 
         except (KeyboardInterrupt, SystemExit):
             raise
