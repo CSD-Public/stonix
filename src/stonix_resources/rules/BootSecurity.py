@@ -36,6 +36,7 @@ bluetooth, microphones, and cameras.
 @change: 2017/08/28 - ekkehard - Added self.sethelptext()
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 
 from __future__ import absolute_import
@@ -70,7 +71,7 @@ class BootSecurity(Rule):
         self.guidance = []
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.servicehelper = ServiceHelper(environ, logger)
         self.type = 'rclocal'
         self.rclocalpath = '/etc/rc.local'

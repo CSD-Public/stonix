@@ -33,6 +33,7 @@ This class is responsible for securing the Apache webserver configuration.
                 to report and fix
 @change: 2018/5/23  Brandon R. Gonzales - Replaced local __readconf function
                 with readFile from stonixutilityfunctions
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import os
@@ -73,7 +74,7 @@ class SecureApacheWebserver(Rule):
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.comment = re.compile('^#|^;')
         conflocations = ['/etc/httpd/conf/httpd.conf',
                          '/etc/apache2/apache2.conf',

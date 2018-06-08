@@ -150,7 +150,7 @@ class CheckApplicable(object):
         An Example dictionary might look like this:
         applicable = {'type': 'white',
                            'family': Linux,
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}
         That example whitelists all Linux operating systems and Mac OS X from
         10.11.0 to 10.13.10.
 

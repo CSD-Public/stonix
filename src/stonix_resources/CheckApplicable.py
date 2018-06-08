@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -29,6 +29,7 @@ Created on Aug 24, 2010
 @change: rsn 2017/03/20 Adding methods for validation, fisma check and setting
                         internal os variables per the environment.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 
 import re
@@ -149,9 +150,9 @@ class CheckApplicable(object):
         An Example dictionary might look like this:
         applicable = {'type': 'white',
                            'family': Linux,
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}
         That example whitelists all Linux operating systems and Mac OS X from
-        10.11.0 to 10.13.10.
+        10.11.0 to 10.14.10.
 
         The family and os keys may be combined. Note that specifying a family
         will mask the behavior of the more specific os key.

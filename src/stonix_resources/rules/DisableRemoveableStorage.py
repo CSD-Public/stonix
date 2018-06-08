@@ -42,10 +42,11 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2016/03/01 ekkehard cgi default value set to False
 @change: 2017/03/30 dkennel Added fisma = high to applicable dictionary
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2017/08/28 rsn Fixing to use new help text methods
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/4/17 dwalker - added additional measures to ensure
     disablement of removable storage.  Cleaned up code
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 
 from __future__ import absolute_import
@@ -88,7 +89,7 @@ class DisableRemoveableStorage(Rule):
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']},
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']},
                            'fisma': 'high'}
 
         # configuration item instantiation

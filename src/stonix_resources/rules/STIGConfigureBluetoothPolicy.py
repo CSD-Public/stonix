@@ -26,6 +26,7 @@ Created on Oct 26, 2016
 @author: dwalker
 @change: 2017/03/30 dkennel Marked as FISMA high
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import traceback
@@ -52,7 +53,7 @@ class STIGConfigureBluetoothPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.13.10']},
+                           'os': {'Mac OS X': ['10.11.0', 'r', '10.14.10']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "BLUETOOTHPOLICY"

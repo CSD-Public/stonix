@@ -26,6 +26,7 @@ This is a unit test for rule STIGConfigurePasswordPolicy
 Created on Jun 6, 2017
 
 @author: dwalker
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import unittest
@@ -52,7 +53,7 @@ class zzzTestRuleSTIGConfigurePasswordPolicy(RuleTest):
         self.passidentifier = "mil.disa.STIG.passwordpolicy.alacarte"
         self.secidentifier = "mil.disa.STIG.Security_Privacy.alacarte"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.13.10']},
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
                            'fisma': 'high'}
         if search("10\.10.*", self.environ.getosver()):
             self.rule.pwprofile = "/Users/vagrant/stonix/src/stonix_resources/files/" + \

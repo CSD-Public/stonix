@@ -30,6 +30,7 @@ Created on Jul 13, 2012
 @change: 2015/04/16 dkennel upate for new isApplicable
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
 from __future__ import absolute_import
 import pwd
@@ -68,7 +69,7 @@ class RemoveBadDotFiles(Rule):
         self.guidance = ['NSA 2.3.4.5', 'cce-4578-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.homelist = ['/', '/root']
         try:
             mypwd = pwd.getpwall()
