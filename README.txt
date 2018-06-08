@@ -35,10 +35,10 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
   robust GUI built in. The GUI is implemented in PyQt. Many platform packages
   will not express a dependecy on PyQt due to the GUI's optional nature.
 
-  At the present time (revision 0.9.19) the following platforms are used for
+  At the present time (revision 0.9.20) the following platforms are used for
   development and test: Red Hat Enterprise Linux 6 and 7, Fedora Linux
   22, OpenSuSE 13.2, Debian 7 and 8 (stable), Ubuntu 14.04 LTS, CentOS 7,
-  OS X El Capitan 10.11, macOS Sierra 10.12, macOS High Sierra 10.13.
+  macOS High Sierra 10.13, macOS Sierra 10.12, OS X El Capitan 10.11 .
   Close derivatives of these operating systems should be well supported,
   more distant cousins less so.
   
