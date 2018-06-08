@@ -55,7 +55,7 @@ class DisableRoot(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.13.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
         # configuration item instantiation
         datatype = 'bool'
