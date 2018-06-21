@@ -45,6 +45,9 @@ imports implement the STONIX GUI.
 @change: 2017-12-21 - Breen Malmberg - added search box implementation;
         (methods: getSearchText(), resizeEvent(), clearText(), updateSearchResults();
         as well as lines in __init__ creating the searchbox and running self.getSearchText())
+@change: 2018-06-21 - Brandon Gonzales - Change tupdate and supdate to use
+        status as a dictionary instead of a QString; Change runThread.run() to
+        send dictionary to tupdate and supdate instead of a QString
 '''
 
 import os
@@ -458,19 +461,18 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         This method is called by runThread objects. In response
         we need to refresh all dynamic components of the UI.
 
-        @param status: a space separated string rule ruleid compliant count
-        total.
+        @param status: dictionary containing the string values for "rulename",
+            "ruleid", "compliant", "completed", and "total"
         @author: D. Kennel
         """
         try:
             self.logger.log(LogPriority.DEBUG,
                             ['GUI', "Tupdate called. Args: " + str(status)])
-            stats = status.split(' ')
-            rule = stats[0]
+            rule = status["rulename"]
             # ruleid = int(stats[1])
-            count = int(stats[3])
-            total = int(stats[4])
-            if stats[2] == 'True':
+            count = int(status["completed"])
+            total = int(status["total"])
+            if status["compliant"] == 'True':
                 compliant = True
             else:
                 compliant = False
@@ -502,22 +504,18 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         This method is called by the runThread objects. In response this method
         updates the statusBar and progress bars with updated info.
 
-        @param status: space formatted string rulename, count, total
+        @param status: dictionary containing the string values for "rulename",
+            "completed", and "total"
         @author: D. Kennel
         """
         try:
             self.logger.log(LogPriority.DEBUG,
                             ['GUI', "supdate: status " + str(status)])
-            status = str(status)
-            stats = status.split(' ')
-            self.logger.log(LogPriority.DEBUG,
-                            ['GUI', "supdate: stats " + str(stats)])
-            rule = stats[0]
-            count = int(stats[1])
-            total = int(stats[2])
+            rule = status["rulename"]
+            count = int(status["completed"])
+            total = int(status["total"])
             self.statusBar().showMessage('Executing: ' + str(rule))
             self.update_progress(count, total)
-
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -549,8 +547,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.update_progress(0, 0)
         self.threads = []
         thread = runThread(self.controller, 'fix', self.logger)
-        self.connect(thread, SIGNAL('tupdate(QString)'), self.tupdate)
-        self.connect(thread, SIGNAL('supdate(QString)'), self.supdate)
+        self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'), self.tupdate)
+        self.connect(thread, SIGNAL('supdate(PyQt_PyObject)'), self.supdate)
         self.threads.append(thread)
         for waitingthread in self.threads:
             waitingthread.start()
@@ -568,8 +566,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.update_progress(0, 0)
         self.threads = []
         thread = runThread(self.controller, 'report', self.logger)
-        self.connect(thread, SIGNAL('tupdate(QString)'), self.tupdate)
-        self.connect(thread, SIGNAL('supdate(QString)'), self.supdate)
+        self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'), self.tupdate)
+        self.connect(thread, SIGNAL('supdate(PyQt_PyObject)'), self.supdate)
         self.threads.append(thread)
         for waitingthread in self.threads:
             waitingthread.start()
@@ -591,8 +589,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                                         QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 thread = runThread(self.controller, 'undo', self.logger)
-                self.connect(thread, SIGNAL('tupdate(QString)'), self.tupdate)
-                self.connect(thread, SIGNAL('supdate(QString)'), self.supdate)
+                self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'), self.tupdate)
+                self.connect(thread, SIGNAL('supdate(PyQt_PyObject)'), self.supdate)
                 self.threads.append(thread)
                 for waitingthread in self.threads:
                     waitingthread.start()
@@ -635,7 +633,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Fix called."])
-        self.threads = []
+        threads = []
         if len(self.rule_list_widget.selectedItems()) > 0:
             rule_name = self.rule_list_widget.selectedItems()[0].text()
             self.pbar.setRange(0, 0)
@@ -643,10 +641,11 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Run Rule Fix running: " + rule_name])
             rule_num = self.controller.getrulenumbyname(rule_name)
             thread = runThread(self.controller, 'fix', self.logger, rule_num)
-            self.connect(thread, SIGNAL('tupdate(QString)'), self.tupdate)
-            self.connect(thread, SIGNAL('supdate(QString)'), self.supdate)
+            self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'), self.tupdate)
+            self.connect(thread, SIGNAL('supdate(PyQt_PyObject)'), self.supdate)
             self.threads.append(thread)
-            for waitingthread in self.threads:
+            threads.append(thread)
+            for waitingthread in threads:
                 waitingthread.start()
             self.logger.log(LogPriority.DEBUG,
                             ['GUI', "Exit Rule Fix."])
@@ -669,8 +668,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             rule_num = self.controller.getrulenumbyname(rule_name)
             thread = runThread(self.controller, 'report', self.logger,
                                rule_num)
-            self.connect(thread, SIGNAL('tupdate(QString)'), self.tupdate)
-            self.connect(thread, SIGNAL('supdate(QString)'), self.supdate)
+            self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'), self.tupdate)
+            self.connect(thread, SIGNAL('supdate(PyQt_PyObject)'), self.supdate)
             self.threads.append(thread)
             for waitingthread in self.threads:
                 waitingthread.start()
@@ -702,9 +701,9 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                 if reply == QMessageBox.Yes:
                     thread = runThread(self.controller, 'undo', self.logger,
                                        rule_num)
-                    self.connect(thread, SIGNAL('tupdate(QString)'),
+                    self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'),
                                  self.tupdate)
-                    self.connect(thread, SIGNAL('supdate(QString)'),
+                    self.connect(thread, SIGNAL('supdate(PyQt_PyObject)'),
                                  self.supdate)
                     self.threads.append(thread)
                     for waitingthread in self.threads:
@@ -1016,6 +1015,7 @@ class runThread(QThread):
         self.logger.log(LogPriority.DEBUG,
                         ['GUI.runThread',
                          'runThread constructed. ruleid=' + str(ruleid)])
+        self.moveToThread(self)
 
     def run(self):
         """
@@ -1030,20 +1030,25 @@ class runThread(QThread):
         completed = 0
         for ruleid in self.ruleidlist:
             name = self.controller.getrulenamebynum(ruleid)
-            sstatus = name + ' ' + str(completed) + ' ' + str(total)
-            self.emit(SIGNAL('supdate(QString)'), sstatus)
+            sstatus = {"rulename": name,
+                       "completed": str(completed),
+                       "total": str(total)}
+            self.emit(SIGNAL('supdate(PyQt_PyObject)'), sstatus)
             self.logger.log(LogPriority.DEBUG,
                             ['GUI.runThread.run',
                              'Sent supdate signal: ' + str(sstatus)])
             # Look for the stop flag and cleanly terminate processing
             if self.stopflag:
                 compliant = self.controller.getrulecompstatus(ruleid)
-                status = 'Canceled' + ' ' + str(ruleid) + ' ' + str(compliant) \
-                + ' ' + str(100) + ' ' + str(100)
-                self.emit(SIGNAL('tupdate(QString)'), status)
+                tstatus = {"rulename": "Canceled",
+                           "ruleid": str(ruleid),
+                           "compliant": str(compliant),
+                           "completed": str(100),
+                           "total": str(100)}
+                self.emit(SIGNAL('tupdate(PyQt_PyObject)'), status)
                 self.logger.log(LogPriority.DEBUG,
                                 ['GUI.runThread.run',
-                                 'Sent tupdate signal for stop flag: ' + str(sstatus)])
+                                 'Sent tupdate signal for stop flag: ' + str(tstatus)])
                 return
             elif self.action == 'fix':
                 self.controller.runruleharden(ruleid)
@@ -1053,9 +1058,12 @@ class runThread(QThread):
                 self.controller.undorule(ruleid)
             compliant = self.controller.getrulecompstatus(ruleid)
             completed = completed + 1
-            status = name + ' ' + str(ruleid) + ' ' + str(compliant) \
-            + ' ' + str(completed) + ' ' + str(total)
-            self.emit(SIGNAL('tupdate(QString)'), status)
+            tstatus = {"rulename": name,
+                       "ruleid": str(ruleid),
+                       "compliant": str(compliant),
+                       "completed": str(completed),
+                       "total": str(total)}
+            self.emit(SIGNAL('tupdate(PyQt_PyObject)'), tstatus)
             self.logger.log(LogPriority.DEBUG,
                             ['GUI.runThread.run',
-                             'Sent tupdate signal: ' + str(sstatus)])
+                             'Sent tupdate signal: ' + str(tstatus)])
