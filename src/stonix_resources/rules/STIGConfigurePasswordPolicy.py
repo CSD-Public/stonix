@@ -142,9 +142,9 @@ class STIGConfigurePasswordPolicy(Rule):
                             compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        elif search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
+                        if search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
                             compliant1 = True
-                        elif search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
+                        if search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
                             compliant2 = True
             if not compliant1:
                 self.pwreport = False
