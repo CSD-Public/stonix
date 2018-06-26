@@ -169,7 +169,7 @@ class DisableRemoveableStorage(Rule):
                             for line in contents:
                                 if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
                                     or re.search("^linux16", line.strip()):
-                                    if not re.search("\s+nousb\s+", line):
+                                    if not re.search("\s+nousb\s*", line):
                                         debug = grub + " file doesn't " + \
                                             "contain nousb kernel option\n"
                                         self.detailedresults += grub + " file doesn't " + \
@@ -177,7 +177,7 @@ class DisableRemoveableStorage(Rule):
                                         self.logger.log(LogPriority.DEBUG,
                                                         debug)
                                         compliant = False
-                                    if not re.search("\s+usbcore\.authorized_default=0\s+", line):
+                                    if not re.search("\s+usbcore\.authorized_default=0\s*", line):
                                         debug = grub + " file doesn't " + \
                                             "contain usbcore.authorized_default=0 " + \
                                             "kernel option\n"
@@ -357,12 +357,12 @@ class DisableRemoveableStorage(Rule):
                                 if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
                                     or re.search("^linux16", line.strip()):
                                     kernellinefound = True
-                                    if not re.search("\s+nousb\s+", line):
+                                    if not re.search("\s+nousb\s*", line):
                                         changed = True
-                                        tempstring += line + " nousb"
-                                    elif not re.search("\s+usbcore\.authorized_default=0\s+", line):
+                                        tempstring += line.strip() + " nousb"
+                                    if not re.search("\s+usbcore\.authorized_default=0\s+", line):
                                         changed = True
-                                        tempstring += line + " usbcore.authroized_default=0"
+                                        tempstring += line.strip() + " usbcore.authorized_default=0"
                                     tempstring += "\n"
                                 else:
                                     tempstring += line
@@ -382,8 +382,10 @@ class DisableRemoveableStorage(Rule):
                                 self.statechglogger.recordfilechange(grub, tmpfile,
                                                                      myid)
                                 os.rename(tmpfile, grub)
-                                os.chown(grub, 0, 0)
-                                os.chmod(grub, 384)
+                                if not setPerms(grub, self.grubperms, self.logger):
+                                    success = False
+                                    self.detailedresults += "Unable to set permissions on " + \
+                                        grub + " file\n"
                             else:
                                 success = False
                 if not grubfilefound:
