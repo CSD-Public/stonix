@@ -963,16 +963,24 @@ def findUserLoggedIn(logger):
     """
 
     myuser = ""
+    reterr = ""
+    cmds = ["/usr/bin/stat -f '%Su' /dev/console", "/usr/bin/stat -c %U /dev/console"]
 
     try:
 
-        matchpat = re.compile("^(\w+)\s+")
+        for cmd in cmds:
+            myuser = ""
+            reterr = ""
+            (myuser, reterr) = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=False).communicate()
+            if reterr:
+                continue
 
-        (myuser, reterr) = Popen(["/usr/bin/stat", "-f", "'%Su'", "/dev/console"],
-                                               stdout=PIPE, stderr=PIPE,
-                                               shell=False).communicate()
         if myuser:
-            logger.log(LogPriority.DEBUG, "User name is: " + myuser.strip())
+            if myuser != "?":
+                logger.log(LogPriority.DEBUG, "User name is: " + myuser.strip())
+            else:
+                myuser = ""
+                logger.log(LogPriority.DEBUG, "User name NOT FOUND")
         else:
             logger.log(LogPriority.DEBUG, "User name NOT FOUND")
 

@@ -32,12 +32,15 @@ Created on Oct 4, 2012
                test runs.
 @change: 2017/10/23 rsn - Adding asserts, and grooming for the second generation
                service helper
+@change: 2018/06/27 Breen Malmberg - removed code to get currently logged-in user as it
+        was relying on OS commands which no longer work and the code itself was not being
+        used anywhere in this test anyway
 '''
+
 import os
 import sys
 import time
 import unittest
-from pwd import getpwnam
 
 sys.path.append("../../../..")
 from src.stonix_resources.environment import Environment
@@ -45,7 +48,8 @@ from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.tests.lib.logdispatcher_lite import LogPriority
 from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.launchctl import LaunchCtl
-from src.stonix_resources.stonixutilityfunctions import findUserLoggedIn, reportStack
+from src.stonix_resources.stonixutilityfunctions import reportStack
+
 
 class zzzTestFrameworkServiceHelper(unittest.TestCase):
 
@@ -73,16 +77,9 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
             self.myservice = 'vixie-cron'
         elif os.path.exists('/etc/init.d/cron'):
             self.myservice = 'cron'
-        try:
-            pwuserinfo = ""
-            self.userLoggedIn = ""
-            self.userLoggedIn = str(findUserLoggedIn(self.logger)).strip()
-            pwuserinfo = getpwnam(self.userLoggedIn)
-            self.userLoggedInUid = str(pwuserinfo.pw_uid)
-        except KeyError, err:
-            raise KeyError("username: " + str(self.userLoggedIn) +
-                           " pwuserinfo: " + str(pwuserinfo) + " " + str(err))
+
         self.startStatus = 'on'
+
         #####
         # Check if the service is running or not.
         if not self.mysh.isRunning(self.myservice, serviceName=self.myservicename):
