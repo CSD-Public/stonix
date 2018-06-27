@@ -458,11 +458,11 @@ class DisableGUILogon(Rule):
             cmd = ["yum", "groups", "mark", "convert"]
             self.ch.executeCommand(cmd)
             self.ph.remove("xorg-x11-xinit")
+            self.ph.remove("xorg-x11-server-Xorg")
             cmd2 = ["yum", "groupremove", "-y", "X Window System"]
             if not self.ch.executeCommand(cmd2):
                 success = False
-                self.detailedresults += '"yum groupremove -y X Window ' + \
-                    'System" command failed\n'
+                self.detailedresults += '"yum groupremove -y X Window System" command failed\n'
         return success
 
     def fixLockdownX(self):
