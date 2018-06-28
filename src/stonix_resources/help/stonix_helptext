@@ -413,7 +413,7 @@ This rule is highly customisable, due to the widely varied sets of required or i
 
 <32>        "This rule enables logging for all attempted FTP access and FTP commands. It also restricts the set of users allowed to access FTP and sets the default umask for FTP users. FTP stands for 'File Transfer Protocol' and is used for the transfer of computer files between a client and server on a computer network."
 
-<45>        "This rule ensures that each user's home directory is not group-writeable or world-readable."
+<45>        "This rule ensures that each user's local home directory is not group-writeable nor world-readable."
 
 <15>        "***On Solaris: REQUIRES REBOOT***
 
