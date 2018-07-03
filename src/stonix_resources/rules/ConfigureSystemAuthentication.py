@@ -424,7 +424,7 @@ class ConfigureSystemAuthentication(Rule):
             self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
                                        self.password)
             if self.environ.getsystemfismacat() == "high":
-                self.password = re.sub("minlen=8", "minlen=14", self.password)
+                self.password = re.sub("minlen=8", "minlen=12", self.password)
                 self.password = re.sub("minclass=3", "minclass=4", self.password)
                 regex1 = PWQUALITY_HIGH_REGEX
             else:
