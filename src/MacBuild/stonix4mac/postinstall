@@ -39,6 +39,7 @@ import ctypes
 import shutil
 import random
 import inspect
+import traceback
 from subprocess import call, Popen, PIPE, STDOUT
 
 def getLibc():
@@ -57,6 +58,7 @@ def getLibc():
         #libc = ctypes.CDLL("libSystem.dylib")
         libc = ctypes.CDLL("/usr/lib/libc.dylib")
     except:
+        log_message(traceback.format_exc())
         raise Exception("DAMN IT JIM!!!")
     else:
         print "Loading Mac dylib......................................"
@@ -163,6 +165,7 @@ def isvalidlink(path):
     try:
         os.stat(path)
     except os.error, err:
+        log_message(traceback.format_exc())
         # errno.ENOENT: broken link - "No such file or directory"
         # errno.ELOOP: circular link - "Too many levels of symlinks"
         if err.errno == errno.ENOENT or err.errno == errno.ELOOP:
@@ -230,6 +233,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
         except Exception, err:
             log_message("Exception trying to create link: " +
                         str(my_link) + " -> " + str(my_link_source))
+            log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
 
     elif move_it:
@@ -238,6 +242,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
             shutil.move(my_link, backup)
         except Exception, err:
             log_message("Exception trying to move file: " + str(my_link))
+            log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
         finally:
             try:
@@ -246,6 +251,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
             except Exception, err:
                 log_message("Exception trying to create link: " +
                             str(my_link) + " -> " + str(my_link_source))
+                log_message(traceback.format_exc())
                 log_message("Associated exception: " + str(err))
     else:
         log_message("Unknown error attempting to create link...", "normal", message_level)
@@ -276,6 +282,7 @@ def etcMove(targetDir="", message_level="normal"):
                                 confTarget + ".new", message_level)
                     os.rename(targetDir + "/stonix.conf", confTarget + ".new")
                 except OSError:
+                    log_message(traceback.format_exc())
                     log_message("Error occurred: " + str(OSError),
                                 message_level)
                     pass
@@ -285,6 +292,7 @@ def etcMove(targetDir="", message_level="normal"):
                                 confTarget, message_level)
                     os.rename(targetDir + "/stonix.conf", confTarget)
                 except OSError:
+                    log_message(traceback.format_exc())
                     log_message("Error occurred: " + str(OSError),
                                 message_level)
                     pass
@@ -294,6 +302,7 @@ def etcMove(targetDir="", message_level="normal"):
                             confTarget, message_level)
                 os.rename(targetDir + "/stonix.conf", confTarget)
             except OSError:
+                log_message(traceback.format_exc())
                 log_message("Error occurred: " + str(OSError) +
                             ", creating blank conf file at " + confTarget,
                             message_level)
@@ -363,12 +372,14 @@ def install_launchd_job(source_path="", targetDir="/", message_level="normal"):
             f.close()
         except Exception, err:
             log_message("Problem trying to write plist for fix..")
+            log_message(traceback.format_exc())
 
         # chown launchagent (both user and group)
         try:
             os.chown(plist_path, 0, 0)
         except Exception, err:
             log_message("Could not chown file: " + str(plist_path))
+            log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
 
         # chmod launchagent
@@ -376,6 +387,7 @@ def install_launchd_job(source_path="", targetDir="/", message_level="normal"):
             os.chmod(plist_path, 0644)
         except Exception, err:
             log_message("Cannot chmod file: " + str(plist_path))
+            log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
 
 
@@ -423,6 +435,7 @@ def make_whatis(message_level):
     try:
         out, err = Popen("/usr/libexec/makewhatis", stdout=PIPE, stderr=PIPE).communicate()
     except Exception, err:
+        log_message(traceback.format_exc())
         log_message("error trying to re-index the man page database...", "normal", message_level)
 
     log_message("output: " + str(out), "normal", message_level)
@@ -446,11 +459,13 @@ def touch_stonix_conf(message_level):
             os.chmod(stonix_conf, 0o644)
         except Exception, err:
             log_message("Could not chmod file: " + str(stonix_conf))
+            log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
         try:
             os.chown(stonix_conf, 0, 0)
         except Exception, err:
             log_message("Could not chown file: " + str(stonix_conf))
+            log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
 
  
@@ -463,25 +478,36 @@ def main():
                 message_level)
 
     libc = getLibc()
-    etcMove("/Applications/stonix4mac.app/Contents/Resources", message_level)
-
-    libc.sync()
-    time.sleep(3)
-    libc.sync()
-    time.sleep(3)
-    libc.sync()
+    # etcMove("/Applications/stonix4mac.app/Contents/Resources", message_level)
+    # 
+    # libc.sync()
+    # time.sleep(3)
+    # libc.sync()
+    # time.sleep(3)
+    # libc.sync()
 
     touch_stonix_conf(message_level)
 
+    libc.sync()
+
     fix_app_perms()
 
+    libc.sync()
+
     make_files_executable()
+
+    libc.sync()
 
     stonix = "/usr/local/bin/stonix"
     stonix4mac = "/usr/local/bin/stonix4mac"
 
-    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/" + "Resources/stonix.app/Contents/MacOS/stonix")
-    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/" + "MacOS/stonix4mac")
+    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix")
+
+    libc.sync()
+
+    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/MacOS/stonix4mac")
+
+    libc.sync()
 
     make_whatis(message_level)
 
@@ -490,6 +516,7 @@ def main():
     libc.sync()
     time.sleep(3)
     libc.sync()
+    time.sleep(3)
 
     log_message("Finished stonix4mac package postflight...", "normal",
                 message_level)
