@@ -199,6 +199,45 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
     # create a name for a backup, if a backup is needed.
     # append the bak.date to the filename
     backup = my_link + "." + myDate + "." + myTime
+    binbackup = "/usr/local/bin" + myDate + "." + myTime
+
+    #####
+    # Create /usr/local/bin if it doesn't exist.  Also, if it's a file,
+    # move it and create a directory
+    if not os.path.exists("/usr/local/bin"):
+        os.makedirs("/usr/local/bin")
+    elif not os.path.isdir("/usr/local/bin"):
+        # move "/usr/local/bin" to "/usr/local/bin".myDate.myTime
+        try:
+            shutil.move("/usr/local/bin", binbackup)
+        except Exception, err:
+            log_message("Exception trying to move file: " + str(my_link))
+            log_message(traceback.format_exc())
+            log_message("Associated exception: " + str(err))
+        finally:
+            try:
+                os.makedirs("/usr/local/bin")
+            except Exception, err:
+                log_message("Exception trying to create link: " +
+                            str(my_link) + " -> " + str(my_link_source))
+                log_message(traceback.format_exc())
+                log_message("Associated exception: " + str(err))
+
+    # chown /usr/local/bin (both user and group)
+    try:
+        os.chown("/usr/local/bin", 0, 0)
+    except Exception, err:
+        log_message("Could not chown /usr/local/bin")
+        log_message(traceback.format_exc())
+        log_message("Associated exception: " + str(err))
+
+    # fix /usr/local/bin
+    try:
+        os.chmod("/usr/local/bin", 0755)
+    except Exception, err:
+        log_message("Cannot chmod /usr/local/bin")
+        log_message(traceback.format_exc())
+        log_message("Associated exception: " + str(err))
 
     #####
     # Logic to determine what do if something already resides
