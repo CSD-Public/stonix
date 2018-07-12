@@ -41,6 +41,14 @@ from ..stonixutilityfunctions import iterate
 class DisableUbuntuDataCollection(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
+        '''
+
+        @param config:
+        @param environ:
+        @param logger:
+        @param statechglogger:
+        '''
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.environ = environ
