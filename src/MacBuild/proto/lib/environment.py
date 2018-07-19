@@ -2,7 +2,7 @@
 
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was       #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -37,11 +37,16 @@
 '''
 Created on Aug 24, 2010
 
-@author: dkennel
+@author: Dave Kennel
 @change: 2014/05/29 - ekkehard j. koch - pep8 and comment updates
+@change: 2018/07/19 - Breen Malmberg - edited many doc strings for consistency and
+        some typo's; added 3 methods getipaddress, gethostname, getmacaddress; re-factored
+        code in guessnetwork to use the new methods; re-factored the method getallips;
+        updated copyright date
 '''
+
 from __future__ import absolute_import
-#--- Native python libraries
+
 import os
 import re
 import sys
@@ -52,13 +57,13 @@ import platform
 import pwd
 import time
 
-class Environment:
 
+class Environment:
     """
     The Environment class collects commonly used information about the
     execution platform and makes it available to the rules.
     :version: 1.0
-    :author: D. Kennel
+    :author: Dave Kennel
     """
 
     def __init__(self):
@@ -74,7 +79,7 @@ class Environment:
         currpwd = pwd.getpwuid(self.euid)
         try:
             self.homedir = currpwd[5]
-        except(IndexError):
+        except (IndexError):
             self.homedir = '/dev/null'
         self.installmode = False
         self.verbosemode = False
@@ -89,8 +94,9 @@ class Environment:
 
         @param bool: installmode
         @return: void
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         try:
             if type(installmode) is types.BooleanType:
                 self.installmode = installmode
@@ -104,8 +110,9 @@ class Environment:
         the program is to run in install mode.
 
         @return: bool : installmode
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         return self.installmode
 
     def setverbosemode(self, verbosemode):
@@ -115,8 +122,9 @@ class Environment:
 
         @param bool: verbosemode
         @return: void
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         try:
             if type(verbosemode) is types.BooleanType:
                 self.verbosemode = verbosemode
@@ -130,8 +138,9 @@ class Environment:
         the program is to run in verbose mode.
 
         @return: bool : verbosemode
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         return self.verbosemode
 
     def setdebugmode(self, debugmode):
@@ -141,8 +150,9 @@ class Environment:
 
         @param bool: debugmode
         @return: void
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         try:
             if type(debugmode) is types.BooleanType:
                 self.debugmode = debugmode
@@ -156,8 +166,9 @@ class Environment:
         program is to run in debug mode.
 
         @return: bool : debugmode
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         return self.debugmode
 
     def getostype(self):
@@ -165,8 +176,9 @@ class Environment:
         Return the detailed operating system type.
 
         @return string :
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         return self.operatingsystem
 
     def getosreportstring(self):
@@ -174,16 +186,18 @@ class Environment:
         Return the detailed operating system type with full version info.
 
         @return string :
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         return self.osreportstring
 
     def getosfamily(self):
         """Return the value of self.osfamily which should be linux, darwin,
         solaris or freebsd.
         @return string :
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         return self.osfamily
 
     def getosver(self):
@@ -191,8 +205,9 @@ class Environment:
         Return the OS version as a string.
 
         @return string :
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         return self.osversion
 
     def gethostname(self):
@@ -200,8 +215,9 @@ class Environment:
         Return the hostname of the system.
 
         @return: string
-        @author: dkennel
+        @author: Dave Kennel
         """
+
         return self.hostname
 
     def getipaddress(self):
@@ -209,8 +225,9 @@ class Environment:
         Return the IP address associated with the host name.
 
         @return string :
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         return self.ipaddress
 
     def getmacaddr(self):
@@ -218,8 +235,9 @@ class Environment:
         Return the mac address in native format.
 
         @return string :
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         return self.macaddress
 
     def geteuid(self):
@@ -227,8 +245,9 @@ class Environment:
         Return the effective user ID
 
         @return int :
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         return self.euid
 
     def geteuidhome(self):
@@ -236,17 +255,19 @@ class Environment:
         Returns the home directory of the current effective user ID.
 
         @return: string
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         return self.homedir
 
     def collectinfo(self):
         """
-        Private method to populate data.
+        Method to populate data.
 
         @return: void
-        @author D. Kennel
+        @author Dave Kennel
         """
+
         # print 'Environment Running discoveros'
         self.discoveros()
         # print 'Environment running setosfamily'
@@ -259,8 +280,9 @@ class Environment:
         """
         Discover the operating system type and version
         @return : void
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         # Alternative (better) implementation for Linux
         if os.path.exists('/usr/bin/lsb_release'):
             proc = subprocess.Popen('/usr/bin/lsb_release -dr',
@@ -345,6 +367,7 @@ class Environment:
         Private method to detect and set the self.osfamily property. This is a
         fuzzy classification of the OS.
         """
+
         uname = sys.platform
         if uname == 'linux2':
             self.osfamily = 'linux'
@@ -355,106 +378,218 @@ class Environment:
         elif uname == 'freebsd9':
             self.osfamily = 'freebsd'
 
-    def guessnetwork(self):
-        """
-        This private method checks the configured interfaces and tries to
-        make an educated guess as to the correct network data. self.ipaddress
-        and self.macaddress will be updated by this method.
-        """
-        # regex to match mac addresses
-        macre = '(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})'
+    def getmacaddress(self):
+        '''
+        return the current system's mac address
+        set the class variable self.macaddress
 
-        ipaddress = ''
-        macaddress = '00:00:00:00:00:00'
+        @return: macaddr
+        @rtype: string
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        '''
 
-        hostname = socket.getfqdn()
+        netutil = self.getnetutil()
+        netcmd = ""
+        macaddr = "00:00:00:00:00:00"
+        macre = "(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})"
+        match = None
+        ipaddress = ""
+
+        if not netutil:
+            print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
+            return macaddr
+        elif "nmcli" in netutil:
+            netcmd = netutil +  " -t device show"
+        elif "ifconfig" in netutil:
+            netcmd = netutil + " -a"
+        elif "ip" in netutil:
+            netcmd = netutil + " -o link"
+        else:
+            print "environment::getmacaddr():WARNING: Could not identify unknown net utility type"
+            return macaddr
+
         try:
+
+            ipaddress = self.getipaddress()
+            macinfocmd = subprocess.Popen(netcmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
+            macinfo = macinfocmd.stdout.readlines()
+
+            for line in macinfo:
+                match = re.search(macre, line)
+                if match is not None:
+                    # print 'Matched MAC address'
+                    macaddr = match.group()
+                if re.search(ipaddress, line):
+                    # print 'Found ipaddress'
+                    break
+
+        except Exception:
+            raise
+
+        self.macaddress = macaddr
+        return macaddr
+
+    def getnetutil(self):
+        '''
+        return the full path to the net utility tool used
+        by the current system
+
+        can detect the following net util's:
+        * ip
+        * ifconfig
+        * nmcli
+
+        @return: netutil
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        netutil = ""
+
+        nmcli = "/usr/bin/nmcli"
+        iptool = "/sbin/ip"
+        ifconfigs = ["/sbin/ifconfig", "/usr/sbin/ifconfig"]
+
+        if os.path.exists(nmcli):
+            netutil = nmcli
+        elif os.path.exists(iptool):
+            netutil = iptool
+        else:
+            for loc in ifconfigs:
+                if os.path.exists(loc):
+                    netutil = loc
+
+        return netutil
+
+    def getipaddress(self):
+        '''
+        return the current system's ip address
+        set the class variable self.ipaddress
+
+        @return: ipaddr
+        @rtype: string
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        '''
+
+        ipaddr = ""
+
+        try:
+
+            hostname = self.gethostname()
             ipdata = socket.gethostbyname_ex(hostname)
             iplist = ipdata[2]
+
             try:
                 iplist.remove('127.0.0.1')
             except (ValueError):
                 # tried to remove loopback when it's not present, continue
                 pass
             if len(iplist) >= 1:
-                ipaddress = iplist[0]
+                ipaddr = iplist[0]
             else:
-                ipaddress = '127.0.0.1'
-        except(socket.gaierror):
+                ipaddr = '127.0.0.1'
+
+        except (socket.gaierror):
             # If we're here it's because socket.getfqdn did not in fact return
             # a valid hostname and gethostbyname errored.
-            ipaddress = self.getdefaultip()
+            ipaddr = self.getdefaultip()
 
-        # In ifconfig output macaddresses are always one line before the ip
-        # address.
-        if sys.platform == 'linux2':
-            cmd = '/sbin/ifconfig'
-        elif os.path.exists('/usr/sbin/ifconfig'):
-            cmd = '/usr/sbin/ifconfig -a'
-        else:
-            cmd = '/sbin/ifconfig -a'
-        proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE, close_fds=True)
-        netdata = proc.stdout.readlines()
+        self.ipaddress = ipaddr
+        return ipaddr
 
-        for line in netdata:
-            # print "processing: " + line
-            match = re.search(macre, line)
-            if match is not None:
-                # print 'Matched MAC address'
-                macaddress = match.group()
-            if re.search(ipaddress, line):
-                # print 'Found ipaddress'
-                break
+    def gethostname(self):
+        '''
+        get the current system's host name
+        (fully qualified domain name)
+        set the class variable self.hostname
 
-        self.hostname = hostname
-        self.ipaddress = ipaddress
-        self.macaddress = macaddress
+        @return: hostfqdn
+        @rtype: string
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        '''
+
+        hostfqdn = ""
+
+        try:
+
+            hostfqdn = socket.getfqdn()
+
+        except Exception:
+            raise
+
+        self.hostname = hostfqdn
+        return hostfqdn
+
+    def guessnetwork(self):
+        """
+        This method checks the configured interfaces and tries to
+        make an educated guess as to the correct network data. The
+        following class variables will be updated by this method:
+        * self.hostname
+        * self.ipaddress
+        * self.macaddress
+
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        """
+
+        self.gethostname()
+        self.getipaddress()
+        self.getmacaddr()
 
     def getdefaultip(self):
         """
         This method will return the ip address of the interface
         associated with the current default route.
 
-        @return: string - ipaddress
-        @author: dkennel
+        @return: ipaddr
+        @rtype: string
+        @author: Dave Kennel
         """
+
         ipaddr = '127.0.0.1'
         gateway = ''
+
         if sys.platform == 'linux2':
+
             try:
-                routecmd = subprocess.Popen('/sbin/route -n', shell=True,
-                                            stdout=subprocess.PIPE,
-                                            close_fds=True)
+                routecmd = subprocess.Popen('/sbin/route -n', shell=True, stdout=subprocess.PIPE, close_fds=True)
                 routedata = routecmd.stdout.readlines()
-            except(OSError):
+            except (OSError):
                 return ipaddr
+
             for line in routedata:
                 if re.search('^default', line):
                     line = line.split()
+
                     try:
                         gateway = line[1]
-                    except(IndexError):
+                    except (IndexError):
                         return ipaddr
         else:
+
             try:
+
                 if os.path.exists('/usr/sbin/route'):
                     cmd = '/usr/sbin/route -n get default'
                 else:
                     cmd = '/sbin/route -n get default'
-                routecmd = subprocess.Popen(cmd, shell=True,
-                                            stdout=subprocess.PIPE,
-                                            close_fds=True)
+                routecmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
                 routedata = routecmd.stdout.readlines()
-            except(OSError):
+            except (OSError):
                 return ipaddr
+
             for line in routedata:
                 if re.search('gateway:', line):
                     line = line.split()
                     try:
                         gateway = line[1]
-                    except(IndexError):
+                    except (IndexError):
                         return ipaddr
+
         if gateway:
             iplist = self.getallips()
             for level in [1, 2, 3, 4]:
@@ -462,6 +597,7 @@ class Environment:
                 if len(matched) == 1:
                     ipaddr = matched[0]
                     break
+
         return ipaddr
 
     def matchip(self, target, iplist, level=1):
@@ -474,84 +610,136 @@ class Environment:
         @param string: ipaddress
         @param list: list of ipaddresses
         @param int: level
-        @return: list - ipaddresses
-        @author: dkennel
+        @return: matchlist
+        @rtype: list
+        @author: Dave Kennel
+        @change: Breen Malmberg - 07/19/2018 - slightly changed return logic
+                so that return value type would be consistent; moved default variable
+                inits to top of method; wrapped all code which could fail in try/except
         """
-        quad = target.split('.')
-        if level == 1:
-            network = quad[0]
-        elif level == 2:
-            network = quad[0] + '.' + quad[1]
-        elif level == 3:
-            network = quad[0] + '.' + quad[1] + '.' + quad[2]
-        elif level == 4:
-            return ['127.0.0.1']
+
+        network = "127.0.0.1"
         matchlist = []
-        for addr in iplist:
-            if re.search(network, addr):
-                matchlist.append(addr)
-        if len(matchlist) == 0:
-            matchlist.append('127.0.0.1')
+
+        try:
+
+            quad = target.split('.')
+
+            if level == 1:
+                network = quad[0]
+            elif level == 2:
+                network = quad[0] + '.' + quad[1]
+            elif level == 3:
+                network = quad[0] + '.' + quad[1] + '.' + quad[2]
+            elif level == 4:
+                matchlist.append(network)
+                return matchlist
+
+            for addr in iplist:
+                if re.search(network, addr):
+                    matchlist.append(addr)
+
+            if not matchlist:
+                matchlist.append("127.0.0.1")
+
+        except Exception:
+            raise
+
         return matchlist
 
     def getallips(self):
         """
         This method returns all ip addresses on all interfaces on the system.
 
-        @return: list of strings
-        @author: dkennel
+        @return: iplist
+        @rtype: list
+        @author: Dave Kennel
+        @change: Breen Malmberg - 07/29/2018 - re-factored rule to account for ifconfig
+                not being installed, and the use case where ifconfig is located at
+                /sbin/ifconfig and the output does not contain "addr:"
         """
+
         iplist = []
-        if sys.platform == 'linux2':
-            try:
-                ifcmd = subprocess.Popen('/sbin/ifconfig', shell=True,
-                                         stdout=subprocess.PIPE,
-                                         close_fds=True)
-                ifdata = ifcmd.stdout.readlines()
-            except(OSError):
-                return iplist
-            for line in ifdata:
-                if re.search('inet addr:', line):
-                    try:
-                        line = line.split()
-                        addr = line[1]
-                        addr = addr.split(':')
-                        addr = addr[1]
-                        iplist.append(addr)
-                    except(IndexError):
-                        continue
-        else:
-            try:
-                if os.path.exists('/usr/sbin/ifconfig'):
-                    cmd = '/usr/sbin/ifconfig -a'
-                else:
-                    cmd = '/sbin/ifconfig -a'
-                ifcmd = subprocess.Popen(cmd, shell=True,
-                                         stdout=subprocess.PIPE,
-                                         close_fds=True)
-                ifdata = ifcmd.stdout.readlines()
-            except(OSError):
-                return iplist
-            for line in ifdata:
-                if re.search('inet ', line):
-                    try:
-                        line = line.split()
-                        addr = line[1]
-                        iplist.append(addr)
-                    except(IndexError):
-                        continue
+        ifconfig = ""
+        nmcli = ""
+        ifconfiglocs = ["/sbin/ifconfig", "/usr/sbin/ifconfig"]
+        nmclilocs = ["/usr/bin/nmcli"]
+
+        for loc in ifconfiglocs:
+            if os.path.exists(loc):
+                ifconfig = loc
+
+        for loc in nmclilocs:
+            if os.path.exists(loc):
+                nmcli = loc
+
+        if sys.platform == "linux2":
+
+            if ifconfig:
+
+                try:
+                    ifcmd = subprocess.Popen(ifconfig, shell=True, stdout=subprocess.PIPE, close_fds=True)
+                    ifdata = ifcmd.stdout.readlines()
+                except (OSError):
+                    return iplist
+
+                for line in ifdata:
+                    if re.search("inet addr:", line):
+                        try:
+                            line = line.split()
+                            addr = line[1]
+                            addr = addr.split(':')
+                            addr = addr[1]
+                            iplist.append(addr)
+                        except (IndexError):
+                            continue
+                    elif re.search("inet ", line):
+                        try:
+                            line = line.split()
+                            addr = line[1]
+                            iplist.append(addr)
+                        except (IndexError):
+                            continue
+
+            elif nmcli:
+
+                try:
+                    nmcmd = subprocess.Popen(nmcli, shell=True, stdout=subprocess.PIPE, close_fds=True)
+                    nmdata = nmcmd.stdout.readlines()
+                except (OSError):
+                    return iplist
+
+                for line in nmdata:
+                    if re.search("IP4\.ADDRESS", line):
+                        try:
+                            sline = line.split(":")
+                            group = sline[1]
+                            if re.search("\/", group):
+                                sgroup = group.split("/")
+                                addr = sgroup[0]
+                            else:
+                                addr = group
+                            iplist.append(addr)
+                        except (IndexError):
+                            continue
+
         return iplist
 
     def get_property_number(self):
         """
         Find and return the
         Property number of the local machine
+
+        @return: propnum
+        @rtype: int
         @author: scmcleni
-        @author: D. Kennel
-        @return: int
+        @author: Dave Kennel
         """
+
         propnum = 0
+
         try:
+
             if os.path.exists('/etc/property-number'):
                 propertynumberfile = open('/etc/property-number', 'r')
                 propnum = propertynumberfile.readline()
@@ -566,21 +754,25 @@ class Environment:
                 cmdout = cmdout.split()
                 try:
                     propnum = cmdout[1]
-                except(IndexError, KeyError):
+                except (IndexError, KeyError):
                     propnum = 0
-        except:
+        except Exception:
             pass
-            # Failed to obtain property number
+
         return propnum
 
     def get_system_serial_number(self):
         """
         Find and return the
         Serial number of the local machine
-        @author: dkennel
-        @return: string
+
+        @return: systemserial
+        @rtype: string
+        @author: Dave Kennel
         """
+
         systemserial = '0'
+
         if os.path.exists('/usr/sbin/system_profiler'):
             profilerfetch = '/usr/sbin/system_profiler SPHardwareDataType'
             cmd3 = subprocess.Popen(profilerfetch, shell=True,
@@ -592,9 +784,10 @@ class Environment:
                     line = line.split(':')
                     try:
                         systemserial = line[1]
-                    except(IndexError, KeyError):
+                    except (IndexError, KeyError):
                         pass
         systemserial = systemserial.strip()
+
         return systemserial
 
     def get_sys_uuid(self):
@@ -603,10 +796,14 @@ class Environment:
         this will be the UUID of the system. On Solaris SPARC this will be
         a number that is _hopefully_ unique as that platform doesn't have
         UUID numbers.
-        @author: D. Kennel
-        @return: string
+
+        @return: uuid
+        @rtype: string
+        @author: Dave Kennel
         """
+
         uuid = '0'
+
         if os.path.exists('/usr/sbin/smbios'):
             smbiosfetch = '/usr/sbin/smbios -t SMB_TYPE_SYSTEM 2>/dev/null'
             cmd2 = subprocess.Popen(smbiosfetch, shell=True,
@@ -618,7 +815,7 @@ class Environment:
                     line = line.split()
                     try:
                         uuid = line[1]
-                    except(IndexError, KeyError):
+                    except (IndexError, KeyError):
                         pass
         elif os.path.exists('/usr/sbin/system_profiler'):
             profilerfetch = '/usr/sbin/system_profiler SPHardwareDataType'
@@ -631,7 +828,7 @@ class Environment:
                     line = line.split()
                     try:
                         uuid = line[2]
-                    except(IndexError, KeyError):
+                    except (IndexError, KeyError):
                         pass
         elif platform.system() == 'SunOS':
             fetchhostid = '/usr/bin/hostid'
@@ -647,12 +844,17 @@ class Environment:
         Returns a bool indicating whether or not the system in question is a
         laptop. The is mobile method is used by some rules that have alternate
         settings for laptops.
-        @author: dkennel
-        @regturn: bool - true if system is a laptop
+
+        @return: ismobile
+        @rtype: bool
+        @author: Dave Kennel
         '''
+
         ismobile = False
-        dmitypes = ['LapTop', 'Portable', 'Notebook', 'Hand Held',
-                    'Sub Notebook']
+
+        # following commented out by Breen Malmberg on 07/19/2018 because it was not being used anywhere
+        # dmitypes = ['LapTop', 'Portable', 'Notebook', 'Hand Held', 'Sub Notebook']
+
         if os.path.exists('/usr/sbin/system_profiler'):
             profilerfetch = '/usr/sbin/system_profiler SPHardwareDataType'
             cmd3 = subprocess.Popen(profilerfetch, shell=True,
@@ -663,6 +865,7 @@ class Environment:
                 if re.search('Book', line):
                     ismobile = True
                     break
+
         return ismobile
 
     def issnitchactive(self):
@@ -670,10 +873,14 @@ class Environment:
         Returns a bool indicating whether or not the little snitch program is
         active. Little snitch is a firewall utility used on Mac systems and can
         interfere with STONIX operations.
+
+        @return: issnitchactive
+        @rtype: bool
         @author: ekkehard
-        @return: bool - true if little snitch is running
         """
+
         issnitchactive = False
+
         if self.osfamily == 'darwin':
             cmd = 'ps axc -o comm | grep lsd'
             littlesnitch = 'lsd'
@@ -687,6 +894,7 @@ class Environment:
                     print 'LittleSnitch Is Running'
                     issnitchactive = True
                     break
+
         return issnitchactive
 
     def collectpaths(self):
@@ -700,10 +908,12 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         script_path_zero = os.path.realpath(sys.argv[0])
+
         try:
             script_path_one = os.path.realpath(sys.argv[1])
-        except:
+        except Exception:
             script_path_one = ""
 
         self.test_mode = False
@@ -800,6 +1010,7 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.test_mode
 
     def get_script_path(self):
@@ -808,6 +1019,7 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.script_path
 
     def get_icon_path(self):
@@ -816,6 +1028,7 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.icon_path
 
     def get_rules_path(self):
@@ -824,6 +1037,7 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.rules_path
 
     def get_config_path(self):
@@ -832,6 +1046,7 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.conf_path
 
     def get_log_path(self):
@@ -840,6 +1055,7 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.log_path
 
     def get_resources_path(self):
@@ -848,14 +1064,16 @@ class Environment:
 
         @author: Roy Nielsen
         """
+
         return self.resources_path
 
     def getruntime(self):
         '''
         Return the runtime recorded.
 
-        @author: dkennel
+        @author: Dave Kennel
         '''
+
         return self.runtime
 
     def setnumrules(self, num):
@@ -864,8 +1082,9 @@ class Environment:
         used by the log dispatcher in the run metadata.
         
         @param num: int - number of rules that apply to this host
-        @author: dkennel
+        @author: Dave Kennel
         '''
+
         if type(num) is not int:
             raise TypeError('Number of rules must be an integer')
         elif num < 0:
@@ -877,8 +1096,9 @@ class Environment:
         '''
         Return the number of rules that apply to this host.
         
-        @author: dkennel
+        @author: Dave Kennel
         '''
+
         return self.numrules
 
     
