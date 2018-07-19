@@ -55,22 +55,10 @@ from logdispatcher import LogPriority
 
 import main_window_pyqt5 as main_window
 
-
-
-#####
-# PyQt specific imports - Needs importing:
-# QThread (QtCore)
-# QObject (QtCore)
-# QMainWindow (QtWidgets)
-# QMessageBox (QtWidgets)
-# QMetaObject (QtCore)
-##### was
-# from PyQt4.QtCore import *
-# from PyQt4.QtGui import *
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtGui
-from PyQt5 import Qt
+from PyQt5.QtCore import Qt
 
 
 class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
