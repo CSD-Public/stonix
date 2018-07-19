@@ -516,108 +516,218 @@ class Environment:
         elif uname == 'freebsd9':
             self.osfamily = 'freebsd'
 
-    def guessnetwork(self):
-        """
-        This private method checks the configured interfaces and tries to
-        make an educated guess as to the correct network data. self.ipaddress
-        and self.macaddress will be updated by this method.
-        """
-        # regex to match mac addresses
-        macre = '(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})'
+    def getmacaddress(self):
+        '''
+        return the current system's mac address
+        set the class variable self.macaddress
 
-        ipaddress = ''
-        macaddress = '00:00:00:00:00:00'
+        @return: macaddr
+        @rtype: string
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        '''
 
-        hostname = socket.getfqdn()
+        netutil = self.getnetutil()
+        netcmd = ""
+        macaddr = "00:00:00:00:00:00"
+        macre = "(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})"
+        match = None
+        ipaddress = ""
+
+        if not netutil:
+            print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
+            return macaddr
+        elif "nmcli" in netutil:
+            netcmd = netutil +  " -t device show"
+        elif "ifconfig" in netutil:
+            netcmd = netutil + " -a"
+        elif "ip" in netutil:
+            netcmd = netutil + " -o link"
+        else:
+            print "environment::getmacaddr():WARNING: Could not identify unknown net utility type"
+            return macaddr
+
         try:
+
+            ipaddress = self.getipaddress()
+            macinfocmd = subprocess.Popen(netcmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
+            macinfo = macinfocmd.stdout.readlines()
+
+            for line in macinfo:
+                match = re.search(macre, line)
+                if match is not None:
+                    # print 'Matched MAC address'
+                    macaddr = match.group()
+                if re.search(ipaddress, line):
+                    # print 'Found ipaddress'
+                    break
+
+        except Exception:
+            raise
+
+        self.macaddress = macaddr
+        return macaddr
+
+    def getnetutil(self):
+        '''
+        return the full path to the net utility tool used
+        by the current system
+
+        can detect the following net util's:
+        * ip
+        * ifconfig
+        * nmcli
+
+        @return: netutil
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        netutil = ""
+
+        nmcli = "/usr/bin/nmcli"
+        iptool = "/sbin/ip"
+        ifconfigs = ["/sbin/ifconfig", "/usr/sbin/ifconfig"]
+
+        if os.path.exists(nmcli):
+            netutil = nmcli
+        elif os.path.exists(iptool):
+            netutil = iptool
+        else:
+            for loc in ifconfigs:
+                if os.path.exists(loc):
+                    netutil = loc
+
+        return netutil
+
+    def getipaddress(self):
+        '''
+        return the current system's ip address
+        set the class variable self.ipaddress
+
+        @return: ipaddr
+        @rtype: string
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        '''
+
+        ipaddr = ""
+
+        try:
+
+            hostname = self.gethostname()
             ipdata = socket.gethostbyname_ex(hostname)
             iplist = ipdata[2]
+
             try:
                 iplist.remove('127.0.0.1')
             except (ValueError):
                 # tried to remove loopback when it's not present, continue
                 pass
             if len(iplist) >= 1:
-                ipaddress = iplist[0]
+                ipaddr = iplist[0]
             else:
-                ipaddress = '127.0.0.1'
-        except(socket.gaierror):
+                ipaddr = '127.0.0.1'
+
+        except (socket.gaierror):
             # If we're here it's because socket.getfqdn did not in fact return
             # a valid hostname and gethostbyname errored.
-            ipaddress = self.getdefaultip()
+            ipaddr = self.getdefaultip()
 
-        # In ifconfig output macaddresses are always one line before the ip
-        # address.
-        if sys.platform == 'linux2':
-            cmd = '/sbin/ifconfig'
-        elif os.path.exists('/usr/sbin/ifconfig'):
-            cmd = '/usr/sbin/ifconfig -a'
-        else:
-            cmd = '/sbin/ifconfig -a'
-        proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE, close_fds=True)
-        netdata = proc.stdout.readlines()
+        self.ipaddress = ipaddr
+        return ipaddr
 
-        for line in netdata:
-            # print "processing: " + line
-            match = re.search(macre, line)
-            if match is not None:
-                # print 'Matched MAC address'
-                macaddress = match.group()
-            if re.search(ipaddress, line):
-                # print 'Found ipaddress'
-                break
+    def gethostname(self):
+        '''
+        get the current system's host name
+        (fully qualified domain name)
+        set the class variable self.hostname
 
-        self.hostname = hostname
-        self.ipaddress = ipaddress
-        self.macaddress = macaddress
+        @return: hostfqdn
+        @rtype: string
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        '''
+
+        hostfqdn = ""
+
+        try:
+
+            hostfqdn = socket.getfqdn()
+
+        except Exception:
+            raise
+
+        self.hostname = hostfqdn
+        return hostfqdn
+
+    def guessnetwork(self):
+        """
+        This method checks the configured interfaces and tries to
+        make an educated guess as to the correct network data. The
+        following class variables will be updated by this method:
+        * self.hostname
+        * self.ipaddress
+        * self.macaddress
+
+        @author: Dave Kennel
+        @author: Breen Malmberg
+        """
+
+        self.gethostname()
+        self.getipaddress()
+        self.getmacaddr()
 
     def getdefaultip(self):
         """
         This method will return the ip address of the interface
         associated with the current default route.
 
-        @return: string - ipaddress
-        @author: dkennel
-        @change: 2017/9/20 - bgonz12 - Changed implementation to not branch
-                    conditionally by OS, but to branch by file system searches.
+        @return: ipaddr
+        @rtype: string
+        @author: Dave Kennel
         """
+
         ipaddr = '127.0.0.1'
         gateway = ''
-        if os.path.exists('/usr/bin/lsb_release'):
+
+        if sys.platform == 'linux2':
+
             try:
-                routecmd = subprocess.Popen('/sbin/route -n', shell=True,
-                                            stdout=subprocess.PIPE,
-                                            close_fds=True)
+                routecmd = subprocess.Popen('/sbin/route -n', shell=True, stdout=subprocess.PIPE, close_fds=True)
                 routedata = routecmd.stdout.readlines()
-            except(OSError):
+            except (OSError):
                 return ipaddr
+
             for line in routedata:
-                if re.search('^default|^0.0.0.0|^\*', line):
+                if re.search('^default', line):
                     line = line.split()
+
                     try:
                         gateway = line[1]
-                    except(IndexError):
+                    except (IndexError):
                         return ipaddr
         else:
+
             try:
+
                 if os.path.exists('/usr/sbin/route'):
                     cmd = '/usr/sbin/route -n get default'
                 else:
                     cmd = '/sbin/route -n get default'
-                routecmd = subprocess.Popen(cmd, shell=True,
-                                            stdout=subprocess.PIPE,
-                                            close_fds=True)
+                routecmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
                 routedata = routecmd.stdout.readlines()
-            except(OSError):
+            except (OSError):
                 return ipaddr
+
             for line in routedata:
                 if re.search('gateway:', line):
                     line = line.split()
                     try:
                         gateway = line[1]
-                    except(IndexError):
+                    except (IndexError):
                         return ipaddr
+
         if gateway:
             iplist = self.getallips()
             for level in [1, 2, 3, 4]:
@@ -625,6 +735,7 @@ class Environment:
                 if len(matched) == 1:
                     ipaddr = matched[0]
                     break
+
         return ipaddr
 
     def matchip(self, target, iplist, level=1):
@@ -637,72 +748,119 @@ class Environment:
         @param string: ipaddress
         @param list: list of ipaddresses
         @param int: level
-        @return: list - ipaddresses
-        @author: dkennel
+        @return: matchlist
+        @rtype: list
+        @author: Dave Kennel
+        @change: Breen Malmberg - 07/19/2018 - slightly changed return logic
+                so that return value type would be consistent; moved default variable
+                inits to top of method; wrapped all code which could fail in try/except
         """
-        quad = target.split('.')
-        if level == 1:
-            network = quad[0]
-        elif level == 2:
-            network = quad[0] + '.' + quad[1]
-        elif level == 3:
-            network = quad[0] + '.' + quad[1] + '.' + quad[2]
-        elif level == 4:
-            return ['127.0.0.1']
+
+        network = "127.0.0.1"
         matchlist = []
-        for addr in iplist:
-            if re.search(network, addr):
-                matchlist.append(addr)
-        if len(matchlist) == 0:
-            matchlist.append('127.0.0.1')
+
+        try:
+
+            quad = target.split('.')
+
+            if level == 1:
+                network = quad[0]
+            elif level == 2:
+                network = quad[0] + '.' + quad[1]
+            elif level == 3:
+                network = quad[0] + '.' + quad[1] + '.' + quad[2]
+            elif level == 4:
+                matchlist.append(network)
+                return matchlist
+
+            for addr in iplist:
+                if re.search(network, addr):
+                    matchlist.append(addr)
+
+            if not matchlist:
+                matchlist.append("127.0.0.1")
+
+        except Exception:
+            raise
+
         return matchlist
 
     def getallips(self):
         """
         This method returns all ip addresses on all interfaces on the system.
 
-        @return: list of strings
-        @author: dkennel
-        @change: 2017/9/22 - bgonz12 - Changed implementation to use the ip
-                    command before trying to use the ifconfig command.
+        @return: iplist
+        @rtype: list
+        @author: Dave Kennel
+        @change: Breen Malmberg - 07/29/2018 - re-factored rule to account for ifconfig
+                not being installed, and the use case where ifconfig is located at
+                /sbin/ifconfig and the output does not contain "addr:"
         """
+
         iplist = []
-        cmd = ''
-        if os.path.exists('/usr/sbin/ip'):
-            cmd = '/usr/sbin/ip address'
-        elif os.path.exists('/sbin/ip'):
-            cmd = '/sbin/ip address'
-        elif os.path.exists('/usr/sbin/ifconfig'):
-            cmd = '/usr/sbin/ifconfig -a'
-        elif os.path.exists('/sbin/ifconfig'):
-            cmd = '/sbin/ifconfig -a'
-        try:
-            ifcmd = subprocess.Popen(cmd, shell=True,
-                                     stdout=subprocess.PIPE,
-                                     close_fds=True)
-            ifdata = ifcmd.stdout.readlines()
-        except(OSError):
-            # TODO - Need error handler
-            raise
-        for line in ifdata:
-            if re.search('inet addr:', line):
+        ifconfig = ""
+        nmcli = ""
+        ifconfiglocs = ["/sbin/ifconfig", "/usr/sbin/ifconfig"]
+        nmclilocs = ["/usr/bin/nmcli"]
+
+        for loc in ifconfiglocs:
+            if os.path.exists(loc):
+                ifconfig = loc
+
+        for loc in nmclilocs:
+            if os.path.exists(loc):
+                nmcli = loc
+
+        if sys.platform == "linux2":
+
+            if ifconfig:
+
                 try:
-                    line = line.split()
-                    addr = line[1]
-                    addr = addr.split(':')
-                    addr = addr[1]
-                    iplist.append(addr)
-                except(IndexError):
-                    continue
-            elif re.search('inet ', line):
+                    ifcmd = subprocess.Popen(ifconfig, shell=True, stdout=subprocess.PIPE, close_fds=True)
+                    ifdata = ifcmd.stdout.readlines()
+                except (OSError):
+                    return iplist
+
+                for line in ifdata:
+                    if re.search("inet addr:", line):
+                        try:
+                            line = line.split()
+                            addr = line[1]
+                            addr = addr.split(':')
+                            addr = addr[1]
+                            iplist.append(addr)
+                        except (IndexError):
+                            continue
+                    elif re.search("inet ", line):
+                        try:
+                            line = line.split()
+                            addr = line[1]
+                            iplist.append(addr)
+                        except (IndexError):
+                            continue
+
+            elif nmcli:
+
                 try:
-                    line = line.split()
-                    addr = line[1]
-                    addr = addr.split('/')
-                    addr = addr[0]
-                    iplist.append(addr)
-                except(IndexError):
-                    continue
+                    nmcmd = subprocess.Popen(nmcli, shell=True, stdout=subprocess.PIPE, close_fds=True)
+                    nmdata = nmcmd.stdout.readlines()
+                except (OSError):
+                    return iplist
+
+                for line in nmdata:
+                    if re.search("IP4\.ADDRESS", line):
+                        try:
+                            sline = line.split(":")
+                            group = sline[1]
+                            if re.search("\/", group):
+                                sgroup = group.split("/")
+                                addr = sgroup[0]
+                            else:
+                                addr = group
+                            iplist.append(addr)
+                        except (IndexError):
+                            continue
+
         return iplist
 
     def get_property_number(self):
