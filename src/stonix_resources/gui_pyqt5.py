@@ -53,13 +53,11 @@ import os
 import sys
 import traceback
 import webbrowser
+
 from view import View
 from logdispatcher import LogPriority
 
 import main_window_pyqt5 as main_window
-
-
-
 #####
 # PyQt specific imports - Needs importing:
 # QThread (QtCore)
@@ -73,7 +71,7 @@ import main_window_pyqt5 as main_window
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtGui
-from PyQt5 import Qt
+from PyQt5.QtCore import Qt
 
 
 class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
@@ -348,11 +346,16 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @author: Roy Nielsen
         @change: 2015/12/09 eball Changed to webbrowser
+        @change: 2018/02/07 Breen Malmberg - (see inline comments below)
         """
         debug = "Opening help in browser"
         self.logger.log(LogPriority.DEBUG, ["GUI", debug])
-        selfdir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0])))
-        tocpath = "file://" + selfdir + "/stonix_resources/help/toc.html"
+        # discontinued using the selfdir dynamic path getting method
+        # due to an issue where if the user runs the stonix application from the terminal
+        # the path retrieved by the below 'selfdir' method does not get the correct path
+        # also, the path is always the same anyway, so for now just hard-coding this path works
+        #selfdir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0])))
+        tocpath = "file:///Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/help/toc.html"
         webbrowser.open(tocpath)
         debug = "webbrowser.open called for " + tocpath
         self.logger.log(LogPriority.DEBUG, ["GUI", debug])
