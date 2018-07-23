@@ -438,7 +438,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         bindir = glob("/usr/bin/kde*")
         kdefound = False
         for kdefile in bindir:
-            if re.search("^kde\d$", kdefile):
+            if re.search("^/usr/bin/kde\d$", str(kdefile)):
                 kdefound = True
         if kdefound and self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
@@ -449,7 +449,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                 self.detailedresults += "No contents found in /etc/passwd!\n"
                 return False
             for line in contents:
-                compliant = True
                 temp = line.split(":")
                 try:
                     if int(temp[2]) >= 500:
@@ -457,52 +456,33 @@ class ConfigureScreenLocking(RuleKVEditor):
                             homebase = temp[5]
                             if not re.search("^/home/", homebase):
                                 continue
-                            homebase += '/.kde'
-                            if not os.path.exists(homebase):
-                                self.detailedresults += "Could not find " + \
-                                    homebase + "\n"
+                            kfile = homebase + "/.kde/share/config/kscreensaverrc"
+#                             kfile = homebase + '/kdesktoprc'
+                            if not os.path.exists(kfile):
+                                self.detailedresults += "Could " + \
+                                    "not find " + kfile + "\n"
                                 compliant = False
                             else:
-                                homebase += '/share'
-                                if not os.path.exists(homebase):
-                                    self.detailedresults += "Could not find " + \
-                                        homebase + "\n"
+                                uid = getpwnam(temp[0])[2]
+                                gid = getpwnam(temp[0])[3]
+                                if not checkPerms(kfile,
+                                                  [uid, gid,
+                                                   0o600],
+                                                  self.logger):
+                                    self.detailedresults += \
+                                        "Incorrect permissions " + \
+                                        "for file " + kfile + \
+                                        ": Expected 600, " + \
+                                        "found " + \
+                                        getOctalPerms(kfile) + \
+                                        "\n"
                                     compliant = False
-                                else:
-                                    homebase += '/config'
-                                    if not os.path.exists(homebase):
-                                        self.detailedresults += "Could not " + \
-                                            "find " + homebase + "\n"
-                                        compliant = False
-                                    else:
-                                        kfile = homebase + '/kdesktoprc'
-                                        if not os.path.exists(kfile):
-                                            kfile = homebase + '/kscreensaverrc'
-                                            if not os.path.exists(kfile):
-                                                self.detailedresults += "Could " + \
-                                                    "not find " + kfile + "\n"
-                                                compliant = False
-                                            else:
-                                                uid = getpwnam(temp[0])[2]
-                                                gid = getpwnam(temp[0])[3]
-                                                if not checkPerms(kfile,
-                                                                  [uid, gid,
-                                                                   0o600],
-                                                                  self.logger):
-                                                    self.detailedresults += \
-                                                        "Incorrect permissions " + \
-                                                        "for file " + kfile + \
-                                                        ": Expected 600, " + \
-                                                        "found " + \
-                                                        getOctalPerms(kfile) + \
-                                                        "\n"
-                                                    compliant = False
-                                                if not self.searchFile(kfile):
-                                                    self.detailedresults += \
-                                                        "Did not find " + \
-                                                        "required contents " + \
-                                                        "in " + kfile + "\n"
-                                                    compliant = False
+                                if not self.searchFile(kfile):
+                                    self.detailedresults += \
+                                        "Did not find " + \
+                                        "required contents " + \
+                                        "in " + kfile + "\n"
+                                    compliant = False
                             if not compliant:
                                 self.kdefix.append(temp[0])
                         else:
@@ -528,16 +508,9 @@ directory, invalid form of /etc/passwd"
                 for user in self.kdefix:
                     self.detailedresults += user + "\n"
         elif kdefound:
-            if self.environ.getosfamily() == "solaris":
-                who = "/usr/bin/who"
-            else:
-                who = "/usr/bin/whoami"
+            who = "/usr/bin/whoami"
             message = Popen(who, stdout=PIPE, shell=False)
-            if self.environ.getosfamily() == "solaris":
-                info = message.stdout.read().split()
-                info = info[0]
-            else:
-                info = message.stdout.read().strip()
+            info = message.stdout.read().strip()
             contents = readFile('/etc/passwd', self.logger)
             if not contents:
                 debug += "You have some serious issues, /etc/passwd is blank\n"
@@ -874,22 +847,19 @@ for this portion of the rule\n"
 
         debug = ""
         success = True
-
+        homebase = "/home/"
         for user in self.kdefix:
-            if self.environ.getosfamily() == "solaris":
-                homebase = "/export/home/"
-            else:
-                homebase = "/home/"
-            homebase += user
-            homebase += "/.kde/share/config"
+            homebase += user + "/.kde/share/config"
             if not os.path.exists(homebase):
                 os.makedirs(homebase)
-            kfile = homebase + "/kdesktoprc"
-            if not os.path.exists(kfile):
-                kfile = homebase + "/kscreensaverrc"
-                if not os.path.exists(kfile):
-                    if not self.correctFile(kfile, user, homebase):
-                        return False
+#             kfile = homebase + "/kdesktoprc"
+            kfile = homebase + "/kscreensaverrc"
+            if not self.correctFile(kfile, user, homebase):
+                success = False
+                self.detailedresults += "Unable to configure desktop " + \
+                    "for " + user + "\n"
+                debug += "Unable to configure desktop " + \
+                    "for " + user + "\n"
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return success

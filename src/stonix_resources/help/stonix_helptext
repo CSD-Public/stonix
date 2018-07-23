@@ -413,7 +413,7 @@ This rule is highly customisable, due to the widely varied sets of required or i
 
 <32>        "This rule enables logging for all attempted FTP access and FTP commands. It also restricts the set of users allowed to access FTP and sets the default umask for FTP users. FTP stands for 'File Transfer Protocol' and is used for the transfer of computer files between a client and server on a computer network."
 
-<45>        "This rule ensures that each user's home directory is not group-writeable or world-readable."
+<45>        "This rule ensures that each user's local home directory is not group-writeable nor world-readable."
 
 <15>        "***On Solaris: REQUIRES REBOOT***
 
@@ -544,3 +544,5 @@ This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionali
 This rule will limit the number of concurrent login sessions the system can have. The default limit amount is 10. The user can specify what they want this number to be, by entering a different number for the MAXSYSLOGINS configuration item value. This rule is disabled by default.
 
 Users should keep in mind, while setting this number, that login sessions can include how many terminals you currently have open."
+
+<311>       "New data collection and reporting utilities have been added to the stable LTS Ubuntu release cycle and enabled by default. This rule will disable or remove these new utilities so no information is collected or reported to Ubuntu."
