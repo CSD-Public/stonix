@@ -29,11 +29,12 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2015/10/08 eball Help text cleanup
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2018/5/22  Brandon R. Gonzales - Added file/directory permissions
-                to report and fix
-@change: 2018/5/23  Brandon R. Gonzales - Replaced local __readconf function
+@change: 2018/5/23  Brandon R. Gonzales - Add file/directory permissions
+                to report and fix; Replace local __readconf function
                 with readFile from stonixutilityfunctions
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2018/7/24 Brandon R. Gonzales - Add report, fix, and ci for
+                restricted/required web directory options
 '''
 from __future__ import absolute_import
 import os
@@ -95,8 +96,8 @@ class SecureApacheWebserver(Rule):
             if os.path.isdir(dirname):
                 self.confdir.append(dirname)
         self.perms = {}
-        self.perms["/var/log/httpd"] =  700
-        for dir  in self.confdir:
+        self.perms["/var/log/httpd"] = 700
+        for dir in self.confdir:
             self.perms[dir] = 750
         for file in self.conffiles:
             self.perms[file] = 640
@@ -120,6 +121,10 @@ class SecureApacheWebserver(Rule):
         self.domodules = self.__initializeSecureApacheMods()
         self.dossl = self.__initializeSecureApacheSsl()
         self.dophp = self.__initializeSecurePhp()
+        self.reqopts = self.__initializeRequiredWebDirOptions()
+        self.resopts = self.__initializeRestrictedWebDirOptions()
+        self.requiredoptions = self.reqopts.getcurrvalue()
+        self.restrictedoptions = self.resopts.getcurrvalue()
         self.guidance = ['NSA 3.16.3', 'CCE-4474-3', 'CCE-3756-4',
                          'CCE-4509-6', 'CCE-4386-9', 'CCE-4029-5',
                          'CCE-3581-6', 'CCE-4574-0']
@@ -159,7 +164,8 @@ class SecureApacheWebserver(Rule):
                          'file_uploads = Off',
                          'allow_url_fopen = Off',
                          'sql.safe_mode = On']
-        self.permissionscompliant = True   
+        self.webdircompliant = True
+        self.permissionscompliant = True
         self.phpcompliant = True
         self.sslcompliant = True
         self.modulescompliant = True
@@ -187,7 +193,7 @@ all systems.'''
         except(KeyError):
             confuc = ''
         myci = ConfigurationItem(conftype, conf, confdefault, confuc,
-                                        confinst, confcurr)
+                                 confinst, confcurr)
         self.logdispatch.log(LogPriority.DEBUG,
                              ['SecureApacheWebserver.__initializeSecureApache',
                               'SECUREAPACHE val = ' + str(confcurr)])
@@ -224,8 +230,8 @@ modules.'''
         myci.setusercomment(confuc)
         self.confitems.append(myci)
         self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.__initializeSecureApacheMods',
-                         'SECUREAPACHEMODS val = ' + str(confcurr)])
+                             ['SecureApacheWebserver.__initializeSecureApacheMods',
+                              'SECUREAPACHEMODS val = ' + str(confcurr)])
         return myci
 
     def __initializeSecureApacheSsl(self):
@@ -261,6 +267,44 @@ development but some existing applications may use insecure side effects.'''
         myci = self.initCi(datatype, key, instructions, default)
         return myci
 
+    def __initializeRequiredWebDirOptions(self):
+        '''
+        Private method to initialize the configurationitem object for the
+        REQUIREDWEBDIROPTIONS list.
+        @return: configuration object instance
+        @author: Brandon R. Gonzales
+        '''
+        datatype = "list"
+        key = "REQUIREDWEBDIROPTIONS"
+        instructions = "This list contains options that are required " + \
+                       "for web directories. These options will be added " + \
+                       "to all web directory definitions. Directories " + \
+                       "that are remotely accessible should be configured " + \
+                       "with options that provide the least amount of " + \
+                       "access possible."
+        default = ["SymLinksIfOwnerMatch"]
+        myci = self.initCi(datatype, key, instructions, default)
+        return myci
+
+    def __initializeRestrictedWebDirOptions(self):
+        '''
+        Private method to initialize the configurationitem object for the
+        RESTRICTEDWEBDIROPTIONS list.
+        @return: configuration object instance
+        @author: Brandon R. Gonzales
+        '''
+        datatype = "list"
+        key = "RESTRICTEDWEBDIROPTIONS"
+        instructions = "This list contains options that are restricted " + \
+                       "for web directories. These options will be " + \
+                       "removed from each web directory definition. " + \
+                       "Directories that are remotely accessible should " + \
+                       "be configured with options that provide the least " + \
+                       "amount of access possible."
+        default = ["Indexes", "FollowSymLinks"]
+        myci = self.initCi(datatype, key, instructions, default)
+        return myci
+
     def locatesslfiles(self):
         '''Probe known apache config file locations to find the file(s)
         containing cipher specifications.
@@ -272,13 +316,13 @@ development but some existing applications may use insecure side effects.'''
         try:
             for directory in self.confdir:
                 self.logdispatch.log(LogPriority.DEBUG,
-                                ['',
-                                 'Listing directory ' + str(directory)])
+                                     ['',
+                                      'Listing directory ' + str(directory)])
                 for filename in os.listdir(directory):
                     path = os.path.join(directory, filename)
                     self.logdispatch.log(LogPriority.DEBUG,
-                                ['',
-                                 'Adding path ' + str(path)])
+                                         ['',
+                                          'Adding path ' + str(path)])
                     filelist.append(path)
             for cpath in filelist:
                 try:
@@ -300,8 +344,8 @@ development but some existing applications may use insecure side effects.'''
             self.detailedresults = self.detailedresults + traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                            ['SecureApacheWebserver.locatesslfiles',
-                             self.detailedresults])
+                                 ['SecureApacheWebserver.locatesslfiles',
+                                  self.detailedresults])
         return sslfilelist
 
     def __checkvalues(self, keylist, conf, invert=False):
@@ -313,13 +357,13 @@ development but some existing applications may use insecure side effects.'''
         @param keylist: list of strings
         @param conf: configuration data to search
         @param invert: Invert the search, ensure that the listed items _do_not_
-        appear in the config file. 
+        appear in the config file.
         @return: dict
         @author: dkennel
         '''
         self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.__checkvalues',
-                         'Looking for keys: ' + str(keylist)])
+                             ['SecureApacheWebserver.__checkvalues',
+                              'Looking for keys: ' + str(keylist)])
         founddict = {}.fromkeys(keylist, False)
         for line in conf:
             if self.comment.match(line):
@@ -328,44 +372,55 @@ development but some existing applications may use insecure side effects.'''
                 if re.search(entry, line):
                     founddict[entry] = True
                     self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.__checkvalues',
-                         'Found key: ' + str(entry)])
+                                         ['SecureApacheWebserver.__checkvalues',
+                                          'Found key: ' + str(entry)])
         return founddict
 
-    def __reportwebdirectories(self, conf):        
+    def __reportwebdiroptions(self, conf):
+        '''SecureApacheWebserver.__reportwebdiroptions() is a private method
+        that checks if a configuration file has web directory definitions
+        with restricted options or missing required options. It is mirrored
+        by the __fixwebdiroptions() method.
+        @param conf: full path of the configuration file to check
+        @return: Tuple - two elements, bool indicating compliance, string
+        with detailed results.
+        @author: Brandon R. Gonzales
+        '''
         results = ''
         compliant = True
-        
         fullentries = []
-        webdirs = []
-        
-        restrictedoptionsfound = []
-        
-        # We are looking to get a list of whole-string web directory entries.
-        # Since the entries span across multiple lines, we need to split the 
-        # entries line-by-line. The end result will be a list of lists.
+        optionsfound = []
+
+        # Get a list of whole-string web directory entries.
         f = open(conf, 'r')
         contents = f.read()
         f.close()
-        fullentries = re.findall("(<Directory.*>(.|\s)*?<\/Directory.*>)", contents)
-        for i in range(0, len(fullentries)):
-            webdirs.append(re.split("\n", str(fullentries[i])))
-            
-        for entry in webdirs:
-            for line in entry:
-                if re.search("Options", line):
+        fullentries = re.findall("^\s*<Directory.*>[\s\S]*?<\/Directory.*>",
+                                 contents,
+                                 flags=re.MULTILINE)
+
+        results += "Non-compliant web directory options (" + conf + "):\n"
+        for entry in fullentries:
+            optionsfound = []
+            # Full entries have multiple lines.
+            # Split the full entry by line, resulting in a list.
+            linedentry = re.split("\n", str(entry))
+            for line in linedentry:
+                # Search for 'Options' in each line;
+                # Don't include matches that are commented out
+                if re.search("^((?!#).)*Options.*$", line):
                     options = line.split()
                     options = options[1:]
                     for option in options:
-                        if option in self.restrictedoptions:
-                            compliant = False
-                            restrictedoptionsfound.append(option)
-        # Remove duplicates
-        restrictedoptionsfound = list(set(restrictedoptionsfound))
-        
-        results += "\nRestricted web directory options:\n"
-        for resopt in restrictedoptionsfound:
-            results += "\'" + resopt + "\' found in \'" + conf + "\'\n"
+                        optionsfound.append(option)
+            for reqopt in self.requiredoptions:
+                if not reqopt in optionsfound:
+                    results += "Required option \'" + reqopt + "\'" + " missing in \'" + linedentry[0] + "\'\n"
+                    compliant = False
+            for resopt in self.restrictedoptions:
+                if resopt in optionsfound:
+                    results += "Restricted option \'" + resopt + "\' found in \'" + linedentry[0] + "\'\n"
+                    compliant = False
         return compliant, results
 
     def __reportpermissions(self):
@@ -378,12 +433,13 @@ development but some existing applications may use insecure side effects.'''
         '''
         results = ''
         compliant = True
-        
-        results += "\nIncorrect file/directory permissions:\n"
+
+        results += "Incorrect file/directory permissions:\n"
         for path in self.perms:
             if os.path.exists(path):
                 if self.perms[path] != getOctalPerms(path):
-                    results += path + " permissions are \'" + str(getOctalPerms(path)) + "\'. Expected " + str(self.perms[path]) + ".\n"
+                    results += path + " permissions are \'" + str(getOctalPerms(path)) + "\'. Expected " + str(
+                        self.perms[path]) + ".\n"
                     compliant = False
         return compliant, results
 
@@ -436,22 +492,22 @@ development but some existing applications may use insecure side effects.'''
                         # back half which contains the .so
                         entrysplit = entry.split(' ')
                         modpath = entrysplit[1]
-#                         This code commented out because of its riduculous
-#                         verbosity but retained in case needed.
-#                         self.logdispatch.log(LogPriority.DEBUG,
-#                                      ['SecureApacheWebserver.__checkmod',
-#                                       'Comparing: ' + str(modpath) + ' ' + line])
+                        #                         This code commented out because of its riduculous
+                        #                         verbosity but retained in case needed.
+                        #                         self.logdispatch.log(LogPriority.DEBUG,
+                        #                                      ['SecureApacheWebserver.__checkmod',
+                        #                                       'Comparing: ' + str(modpath) + ' ' + line])
                         if re.search(modpath, line):
                             self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__checkmod',
-                                      'Found ' + str(modpath)])
+                                                 ['SecureApacheWebserver.__checkmod',
+                                                  'Found ' + str(modpath)])
                             self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__checkmod',
-                                      'Line searched ' + str(line)])
+                                                 ['SecureApacheWebserver.__checkmod',
+                                                  'Line searched ' + str(line)])
                             compliant = False
                             results = results + ' File ' + filetocheck + \
-                            ' contains module entry ' + entry + \
-                            ' This should be disabled if possible.'
+                                      ' contains module entry ' + entry + \
+                                      ' This should be disabled if possible.'
             else:
                 continue
 
@@ -475,35 +531,36 @@ development but some existing applications may use insecure side effects.'''
                 conf = rhandle.readlines()
                 rhandle.close()
                 self.logdispatch.log(LogPriority.DEBUG,
-                            ['SecureApacheWebserver.report',
-                             'Checking aglobals'])
+                                     ['SecureApacheWebserver.report',
+                                      'Checking aglobals'])
                 founddict1 = self.__checkvalues(self.aglobals, conf)
                 for entry in self.aglobals:
                     if founddict1[entry] == False:
                         compliant = False
                         self.httpcompliant = False
                         self.detailedresults = self.detailedresults + \
-                        'Required directive ' + entry + \
-                        ' not found in Apache configuration. \n'
-            
-            #self.logdispatch.log(LogPriority.DEBUG, \
-            #                     'Checking web directory options')
-            #self.restrictedoptions = ["Indexes", "FollowSymLinks"]
-            #for conf in self.conffiles:
-            #    webdircompliant, webdirresults = self.__reportwebdirectories(conf)
-            #    if not webdircompliant:
-            #        self.webdircompliant = False
-            #        compliant = False
-            #        self.detailedresults += webdirresults
-            
+                                               'Required directive ' + entry + \
+                                               ' not found in Apache configuration. \n'
+
+            self.logdispatch.log(LogPriority.DEBUG, \
+                                 'Checking web directory options')
+            self.requiredoptions = self.reqopts.getcurrvalue()
+            self.restrictedoptions = self.resopts.getcurrvalue()
+            for conf in self.conffiles:
+                webdircompliant, webdirresults = self.__reportwebdiroptions(conf)
+                if not webdircompliant:
+                    self.webdircompliant = False
+                    compliant = False
+                    self.detailedresults += "\n" + webdirresults
+
             self.logdispatch.log(LogPriority.DEBUG, \
                                  'Checking file/directory permissions')
             permscompliant, permsresults = self.__reportpermissions()
             if not permscompliant:
                 self.permissionscompliant = False
                 compliant = False
-                self.detailedresults += permsresults
-            
+                self.detailedresults += "\n" + permsresults
+
             self.logdispatch.log(LogPriority.DEBUG, 'Checking modules')
             modcompliant, results = self.__checkmod()
             if not modcompliant:
@@ -522,7 +579,7 @@ development but some existing applications may use insecure side effects.'''
                         compliant = False
                         self.sslcompliant = False
                         self.detailedresults = self.detailedresults + \
-                        filename + ' should contain ' + entry + ' \n'
+                                               filename + ' should contain ' + entry + ' \n'
             if os.path.exists(self.phpfile):
                 self.logdispatch.log(LogPriority.DEBUG, 'Checking phpfile')
                 rhandle4 = open(self.phpfile, 'r')
@@ -534,7 +591,7 @@ development but some existing applications may use insecure side effects.'''
                         compliant = False
                         self.phpcompliant = False
                         self.detailedresults = self.detailedresults + \
-                        self.phpfile + ' should contain ' + entry + ' \n'
+                                               self.phpfile + ' should contain ' + entry + ' \n'
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -542,7 +599,7 @@ development but some existing applications may use insecure side effects.'''
         except Exception, err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                                   " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
@@ -557,20 +614,20 @@ development but some existing applications may use insecure side effects.'''
         @param eventid2: string - event id code for the permissions change
         '''
         self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.__fixapacheglobals',
-                         'Entering function'])
+                             ['SecureApacheWebserver.__fixapacheglobals',
+                              'Entering function'])
         if self.httpcompliant:
             return
         if os.path.exists(conffile):
             self.logdispatch.log(LogPriority.DEBUG,
-                            ['SecureApacheWebserver.__fixapacheglobals',
-                             'Located config file ' + conffile])
+                                 ['SecureApacheWebserver.__fixapacheglobals',
+                                  'Located config file ' + conffile])
             localconf = readFile(conffile, self.logdispatch)
             founddict = {}.fromkeys(self.aglobals, False)
             for directive in self.aglobals:
                 self.logdispatch.log(LogPriority.DEBUG,
-                                ['SecureApacheWebserver.__fixapacheglobals',
-                                 'Processing directive: ' + directive])
+                                     ['SecureApacheWebserver.__fixapacheglobals',
+                                      'Processing directive: ' + directive])
                 newconf = []
                 fragment = directive.split()
                 option = fragment[0]
@@ -582,21 +639,21 @@ development but some existing applications may use insecure side effects.'''
                         line = directive + '\n'
                         founddict[directive] = True
                         self.logdispatch.log(LogPriority.DEBUG,
-                                        ['SecureApacheWebserver.__fixapacheglobals',
-                                         'Corrected option: ' + option])
+                                             ['SecureApacheWebserver.__fixapacheglobals',
+                                              'Corrected option: ' + option])
                     elif re.search(directive, line):
                         founddict[directive] = True
                         self.logdispatch.log(LogPriority.DEBUG,
-                                        ['SecureApacheWebserver.__fixapacheglobals',
-                                         'Found directive: ' + directive])
+                                             ['SecureApacheWebserver.__fixapacheglobals',
+                                              'Found directive: ' + directive])
                     newconf.append(line)
                 localconf = newconf
             for directive in self.aglobals:
                 if founddict[directive] == False:
                     localconf.insert(30, directive + '\n')
                     self.logdispatch.log(LogPriority.DEBUG,
-                                    ['SecureApacheWebserver.__fixapacheglobals',
-                                     'Added directive: ' + directive])
+                                         ['SecureApacheWebserver.__fixapacheglobals',
+                                          'Added directive: ' + directive])
             tempfile = conffile + '.stonixtmp'
             whandle = open(tempfile, 'w')
             for line in localconf:
@@ -620,20 +677,20 @@ development but some existing applications may use insecure side effects.'''
             if self.environ.getosfamily == 'solaris':
                 if owner != 0 or group != 2 or mode != 416:
                     self.logdispatch.log(LogPriority.DEBUG,
-                                    ['SecureApacheWebserver.__fixapacheglobals',
-                                     'Applying Solaris permissions'])
+                                         ['SecureApacheWebserver.__fixapacheglobals',
+                                          'Applying Solaris permissions'])
                     myend2 = [0, 2, 416]
                     mytype2 = 'perm'
                     mystart2 = [owner, group, mode]
                     myid2 = eventid2
                     event2 = {'eventtype': mytype2,
-                             'startstate': mystart2,
-                             'endstate': myend2}
+                              'startstate': mystart2,
+                              'endstate': myend2}
                     self.statechglogger.recordchgevent(myid2, event2)
                     os.chown(conffile, myend2[0], myend2[1])
                     os.chmod(conffile, myend2[2])
             elif owner != 0 or group != 0 or mode != 416:
-                myend2 = [0, 0, 416] # TODO: change 416 value to be whatever the current file perm is
+                myend2 = [0, 0, 416]  # TODO: change 416 value to be whatever the current file perm is
                 mytype2 = 'perm'
                 mystart2 = [owner, group, mode]
                 myid2 = eventid2
@@ -646,94 +703,67 @@ development but some existing applications may use insecure side effects.'''
                 os.chmod(conffile, myend2[2])
             resetsecon(conffile)
 
-    def __fixwebdirectories(self, conf):        
+    def __fixwebdiroptions(self, conf):
+        '''SecureApacheWebserver.__fixwebdiroptions() is a private method
+        that adds/removes web directory options to each definition in a conf file
+        depending on if the option is restricted or required.
+        @param conf: full path of the configuration file to fix
+        @author: Brandon R. Gonzales
+        '''
         results = ''
         success = True
-        
         fullentries = []
-        linedentries = []
-        
-        validoptionsfound = []
-        
-        # We are looking to get a list of whole-string web directory entries.
-        # Since the entries span across multiple lines, we need to split the 
-        # entries line-by-line. The end result will be a list of lists.
+        optionsfound = []
+
+        # Get a list of whole-string web directory entries.
         f = open(conf, 'r')
         contents = f.read()
         f.close()
-        modifiedcontents = contents
-        fullentries = re.findall("<Directory.*>[\s\S]*?<\/Directory.*>", contents)
-        for i in range(0, len(fullentries)):
-            linedentries.append(re.split("\n", str(fullentries[i])))
-        
-        modifiedentry = []
+        fixedcontents = contents
+        fullentries = re.findall("^\s*<Directory.*>[\s\S]*?<\/Directory.*>",
+                                 contents,
+                                 flags=re.MULTILINE)
+
         for entry in fullentries:
-            linedentry = re.split("\n", str(entry))
+            optionsfound = []
             optionsline = -1
-            validoptionsfound = []
-            modifiedentry = linedentry
+
+            # Full entries have multiple lines.
+            # Split the full entry by line, resulting in a list.
+            linedentry = re.split("\n", str(entry))
+            fixedentry = linedentry
             for index, line in enumerate(linedentry):
-                # Search for Options in 'line' but don't
-                # include matches that are commented out
+                # Search for 'Options' in each line;
+                # Don't include matches that are commented out
                 if re.search("^((?!#).)*Options.*$", line):
                     if optionsline == -1:
                         optionsline = index
                     options = line.split()
                     options = options[1:]
                     for option in options:
-                        if not option in self.restrictedoptions:
-                            validoptionsfound.append(option)
-                    modifiedentry.remove(line)
-            validoptionsfound = list(set(validoptionsfound))
-            fixedoptions = "Options"
-            for option in validoptionsfound:
-                fixedoptions += " " + option
-            modifiedentry.insert(optionsline, fixedoptions)
-            modifiedcontents = modifiedcontents.replace(entry, "\n".join(modifiedentry))   
-        
-#        for entry in linedentries:
-#            optionsline = -1
-#            validoptionsfound = []
-#            modifiedentry = entry
-#            for index, line in enumerate(entry):
-#                # Search for Options in 'line' but don't
-#                # include matches that are commented out
-#                if re.search("^((?!#).)*Options.*$", line):
-#                    if optionsline == -1:
-#                        optionsline = index
-#                    options = line.split()
-#                    options = options[1:]
-#                    for option in options:
-#                        if not option in self.restrictedoptions:
-#                            validoptionsfound.append(option)
-#                    modifiedentry.remove(line)
-#            validoptionsfound = list(set(validoptionsfound))
-#            fixedoptions = "Options"
-#            for option in validoptionsfound:
-#                fixedoptions += " " + option
-#            modifiedentry.insert(optionsline, fixedoptions)
-#            modifiedcontents = modifiedcontents.replace("".join(entry), "".join(modifiedentry))        
-        
-        tmppath = conf + ".tmp"
-        if writeFile(tmppath, modifiedcontents, self.logdispatch):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": conf}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(conf,
-                                                         modifiedcontents,
-                                                         myid)
-                    os.rename(tmppath, conf)
-                    os.chmod(conf, 640)
-                    os.chown(conf, 0, 0)
-                    resetsecon(conf)
+                        optionsfound.append(option)
+                    fixedentry.remove(line)
+            optionsfound = list(set(optionsfound))
+            for reqopt in self.requiredoptions:
+                if not reqopt in optionsfound:
+                    optionsfound.append(reqopt)
+            for resopt in self.restrictedoptions:
+                if resopt in optionsfound:
+                    optionsfound.remove(resopt)
+            if len(optionsfound) > 0:
+                fixedoptions = "    Options"
+                for option in optionsfound:
+                    fixedoptions += " " + option
+                fixedentry.insert(optionsline, fixedoptions)
+            fixedcontents = fixedcontents.replace(entry, str("\n".join(fixedentry)))
+        tmpconf = conf + ".tmp"
+        if writeFile(tmpconf, fixedcontents, self.logdispatch):
+            os.rename(tmpconf, conf)
+            os.chmod(conf, 416)
+            os.chown(conf, 0, 0)
+            resetsecon(conf)
         else:
             success = False
-        
-        self.logdispatch.log(LogPriority.DEBUG, "IS THIS REALLY HAPPENING?")
-        
-        return success, results
 
     def __fixpermissions(self):
         '''SecureApacheWebserver.__fixpermissions() private method to set
@@ -742,7 +772,7 @@ development but some existing applications may use insecure side effects.'''
         '''
         results = ''
         success = True
-        
+
         for path in self.perms:
             if os.path.exists(path):
                 if self.perms[path] != getOctalPerms(path):
@@ -750,8 +780,8 @@ development but some existing applications may use insecure side effects.'''
                     os.chmod(path, int(str(self.perms[path]), 8))
                     if self.perms[path] != getOctalPerms(path):
                         results += "Unable to fix permissions for \'" + path + \
-                        "\': Permissions are " + str(getOctalPerms(path)) + \
-                        ". Expected " + str(self.perms[path]) + ".\n"
+                                   "\': Permissions are " + str(getOctalPerms(path)) + \
+                                   ". Expected " + str(self.perms[path]) + ".\n"
                         success = False
 
     def __fixapachemodules(self, conffile, eventid1, eventid2):
@@ -767,8 +797,8 @@ development but some existing applications may use insecure side effects.'''
         file. (May not be needed).
         '''
         self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.__fixapachemodules',
-                         'Entering function'])
+                             ['SecureApacheWebserver.__fixapachemodules',
+                              'Entering function'])
         if self.modulescompliant:
             return
         movefile = False
@@ -800,8 +830,8 @@ development but some existing applications may use insecure side effects.'''
             if disablefile:
                 confpath = re.sub('\.load', '.conf', conffile)
                 self.logdispatch.log(LogPriority.DEBUG,
-                                 ['SecureApacheWebserver.__fixapachemodules',
-                                  'Disabling: ' + conffile + ' ' + confpath])
+                                     ['SecureApacheWebserver.__fixapachemodules',
+                                      'Disabling: ' + conffile + ' ' + confpath])
                 disabledir = '/etc/apache2/mods-available'
                 if not os.path.isdir(disabledir):
                     os.makedirs(disabledir, owneronly)
@@ -850,16 +880,16 @@ development but some existing applications may use insecure side effects.'''
             modconf = ''
             for module in self.modules:
                 self.logdispatch.log(LogPriority.DEBUG,
-                                ['SecureApacheWebserver.__fixapachemodules',
-                                 'Processing module ' + module])
+                                     ['SecureApacheWebserver.__fixapachemodules',
+                                      'Processing module ' + module])
                 line = 'LoadModule ' + module
                 # this matches the newline and any space + the line
                 pattern = '\n[\s]*' + line + '|^[\s]*' + line
                 newline = '\n# ' + line
                 modconf, numsubs = re.subn(pattern, newline, localconf)
                 self.logdispatch.log(LogPriority.DEBUG,
-                                ['SecureApacheWebserver.__fixapachemodules',
-                                 'RE made ' + str(numsubs) + ' changes.'])
+                                     ['SecureApacheWebserver.__fixapachemodules',
+                                      'RE made ' + str(numsubs) + ' changes.'])
                 localconf = modconf
             whandle = open(conffile, 'w')
             whandle.write(localconf)
@@ -879,19 +909,19 @@ development but some existing applications may use insecure side effects.'''
                         whandle.close()
                         os.remove(tempfile)
                         self.logdispatch.log(LogPriority.INFO,
-                                        ['SecureApacheWebserver.__fixapachemodules',
-                                         'Conf failed test! Module changes undone.'])
+                                             ['SecureApacheWebserver.__fixapachemodules',
+                                              'Conf failed test! Module changes undone.'])
             if changecomplete:
                 # We actually wrote our changes into the main config file so we
                 # need to flip flop the temp and primary config files
                 statdata = os.stat(conffile)
                 self.logdispatch.log(LogPriority.DEBUG,
-                                    ['SecureApacheWebserver.__fixapachemodules',
-                                     'Moving : ' + str(conffile) + ' to ' + str(tempfile2)])
+                                     ['SecureApacheWebserver.__fixapachemodules',
+                                      'Moving : ' + str(conffile) + ' to ' + str(tempfile2)])
                 shutil.move(conffile, tempfile2)
                 self.logdispatch.log(LogPriority.DEBUG,
-                                    ['SecureApacheWebserver.__fixapachemodules',
-                                     'Moving : ' + str(tempfile) + ' to ' + str(conffile)])
+                                     ['SecureApacheWebserver.__fixapachemodules',
+                                      'Moving : ' + str(tempfile) + ' to ' + str(conffile)])
                 shutil.move(tempfile, conffile)
                 mytype = 'conf'
                 mystart = 'notconfigured'
@@ -907,8 +937,8 @@ development but some existing applications may use insecure side effects.'''
                 self.statechglogger.recordchgevent(myid, event)
                 self.statechglogger.recordfilechange(conffile, tempfile2, myid)
                 self.logdispatch.log(LogPriority.DEBUG,
-                                    ['SecureApacheWebserver.__fixapachemodules',
-                                     'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
+                                     ['SecureApacheWebserver.__fixapachemodules',
+                                      'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
                 os.rename(tempfile2, conffile)
                 if owner != 0 or group != 0 or mode != 416:
                     mytype2 = 'perm'
@@ -960,8 +990,8 @@ development but some existing applications may use insecure side effects.'''
                     elif re.search(option, line) and not re.search(directive,
                                                                    line):
                         self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__fixsslconfig',
-                                      'Substituting line ' + line])
+                                             ['SecureApacheWebserver.__fixsslconfig',
+                                              'Substituting line ' + line])
                         line = directive + '\n'
                         founddict[directive] = True
                     elif re.search(directive, line):
@@ -974,8 +1004,8 @@ development but some existing applications may use insecure side effects.'''
             for directive in self.sslitems:
                 if founddict[directive] == False:
                     self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__fixsslconfig',
-                                      'Missing directive: ' + directive])
+                                         ['SecureApacheWebserver.__fixsslconfig',
+                                          'Missing directive: ' + directive])
                     localconf.insert(20, directive + '\n')
             whandle = open(ssltemp, 'w')
             for line in localconf:
@@ -1007,7 +1037,7 @@ development but some existing applications may use insecure side effects.'''
                           'myfile': sslfile}
                 self.statechglogger.recordchgevent(myid2, event2)
             os.chown(sslfile, 0, 0)
-            os.chmod(sslfile, 420)
+            os.chmod(sslfile, 416)
             resetsecon(sslfile)
 
     def __fixphpconfig(self):
@@ -1083,7 +1113,7 @@ development but some existing applications may use insecure side effects.'''
                       'endstate': myend2}
             self.statechglogger.recordchgevent(myid2, event2)
         os.chown(self.phpfile, 0, 0)
-        os.chmod(self.phpfile, 420)
+        os.chmod(self.phpfile, 416)
         resetsecon(self.phpfile)
 
     def fix(self):
@@ -1099,7 +1129,7 @@ development but some existing applications may use insecure side effects.'''
         except Exception:
             self.detailedresults = 'SecureApacheWebserver.fix: '
             self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
+                                   traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         myidbase = 100
@@ -1119,7 +1149,7 @@ development but some existing applications may use insecure side effects.'''
             except Exception:
                 self.detailedresults = 'SecureApacheWebserver.fix: '
                 self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
+                                       traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
             for apacheconf in self.conffiles:
@@ -1135,16 +1165,16 @@ development but some existing applications may use insecure side effects.'''
                 except Exception:
                     self.detailedresults = 'SecureApacheWebserver.fix: '
                     self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
+                                           traceback.format_exc()
                     self.rulesuccess = False
                     self.logdispatch.log(LogPriority.ERROR,
                                          self.detailedresults)
 
-        #if self.secureapache.getcurrvalue() and not self.webdircompliant:
-        #    self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory options')
-        #    for conf in self.conffiles:
-        #        self.__fixwebdirectories(conf)
-            
+        if self.secureapache.getcurrvalue() and not self.webdircompliant:
+            self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory options')
+            for conf in self.conffiles:
+                self.__fixwebdiroptions(conf)
+
         if self.secureapache.getcurrvalue() and not self.permissionscompliant:
             self.logdispatch.log(LogPriority.DEBUG, 'Fixing file/directory permissions')
             self.__fixpermissions()
@@ -1167,7 +1197,7 @@ development but some existing applications may use insecure side effects.'''
             except Exception:
                 self.detailedresults = 'SecureApacheWebserver.fix: '
                 self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
+                                       traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
             modulesd = '/etc/httpd/conf.modules.d'
@@ -1179,14 +1209,14 @@ development but some existing applications may use insecure side effects.'''
                     modulesdirpath = modulesd
                 elif os.path.exists(enabled):
                     modulesdirpath = enabled
-# TODO need control statement here to switch for moving files on ubuntu
+                # TODO need control statement here to switch for moving files on ubuntu
                 for filename in os.listdir(modulesdirpath):
                     filepath = os.path.join(modulesdirpath, filename)
                     filesToCheck.append(filepath)
             for filename in self.conffiles:
                 if os.path.exists(filename):
                     filesToCheck.append(filename)
-# TODO need control statement here to switch for moving files on ubuntu
+            # TODO need control statement here to switch for moving files on ubuntu
             for apacheconf in filesToCheck:
                 # Although paths were checked before, it is possible for a file
                 # to be removed in its partner's self.__fixapachemodules call
@@ -1204,7 +1234,7 @@ development but some existing applications may use insecure side effects.'''
                 except Exception:
                     self.detailedresults = 'SecureApacheWebserver.fix: '
                     self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
+                                           traceback.format_exc()
                     self.rulesuccess = False
                     self.logdispatch.log(LogPriority.ERROR,
                                          self.detailedresults)
@@ -1226,7 +1256,7 @@ development but some existing applications may use insecure side effects.'''
             except Exception:
                 self.detailedresults = 'SecureApacheWebserver.fix: '
                 self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
+                                       traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
             for sslfile in self.sslfiles:
@@ -1242,7 +1272,7 @@ development but some existing applications may use insecure side effects.'''
                 except Exception:
                     self.detailedresults = 'SecureApacheWebserver.fix: '
                     self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
+                                           traceback.format_exc()
                     self.rulesuccess = False
                     self.logdispatch.log(LogPriority.ERROR,
                                          self.detailedresults)
@@ -1255,7 +1285,7 @@ development but some existing applications may use insecure side effects.'''
             except Exception:
                 self.detailedresults = 'SecureApacheWebserver.fix: '
                 self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
+                                       traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
@@ -1273,7 +1303,7 @@ development but some existing applications may use insecure side effects.'''
                                                       '0136001')
         except(IndexError, KeyError):
             self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.undo', "EventID 0136001 not found"])
+                                 ['SecureApacheWebserver.undo', "EventID 0136001 not found"])
         try:
             eventphpm = self.statechglogger.getchgevent('0136002')
             if eventphpm['startstate'] != eventphpm['endstate']:
@@ -1286,7 +1316,7 @@ development but some existing applications may use insecure side effects.'''
                     resetsecon(self.phpfile)
         except(IndexError, KeyError):
             self.logdispatch.log(LogPriority.DEBUG,
-                        ['SecureApacheWebserver.undo', "EventID 0136002 not found"])
+                                 ['SecureApacheWebserver.undo', "EventID 0136002 not found"])
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -1294,7 +1324,7 @@ development but some existing applications may use insecure side effects.'''
             self.detailedresults = traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
-                        ['SecureApacheWebserver.undo', self.detailedresults])
+                                 ['SecureApacheWebserver.undo', self.detailedresults])
         myidbase = 100
         counter = 1
         miss = 0
@@ -1308,7 +1338,7 @@ development but some existing applications may use insecure side effects.'''
                     if event['startstate'] != event['endstate']:
                         conffile = event['myfile']
                         self.statechglogger.revertfilechanges(conffile,
-                                                      eventid)
+                                                              eventid)
                 if event['eventtype'] == 'move':
                     if event['startstate'] != event['endstate']:
                         shutil.move(event['endstate'], event['startstate'])
@@ -1331,8 +1361,8 @@ development but some existing applications may use insecure side effects.'''
 
             except(IndexError, KeyError):
                 self.logdispatch.log(LogPriority.DEBUG,
-                                ['SecureApacheWebserver.undo',
-                                 "EventID " + eventid + " not found"])
+                                     ['SecureApacheWebserver.undo',
+                                      "EventID " + eventid + " not found"])
                 miss = miss + 1
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
@@ -1341,7 +1371,7 @@ development but some existing applications may use insecure side effects.'''
                 self.detailedresults = traceback.format_exc()
                 self.rulesuccess = False
                 self.logdispatch.log(LogPriority.ERROR,
-                                ['SecureApacheWebserver.undo', self.detailedresults])
+                                     ['SecureApacheWebserver.undo', self.detailedresults])
         self.detailedresults = 'The Secure Apache Webserver rule has been undone.'
         self.currstate = 'notconfigured'
 
