@@ -277,8 +277,8 @@ class ConfigureScreenLocking(RuleKVEditor):
                                             "lock-delay": "0",
                                             "picture-opacity": "100",
                                             "picture-uri": "\'\'"},
-                              "org.gnome.desktop.session": {
-                                            "idle-delay": "300"}}
+                              "org/gnome/desktop/session": {
+                                            "idle-delay": "uint32 900"}}
             self.kveditordconf = KVEditorStonix( self.statechglogger,
                                                  self.logger,
                                                  "tagconf",
@@ -304,7 +304,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                        " get org.gnome.desktop.screensaver picture-opacity":
                        "100",
                        " get org.gnome.desktop.screensaver picture-uri": "''",
-                       " get org.gnome.desktop.session idle-delay": "300"}
+                       " get org.gnome.desktop.session idle-delay": "900"}
             for cmd in getcmds:
                 cmd2 = gsettings + cmd
                 self.cmdhelper.executeCommand(cmd2)
@@ -318,7 +318,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                                 num = splitOut[1]
                             else:
                                 num = splitOut[0]
-                            if int(num) > 300:
+                            if int(num) > 900:
                                 compliant = False
                                 self.detailedresults += "Idle delay value " + \
                                     "is not 300 seconds or lower (value: " +\
@@ -772,12 +772,12 @@ for this portion of the rule\n"
                         self.cmdhelper.executeCommand(cmd)            
             # Create dconf settings lock file
             if not os.path.exists(self.dconfsettingslock):
-                    if not createFile(self.dconfsettingslock, self.logger):
-                        self.rulesuccess = False
-                        self.detailedresults += "Unabled to create stonix-settings file\n"
-                        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-                        return False
+                if not createFile(self.dconfsettingslock, self.logger):
+                    self.rulesuccess = False
+                    self.detailedresults += "Unabled to create stonix-settings file\n"
+                    self.formatDetailedResults("fix", self.rulesuccess,
+                               self.detailedresults)
+                    return False
             # Write to the lock file
             if self.dconflockdata:
                 contents = ""
