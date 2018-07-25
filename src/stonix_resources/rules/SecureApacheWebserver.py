@@ -154,7 +154,10 @@ class SecureApacheWebserver(Rule):
                         'ext_filter_module modules/mod_ext_filter.so',
                         'expires_module modules/mod_expires.so',
                         'headers_module modules/mod_headers.so',
-                        'vhost_alias_module modules/mod_vhost_alias.so']
+                        'vhost_alias_module modules/mod_vhost_alias.so',
+                        'deflate_module modules/mod_deflate.so',
+                        'usertrack_module modules/mod_usertrack.so',
+                        'mime_magic_module modules/mod_mime_magic.so']
         self.phpitems = ['display_errors = Off',
                          'expose_php = Off',
                          'log_errors = On',
@@ -547,11 +550,12 @@ development but some existing applications may use insecure side effects.'''
             self.requiredoptions = self.reqopts.getcurrvalue()
             self.restrictedoptions = self.resopts.getcurrvalue()
             for conf in self.conffiles:
-                webdircompliant, webdirresults = self.__reportwebdiroptions(conf)
-                if not webdircompliant:
-                    self.webdircompliant = False
-                    compliant = False
-                    self.detailedresults += "\n" + webdirresults
+                if os.path.exists(conf):
+                    webdircompliant, webdirresults = self.__reportwebdiroptions(conf)
+                    if not webdircompliant:
+                        self.webdircompliant = False
+                        compliant = False
+                        self.detailedresults += "\n" + webdirresults
 
             self.logdispatch.log(LogPriority.DEBUG, \
                                  'Checking file/directory permissions')
@@ -1173,7 +1177,8 @@ development but some existing applications may use insecure side effects.'''
         if self.secureapache.getcurrvalue() and not self.webdircompliant:
             self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory options')
             for conf in self.conffiles:
-                self.__fixwebdiroptions(conf)
+                if os.path.exists(conf):
+                    self.__fixwebdiroptions(conf)
 
         if self.secureapache.getcurrvalue() and not self.permissionscompliant:
             self.logdispatch.log(LogPriority.DEBUG, 'Fixing file/directory permissions')
