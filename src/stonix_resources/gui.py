@@ -206,6 +206,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.rule_list_widget.sortItems()
         self.red = QColor(255, 102, 112)
         self.green = QColor(153, 255, 153)
+        self.yellow = QColor(255, 255, 0)
 
         # Setup a frame inside the scroll area
         self.ci_container = QFrame()
@@ -465,27 +466,36 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             "ruleid", "compliant", "completed", and "total"
         @author: D. Kennel
         """
+
         try:
-            self.logger.log(LogPriority.DEBUG,
-                            ['GUI', "Tupdate called. Args: " + str(status)])
+
+            self.logger.log(LogPriority.DEBUG, ['GUI', "Tupdate called. Args: " + str(status)])
             rule = status["rulename"]
+
             # ruleid = int(stats[1])
             count = int(status["completed"])
             total = int(status["total"])
+            ruleenabled = status['ruleenabled']
+
             if status["compliant"] == 'True':
                 compliant = True
             else:
                 compliant = False
+
             if compliant:
                 qcolor_rgb = self.green
-                self.set_listview_item_bgcolor(rule, qcolor_rgb)
                 iconame = 'grn'
-                self.set_listview_item_icon(rule, iconame)
             else:
                 qcolor_rgb = self.red
-                self.set_listview_item_bgcolor(rule, qcolor_rgb)
                 iconame = 'red'
-                self.set_listview_item_icon(rule, iconame)
+
+            if ruleenabled == 'False':
+                qcolor_rgb = self.yellow
+                iconame = 'warn'
+
+            self.set_listview_item_bgcolor(rule, qcolor_rgb)
+            self.set_listview_item_icon(rule, iconame)
+
             self.rulelistselchange()
             self.statusBar().showMessage('Completed: ' + str(rule))
             self.update_progress(count, total)
@@ -1023,11 +1033,20 @@ class runThread(QThread):
         methods as directed by the action.
 
         @author: dkennel
+        @author: Breen Malmberg - 07/26/2018 - updated tstatus dict when the
+                primary ci for a rule is a boolean and is disabled; updated
+                the detailedresults for the calling rule with a call to a new
+                method in rule.py set_rule_detailedresults (since rule's detailed
+                results are not observable from the gui class), when the run
+                mode is 'fix' and fix did not run because the ci was disabled
         """
+
         if self.stopflag:
             return
+
         total = len(self.ruleidlist)
         completed = 0
+
         for ruleid in self.ruleidlist:
             name = self.controller.getrulenamebynum(ruleid)
             sstatus = {"rulename": name,
@@ -1045,7 +1064,7 @@ class runThread(QThread):
                            "compliant": str(compliant),
                            "completed": str(100),
                            "total": str(100)}
-                self.emit(SIGNAL('tupdate(PyQt_PyObject)'), status)
+                self.emit(SIGNAL('tupdate(PyQt_PyObject)'), tstatus)
                 self.logger.log(LogPriority.DEBUG,
                                 ['GUI.runThread.run',
                                  'Sent tupdate signal for stop flag: ' + str(tstatus)])
@@ -1058,11 +1077,37 @@ class runThread(QThread):
                 self.controller.undorule(ruleid)
             compliant = self.controller.getrulecompstatus(ruleid)
             completed = completed + 1
+
             tstatus = {"rulename": name,
                        "ruleid": str(ruleid),
                        "compliant": str(compliant),
                        "completed": str(completed),
-                       "total": str(total)}
+                       "total": str(total),
+                       "ruleenabled": "False"}
+
+            rulecinames = []
+            ruleconfigoptions = self.controller.getruleconfigoptions(ruleid)
+            for opt in ruleconfigoptions:
+                rulecinames.append(opt.getkey())
+
+            primaryci = ruleconfigoptions[0]
+            cidtype = primaryci.getdatatype()
+            ciname = primaryci.getkey()
+
+            civalue = primaryci.getcurrvalue()
+            if cidtype == 'bool':
+                if civalue:
+                    tstatus['ruleenabled'] = 'True'
+
+            if self.action == 'fix':
+                if tstatus['ruleenabled'] == 'False':
+                    self.controller.set_rule_detailedresults(ruleid, "fix", False, "Fix was not run and nothing was changed, because the configuration item '" + str(ciname) + "' was not enabled.")
+            else:
+                # fix didn't actually run, but since it wasn't a 'fix' action
+                # in the first place, we don't want to imply an anomaly with fix
+                # which doesn't exist under that condition
+                tstatus['ruleenabled'] = 'True'
+
             self.emit(SIGNAL('tupdate(PyQt_PyObject)'), tstatus)
             self.logger.log(LogPriority.DEBUG,
                             ['GUI.runThread.run',
