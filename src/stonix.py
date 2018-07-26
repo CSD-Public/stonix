@@ -1090,6 +1090,23 @@ class Controller(Observable):
             print "Controller:getcompletionpercentage: Percent: " + str(percent)
         return percent
 
+    def set_rule_detailedresults(self, ruleid, mode, result, msg):
+        '''
+        update the specified rule's (ruleid) detailedresults with the msg from
+        the caller; (used to bridge the observable gap between other classes and
+        the running rule)
+
+        @param ruleid: int; the rule number identifier
+        @param mode: string; fix|report|undo
+        @param result: bool; (see rule.py formatDetailedResults())
+        @param msg: string; message to update detailedresults with
+        @author: Breen Malmberg
+        '''
+
+        for rule in self.installedrules:
+            if ruleid == rule.getrulenum():
+                rule.formatDetailedResults(mode, result, msg)
+
     def getruleauditonly(self, ruleid):
         '''
         This method returns the audit only status boolean
