@@ -28,11 +28,14 @@ Verify package integrity, correct permissions
 @change: 2015/08/24 eball - Improve output, remove .pyc files from output
 @change: 2016/04/20 eball - Per RHEL 7 STIG, added a fix to automate correction
     of file permissions
+@change: 2018/07/30 Breen Malmberg - re-wrote the report and fix methods entirely
 '''
 
 from __future__ import absolute_import
+
 import re
 import traceback
+
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
@@ -59,7 +62,6 @@ class InstalledSoftwareVerification(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Red Hat Enterprise Linux': ['6.0', '+'],
                                   'CentOS Linux': ['7.0', '+']}}
-                                  #'Fedora': ['21', '+']}}
 
         datatype = 'bool'
         key = 'FIXPERMISSIONS'
@@ -68,163 +70,145 @@ of the package for any file which has a permission deviation from the vendor \
 default.'
         default = True
         self.fixPermsCi = self.initCi(datatype, key, instructions, default)
-
-        self.ch = CommandHelper(self.logger)
-        self.reportRun = False
-        self.ownerErr = []
-        self.groupErr = []
-        self.permErr = []
-        self.hashErr = []
-        self.packagesFixed = []
         self.sethelptext()
+
+    def getInstalledPackages(self):
+        '''
+        return a list of installed packages (as reported
+        by rpm database)
+
+        @return:installedpackages
+        @rtype: list
+        @author: Breen Malmberg
+        '''
+
+        installedpackages = []
+
+        listinstalledcmd = "rpm -qa"
+
+        self.ch.executeCommand(listinstalledcmd)
+        outputlist = self.ch.getOutput()
+        retcode = self.ch.getReturnCode()
+        if retcode == 0:
+            installedpackages = outputlist
+        else:
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+
+        return installedpackages
 
     def report(self):
         '''
+        Compile a list of files not conforming to rpm package database permissions (Mode)
+        report non-compliant if any are found
+        else report compliant
+
+        @return: self.compliant
+        @rtype: bool
         @author: Eric Ball
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+        @author: Breen Malmberg
+        @change: Breen Malmberg - 07/30/2018 - complete re-write of method
         '''
+
+        self.detailedresults = ""
+        self.compliant = True
+        self.ch = CommandHelper(self.logger)
+        reportcmd = "rpm -V --nosignature --nolinkto --nofiledigest --nosize --nomtime --nordev --nocaps "
+        self.badpermfiles = []
+        self.badpermpkgs = {}
+        self.badgroupfiles = []
+        self.badownerfiles = []
+        self.badhashfiles = []
+
         try:
-            self.detailedresults = ""
-            results = ""
 
-            if self.reportRun:
-                ownerErr = self.ownerErr
-                groupErr = self.groupErr
-                # Using the list[:] syntax to force assignment of value rather
-                # than reference
-                permErr = self.permErr[:]
-                hashErr = self.hashErr
+            self.logger.log(LogPriority.DEBUG, "Searching for files with incorrect permissions...")
 
-                for fileName in permErr:
-                    cmd = ["rpm", "-qf", fileName]
-                    self.ch.executeCommand(cmd)
-                    packageName = self.ch.getOutputString()
-                    cmd = ["rpm", "-V", packageName, "--nodigest",
-                           "--nosignature", "--nolinkto", "--nofiledigest",
-                           "--nosize", "--nouser", "--nogroup", "--nomtime",
-                           "--nordev", "--nocaps"]
-                    self.ch.executeCommand(cmd)
-                    if self.ch.getReturnCode() == 0:
-                        # Remove from self.permErr so we don't mess with the
-                        # loop index
-                        self.permErr.remove(fileName)
-                permErr = self.permErr
+            installedpkgs = self.getInstalledPackages()
 
-            else:
-                cmd = ["rpm", "-Va"]
-                self.ch.executeCommand(cmd)
-                rpmout = self.ch.getOutputString()
-                rpmoutlines = rpmout.split("\n")
-                ownerErr = []
-                groupErr = []
-                permErr = []
-                hashErr = []
+            for pkg in installedpkgs:
+                self.ch.executeCommand(reportcmd + pkg)
+                outputlist = self.ch.getOutput()
+                self.badpermpkgs[pkg] = []
+                for line in outputlist:
+                    # search for bad permissions
+                    if re.search("^.*(\.+M|M\.+)", line, re.IGNORECASE):
+                        sline = line.split()
+                        self.badpermpkgs[pkg].append(sline[1])
+                        self.badpermfiles.append(sline[1])
+                    # search for bad group ownership
+                    if re.search("^.*(\.+G|G\.+)", line, re.IGNORECASE):
+                        sline = line.split()
+                        self.badgroupfiles.append(sline[1])
+                    # search for bad ownership (user)
+                    if re.search("^.*(\.+U|U\.+)", line, re.IGNORECASE):
+                        sline = line.split()
+                        self.badownerfiles.append(sline[1])
+                    # search for bad md5 hash
+                    if re.search("^.*(\.+5|5\.+)", line, re.IGNORECASE):
+                        sline = line.split()
+                        self.badhashfiles.append(sline[1])
 
-                for line in rpmoutlines:
-                    words = line.split()
-                    if len(words) >= 2:
-                        if re.search("^.....U", line):
-                            if not re.search(".pyc$", words[-1]):
-                                ownerErr.append(words[-1])
-                        if re.search("^......G", line):
-                            if not re.search(".pyc$", words[-1]):
-                                groupErr.append(words[-1])
-                        if re.search("^.M", line):
-                            if not re.search(".pyc$", words[-1]):
-                                permErr.append(words[-1])
-                        if re.search("^..5", line):
-                            if not re.search(".pyc$", words[-1]) \
-                               and words[1] != 'c':
-                                hashErr.append(words[-1])
+            if self.badpermfiles:
+                self.compliant = False
+                self.detailedresults += "\nThe following package files have incorrect permissions:\n" + "\n".join(self.badpermfiles)
+            if self.badgroupfiles:
+                self.compliant = False
+                self.detailedresults += "\n\nThe following package files have bad group ownership:\n" + "\n".join(self.badgroupfiles)
+            if self.badownerfiles:
+                self.compliant = False
+                self.detailedresults += "\n\nThe following package files have bad ownership:\n" + "\n".join(self.badownerfiles)
+            if self.badhashfiles:
+                self.compliant = False
+                self.detailedresults += "\n\nThe following package files have bad MD5 checksums:\n" + "\n".join(self.badhashfiles)
 
-            if len(ownerErr) > 0:
-                results += "Files with bad user ownership:\n"
-                for line in ownerErr:
-                    results += line + "\n"
-                results += "\n"
-            if len(groupErr) > 0:
-                results += "Files with bad group ownership:\n"
-                for line in groupErr:
-                    results += line + "\n"
-                results += "\n"
-
-            if len(permErr) > 0:
-                results += "Files with changed permissions:\n"
-                for line in permErr:
-                    results += line + "\n"
-                results += "\n"
-
-            if len(hashErr) > 0:
-                results += "Files with changed hashes (excluding those " + \
-                    "marked as config files in their RPM):\n"
-                for line in hashErr:
-                    results += line + "\n"
-                results += "\n"
-
-            if len(results) > 0:
-                instr = "For suggested corrective actions, see help text.\n"
-                results = instr + results
-            self.detailedresults = results
-
-            self.ownerErr = ownerErr
-            self.groupErr = groupErr
-            self.permErr = permErr
-            self.hashErr = hashErr
-
-            self.compliant = not bool(ownerErr + groupErr + permErr + hashErr)
-            self.rulesuccess = True
-            self.reportRun = True
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
-            self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
-            self.rulesuccess = False
+            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.compliant = False
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
-        """
+        '''
         The fix method changes permissions to the package defaults.
 
+        @return: self.rulesuccess
+        @rtype: bool
         @author: Eric Ball
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
-        """
+        @author: Breen Malmberg
+        @change: Breen Malmberg - 07/30/2018 - re-write of entire method
+        '''
+
+        self.detailedresults = ""
+        self.rulesuccess = True
+        fixcmd = "rpm --setperms "
+
         try:
-            success = True
-            self.detailedresults = ""
 
-            if self.fixPermsCi.getcurrvalue():
-                permErr = self.permErr
-                packagesFixed = []
+            if not self.fixPermsCi.getcurrvalue():
+                return self.rulesuccess
 
-                for fileName in permErr:
-                    cmd = ["rpm", "-qf", fileName]
-                    self.ch.executeCommand(cmd)
-                    packageName = self.ch.getOutputString()
-                    if packageName not in packagesFixed:
-                        packagesFixed.append(packageName)
-                        cmd = ["rpm", "--setperms", packageName]
-                        self.ch.executeCommand(cmd)
-                        # Rule succeeds only if all return codes are 0
-                        success &= not bool(self.ch.getReturnCode())
+            for pkg in self.badpermpkgs:
+                if self.badpermpkgs[pkg]:
+                    self.ch.executeCommand(fixcmd + pkg)
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        self.rulesuccess = False
 
-            self.rulesuccess = success
+            self.detailedresults += "\n\nPlease note that we will not attempt to fix ownership, group ownership, or bad md5 checksums. For suggestions on what to do if files are found with these issues, please see the rule's help text."
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
+        except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            self.detailedresults = self.detailedresults + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
