@@ -1100,6 +1100,9 @@ class runThread(QThread):
                 if cidtype == 'bool':
                     if civalue:
                         tstatus['ruleenabled'] = 'True'
+                else:
+                    # This rule has no fix function
+                    tstatus['ruleenabled'] = 'True'
 
                 if self.action == 'fix':
                     if tstatus['ruleenabled'] == 'False':
@@ -1109,6 +1112,16 @@ class runThread(QThread):
                     # in the first place, we don't want to imply an anomaly with fix
                     # which doesn't exist under that condition
                     tstatus['ruleenabled'] = 'True'
+            else:
+                # This rule had no CI
+                # we don't want to imply an anomaly with fix
+                # which doesn't exist under that condition
+                tstatus['ruleenabled'] = 'True'
+
+            # This is a one-off because schedulestonix is the only rule
+            # with a CI that doesn't require any CIs to be enabled in order to run fix
+            if name.lower() == 'schedulestonix':
+                tstatus['ruleenabled'] = 'True'
 
             self.emit(SIGNAL('tupdate(PyQt_PyObject)'), tstatus)
             self.logger.log(LogPriority.DEBUG,
