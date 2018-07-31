@@ -23,16 +23,22 @@
 '''
 Created on Apr 5, 2016
 
-@author: dwalker
+@author: Derek Walker
 @change: 2016/07/06 eball Added undo events to fix
 @change: 2017/10/23 rsn removed unused service helper
+@change: 2018/07/31 Breen Malmberg - added doc strings for report and fix
+        methods; added redhat insights software to default list of software
+        to remove
 '''
+
 from __future__ import absolute_import
+
+import traceback
+
 from ..pkghelper import Pkghelper
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..rule import Rule
-import traceback
 
 
 class RemoveSoftware(Rule):
@@ -56,20 +62,19 @@ class RemoveSoftware(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
         self.iditerator = 0
-        self.ph = Pkghelper(self.logger, self.environ)
-        # Configuration item instantiation
-        datatype = "bool"
-        key = "REMOVESOFTWARE"
-        instructions = "To disable this rule set the value of " + \
-            "REMOVESOFTWARE TO False."
-        default = False
-        self.ci = self.initCi(datatype, key, instructions, default)
 
-        datatype = "list"
-        key = "PACKAGES"
-        instructions = "Enter the package(s) that you wish to remove.  By " + \
+        # Configuration item instantiation
+        datatype1 = "bool"
+        key1 = "REMOVESOFTWARE"
+        instructions1 = "To disable this rule set the value of REMOVESOFTWARE TO False."
+        default1 = False
+        self.ci = self.initCi(datatype1, key1, instructions1, default1)
+
+        datatype2 = "list"
+        key2 = "PACKAGES"
+        instructions2 = "Enter the package(s) that you wish to remove.  By " + \
             "default we already list packages that we recommend for removal."
-        default = ["squid",
+        default2 = ["squid",
                    "telnet-server",
                    "rsh-server",
                    "rsh",
@@ -104,40 +109,72 @@ class RemoveSoftware(Rule):
                    "bind9.i386",
                    "bind",
                    "dnsutils",
-                   "bind-utils"]
-        self.pkgci = self.initCi(datatype, key, instructions, default)
+                   "bind-utils",
+                   "redhat-access-insights",
+                   "insights-client"]
+
+        self.pkgci = self.initCi(datatype2, key2, instructions2, default2)
 
     def report(self):
+        '''
+        report on any unnecessary software that is currently
+        installed
+        return True if none installed
+        return False if any installed
+
+        @return: self.compliant
+        @rtype: bool
+        @author: Derek Walker
+        '''
+
         self.detailedresults = ""
+        self.compliant = True
+        self.ph = Pkghelper(self.logger, self.environ)
+
         try:
-            compliant = True
+
             if self.pkgci.getcurrvalue():
                 for pkg in self.pkgci.getcurrvalue():
                     if self.ph.check(pkg):
                         self.detailedresults += pkg + " is installed\n"
-                        compliant = False
-            self.compliant = compliant
+                        self.compliant = False
+
         except Exception:
-            self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.compliant = False
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
+        '''
+        remove all unnecessary software
+
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Derek Walker
+        '''
+
+        self.rulesuccess = True
+        self.detailedresults = ""
+        self.iditerator = 0
+
         try:
-            success = True
-            self.detailedresults = ""
+
             if not self.ci.getcurrvalue():
-                return
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                return self.rulesuccess
             elif not self.pkgci.getcurrvalue():
-                return
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                return self.rulesuccess
+
             # Clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
+
             for pkg in self.pkgci.getcurrvalue():
                 if self.ph.check(pkg):
                     try:
@@ -150,18 +187,17 @@ class RemoveSoftware(Rule):
                                      "endstate": "removed"}
                             self.statechglogger.recordchgevent(myid, event)
                         else:
-                            success = False
+                            self.rulesuccess = False
                     except Exception:
                         continue
-            self.rulesuccess = success
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
