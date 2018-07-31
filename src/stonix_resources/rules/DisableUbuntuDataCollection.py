@@ -80,7 +80,7 @@ class DisableUbuntuDataCollection(Rule):
         @author: Breen Malmberg
         '''
 
-        self.detailededresults = ""
+        self.detailedresults = ""
         self.ph = Pkghelper(self.logger, self.environ)
         self.compliant = True
 

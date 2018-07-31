@@ -66,6 +66,13 @@ class ConfigureSudo(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
+        datatype2 = 'bool'
+        key2 = 'CONFIGURESUDO'
+        instructions2 = '''To disable this rule set the value of \
+        CONFIGURESUDO to False.'''
+        default2 = True
+        self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
+
 # set up CI's
         #configuration item instantiation
         datatype = 'string'
@@ -81,15 +88,7 @@ class ConfigureSudo(Rule):
             self.group = "sudo"
         elif re.search('Debian', self.environ.getostype(), re.IGNORECASE):
             self.group = "sudo"
-
         self.ci = self.initCi(datatype, key, instructions, self.group)
-
-        datatype2 = 'bool'
-        key2 = 'CONFIGURESUDO'
-        instructions2 = '''To disable this rule set the value of \
-CONFIGURESUDO to False.'''
-        default2 = True
-        self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
 
         self.localization()
 
