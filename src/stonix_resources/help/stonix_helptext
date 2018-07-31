@@ -270,37 +270,35 @@ This helps prevent take-over and illicit use of idle sessions and frees system r
 
 <2>		  "This rule installs the 'Just Another Management Framework' (JAMF) 'JAMF Casper Recon' client. The JAMF Casper Recon client is a software inventory tool."
 
-<230>        "This rule will check the integrity of the installed software on this system. An RPM integrity check looks at things like: 
-File size
-File mode
+<230>        "This rule will check the integrity of the installed software on this system. This RPM integrity check will look at:
+
+File mode (permissions)
 MD5 checksum
-Symlinks
 Ownership
 Group Ownership
-Timestamps
-Configuration file changes
-Existance of file(s)
-This rule invokes the 'rpm -Va' command - which can take several minutes to complete.
 
-Since the results of these tests are heavily dependent on user configuration, the only changes made to the system are to correct permissions.
+Since the results of these tests are heavily dependent on user configuration, the only changes made to the system will be to correct permissions.
 
-SUGGESTED CORRECTIVE ACTIONS: 
+Depending on the number of packages installed, this rule could take up to a few minutes to complete.
+
+SUGGESTED CORRECTIVE ACTIONS:
 For files with bad user/group ownership:
- 
+
 For each file listed in the report output, run the following command as root: 
-# rpm --setugids `rpm -qf [filename]` 
+# rpm --setugids `rpm -qf [filename]`
+
 This will attempt to return the user and group ownership to the package defaults.
 
-For files with changed permissions: 
-The Fix for this rule will automatically change the permissions for the package that each file is a part of back to the vendor defaults. 
-
 For files with changed hashes: 
-If you believe that the file's hash has changed due to corruption or malicious activity, begin by running the following command as root: 
-# rpm -qf [filename] 
+If you believe that the file's hash has changed due to corruption or malicious activity, begin by running the following command as root:
+# rpm -qf [filename]
+
 This will output the [package] name. It can also be run in backticks (`rpm -qf [filename]`) in place of [package] in the following commands. 
-Next, run: 
-# rpm -Uvh [package] 
-OR 
+Next, run:
+# rpm -Uvh [package]
+
+OR
+
 # yum reinstall [package]."
 
 <10>		"This rule will install the local root certificate into the Linux certificate chain. It will also attempt to register this certificate with Firefox/Iceweasel.
