@@ -221,6 +221,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         self.rule_list_widget.sortItems()
         self.red = QtGui.QColor(255, 102, 112)
         self.green = QtGui.QColor(153, 255, 153)
+        self.yellow = QtGui.QColor(255, 255, 0)
 
         # Setup a frame inside the scroll area
         self.ci_container = QtWidgets.QFrame()
@@ -490,34 +491,43 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Tupdate called. Args: " + str(status)])
             rule = status["rulename"]
             # ruleid = int(status["ruleid"])
+            ruleenabled = ""
             count = int(status["completed"])
             total = int(status["total"])
+            try:
+                ruleenabled = status['ruleenabled']
+            except:
+                pass
+
             if status["compliant"] == 'True':
                 compliant = True
             else:
                 compliant = False
+
             if compliant:
                 qcolor_rgb = self.green
-                self.set_listview_item_bgcolor(rule, qcolor_rgb)
                 iconame = 'grn'
-                self.set_listview_item_icon(rule, iconame)
             else:
                 qcolor_rgb = self.red
-                self.set_listview_item_bgcolor(rule, qcolor_rgb)
                 iconame = 'red'
-                self.set_listview_item_icon(rule, iconame)
+
+            if ruleenabled == 'False':
+                qcolor_rgb = self.yellow
+                iconame = 'warn'
+
+            self.set_listview_item_bgcolor(rule, qcolor_rgb)
+            self.set_listview_item_icon(rule, iconame)
+
             self.rulelistselchange()
             self.statusBar().showMessage('Completed: ' + str(rule))
             self.update_progress(count, total)
             if count > 1 and count == total:
                 self.statusBar().showMessage('Run Completed')
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             trace = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR,
-                            ['GUI', "Problem in tupdate: " + trace])
+            self.logger.log(LogPriority.ERROR, ['GUI', "Problem in tupdate: " + trace])
 
     def supdate(self, status):
         """
@@ -1141,7 +1151,33 @@ class runThread(QtCore.QThread):
                        "ruleid": str(ruleid),
                        "compliant": str(compliant),
                        "completed": str(completed),
-                       "total": str(total)}
+                       "total": str(total),
+                       "ruleenabled": "False"}
+
+            ruleconfigoptions = self.controller.getruleconfigoptions(ruleid)
+
+            # check if there were any CIs at all
+            if len(ruleconfigoptions) > 0:
+                primaryci = ruleconfigoptions[0]
+                cidtype = primaryci.getdatatype()
+                ciname = primaryci.getkey()
+
+                civalue = primaryci.getcurrvalue()
+                if cidtype == 'bool':
+                    if civalue:
+                        tstatus['ruleenabled'] = 'True'
+
+                if self.action == 'fix':
+                    if tstatus['ruleenabled'] == 'False':
+                        self.controller.set_rule_detailedresults(ruleid, "fix", False,
+                                                                 "Fix was not run and nothing was changed, because the configuration item '" + str(
+                                                                     ciname) + "' was not enabled.")
+                else:
+                    # fix didn't actually run, but since it wasn't a 'fix' action
+                    # in the first place, we don't want to imply an anomaly with fix
+                    # which doesn't exist under that condition
+                    tstatus['ruleenabled'] = 'True'
+
             #####
             # Signal/slot change for PyQt5
             # self.emit(SIGNAL('tupdate(QString)'), status)
