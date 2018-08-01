@@ -44,6 +44,9 @@ class KVAProfiles():
         such as com.apple.DiscRecording and val should be the rest of the
         dictionary'''
         retval = True
+        '''In some cases val will be blank in which case we're just
+        looking for the presence of the profile or more specifically
+        the identifier (key)'''
         if not val:
             for line in output:
                 if re.search("^" + key, line.strip()):
@@ -52,98 +55,103 @@ class KVAProfiles():
             debug = "The profile sub-identifier:" + key + " was not found\n"
             self.logger.log(LogPriority.DEBUG, debug)
             return False
-        else:
-            iterator1 = 0
-            keyoutput = []
-            keyfound = False
-            for line in output:
-                if re.search("^" + key + ":$", line.strip()):
-                    keyfound = True
-                    temp = output[iterator1 + 1:]
-                    iterator2 = 0
-                    for line in temp:
-                        if re.search("^Payload Data:", line.strip()):
-                            temp = temp[iterator2 + 1:]
-                            keyoutput = temp
-                            break
-                        else:
-                            iterator2 += 1
-                    if keyoutput:
+        
+        '''Go throught output and see if we can find the profile
+        identifier (key)'''
+        iterator1 = 0
+        keyoutput = []
+        keyfound = False
+        for line in output:
+            '''We found the profile identifier'''
+            if re.search("^" + key + ":$", line.strip()):
+                keyfound = True
+                ''''Put all output after the identifier line into a 
+                new list'''
+                temp = output[iterator1 + 1:]
+                iterator2 = 0
+                for line in temp:
+                    if re.search("^Payload Data:", line.strip()):
+                        temp = temp[iterator2 + 1:]
+                        keyoutput = temp
                         break
+                    else:
+                        iterator2 += 1
+                if keyoutput:
+                    break
+            else:
+                iterator1 += 1
+        if not keyfound:
+            debug = "Key: " + key + " was never found\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            return False
+        '''keyoutput should just contain lines after Payload Data line'''
+        if keyoutput:
+
+            payloadblocktemp = []
+            '''This next loop is getting everything inside the payload
+            section stopping before the next identifier'''
+            for line in keyoutput:
+                if not re.search("^}$", line.strip()):
+                    line = re.sub("\s+", "", line)
+                    payloadblocktemp.append(line)
                 else:
-                    iterator1 += 1
-            if not keyfound:
-                debug = "Key: " + key + " was never found\n"
+                    break
+            payloadblock = []
+            i = 0
+            dontadd = False
+            '''This loop is to clean up the output and squash together
+            any consecutive lines that are blank values inside {} or ()'''
+            while i < len(payloadblocktemp):
+                if dontadd:
+                    i += 1
+                    dontadd = False
+                    continue
+                '''The next two if statements check to see if two consecutive
+                lines represent an empty dictionary or tuple.  If so we want
+                to combine these into one line without the ; at the end'''
+                if re.search("\{$", payloadblocktemp[i]):
+                    try:
+                        if re.search("\};$", payloadblocktemp[i + 1]):
+                            dontadd = True
+                            line = re.sub(";$", "", payloadblocktemp[i + 1])
+                            payloadblock.append(payloadblocktemp[i] + line)
+                        else:
+                            payloadblock.append(payloadblocktemp[i])
+                    except IndexError:
+                        debug = "File in bad format, fix will install profile\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        return False
+                elif re.search("\($", payloadblocktemp[i]):
+                    try:
+                        if re.search("\);$", payloadblocktemp[i + 1]):
+                            dontadd = True
+                            line = re.sub(";$", "", payloadblocktemp[i + 1])
+                            payloadblock.append(payloadblocktemp[i] + line)
+                        else:
+                            payloadblock.append(payloadblocktemp[i])
+                    except IndexError:
+                        debug = "File in bad format, fix will install profile\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        return False
+                else:
+                    payloadblock.append(payloadblocktemp[i])
+                i += 1
+            for k, v, in val.iteritems():
+                if isinstance(v, list):
+                    retval = self.checkSimple(k, v, payloadblock)
+                elif isinstance(v, tuple):
+                    retval = self.checkTuple(k, v, payloadblock)
+                elif isinstance(v, dict):
+                    retval = self.checkDict(k, v, payloadblock)
+                if not retval:
+                    return False
+        else:
+            if not val:
+                return True
+            else:
+                debug = "There was no Payload Data for key: " + key + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
-            '''keyoutput should just contain lines after Payload Data line'''
-            if keyoutput:
-
-                payloadblocktemp = []
-                '''This next loop is getting everything inside the payload
-                section stopping before the next identifier'''
-                for line in keyoutput:
-                    if not re.search("^}$", line.strip()):
-                        line = re.sub("\s+", "", line)
-                        payloadblocktemp.append(line)
-                    else:
-                        break
-                payloadblock = []
-                i = 0
-                dontadd = False
-                '''This loop is to clean up the output and squash together
-                any consecutive lines that are blank values inside {} or ()'''
-                while i < len(payloadblocktemp):
-                    if dontadd:
-                        i += 1
-                        dontadd = False
-                        continue
-                    '''The next two if statements check to see if two consecutive
-                    lines represent an empty dictionary or tuple.  If so we want
-                    to combine these into one line without the ; at the end'''
-                    if re.search("\{$", payloadblocktemp[i]):
-                        try:
-                            if re.search("\};$", payloadblocktemp[i + 1]):
-                                dontadd = True
-                                line = re.sub(";$", "", payloadblocktemp[i + 1])
-                                payloadblock.append(payloadblocktemp[i] + line)
-                            else:
-                                payloadblock.append(payloadblocktemp[i])
-                        except IndexError:
-                            debug = "File in bad format, fix will install profile\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            return False
-                    elif re.search("\($", payloadblocktemp[i]):
-                        try:
-                            if re.search("\);$", payloadblocktemp[i + 1]):
-                                dontadd = True
-                                line = re.sub(";$", "", payloadblocktemp[i + 1])
-                                payloadblock.append(payloadblocktemp[i] + line)
-                            else:
-                                payloadblock.append(payloadblocktemp[i])
-                        except IndexError:
-                            debug = "File in bad format, fix will install profile\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            return False
-                    else:
-                        payloadblock.append(payloadblocktemp[i])
-                    i += 1
-                for k, v, in val.iteritems():
-                    if isinstance(v, list):
-                        retval = self.checkSimple(k, v, payloadblock)
-                    elif isinstance(v, tuple):
-                        retval = self.checkTuple(k, v, payloadblock)
-                    elif isinstance(v, dict):
-                        retval = self.checkDict(k, v, payloadblock)
-                    if not retval:
-                        return False
-            else:
-                if not val:
-                    return True
-                else:
-                    debug = "There was no Payload Data for key: " + key + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    return False
         return retval    
 
     def checkSimple(self, k, v, keyoutput):
