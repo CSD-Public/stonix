@@ -24,6 +24,10 @@
 Created on Mar 9, 2016
 
 @author: dwalker
+@change: 08/03/2018 - dwalker - added more documentation and fixed
+        regex check to look for = with spaces around it inside
+        checkSimple method and removed unecessary else portion of code
+        inside validate method.
 '''
 import re
 from logdispatcher import LogPriority
@@ -39,10 +43,24 @@ class KVAProfiles():
         self.installcmd = ""
 
     def validate(self, output, key, val):
-        #in instance where the profile is installed with no payload
+        '''
+        @summary: Method checks if either profile is installed and/or contents of
+        profile is up to par with our security standards
+        @author: dwalker
+        @param output: The output from system_profiler 
+                SPConfigurationProfileDataType command 
+        @param key: The profile identifier we're looking for in the output.
+                Usually takes the form of com.apple.example
+        @param val: A dictionary which could contain other lists, dicts,
+                and/or tuples nested within.  Example:
+                {"allowsimple": ["1", "bool"],
+                 "forcePIN": ["1", "bool"],
+                 ...}
+        @return: bool - True or False
+        '''
         '''When passed through, key should be the identifier to be found
         such as com.apple.DiscRecording and val should be the rest of the
-        dictionary'''
+        dictionary.'''
         retval = True
         '''In some cases val will be blank in which case we're just
         looking for the presence of the profile or more specifically
@@ -69,6 +87,9 @@ class KVAProfiles():
                 new list'''
                 temp = output[iterator1 + 1:]
                 iterator2 = 0
+                '''Go through this new list and look for where the 
+                payload section starts.  The rest of the output gets
+                stored in the keyout list'''
                 for line in temp:
                     if re.search("^Payload Data:", line.strip()):
                         temp = temp[iterator2 + 1:]
@@ -80,18 +101,19 @@ class KVAProfiles():
                     break
             else:
                 iterator1 += 1
+        '''Check to see if we ever found the identifier (key).
+        If not, return False'''
         if not keyfound:
             debug = "Key: " + key + " was never found\n"
             self.logger.log(LogPriority.DEBUG, debug)
             return False
         '''keyoutput should just contain lines after Payload Data line'''
         if keyoutput:
-
             payloadblocktemp = []
             '''This next loop is getting everything inside the payload
             section stopping before the next identifier'''
             for line in keyoutput:
-                if not re.search("^}$", line.strip()):
+                if not re.search("*:", line):
                     line = re.sub("\s+", "", line)
                     payloadblocktemp.append(line)
                 else:
@@ -136,6 +158,8 @@ class KVAProfiles():
                 else:
                     payloadblock.append(payloadblocktemp[i])
                 i += 1
+            '''k is the key inside val variable (e.g. allowsimple)
+            and v is the value, in this example, a list (e.g. ["1", "bool"])'''
             for k, v, in val.iteritems():
                 if isinstance(v, list):
                     retval = self.checkSimple(k, v, payloadblock)
@@ -154,18 +178,42 @@ class KVAProfiles():
                 return False
         return retval    
 
-    def checkSimple(self, k, v, keyoutput):
+    def checkSimple(self, k, v, payloadblock):
+        '''
+        @summary: Method that checks payloadblock contents
+                for k (key) and associated v (value)
+        @author: dwalker
+        @param k: Not to be confused with the key in the calling
+                method which was our identifier before the payload.
+                This key is now the key in the inner dictionary
+                passed through as val from the calling method
+        @param v: Not to be confused with the value in the calling
+                method which was our inner dictionary passed through
+                as val. This val is now the list, tuple or dict 
+                associated with our k value.
+        @param payloadblock: A list of lines from our payload
+                portion of the output from the system_profiler
+                command
+        @return: bool - True or False
+        '''
         founditem = False
         retval = True
         unsecure = False
         debug = ""
-        for line in keyoutput:
-            if re.search("^" + k + "=", line.strip()):
+        for line in payloadblock:
+            if re.search("^" + k + " = ", line.strip()):
                 founditem = True
                 temp = line.strip().split("=")
                 try:
                     if temp[1]:
+                        '''Remove any arbitrary whitespace'''
+                        temp[1] = re.sub("\s", "", temp[1])
+                        '''Remove semicolon at end if exists'''
                         temp[1] = re.sub(";$", "", temp[1])
+                        '''If the second value inside the list v is the word
+                        bool, then we want to make sure that our value found
+                        after the = in our output matches what we're expecting
+                        in v[0] which is either going to be a 1 or 0'''
                         if v[1] == "bool":
                             if str(temp[1].strip()) != v[0]:
                                 debug += "Key: " + k + " doesn't " + \
@@ -173,6 +221,16 @@ class KVAProfiles():
                                     "value\n"
                                 unsecure = True
                                 break
+                            '''If the second value inside the list v is the word
+                            int, then we want to make sure that our value found
+                            after the = in our output matches what we're expecting
+                            in v[0] which could be any numerical integer.
+                            Additionally, if it's "int", there will be a third value
+                            inside the list v (v[2]) which will contain either the
+                            word "more" or "less".  More indicates that if the values
+                            don't match but the value in our output is a greater 
+                            integer value than what we're expecting, then it's still
+                            ok and vice versa with the less keyword.'''
                         elif v[1] == "int":
                             if v[2] == "more":
                                 if int(temp[1].strip()) < int(v[0]):
@@ -188,6 +246,10 @@ class KVAProfiles():
                                         "value\n"
                                     unsecure = True
                                     break
+                            '''If the second value inside the list v is the word
+                            string, then we want to make sure that our value found
+                            after the = in our output matches what we're expecting
+                            in v[0] which could be any string.'''
                         elif v[1] == "string":
                             if temp[1].strip() != v[0]:
                                 debug += "Key: " + k + " doesn't " + \
@@ -298,18 +360,51 @@ class KVAProfiles():
         return retval
     
     def setUndoCmd(self, undocmd):
+        '''
+        @summary: Mutator method to set self.undocmd to the
+                passed in undo command.
+        @author: dwalker
+        @param undocmd: undo command passed through from 
+                update method
+        
+        '''
         self.undocmd = undocmd
     
-    def setInstallCmd(self, installcmd):    
+    def setInstallCmd(self, installcmd):
+        '''
+        @summary: Mutator method to set self.installcmd to
+                thev passed in install command.
+        @author: dwalker
+        @param installcmd: install command passed through from 
+                update method
+        '''
         self.installcmd = installcmd
     
     def getUndoCmd(self):
+        '''
+        @summary: Accessor method to retrieve self.undocmd
+        @author: dwalker
+        @return: self.undocmd
+        '''
         return self.undocmd
     
     def getInstallCmd(self):
+        '''
+        @summary: Accessor method to retrieve self.installcmd
+        @author: dwalker
+        @return: self.installcmd
+        '''
         return self.installcmd
         
     def update(self):
+        '''
+        @summary: Method to set the install command for 
+        installing the profile for the fix method and set
+        the remove command for removing the profile for the
+        undo method in upper implementing classes
+        @author: dwalker
+        @return: bool - True
+        '''
         cmd = ["/usr/bin/profiles", "-I", "-F", self.path]
         self.setInstallCmd(cmd)
         cmd = ["/usr/bin/profiles", "-R", "-F", self.path]
@@ -317,6 +412,13 @@ class KVAProfiles():
         return True
     
     def commit(self):
+        '''
+        @summary: Method that performs the install command
+                to install the appropriate profile for the
+                calling rule.
+        @author: dwalker
+        @return: bool - True or False
+        '''
         self.ch = CommandHelper(self.logger)
         if self.installcmd:
             if not self.ch.executeCommand(self.installcmd):
