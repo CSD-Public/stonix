@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.14
+Version: 0.9.21
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -123,6 +123,21 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Aug 7 2018 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.21
+- New - SecureApacheWebServer - Update to the rule. Now ensures that the following modules are installed and loaded in apache by default: mod_ssl, mod_security, mod_cband, mod_bwshare, mod_limitpconn, mod_evasive
+- New - SecureApacheWebServer - Update to the rule. The following configuration change will now be made by default: Limit the web methods to GET and POST
+- New - SecureApacheWebServer - Update to the rule. The following configuration change will now be made to <Directory "/var/www/html"> section: Options SymLinksIfOwnerMatch
+- New - SecureApacheWebServer - Update to the rule. The following modules in apache will now be disabled by default: mod_ext_filter.so, mod_expires.so, mod_deflate.so, mod_headers.so, mod_usertrack.so, mod_vhost_alias.so, mod_mime_magic.so
+- New - SecureApacheWebServer - Update to the rule. Rule will now set permissions on /var/log/httpd to 700 and /etc/httpd/conf to 750 and all files under /etc/httpd/conf/ to 640
+- New - Rule Status Indicator update - The way, in which the status of a rule is graphically displayed, has been modified to inform the user when the rule's fixes were not applied due to the rule not being enabled. (Hopefully this will allay any confusions on whether or not a rule actually made any changes after being run) Rules which were run but were not enabled and therefor did not apply any changes, will be displayed with a yellow highlighted background in the GUI list and will also report (in the detailed results) that they did not apply any fix changes due to not being enabled
+- New - DisableUbuntuDataCollection - New rule. Removes packages apport and popularity-contest as these were collecting potentially sensitive information and reporting it to Ubuntu
+- New - RemoveSoftware - Update to the rule. Will now remove redhat-access-insights by default, as this was collecting potentially sensitive information and reporting it to Redhat
+- Fixed - ConfigureScreenLocking - A syntax bug with one of the configuration entries which was preventing the configuration from actually taking effect
+- Fixed - CheckPartitioning - Under specific circumstances this rule was finishing without displaying any results
+- Fixed - ConfigureLANLLDAP - A specific configuration path being referred to in the code had changed from Ubuntu 16 to 18. The path reference was updated and should now work properly for Ubuntu 18
+- Fixed - STONIX Framework - In some cases, systemd networking tools needed to be used instead of sysv tools (i.e. ifconfig). The code has been updated to use whichever set of tools is appropriate for each operating system
+- Fixed - STONIX Framework - A case where a method in the graphical user interface code was expecting to receive a list, but could potentially receive an empty data structure. This was causing a traceback in these situations
+
 * Wed Feb 28 2018 Derek Walker <dwalker@lanl.gov> - 0.9.16
 - Multiple bug fixes across multiple rules due to discrepancies with helper object that manages services
 - Stonix now turns off software update notifications
