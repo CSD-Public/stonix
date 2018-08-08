@@ -189,8 +189,8 @@ class KVAProfiles():
                 passed through as val from the calling method
         @param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
-                as val. This val is now the list, tuple or dict 
-                associated with our k value.
+                as val. This val is now the list associated with our
+                k value.
         @param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
@@ -270,6 +270,23 @@ class KVAProfiles():
         return retval
     
     def checkTuple(self, k, v, payloadblock):
+        '''
+        @summary: Method that checks payloadblock contents
+                for k (key) and associated v (value)
+        @author: dwalker
+        @param k: Not to be confused with the key in the calling
+                method which was our identifier before the payload.
+                This key is now the key in the inner dictionary
+                passed through as val from the calling method
+        @param v: Not to be confused with the value in the calling
+                method which was our inner dictionary passed through
+                as val. This val is now the tuple associated with
+                our k value.
+        @param payloadblock: A list of lines from our payload
+                portion of the output from the system_profiler
+                command
+        @return: bool - True or False
+        '''
         retval = True
         iterator = 0
         temp, temp2 = [], []
@@ -334,6 +351,23 @@ class KVAProfiles():
         return retval
      
     def checkDict(self, k, v, payloadblock):
+        '''
+        @summary: Method that checks payloadblock contents
+                for k (key) and associated v (value)
+        @author: dwalker
+        @param k: Not to be confused with the key in the calling
+                method which was our identifier before the payload.
+                This key is now the key in the inner dictionary
+                passed through as val from the calling method
+        @param v: Not to be confused with the value in the calling
+                method which was our inner dictionary passed through
+                as val. This val is now the dict associated with
+                our k value.
+        @param payloadblock: A list of lines from our payload
+                portion of the output from the system_profiler
+                command
+        @return: bool - True or False
+        '''
         retval = True
         iterator = 0
         for line in payloadblock:
