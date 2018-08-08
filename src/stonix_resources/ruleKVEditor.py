@@ -742,8 +742,7 @@ LANL-stonix."""
                 if (self.detailedresults == ""):
                     self.detailedresults = messagestring
                 else:
-                    self.detailedresults = self.detailedresults + "\n" + \
-                    messagestring
+                    self.detailedresults += messagestring + "\n"
         elif datatype == types.ListType:
             if not (pMessage == []):
                 for item in pMessage:
@@ -751,8 +750,7 @@ LANL-stonix."""
                     if (self.detailedresults == ""):
                         self.detailedresults = messagestring
                     else:
-                        self.detailedresults = self.detailedresults + "\n" + \
-                        messagestring
+                        self.detailedresults += messagestring + "\n"
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
