@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from select import select
 
 ###############################################################################
 #                                                                             #
@@ -473,9 +472,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             rule = status["rulename"]
 
             # ruleid = int(stats[1])
+            ruleenabled = ""
             count = int(status["completed"])
             total = int(status["total"])
-            ruleenabled = status['ruleenabled']
+            try:
+                ruleenabled = status['ruleenabled']
+            except:
+                pass
 
             if status["compliant"] == 'True':
                 compliant = True
@@ -1085,27 +1088,39 @@ class runThread(QThread):
                        "total": str(total),
                        "ruleenabled": "False"}
 
-            rulecinames = []
             ruleconfigoptions = self.controller.getruleconfigoptions(ruleid)
-            for opt in ruleconfigoptions:
-                rulecinames.append(opt.getkey())
 
-            primaryci = ruleconfigoptions[0]
-            cidtype = primaryci.getdatatype()
-            ciname = primaryci.getkey()
+            # check if there were any CIs at all
+            if len(ruleconfigoptions) > 0:
+                primaryci = ruleconfigoptions[0]
+                cidtype = primaryci.getdatatype()
+                ciname = primaryci.getkey()
 
-            civalue = primaryci.getcurrvalue()
-            if cidtype == 'bool':
-                if civalue:
+                civalue = primaryci.getcurrvalue()
+                if cidtype == 'bool':
+                    if civalue:
+                        tstatus['ruleenabled'] = 'True'
+                else:
+                    # This rule has no fix function
                     tstatus['ruleenabled'] = 'True'
 
-            if self.action == 'fix':
-                if tstatus['ruleenabled'] == 'False':
-                    self.controller.set_rule_detailedresults(ruleid, "fix", False, "Fix was not run and nothing was changed, because the configuration item '" + str(ciname) + "' was not enabled.")
+                if self.action == 'fix':
+                    if tstatus['ruleenabled'] == 'False':
+                        self.controller.set_rule_detailedresults(ruleid, "fix", False, "Fix was not run and nothing was changed, because the configuration item '" + str(ciname) + "' was not enabled.")
+                else:
+                    # fix didn't actually run, but since it wasn't a 'fix' action
+                    # in the first place, we don't want to imply an anomaly with fix
+                    # which doesn't exist under that condition
+                    tstatus['ruleenabled'] = 'True'
             else:
-                # fix didn't actually run, but since it wasn't a 'fix' action
-                # in the first place, we don't want to imply an anomaly with fix
+                # This rule had no CI
+                # we don't want to imply an anomaly with fix
                 # which doesn't exist under that condition
+                tstatus['ruleenabled'] = 'True'
+
+            # This is a one-off because schedulestonix is the only rule
+            # with a CI that doesn't require any CIs to be enabled in order to run fix
+            if name.lower() == 'schedulestonix':
                 tstatus['ruleenabled'] = 'True'
 
             self.emit(SIGNAL('tupdate(PyQt_PyObject)'), tstatus)

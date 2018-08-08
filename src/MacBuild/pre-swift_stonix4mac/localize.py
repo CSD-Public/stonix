@@ -1,1 +1,0 @@
-../../stonix_resources/localize.py

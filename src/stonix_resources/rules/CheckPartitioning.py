@@ -70,16 +70,24 @@ class CheckPartitioning(Rule):
         self.auditonly = True
 
     def report(self):
-        '''CheckPartitioning.report(): produce a report on whether or not the
+        '''
+        CheckPartitioning.report(): produce a report on whether or not the
         systems partitioning appears to follow best practices.
 
-        @author: D. Kennel
+        @return: self.compliant
+        @rtype: bool
+        @author: David Kennel
+        @change: Breen Malmberg - 07/30/2018 - added potential missing format
+                detailedresults; minor docstring edit
         '''
 
         self.detailedresults = ""
+        self.compliant = True
 
         if self.hasrunalready:
-            return True
+            self.formatDetailedResults('report', self.compliant, self.detailedresults)
+            return self.compliant
+
         tempcompliant = False
         varcompliant = False
         varlogcompliant = False
@@ -89,16 +97,19 @@ class CheckPartitioning(Rule):
         results = 'The following filesystems should be on their own partitions:'
         fstabfile = '/etc/fstab'
         fsnodeindex = 1
+
         if self.environ.getosfamily() == 'solaris':
             fstabfile = '/etc/vfstab'
             fsnodeindex = 2
+
         try:
+
             fstab = open(fstabfile, 'r')
             fstabdata = fstab.readlines()
+
             for line in fstabdata:
                 line = line.split()
-                self.logger.log(LogPriority.DEBUG,
-                                'Processing: ' + str(line))
+                self.logger.log(LogPriority.DEBUG, 'Processing: ' + str(line))
                 if len(line) > 0 and not re.search('^#', line[0]):
                     try:
                         # dev = line[0]
@@ -122,35 +133,35 @@ class CheckPartitioning(Rule):
                     if re.search('^/home$|^/export/home$', fsnode):
                         homecomp = True
             if not tempcompliant:
+                self.compliant = False
                 results = results + ' /tmp'
             if not varcompliant:
+                self.compliant = False
                 results = results + ' /var'
             if not varlogcompliant:
+                self.compliant = False
                 results = results + ' /var/log'
             if not varlogauditcomp:
+                self.compliant = False
                 results = results + ' /var/log/audit'
             if not vartmpcomp:
+                self.compliant = False
                 results = results + ' /var/tmp'
             if not homecomp:
+                self.compliant = False
                 results = results + ' /home or /export/home'
-            if tempcompliant and varcompliant and varlogcompliant and \
-            varlogauditcomp and vartmpcomp and homecomp:
-                self.compliant = True
-                self.detailedresults = 'Filesystem partitioning is good'
-                return True
-            else:
-                self.detailedresults = results
+
+            self.detailedresults += results
+
             self.hasrunalready = True
-            self.rulesuccess = True
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.rulesuccess = False
+        except Exception:
+            self.detailedresults += traceback.format_exc()
+            self.compliant = False
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
