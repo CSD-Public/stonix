@@ -740,7 +740,7 @@ LANL-stonix."""
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
-                    self.detailedresults = messagestring
+                    self.detailedresults = messagestring + "\n"
                 else:
                     self.detailedresults += messagestring + "\n"
         elif datatype == types.ListType:
@@ -748,7 +748,7 @@ LANL-stonix."""
                 for item in pMessage:
                     messagestring = item
                     if (self.detailedresults == ""):
-                        self.detailedresults = messagestring
+                        self.detailedresults = messagestring + "\n"
                     else:
                         self.detailedresults += messagestring + "\n"
         else:
