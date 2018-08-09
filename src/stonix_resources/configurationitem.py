@@ -306,7 +306,10 @@ forgot to override the default instructions for this key. Please file a bug.
                     newvalue = float(newvalue)
                 elif self.datatype == 'list' and type(newvalue) is not \
                 types.ListType:
-                    newvalue = newvalue.split(listdelim)
+                    if not newvalue:
+                        newvalue = []
+                    else:
+                        newvalue = newvalue.split(listdelim)
         except(TypeError, ValueError):
             return False
         if self.validate(newvalue):
