@@ -28,6 +28,8 @@ Created on Mar 9, 2016
         regex check to look for = with spaces around it inside
         checkSimple method and removed unecessary else portion of code
         inside validate method.
+@changed: 08/15/2018 - Brandon R. Gonzales - changed a regular expression from
+        "*:" to ".*:"
 '''
 import re
 from logdispatcher import LogPriority
@@ -113,7 +115,7 @@ class KVAProfiles():
             '''This next loop is getting everything inside the payload
             section stopping before the next identifier'''
             for line in keyoutput:
-                if not re.search("*:", line):
+                if not re.search(".*:", line):
                     line = re.sub("\s+", "", line)
                     payloadblocktemp.append(line)
                 else:
