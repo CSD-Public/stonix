@@ -26,6 +26,8 @@ This rule removes all detected games.
 @author: Eric Ball
 @change: 2015/08/20 eball Original implementation
 @change: 2016/09/14 eball Added autoremove command to apt-get systems fix
+@change: 2018/08/20 Brandon R. Gonzales Added protections for functions using
+                    '/usr/games' in case the directory doesn't exist
 '''
 from __future__ import absolute_import
 import os
@@ -120,10 +122,11 @@ class RemoveSUIDGames(Rule):
                     compliant = False
                     results += game + " found on system\n"
 
-            usrgames = os.listdir("/usr/games")
-            if len(usrgames) > 0:
-                compliant = False
-                results += "/usr/games dir is not empty\n"
+            if(os.path.exists("/usr/games")):
+                usrgames = os.listdir("/usr/games")
+                if len(usrgames) > 0:
+                    compliant = False
+                    results += "/usr/games dir is not empty\n"
 
             self.compliant = compliant
             self.detailedresults = results
@@ -224,9 +227,10 @@ class RemoveSUIDGames(Rule):
                     success = False
                     results += "Unable to remove " + game + "\n"
 
-            if not self.__cleandir("/usr/games"):
-                success = False
-                results += "Unable to remove all games from /usr/games\n"
+            if(os.path.exists("/usr/games")):
+                if not self.__cleandir("/usr/games"):
+                    success = False
+                    results += "Unable to remove all games from /usr/games\n"
 
             self.rulesuccess = success
             self.detailedresults = results
