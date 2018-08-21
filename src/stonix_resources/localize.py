@@ -51,6 +51,9 @@ that access the version variable to use this copy.
 @change: 2018/04/11 - ekkehard - incremented STONIXVERSION = '0.9.18'
 @change: 2018/05/08 - ekkehard - incremented STONIXVERSION = '0.9.19'
 @change: 2018/06/08 - ekkehard - incremented STONIXVERSION = '0.9.20'
+@change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
+                                PWQUALITY_HIGH_REGEX minlen from 12 to 14
+
 '''
 
 FISMACAT = 'med'
@@ -338,7 +341,7 @@ PWQUALITY_REGEX = regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+"
     "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
 CRACKLIB_HIGH_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
-    "minlen=12[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+    "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
 CRACKLIB_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
     "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
