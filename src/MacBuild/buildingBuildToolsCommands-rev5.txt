@@ -30,8 +30,8 @@ export http_proxy=<proxy>
 # Create directory structure for build
 sudo mkdir -p /opt/tools/downloads
 sudo mkdir -p /opt/tools/logs
-chown -R localadmin:builder /opt/tools
-chmod -R g+w /opt/tools
+sudo chown -R localadmin:builder /opt/tools
+sudo chmod -R g+w /opt/tools
 cd /opt/tools
 
 #####
@@ -102,9 +102,13 @@ cd ..
 # The following needs to be setup up before installing pyinstaller, 
 # as well as being necessary for build scripts:
 export PYTHONPATH=/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages/sip:/opt/tools/lib/python2.7/site-packages:$PYTHONPATH
+
 export DYLD_LIBRARY_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$DYLD_LIBRARY_PATH
+
 export DYLD_FRAMEWORK_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$DYLD_FRAMEWORK_PATH
+
 export LD_FRAMEWORK_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$LD_FRAMEWORK_PATH
+
 export LD_LIBRARY_PATH=/opt/tools/lib/Qt5.9.4/lib:/opt/tools/lib/Python/2.7/site-packages:/opt/tools/lib/Python/2.7/site-packages/PyQt5:/opt/tools/lib/Python/2.7/site-packages/sip:$LD_LIBRARY_PATH
 
 #####
