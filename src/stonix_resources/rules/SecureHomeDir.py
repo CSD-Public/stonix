@@ -44,7 +44,7 @@ import stat
 import re
 import pwd
 
-from ..stonixutilityfunctions import iterate, readFile
+from ..stonixutilityfunctions import readFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
@@ -261,17 +261,10 @@ class SecureHomeDir(Rule):
                     currpwd = pwd.getpwnam(u)
                     HomeDirs.append(currpwd[5])
 
-            if HomeDirs:
-                for hd in HomeDirs:
-                    if not os.path.exists(hd):
-                        HomeDirs.remove(hd)
-                    elif re.search('\/var\/empty', hd):
-                        HomeDirs.remove(hd)
-                    # skip homedir if it is /dev/null
-                    elif re.search('\/dev\/null', hd):
-                        HomeDirs.remove(hd)
+            if not HomeDirs:
+                self.logger.log(LogPriority.DEBUG, "No home directories found")
             else:
-                self.logger.log(LogPriority.DEBUG, "No Mac user local home directories found")
+                HomeDirs = self.validateHomedirs(HomeDirs)
 
         except Exception:
             raise
@@ -287,38 +280,137 @@ class SecureHomeDir(Rule):
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "Building list of Linux local user home directories...")
+        self.logger.log(LogPriority.DEBUG, "Building list of Linux user home directories...")
 
         HomeDirs = []
+        awk = "/usr/bin/awk"
         passwd = "/etc/passwd"
+        invalidshells = ["/sbin/nologin", "/sbin/halt", "/sbin/shutdown", "/dev/null", "/bin/sync"]
+        getacctscmd = awk + " -F: '{ print $1 }' " + passwd
+        acctnames = []
+        usernames = []
 
         try:
 
+            # establish the minimum user id on this system
             uid_min = self.getUIDMIN()
-
             if not uid_min:
                 uid_min = "500"
 
-            self.logger.log(LogPriority.DEBUG, "Reading contents of " + passwd + " ...")
-            # read in /etc/passwd
-            passwdcontents = readFile(passwd, self.logger)
-
-            # get list of home directories
-            if passwdcontents:
-                for line in passwdcontents:
-                    sline = line.split(":")
-                    if int(sline[2]) >= int(uid_min):
-                        HomeDirs.append(sline[5])
+            if os.path.exists(awk):
+                # build a list of user (non-system) account names
+                self.cmdhelper.executeCommand(getacctscmd)
+                acctnames = self.cmdhelper.getOutput()
             else:
-                self.logger.log(LogPriority.DEBUG, passwd + " was blank!")
+                self.logger.log(LogPriority.DEBUG, "awk utility not installed! What kind of Linux are you running??")
+                # alternate method of getting account names in case system
+                # does not have the awk utility installed..
+                f = open(passwd, 'r')
+                contents = f.readlines()
+                f.close()
+
+                for line in contents:
+                    sline = line.split(':')
+                    if len(sline) > 1:
+                        acctnames.append(sline[0])
+
+            if acctnames:
+                for an in acctnames:
+                    if int(pwd.getpwnam(an).pw_uid) >= int(uid_min):
+                        usernames.append(an)
+            else:
+                self.logger.log(LogPriority.DEBUG, "Could not find any accounts on this system!")
+                return HomeDirs
+
+            # further check to see if this might still be a system account
+            # which just got added in the user id range somehow (by checking
+            # the shell)
+            for un in usernames:
+                if pwd.getpwnam(un).pw_shell in invalidshells:
+                    usernames.remove(un)
+
+            for un in usernames:
+                HomeDirs.append(pwd.getpwnam(un).pw_dir)
+            # now we should be reasonably certain that the list we have are all
+            # valid users (and not system accounts) but let's do one more check
+            # to make sure they weren't assigned a home directory some where that
+            # we don't want to modify (ex. etc or /root)
+            HomeDirs = self.validateHomedirs(HomeDirs)
 
             if not HomeDirs:
-                self.logger.log(LogPriority.DEBUG, "No Mac user local home directories found")
+                self.logger.log(LogPriority.DEBUG, "No home directories found")
+            else:
+                HomeDirs = self.validateHomedirs(HomeDirs)
 
         except Exception:
             raise
 
         return HomeDirs
+
+    def validateHomedirs(self, dirs):
+        '''
+        strip out common system (and non-existent) directories from the given list of dirs
+        and return the resultant list
+
+        @param dirs: list; list of strings containing directories to search
+        and modify
+
+        @return: validateddirs
+        @rtype: list
+
+        @author: Breen Malmberg
+        '''
+
+        validateddirs = []
+        systemdirs = ['/tmp', '/var', '/temp', '/', '/bin', '/sbin', '/etc', '/dev', '/root']
+
+        self.logger.log(LogPriority.DEBUG, "Validating list of user home directories...")
+
+        # if the base directory of a given path matches any of the above system directories, then we discard it
+        for d in dirs:
+            if os.path.exists(d):
+                basepath = self.getBasePath(d)
+                if basepath not in systemdirs:
+                    validateddirs.append(d)
+                else:
+                    self.logger.log(LogPriority.DEBUG, "An account with a uid in the non-system range had a strange home directory: " + d)
+                    self.logger.log(LogPriority.DEBUG, "Excluding this home directory from the list...")
+            else:
+                self.logger.log(LogPriority.DEBUG, "Home directory: " + d + " does not exist. Excluding it...")
+
+        return validateddirs
+
+    def getBasePath(self, path):
+        '''
+        get only the first (base) part of a given path
+
+        @param path: string; full path to get base of
+
+        @return: basepath
+        @rtype: string
+
+        @author: Breen Malmberg
+        '''
+
+        basepath = "/"
+
+        # break path into list of characters
+        pathchars = list(path)
+
+        # remove the first '/' if it is there, to make
+        # the list iteration easier
+        if pathchars[0] == "/":
+            del pathchars[0]
+
+        # iterate over list of characters, adding all characters
+        # before the next '/' path divider, to the basepath
+        for c in pathchars:
+            if c == "/":
+                break
+            else:
+                basepath += c
+
+        return basepath
 
     def getUIDMIN(self):
         '''
@@ -341,7 +433,8 @@ class SecureHomeDir(Rule):
                     if re.search("^UID_MIN", line, re.IGNORECASE):
                         sline = line.split()
                         uid_min = sline[1]
-            else:
+
+            if not uid_min:
                 self.logger.log(LogPriority.DEBUG, "Unable to determine UID_MIN")
 
         except Exception:
@@ -355,13 +448,20 @@ class SecureHomeDir(Rule):
 
         @return: compliant
         @rtype: bool
+
         @author: Derek Walker
         @change: Breen Malmberg - 06/28/2018 - re-wrote method
         '''
 
         compliant = True
+        passwd = "/etc/passwd"
 
         try:
+
+            if not os.path.exists(passwd):
+                self.logger.log(LogPriority.DEBUG, "You have no passwd file! Cannot get lits of user home directories! Aborting.")
+                compliant = False
+                return compliant
 
             if self.environ.geteuid() == 0:
                 # running as root/admin
@@ -369,7 +469,7 @@ class SecureHomeDir(Rule):
 
                 if homedirs:
 
-                    self.logger.log(LogPriority.DEBUG, "Scanning home directories...")
+                    self.logger.log(LogPriority.DEBUG, "Scanning home directory permissions...")
                     for hd in homedirs:
                         if not os.path.exists(hd):
                             self.logger.log(LogPriority.DEBUG, "Skipping directory " + hd + " because it does not exist...")
@@ -418,11 +518,12 @@ class SecureHomeDir(Rule):
 
         HomeDir = ""
         findHomeDir = "echo $HOME"
+        uuid = self.environ.geteuid()
 
         try:
 
             # precautionary check
-            if self.environ.geteuid() <= 100:
+            if uuid <= 100:
                 self.logger.log(LogPriority.DEBUG, "This method should only be run by non-system, user accounts!")
                 return HomeDir
 
@@ -434,6 +535,10 @@ class SecureHomeDir(Rule):
                 return HomeDir
 
             HomeDir = self.cmdhelper.getOutputString()
+
+            # backup method (if the $HOME env is not set for the current user)
+            if not HomeDir:
+                HomeDir = pwd.getpwuid(uuid).pw_dir
 
         except Exception:
             raise
