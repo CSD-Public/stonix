@@ -134,20 +134,20 @@ default.'
                     # search for bad permissions
                     if re.search("^.*(\.+M|M\.+)", line, re.IGNORECASE):
                         sline = line.split()
-                        self.badpermpkgs[pkg].append(sline[1])
+                        self.badpermpkgs[pkg].append(sline[len(sline)-1])
                         self.badpermfiles.append(sline[1])
                     # search for bad group ownership
                     if re.search("^.*(\.+G|G\.+)", line, re.IGNORECASE):
                         sline = line.split()
-                        self.badgroupfiles.append(sline[1])
+                        self.badgroupfiles.append(sline[len(sline)-1])
                     # search for bad ownership (user)
                     if re.search("^.*(\.+U|U\.+)", line, re.IGNORECASE):
                         sline = line.split()
-                        self.badownerfiles.append(sline[1])
+                        self.badownerfiles.append(sline[len(sline)-1])
                     # search for bad md5 hash
                     if re.search("^.*(\.+5|5\.+)", line, re.IGNORECASE):
                         sline = line.split()
-                        self.badhashfiles.append(sline[1])
+                        self.badhashfiles.append(sline[len(sline)-1])
 
             if self.badpermfiles:
                 self.compliant = False
@@ -165,7 +165,7 @@ default.'
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults += traceback.format_exc()
             self.compliant = False
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
@@ -206,7 +206,7 @@ default.'
             raise
         except Exception:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + traceback.format_exc()
+            self.detailedresults += traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
