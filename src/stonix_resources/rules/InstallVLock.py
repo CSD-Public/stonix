@@ -90,6 +90,8 @@ class InstallVLock(Rule):
                         vlock = "kbd"
                 if vlock != "kbd":
                     vlock = "vlock"
+            elif self.ph.manager == "zypper":
+                vlock = "kbd"
             else:
                 vlock = "vlock"
             present = self.ph.check(vlock)
@@ -130,7 +132,7 @@ class InstallVLock(Rule):
                 self.statechglogger.deleteentry(event)
 
             self.rulesuccess = self.ph.install("vlock")
-            if self.rulesuccess:
+            if self.rulesuccess and self.ph.manager != "zypper":
                 myid = "0121001"
                 cmd = self.ph.getInstall()
                 cmd += "vlock"
