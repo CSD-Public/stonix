@@ -26,6 +26,8 @@ Created on May 27, 2016
 @author: dkennel
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2018/08/29 Brandon R. Gonzales - increased the sleep time in fixes to
+    give iptables more time to restart
 '''
 from __future__ import absolute_import
 
@@ -490,7 +492,7 @@ COMMIT
                                             stderr=subprocess.PIPE,
                                             shell=True, close_fds=True)
                     # Sleep for a bit to let the restarts occur
-                    time.sleep(3)
+                    time.sleep(10)
                     self.detailedresults += "Firewall configured.\n "
                 elif os.path.exists(self.iprestore) and \
                      os.path.exists(self.ip6restore):
@@ -665,7 +667,7 @@ fw_custom_after_finished() {
                                  stderr=subprocess.PIPE,
                                  shell=True, close_fds=True)
                 # Sleep for a bit to let the restarts occur
-                time.sleep(3)
+                time.sleep(10)
                 self.servicehelper.disableService('iptables', serviceTarget=self.serviceTarget)
                 self.servicehelper.disableService('ip6tables', serviceTarget=self.serviceTarget)
             elif os.path.exists(self.iprestore) and \
