@@ -93,12 +93,8 @@ class SSHTimeout(Rule):
             results = ""
             timeout = self.intCi.getcurrvalue()
             if self.environ.getostype() == "Mac OS X":
-                if re.search("10\.11\.*|10\.12\.*", self.environ.getosver()):
-                    self.path = '/private/etc/ssh/sshd_config'
-                    self.tpath = '/private/etc/ssh/sshd_config.tmp'
-                else:
-                    self.path = "/private/etc/sshd_config"
-                    self.tpath = "/private/etc/sshd_config.tmp"
+                self.path = '/private/etc/ssh/sshd_config'
+                self.tpath = '/private/etc/ssh/sshd_config.tmp'
             else:
                 self.path = '/etc/ssh/sshd_config'
                 self.tpath = '/etc/ssh/sshd_config.tmp'
