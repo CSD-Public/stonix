@@ -871,21 +871,24 @@ class CiFrame(QtWidgets.QFrame):
         ci_usercomment back to the configuration item object from which they
         came.
         @author: D. Kennel
+        @change: Breen Malmberg - 09/04/2018 - cannot str() typecast certain
+                unicode characters (for ex: 'ascii' codec can't encode character u'\u0301')
+                so str() was replaced with repr() using encode() method to handle
+                unreadable unicode characters (they will appear as ?)
         """
         for opt in self.rule_config_opts:
             datatype = opt.getdatatype()
             name = opt.getkey()
             myuc = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + name)
-            if datatype == 'string' or datatype == 'int' or \
-            datatype == 'float':
+            if datatype == 'string' or datatype == 'int' or datatype == 'float':
                 mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
-                mydataval = str(mydata.text())
+                mydataval = repr(mydata.text()).encode('ascii', 'replace')
             elif datatype == 'bool':
                 mydata = self.findChild(QtWidgets.QCheckBox, 'value' + name)
                 mydataval = mydata.isChecked()
             elif datatype == 'list':
                 mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
-                mydataval = str(mydata.text())
+                mydataval = repr(mydata.text()).encode('ascii', 'replace')
                 mydataval = mydataval.split()
             myucval = myuc.toPlainText()
             valid = opt.updatecurrvalue(mydataval)
