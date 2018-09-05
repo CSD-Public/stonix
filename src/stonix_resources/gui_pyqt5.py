@@ -39,7 +39,7 @@ Created Jun 20, 2012
 This is the GUI interface for STONIX (project Dylan). This file and its related
 imports implement the STONIX GUI.
 
-@author: D. Kennel
+@author: David Kennel
 @note: 2015-09-11 - rsn - Adding initial attempt at a help browser.
 @change: 2017-12-21 - Breen Malmberg - added search box implementation;
         (methods: getSearchText(), resizeEvent(), clearText(), updateSearchResults();
@@ -79,7 +79,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     Main GUI class for the stonix GUI. This class inherits from
     main_window.Ui_MainWindow which was created in QTDesigner.
 
-    @author: D. Kennel
+    @author: David Kennel
     """
     def __init__(self, controller, environment, logger):
         """
@@ -89,7 +89,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @param controller: The stonix controller object
         @param environment: The stonix environment object
-        @author: D. Kennel
+        @author: David Kennel
         @change: 2017/13/9 Brandon Gonzales Added calls to setenableci on
             CiFrame creation.
         """
@@ -367,7 +367,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @param curr: int - current position in the total set
         @param total: int -  size of total set
-        @author: dkennel
+        @author: David Kennel
         """
         if total == 1 and curr == 0:
             self.pbar.setRange(0, 0)
@@ -380,7 +380,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Show frames containing the rule details and configuration items
         appropriate to the selected rule.
 
-        @author: D. Kennel
+        @author: David Kennel
         @change: 2017/13/9 Brandon Gonzales Hide save_cancel_frame in user mode
         """
         if len(self.rule_list_widget.selectedItems()) > 0:
@@ -428,7 +428,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         """
         Program quit from GUI called. Clean up lock files and post reports.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         self.controller.releaselock()
         self.logger.postreport()
@@ -462,7 +462,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @param string: item_text (rule name)
         @param string: icon name (grn, red, warn, quest)
-        @author: D. Kennel
+        @author: David Kennel
         """
         myicon = os.path.join(self.icon_path, self.questionmark)
         if iconame == 'grn':
@@ -484,7 +484,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @param status: dictionary containing the string values for "rulename",
             "ruleid", "compliant", "completed", and "total"
-        @author: D. Kennel
+        @author: David Kennel
         """
         try:
             self.logger.log(LogPriority.DEBUG,
@@ -536,7 +536,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @param status: dictionary containing the string values for "rulename",
             "completed", and "total"
-        @author: D. Kennel
+        @author: David Kennel
         """
         try:
             self.logger.log(LogPriority.DEBUG,
@@ -560,7 +560,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         It does this by clearing the self.threads property which allows the
         currently executing thread to finish.
 
-        @author: dkennel
+        @author: David Kennel
         """
         for thread in self.threads:
             thread.stopflag = True
@@ -572,7 +572,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Slot for the menu action Rule -> Run all. Passes through to the
         controller's run all rules method.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
 
         self.update_progress(0, 0)
@@ -595,7 +595,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Slot for the menu action Rule -> Report All. Passes through to the
         controller's report all rules method.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
 
         self.update_progress(0, 0)
@@ -618,7 +618,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Slot for the menu action Rule -> Revert All. Passes through to the
         controller's revert all rules method.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         self.update_progress(0, 0)
         self.threads = []
@@ -649,7 +649,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         """
         Display the about Stonix window
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         window = aboutStonix(self.stonixversion, self)
         window.show()
@@ -660,7 +660,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Display the log browser window and load it with the log from the last
         run.
 
-        @author: dkennel
+        @author: David Kennel
         """
         window = Ui_logBrowser(self)
         window.displaytext(self.controller.displaylastrun())
@@ -672,7 +672,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Slot for the fix_button visible in the rule details pane. Calls in
         turn the controller's method to run one rule.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Fix called."])
@@ -701,7 +701,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Slot for the report_button visible in the rule details pane. Calls in
         turn the controller's method to run one rule.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Report called."])
@@ -731,7 +731,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Slot for the revert_button visible in the rule details pane. Calls in
         turn the controller's method to revert one rule.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Revert called."])
@@ -773,7 +773,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         the stonix config file and updates the current values of the
         configuration items currently held by the rule objects.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         for citem in self.ruleci:
             self.ruleci[citem].updatecivalues()
@@ -785,7 +785,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         changes and resets the values to what is held in the currvalue of the
         ci objects.
 
-        @author: D. Kennel
+        @author: David Kennel
         """
         for citem in self.ruleci:
             self.ruleci[citem].clearchanges()
@@ -795,7 +795,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         Capture the window closeEvent and clean up our lock file before
         accepting the event.
 
-        @author: dkennel
+        @author: David Kennel
         '''
         self.guiexit()
         event.accept()
@@ -806,7 +806,7 @@ class CiFrame(QtWidgets.QFrame):
     The ciFrame manages the display for the config items for each rule. Each
     rule is tied to it's ciFrame via the ruleci dictionary.
 
-    @author: D. Kennel
+    @author: David Kennel
     @change: 2017/13/9 Brandon Gonzales Added function setenableci.
     """
     def __init__(self, parent, rulenum, controller, logger):
@@ -816,12 +816,13 @@ class CiFrame(QtWidgets.QFrame):
 
         @param int: rulenum - rule number that this ciFrame belongs to
         @param controller: the controller object
-        @author: D. Kennel
+        @author: David Kennel
         """
         super(CiFrame, self).__init__(parent)
         self.setFrameShadow(QtWidgets.QFrame.Raised)
         self.cframelayout = QtWidgets.QVBoxLayout()
         self.rulenum = rulenum
+        self.rulename = controller.getrulenamebynum(rulenum)
         self.rule_config_opts = controller.getruleconfigoptions(rulenum)
         for opt in self.rule_config_opts:
             self.ciname = QtWidgets.QLabel()
@@ -880,28 +881,37 @@ class CiFrame(QtWidgets.QFrame):
         This method will write the current values of the ci_value and the
         ci_usercomment back to the configuration item object from which they
         came.
-        @author: D. Kennel
+
+        @author: David Kennel
+        @change: Breen Malmberg - 09/04/2018 - cannot str() typecast certain
+                unicode characters (for ex: 'ascii' codec can't encode character u'\u0301')
+                so str() was replaced with encode() method to handle
+                unreadable unicode characters
         """
+
         for opt in self.rule_config_opts:
+
             datatype = opt.getdatatype()
-            name = opt.getkey()
-            myuc = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + name)
-            if datatype == 'string' or datatype == 'int' or \
-            datatype == 'float':
-                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
-                mydataval = str(mydata.text())
+            ciname = opt.getkey()
+            myuc = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + ciname)
+
+            if datatype == 'string' or datatype == 'int' or datatype == 'float':
+                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + ciname)
+                mydataval = mydata.text().encode('ascii', 'ignore')
             elif datatype == 'bool':
-                mydata = self.findChild(QtWidgets.QCheckBox, 'value' + name)
+                mydata = self.findChild(QtWidgets.QCheckBox, 'value' + ciname)
                 mydataval = mydata.isChecked()
             elif datatype == 'list':
-                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
-                mydataval = str(mydata.text())
+
+                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + ciname)
+                mydataval = mydata.text().encode('ascii', 'ignore')
                 mydataval = mydataval.split()
+
             myucval = myuc.toPlainText()
             valid = opt.updatecurrvalue(mydataval)
+
             if not valid:
-                QtWidgets.QMessageBox.warning(self, "Validation Error",
-                                    "Invalid value for " + name + ".")
+                QtWidgets.QMessageBox.warning(self, "Validation Error", "Invalid value for Rule: " + self.rulename + " CI: " + ciname + ".")
                 mydata.setFocus()
                 return
 
@@ -911,7 +921,7 @@ class CiFrame(QtWidgets.QFrame):
         """
         This method will undo any changes that the user has made to any of the
         ci feilds in the gui.
-        @author: D. Kennel
+        @author: David Kennel
         """
         for opt in self.rule_config_opts:
             datatype = opt.getdatatype()
@@ -959,7 +969,7 @@ class aboutStonix(QtWidgets.QDialog):
     """
     The aboutStonix class displays a simple popup dialog containing basic
     information about the stonix app.
-    @author: D. Kennel
+    @author: David Kennel
     """
 
     def __init__(self, stonixversion, parent=None):
@@ -989,8 +999,15 @@ class aboutStonix(QtWidgets.QDialog):
         # self.clearWState(QtCore.QtCore.Qt.WState_Polished)
 
     def languageChange(self):
+        '''
+        set window's title, stonix version and copyright text
+
+        @return:
+        '''
+
         self.setWindowTitle("About LANL-STONIX")
-        copyrightText = '''Copyright 2015.  Los Alamos National Security, LLC. This material was \n
+
+        copyrightText = '''Copyright 2015-2018.  Los Alamos National Security, LLC. This material was \n
 produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos \n
 National Laboratory (LANL), which is operated by Los Alamos National \n
 Security, LLC for the U.S. Department of Energy. The U.S. Government has \n
@@ -1008,9 +1025,17 @@ option) any later version. Accordingly, this program is distributed in the \n
 hope that it will be useful, but WITHOUT ANY WARRANTY; without even the \n
 implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. \n
 See the GNU General Public License for more details.'''
+
         self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">" + copyrightText + "</p>"))
 
     def __tr(self, s, c=None):
+        '''
+
+        @param s:
+        @param c:
+        @return:
+        '''
+
         return QtWidgets.qApp.translate("aboutStonix", s, c)
 
 
@@ -1019,7 +1044,7 @@ class Ui_logBrowser(QtWidgets.QDialog):
     The Ui_logBrowser class displays a read only text browser which displays
     the stonix logs.
 
-    @author: dkennel
+    @author: David Kennel
     """
     def __init__(self, parent=None):
         QtWidgets.QDialog.__init__(self, parent)
@@ -1051,7 +1076,7 @@ class Ui_logBrowser(QtWidgets.QDialog):
         Display the submitted text in the textBrowser.
 
         @param string or list:
-        @author dkennel
+        @author David Kennel
         """
         if type(text) is list:
             temptext = ''
@@ -1074,7 +1099,7 @@ class runThread(QtCore.QThread):
     @param action: 'report', 'fix', 'undo'
     @param ruleid: int - id number of the rule to run. Will default to a none
     object which this class will interpret to mean run all rules.
-    @author: dkennel
+    @author: David Kennel
     """
     #####
     # New for PyQt5
@@ -1105,7 +1130,7 @@ class runThread(QtCore.QThread):
         The run method will run the rules calling their fix, report or undo
         methods as directed by the action.
 
-        @author: dkennel
+        @author: David Kennel
         """
         if self.stopflag:
             return
