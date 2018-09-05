@@ -833,16 +833,15 @@ class CiFrame(QFrame):
             datatype = opt.getdatatype()
             name = opt.getkey()
             myuc = self.findChild(QPlainTextEdit, 'ucvalue' + name)
-            if datatype == 'string' or datatype == 'int' or \
-            datatype == 'float':
+            if datatype == 'string' or datatype == 'int' or datatype == 'float':
                 mydata = self.findChild(QLineEdit, 'value' + name)
-                mydataval = repr(mydata.text()).encode('ascii', 'replace')
+                mydataval = mydata.text().encode('ascii', 'ignore')
             elif datatype == 'bool':
                 mydata = self.findChild(QCheckBox, 'value' + name)
                 mydataval = mydata.isChecked()
             elif datatype == 'list':
                 mydata = self.findChild(QLineEdit, 'value' + name)
-                mydataval = repr(mydata.text()).encode('ascii', 'replace')
+                mydataval = mydata.text().encode('ascii', 'ignore')
                 mydataval = mydataval.split()
             myucval = myuc.toPlainText()
             valid = opt.updatecurrvalue(mydataval)

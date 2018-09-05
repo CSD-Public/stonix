@@ -882,13 +882,13 @@ class CiFrame(QtWidgets.QFrame):
             myuc = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + name)
             if datatype == 'string' or datatype == 'int' or datatype == 'float':
                 mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
-                mydataval = repr(mydata.text()).encode('ascii', 'replace')
+                mydataval = mydata.text().encode('ascii', 'ignore')
             elif datatype == 'bool':
                 mydata = self.findChild(QtWidgets.QCheckBox, 'value' + name)
                 mydataval = mydata.isChecked()
             elif datatype == 'list':
                 mydata = self.findChild(QtWidgets.QLineEdit, 'value' + name)
-                mydataval = repr(mydata.text()).encode('ascii', 'replace')
+                mydataval = mydata.text().encode('ascii', 'ignore')
                 mydataval = mydataval.split()
             myucval = myuc.toPlainText()
             valid = opt.updatecurrvalue(mydataval)
