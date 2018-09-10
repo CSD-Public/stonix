@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.21
+Version: 0.9.22
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
@@ -123,6 +123,18 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Mon Sep 10 2018 Brandon Gonzales <bgonz12@lanl.gov> - 0.9.22
+- Fixed - InstalledSoftwareVerification - An issue which caused the reporting results to be improperly formatted and displayed (unreadable)
+- Fixed - InstalledSoftwareVerification - An issue causing a disparity between what the rule was fixing and what it was reporting on, which resulted in the rule reporting non compliant after fix
+- Fixed - ConfigureLANLLDAP - A logic error which caused a disparity (under certain conditions) between what the rule was fixing and what it was reporting on, which resulted in the rule reporting non compliant after fix
+- Fixed - ConfigureSystemAuthentication - Two rules editing the same file(s) with different values causing both to report non compliant after fix
+- Fixed - RemoveSUIDGames - An issue where the rule was not checking if a directory existed prior to attempting to perform a list operation on it
+- Fixed - ConfigureLinuxFirewall - An issue where the rule was not waiting long enough for the iptables service to restart before running the report which was resulting in the rule reporting non compliant after fix
+- Fixed - ConfigureFirewall - An error where an empty list was being interpreted as an empty set of quotes instead of a list. This was causing the rule to report non compliant after fix under certain circumstances
+- Fixed - SSHTimeout - Was creating ssh and sshd config files in the wrong location on later versions of macOS X
+- Fixed - InstallVLock - Updated potential package name for newer versions of some OS's
+- Fixed - SecureHomeDir - In some edge cases the rule could potentially incorrectly modify the permissions of some system directories. The rule has been re-written to be much more robust in determining what is and what is not a valid user home directory
+
 * Tue Aug 7 2018 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.21
 - New - SecureApacheWebServer - Update to the rule. Now ensures that the following modules are installed and loaded in apache by default: mod_ssl, mod_security, mod_cband, mod_bwshare, mod_limitpconn, mod_evasive
 - New - SecureApacheWebServer - Update to the rule. The following configuration change will now be made by default: Limit the web methods to GET and POST
