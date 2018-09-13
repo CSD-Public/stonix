@@ -50,7 +50,6 @@ imports implement the STONIX GUI.
 '''
 
 import os
-import sys
 import traceback
 import webbrowser
 
@@ -460,8 +459,8 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         icon types: grn, red, warn, quest. The item_text should be the rule
         name.
 
-        @param string: item_text (rule name)
-        @param string: icon name (grn, red, warn, quest)
+        @param item_text: string; (rule name)
+        @param iconame: string; (grn, red, warn, quest)
         @author: David Kennel
         """
         myicon = os.path.join(self.icon_path, self.questionmark)
@@ -814,8 +813,8 @@ class CiFrame(QtWidgets.QFrame):
         Constructor for the ciFrame. Expects to receive a rule number and a
         reference to the controller at time of instantiation.
 
-        @param int: rulenum - rule number that this ciFrame belongs to
-        @param controller: the controller object
+        @param rulenum: int; rule number that this ciFrame belongs to
+        @param controller: object; the controller object
         @author: David Kennel
         """
         super(CiFrame, self).__init__(parent)
@@ -891,31 +890,41 @@ class CiFrame(QtWidgets.QFrame):
 
         for opt in self.rule_config_opts:
 
-            datatype = opt.getdatatype()
-            ciname = opt.getkey()
-            myuc = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + ciname)
+            try:
 
-            if datatype == 'string' or datatype == 'int' or datatype == 'float':
-                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + ciname)
-                mydataval = mydata.text().encode('ascii', 'ignore')
-            elif datatype == 'bool':
-                mydata = self.findChild(QtWidgets.QCheckBox, 'value' + ciname)
-                mydataval = mydata.isChecked()
-            elif datatype == 'list':
+                CIobjval = None
+                CIobj = None
+                cidatatype = opt.getdatatype()
+                ciname = opt.getkey()
+                usercomment = self.findChild(QtWidgets.QPlainTextEdit, 'ucvalue' + ciname)
 
-                mydata = self.findChild(QtWidgets.QLineEdit, 'value' + ciname)
-                mydataval = mydata.text().encode('ascii', 'ignore')
-                mydataval = mydataval.split()
+                if cidatatype in ['string', 'int', 'float']:
+                    CIobj = self.findChild(QtWidgets.QLineEdit, 'value' + ciname)
+                    CIobjval = CIobj.text().encode('ascii', 'ignore')
+                elif cidatatype == 'bool':
+                    CIobj = self.findChild(QtWidgets.QCheckBox, 'value' + ciname)
+                    CIobjval = CIobj.isChecked()
+                elif cidatatype == 'list':
+                    CIobj = self.findChild(QtWidgets.QLineEdit, 'value' + ciname)
+                    CIobjval = CIobj.text().encode('ascii', 'ignore')
+                    CIobjval = CIobjval.split()
 
-            myucval = myuc.toPlainText()
-            valid = opt.updatecurrvalue(mydataval)
+                valid = opt.updatecurrvalue(CIobjval)
 
-            if not valid:
-                QtWidgets.QMessageBox.warning(self, "Validation Error", "Invalid value for Rule: " + self.rulename + " CI: " + ciname + ".")
-                mydata.setFocus()
+                if not valid:
+                    QtWidgets.QMessageBox.warning(self, "Validation Error", "Invalid value in CI: " + ciname + " for Rule: " + self.rulename)
+                    CIobj.selectAll()
+                    CIobj.setFocus()
+                    return
+
+                usercommentval = usercomment.toPlainText()
+                opt.setusercomment(usercommentval)
+
+            except UnicodeEncodeError:
+                QtWidgets.QMessageBox.warning(self, "Encoding Error", "Failed to save configuration changes to stonix.conf because there are 1 or more untranslatable unicode characters in the value for CI: " + ciname + " in the Rule: " + self.rulename)
                 return
-
-            opt.setusercomment(myucval)
+            except:
+                raise
 
     def clearchanges(self):
         """
@@ -1075,7 +1084,7 @@ class Ui_logBrowser(QtWidgets.QDialog):
         """
         Display the submitted text in the textBrowser.
 
-        @param string or list:
+        @param text: string|list;
         @author David Kennel
         """
         if type(text) is list:

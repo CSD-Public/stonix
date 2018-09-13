@@ -439,10 +439,11 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         icon types: grn, red, warn, quest. The item_text should be the rule
         name.
 
-        @param string: item_text (rule name)
-        @param string: icon name (grn, red, warn, quest)
+        @param item_text: string; (rule name)
+        @param iconame: string; (grn, red, warn, quest)
         @author: David Kennel
         """
+
         myicon = os.path.join(self.icon_path, self.questionmark)
         if iconame == 'grn':
             myicon = os.path.join(self.icon_path, self.compliant)
@@ -597,9 +598,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.update_progress(0, 0)
         self.threads = []
         if self.environ.geteuid() == 0:
-            reply = QMessageBox.warning(self, 'Revert Changes',
-                                        "Are you sure you want to revert the changes for all rules?",
-                                        QMessageBox.Yes, QMessageBox.No)
+            dialogue = QMessageBox()
+            reply = QMessageBox.warning(dialogue, 'Revert Changes', "Are you sure you want to revert the changes for all rules?", QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 thread = runThread(self.controller, 'undo', self.logger)
                 self.connect(thread, SIGNAL('tupdate(PyQt_PyObject)'), self.tupdate)
@@ -611,9 +611,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                 self.logger.log(LogPriority.DEBUG,
                                 ['GUI', "Run All Revert complete"])
         else:
-            discard = QMessageBox.warning(self, 'Revert Changes',
-                                          'Root level privileges are required to undo changes!',
-                                          QMessageBox.Ok)
+            dialogue = QMessageBox()
+            discard = QMessageBox.warning(dialogue, 'Revert Changes', 'Root level privileges are required to undo changes!', QMessageBox.Ok)
 
     def helpabout(self):
         """
@@ -707,10 +706,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Run Rule Revert running: " + rule_name])
             rule_num = self.controller.getrulenumbyname(rule_name)
             if self.environ.geteuid() == 0:
-                reply = QMessageBox.warning(self, 'Revert Changes',
-                                          "Are you sure you want to revert changes for rule " \
-                                          + rule_name + " ?",
-                                          QMessageBox.Yes, QMessageBox.No)
+                dialogue = QMessageBox()
+                reply = QMessageBox.warning(dialogue, 'Revert Changes', "Are you sure you want to revert changes for rule " + rule_name + " ?", QMessageBox.Yes, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     thread = runThread(self.controller, 'undo', self.logger,
                                        rule_num)
@@ -722,11 +719,10 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                     for waitingthread in self.threads:
                         waitingthread.start()
             else:
-                discard = QMessageBox.warning(self, 'Revert Changes',
-                                              'Root level privileges are required to undo changes!',
-                                              QMessageBox.Ok)
-            self.logger.log(LogPriority.DEBUG,
-                            ['GUI', "Exit Rule Revert."])
+                dialogue = QMessageBox()
+                QMessageBox.warning(dialogue, 'Revert Changes', 'Root level privileges are required to undo changes!', QMessageBox.Ok)
+
+            self.logger.log(LogPriority.DEBUG, ['GUI', "Exit Rule Revert."])
 
     def savechanges(self):
         """
@@ -774,10 +770,12 @@ class CiFrame(QFrame):
         Constructor for the ciFrame. Expects to receive a rule number and a
         reference to the controller at time of instantiation.
 
-        @param int: rulenum - rule number that this ciFrame belongs to
+        @param rulenum: int; rule number that this ciFrame belongs to
         @param controller: the controller object
+
         @author: David Kennel
         """
+
         super(CiFrame, self).__init__(parent)
         self.setFrameShadow(QFrame.Raised)
         self.cframelayout = QVBoxLayout()
@@ -850,31 +848,41 @@ class CiFrame(QFrame):
 
         for opt in self.rule_config_opts:
 
-            datatype = opt.getdatatype()
-            ciname = opt.getkey()
-            myuc = self.findChild(QPlainTextEdit, 'ucvalue' + ciname)
+            try:
 
-            if datatype == 'string' or datatype == 'int' or datatype == 'float':
-                mydata = self.findChild(QLineEdit, 'value' + ciname)
-                mydataval = mydata.text().encode('ascii', 'ignore')
-            elif datatype == 'bool':
-                mydata = self.findChild(QCheckBox, 'value' + ciname)
-                mydataval = mydata.isChecked()
-            elif datatype == 'list':
+                CIobjval = None
+                CIobj = None
+                cidatatype = opt.getdatatype()
+                ciname = opt.getkey()
+                usercomment = self.findChild(QPlainTextEdit, 'ucvalue' + ciname)
 
-                mydata = self.findChild(QLineEdit, 'value' + ciname)
-                mydataval = mydata.text().encode('ascii', 'ignore')
-                mydataval = mydataval.split()
+                if cidatatype in ['string', 'int', 'float']:
+                    CIobj = self.findChild(QLineEdit, 'value' + ciname)
+                    CIobjval = str(CIobj.text())
+                elif cidatatype == 'bool':
+                    CIobj = self.findChild(QCheckBox, 'value' + ciname)
+                    CIobjval = CIobj.isChecked()
+                elif cidatatype == 'list':
+                    CIobj = self.findChild(QLineEdit, 'value' + ciname)
+                    CIobjval = str(CIobj.text())
+                    CIobjval = CIobjval.split()
 
-            myucval = myuc.toPlainText()
-            valid = opt.updatecurrvalue(mydataval)
+                valid = opt.updatecurrvalue(CIobjval)
 
-            if not valid:
-                QMessageBox.warning(self, "Validation Error", "Invalid value for Rule: " + self.rulename + " CI: " + ciname + ".")
-                mydata.setFocus()
+                if not valid:
+                    QMessageBox.warning(self, "Validation Error", "Invalid value in CI: " + ciname + " for Rule: " + self.rulename)
+                    CIobj.selectAll()
+                    CIobj.setFocus()
+                    return
+
+                usercommentval = usercomment.toPlainText()
+                opt.setusercomment(usercommentval)
+
+            except UnicodeEncodeError:
+                QMessageBox.warning(self, "Encoding Error", "Failed to save configuration changes to stonix.conf because there are 1 or more untranslatable unicode characters in the value for CI: " + ciname + " in the Rule: " + self.rulename)
                 return
-
-            opt.setusercomment(myucval)
+            except:
+                raise
 
     def clearchanges(self):
         """
@@ -1009,7 +1017,7 @@ class Ui_logBrowser(QDialog):
         """
         Display the submitted text in the textBrowser.
 
-        @param string or list:
+        @param text: string|list;
         @author David Kennel
         """
         if type(text) is list:
@@ -1029,12 +1037,13 @@ class runThread(QThread):
     action to be performed is also required and must be one of 'report', 'fix',
     or 'undo'.
 
-    @param controller: a reference to the controller object.
-    @param action: 'report', 'fix', 'undo'
-    @param ruleid: int - id number of the rule to run. Will default to a none
-    object which this class will interpret to mean run all rules.
+    @param controller: object; a reference to the controller object.
+    @param action: string; can be: report, fix, undo
+    @param ruleid: int; id number of the rule to run. Will default to a none
+            object which this class will interpret to mean run all rules.
     @author: David Kennel
     """
+
     def __init__(self, controller, action, logger, ruleid=None):
         super(runThread, self).__init__()
         self.controller = controller
@@ -1059,17 +1068,13 @@ class runThread(QThread):
         The run method will run the rules calling their fix, report or undo
         methods as directed by the action.
 
-<<<<<<< HEAD
-        @author: dkennel
+        @author: David Kennel
         @author: Breen Malmberg - 07/26/2018 - updated tstatus dict when the
                 primary ci for a rule is a boolean and is disabled; updated
                 the detailedresults for the calling rule with a call to a new
                 method in rule.py set_rule_detailedresults (since rule's detailed
                 results are not observable from the gui class), when the run
                 mode is 'fix' and fix did not run because the ci was disabled
-=======
-        @author: David Kennel
->>>>>>> efc14e4... [artf53778] added the rule name to the qwarning dialogue box message that pops up in the gui when a type validation error occurs
         """
 
         if self.stopflag:
