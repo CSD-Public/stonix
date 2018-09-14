@@ -35,6 +35,9 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/7/24 Brandon R. Gonzales - Add report, fix, and ci for
                 restricted/required web directory options
+@change: 2018/9/14 Brandon R. Gonzales - Refactored report/fix/cis for web
+                directory options (it is now simply securewebdirs) and added
+                functionality to limit web directory server methods
 '''
 from __future__ import absolute_import
 import os
@@ -95,12 +98,17 @@ class SecureApacheWebserver(Rule):
         for dirname in confdirs:
             if os.path.isdir(dirname):
                 self.confdir.append(dirname)
+
         self.perms = {}
         self.perms["/var/log/httpd"] = 700
         for dir in self.confdir:
             self.perms[dir] = 750
         for file in self.conffiles:
             self.perms[file] = 640
+
+        self.requiredoptions = ["SymLinksIfOwnerMatch"]
+        self.restrictedoptions = ["FollowSymLinks", "Indexes", "None"]
+
         self.sslfiles = self.locatesslfiles()
         self.phpfile = '/etc/php.ini'
         phplocs = ['/etc/php.ini', '/usr/local/etc/php.ini']
@@ -121,10 +129,7 @@ class SecureApacheWebserver(Rule):
         self.domodules = self.__initializeSecureApacheMods()
         self.dossl = self.__initializeSecureApacheSsl()
         self.dophp = self.__initializeSecurePhp()
-        self.reqopts = self.__initializeRequiredWebDirOptions()
-        self.resopts = self.__initializeRestrictedWebDirOptions()
-        self.requiredoptions = self.reqopts.getcurrvalue()
-        self.restrictedoptions = self.resopts.getcurrvalue()
+        self.securewebdirs = self.__initializeSecureWebDirs()
         self.guidance = ['NSA 3.16.3', 'CCE-4474-3', 'CCE-3756-4',
                          'CCE-4509-6', 'CCE-4386-9', 'CCE-4029-5',
                          'CCE-3581-6', 'CCE-4574-0']
@@ -270,41 +275,21 @@ development but some existing applications may use insecure side effects.'''
         myci = self.initCi(datatype, key, instructions, default)
         return myci
 
-    def __initializeRequiredWebDirOptions(self):
+    def __initializeSecureWebDirs(self):
         '''
         Private method to initialize the configurationitem object for the
-        REQUIREDWEBDIROPTIONS list.
+        SECUREWEBDIRS bool.
         @return: configuration object instance
         @author: Brandon R. Gonzales
         '''
-        datatype = "list"
-        key = "REQUIREDWEBDIROPTIONS"
-        instructions = "This list contains options that are required " + \
-                       "for web directories. These options will be added " + \
-                       "to all web directory definitions. Directories " + \
-                       "that are remotely accessible should be configured " + \
-                       "with options that provide the least amount of " + \
-                       "access possible."
-        default = ["SymLinksIfOwnerMatch"]
-        myci = self.initCi(datatype, key, instructions, default)
-        return myci
-
-    def __initializeRestrictedWebDirOptions(self):
-        '''
-        Private method to initialize the configurationitem object for the
-        RESTRICTEDWEBDIROPTIONS list.
-        @return: configuration object instance
-        @author: Brandon R. Gonzales
-        '''
-        datatype = "list"
-        key = "RESTRICTEDWEBDIROPTIONS"
-        instructions = "This list contains options that are restricted " + \
-                       "for web directories. These options will be " + \
-                       "removed from each web directory definition. " + \
-                       "Directories that are remotely accessible should " + \
-                       "be configured with options that provide the least " + \
-                       "amount of access possible."
-        default = ["Indexes", "FollowSymLinks"]
+        datatype = "bool"
+        key = "SECUREWEBDIRS"
+        instructions = "If set to true, the SECUREWEBDIRS action will " + \
+                       "configure all web directories to be more secure. " + \
+                       "This includes requiring/restricting specific web " + \
+                       "directory 'Options' and limiting the available " + \
+                       "web server methods to GET and POST."
+        default = True
         myci = self.initCi(datatype, key, instructions, default)
         return myci
 
@@ -379,11 +364,11 @@ development but some existing applications may use insecure side effects.'''
                                           'Found key: ' + str(entry)])
         return founddict
 
-    def __reportwebdiroptions(self, conf):
-        '''SecureApacheWebserver.__reportwebdiroptions() is a private method
-        that checks if a configuration file has web directory definitions
-        with restricted options or missing required options. It is mirrored
-        by the __fixwebdiroptions() method.
+    def __reportwebdirs(self, conf):
+        '''SecureApacheWebserver.__reportwebdirs() is a private method
+        that checks if all web directory definitions in a configuration file
+        have secure options and a limited set of available web server methods.
+        It is mirrored by the __fixwebdirs() method.
         @param conf: full path of the configuration file to check
         @return: Tuple - two elements, bool indicating compliance, string
         with detailed results.
@@ -391,39 +376,56 @@ development but some existing applications may use insecure side effects.'''
         '''
         results = ''
         compliant = True
-        fullentries = []
-        optionsfound = []
+        optionsresults = "Non-compliant web directory options:\n"
+        optionscompliant = True
+        methodsresults = "Web directories with server methods not disabled by default:\n"
+        methodscompliant = True
 
-        # Get a list of whole-string web directory entries.
+        webdirentries = []
+
+        # Get a list of web directory entries.
         f = open(conf, 'r')
         contents = f.read()
         f.close()
-        fullentries = re.findall("^\s*<Directory.*>[\s\S]*?<\/Directory.*>",
-                                 contents,
-                                 flags=re.MULTILINE)
+        webdirentries = re.findall("^\s*<Directory.*>[\s\S]*?<\/Directory.*>",
+                                   contents,
+                                   flags=re.MULTILINE)
 
-        results += "Non-compliant web directory options (" + conf + "):\n"
-        for entry in fullentries:
+        for entry in webdirentries:
+            # Secure web dir Options
             optionsfound = []
-            # Full entries have multiple lines.
-            # Split the full entry by line, resulting in a list.
-            linedentry = re.split("\n", str(entry))
-            for line in linedentry:
-                # Search for 'Options' in each line;
-                # Don't include matches that are commented out
-                if re.search("^((?!#).)*Options.*$", line):
-                    options = line.split()
-                    options = options[1:]
-                    for option in options:
-                        optionsfound.append(option)
+
+            optionlines = re.findall("(^\s*Options.*$)", entry, re.MULTILINE)
+
+            for line in optionlines:
+                options = line.split()
+                options = options[1:]
+                for option in options:
+                    optionsfound.append(option)
             for reqopt in self.requiredoptions:
                 if not reqopt in optionsfound:
-                    results += "Required option \'" + reqopt + "\'" + " missing in \'" + linedentry[0] + "\'\n"
+                    optionsresults += "Required option \'" + reqopt + "\'" + " missing in \'" + entry.split('\n', 1)[0] + "\'\n"
+                    optionscompliant = False
                     compliant = False
             for resopt in self.restrictedoptions:
                 if resopt in optionsfound:
-                    results += "Restricted option \'" + resopt + "\' found in \'" + linedentry[0] + "\'\n"
+                    optionsresults += "Restricted option \'" + resopt + "\' found in \'" + entry.split('\n', 1)[0] + "\'\n"
+                    optionscompliant = False
                     compliant = False
+
+            # Limit web server methods
+            limitexcept = re.search("^\s*<LimitExcept.*>[\s\S]*Order allow,deny[\s\S]*<\/LimitExcept>",
+                                   entry,
+                                   flags=re.MULTILINE)
+            if not limitexcept:
+                methodsresults += "\'" + entry.split('\n', 1)[0] + "\'\n"
+                methodscompliant = False
+                compliant = False
+
+        if not optionscompliant:
+            results += optionsresults + "\n"
+        if not methodscompliant:
+            results += methodsresults
         return compliant, results
 
     def __reportpermissions(self):
@@ -545,17 +547,16 @@ development but some existing applications may use insecure side effects.'''
                                                'Required directive ' + entry + \
                                                ' not found in Apache configuration. \n'
 
-            self.logdispatch.log(LogPriority.DEBUG, \
-                                 'Checking web directory options')
-            self.requiredoptions = self.reqopts.getcurrvalue()
-            self.restrictedoptions = self.resopts.getcurrvalue()
-            for conf in self.conffiles:
-                if os.path.exists(conf):
-                    webdircompliant, webdirresults = self.__reportwebdiroptions(conf)
-                    if not webdircompliant:
-                        self.webdircompliant = False
-                        compliant = False
-                        self.detailedresults += "\n" + webdirresults
+            if self.securewebdirs.getcurrvalue():
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Checking web directory configurations')
+                for conf in self.conffiles:
+                    if os.path.exists(conf):
+                        webdircompliant, webdirresults = self.__reportwebdirs(conf)
+                        if not webdircompliant:
+                            self.webdircompliant = False
+                            compliant = False
+                            self.detailedresults += "\n" + webdirresults
 
             self.logdispatch.log(LogPriority.DEBUG, \
                                  'Checking file/directory permissions')
@@ -707,46 +708,42 @@ development but some existing applications may use insecure side effects.'''
                 os.chmod(conffile, myend2[2])
             resetsecon(conffile)
 
-    def __fixwebdiroptions(self, conf):
-        '''SecureApacheWebserver.__fixwebdiroptions() is a private method
-        that adds/removes web directory options to each definition in a conf file
-        depending on if the option is restricted or required.
+    def __fixwebdirs(self, conf):
+        '''SecureApacheWebserver.__fixwebdirs() is a private method
+        that secures all web directory definitions in a configuration file by
+        requiring/restricting specific 'Options' and limiting the set of
+        available web server methods.
         @param conf: full path of the configuration file to fix
         @author: Brandon R. Gonzales
         '''
         results = ''
         success = True
-        fullentries = []
+        webdirentries = []
         optionsfound = []
 
-        # Get a list of whole-string web directory entries.
+        # Get a list of web directory entries.
         f = open(conf, 'r')
         contents = f.read()
         f.close()
         fixedcontents = contents
-        fullentries = re.findall("^\s*<Directory.*>[\s\S]*?<\/Directory.*>",
-                                 contents,
+        webdirentries = re.findall("^\s*<Directory.*>[\s\S]*?<\/Directory.*>",
+                                 fixedcontents,
                                  flags=re.MULTILINE)
 
-        for entry in fullentries:
+        for entry in webdirentries:
             optionsfound = []
-            optionsline = -1
 
-            # Full entries have multiple lines.
-            # Split the full entry by line, resulting in a list.
-            linedentry = re.split("\n", str(entry))
-            fixedentry = linedentry
-            for index, line in enumerate(linedentry):
-                # Search for 'Options' in each line;
-                # Don't include matches that are commented out
-                if re.search("^((?!#).)*Options.*$", line):
-                    if optionsline == -1:
-                        optionsline = index
-                    options = line.split()
-                    options = options[1:]
-                    for option in options:
-                        optionsfound.append(option)
-                    fixedentry.remove(line)
+            fixedentry = entry
+            optionlines = re.findall("(^\s*Options.*$)", fixedentry, re.MULTILINE)
+
+            for line in optionlines:
+                options = line.split()
+                options = options[1:]
+                for option in options:
+                    optionsfound.append(option)
+                if not line == optionlines[0]:
+                    fixedentry = fixedentry.replace(line, "")
+
             optionsfound = list(set(optionsfound))
             for reqopt in self.requiredoptions:
                 if not reqopt in optionsfound:
@@ -758,8 +755,25 @@ development but some existing applications may use insecure side effects.'''
                 fixedoptions = "    Options"
                 for option in optionsfound:
                     fixedoptions += " " + option
-                fixedentry.insert(optionsline, fixedoptions)
-            fixedcontents = fixedcontents.replace(entry, str("\n".join(fixedentry)))
+                if len(optionlines) > 0:
+                    fixedentry = fixedentry.replace(optionlines[0], fixedoptions)
+                else:
+                    index = fixedentry.find("</Directory")
+                    fixedentry = fixedentry[:index] + fixedoptions + fixedentry[index:]
+
+            limexdefault = "\n    <LimitExcept GET POST>\n" + \
+                           "        Order allow,deny\n" + \
+                           "    </LimitExcept>\n"
+
+            # Limit web server methods
+            limitexcept = re.search("^\s*<LimitExcept.*>[\s\S]*Order allow,deny[\s\S]*<\/LimitExcept>",
+                                   entry,
+                                   flags=re.MULTILINE)
+            if not limitexcept:
+                index = fixedentry.find("</Directory")
+                fixedentry = fixedentry[:index] + limexdefault + fixedentry[index:]
+
+            fixedcontents = fixedcontents.replace(entry, fixedentry)
         tmpconf = conf + ".tmp"
         if writeFile(tmpconf, fixedcontents, self.logdispatch):
             os.rename(tmpconf, conf)
@@ -1174,11 +1188,11 @@ development but some existing applications may use insecure side effects.'''
                     self.logdispatch.log(LogPriority.ERROR,
                                          self.detailedresults)
 
-        if self.secureapache.getcurrvalue() and not self.webdircompliant:
-            self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory options')
+        if self.secureapache.getcurrvalue() and self.securewebdirs.getcurrvalue() and not self.webdircompliant:
+            self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory configurations')
             for conf in self.conffiles:
                 if os.path.exists(conf):
-                    self.__fixwebdiroptions(conf)
+                    self.__fixwebdirs(conf)
 
         if self.secureapache.getcurrvalue() and not self.permissionscompliant:
             self.logdispatch.log(LogPriority.DEBUG, 'Fixing file/directory permissions')
