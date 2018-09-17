@@ -9,9 +9,9 @@ The root user should only use the browser for administration tasks."
 
 'Promiscuous' mode is a mode for a wired 'Network Interface Controller' (NIC) or 'Wireless Network Interface Controller' (WNIC) which causes the controller to pass all traffic it receives to the 'Central Processing Unit' (CPU) rather than passing only the frames that the controller is intended to receive. This mode is normally used for packet sniffing."
 
-<62>        "***AUDIT-ONLY; NO FIX*** 
+<62>        "***PARTIAL FIX***
 
-This rule checks to see if each 'Secure Shell' (SSH) key on the system is encrypted with a password. 
+This rule checks to see if each 'Secure Shell' (SSH) key on the system is encrypted with a password. It will only change permissions on keys with insecure permissions settings. This rule cannot encrypt your keys with passwords. That part requires a manual fix.
 
 The SSH service can be configured to use 'Public Key Infrastructure' (PKI) keys for authentication - commonly referred to as SSH Keys. SSH keys are a good authenticator and are very useful for denying brute-force password guessing attacks. There is a potential weakness in SSH keys in that it is possible to create the private key without a password. These password-less, unencrypted keys can then be used to move laterally by any user with read access to the key. To prevent this sort of exploitation, all private keys used for SSH should have a password and be protected by file permissions that limit read access to the owner."
 
