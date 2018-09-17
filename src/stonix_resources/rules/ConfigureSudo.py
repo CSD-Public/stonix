@@ -68,8 +68,7 @@ class ConfigureSudo(Rule):
 
         datatype2 = 'bool'
         key2 = 'CONFIGURESUDO'
-        instructions2 = '''To disable this rule set the value of \
-        CONFIGURESUDO to False.'''
+        instructions2 = '''To disable this rule set the value of CONFIGURESUDO to False.'''
         default2 = True
         self.ci2 = self.initCi(datatype2, key2, instructions2, default2)
 
@@ -77,8 +76,7 @@ class ConfigureSudo(Rule):
         #configuration item instantiation
         datatype = 'string'
         key = 'GROUPNAME'
-        instructions = "The group listed is the group that will be placed " + \
-        "into the sudoers file with permissions to run all commands."
+        instructions = "The group listed is the group that will be placed into the sudoers file with permissions to run all commands."
 
         # set the default group name to add to sudoers
         self.group = "wheel"
