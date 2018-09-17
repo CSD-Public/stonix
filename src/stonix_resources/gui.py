@@ -249,13 +249,20 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         @author: Breen Malmberg
         '''
 
-        self.logger.log(LogPriority.DEBUG, "\n\ngetSearchText() called\n\n")
+        self.logger.log(LogPriority.DEBUG, "\nBuilding Search database...\n")
 
         self.search_text = {}
 
         for rnum in self.rule_data:
+
+            cisearchtext = ""
+            rule_config_opts = self.controller.getruleconfigoptions(rnum)
+            for opt in rule_config_opts:
+                cisearchtext += " " + str(opt.getkey())
+                cisearchtext += " " + str(opt.getinstructions())
+
             rname = self.controller.getrulenamebynum(rnum)
-            self.search_text[rname] = self.rule_data[rnum][0] + ' ' + self.rule_data[rnum][1]
+            self.search_text[rname] = self.rule_data[rnum][0] + ' ' + self.rule_data[rnum][1] + ' ' + cisearchtext
 
     def resizeEvent(self, event):
         '''
