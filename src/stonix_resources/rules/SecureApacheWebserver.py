@@ -35,22 +35,27 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/7/24 Brandon R. Gonzales - Add report, fix, and ci for
                 restricted/required web directory options
-@change: 2018/9/14 Brandon R. Gonzales - Refactored report/fix/cis for web
-                directory options (it is now simply securewebdirs) and added
+@change: 2018/9/14 Brandon R. Gonzales - Refactor report/fix/cis for web
+                directory options (it is now simply securewebdirs); Add
                 functionality to limit web directory server methods
+@change: 2018/9/19 Brandon R. Gonzales - Add fix and report for installing rpm
+                security modules; Update SECUREAPACHEMODS ci instruction text
+                to include the new functionality
 '''
 from __future__ import absolute_import
+
 import os
 import re
-import traceback
+import shutil
 import stat
 import subprocess
-import shutil
+import traceback
 
-from ..rule import Rule
 from ..configurationitem import ConfigurationItem
-from ..stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
 from ..logdispatcher import LogPriority
+from ..pkghelper import Pkghelper
+from ..rule import Rule
+from ..stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
 
 
 class SecureApacheWebserver(Rule):
@@ -137,32 +142,41 @@ class SecureApacheWebserver(Rule):
                          'ServerTokens Prod',
                          'ServerSignature Off']
         self.sslitems = ['SSLCipherSuite ALL:!EXP:!NULL:!ADH:!LOW:!SSLv2!MEDIUM']
-        self.modules = ['rewrite_module modules/mod_rewrite.so',
-                        'ldap_module modules/mod_ldap.so',
-                        'authnz_ldap_module modules/mod_authnz_ldap.so',
-                        'include_module modules/mod_include.so',
-                        'dav_module modules/mod_dav.so',
-                        'dav_fs_module modules/mod_dav_fs.so',
-                        'dav_module modules/mod_dav.so',
-                        'dav_lock_module modules/mod_dav_lock.so',
-                        'status_module modules/mod_status.so',
-                        'info_module modules/mod_info.so',
-                        'speling_module modules/mod_speling.so',
-                        'userdir_module modules/mod_userdir.so',
-                        'proxy_balancer_module modules/mod_proxy_balancer.so',
-                        'proxy_ftp_module modules/mod_proxy_ftp.so',
-                        'proxy_http_module modules/mod_proxy_http.so',
-                        'proxy_connect_module modules/mod_proxy_connect.so',
-                        'cache_module modules/mod_cache.so',
-                        'cache_disk_module modules/mod_cache_disk.so',
-                        'cache_socache_module modules/mod_cache_socache.so',
-                        'ext_filter_module modules/mod_ext_filter.so',
-                        'expires_module modules/mod_expires.so',
-                        'headers_module modules/mod_headers.so',
-                        'vhost_alias_module modules/mod_vhost_alias.so',
-                        'deflate_module modules/mod_deflate.so',
-                        'usertrack_module modules/mod_usertrack.so',
-                        'mime_magic_module modules/mod_mime_magic.so']
+        self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.securitymods = ['mod_ssl',
+                             'mod_security',
+                             'mod_cband',
+                             'mod_bwshare',
+                             'mod_limitipconn',
+                             'mod_evasive']
+        self.nonessentialmods = [
+            'rewrite_module modules/mod_rewrite.so',
+            'ldap_module modules/mod_ldap.so',
+            'authnz_ldap_module modules/mod_authnz_ldap.so',
+            'include_module modules/mod_include.so',
+            'dav_module modules/mod_dav.so',
+            'dav_fs_module modules/mod_dav_fs.so',
+            'dav_module modules/mod_dav.so',
+            'dav_lock_module modules/mod_dav_lock.so',
+            'status_module modules/mod_status.so',
+            'info_module modules/mod_info.so',
+            'speling_module modules/mod_speling.so',
+            'userdir_module modules/mod_userdir.so',
+            'proxy_balancer_module modules/mod_proxy_balancer.so',
+            'proxy_ftp_module modules/mod_proxy_ftp.so',
+            'proxy_http_module modules/mod_proxy_http.so',
+            'proxy_connect_module modules/mod_proxy_connect.so',
+            'cache_module modules/mod_cache.so',
+            'cache_disk_module modules/mod_cache_disk.so',
+            'cache_socache_module modules/mod_cache_socache.so',
+            'ext_filter_module modules/mod_ext_filter.so',
+            'expires_module modules/mod_expires.so',
+            'headers_module modules/mod_headers.so',
+            'vhost_alias_module modules/mod_vhost_alias.so',
+            'deflate_module modules/mod_deflate.so',
+            'usertrack_module modules/mod_usertrack.so',
+            'mime_magic_module modules/mod_mime_magic.so']
+
         self.phpitems = ['display_errors = Off',
                          'expose_php = Off',
                          'log_errors = On',
@@ -218,11 +232,15 @@ all systems.'''
         myci = ConfigurationItem('bool')
         key = 'SECUREAPACHEMODS'
         myci.setkey(key)
-        confinst = '''If set to yes or true the SECUREAPACHEMODS variable will
-minimize the installed Apache modules. Apache modules provide increased
-functionality at the cost of increased attack surface and information leakage.
-Users disabling this action should manually validate and minimize the installed
-modules.'''
+        confinst = "If set to yes or true the SECUREAPACHEMODS variable " + \
+                   "will install security Apache modules on rpm based " + \
+                   "systems and minimize non-essetintial modules on all " + \
+                   "systems. Security modules provide protections " + \
+                   "against malicious attackers while non-essential " + \
+                   "Apache modules can increase a system's attack " + \
+                   "surface and information leakage. Users disabling " + \
+                   "this action should manually validate and minimize " + \
+                   "the installed modules."
         myci.setinstructions(confinst)
         default = True
         myci.setdefvalue(default)
@@ -439,7 +457,6 @@ development but some existing applications may use insecure side effects.'''
         results = ''
         compliant = True
 
-        results += "Incorrect file/directory permissions:\n"
         for path in self.perms:
             if os.path.exists(path):
                 if self.perms[path] != getOctalPerms(path):
@@ -448,7 +465,26 @@ development but some existing applications may use insecure side effects.'''
                     compliant = False
         return compliant, results
 
-    def __checkmod(self):
+    def __reportsecuritymod(self):
+        '''SecureApacheWebserver.__reportsecuritymod() is a private method to
+        to report if rpm apache security modules are installed. It is mirrored
+        by the __reportsecuritymod() method.
+        @return: Tuple - two elements, bool indicating the fix's success,
+        string with detailed results.
+        @author Brandon R. Gonzales
+        '''
+        results = ''
+        compliant = True
+
+        # Check if httpd is installed (only available on rpm based systems)
+        if self.ph.check("httpd"):
+            for pkg in self.securitymods:
+                if self.ph.checkAvailable(pkg) and not self.ph.check(pkg):
+                    results += pkg + " is not installed\n"
+                    compliant = False
+        return compliant, results
+
+    def __reportminimizemod(self):
         '''SecureApacheWebserver.__checkmod() is a private method to check for
         modules that should be disabled. It is mirrored by the
         __fixapachemodules() method.
@@ -491,7 +527,7 @@ development but some existing applications may use insecure side effects.'''
                 for line in modconf:
                     if self.comment.match(line):
                         continue
-                    for entry in self.modules:
+                    for entry in self.nonessentialmods:
                         # Ubuntu is using a different path to modules
                         # so we split the list elements and re.search on the
                         # back half which contains the .so
@@ -566,12 +602,19 @@ development but some existing applications may use insecure side effects.'''
                 compliant = False
                 self.detailedresults += "\n" + permsresults
 
-            self.logdispatch.log(LogPriority.DEBUG, 'Checking modules')
-            modcompliant, results = self.__checkmod()
+            self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
+            secmodcompliant, results = self.__reportsecuritymod()
+            if not secmodcompliant:
+                self.secmodulescompliant = False
+                compliant = False
+                self.detailedresults += "\n" + results
+
+            self.logdispatch.log(LogPriority.DEBUG, 'Checking for non-essential modules')
+            modcompliant, results = self.__reportminimizemod()
             if not modcompliant:
                 self.modulescompliant = False
                 compliant = False
-                self.detailedresults = self.detailedresults + results
+                self.detailedresults += "\n" + results
 
             self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
             for filename in self.sslfiles:
@@ -583,8 +626,8 @@ development but some existing applications may use insecure side effects.'''
                     if founddict3[entry] == False:
                         compliant = False
                         self.sslcompliant = False
-                        self.detailedresults = self.detailedresults + \
-                                               filename + ' should contain ' + entry + ' \n'
+                        self.detailedresults += "\n" + filename + \
+                                                ' should contain ' + entry
             if os.path.exists(self.phpfile):
                 self.logdispatch.log(LogPriority.DEBUG, 'Checking phpfile')
                 rhandle4 = open(self.phpfile, 'r')
@@ -595,8 +638,8 @@ development but some existing applications may use insecure side effects.'''
                     if founddict4[entry] == False:
                         compliant = False
                         self.phpcompliant = False
-                        self.detailedresults = self.detailedresults + \
-                                               self.phpfile + ' should contain ' + entry + ' \n'
+                        self.detailedresults += "\n"+ self.phpfile + \
+                                                ' should contain ' + entry
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -802,8 +845,24 @@ development but some existing applications may use insecure side effects.'''
                                    ". Expected " + str(self.perms[path]) + ".\n"
                         success = False
 
-    def __fixapachemodules(self, conffile, eventid1, eventid2):
-        '''SecureApacheWebserver.__fixapachemodules() private method to disable
+    def __fixsecuritymod(self):
+        '''SecureApacheWebserver.__fixsecuritymod() private method to install
+        apache security modules. It is mirrored by the __reportsecuritymod()
+        method.
+        @return: bool - If successful True; If failure False
+        @author Brandon R. Gonzales
+        '''
+        success = True
+
+        for pkg in self.securitymods:
+            if self.ph.checkAvailable(pkg):
+                if not self.ph.check(pkg):
+                    if not self.ph.install(pkg):
+                        success = False
+        return success
+
+    def __fixminimizemod(self, conffile, eventid1, eventid2):
+        '''SecureApacheWebserver.__fixminimizemod() private method to disable
         apache modules that are not needed. This method loops over locations
         for the apache binary but does not understand a list for conffile
         location.
@@ -840,7 +899,7 @@ development but some existing applications may use insecure side effects.'''
             rhandle = open(conffile, 'r+')
             filecontents = rhandle.read()
             rhandle.close()
-            for module in self.modules:
+            for module in self.nonessentialmods:
                 modulesplit = module.split(' ')
                 modulepath = modulesplit[1]
                 if re.search(modulepath, filecontents):
@@ -896,7 +955,7 @@ development but some existing applications may use insecure side effects.'''
             rhandle.close()
             undoconf = localconf
             modconf = ''
-            for module in self.modules:
+            for module in self.nonessentialmods:
                 self.logdispatch.log(LogPriority.DEBUG,
                                      ['SecureApacheWebserver.__fixapachemodules',
                                       'Processing module ' + module])
@@ -1198,6 +1257,9 @@ development but some existing applications may use insecure side effects.'''
             self.logdispatch.log(LogPriority.DEBUG, 'Fixing file/directory permissions')
             self.__fixpermissions()
 
+        if not self.secmodulescompliant:
+            self.__fixsecuritymod()
+
         myidbase = 200
         if self.domodules.getcurrvalue() and not self.modulescompliant:
             rangebase = str(self.rulenumber).zfill(4) + '2'
@@ -1246,7 +1308,7 @@ development but some existing applications may use insecure side effects.'''
                 myidbase = myidbase + 1
                 permid = self.makeEventId(myidbase)
                 try:
-                    self.__fixapachemodules(apacheconf, changeid, permid)
+                    self.__fixminimizemod(apacheconf, changeid, permid)
                 except (KeyboardInterrupt, SystemExit):
                     # User initiated exit
                     raise
