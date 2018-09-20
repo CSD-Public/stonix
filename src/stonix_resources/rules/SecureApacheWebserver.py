@@ -190,6 +190,7 @@ class SecureApacheWebserver(Rule):
         self.permissionscompliant = True
         self.phpcompliant = True
         self.sslcompliant = True
+        self.secmodulescompliant = True
         self.modulescompliant = True
         self.httpcompliant = True
 
@@ -602,12 +603,13 @@ development but some existing applications may use insecure side effects.'''
                 compliant = False
                 self.detailedresults += "\n" + permsresults
 
-            self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
-            secmodcompliant, results = self.__reportsecuritymod()
-            if not secmodcompliant:
-                self.secmodulescompliant = False
-                compliant = False
-                self.detailedresults += "\n" + results
+            if self.environ.getosfamily() == "linux":
+                self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
+                secmodcompliant, results = self.__reportsecuritymod()
+                if not secmodcompliant:
+                    self.secmodulescompliant = False
+                    compliant = False
+                    self.detailedresults += "\n" + results
 
             self.logdispatch.log(LogPriority.DEBUG, 'Checking for non-essential modules')
             modcompliant, results = self.__reportminimizemod()
