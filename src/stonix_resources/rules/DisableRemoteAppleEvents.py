@@ -29,7 +29,7 @@ with a program on a different computer. Unless needed, Remote Apple Events
 should be turned off. If turned on, add users to the Allow Access for list if
 possible.
 
-@author: bemalmbe
+@author: Breen Malmberg
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change 2017/08/28 Breen Malmberg Fixing to use new help text methods
@@ -41,6 +41,7 @@ possible.
 from __future__ import absolute_import
 
 import os
+import re
 import traceback
 
 from ..rule import Rule
@@ -68,212 +69,239 @@ class DisableRemoteAppleEvents(Rule):
         self.formatDetailedResults("initialize")
         self.compliant = False
         self.mandatory = True
-        self.helptext = 'Apple Events is a technology which allows one ' \
-        'program to communicate with other programs. Remote Apple Events ' \
-        'allows a program on one computer to communicate with a program on ' \
-        'a different computer. Unless needed, Remote Apple Events should be ' \
-        'turned off. If turned on, add users to the Allow Access for list ' \
-        'if possible.'
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.10']
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+        self.sethelptext()
 
         # set up CIs
         datatype = 'bool'
         key = 'DISABLEREMOTEAPPLEEVENTS'
         instructions = 'To allow the use of remote apple events on this system, set the value of DisableRemoteAppleEvents to False.'
-        default = True
+        default = False
         self.disableremoteevents = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
         key2 = 'REMOTEAPPLEEVENTSUSERS'
         instructions2 = 'If you have a business requirement to have remote apple events turned on, enter a list of users who will be allowed access to remote apple events on this system'
-        default2 = []
+        default2 = ["bemalmbe"]
         self.secureremoteevents = self.initCi(datatype2, key2, instructions2, default2)
-
-        # set up class variables
-        self.eppcfile = '/System/Library/LaunchDaemons/com.apple.eppc.plist'
-        self.eppcfileshort = 'com.apple.eppc'
-        self.raefile = '/private/var/db/dslocal/nodes/default/groups/com.apple.access_remote_ae.plist'
-        self.raefileshort = 'com.apple.access_remote_ae'
 
     def report(self):
         '''
         return the compliance status of the system with this rule
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.compliant
+        @rtype: bool
+
+        @author: Breen Malmberg
         '''
 
-        self.detailedresults = ''
+        self.detailedresults = ""
         self.cmhelper = CommandHelper(self.logger)
-        self.compliant = False
-        secure = True
-        disabled = False
+        self.compliant = True
 
         try:
 
+            print "Value of disableremoteevents CI = " + str(self.disableremoteevents.getcurrvalue())
+
             if self.disableremoteevents.getcurrvalue():
-                disabled = self.checkPlistVal('1', self.getCurPlistVal(self.eppcfile, 'Disabled'))
+                if not self.reportDisabled():
+                    self.compliant = False
 
-            if self.secureremoteevents.getcurrvalue():
-                secure = self.checkPlistVal(self.secureremoteevents.getcurrvalue(), self.getCurPlistVal(self.raefile, 'users'))
+            print "Value of secureremoteevents CI = " + str(self.secureremoteevents.getcurrvalue())
 
-            if secure and disabled:
-                self.compliant = True
-            elif not disabled:
-                self.detailedresults += '\ndisable remote apple events is set to True, but remote apple events is currently enabled'
-            elif not secure:
-                self.detailedresults += '\nthe allowed users acl for remote apple events is configured incorrectly'
+            if self.secureremoteevents.getcurrvalue() != []:
+                if not self.reportSecured():
+                    self.compliant = False
 
         except Exception:
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
-###############################################################################
+    def reportDisabled(self):
+        '''
+
+        @return:
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Checking if remote apple events are disabled...")
+
+        retval = False
+        get_remote_ae = "/usr/sbin/systemsetup -getremoteappleevents"
+        searchphrase = "Remote Apple Events: Off"
+
+        self.cmhelper.executeCommand(get_remote_ae)
+        outputlist = self.cmhelper.getOutput()
+        for line in outputlist:
+            if re.search(searchphrase, line, re.IGNORECASE):
+                retval = True
+
+        if not retval:
+            self.detailedresults += "\nRemote Apple Events are On"
+        else:
+            self.detailedresults += "\nRemote Apple Events are Off"
+
+        return retval
+
+    def reportSecured(self):
+        '''
+
+        @return:
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Checking if remote apple events is secured...")
+
+        retval = True
+        uuid_list = self.getUUIDs(self.secureremoteevents.getcurrvalue())
+        remote_ae_users = self.getRemoteAEUsers()
+
+        difference = list(set(uuid_list) - set(remote_ae_users))
+        if difference:
+            retval = False
+            self.detailedresults += "\nThe current list of allowed remote access users does not match the desired list of remote access users"
+            self.detailedresults += "\nDifference: " + " ".join(difference)
+
+        return retval
+
+    def getRemoteAEUsers(self):
+        '''
+        return a list of uuid's of current remote ae users
+        (mac os x stores the remote ae users as uuid's in a plist)
+
+        @return:
+        '''
+
+        get_remote_ae_users = "/usr/bin/dscl . read /Groups/com.apple.access_remote_ae GroupMembers"
+        remote_ae_users = []
+
+        # it is possible that the key "GroupMembers" does not exist
+        # this is because when you remove the last remote ae user from the list,
+        # mac os x deletes this key from the plist as well..
+        self.cmhelper.executeCommand(get_remote_ae_users)
+        retcode = self.cmhelper.getReturnCode()
+        if retcode == 0:
+            remote_ae_users = self.cmhelper.getOutputString().split()
+        else:
+            errmsg = self.cmhelper.getErrorString()
+            self.logger.log(LogPriority.DEBUG, str(errmsg))
+        if "GroupMembers:" in remote_ae_users:
+            remote_ae_users.remove("GroupMembers:")
+
+        return remote_ae_users
+
     def fix(self):
         '''
         run commands needed to bring the system to a compliant state with this
         rule
 
-        @return: bool
-        @author: bemalmbe
+        @return: self.rulesuccess
+        @rtype: bool
+
+        @author: Breen Malmberg
         '''
 
-        self.rulesuccess = False
-        self.detailedresults = ''
-        self.id = 0
+        self.iditerator = 0
+        self.rulesuccess = True
+        self.detailedresults = ""
 
         try:
-
-            if self.secureremoteevents.getcurrvalue():
-                users = self.compileUsers(self.secureremoteevents.getcurrvalue())
-                if users:
-                    origval = self.compileUsers(self.getCurPlistVal(self.raefile, 'users'))
-                    self.rulesuccess = self.cmhelper.executeCommand('defaults write ' + self.raefile + ' users ' + users)
-
-                    self.id += 1
-                    myid = iterate(self.id, self.rulenumber)
-                    event = {'eventtype': 'commandstring',
-                             'command': 'defaults write ' + self.raefile + ' users ' + str(origval)}
-                    self.statechglogger.recordchgevent(myid, event)
 
             if self.disableremoteevents.getcurrvalue():
-                origval = self.getCurPlistVal(self.eppcfile, 'Disabled')
-                self.rulesuccess = self.cmhelper.executeCommand('defaults write ' + self.eppcfile + ' Disabled -bool true')
+                if not self.disable_remote_ae():
+                    self.rulesuccess = False
 
-                self.id += 1
-                myid = iterate(self.id, self.rulenumber)
-                event = {'eventtype': 'commandstring',
-                         'command': 'defaults write ' + self.raefile + ' Disabled ' + str(origval)}
-                self.statechglogger.recordchgevent(myid, event)
+            if self.secureremoteevents.getcurrvalue():
+                if not self.secure_remote_ae():
+                    self.rulesuccess = False
 
         except Exception:
-            self.detailedresult += '\n' + traceback.format_exc()
+            self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
 
-###############################################################################
-    def compileUsers(self, userlist):
-        '''
-        compile a given list of users into a string of the format: '(user1, user2, user3...)'
-
-        @param: list userlist    list of users
-        @return: string
-        @author: bemalmbe
+    def disable_remote_ae(self):
         '''
 
-        returnstring = ''
-
-        try:
-
-            if userlist:
-                for user in userlist:
-                    userlist = [c.replace(user, user.strip().strip('\n')) for c in userlist]
-                returnstring = '('
-                for user in userlist:
-                    returnstring += user + ','
-                returnstring = returnstring[:-1]
-                returnstring += ')'
-                returnstring = "'" + returnstring + "'"
-
-        except Exception:
-            raise
-        return returnstring
-
-###############################################################################
-    def getCurPlistVal(self, plist, key):
-        '''
-        get the value of the given plist key
-
-        @param: string plist    name of plist file to query
-        @param: string key    name of key to query
-        @return: list
-        @author: bemalmbe
-        '''
-
-        try:
-
-            if not os.path.exists(plist):
-                self.detailedresults += '\ngetCurPlistVal(): could not find specified plist file: ' + str(plist)
-
-            self.cmhelper.executeCommand('defaults read ' + plist + ' ' + key)
-            output = self.cmhelper.getOutput()
-
-        except Exception:
-            raise
-        return output
-
-###############################################################################
-    def checkPlistVal(self, val, output):
-        '''
-        check a given value, val, against a list of values, output
-
-        @param: string/list val    given value or list of values to check
-        @param: list output    given list of values to check against
-        @return: bool
-        @author: bemalmbe
+        @return:
         '''
 
         retval = True
 
-        try:
+        disable_remote_ae_cmd = "/usr/sbin/systemsetup setremoteappleevents off"
+        undocmd = "/usr/sbin/systemsetup setremoteappleevents on"
+        self.cmhelper.executeCommand(disable_remote_ae_cmd)
+        retcode = self.cmhelper.getReturnCode()
+        if retcode != 0:
+            retval = False
+        else:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "commandstring",
+                     "command": undocmd}
 
-            for item in output:
-                output = [c.replace(item, item.strip(')')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip('(')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip('\n')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip(',')) for c in output]
-            for item in output:
-                output = [c.replace(item, item.strip()) for c in output]
-            for item in output:
-                if item == '':
-                    output.remove(item)
-            if len(output) > 1:
-                for item in output:
-                    if item == '1' or item == '0' or item == 1 or item == 0:
-                        output.remove(item)
+            self.statechglogger.recordchgevent(myid, event)
 
-            if isinstance(val, list):
-                for item in val:
-                    if item not in output:
-                        retval = False
-
-            elif isinstance(val, basestring):
-                if val not in output:
-                    retval = False
-
-        except Exception:
-            raise
         return retval
+
+    def secure_remote_ae(self):
+        '''
+
+        @return:
+        '''
+
+        retval = True
+        desired_remote_ae_users = self.getUUIDs(self.secureremoteevents.getcurrvalue())
+        securecmd = "/usr/bin/dscl . create /Groups/com.apple.access_remote_ae GroupMembers " + " ".join(desired_remote_ae_users)
+        original_remote_ae_users = self.getRemoteAEUsers()
+        if original_remote_ae_users:
+            undocmd = "/usr/bin/dscl . create /Groups/com.apple.access_remote_ae GroupMembers " + " ".join(original_remote_ae_users)
+        else:
+            undocmd = "/usr/bin/dscl . delete /Groups/com.apple.access_remote_ae GroupMembers"
+
+        self.cmhelper.executeCommand(securecmd)
+        retcode = self.cmhelper.getReturnCode()
+        if retcode == 0:
+            self.iditerator += 1
+
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "commandstring",
+                     "command": undocmd}
+
+            self.statechglogger.recordchgevent(myid, event)
+        else:
+            retval = False
+            self.detailedresults += "\nFailed to properly configure the desired remote apple events users"
+
+        return retval
+
+    def getUUIDs(self, userlist):
+        '''
+        convert the desired (user-specified) list of ae user names
+        into uuid's; return as list
+
+        @return:
+        '''
+
+        uuidlist = []
+
+        for user in userlist:
+            output = ""
+            get_uuid = "/usr/bin/dsmemberutil getuuid -U " + user
+            self.cmhelper.executeCommand(get_uuid)
+            output = self.cmhelper.getOutputString()
+            if re.search("no uuid", output, re.IGNORECASE):
+                continue
+            else:
+                if output:
+                    uuidlist.append(output.strip())
+
+        return uuidlist
