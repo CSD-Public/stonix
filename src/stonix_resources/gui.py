@@ -857,31 +857,41 @@ class CiFrame(QFrame):
 
         for opt in self.rule_config_opts:
 
-            datatype = opt.getdatatype()
-            ciname = opt.getkey()
-            myuc = self.findChild(QPlainTextEdit, 'ucvalue' + ciname)
+            try:
 
-            if datatype == 'string' or datatype == 'int' or datatype == 'float':
-                mydata = self.findChild(QLineEdit, 'value' + ciname)
-                mydataval = mydata.text().encode('ascii', 'ignore')
-            elif datatype == 'bool':
-                mydata = self.findChild(QCheckBox, 'value' + ciname)
-                mydataval = mydata.isChecked()
-            elif datatype == 'list':
+                CIobjval = None
+                CIobj = None
+                cidatatype = opt.getdatatype()
+                ciname = opt.getkey()
+                usercomment = self.findChild(QPlainTextEdit, 'ucvalue' + ciname)
 
-                mydata = self.findChild(QLineEdit, 'value' + ciname)
-                mydataval = mydata.text().encode('ascii', 'ignore')
-                mydataval = mydataval.split()
+                if cidatatype in ['string', 'int', 'float']:
+                    CIobj = self.findChild(QLineEdit, 'value' + ciname)
+                    CIobjval = str(CIobj.text())
+                elif cidatatype == 'bool':
+                    CIobj = self.findChild(QCheckBox, 'value' + ciname)
+                    CIobjval = CIobj.isChecked()
+                elif cidatatype == 'list':
+                    CIobj = self.findChild(QLineEdit, 'value' + ciname)
+                    CIobjval = str(CIobj.text())
+                    CIobjval = CIobjval.split()
 
-            myucval = myuc.toPlainText()
-            valid = opt.updatecurrvalue(mydataval)
+                valid = opt.updatecurrvalue(CIobjval)
 
-            if not valid:
-                QMessageBox.warning(self, "Validation Error", "Invalid value for Rule: " + self.rulename + " CI: " + ciname + ".")
-                mydata.setFocus()
+                if not valid:
+                    QMessageBox.warning(self, "Validation Error", "Invalid value in CI: " + ciname + " for Rule: " + self.rulename)
+                    CIobj.selectAll()
+                    CIobj.setFocus()
+                    return
+
+                usercommentval = usercomment.toPlainText()
+                opt.setusercomment(usercommentval)
+
+            except UnicodeEncodeError:
+                QMessageBox.warning(self, "Encoding Error", "Failed to save configuration changes to stonix.conf because there are 1 or more untranslatable unicode characters in the value for CI: " + ciname + " in the Rule: " + self.rulename)
                 return
-
-            opt.setusercomment(myucval)
+            except:
+                raise
 
     def clearchanges(self):
         """
