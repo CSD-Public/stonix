@@ -79,13 +79,13 @@ class DisableRemoteAppleEvents(Rule):
         datatype = 'bool'
         key = 'DISABLEREMOTEAPPLEEVENTS'
         instructions = 'To allow the use of remote apple events on this system, set the value of DisableRemoteAppleEvents to False.'
-        default = False
+        default = True
         self.disableremoteevents = self.initCi(datatype, key, instructions, default)
 
         datatype2 = 'list'
         key2 = 'REMOTEAPPLEEVENTSUSERS'
         instructions2 = 'If you have a business requirement to have remote apple events turned on, enter a list of users who will be allowed access to remote apple events on this system'
-        default2 = ["bemalmbe"]
+        default2 = []
         self.secureremoteevents = self.initCi(datatype2, key2, instructions2, default2)
 
     def report(self):
@@ -280,6 +280,23 @@ class DisableRemoteAppleEvents(Rule):
         else:
             retval = False
             self.detailedresults += "\nFailed to properly configure the desired remote apple events users"
+
+        # we assume the user wants to use the service if they configure the user list for it
+        # and turn off the disable events CI
+        if not self.disableremoteevents.getcurrvalue():
+            undo_enable_remote_ae_cmd = "/usr/sbin/systemsetup setremoteappleevents off"
+            enable_remote_ae_cmd = "/usr/sbin/systemsetup setremoteappleevents on"
+            self.cmhelper.executeCommand(enable_remote_ae_cmd)
+            retcode = self.cmhelper.getReturnCode()
+            if retcode != 0:
+                retval = False
+                self.detailedresults += "\nFailed to enable remote apple events service"
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "commandstring",
+                         "command": undo_enable_remote_ae_cmd}
+                self.statechglogger.recordchgevent(myid, event)
 
         return retval
 
