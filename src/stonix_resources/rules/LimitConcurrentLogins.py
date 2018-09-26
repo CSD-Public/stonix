@@ -63,8 +63,8 @@ class LimitConcurrentLogins(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.applicable = {'type': 'white',
-                           'family': ['linux']}
-#                            'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
+                           'family': ['linux'],
+                            'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
         self.conffilesdir = "/etc/security/limits.d"
         self.sethelptext()
 
