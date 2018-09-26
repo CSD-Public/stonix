@@ -358,6 +358,7 @@ class MinimizeServices(Rule):
                                'plymouth-read-write.service',
                                'plymouth-start.service',
                                'polkit.service', 'postfix.service',
+                               'postfix@-.service', # for ubuntu 18...
                                'poweroff.service', 'prefdm.service',
                                'procps.service',
                                'procps', 'psacct.service',
