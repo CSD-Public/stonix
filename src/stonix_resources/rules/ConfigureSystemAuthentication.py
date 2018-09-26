@@ -254,11 +254,21 @@ class ConfigureSystemAuthentication(Rule):
         @author: dwalker
         @param self - essential if you override this definition
         @return: bool - True if fix is successful, False if it isn't
+        @change: Breen Malmberg - 9/26/2018 - added a check and installation of a
+                necessary package for fedora 28, in order for the fix to continue
         '''
 
         success = True
         debug = ""
         self.detailedresults = ""
+
+        try:
+            if self.ph.manager == "dnf":
+                if not self.ph.check("authconfig"):
+                    self.ph.install("authconfig") # this is needed by fedora 28 to continue
+        except:
+            pass
+
         '''create backups of pamfiles'''
         if os.path.exists(self.pampassfile):
             createFile(self.pampassfile + ".backup", self.logger)
