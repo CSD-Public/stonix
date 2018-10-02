@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,7 +27,10 @@ Created on Aug 06, 2012
 '''
 
 import re
+import os
+import time
 
+from stonixutilityfunctions import psRunning
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from StonixExceptions import repoError
@@ -90,9 +93,24 @@ class AptGet(object):
         @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
                 method now returns a variable; parameter validation added
                 detailedresults replaced with logging
+        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
         '''
 
         installed = True
+        maxtries = 12
+        trynum = 0
+        pslist = ["apt", "apt-get", "dpkg"]
+
+        for ps in pslist:
+            while psRunning(ps):
+                trynum += 1
+                if trynum == maxtries:
+                    self.logger.log(LogPriority.DEBUG, "Timed out while attempting to install package, due to Apt package manager being in-use by another process.")
+                    installed = False
+                    return installed
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Apt package manager is in-use by another process. Waiting for it to be freed...")
+                    time.sleep(5)
 
         try:
 
@@ -128,6 +146,20 @@ class AptGet(object):
         '''
 
         removed = True
+        maxtries = 12
+        trynum = 0
+        pslist = ["apt", "apt-get", "dpkg"]
+
+        for ps in pslist:
+            while psRunning(ps):
+                trynum += 1
+                if trynum == maxtries:
+                    self.logger.log(LogPriority.DEBUG, "Timed out while attempting to remove package, due to Apt package manager being in-use by another process.")
+                    removed = False
+                    return removed
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Apt package manager is in-use by another process. Waiting for it to be freed...")
+                    time.sleep(5)
 
         try:
 
@@ -170,6 +202,20 @@ class AptGet(object):
         installed = False
         stringToMatch = "ii\s+" + str(package)
         outputstr = ""
+        maxtries = 12
+        trynum = 0
+        pslist = ["apt", "apt-get", "dpkg"]
+
+        for ps in pslist:
+            while psRunning(ps):
+                trynum += 1
+                if trynum == maxtries:
+                    self.logger.log(LogPriority.DEBUG, "Timed out while attempting to check status of package, due to Apt package manager being in-use by another process.")
+                    installed = False
+                    return installed
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Apt package manager is in-use by another process. Waiting for it to be freed...")
+                    time.sleep(5)
 
         try:
 
@@ -212,6 +258,22 @@ class AptGet(object):
         found = False
         repoerr = ""
         outputstr = ""
+        maxtries = 12
+        trynum = 0
+        pslist = ["apt", "apt-get", "dpkg"]
+
+        for ps in pslist:
+            while psRunning(ps):
+                trynum += 1
+                if trynum == maxtries:
+                    self.logger.log(LogPriority.DEBUG,
+                                    "Timed out while attempting to check availability of package, due to apt package manager being in-use by another process.")
+                    available = False
+                    return available
+                else:
+                    self.logger.log(LogPriority.DEBUG,
+                                    "apt package manager is in-use by another process. Waiting for it to be freed...")
+                    time.sleep(5)
 
         try:
 
