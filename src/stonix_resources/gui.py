@@ -1076,17 +1076,17 @@ class runThread(QThread):
         The run method will run the rules calling their fix, report or undo
         methods as directed by the action.
 
-<<<<<<< HEAD
-        @author: dkennel
+        @author: David Kennel
         @author: Breen Malmberg - 07/26/2018 - updated tstatus dict when the
                 primary ci for a rule is a boolean and is disabled; updated
                 the detailedresults for the calling rule with a call to a new
                 method in rule.py set_rule_detailedresults (since rule's detailed
                 results are not observable from the gui class), when the run
                 mode is 'fix' and fix did not run because the ci was disabled
-=======
+
         @author: David Kennel
->>>>>>> efc14e4... [artf53778] added the rule name to the qwarning dialogue box message that pops up in the gui when a type validation error occurs
+        @change: Breen Malmberg - 9/25/2018 - added the rule name to the qwarning dialogue
+                box message that pops up in the gui when a type validation error occurs
         """
 
         if self.stopflag:

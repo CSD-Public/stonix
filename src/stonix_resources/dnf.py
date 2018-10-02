@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,7 +27,10 @@ Created on Aug 13, 2015
 '''
 
 import re
+import os
+import time
 
+from stonixutilityfunctions import psRunning
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from StonixExceptions import repoError
@@ -58,7 +61,8 @@ class Dnf(object):
         self.chavailable = self.dnfloc + " list --available "
         self.checkupdate = self.dnfloc + " check-update "
         self.rpm = "/bin/rpm -qf "
-        self.updatepackage = self.dnfloc + " -yq upgrade " 
+        self.updatepackage = self.dnfloc + " -yq upgrade "
+        self.lockfiles = ["/var/run/dnf.lock", "/var/run/dnf.pid", "/run/dnf.lock", "/run/dnf.pid"]
 
     def installpackage(self, package):
         '''
@@ -69,10 +73,24 @@ class Dnf(object):
         @return installed
         @rtype: bool
         @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017
+        @change: Breen Malmberg - 4/18/2017 - refactored method; added logging; replaced
+                detailedresults with logging
+        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
         '''
 
         installed = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("dnf"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to install package, due to dnf package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "dnf package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -107,6 +125,18 @@ class Dnf(object):
         '''
 
         removed = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("dnf"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to remove package, due to dnf package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "dnf package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -145,6 +175,18 @@ class Dnf(object):
         installed = False
         errstr = ""
         outputstr = ""
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("dnf"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to check status of package, due to dnf package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "dnf package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -199,6 +241,20 @@ class Dnf(object):
         '''
 
         found = False
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("dnf"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG,
+                                "Timed out while attempting to check availability of package, due to dnf package manager being in-use by another process.")
+                found = False
+                return found
+            else:
+                self.logger.log(LogPriority.DEBUG,
+                                "dnf package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
