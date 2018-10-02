@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -27,7 +27,10 @@ Created on Aug 08, 2012
 '''
 
 import re
+import os
+import time
 
+from stonixutilityfunctions import psRunning
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from StonixExceptions import repoError
@@ -39,7 +42,7 @@ class Zypper(object):
     all platform specific pkgmgr classes.
 
     @author: Derek T Walker
-    @change: 2012/08/08 dwalker - Original Implementation
+    @change: 2012/08/08 Derek Walker - Original Implementation
     @change: 2014/09/10 dkennel - Added -n option to search command string
     @change: 2014/12/24 Breen Malmberg - fixed a typo in the old search string;
             fixed multiple pep8 violations; changed search strings to be match exact and
@@ -74,11 +77,24 @@ class Zypper(object):
                 recognizable to the underlying package manager.
         @return: installed
         @rtype: bool
-        @author: dwalker
-        @change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting
+        @author: Derek Walker
+        @change: Breen Malmberg - 12/24/2014 - fixed method doc string formatting
+        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
         '''
 
         installed = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("zypper"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to install package due to zypper package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "zypper package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -108,13 +124,25 @@ class Zypper(object):
                 recognizable to the underlying package manager.
         @return: removed
         @rtype: bool
-        @author: dwalker
+        @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting;
                 fixed an issue with var 'removed' not
                 being initialized before it was called
         '''
 
         removed = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("zypper"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to remove package due to zypper package manager being in-use by another process.")
+                removed = False
+                return removed
+            else:
+                self.logger.log(LogPriority.DEBUG, "zypper package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -145,7 +173,7 @@ class Zypper(object):
             is to be checked, must be recognizable to the underlying package
             manager.
         @return: bool
-        @author: dwalker
+        @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting
         @change: 12/24/2014 - Breen Malmberg - changed var name 'found' to
             'installed'
@@ -156,6 +184,18 @@ class Zypper(object):
 
         installed = True
         errstr = ""
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("zypper"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to check status of  package due to zypper package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "zypper package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -184,7 +224,7 @@ class Zypper(object):
 
         @param: package string name of package to search for
         @return: bool
-        @author: dwalker
+        @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - added method documentation
         @change: 12/24/2014 - Breen Malmberg - changed var name 'found' to
             'available'
@@ -195,6 +235,20 @@ class Zypper(object):
         '''
 
         available = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("zypper"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG,
+                                "Timed out while attempting to check availability of package, due to zypper package manager being in-use by another process.")
+                available = False
+                return available
+            else:
+                self.logger.log(LogPriority.DEBUG,
+                                "zypper package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -211,7 +265,7 @@ class Zypper(object):
                             available = True
             except repoError as repoerr:
                 if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    self.logger.log(LogPriority.WARNING, str(repoerr))
                     return False
 
                 if available:
@@ -342,7 +396,7 @@ class Zypper(object):
         return the install command string for the zypper pkg manager
 
         @return: string
-        @author: dwalker
+        @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - added method documentation
         '''
 
@@ -353,7 +407,7 @@ class Zypper(object):
         return the uninstall/remove command string for the zypper pkg manager
 
         @return: string
-        @author: dwalker
+        @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - added method documentation
         '''
 
