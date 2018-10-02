@@ -123,6 +123,18 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Oct 2 2018 Brandon Gonzales <bgonz12@lanl.gov> - 0.9.23
+- New – SecureApacheWebserver – Update to the rule. Now installs apache security modules on rpm based systems.
+- New – SecureApacheWebserver – Update to the rule. Now limits the available web directory server methods to GET and POST. Other server methods must be added manually in each web directory configuration.
+- New - DisableRemoteAppleEvents – Update to the rule. Remote apple events service will be enabled if the “disable apple events” CI is disabled. The rule now includes a CI to configure the list of remote access users.
+- New – ReduceSudoTimeout – Update to the rule. Added a CI to allow the user to specify their own timeout value (between 0 and 15 in minutes).
+- New – STONIX UI – Changed search bar functionality. Expanded the search scope to include ci names and instructions.
+- Fixed – Unicode encoding issue – A QT GUI bug where text was not displaying properly due to a failed conversion between unicode and utf-8.
+- Fixed – LimitConcurrentLogins – A typo in init, which resulted in the rule not being applicable to mac when it should be.
+- Fixed – ConfigureLANLLDAP and ConfigureSystemAuthentication – Issue where the rule was failing to install a required package on Fedora 28 because the name of the package had changed to “authconfig”.
+- Fixed – ConfigureSystemAuthentication – Help text typo.
+- Removed – RemoveSTOM – This rule is no longer needed/applicable and has been removed from the code base.
+
 * Mon Sep 10 2018 Brandon Gonzales <bgonz12@lanl.gov> - 0.9.22
 - Fixed - InstalledSoftwareVerification - An issue which caused the reporting results to be improperly formatted and displayed (unreadable)
 - Fixed - InstalledSoftwareVerification - An issue causing a disparity between what the rule was fixing and what it was reporting on, which resulted in the rule reporting non compliant after fix
