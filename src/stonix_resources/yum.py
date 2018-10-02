@@ -27,7 +27,10 @@ Created on Aug 06, 2012
 '''
 
 import re
+import os
+import time
 
+from stonixutilityfunctions import psRunning
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from StonixExceptions import repoError
@@ -70,9 +73,22 @@ class Yum(object):
         @author: Derek T. Walker
         @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
                 detailedresults with logging
+        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
         '''
 
         installed = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("yum"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to install package due to yum package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "Yum package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -85,7 +101,7 @@ class Yum(object):
                     raise repoError('yum', retcode)
             except repoError as repoerr:
                 if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    self.logger.log(LogPriority.WARNING, str(repoerr))
                     installed = False
 
             if installed:
@@ -111,6 +127,18 @@ class Yum(object):
         '''
 
         removed = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("yum"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to remove package, due to yum package manager being in-use by another process.")
+                removed = False
+                return removed
+            else:
+                self.logger.log(LogPriority.DEBUG, "Yum package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -122,7 +150,7 @@ class Yum(object):
                     raise repoError('yum', retcode)
             except repoError as repoerr:
                 if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+                    self.logger.log(LogPriority.WARNING, str(repoerr))
                     removed = False
 
             if removed:
@@ -151,6 +179,18 @@ class Yum(object):
 
         installed = True
         errstr = ""
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("yum"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to check status of package, due to yum package manager being in-use by another process.")
+                installed = False
+                return installed
+            else:
+                self.logger.log(LogPriority.DEBUG, "Yum package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -279,6 +319,18 @@ class Yum(object):
         '''
 
         available = True
+        maxtries = 12
+        trynum = 0
+
+        while psRunning("yum"):
+            trynum += 1
+            if trynum == maxtries:
+                self.logger.log(LogPriority.DEBUG, "Timed out while attempting to check availability of package, due to yum package manager being in-use by another process.")
+                available = False
+                return available
+            else:
+                self.logger.log(LogPriority.DEBUG, "Yum package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
 
         try:
 
@@ -290,7 +342,7 @@ class Yum(object):
                     raise repoError('yum', retcode, str(errstr))
             except repoError as repoerr:
                 if not repoerr.success:
-                    self.logger.log(LogPriority.DEBUG, str(errstr))
+                    self.logger.log(LogPriority.DEBUG, str(repoerr))
                     available = False
 
             if available:

@@ -1317,3 +1317,27 @@ def reportStack(level=1):
     '''
     return filename + " : " + functionName + " : " + lineNumber + " : "
 
+def psRunning(ps):
+    '''
+    check whether a process identified by the given pid is
+    currently running or not
+
+    note: despite the name of the os function, this will not
+    actually kill or attempt to kill the given process!
+    (see python documentation for os.kill() 2.7.15)
+
+    @param pid: int; process id to check
+
+    @return: isrunning
+    @rtype: bool
+
+    @author: Breen Malmberg
+    '''
+
+    isrunning = False
+
+    output = subprocess.check_output(["lslocks"])
+    if ps in output.split():
+        isrunning = True
+
+    return isrunning
