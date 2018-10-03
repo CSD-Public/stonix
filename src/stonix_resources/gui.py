@@ -1138,8 +1138,11 @@ class runThread(QThread):
                     tstatus['ruleenabled'] = 'True'
 
                 if self.action == 'fix':
-                    if tstatus['ruleenabled'] == 'False':
-                        self.controller.set_rule_detailedresults(ruleid, "fix", False, "Fix was not run and nothing was changed, because the configuration item '" + str(ciname) + "' was not enabled.")
+                    # this is a one-off because schedulestonix is the only rule who's
+                    # primary CI is not the indicator of whether that rule should be run or not
+                    if tstatus['rulename'] != 'ScheduleStonix':
+                        if tstatus['ruleenabled'] == 'False':
+                            self.controller.set_rule_detailedresults(ruleid, "fix", False, "Fix was not run and nothing was changed, because the configuration item '" + str(ciname) + "' was not enabled.")
                 else:
                     # fix didn't actually run, but since it wasn't a 'fix' action
                     # in the first place, we don't want to imply an anomaly with fix
