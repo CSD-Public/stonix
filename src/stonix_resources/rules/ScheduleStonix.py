@@ -131,8 +131,18 @@ class ScheduleStonix(Rule):
 
         self.initVars()
         if self.firstRun():
-            self.genJobTimes("all")
-            self.syncCITimes()
+            self.initTimes()
+
+    def initTimes(self):
+        '''
+
+        @return:
+        '''
+
+        self.genJobTimes()
+        self.syncCITimes()
+        if self.checkJobCollisions():
+            return self.initTimes()
 
     def syncCITimes(self):
         '''
@@ -679,6 +689,12 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                 self.formatDetailedResults("report", self.compliant, self.detailedresults)
                 self.logger.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
+            collisions = self.checkJobCollisions()
+            for item in collisions:
+                self.genJobTimes(item)
+            if collisions:
+                self.detailedresults += "\nOne of the times entered was invalid because it would cause more than one of the jobs to run at the same time. The offending time entry has been changed to a new, randomly generated one."
+                self.syncCITimes()
         else:
             self.logger.log(LogPriority.DEBUG, "Using randomly generated job times...")
             if self.checkJobCollisions():
