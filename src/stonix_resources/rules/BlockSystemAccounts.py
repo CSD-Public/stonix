@@ -31,13 +31,13 @@ the 'root' account which will not be blocked due access to it being required
 by administrators in certain situations.
 
 @author: Breen Malmberg
-@change: 01/29/2014 dwalker revised
+@change: 01/29/2014 Derek Walker revised
 @change: 02/12/2014 ekkehard Implemented self.detailedresults flow
 @change: 02/12/2014 ekkehard Implemented isapplicable
 @change: 02/19/2014 ekkehard Make sure report always runs
-@change: 04/18/2014 dkennel Updated to new style configuration item.
+@change: 04/18/2014 Dave Kennel Updated to new style configuration item.
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
-@change: 2015/04/14 dkennel Updated for new style isApplicable
+@change: 2015/04/14 Dave Kennel Updated for new style isApplicable
 @change: 2015/06/10 Breen Malmberg - updated author names; implemented correct
 mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
@@ -45,6 +45,7 @@ mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2018/10/50 Breen Malmberg - refactor of rule
 '''
 
 from __future__ import absolute_import
@@ -54,8 +55,9 @@ import traceback
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import readFile, writeFile, iterate, checkPerms
-from ..stonixutilityfunctions import setPerms, resetsecon
+from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import readFile, iterate
+from ..stonixutilityfunctions import resetsecon
 
 
 class BlockSystemAccounts(Rule):
@@ -66,7 +68,7 @@ class BlockSystemAccounts(Rule):
     def __init__(self, config, enviro, logger, statechglogger):
         '''
         Constructor
-        @change: 04/18/2014 dkennel Updated to new style configuration item.
+        @change: 04/18/2014 Dave Kennel Updated to new style configuration item.
         '''
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
@@ -104,58 +106,165 @@ shells set the value of this to False, or No.'''
         if the rule does not succeed.
 
         @return: self.compliant
-        @rtype: boolean
+        @rtype: bool
         @author: Breen Malmberg
-        @change: dwalker
+        @change: Derek Walker
         @change: Breen Malmberg - 06/10/2015 - fixed some reporting variables;
         added correct mac os x implementation (/usr/bin/false)
         '''
 
         self.detailedresults = ""
         self.compliant = True
-        self.nologinopt = '/sbin/nologin'
-        configoptfound = True
+        acceptable_nologin_shells = ["/sbin/nologin", "/dev/null", "", "/usr/bin/false"]
+        self.ch = CommandHelper(self.logger)
+        self.corrections_needed = []
 
         try:
 
-            if self.environ.getosfamily() == 'darwin':
-                self.nologinopt = '/usr/bin/false'
-
-            contents = readFile("/etc/passwd", self.logger)
-
-            if contents:
-
-                for line in contents:
-
-                    if re.search("^#", line) or re.match("^\s*$", line):
-                        continue
-
-                    templine = line.strip().split(":")
-
-                    if not len(templine) >= 6:
-                        self.detailedresults += "\nyour /etc/passwd file is incorrectly formatted"
-                        self.compliant = False
-                        return self.compliant
-
-                    if int(templine[2]) >= 500 or templine[2] == "0":
-                        continue
-                    if not re.search(":" + self.nologinopt + "$|:/dev/null$", line):
-                        self.compliant = False
-                        configoptfound = False
-                if not configoptfound:
-                    self.detailedresults += '\nrequired configuration option not found in system account entry in /etc/passwd'
+            system_login_shells = self.getsysloginshells()
+            for acc in system_login_shells:
+                if system_login_shells[acc] not in acceptable_nologin_shells:
+                    self.compliant = False
+                    self.corrections_needed.append(acc)
+            if self.corrections_needed:
+                self.detailedresults += "\nThe following system accounts can log in:\n" + "\n".join(self.corrections_needed)
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                                          self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-###############################################################################
+    def getUIDMIN(self):
+        '''
+        return this system's minimum user ID start value, if configured
+
+        @return: uid_min
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        uid_min = ""
+        logindefs = "/etc/login.defs"
+
+        try:
+
+            # get normal user uid start value
+            logindefscontents = readFile(logindefs, self.logger)
+            if logindefscontents:
+                for line in logindefscontents:
+                    if re.search("^UID_MIN", line, re.IGNORECASE):
+                        sline = line.split()
+                        uid_min = sline[1]
+
+            if not uid_min:
+                self.logger.log(LogPriority.DEBUG, "Unable to determine UID_MIN")
+
+        except IndexError:
+            pass
+        except IOError:
+            self.logger.log(LogPriority.DEBUG, "Failed to read uid_min from file")
+            return uid_min
+
+        return uid_min
+
+    def getsystemaccounts(self):
+        '''
+
+        @return: system_accounts_list
+        #@rtype: list
+        '''
+
+        system_accounts_list = []
+
+        if self.environ.getosfamily() == "darwin":
+            try:
+                system_accounts_list = ["root", "nobody"]
+                get_sys_accounts_cmd = "/usr/bin/dscl . list /Users | grep -i _"
+                self.ch.executeCommand(get_sys_accounts_cmd)
+                system_accounts_list += self.ch.getOutput()
+            except OSError:
+                self.logger.log(LogPriority.DEBUG, "Failed to retrieve list of system accounts")
+                return system_accounts_list
+        else:
+            exclude_accounts = ["halt", "shutdown", "sync", "root"]
+            system_accounts_list = []
+            uid_min = self.getUIDMIN()
+            if not uid_min:
+                uid_min = "500"
+            f = open("/etc/passwd", "r")
+            contentlines = f.readlines()
+            f.close()
+
+            try:
+
+                for line in contentlines:
+                    sline = line.split(":")
+
+                    if int(sline[2]) < int(uid_min):
+                        if sline[0] not in exclude_accounts:
+
+                            system_accounts_list.append(sline[0])
+            except IndexError:
+                pass
+
+        return system_accounts_list
+
+    def getloginshell(self, account):
+        '''
+
+        @param accountname:
+        @return:
+        '''
+
+        loginshell = ""
+
+        try:
+            f = open("/etc/passwd", "r")
+            contentlines = f.readlines()
+            f.close()
+        except IOError:
+            self.logger.log(LogPriority.DEBUG, "Could not read from passwd file")
+            return loginshell
+
+        try:
+
+            for line in contentlines:
+                if re.search("^"+account, line, re.IGNORECASE):
+                    sline = line.split(":")
+                    loginshell = sline[6]
+
+        except IndexError:
+            pass
+
+        return loginshell
+
+    def getsysloginshells(self):
+        '''
+
+        @return:
+        '''
+
+        system_login_shells = {}
+        system_accounts = self.getsystemaccounts()
+        for acc in system_accounts:
+
+            system_login_shells[acc] = self.getloginshell(acc).strip()
+
+        return system_login_shells
+
+    def setdefaultloginshell(self, account, shell):
+        '''
+
+        @param account:
+        @return:
+        '''
+
+        change_shell_cmd = "/usr/bin/chsh -s " + shell + " " + account
+        self.ch.executeCommand(change_shell_cmd)
 
     def fix(self):
         '''
@@ -163,9 +272,9 @@ shells set the value of this to False, or No.'''
         self.rulesuccess will be updated if the rule does not succeed.
 
         @return: self.rulesuccess
-        @rtype: boolean
+        @rtype: bool
         @author: Breen Malmberg
-        @change: dwalker
+        @change: Derek Walker
         @change: Breen Malmberg - 06/10/2015 - pep8 housekeeping; readability improvements;
         refactored some logging and reporting and try/except code; implemented correct
         mac os x fix functionality
@@ -173,105 +282,47 @@ shells set the value of this to False, or No.'''
 
         self.detailedresults = ""
         self.rulesuccess = True
+        path = "/etc/passwd"
+        tmppath = path + ".stonixtmp"
+        self.iditerator = 0
 
         try:
 
             if not self.ci.getcurrvalue():
                 return self.rulesuccess
 
-            #clear out event history so only the latest fix is recorded
-            self.iditerator = 0
+            self.ch.executeCommand("rm -f " + tmppath)
+            self.ch.executeCommand("cp /etc/passwd " + tmppath)
+            rf = open(tmppath, "r")
+            contentlines = rf.readlines()
+            rf.close()
+            for c in self.corrections_needed:
+                for line in contentlines:
+                    if re.search(c, line):
+                        sline = line.split(":")
+                        contentlines = [c.replace(sline[6], "/sbin/nologin\n") for c in contentlines]
+            wf = open(tmppath, "w")
+            wf.writelines(contentlines)
+            wf.close()
 
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            if eventlist:
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {'eventtype': 'conf',
+                     'filepath': path}
 
-            path = "/etc/passwd"
-            contents = readFile(path, self.logger)
-            tempstring = ""
-            tmpfile = path + ".tmp"
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(path, tmppath, myid)
 
-            if contents:
-
-                if not checkPerms(path, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-
-                    if not setPerms(path, [0, 0, 420], self.logger,
-                                                    self.statechglogger, myid):
-                        self.rulesuccess = False
-                        self.detailedresults += '\nunable to set permissions correctly on ' + str(path)
-
-                for line in contents:
-
-                    if re.match('^#', line) or re.match(r'^\s*$', line):
-                        tempstring += line
-                        continue
-
-                    templine = line.strip().split(":")
-
-                    if not len(templine) >= 6:
-
-                        self.detailedresults += "\nyour /etc/passwd file is incorrectly formatted"
-                        self.rulesuccess = False
-                        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-                        self.logdispatch.log(LogPriority.INFO,
-                                             self.detailedresults)
-                        return self.rulesuccess
-
-                    try:
-
-                        if int(templine[2]) >= 500 or templine[2] == "0":
-                            tempstring += line
-                            continue
-
-                        elif not re.search(":" + self.nologinopt + "$|:/dev/null$", line.strip()):
-                            if len(templine) == 6:
-                                templine.append(self.nologinopt)
-                            elif len(templine) == 7:
-                                templine[6] = self.nologinopt
-
-                            templine = ":".join(templine)
-                            tempstring += templine + "\n"
-
-                        else:
-                            tempstring += line
-
-                    except IndexError:
-                        raise
-                    except Exception:
-                        self.detailedresults = traceback.format_exc()
-                        self.logger.log(LogPriority.ERROR, self.detailedresults)
-                        self.rulesuccess = False
-                        return self.rulesuccess
-
-                if writeFile(tmpfile, tempstring, self.logger):
-
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': path}
-
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(path, tmpfile, myid)
-
-                    os.rename(tmpfile, path)
-                    os.chown(path, 0, 0)
-                    os.chmod(path, 420)
-                    resetsecon(path)
-
-            else:
-                self.rulesuccess = False
-                self.detailedresults += '\nunable to read /etc/passwd contents'
+            os.rename(tmppath, path)
+            os.chown(path, 0, 0)
+            os.chmod(path, 420)
+            resetsecon(path)
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
