@@ -48,7 +48,7 @@ from ..stonixutilityfunctions import iterate
 from ..localize import NTPSERVERSINTERNAL
 from ..localize import NTPSERVERSEXTERNAL
 from ..CommandHelper import CommandHelper
-
+from ..get_libc import getLibc
 
 class SetNTP(Rule):
     '''
@@ -87,6 +87,8 @@ class SetNTP(Rule):
 
         self.ch = CommandHelper(self.logger)
         self.ss = "/usr/sbin/systemsetup"
+
+        self.libc = getLibc()
 
         # set conf file path
         self.ntpfile = '/etc/ntp.conf'
@@ -476,6 +478,9 @@ class SetNTP(Rule):
             cmd1 = [self.ss, "-setusingnetworktime", "on"]
             try:
                 self.ch.executeCommand(cmd1)
+                self.ch.executeCommand(cmd1)
+                self.ch.executeCommand(cmd1)
+                self.libc.sync()
             except OSError:
                 self.logger.log(LogPriority.DEBUG, '\nSetNTP.fix_darwin() - command ' + str(self.ss) + ' not found\n' + str(OSError.message))
 
@@ -588,6 +593,7 @@ class SetNTP(Rule):
             except OSError:
                 self.logger.log(LogPriority.DEBUG, '\nSetNTP.fix_darwin() - ntpd not installed or not found\n' + str(OSError.message))
 
+            self.libc.sync()
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
