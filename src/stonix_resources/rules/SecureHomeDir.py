@@ -258,7 +258,11 @@ class SecureHomeDir(Rule):
 
             if UsersList:
                 for u in UsersList:
-                    currpwd = pwd.getpwnam(u)
+                    try:
+                        currpwd = pwd.getpwnam(u)
+                    except KeyError:
+                        UsersList.remove(u)
+                        continue
                     HomeDirs.append(currpwd[5])
 
             if not HomeDirs:
