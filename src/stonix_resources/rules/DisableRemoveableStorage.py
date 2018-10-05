@@ -287,24 +287,26 @@ class DisableRemoveableStorage(Rule):
 ###############################################################################
 
     def reportMac(self):
+        '''
+        
+        @return: compliant
+        @rtype: bool
+        '''
+
         self.detailedresults = ""
-        compliant = True
-        self.cronfile = "/usr/lib/cron/tabs/root"
-        if os.path.exists(self.cronfile):
-            #for this file we don't worry about permissions, SIP protected
-            contents = readFile(self.cronfile, self.logger)
-            found = False
-            for line in contents:
-                if re.search("\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist", line):
-                    found = True
-                    break
-            if not found:
-                compliant = False
-                self.detailedresults += "Didn't find the correct contents " + \
-                    "in crontab file\n"
-        else:
-            self.detailedresults += self.cronfile + " doesn't exist\n"
-            compliant = False
+        compliant = False
+
+        checkcroncmd = "/usr/bin/crontab -l"
+        self.ch.executeCommand(checkcroncmd)
+        output = self.ch.getOutput()
+        for line in output:
+            if re.search("\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist", line):
+                compliant = True
+                break
+
+        if not compliant:
+            self.detailedresults += "\nMissing required system cron job"
+
         return compliant
 
 ###############################################################################
