@@ -1336,7 +1336,7 @@ def psRunning(ps):
 
     isrunning = False
 
-    output = subprocess.check_output(["lslocks"])
+    output, errmsg = Popen("lslocks", stdout=PIPE, stderr=PIPE, shell=False).communicate()
     if ps in output.split():
         isrunning = True
 
