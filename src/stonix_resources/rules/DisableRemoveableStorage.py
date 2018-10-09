@@ -106,6 +106,9 @@ class DisableRemoveableStorage(Rule):
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
         self.sethelptext()
 
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.ch = CommandHelper(self.logger)
+
     def report(self):
         '''
         report the current rule-compliance status of this system. update
@@ -145,8 +148,6 @@ class DisableRemoveableStorage(Rule):
                 self.grubfiles = ["/boot/grub2/grub.cfg",
                              "/boot/grub/grub.cfg"
                              "/boot/grub/grub.conf"]
-                self.ph = Pkghelper(self.logger, self.environ)
-                self.ch = CommandHelper(self.logger)
                 self.detailedresults = ""
                 self.grubperms = ""
                 if re.search("Red Hat", self.environ.getostype()) and \
@@ -529,13 +530,13 @@ class DisableRemoveableStorage(Rule):
         @change: dwalker 8/19/2014
         '''
         debug = ""
+        success = True
 #         check = "/usr/sbin/kextstat "
 #         unload = "/sbin/kextunload "
 #         load = "/sbin/kextload "
 #         filepath = "/System/Library/Extensions/"
-        success = True
-        #created1 = False
-#         created2 = False
+        self.cronfile = "/usr/lib/cron/tabs/root"
+
         croncreated = False
         if not os.path.exists(self.cronfile):
             createFile(self.cronfile, self.logger)
