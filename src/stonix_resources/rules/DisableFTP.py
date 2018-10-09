@@ -29,6 +29,7 @@ Created on Mar 4, 2015
 @change: 2017/8/9 dwalker updated rule to use unload option vs disable option
 @change: 2017/8/30 dwalker updated rule to properly disable ftp according to
         apple suport
+@change: 10/09/2018 - Breen Malmberg - made applicable to mojave 10.14
 '''
 from __future__ import absolute_import
 from ..rule import Rule
@@ -51,7 +52,7 @@ class DisableFTP(Rule):
         self.mandatory = True
         self.helptext = "This rule disables FTP services for the Mac"
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
         # init CIs
         datatype = 'bool'
