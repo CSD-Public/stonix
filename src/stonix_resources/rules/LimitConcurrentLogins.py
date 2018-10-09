@@ -31,6 +31,7 @@ This is not a mandatory rule
 @change: 04/27/2018 - Breen Malmberg - changed config type to 'maxlogins'; fixed
         the removal of newline characters between config lines; added permissions
         checking of config file(s); changed mandatory flag to False
+@change: 10/09/2018 - Breen Malmberg - made applicable to mojave 10.14
 '''
 
 from __future__ import absolute_import
@@ -64,7 +65,7 @@ class LimitConcurrentLogins(Rule):
         self.mandatory = False
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                            'os': {'Mac OS X': ['10.11', 'r', '10.12.10']}}
+                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.conffilesdir = "/etc/security/limits.d"
         self.sethelptext()
 
