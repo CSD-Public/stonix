@@ -587,9 +587,10 @@ class SetNTP(Rule):
                 os.chmod(self.ntpfile, 0644)
                 os.chown(self.ntpfile, 0, 0)
 
-            cmd3 = ["ntpd"]
+            cmd3 = ["/usr/sbin/ntpd"]
             try:
-                self.ch.executeCommand(cmd3)
+                if os.path.exists(cmd3):
+                    self.ch.executeCommand(cmd3)
             except OSError:
                 self.logger.log(LogPriority.DEBUG, '\nSetNTP.fix_darwin() - ntpd not installed or not found\n' + str(OSError.message))
 
