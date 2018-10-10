@@ -97,6 +97,7 @@ class SecureNFS(Rule):
             if self.environ.getosfamily() == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
 
+            # secure NFS service
             self.sh = ServiceHelper(self.environ, self.logger)
             if self.environ.getostype() == "Mac OS X":
                 nfsfile = "/etc/nfs.conf"
@@ -147,11 +148,8 @@ class SecureNFS(Rule):
                                              self.detailedresults)
                         return self.compliant
 
-            if not self.checkNFSexports():
-                nfsexports = False
-
             if os.path.exists(nfsfile):
-                nfstemp = nfsfile + ".tmp"
+                nfstemp = nfsfile + ".stonixtmp"
                 eqtype = ""
                 eqtypestr = ""
                 if self.environ.getostype() == "Mac OS X":
@@ -201,9 +199,14 @@ class SecureNFS(Rule):
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 self.compliant = False
 
+            # secure NFS exports
             export = "/etc/exports"
             if os.path.exists(export):
-                extemp = export + ".tmp"
+
+                if not self.checkNFSexports():
+                    nfsexports = False
+
+                extemp = export + ".stonixtmp"
                 data2 = {"all_squash": "",
                          "no_root_squash": "",
                          "insecure_locks": ""}
@@ -223,12 +226,10 @@ class SecureNFS(Rule):
                         "have the correct permissions"
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
-            else:
-                self.detailedresults += "\n" + export + " file doesn't exist"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                self.compliant = False
+
             if not nfsexports:
                 self.compliant = False
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -238,8 +239,6 @@ class SecureNFS(Rule):
                                    self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-###############################################################################
 
     def checkNFSexports(self):
         '''
@@ -415,7 +414,7 @@ class SecureNFS(Rule):
 
             if not os.path.exists(nfsfile):
                 if createFile(nfsfile, self.logger):
-                    nfstemp = nfsfile + ".tmp"
+                    nfstemp = nfsfile + ".stonixtmp"
                     if self.environ.getostype() == "Mac OS X":
                         if not self.sh.auditService('/System/Library/LaunchDaemons/com.apple.nfsd.plist', serviceTarget='com.apple.nfsd'):
                             success = True
@@ -509,7 +508,7 @@ class SecureNFS(Rule):
                                              self.detailedresults)
                         return success
                 if createFile(export, self.logger):
-                    extemp = export + ".tmp"
+                    extemp = export + ".stonixtmp"
                     data2 = {"all_squash": "",
                              "no_root_squash": "",
                              "insecure_locks": ""}
@@ -545,7 +544,7 @@ class SecureNFS(Rule):
                     self.statechglogger.recordchgevent(myid, event)
             else:
                 if installed:
-                    extemp = export + ".tmp"
+                    extemp = export + ".stonixtmp"
                     data2 = {"all_squash": "",
                              "no_root_squash": "",
                              "insecure_locks": ""}
