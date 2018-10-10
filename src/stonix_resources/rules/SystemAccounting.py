@@ -161,7 +161,10 @@ class SystemAccounting(Rule):
             self.accpath = '/var/account/acct'
             self.pkgname = 'sysstat'
         else:
-            self.enableacc = '/etc/rc.conf'
+            if os.path.exists("/etc/rc.common"):
+                self.enableacc = "/etc/rc.common"
+            else:
+                self.enableacc = '/etc/rc.conf'
             self.accbasedir = '/var/account'
             self.accpath = '/var/account/acct'
 
