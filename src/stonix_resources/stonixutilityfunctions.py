@@ -1322,10 +1322,6 @@ def psRunning(ps):
     check whether a process identified by the given pid is
     currently running or not
 
-    note: despite the name of the os function, this will not
-    actually kill or attempt to kill the given process!
-    (see python documentation for os.kill() 2.7.15)
-
     @param pid: int; process id to check
 
     @return: isrunning
@@ -1335,8 +1331,17 @@ def psRunning(ps):
     '''
 
     isrunning = False
+    cmd = ""
 
-    output, errmsg = Popen("lslocks", stdout=PIPE, stderr=PIPE, shell=False).communicate()
+    if os.path.exists("/usr/bin/lslocks"):
+        cmd = "/usr/bin/lslocks"
+    elif os.path.exists("/usr/sbin/lsof"):
+        cmd = "/usr/sbin/lsof"
+    else:
+        print("Could not determine status of process: " + str(ps))
+        return isrunning
+
+    output, errmsg = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=False).communicate()
     if ps in output.split():
         isrunning = True
 
