@@ -584,7 +584,7 @@ class SetNTP(Rule):
 
             cmd3 = ["/usr/sbin/ntpd"]
             try:
-                if os.path.exists(cmd3):
+                if os.path.exists(cmd3[0]):
                     self.ch.executeCommand(cmd3)
             except OSError:
                 self.logger.log(LogPriority.DEBUG, '\nSetNTP.fix_darwin() - ntpd not installed or not found\n' + str(OSError.message))
