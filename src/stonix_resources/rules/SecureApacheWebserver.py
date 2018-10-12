@@ -41,6 +41,8 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2018/9/19 Brandon R. Gonzales - Add fix and report for installing rpm
                 security modules; Update SECUREAPACHEMODS ci instruction text
                 to include the new functionality
+@change: 2018/10/12 Brandon R. Gonzales - Change subprocess command calls to
+                instead use CommandHelper.
 '''
 from __future__ import absolute_import
 
@@ -48,11 +50,11 @@ import os
 import re
 import shutil
 import stat
-import subprocess
 import traceback
 
 from ..configurationitem import ConfigurationItem
 from ..logdispatcher import LogPriority
+from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
 from ..rule import Rule
 from ..stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
@@ -85,6 +87,8 @@ class SecureApacheWebserver(Rule):
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.comment = re.compile('^#|^;')
+        self.ch = CommandHelper(self.logdispatch)
+        self.ph = Pkghelper(self.logdispatch, self.environ)
         conflocations = ['/etc/httpd/conf/httpd.conf',
                          '/etc/apache2/apache2.conf',
                          '/etc/httpd/httpd.conf',
@@ -142,7 +146,6 @@ class SecureApacheWebserver(Rule):
                          'ServerTokens Prod',
                          'ServerSignature Off']
         self.sslitems = ['SSLCipherSuite ALL:!EXP:!NULL:!ADH:!LOW:!SSLv2!MEDIUM']
-        self.ph = Pkghelper(self.logdispatch, self.environ)
         self.securitymods = ['mod_ssl',
                              'mod_security',
                              'mod_cband',
@@ -976,9 +979,10 @@ development but some existing applications may use insecure side effects.'''
             configtest = ''
             for path in self.binpaths:
                 if os.path.exists(path):
-                    configtest = path + ' -t  &> /dev/null'
-                    retcode = subprocess.call(configtest, shell=True,
-                                              close_fds=True)
+                    configtest = [path, '-t', '&>', '/dev/null']
+                    self.ch.executeCommand(configtest)
+                    retcode = self.ch.getReturnCode()
+
                     if retcode != 0:
                         # Configuration failed selftest rollback the change!
                         changecomplete = False
