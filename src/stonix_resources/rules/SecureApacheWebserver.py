@@ -566,7 +566,7 @@ development but some existing applications may use insecure side effects.'''
         '''
         self.logdispatch.log(LogPriority.DEBUG, 'Entering report method')
         compliant = True
-        self.detailedresults = 'Results '
+        self.detailedresults = ""
         try:
             for filename in self.conffiles:
                 if os.path.exists(filename):
@@ -645,6 +645,16 @@ development but some existing applications may use insecure side effects.'''
                         self.phpcompliant = False
                         self.detailedresults += "\n"+ self.phpfile + \
                                                 ' should contain ' + entry
+            for path in self.binpaths:
+                if os.path.exists(path):
+                    configtest = [path, '-t',]
+                    self.ch.executeCommand(configtest)
+
+                    if self.ch.getReturnCode() != 0:
+                        # Check if httpd configurations are valid
+                        compliant = False
+                        self.detailedresults = "\nInvalid httpd configurations. This may require a manual fix: \n" + \
+                                                "\n".join(self.ch.getErrorOutput()) + "\n\n" + self.detailedresults
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -979,11 +989,10 @@ development but some existing applications may use insecure side effects.'''
             configtest = ''
             for path in self.binpaths:
                 if os.path.exists(path):
-                    configtest = [path, '-t', '&>', '/dev/null']
+                    configtest = [path, '-t',]
                     self.ch.executeCommand(configtest)
-                    retcode = self.ch.getReturnCode()
 
-                    if retcode != 0:
+                    if self.ch.getReturnCode() != 0:
                         # Configuration failed selftest rollback the change!
                         changecomplete = False
                         localconf = undoconf
